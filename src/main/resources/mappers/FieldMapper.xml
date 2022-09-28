@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.object.meta.persistence.mappers.FieldMapper">
+
+  <resultMap id="BaseResultMap" type="tech.metavm.object.meta.persistence.FieldPO">
+    <!--@mbg.generated-->
+    <!--@Table field-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="owner_id" jdbcType="BIGINT" property="ownerId"/>
+    <result column="access" jdbcType="INTEGER" property="access"/>
+<!--    <result column="type" jdbcType="INTEGER" property="typeCategory"/>-->
+    <result column="required" jdbcType="BOOLEAN" property="required"/>
+    <result column="unique" jdbcType="BOOLEAN" property="unique"/>
+    <result column="default_value" jdbcType="VARCHAR" property="defaultValue"/>
+    <result column="column_name" jdbcType="VARCHAR" property="columnName"/>
+    <result column="target_id" jdbcType="BIGINT" property="targetId"/>
+    <result column="as_title" jdbcType="BOOLEAN" property="asTitle"/>
+    <result column="multi_valued" jdbcType="BOOLEAN" property="multiValued"/>
+    <result column="type_id" jdbcType="BIGINT" property="typeId"/>
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, tenant_id, `name`, owner_id, access, `type`, required, `unique`, default_value, column_name, target_id,
+    as_title, multi_valued, type_id
+  </sql>
+
+  <select id="selectById" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from field
+    where id = #{id} and tenant_id = #{tenantId} and deleted_at = 0
+  </select>
+
+  <insert id="batchInsert" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+    insert into field (id, tenant_id, `name`, owner_id, access, target_id, required,
+    `unique`, default_value, column_name, as_title, multi_valued, type_id)
+    values
+    <foreach collection="collection" item="item" separator=",">
+        (#{item.id}, #{item.tenantId}, #{item.name}, #{item.ownerId}, #{item.access},#{item.targetId},
+        #{item.required}, #{item.unique}, #{item.defaultValue}, #{item.columnName}, #{item.asTitle},
+        #{item.multiValued},
+        #{item.typeId})
+    </foreach>
+  </insert>
+
+  <update id="batchUpdate">
+    <foreach collection="list" item="item" separator=";">
+      update field
+      <set>
+       <if test="item.name != null">
+          `name` = #{item.name},
+       </if>
+        <if test="item.access != null">
+          `access` = #{item.access},
+        </if>
+        <if test="item.targetId != null">
+          target_id = #{item.targetId},
+        </if>
+        <if test="item.typeId != null">
+          type_id = #{item.typeId},
+        </if>
+        <if test="item.required != null">
+          required = #{item.required},
+        </if>
+        <if test="item.unique != null">
+          `unique` = #{item.unique},
+        </if>
+        <if test="item.defaultValue != null">
+          default_value = #{item.defaultValue},
+        </if>
+        <if test="item.columnName != null">
+          column_name = #{item.columnName},
+        </if>
+        <if test="item.asTitle != null">
+          as_title = #{item.asTitle},
+        </if>
+        <if test="item.multiValued != null">
+          multi_valued = #{item.multiValued},
+        </if>
+      </set>
+      where id = #{item.id} and
+      tenant_id = #{item.tenantId}
+      and deleted_at = 0
+    </foreach>
+  </update>
+
+  <update id="batchDelete">
+    update field set deleted_at = unix_timestamp() * 1000
+    where
+    deleted_at = 0
+    and id in
+    <foreach collection="collection" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+  </update>
+
+  <select id="selectByOwnerIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    field
+    where tenant_id = #{tenantId} and deleted_at = 0 and
+    owner_id in
+    <foreach collection="ownerIds" item="ownerId" open="(" close=")" separator=",">
+      #{ownerId}
+    </foreach>
+  </select>
+
+  <select id="countByTargetId" resultType="int">
+    select count(1) from field where tenant_id = #{tenantId} and target_id = #{targetId} and deleted_at = 0
+  </select>
+
+  <select id="selectByTargetId" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from field where tenant_id = #{tenantId} and target_id = #{targetId} and deleted_at = 0 limit #{limit}
+  </select>
+
+  <update id="deleteByOwnerId">
+    update field set deleted_at = unix_timestamp() * 1000
+    where tenant_id = #{tenantId} and owner_id = #{ownerId} and deleted_at = 0
+  </update>
+
+  <update id="updateAsTitle">
+    update field set as_title = #{asTitle}
+    where tenant_id = #{tenantId} and id = #{id} and deleted_at = 0
+  </update>
+
+  <select id="selectTitleFields" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from field
+    where tenant_id = #{tenantId} and deleted_at = 0 and as_title = true and owner_id in
+    <foreach collection="ownerIds" item="ownerId" open="(" close=")" separator=",">
+      #{ownerId}
+    </foreach>
+  </select>
+
+  <select id="selectByIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    field
+    where
+    deleted_at = 0 and
+    id in
+    <foreach collection="collection" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+  </select>
+
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.flow.persistence.NodeMapper">
+  <resultMap id="BaseResultMap" type="tech.metavm.flow.persistence.NodePO">
+    <!--@mbg.generated-->
+    <!--@Table node-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="flow_id" jdbcType="BIGINT" property="flowId" />
+    <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="prev_id" jdbcType="BIGINT" property="prevId"/>
+    <result column="output_type_id" jdbcType="BIGINT" property="outputTypeId"/>
+    <result column="scope_id" jdbcType="BIGINT" property="scopeId"/>
+    <result column="param" jdbcType="VARCHAR" property="param"/>
+    <result column="deleted_at" jdbcType="BIGINT" property="deletedAt" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, tenant_id, `name`, flow_id, `type`, prev_id, output_type_id, scope_id, param, deleted_at
+  </sql>
+
+  <select id="selectByIds" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from node
+    where id in
+    <foreach collection="collection" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+    and deleted_at = 0
+  </select>
+
+  <update id="batchDelete">
+    <!--@mbg.generated-->
+    update node
+    set deleted_at = unix_timestamp() * 1000
+    where id in
+    <foreach collection="list" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+    and deleted_at = 0
+  </update>
+
+  <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+    <!--@mbg.generated-->
+    insert into node (id, tenant_id, `name`, flow_id, `type`, prev_id, output_type_id, scope_id, param)
+    values 
+    <foreach collection="collection" item="item" separator=",">
+      (#{item.id}, #{item.tenantId}, #{item.name}, #{item.flowId}, #{item.type},
+      #{item.prevId}, #{item.outputTypeId}, #{item.scopeId}, #{item.param})
+    </foreach>
+
+  </insert>
+
+  <update id="batchUpdate">
+    <!--@mbg.generated-->
+    <foreach collection="list" item="item" separator=";">
+      update node
+      <set>
+        <if test="item.tenantId != null">
+          tenant_id = #{item.tenantId},
+        </if>
+        <if test="item.name != null">
+          `name` = #{item.name},
+        </if>
+        <if test="item.flowId != null">
+          flow_id = #{item.flowId},
+        </if>
+        <if test="item.type != null">
+          `type` = #{item.type},
+        </if>
+        <if test="item.prevId != null">
+          prev_id = #{item.prevId},
+        </if>
+        <if test="item.outputTypeId != null">
+          output_type_id = #{item.outputTypeId},
+        </if>
+        <if test="item.param != null">
+          param = #{item.param},
+        </if>
+        <if test="item.deletedAt != null">
+          deleted_at = #{item.deletedAt},
+        </if>
+      </set>
+      where id = #{item.id}
+    </foreach>
+  </update>
+
+  <select id="selectByFlowIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from node
+    where flow_id in
+    <foreach collection="collection" item="flowId" separator="," open="(" close=")">
+      #{flowId}
+    </foreach>
+    and deleted_at = 0
+  </select>
+
+</mapper>

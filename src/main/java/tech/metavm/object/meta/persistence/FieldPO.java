@@ -1,0 +1,144 @@
+package tech.metavm.object.meta.persistence;
+
+public class FieldPO {
+
+    private Long id;
+
+    private Long tenantId;
+
+    private String name;
+
+    private Long ownerId;
+
+//    private Integer typeCategory;
+
+    private Integer access;
+
+    private Boolean required;
+
+    private Boolean unique;
+
+    private Boolean multiValued;
+
+    private String defaultValue;
+
+    private Long targetId;
+
+    private String columnName;
+
+    private Boolean asTitle;
+
+    private Long typeId;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+//    public Integer getTypeCategory() {
+//        return typeCategory;
+//    }
+
+    public Boolean getRequired() {
+        return required;
+    }
+
+    public void setRequired(Boolean required) {
+        this.required = required;
+    }
+
+    public Boolean getUnique() {
+        return unique;
+    }
+
+    public void setUnique(Boolean unique) {
+        this.unique = unique;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+//    public void setTypeCategory(Integer typeCategory) {
+//        this.typeCategory = typeCategory;
+//    }
+
+    public Integer getAccess() {
+        return access;
+    }
+
+    public void setAccess(Integer access) {
+        this.access = access;
+    }
+
+    public Long getTargetId() {
+        return targetId;
+    }
+
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
+    }
+
+    public Boolean getAsTitle() {
+        return asTitle;
+    }
+
+    public void setAsTitle(Boolean asTitle) {
+        this.asTitle = asTitle;
+    }
+
+    public Boolean getMultiValued() {
+        return multiValued;
+    }
+
+    public void setMultiValued(Boolean multiValued) {
+        this.multiValued = multiValued;
+    }
+
+    public Long getTypeId() {
+        return typeId;
+    }
+
+    public void setTypeId(Long typeId) {
+        this.typeId = typeId;
+    }
+}

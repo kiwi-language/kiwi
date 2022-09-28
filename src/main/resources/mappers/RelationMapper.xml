@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.object.instance.persistence.mappers.RelationMapper">
+  <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.RelationPO">
+    <!--@mbg.generated-->
+    <!--@Table relation-->
+    <id column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+    <id column="field_id" jdbcType="BIGINT" property="fieldId" />
+    <id column="src_instance_id" jdbcType="BIGINT" property="srcInstanceId" />
+    <id column="dest_instance_id" jdbcType="BIGINT" property="destInstanceId" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    tenant_id, field_id, src_instance_id, dest_instance_id
+  </sql>
+
+  <delete id="batchDelete">
+    <!--@mbg.generated-->
+    delete from relation
+    where
+    (tenant_id, field_id, src_instance_id, dest_instance_id) in
+    <foreach collection="list" item="item" open="(" close=")" separator=",">
+      (#{item.tenantId}, #{item.fieldId}, #{item.srcInstanceId}, #{item.destInstanceId})
+    </foreach>
+  </delete>
+
+  <insert id="batchInsert">
+    <!--@mbg.generated-->
+    insert into relation (tenant_id, field_id, src_instance_id,
+      dest_instance_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+        (#{item.tenantId}, #{item.fieldId}, #{item.srcInstanceId}, #{item.destInstanceId})
+    </foreach>
+  </insert>
+
+  <select id="selectBySourceIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    relation
+    where
+    tenant_id = #{tenantId} and
+    src_instance_id in
+    <foreach collection="sourceIds" item="sourceId" separator="," open="(" close=")">
+      #{sourceId}
+    </foreach>
+  </select>
+
+  <select id="selectByTargets" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    relation
+    where
+    tenant_id = #{tenantId} and
+    (dest_instance_id, field_id) in
+    <foreach collection="targets" item="target" separator="," open="(" close=")">
+      (#{target.destInstanceId}, #{target.fieldId})
+    </foreach>
+  </select>
+</mapper>

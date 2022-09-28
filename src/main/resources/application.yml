@@ -1,0 +1,19 @@
+spring:
+    main:
+      allow-circular-references: true
+    datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      username: root
+      password: 85263670
+      url: jdbc:mysql://localhost:3306/object?allowMultiQueries=true
+    data:
+      elasticsearch:
+        host: localhost
+        port: 9200
+
+mybatis:
+  mapper-locations: classpath*:/mappers/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: tech.nonocode.object.meta.persistence
+

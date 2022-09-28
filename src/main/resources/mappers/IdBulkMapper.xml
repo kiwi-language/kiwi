@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.infra.persistence.IdBulkMapper">
+
+  <resultMap id="BaseResultMap" type="tech.metavm.infra.persistence.IdBulk">
+    <!--@mbg.generated-->
+    <!--@Table id_bulk-->
+    <id column="num" jdbcType="INTEGER" property="num" />
+    <result column="next_id" jdbcType="BIGINT" property="nextId" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    num, next_id
+  </sql>
+
+  <select id="selectForUpdate" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from id_bulk
+    where num = #{bulkNum} for update
+  </select>
+
+  <insert id="batchInsert">
+    <!--@mbg.generated-->
+    insert into id_bulk (num, next_id) values
+    <foreach collection="collection" item="item" separator=",">
+      (#{item.num}, #{item.nextId})
+    </foreach>
+  </insert>
+
+  <update id="increaseNextId">
+    update id_bulk set next_id = next_id + #{inc} where num = #{bulkNum}
+  </update>
+
+</mapper>
