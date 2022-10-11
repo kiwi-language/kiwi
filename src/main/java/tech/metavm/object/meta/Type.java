@@ -4,6 +4,7 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.instance.ColumnType;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
@@ -103,6 +104,10 @@ public class Type extends Entity {
         return Collections.unmodifiableList(fields());
     }
 
+    public Type getArrayType() {
+        return getContext().getTypeStore().getArrayType(this, getContext());
+    }
+
     private List<Field> fields() {
         ensureFieldAndOptionLoaded();
         return fields;
@@ -129,7 +134,7 @@ public class Type extends Entity {
         if(field.getId() != null && getField(field.getId()) != null) {
             throw new RuntimeException("Field " + field.getId() + " is already added");
         }
-        if(getFieldNyName(field.getName()) != null) {
+        if(getFieldByName(field.getName()) != null) {
             throw BusinessException.invalidField(field, "属性名称'" + field.getName() + "'已存在");
         }
         if(field.isAsTitle() && getTileField() != null) {
@@ -187,7 +192,7 @@ public class Type extends Entity {
     }
 
     public boolean isNumber() {
-        return category == TypeCategory.NUMBER;
+        return category == TypeCategory.DOUBLE;
     }
 
     public boolean isInt64() {
@@ -214,11 +219,31 @@ public class Type extends Entity {
         return ephemeral;
     }
 
+    public boolean isPersistent() {
+        return !isEphemeral();
+    }
+
     public Field getField(long fieldId) {
         return NncUtils.filterOne(fields(), f -> f.getId() == fieldId);
     }
 
-    public Field getFieldNyName(String fieldName) {
+    public Field getFieldNyPath(String fieldPath) {
+        int idx = fieldPath.indexOf('.');
+        if(idx == -1) {
+            return getFieldByName(fieldPath);
+        }
+        else {
+            String fieldName = fieldPath.substring(0, idx);
+            String subPath = fieldPath.substring(idx + 1);
+            Field field = getFieldByName(fieldName);
+            if(field == null) {
+                throw new RuntimeException("Invalid field path '" + fieldPath + "', field '" + fieldName + "' not found");
+            }
+            return field.getType().getFieldNyPath(subPath);
+        }
+    }
+
+    public Field getFieldByName(String fieldName) {
         return NncUtils.filterOne(fields(), f -> f.getName().equals(fieldName));
     }
 
@@ -286,6 +311,10 @@ public class Type extends Entity {
         return po;
     }
 
+    public boolean isInstance(Instance instance) {
+        return instance != null && this.equals(instance.getType());
+    }
+
     public TypeDTO toDTO() {
         return new TypeDTO(
                 id,
@@ -315,6 +344,11 @@ public class Type extends Entity {
         } else {
             return this;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Type {name: " + name + "}";
     }
 }
 

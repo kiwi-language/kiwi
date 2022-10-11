@@ -33,10 +33,10 @@ public class DefaultValueUtil {
     public static Object convertFromStrOne(String str, TypeCategory fieldType) {
         return switch (fieldType) {
             case INT32, INT64, TABLE, TIME, DATE, ENUM, PAGE, INTERFACE, FLOW_INPUT, NULLABLE -> parseLong(str);
-            case NUMBER -> parseDouble(str);
+            case DOUBLE -> parseDouble(str);
             case BOOL -> parseBool(str);
+            case OBJECT, ARRAY -> null;
             case STRING -> str;
-            case ARRAY -> null;
         };
     }
 

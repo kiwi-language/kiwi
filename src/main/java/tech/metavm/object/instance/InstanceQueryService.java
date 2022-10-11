@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.object.instance.query.Expression;
+import tech.metavm.object.instance.query.ExpressionUtil;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
@@ -45,13 +46,13 @@ public class InstanceQueryService {
             return null;
         }
         if(titleField.isString()) {
-            return Expression.or(
-                    Expression.fieldLike(titleField, queryDTO.searchText()),
-                    Expression.fieldStartsWith(titleField, queryDTO.searchText())
+            return ExpressionUtil.or(
+                    ExpressionUtil.fieldLike(titleField, queryDTO.searchText()),
+                    ExpressionUtil.fieldStartsWith(titleField, queryDTO.searchText())
             );
         }
         else {
-            return Expression.fieldEq(titleField, queryDTO.searchText());
+            return ExpressionUtil.fieldEq(titleField, queryDTO.searchText());
         }
     }
 

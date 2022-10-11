@@ -25,11 +25,13 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     public BranchNode(NodePO nodePO, BranchParamDTO param, ScopeRT scope) {
         super(nodePO, scope);
         for (BranchDTO branchDTO : param.branches()) {
+            ScopeRT branchScope = getFromContext(ScopeRT.class, branchDTO.scope().id());
+            branchScope.setOwner(this);
             branches.add(
                 new Branch(
                     branchDTO.id(),
                     branchDTO.condition(),
-                    getFromContext(ScopeRT.class, branchDTO.scope().id()),
+                    branchScope,
                     this
                 )
             );
@@ -42,8 +44,8 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     }
 
     @Override
-    protected BranchParamDTO getParam(boolean forPersistence) {
-        return new BranchParamDTO(NncUtils.map(branches, branch -> branch.toDTO(!forPersistence)));
+    protected BranchParamDTO getParam(boolean persisting) {
+        return new BranchParamDTO(NncUtils.map(branches, branch -> branch.toDTO(!persisting, persisting)));
     }
 
     public Branch addBranch(BranchDTO branchDTO) {
@@ -85,6 +87,14 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     @Override
     public void execute(FlowFrame frame) {
+        for (Branch branch : branches) {
+            if(branch.checkCondition(frame)) {
+                if(branch.isNotEmpty()) {
+                    frame.jumpTo(branch.getScope().getFirstNode());
+                }
+                break;
+            }
+        }
     }
 
 }

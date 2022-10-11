@@ -14,7 +14,7 @@ public class PathParser {
         String[] splits = path.split("\\.");
         Path current = root;
         for (String split : splits) {
-            current = current.getOrCreate(split);
+            current = current.getOrCreateChild(split);
         }
     }
 

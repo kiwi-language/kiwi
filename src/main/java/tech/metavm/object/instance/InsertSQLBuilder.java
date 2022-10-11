@@ -38,7 +38,7 @@ public class InsertSQLBuilder {
         List<String> setItems = NncUtils.map(columns, col -> "`" + col + "` = ?");
         return "UPDATE `" + table
                 + "` SET " + NncUtils.join(setItems)
-                + " WHERE tenant_id = ? and objectId = ? and deleted_at = 0";
+                + " WHERE tenant_id = ? and id = ? and deleted_at = 0";
     }
 
 }

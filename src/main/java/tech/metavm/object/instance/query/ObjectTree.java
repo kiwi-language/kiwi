@@ -23,8 +23,8 @@ public class ObjectTree extends NTree {
     public void setInstance(Instance instance) {
         Type type = instance.getType();
         for (Path childPath : path.getChildren()) {
-            Field field = type.getFieldNyName(childPath.getName());
-            Object fieldValue = instance.get(field);
+            Field field = type.getFieldByName(childPath.getName());
+            Object fieldValue = instance.getRaw(field);
             if(fieldValue == null) {
                 continue;
             }

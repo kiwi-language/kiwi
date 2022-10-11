@@ -4,6 +4,7 @@ import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.AddObjectParamDTO;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
@@ -30,10 +31,10 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
     }
 
     @Override
-    protected AddObjectParamDTO getParam(boolean forPersistence) {
+    protected AddObjectParamDTO getParam(boolean persisting) {
         return new AddObjectParamDTO(
                 getOutputType().getId(),
-                NncUtils.map(fields, FieldParam::toDTO)
+                NncUtils.map(fields, fp -> fp.toDTO(persisting))
         );
     }
 
@@ -43,16 +44,18 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
         fields.clear();
         fields.addAll(NncUtils.map(
                 param.fieldParams(),
-                fp -> new FieldParam(fp, getContext())
+                fp -> new FieldParam(fp, getContext(), getParsingContext())
         ));
     }
 
     @Override
     public void execute(FlowFrame frame) {
-        frame.addInstance(
-            InstanceDTO.valueOf(
-                NncUtils.get(getOutputType(), Type::getId),
-                NncUtils.map(fields, fp -> fp.evaluate(frame))
+        frame.setResult(
+            frame.addInstance(
+                InstanceDTO.valueOf(
+                    NncUtils.get(getOutputType(), Type::getId),
+                    NncUtils.map(fields, fp -> fp.evaluate(frame))
+                )
             )
         );
     }

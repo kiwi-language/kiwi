@@ -65,7 +65,7 @@ public class ContextDifference {
     private boolean isDifferent(Instance before, Instance after) {
         Type type = before.getType();
         for (Field field : type.getFields()) {
-            if(!Objects.equals(before.get(field), after.get(field))) {
+            if(!Objects.equals(before.getRaw(field), after.getRaw(field))) {
                 return true;
             }
         }

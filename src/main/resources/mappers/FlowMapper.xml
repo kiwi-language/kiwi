@@ -9,11 +9,12 @@
     <result column="name" jdbcType="VARCHAR" property="name" />
     <result column="type_id" jdbcType="BIGINT" property="typeId" />
     <result column="root_scope_id" jdbcType="BIGINT" property="rootScopeId"/>
+    <result column="input_type_id" jdbcType="BIGINT" property="inputTypeId"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, `name`, type_id, root_scope_id
+    id, tenant_id, `name`, type_id, root_scope_id, input_type_id
   </sql>
 
   <select id="selectByIds" parameterType="java.lang.Long" resultMap="BaseResultMap">
@@ -41,10 +42,10 @@
 
   <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
     <!--@mbg.generated-->
-    insert into flow (id, tenant_id, `name`, type_id, root_scope_id)
+    insert into flow (id, tenant_id, `name`, type_id, root_scope_id, input_type_id)
     values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.tenantId}, #{item.name},  #{item.typeId}, #{item.rootScopeId})
+      (#{item.id}, #{item.tenantId}, #{item.name},  #{item.typeId}, #{item.rootScopeId}, #{item.inputTypeId})
     </foreach>
 
   </insert>
@@ -62,6 +63,9 @@
         </if>
         <if test="item.typeId != null">
           type_id = #{item.typeId},
+        </if>
+        <if test="item.inputTypeId != null">
+          input_type_id = #{item.inputTypeId},
         </if>
       </set>
       where id = #{item.id} and deleted_at = 0

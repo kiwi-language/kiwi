@@ -32,12 +32,12 @@ public class GetObjectNode extends NodeRT<GetObjectParamDTO> {
     @Override
     protected void setParam(GetObjectParamDTO param) {
         objectType = context.getType(param.typeId());
-        objectId = ValueFactory.getValue(param.id());
+        objectId = ValueFactory.getValue(param.id(), getParsingContext());
     }
 
     @Override
-    protected GetObjectParamDTO getParam(boolean forPersistence) {
-        return new GetObjectParamDTO(objectType.getId(), objectId.toDTO());
+    protected GetObjectParamDTO getParam(boolean persisting) {
+        return new GetObjectParamDTO(objectType.getId(), objectId.toDTO(persisting));
     }
 
     @Override

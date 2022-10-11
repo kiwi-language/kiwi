@@ -27,11 +27,12 @@ public class PrimitiveTypeInitializer {
     public static final TypeInfo[] TYPE_INFO_LIST = new TypeInfo[] {
             new TypeInfo("文本", TypeCategory.STRING),
             new TypeInfo("是否", TypeCategory.BOOL),
-            new TypeInfo("数值", TypeCategory.NUMBER),
+            new TypeInfo("数值", TypeCategory.DOUBLE),
             new TypeInfo("整数", TypeCategory.INT64),
             new TypeInfo("时间", TypeCategory.TIME),
             new TypeInfo("日期", TypeCategory.DATE),
-            new TypeInfo("INT32", TypeCategory.INT32)
+            new TypeInfo("INT32", TypeCategory.INT32),
+            new TypeInfo("对象", TypeCategory.OBJECT),
     };
 
     @Transactional

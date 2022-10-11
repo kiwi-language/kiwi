@@ -83,11 +83,44 @@ public class Instance extends AbsInstance {
 
     public String getTitle() {
         Field titleField = type.getTileField();
-        return titleField != null ? getField(titleField).getDisplayValue() : getId() + "";
+        return titleField != null ? field(titleField).getDisplayValue() : getId() + "";
     }
 
-    public Object get(String fieldName) {
-        return get(getType().getFieldNyNameRequired(fieldName));
+    public Object getResolved(List<Long> fieldPath) {
+        long fieldId = fieldPath.get(0);
+        InstanceField field = field(fieldId);
+        if(fieldPath.size() > 1) {
+            List<Long> subFieldPath = fieldPath.subList(1, fieldPath.size());
+            return NncUtils.get(field.getInstance(), inst -> inst.getResolved(subFieldPath));
+        }
+        else {
+            return field.getResolvedValue();
+        }
+    }
+
+    public Object getRaw(List<Long> fieldPath) {
+        long fieldId = fieldPath.get(0);
+        InstanceField field = field(fieldId);
+        if(fieldPath.size() > 1) {
+            List<Long> subFieldPath = fieldPath.subList(1, fieldPath.size());
+            return NncUtils.get(field.getInstance(), inst -> inst.getRaw(subFieldPath));
+        }
+        else {
+            return field.getValue();
+        }
+    }
+
+    public Object getRaw(String fieldPath) {
+        int idx = fieldPath.indexOf('.');
+        if(idx == -1) {
+            return getRaw(getType().getFieldNyNameRequired(fieldPath));
+        }
+        else {
+            String fieldName = fieldPath.substring(0, idx);
+            String subPath = fieldPath.substring(idx + 1);
+            Instance fieldInstance = getInstance(fieldName);
+            return NncUtils.get(fieldInstance, inst -> inst.getRaw(subPath));
+        }
     }
 
     public Instance getInstance(long fieldId) {
@@ -103,22 +136,22 @@ public class Instance extends AbsInstance {
     }
 
     public Long getLong(String fieldName) {
-        return (Long) get(fieldName);
+        return (Long) getRaw(fieldName);
     }
 
     public List<Long> getLongList(String fieldName) {
-        return (List<Long>) get(fieldName);
+        return (List<Long>) getRaw(fieldName);
     }
 
-    public Object get(Field field) {
+    public Object getRaw(Field field) {
         return id2field.get(field.getId()).getValue();
     }
 
-    public Object get(long fieldId) {
+    public Object getRaw(long fieldId) {
         return id2field.get(fieldId).getValue();
     }
 
-    private InstanceField getField(Field field) {
+    private InstanceField field(Field field) {
         return id2field.get(field.getId());
     }
 
@@ -231,4 +264,8 @@ public class Instance extends AbsInstance {
         return context;
     }
 
+    @Override
+    public String toString() {
+        return "Instance {type: " + getType().getName() + ", id: " + getId() + ", title: " + getTitle() + "}";
+    }
 }

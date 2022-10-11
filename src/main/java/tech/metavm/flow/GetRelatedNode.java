@@ -22,13 +22,13 @@ public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
     }
 
     @Override
-    protected GetRelatedParamDTO getParam(boolean forPersistence) {
-        return new GetRelatedParamDTO(objectId.toDTO(), fieldId);
+    protected GetRelatedParamDTO getParam(boolean persisting) {
+        return new GetRelatedParamDTO(objectId.toDTO(persisting), fieldId);
     }
 
     @Override
     protected void setParam(GetRelatedParamDTO param) {
-        objectId = ValueFactory.getValue(param.objectId());
+        objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
         fieldId = param.fieldId();
     }
 

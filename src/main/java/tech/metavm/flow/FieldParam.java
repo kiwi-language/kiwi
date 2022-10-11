@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityContext;
 import tech.metavm.flow.rest.FieldParamDTO;
+import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
@@ -12,9 +13,9 @@ public class FieldParam {
     private final Field field;
     private final Value value;
 
-    public FieldParam(FieldParamDTO dto, EntityContext context) {
+    public FieldParam(FieldParamDTO dto, EntityContext context, ParsingContext parsingContext) {
         this.field = context.getField(dto.fieldId());
-        this.value = ValueFactory.getValue(dto.value());
+        this.value = ValueFactory.getValue(dto.value(), parsingContext);
     }
 
     public Field getField() {
@@ -25,8 +26,8 @@ public class FieldParam {
         return value;
     }
 
-    public FieldParamDTO toDTO() {
-        return new FieldParamDTO(field.getId(), NncUtils.get(value, Value::toDTO));
+    public FieldParamDTO toDTO(boolean persisting) {
+        return new FieldParamDTO(field.getId(), NncUtils.get(value, v -> v.toDTO(persisting)));
     }
 
     public InstanceFieldDTO evaluate(FlowFrame executionContext) {

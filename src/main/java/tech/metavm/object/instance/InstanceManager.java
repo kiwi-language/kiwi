@@ -9,10 +9,7 @@ import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
-import tech.metavm.object.instance.query.ConstantExpression;
-import tech.metavm.object.instance.query.Expression;
-import tech.metavm.object.instance.query.ExpressionParser;
-import tech.metavm.object.instance.query.GraphQueryExecutor;
+import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.instance.rest.SelectRequestDTO;
@@ -120,9 +117,9 @@ public class InstanceManager {
         Expression expression = ExpressionParser.parse(type, query.searchText());
         if(expression instanceof ConstantExpression) {
             Field titleField = type.getTileField();
-            expression = Expression.or(
-                    Expression.fieldStartsWith(titleField, query.searchText()),
-                    Expression.fieldLike(titleField, query.searchText())
+            expression = ExpressionUtil.or(
+                    ExpressionUtil.fieldStartsWith(titleField, query.searchText()),
+                    ExpressionUtil.fieldLike(titleField, query.searchText())
             );
         }
         SearchQuery searchQuery = new SearchQuery(

@@ -179,7 +179,7 @@ public class InstanceContext {
 
     private ContextDifference diff() {
         ContextDifference diff = new ContextDifference(tenantId);
-        diff.diff(headSubContext.getInstances(), bufferSubContext.getInstances());
+        diff.diff(headSubContext.getPersistentInstances(), bufferSubContext.getPersistentInstances());
         return diff;
     }
 
@@ -214,6 +214,10 @@ public class InstanceContext {
 
         Collection<Instance> getInstances() {
             return instanceMap.values();
+        }
+
+        Collection<Instance> getPersistentInstances() {
+            return NncUtils.filter(getInstances(), inst -> inst.getType().isPersistent());
         }
 
         void rebuildFrom(SubContext that) {

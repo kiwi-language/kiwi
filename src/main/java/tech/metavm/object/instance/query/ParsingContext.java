@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.query;
 
+import java.util.List;
+
 public interface ParsingContext {
 
-    Expression parseField(String fieldPath);
+    Expression parse(List<Var> varPath);
 
 }

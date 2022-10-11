@@ -146,14 +146,14 @@ public class EntityContext {
     }
 
     public Type getTypeByCategory(TypeCategory category) {
-        return getMetadataStore().getByCategory(category, this);
+        return getTypeStore().getByCategory(category, this);
     }
 
     public Type getTypeByName(String name) {
-        return getMetadataStore().getByName(name, this);
+        return getTypeStore().getByName(name, this);
     }
 
-    public TypeStore getMetadataStore() {
+    public TypeStore getTypeStore() {
         return (TypeStore) storeRegistry.getStore(Type.class);
     }
 
@@ -196,7 +196,7 @@ public class EntityContext {
 //    }
 
     private Type getOrCreateNullableType(Type baseType) {
-        Type nullableType = getMetadataStore().getNullableType(baseType, this);
+        Type nullableType = getTypeStore().getNullableType(baseType, this);
         return Objects.requireNonNullElseGet(nullableType, () -> createNullableType(baseType));
     }
 
@@ -216,7 +216,7 @@ public class EntityContext {
     }
 
     private Type getOrCreateArrayType(Type baseType) {
-        Type arrayType = getMetadataStore().getArrayType(baseType, this);
+        Type arrayType = getTypeStore().getArrayType(baseType, this);
         return Objects.requireNonNullElseGet(arrayType, () -> createArrayType(baseType));
     }
 

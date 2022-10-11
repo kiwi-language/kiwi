@@ -42,7 +42,8 @@ public class FlowManager {
     @Transactional
     public long create(FlowDTO flowDTO) {
         EntityContext context = newContext();
-        FlowRT flow = new FlowRT(flowDTO, context);
+        Type inputType = saveInputType(null, List.of(), flowDTO.name(), context);
+        FlowRT flow = new FlowRT(flowDTO, inputType, context);
         NodeRT<?> selfNode = createSelfNode(flow);
         createInputNode(flow, selfNode, context);
         context.sync();
@@ -60,14 +61,13 @@ public class FlowManager {
     }
 
     private void createInputNode(FlowRT flow, NodeRT<?> prev, EntityContext context) {
-        Type type = saveInputType(null, List.of(), flow);
         NodeDTO inputNodeDTO = NodeDTO.newNode(
                 0L,
                 "流程输入",
                 NodeType.INPUT.code(),
                 null
         );
-        new InputNode(inputNodeDTO, prev, flow.getRootScope(), type);
+        new InputNode(inputNodeDTO, prev, flow.getRootScope());
     }
 
     @Transactional
@@ -79,6 +79,7 @@ public class FlowManager {
             throw BusinessException.flowNotFound(flowDTO.id());
         }
         flow.update(flowDTO);
+        flow.getInputType().setName(getInputTypeName(flow.getName()));
         context.sync();
     }
 
@@ -122,12 +123,13 @@ public class FlowManager {
 
     private void updateInputType(NodeDTO nodeDTO, InputNode node) {
         InputParamDTO inputParam = nodeDTO.getParam();
-        long typeId = node.getObjectType().getId();
+        FlowRT flow = node.getFlow();
+        long typeId = flow.getInputType().getId();
         List<FieldDTO> fieldDTOs = NncUtils.map(
                 inputParam.fields(),
                 inputField -> inputField.toFieldDTO(typeId)
         );
-        saveInputType(typeId, fieldDTOs, node.getFlow());
+        saveInputType(typeId, fieldDTOs, flow.getName(), flow.getContext());
     }
 
     @Transactional
@@ -141,10 +143,10 @@ public class FlowManager {
         context.sync();
     }
 
-    private Type saveInputType(Long id, List<FieldDTO> fieldDTOs, FlowRT flow) {
+    private Type saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, EntityContext context) {
         TypeDTO typeDTO = new TypeDTO(
                 id,
-                flow.getId() + "流程输入",
+                getInputTypeName(flowName),
                 TypeCategory.FLOW_INPUT.code(),
                 true,
                 null,
@@ -152,10 +154,14 @@ public class FlowManager {
                 null,
                 fieldDTOs
         );
-        return typeManager.saveTypeWithFields(typeDTO, flow.getContext());
+        return typeManager.saveTypeWithFields(typeDTO, context);
     }
 
-    public Page<FlowDTO> list(long typeId, int page, int pageSize, String searchText) {
+    private String getInputTypeName(String flowName) {
+        return flowName + "流程输入";
+    }
+
+    public Page<FlowSummaryDTO> list(long typeId, int page, int pageSize, String searchText) {
         FlowQuery query = new FlowQuery(
                 ContextUtil.getTenantId(),
                 typeId,
@@ -166,7 +172,7 @@ public class FlowManager {
         EntityContext context = newContext();
         Page<FlowRT> flowPage = flowStore.query(query, context);
         return new Page<>(
-                NncUtils.map(flowPage.data(), FlowRT::toDTO),
+                NncUtils.map(flowPage.data(), FlowRT::toSummaryDTO),
                 flowPage.total()
         );
     }
@@ -178,7 +184,7 @@ public class FlowManager {
         if(nodeRT instanceof BranchNode branchNode) {
             Branch branch = branchNode.addBranch(branchDTO);
             context.sync();
-            return branch.toDTO(true);
+            return branch.toDTO(true, false);
         }
         else {
             throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
@@ -200,7 +206,7 @@ public class FlowManager {
             }
             branch.update(branchDTO);
             context.sync();
-            return branch.toDTO(true);
+            return branch.toDTO(true, false);
         }
         else {
             throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");

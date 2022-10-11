@@ -170,17 +170,17 @@ public class ExpressionTokenizer {
 
         TokenType tokenType;
         if(isOperator()) {
-            if(isNegation()) {
-                position++;
-                skipSpaces();
-                if(isDigit()) {
-                    tokenType = forwardNumber();
-                }
-                else {
-                    tokenType = TokenType.OPERATOR;
-                }
-            }
-            else if(isLeftParenthesis()) {
+//            if(isNegation()) {
+//                position++;
+//                skipSpaces();
+//                if(isDigit()) {
+//                    tokenType = forwardNumber();
+//                }
+//                else {
+//                    tokenType = TokenType.OPERATOR;
+//                }
+//            }
+            if(isLeftParenthesis()) {
                 position++;
                 tokenType = TokenType.LEFT_PARENTHESIS;
             }

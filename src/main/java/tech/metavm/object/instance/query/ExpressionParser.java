@@ -3,7 +3,9 @@ package tech.metavm.object.instance.query;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class ExpressionParser {
 
@@ -80,7 +82,17 @@ public class ExpressionParser {
     }
 
     private Expression parseField(String fieldPath) {
-        return context.parseField(fieldPath);
+        String[] splits = fieldPath.split("\\.");
+        List<Var> vars = new ArrayList<>();
+        for (String split : splits) {
+            if(split.startsWith("$")) {
+                vars.add(new Var(VarType.ID, Long.parseLong(split.substring(1))));
+            }
+            else {
+                vars.add(new Var(VarType.NAME, split));
+            }
+        }
+        return context.parse(vars);
     }
 
     private boolean hasPrecedentOp(int precedence) {
@@ -95,7 +107,7 @@ public class ExpressionParser {
         }
         else if(op.isComma()) {
             Expression second = popExprRequired(), first = popExprRequired();
-            exprStack.push(ListExpression.merge(first, second));
+            exprStack.push(ArrayExpression.merge(first, second));
         }
         else if(op.isUnary()) {
             Expression expression = popExprRequired();

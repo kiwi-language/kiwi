@@ -28,16 +28,16 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
     @Override
     protected void setParam(SubFlowParam param) {
         flow = getFlowFromContext(param.flowId());
-        selfId = ValueFactory.getValue(param.selfId());
-        arguments = NncUtils.map(param.fieldParams(), fieldParamDTO -> new FieldParam(fieldParamDTO, context));
+        selfId = ValueFactory.getValue(param.selfId(), getParsingContext());
+        arguments = NncUtils.map(param.fieldParams(), fieldParamDTO -> new FieldParam(fieldParamDTO, context, getParsingContext()));
     }
 
     @Override
-    protected SubFlowParam getParam(boolean forPersistence) {
+    protected SubFlowParam getParam(boolean persisting) {
         return new SubFlowParam(
-                selfId.toDTO(),
+                selfId.toDTO(persisting),
                 flow.getId(),
-                NncUtils.map(arguments, FieldParam::toDTO)
+                NncUtils.map(arguments, fp -> fp.toDTO(persisting))
         );
     }
 
@@ -46,7 +46,7 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
         FlowStack stack = frame.getStack();
         Instance instance = (Instance) selfId.evaluate(frame);
         FlowFrame newContext = new FlowFrame(
-                flow, instance.getId(), evaluateArguments(frame), stack
+                flow, instance, evaluateArguments(frame), stack
         );
         stack.push(newContext);
     }

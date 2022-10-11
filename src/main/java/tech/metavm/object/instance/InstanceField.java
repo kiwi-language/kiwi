@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.flow.ConstantValue;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.ValueDTO;
 import tech.metavm.object.meta.ChoiceOption;
@@ -51,6 +52,20 @@ public class InstanceField {
 
     public Object getValue() {
         return value;
+    }
+
+    public Object getResolvedValue() {
+        if(field.isTable()) {
+            if(field.isArray()) {
+                return NncUtils.map(getIds(), context::get);
+            }
+            else {
+                return NncUtils.get(getId(), context::get);
+            }
+        }
+        else {
+            return value;
+        }
     }
 
     public void setValue(Object value) {
@@ -174,6 +189,17 @@ public class InstanceField {
         }
         else if(field.getConcreteType().isTable()) {
             return context.getTitle((Long) value);
+        }
+        else if(field.getConcreteType().isBool()) {
+            if(Boolean.TRUE.equals(value)) {
+                return "是";
+            }
+            else if(Boolean.FALSE.equals(value)) {
+                return "否";
+            }
+            else {
+                return "";
+            }
         }
         return NncUtils.toString(value);
     }

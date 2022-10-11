@@ -2,6 +2,10 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.BusinessException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TypeParsingContext implements ParsingContext {
 
@@ -12,32 +16,30 @@ public class TypeParsingContext implements ParsingContext {
     }
 
     @Override
-    public Expression parseField(String fieldPath) {
-        return getExpression(type, fieldPath);
+    public FieldExpression parse(List<Var> varPath) {
+        return new FieldExpression(ExpressionUtil.thisObject(type), getFields(type, varPath));
     }
 
-    public static FieldExpression getExpression(Type type, String fieldPath) {
-        return new FieldExpression(fieldPath, getField(type, fieldPath));
+    public static List<Field> getFields(Type type, List<Var> varPath) {
+        List<Field> fields = new ArrayList<>();
+        Type t = type;
+        Field field;
+        for (Var var : varPath) {
+            field = getField(t, var);
+            if(field == null) {
+                throw BusinessException.invalidExpression("属性'" + var + "'不存在");
+            }
+            fields.add(field);
+            t = field.getType();
+        }
+        return fields;
     }
 
-    private static Field getField(Type type, String fieldPath) {
-        if(type == null) {
-            return null;
-        }
-        String[] splits = fieldPath.split("\\.");
-        Field field = null;
-        for (String split : splits) {
-            if(type == null) {
-                throw new RuntimeException("Invalid field path: " + fieldPath);
-            }
-            field = type.getFieldNyName(split);
-            if(field.isComposite()) {
-                type = field.getConcreteType();
-            }
-            else {
-                type = null;
-            }
-        }
-        return field;
+    public static Field getField(Type type, Var var) {
+        return switch (var.getType()) {
+            case NAME -> type.getFieldByName(var.getStringSymbol());
+            case ID -> type.getField(var.getLongSymbol());
+        };
     }
+
 }

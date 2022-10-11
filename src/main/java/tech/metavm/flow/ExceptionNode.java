@@ -17,7 +17,7 @@ public class ExceptionNode extends NodeRT<Void> {
     protected void setParam(Void param) {}
 
     @Override
-    protected Void getParam(boolean forPersistence) {
+    protected Void getParam(boolean persisting) {
         return null;
     }
 

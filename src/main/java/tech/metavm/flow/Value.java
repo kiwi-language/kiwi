@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.query.EvaluationContext;
 
 public abstract class Value {
     private final ValueType type;
@@ -9,12 +10,12 @@ public abstract class Value {
         type = ValueType.getByCodeRequired(valueDTO.type());
     }
 
-    protected abstract Object getDTOValue();
+    protected abstract Object getDTOValue(boolean persisting);
 
-    public ValueDTO toDTO() {
-        return new ValueDTO(type.code(), getDTOValue());
+    public ValueDTO toDTO(boolean persisting) {
+        return new ValueDTO(type.code(), getDTOValue(persisting));
     }
 
-    public abstract Object evaluate(FlowFrame frame);
+    public abstract Object evaluate(EvaluationContext evaluationContext);
 
 }

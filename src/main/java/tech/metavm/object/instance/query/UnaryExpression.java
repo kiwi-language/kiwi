@@ -1,5 +1,9 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.meta.Type;
+
+import java.util.List;
+
 public class UnaryExpression extends Expression {
     private final Operator operator;
     private final Expression operand;
@@ -18,17 +22,34 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public String toString() {
+    public String buildSelf(VarType symbolType) {
+        boolean operandParenthesized = operand.precedence() >= precedence();
+        String operandExpr = operand.build(symbolType, operandParenthesized);
         if(operator.isPrefix()) {
-            if(operator.toString().length() == 1) {
-                return "(" + operator + operand + ")";
-            }
-            else {
-                return "(" + operator + " " + operand + ")";
-            }
+            return operator + " " + operandExpr;
         }
         else {
-            return "(" + operand + " " + operator + ")";
+            return operandExpr + " " + operator;
         }
+    }
+
+    @Override
+    public int precedence() {
+        return operator.precedence();
+    }
+
+    @Override
+    public Type getType() {
+        if(operator.resultType() != null) {
+            return operator.resultType();
+        }
+        else {
+            return operand.getType();
+        }
+    }
+
+    @Override
+    protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
+        return operand.extractExpressions(klass);
     }
 }

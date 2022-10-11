@@ -25,7 +25,7 @@ public class LoopNode extends NodeRT<LoopParam> {
 
     @Override
     protected void setParam(LoopParam param) {
-        condition = ValueFactory.getValue(param.condition());
+        condition = ValueFactory.getValue(param.condition(), getParsingContext());
     }
 
     public NodeRT<?> getFirstChild() {
@@ -37,9 +37,9 @@ public class LoopNode extends NodeRT<LoopParam> {
     }
 
     @Override
-    protected LoopParam getParam(boolean forPersistence) {
+    protected LoopParam getParam(boolean persisting) {
         return new LoopParam(
-                condition.toDTO(),
+                condition.toDTO(persisting),
                 NncUtils.get(firstChild, Entity::getId)
         );
     }

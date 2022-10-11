@@ -42,15 +42,15 @@ public class DirectoryAccessNode extends NodeRT<DirectoryAccessParamDTO> {
         this.directory = getFromContext(Directory.class, param.directoryId());
         fieldParams.addAll(NncUtils.map(
                 param.fieldParams(),
-                fieldParam -> new FieldParam(fieldParam, getContext())
+                fieldParam -> new FieldParam(fieldParam, getContext(), getParsingContext())
         ));
     }
 
     @Override
-    protected DirectoryAccessParamDTO getParam(boolean forPersistence) {
+    protected DirectoryAccessParamDTO getParam(boolean persisting) {
         return new DirectoryAccessParamDTO(
                 directory.getId(),
-                NncUtils.map(fieldParams, FieldParam::toDTO)
+                NncUtils.map(fieldParams, fp -> fp.toDTO(persisting))
         );
     }
 

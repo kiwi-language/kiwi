@@ -56,7 +56,7 @@ public class SearchBuilder {
             FieldExpression fieldExpr = (FieldExpression) expression.getFirst();
             ConstantExpression constExpr = (ConstantExpression) expression.getSecond();
             Object constValue = constExpr.getValue();
-            Column column = fieldExpr.getField().getColumn();
+            Column column = fieldExpr.getLastField().getColumn();
             String columnName = operator == Operator.LIKE ? column.fuzzyName() : column.name();
             String value = operator == Operator.STARTS_WITH ? escape((String) constValue) + "*" : toString(constValue);
             return parenthesize(columnName + getEsOperator(operator) + value);
@@ -67,7 +67,7 @@ public class SearchBuilder {
             List<Object> values = (List<Object>) constExpr.getValue();
             return parenthesize(
                     NncUtils.join(
-                        values, v -> fieldExpr.getField().getColumnName() + ":" + toString(v), " OR "
+                        values, v -> fieldExpr.getLastField().getColumnName() + ":" + toString(v), " OR "
                     )
                 );
         }

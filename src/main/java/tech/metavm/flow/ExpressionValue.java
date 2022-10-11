@@ -1,23 +1,25 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.query.*;
 
-public class ExpressionValue extends Value{
+public class ExpressionValue extends Value {
 
-    private String expression;
+    private final Expression expression;
 
-    public ExpressionValue(ValueDTO valueDTO) {
+    public ExpressionValue(ValueDTO valueDTO, ParsingContext parsingContext) {
         super(valueDTO);
-        expression = (String) valueDTO.value();
+        String str = (String) valueDTO.value();
+        expression = ExpressionParser.parse(str, parsingContext);
     }
 
     @Override
-    protected Object getDTOValue() {
-        return expression;
+    protected Object getDTOValue(boolean persisting) {
+        return expression.buildSelf(persisting ? VarType.ID : VarType.NAME);
     }
 
     @Override
-    public Object evaluate(FlowFrame frame) {
-        return null;
+    public Object evaluate(EvaluationContext evaluationContext) {
+        return ExpressionEvaluator.evaluate(expression, evaluationContext);
     }
 }

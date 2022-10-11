@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
+import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 
 @RestController
@@ -13,13 +14,16 @@ public class FlowController {
     @Autowired
     private FlowManager flowManager;
 
+    @Autowired
+    private FlowExecutionService flowExecutionService;
+
     @GetMapping("/{id:[0-9]+}")
     public Result<FlowDTO> get(@PathVariable("id") long id) {
         return Result.success(flowManager.get(id));
     }
 
     @GetMapping
-    public Result<Page<FlowDTO>> list(
+    public Result<Page<FlowSummaryDTO>> list(
             @RequestParam("typeId") long typeId,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize,
@@ -75,6 +79,12 @@ public class FlowController {
     public Result<Void> deleteBranch(@PathVariable("ownerId") long ownerId,
                                      @PathVariable("id") long id) {
         flowManager.deleteBranch(ownerId, id);
+        return Result.success(null);
+    }
+
+    @PostMapping("/execute")
+    public Result<Void> execute(@RequestBody FlowExecutionRequest request) {
+        flowExecutionService.execute(request);
         return Result.success(null);
     }
 

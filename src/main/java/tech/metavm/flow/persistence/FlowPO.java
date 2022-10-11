@@ -11,16 +11,18 @@ public class FlowPO {
 
     private Long rootScopeId;
 
+    private Long inputTypeId;
 
     public FlowPO() {
     }
 
-    public FlowPO(Long id, Long tenantId, String name, Long typeId, Long rootScopeId) {
+    public FlowPO(Long id, Long tenantId, String name, Long typeId, Long rootScopeId, Long inputTypeId) {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
         this.typeId = typeId;
         this.rootScopeId = rootScopeId;
+        this.inputTypeId = inputTypeId;
     }
 
     public Long getId() {
@@ -61,5 +63,13 @@ public class FlowPO {
 
     public void setRootScopeId(Long rootScopeId) {
         this.rootScopeId = rootScopeId;
+    }
+
+    public Long getInputTypeId() {
+        return inputTypeId;
+    }
+
+    public void setInputTypeId(Long inputTypeId) {
+        this.inputTypeId = inputTypeId;
     }
 }

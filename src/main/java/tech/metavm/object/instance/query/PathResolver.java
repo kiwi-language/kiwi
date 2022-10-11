@@ -30,13 +30,13 @@ public class PathResolver {
             fillPath0(binaryExpression.getFirst(), visited);
             fillPath0(binaryExpression.getSecond(), visited);
         }
-        else if(expression instanceof ListExpression listExpression) {
+        else if(expression instanceof ArrayExpression listExpression) {
             for (Expression expr : listExpression.getExpressions()) {
                 fillPath0(expr, visited);
             }
         }
         else if(expression instanceof FieldExpression fieldExpression) {
-            root.fillPath(fieldExpression.getFieldPath());
+            root.fillPath(fieldExpression.getPathString());
         }
     }
 

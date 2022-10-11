@@ -2,6 +2,8 @@ package tech.metavm.flow;
 
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceContext;
+import tech.metavm.object.instance.query.Expression;
+import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.InstanceDTO;
 
 import java.util.LinkedList;
@@ -9,12 +11,14 @@ import java.util.LinkedList;
 public class FlowStack {
 
     private final InstanceContext instanceContext;
+    private final Path root = new Path("root");
+    private final LinkedList<NodeRT<?>> actionBuffer = new LinkedList<>();
     private final LinkedList<FlowFrame> stack = new LinkedList<>();
     private Instance ret;
 
-    public FlowStack(FlowRT flow, long selfId, InstanceDTO argument, InstanceContext instanceContext) {
+    public FlowStack(FlowRT flow, Instance self, InstanceDTO argument, InstanceContext instanceContext) {
         this.instanceContext = instanceContext;
-        stack.push(new FlowFrame(flow, selfId, argument, this));
+        stack.push(new FlowFrame(flow, self, argument, this));
     }
 
     public void execute() {
@@ -60,4 +64,13 @@ public class FlowStack {
     boolean isEmpty() {
         return stack.isEmpty();
     }
+
+    public void addActionToBuffer(NodeRT<?> node) {
+        actionBuffer.add(node);
+    }
+
+    private void addExpressionToResolve(Expression expression) {
+
+    }
+
 }

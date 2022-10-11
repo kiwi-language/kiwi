@@ -24,8 +24,8 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
     }
 
     @Override
-    protected DeleteObjectParamDTO getParam(boolean forPersistence) {
-        return new DeleteObjectParamDTO(objectId.toDTO());
+    protected DeleteObjectParamDTO getParam(boolean persisting) {
+        return new DeleteObjectParamDTO(objectId.toDTO(persisting));
     }
 
     @Override
@@ -34,7 +34,7 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
     }
 
     public void setObjectId(ValueDTO objectId) {
-        this.objectId = ValueFactory.getValue(objectId);
+        this.objectId = ValueFactory.getValue(objectId, getParsingContext());
     }
 
     @Override

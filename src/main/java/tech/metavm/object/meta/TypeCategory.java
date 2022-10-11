@@ -5,16 +5,17 @@ import tech.metavm.object.instance.ColumnType;
 import java.util.Arrays;
 
 public enum TypeCategory {
-    TABLE(0),
-    ENUM(1),
+    TABLE(0, ColumnType.INT64),
+    ENUM(1, ColumnType.INT64),
     INTERFACE(2),
     FLOW_INPUT(3),
     PAGE(4),
     ARRAY(5),
     NULLABLE(7),
+    OBJECT(8),
 
     STRING(11, ColumnType.VARCHAR64),
-    NUMBER(12, ColumnType.FLOAT),
+    DOUBLE(12, ColumnType.FLOAT),
     INT64(13, ColumnType.INT64),
     BOOL(16, ColumnType.BOOL),
     TIME(18, ColumnType.INT64),
@@ -90,7 +91,7 @@ public enum TypeCategory {
     }
 
     public boolean isNumber() {
-        return this == NUMBER;
+        return this == DOUBLE;
     }
 
     public boolean isBool() {

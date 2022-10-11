@@ -6,6 +6,7 @@ import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.EntityColl;
 import tech.metavm.util.NameUtils;
@@ -18,14 +19,16 @@ public class FlowRT extends Entity {
     private String name;
     private final Type type;
     private final ScopeRT rootScope;
-    private long inputTypeId;
+    private final Type inputType;
     private long outputTypeId;
 
     private final transient EntityColl<ScopeRT> scopes = new EntityColl<>();
     private final transient EntityColl<NodeRT<?>> nodes = new EntityColl<>();
+    private transient long version = 1L;
 
-    public FlowRT(FlowDTO flowDTO, EntityContext context) {
+    public FlowRT(FlowDTO flowDTO, Type inputType, EntityContext context) {
         super(context);
+        this.inputType = inputType;
         setName(flowDTO.name());
         type = context.getType(flowDTO.typeId());
         rootScope = new ScopeRT(this);
@@ -33,7 +36,8 @@ public class FlowRT extends Entity {
 
     FlowRT(FlowPO flowPO, List<ScopePO> scopePOs, List<NodePO> nodePOs, EntityContext context) {
         super(flowPO.getId(), context);
-        this.type = context.getType(flowPO.getTypeId());
+        this.type = getTypeFromContext(flowPO.getTypeId());
+        this.inputType = getTypeFromContext(flowPO.getInputTypeId());
         setName(flowPO.getName());
 
         if(NncUtils.isNotEmpty(scopePOs)) {
@@ -101,13 +105,23 @@ public class FlowRT extends Entity {
         );
     }
 
+    public FlowSummaryDTO toSummaryDTO() {
+        return new FlowSummaryDTO(
+                id,
+                name,
+                type.getId(),
+                NncUtils.get(getInputType(), Entity::getId)
+        );
+    }
+
     public FlowPO toPO() {
         return new FlowPO(
                 id,
                 getTenantId(),
                 name,
                 type.getId(),
-                rootScope.getId()
+                rootScope.getId(),
+                inputType.getId()
         );
     }
 
@@ -128,11 +142,7 @@ public class FlowRT extends Entity {
     }
 
     public Type getInputType() {
-        return NncUtils.filterOneAndMap(
-                nodes.values(),
-                node -> node.getType() == NodeType.INPUT,
-                NodeRT::getOutputType
-        );
+        return inputType;
     }
 
     public Type getOutputType() {
@@ -149,17 +159,28 @@ public class FlowRT extends Entity {
 
     void addNode(NodeRT<?> node) {
         nodes.add(node);
+        version++;
     }
 
     void removeNode(NodeRT<?> node) {
         nodes.remove(node);
+        version++;
     }
 
     public NodeRT<?> getRootNode() {
         return rootScope.getFirstNode();
     }
 
+    public NodeRT<?> getNodeByNameRequired(String nodeName) {
+        return NncUtils.filterOneRequired(nodes, n -> n.getName().equals(nodeName),
+                "流程节点'" + nodeName + "'不存在");
+    }
+
     public NodeRT<?> getNodeByName(String nodeName) {
         return NncUtils.filterOne(nodes, n -> n.getName().equals(nodeName));
+    }
+
+    public long getVersion() {
+        return version;
     }
 }

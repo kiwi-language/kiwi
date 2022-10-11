@@ -3,9 +3,14 @@ package tech.metavm.flow;
 import tech.metavm.entity.Entity;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.query.FlowParsingContext;
+import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
+
+import java.util.List;
 
 public abstract class NodeRT<P> extends Entity {
     private String name;
@@ -14,6 +19,7 @@ public abstract class NodeRT<P> extends Entity {
     private final ScopeRT scope;
     private NodeRT<?> predecessor;
     private transient NodeRT<?> successor;
+    private final ParsingContext parsingContext;
 
     public NodeRT(NodeDTO nodeDTO, Type outputType, ScopeRT scope) {
         this(
@@ -54,6 +60,7 @@ public abstract class NodeRT<P> extends Entity {
             previous.insertAfter(this);
         }
         this.scope.addNode(this);
+        parsingContext = FlowParsingContext.create(this);
     }
 
     public FlowRT getFlow() {
@@ -74,6 +81,20 @@ public abstract class NodeRT<P> extends Entity {
 
     public NodeRT<?> getSuccessor() {
         return successor;
+    }
+
+    public NodeRT<?> getGlobalPredecessor() {
+        if(predecessor != null) {
+            return predecessor;
+        }
+        return NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor);
+    }
+
+    public NodeRT<?> getGlobalSuccessor() {
+        if(successor != null) {
+            return successor;
+        }
+        return NncUtils.get(scope.getOwner(), NodeRT::getGlobalSuccessor);
     }
 
     public NodeRT<?> getPredecessor() {
@@ -105,6 +126,10 @@ public abstract class NodeRT<P> extends Entity {
     public void update(NodeDTO nodeDTO) {
         setName(nodeDTO.name());
         setParam(nodeDTO.getParam());
+    }
+
+    public final ParsingContext getParsingContext() {
+        return parsingContext;
     }
 
     protected void setOutputType(Type outputType) {
@@ -144,7 +169,7 @@ public abstract class NodeRT<P> extends Entity {
         return scope;
     }
 
-    protected abstract P getParam(boolean forPersistence);
+    protected abstract P getParam(boolean persisting);
 
     protected abstract void setParam(P p);
 

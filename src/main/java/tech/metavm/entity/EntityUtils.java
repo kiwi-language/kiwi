@@ -102,6 +102,9 @@ public class EntityUtils {
         if(visited.contains(pojo1) || visited.contains(pojo2)) {
             throw new RuntimeException("Back reference of POJO is currently not supported");
         }
+        if(!pojo1.getClass().equals(pojo2.getClass())) {
+            return false;
+        }
         visited.add(pojo1);
         visited.add(pojo2);
         Class<?> klass = pojo1.getClass();

@@ -19,7 +19,7 @@ public class ReturnNode extends NodeRT<Void> {
     }
 
     @Override
-    protected Void getParam(boolean forPersistence) {
+    protected Void getParam(boolean persisting) {
         return null;
     }
 

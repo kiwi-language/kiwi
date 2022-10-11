@@ -4,6 +4,7 @@ import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
@@ -13,16 +14,16 @@ public class InputNode extends NodeRT<InputParamDTO> {
 
     private final Type objectType;
 
-    public InputNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, Type type) {
+    public InputNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {
         super(
                 null,
                 nodeDTO.name(),
                 NodeType.INPUT,
-                type,
+                scope.getFlow().getInputType(),
                 prev,
                 scope
         );
-        this.objectType = type;
+        this.objectType = getOutputType();
     }
 
     public InputNode(NodeDTO nodeDTO, InputParamDTO param, ScopeRT scope) {
@@ -41,7 +42,7 @@ public class InputNode extends NodeRT<InputParamDTO> {
     }
 
     @Override
-    protected InputParamDTO getParam(boolean forPersistence) {
+    protected InputParamDTO getParam(boolean persisting) {
         return new InputParamDTO(
                 objectType.getId(),
                 NncUtils.map(

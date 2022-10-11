@@ -15,6 +15,15 @@ public class NncUtils {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
 
+    public static void requireMinimumSize(Collection<?> collection, int minSize) {
+        if(collection == null) {
+           throw new InternalException("collection is null");
+        }
+        if(collection.size() < minSize) {
+            throw new InternalException("collection has less elements than required. Minimum size: " + minSize );
+        }
+    }
+
     public static String toJSONString(Object object) {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
@@ -107,6 +116,21 @@ public class NncUtils {
             return List.of();
         }
         return source.stream().filter(filter).collect(Collectors.toList());
+    }
+
+    public static <T> List<T> merge(Collection<T> coll1, Collection<T> coll2) {
+        List<T> merged = new ArrayList<>(coll1);
+        merged.addAll(coll2);
+        return merged;
+    }
+
+
+    public static <T> List<T> merge(List<List<T>> collections) {
+        List<T> merged = new ArrayList<>();
+        for (List<T> coll : collections) {
+            merged.addAll(coll);
+        }
+        return merged;
     }
 
     public static <T, R> List<R> map(Collection<T> source, Function<T, R> mapping) {

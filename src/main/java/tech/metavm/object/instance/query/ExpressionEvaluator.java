@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.instance.Instance;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
@@ -9,25 +10,34 @@ import java.util.Objects;
 
 import static tech.metavm.object.instance.query.ExpressionUtil.*;
 
-public class ExpressionEvaluater {
+public class ExpressionEvaluator {
 
-    public static Object evaluate(ObjectTree tree, Expression expression) {
-        return new ExpressionEvaluater(tree, expression).evaluate();
+    public static Object evaluate(Expression expression, ObjectTree objectTree) {
+        return new ExpressionEvaluator(expression, new TreeEvaluationContext(objectTree)).evaluate();
     }
 
-    private final ObjectTree objectTree;
+    public static Object evaluate(Expression expression, Instance instance) {
+        return new ExpressionEvaluator(expression, new InstanceEvaluationContext(instance)).evaluate();
+    }
+
+    public static Object evaluate(Expression expression, EvaluationContext context) {
+        return new ExpressionEvaluator(expression, context).evaluate();
+    }
+
+    private final EvaluationContext context;
     private final Expression expression;
 
-    private ExpressionEvaluater(ObjectTree objectTree, Expression expression) {
-        this.objectTree = objectTree;
+    private ExpressionEvaluator(Expression expression, EvaluationContext context) {
+        this.context = context;
         this.expression = expression;
     }
 
-    private Object evaluate() {
+    public Object evaluate() {
         return evaluate(expression);
     }
 
-    private Object evaluate(Expression expression) {
+    public Object evaluate(Expression expression) {
+        Objects.requireNonNull(expression);
         if(expression instanceof UnaryExpression unaryExpression) {
             return evaluateUnary(unaryExpression);
         }
@@ -37,16 +47,24 @@ public class ExpressionEvaluater {
         if(expression instanceof ConstantExpression constantExpression) {
             return evaluateConst(constantExpression);
         }
-        if(expression instanceof FieldExpression fieldExpression) {
-            return evaluateField(fieldExpression);
-        }
-        if(expression instanceof ListExpression listExpression) {
+        if(expression instanceof ArrayExpression listExpression) {
             return evaluateList(listExpression);
         }
         if(expression instanceof FunctionExpression functionExpression) {
             return evaluateFunction(functionExpression);
         }
+        if(expression instanceof FieldExpression fieldExpression) {
+            return evaluateField(fieldExpression);
+        }
+        if(context.isExpressionSupported(expression.getClass())) {
+            return evaluateInContext(expression);
+        }
         throw new RuntimeException("Unsupported expression: " + expression);
+    }
+
+    private Object evaluateField(FieldExpression fieldExpression) {
+        Instance instance = (Instance) evaluate(fieldExpression.getInstance());
+        return NncUtils.get(instance, inst -> inst.getResolved(fieldExpression.getFieldIds()));
     }
 
     private Object evaluateFunction(FunctionExpression functionExpression) {
@@ -54,15 +72,15 @@ public class ExpressionEvaluater {
         return functionExpression.getFunction().evaluate(argValues);
     }
 
-    private Object evaluateList(ListExpression listExpression) {
+    private Object evaluateList(ArrayExpression listExpression) {
         return NncUtils.map(
                 listExpression.getExpressions(),
                 this::evaluate
         );
     }
 
-    private Object evaluateField(FieldExpression fieldExpression) {
-        return objectTree.getFieldValue(fieldExpression.getFieldPath());
+    private Object evaluateInContext(Expression expression) {
+        return context.evaluate(expression, this);
     }
 
     private Object evaluateConst(ConstantExpression constantExpression) {
@@ -157,12 +175,14 @@ public class ExpressionEvaluater {
         if(op == Operator.NOT) {
             return !castBoolean(value);
         }
-        if(op == Operator.NEGATE) {
-            if(ValueUtil.isInteger(value)) {
-                return -castInteger(value);
-            }
-            return -castFloat(value);
-        }
+
+//        TODO: 支持负数运算符
+//        if(op == Operator.NEGATE) {
+//            if(ValueUtil.isInteger(value)) {
+//                return -castInteger(value);
+//            }
+//            return -castFloat(value);
+//        }
         if(op == Operator.IS_NOT_NULL) {
             return value != null;
         }

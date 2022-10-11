@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.Instance;
 
 public class SelfNode extends NodeRT<Void> {
 
@@ -19,7 +20,7 @@ public class SelfNode extends NodeRT<Void> {
     }
 
     @Override
-    protected Void getParam(boolean forPersistence) {
+    protected Void getParam(boolean persisting) {
         return null;
     }
 

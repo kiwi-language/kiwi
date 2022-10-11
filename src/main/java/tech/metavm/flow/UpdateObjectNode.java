@@ -4,6 +4,7 @@ import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -34,29 +35,28 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
     @Override
     protected void setParam(UpdateObjectParamDTO param) {
-        objectId = ValueFactory.getValue(param.objectId());
+        objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
         fieldParams = NncUtils.map(
                 param.fields(),
-                fieldParamDTO -> new FieldParam(fieldParamDTO, getFlow().getContext())
+                fieldParamDTO -> new FieldParam(fieldParamDTO, getFlow().getContext(), getParsingContext())
         );
     }
 
     @Override
-    protected UpdateObjectParamDTO getParam(boolean forPersistence) {
+    protected UpdateObjectParamDTO getParam(boolean persisting) {
         return new UpdateObjectParamDTO(
-                objectId.toDTO(),
-                NncUtils.map(fieldParams, FieldParam::toDTO)
+                objectId.toDTO(persisting),
+                NncUtils.map(fieldParams, fp -> fp.toDTO(persisting))
         );
     }
 
     @Override
     public void execute(FlowFrame frame) {
-        long id = (long) objectId.evaluate(frame);
-        Instance instance = frame.getInstance(id);
+        Instance instance = (Instance) objectId.evaluate(frame);
         if(instance != null) {
             for (FieldParam fieldParam : fieldParams) {
-                Object value = fieldParam.evaluate(frame);
-                instance.set(fieldParam.getField().getId(), value);
+                InstanceFieldDTO instanceFieldDTO = fieldParam.evaluate(frame);
+                instance.set(fieldParam.getField().getId(), instanceFieldDTO.value());
             }
         }
     }

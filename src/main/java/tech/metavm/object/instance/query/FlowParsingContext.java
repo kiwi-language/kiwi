@@ -1,41 +1,80 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.flow.FlowRT;
 import tech.metavm.flow.NodeRT;
-import tech.metavm.object.meta.Type;
-import tech.metavm.util.BusinessException;
+import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.meta.Field;
+import tech.metavm.util.NncUtils;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class FlowParsingContext implements ParsingContext {
 
-    private final FlowRT flow;
+    public static FlowParsingContext create(NodeRT<?> currentNode) {
+        return new FlowParsingContext(currentNode.getGlobalPredecessor());
+    }
 
-    public FlowParsingContext(FlowRT flow) {
-        this.flow = flow;
+    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor) {
+        return new FlowParsingContext(
+                predecessor != null ?
+                        predecessor
+                        : NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor)
+        );
+    }
+
+    private final NodeRT<?> lastNode;
+    private long lastBuiltVersion = 0L;
+    private final Map<Long, NodeRT<?>> id2node = new HashMap<>();
+    private final Map<String, NodeRT<?>> name2node = new HashMap<>();
+
+    public FlowParsingContext(NodeRT<?> lastNode) {
+        this.lastNode = lastNode;
+    }
+
+    private void rebuildIfOutdated() {
+        if(lastNode == null) {
+            return;
+        }
+        if(lastBuiltVersion < lastNode.getFlow().getVersion()) {
+            rebuild();
+        }
+    }
+
+    private void rebuild() {
+        id2node.clear();
+        name2node.clear();
+        NodeRT<?> node = this.lastNode;
+        do {
+            id2node.put(node.getId(), node);
+            name2node.put(node.getName(), node);
+            node = node.getGlobalPredecessor();
+        } while(node != null && !id2node.containsKey(node.getId()));
+        lastBuiltVersion = lastNode.getFlow().getVersion();
     }
 
     @Override
-    public Expression parseField(String fieldPath) {
-        int idx = fieldPath.indexOf('.');
-        if(idx == -1) {
-            invalidExpression(fieldPath);
+    public Expression parse(List<Var> varPath) {
+        rebuildIfOutdated();
+        NncUtils.requireMinimumSize(varPath, 1);
+        NodeRT<?> node = getNode(varPath.get(0));
+        Objects.requireNonNull(node);
+        if(varPath.size() == 1) {
+            return new NodeExpression(node);
         }
-        String nodeName = fieldPath.substring(0, idx);
-        String subPath = fieldPath.substring(idx + 1);
-        NodeRT<?> node = getNode(nodeName);
-        if(node == null || node.getOutputType() == null) {
-            invalidExpression(fieldPath);
+        else {
+            List<Var> fieldPath = varPath.subList(1, varPath.size());
+            List<Field> fields = TypeParsingContext.getFields(node.getOutputType(), fieldPath);
+            return new FieldExpression(new NodeExpression(node), fields);
         }
-        return new NodeFieldExpression(node, TypeParsingContext.getExpression(node.getOutputType(), subPath));
     }
 
-    private NodeRT<?> getNode(String nodeName) {
-        return flow.getNodeByName(nodeName);
-    }
-
-    private void invalidExpression(String fieldPath) {
-        throw BusinessException.invalidExpression("节点表达式'" + fieldPath + "'不正确");
+    private NodeRT<?> getNode(Var var) {
+        return switch (var.getType()) {
+            case ID -> id2node.get(var.getLongSymbol());
+            case NAME -> name2node.get(var.getStringSymbol());
+        };
     }
 
 }

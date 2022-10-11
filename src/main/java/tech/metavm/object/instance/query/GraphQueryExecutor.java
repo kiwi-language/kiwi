@@ -6,7 +6,6 @@ import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +33,7 @@ public class GraphQueryExecutor {
             Object[] value = new Object[exprArray.length];
             results.add(value);
             for(int j = 0; j < exprArray.length; j++) {
-                value[j] = ExpressionEvaluater.evaluate(root, exprArray[j]);
+                value[j] = ExpressionEvaluator.evaluate(exprArray[j], root);
             }
         }
         return results;

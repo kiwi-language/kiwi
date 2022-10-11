@@ -85,9 +85,12 @@ public class Entity {
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Entity entity = (Entity) o;
-        return Objects.equals(id, entity.id);
+        if(o instanceof Entity e) {
+            return EntityUtils.entityEquals(this, e);
+        }
+        else {
+            return false;
+        }
     }
 
     @Override

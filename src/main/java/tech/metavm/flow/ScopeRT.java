@@ -1,7 +1,6 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityUtils;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
 import tech.metavm.util.EntityColl;
@@ -14,6 +13,7 @@ public class ScopeRT extends Entity  {
     private transient final EntityColl<NodeRT<?>> nodes = new EntityColl<>();
 
     private final FlowRT flow;
+    private transient NodeRT<?> owner;
 
     public ScopeRT(FlowRT flow) {
         this(null, flow);
@@ -23,6 +23,10 @@ public class ScopeRT extends Entity  {
         super(id, flow.getContext());
         this.flow = flow;
         flow.addScope(this);
+    }
+
+    public void setOwner(NodeRT<?> owner) {
+        this.owner = owner;
     }
 
     public ScopePO toPO() {
@@ -64,6 +68,10 @@ public class ScopeRT extends Entity  {
         return NncUtils.filterOne(getNodes(), node -> node.getPredecessor() == null);
     }
 
+    public NodeRT<?> getOwner() {
+        return owner;
+    }
+
     public void removeNode(NodeRT<?> node) {
         nodes.remove(node);
         flow.removeNode(node);
@@ -76,5 +84,9 @@ public class ScopeRT extends Entity  {
     public void remove() {
         new ArrayList<>(nodes.values()).forEach(NodeRT::remove);
         context.remove(this);
+    }
+
+    public boolean isEmpty() {
+        return nodes.isEmpty();
     }
 }
