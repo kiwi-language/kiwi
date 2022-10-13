@@ -202,7 +202,6 @@ public class EntityContext {
 
     private Type createNullableType(Type baseType) {
         Type nullableType = new Type(
-                null,
                 baseType.getName() + "?",
                 TypeCategory.NULLABLE,
                 false,
@@ -222,7 +221,6 @@ public class EntityContext {
 
     private Type createArrayType(Type baseType) {
         Type arrayType = new Type(
-                null,
                 baseType.getName() + "[]",
                 TypeCategory.ARRAY,
                 false,

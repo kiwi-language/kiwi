@@ -3,12 +3,14 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityUtils;
+import tech.metavm.entity.LoadingList;
 import tech.metavm.object.instance.ColumnType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -21,12 +23,10 @@ public class Type extends Entity {
     private final Type baseType;
     private String desc;
     private transient boolean fieldAndOptionLoaded = false;
-    private transient final List<Field> fields = new ArrayList<>();
-    private transient final List<ChoiceOption> choiceOptions = new ArrayList<>();
+    private transient final List<Field> fields;
+    private transient final List<ChoiceOption> choiceOptions;
 
-    public Type(
-                TypeDTO typeDTO, EntityContext context
-    ) {
+    public Type(TypeDTO typeDTO, EntityContext context) {
         this(
                 typeDTO.id(),
                 typeDTO.name(),
@@ -35,6 +35,8 @@ public class Type extends Entity {
                 typeDTO.ephemeral(),
                 NncUtils.get(typeDTO.baseTypeId(), context::getType),
                 typeDTO.desc(),
+                new ArrayList<>(),
+                new ArrayList<>(),
                 context
         );
     }
@@ -48,11 +50,35 @@ public class Type extends Entity {
                 po.getEphemeral(),
                 NncUtils.get(po.getBaseTypeId(), context::getType),
                 po.getDesc(),
+                null,
+                null,
                 context
         );
     }
 
     public Type(
+            String name,
+            TypeCategory type,
+            boolean anonymous,
+            boolean ephemeral,
+            Type baseType,
+            String desc,
+            EntityContext context) {
+        this(
+                null,
+                name,
+                type,
+                anonymous,
+                ephemeral,
+                baseType,
+                desc,
+                new ArrayList<>(),
+                new ArrayList<>(),
+                context
+        );
+    }
+
+    private Type(
                 Long id,
                 String name,
                 TypeCategory type,
@@ -60,6 +86,8 @@ public class Type extends Entity {
                 boolean ephemeral,
                 Type baseType,
                 String desc,
+                List<Field> fields,
+                List<ChoiceOption> choiceOptions,
                 EntityContext context) {
         super(id, context);
         this.id = id;
@@ -69,6 +97,9 @@ public class Type extends Entity {
         this.ephemeral = ephemeral;
         this.baseType = baseType;
         this.desc = desc;
+        TypeStore typeStore = context.getTypeStore();
+        this.fields = fields != null ? fields : typeStore.getFieldsLoadingList(this);
+        this.choiceOptions = choiceOptions != null ? choiceOptions : typeStore.getChoiceOptionsLoadingList(this);
     }
 
     public TypeCategory getCategory() {
@@ -100,6 +131,24 @@ public class Type extends Entity {
         return desc;
     }
 
+    void preloadFields(List<Field> fields) {
+        if(this.fields instanceof LoadingList<Field> loadingList) {
+            loadingList.preload(fields);
+        }
+        else {
+            throw new InternalException("the list of fields is not a loading list");
+        }
+    }
+
+    void preloadChoiceOptions(List<ChoiceOption> choiceOptions) {
+        if(this.choiceOptions instanceof LoadingList<ChoiceOption> loadingList) {
+            loadingList.preload(choiceOptions);
+        }
+        else {
+            throw new InternalException("the list of fields is not a loading list");
+        }
+    }
+
     public List<Field> getFields() {
         return Collections.unmodifiableList(fields());
     }
@@ -114,10 +163,10 @@ public class Type extends Entity {
     }
 
     private void ensureFieldAndOptionLoaded() {
-        if(!fieldAndOptionLoaded) {
-            fieldAndOptionLoaded = true;
-            loadFieldsAndOptions();
-        }
+//        if(!fieldAndOptionLoaded) {
+//            fieldAndOptionLoaded = true;
+//            loadFieldsAndOptions();
+//        }
     }
 
     private List<ChoiceOption> choiceOptions() {
@@ -248,7 +297,8 @@ public class Type extends Entity {
     }
 
     Column allocateColumn(Field field) {
-        if(category.getColumnType() == null) {
+        TypeCategory fieldTypeCategory = field.getBaseTypeCategory();
+        if(fieldTypeCategory.getColumnType() == null) {
             return null;
         }
         List<Column> usedColumns = NncUtils.filterAndMap(
@@ -257,7 +307,7 @@ public class Type extends Entity {
                 Field::getColumn
         );
         Map<ColumnType, Queue<Column>> columnMap = ColumnType.getColumnMap(usedColumns);
-        Queue<Column> columns = columnMap.get(category.getColumnType());
+        Queue<Column> columns = columnMap.get(fieldTypeCategory.getColumnType());
         if(columns.isEmpty()) {
             throw BusinessException.invalidField(field, "属性数量超出限制");
         }

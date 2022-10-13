@@ -19,6 +19,7 @@ import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.TypeStore;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -88,9 +89,10 @@ public class InstanceSearchService {
         Map<Long, InstanceFieldDTO> instanceFieldMap = NncUtils.toMap(instance.fields(), InstanceFieldDTO::fieldId);
         for (Field field : type.getFields()) {
             InstanceFieldDTO instanceField = instanceFieldMap.get(field.getId());
-            source.put(field.getColumnName(), instanceField.value());
+            Object fieldValue = ValueFormatter.parse(instanceField.value(), field.getType());
+            source.put(field.getColumnName(), fieldValue);
             if(field.isString()) {
-                source.put(field.getColumn().fuzzyName(), instanceField.value());
+                source.put(field.getColumn().fuzzyName(), fieldValue);
             }
         }
         return source;

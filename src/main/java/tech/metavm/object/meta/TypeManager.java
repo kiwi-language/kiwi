@@ -195,7 +195,7 @@ public class TypeManager {
     public Field updateField(FieldDTO fieldDTO, EntityContext context) {
         NncUtils.require(fieldDTO.id(), "列ID");
         TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
-        Field field = context.getField(fieldDTO.id());
+        Field field = context.get(Field.class, fieldDTO.id());
         field.update(fieldDTO);
         if(typeCategory.isEnum()) {
             EnumEditContext enumContext = saveEnumType(fieldDTO, context);

@@ -101,6 +101,10 @@ public class FlowManager {
         }
         ScopeRT scope = context.get(ScopeRT.class, nodeDTO.scopeId());
         NodeRT<?> node = NodeFactory.getFlowNode(nodeDTO, scope);
+        if(node instanceof BranchNode branchNode) {
+            branchNode.addBranch(new ValueDTO(ValueType.CONSTANT.code(), true));
+            branchNode.addBranch(new ValueDTO(ValueType.CONSTANT.code(), true));
+        }
         context.sync();
         return node.toDTO();
     }
@@ -133,13 +137,16 @@ public class FlowManager {
     }
 
     @Transactional
-    public void removeNode(long nodeId) {
+    public void deleteNode(long nodeId) {
         EntityContext context = newContext();
         NodeRT<?> node = context.get(NodeRT.class, nodeId);
         if(node == null) {
             return;
         }
         node.remove();
+        if(node instanceof BranchNode branchNode) {
+            branchNode.getBranches().forEach(Branch::remove);
+        }
         context.sync();
     }
 
@@ -217,14 +224,12 @@ public class FlowManager {
     public void deleteBranch(long ownerId, long branchId) {
         EntityContext context = newContext();
         NodeRT<?> owner = context.get(NodeRT.class, ownerId);
-        if(owner == null) {
-            throw BusinessException.nodeNotFound(ownerId);
-        }
         if(owner instanceof BranchNode branchNode) {
-            Branch branch = branchNode.deleteBranch(branchId);
+            Branch branch = branchNode.getBranch(branchId);
             if(branch == null) {
                 throw BusinessException.branchNotFound(branchId);
             }
+            branch.remove();
             context.sync();
         }
         else {

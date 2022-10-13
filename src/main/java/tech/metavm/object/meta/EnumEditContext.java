@@ -77,7 +77,6 @@ public class EnumEditContext {
 
     private Type createType() {
         type = new Type(
-                null,
                 name,
                 TypeCategory.ENUM,
                 anonymous,

@@ -325,12 +325,16 @@ public class NncUtils {
     }
 
     public static <K, T> Map<K, List<T>> toMultiMap(Collection<T> list, Function<T, K> keyMapping) {
+        return toMultiMap(list, keyMapping, Function.identity());
+    }
+
+    public static <K, T, R> Map<K, List<R>> toMultiMap(Collection<T> list, Function<T, K> keyMapper, Function<T, R> valueMapper) {
         if(list == null) {
             return new HashMap<>();
         }
-        Map<K, List<T>> map = new HashMap<>();
+        Map<K, List<R>> map = new HashMap<>();
         for (T item : list) {
-            map.computeIfAbsent(keyMapping.apply(item), k->new ArrayList<>()).add(item);
+            map.computeIfAbsent(keyMapper.apply(item), k->new ArrayList<>()).add(valueMapper.apply(item));
         }
         return map;
     }

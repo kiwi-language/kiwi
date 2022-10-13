@@ -61,7 +61,7 @@ public class FlowController {
 
     @DeleteMapping("/node/{id:[0-9]+}")
     public Result<Void> deleteNode(@PathVariable("id") long nodeId) {
-        flowManager.removeNode(nodeId);
+        flowManager.deleteNode(nodeId);
         return Result.success(null);
     }
 

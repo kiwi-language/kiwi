@@ -11,6 +11,7 @@ public record TypeDTO(
         String desc,
         TitleFieldDTO titleField,
         List<FieldDTO> fields
+// TODO return flow summaries , List<FlowSummaryDTO> flows
 ) {
 
 }

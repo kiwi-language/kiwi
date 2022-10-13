@@ -28,8 +28,8 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
     @Override
     protected void setParam(SubFlowParam param) {
         flow = getFlowFromContext(param.flowId());
-        selfId = ValueFactory.getValue(param.selfId(), getParsingContext());
-        arguments = NncUtils.map(param.fieldParams(), fieldParamDTO -> new FieldParam(fieldParamDTO, context, getParsingContext()));
+        selfId = ValueFactory.getValue(param.self(), getParsingContext());
+        arguments = NncUtils.map(param.fields(), fieldParamDTO -> new FieldParam(fieldParamDTO, context, getParsingContext()));
     }
 
     @Override
@@ -44,11 +44,13 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
     @Override
     public void execute(FlowFrame frame) {
         FlowStack stack = frame.getStack();
-        Instance instance = (Instance) selfId.evaluate(frame);
-        FlowFrame newContext = new FlowFrame(
-                flow, instance, evaluateArguments(frame), stack
+        FlowFrame newFrame = new FlowFrame(
+                flow,
+                (Instance) selfId.evaluate(frame),
+                evaluateArguments(frame),
+                stack
         );
-        stack.push(newContext);
+        stack.push(newFrame);
     }
 
     private InstanceDTO evaluateArguments(FlowFrame executionContext) {

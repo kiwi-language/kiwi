@@ -112,7 +112,6 @@ public class FlowFrame implements EvaluationContext {
             NodeRT<?> node = pc;
             node.execute(this);
             if(state == State.RETURN || state == State.EXCEPTION) {
-                stack.pop();
                 return;
             }
             if(stack.peek() != this) {
@@ -125,7 +124,7 @@ public class FlowFrame implements EvaluationContext {
                 pc = node.getGlobalSuccessor();
             }
             if(pc == null) {
-                stack.pop();
+                state = State.RETURN;
                 return;
             }
         }
@@ -168,7 +167,6 @@ public class FlowFrame implements EvaluationContext {
     public void resume(Instance result) {
         setResult(result);
         pc = pc.getSuccessor();
-        execute();
     }
 
     public Instance getSelf() {
@@ -205,6 +203,6 @@ public class FlowFrame implements EvaluationContext {
     }
 
     public Instance getRet() {
-        return results.get(pc.getId());
+        return pc != null ? results.get(pc.getId()) : null;
     }
 }

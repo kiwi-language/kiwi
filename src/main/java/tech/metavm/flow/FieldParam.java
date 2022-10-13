@@ -33,7 +33,7 @@ public class FieldParam {
     public InstanceFieldDTO evaluate(FlowFrame executionContext) {
         return InstanceFieldDTO.valueOf(
                 field.getId(),
-                value.evaluate(executionContext)
+                NncUtils.get(value, v -> v.evaluate(executionContext))
         );
     }
 

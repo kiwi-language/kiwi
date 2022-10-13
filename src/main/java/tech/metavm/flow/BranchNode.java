@@ -4,6 +4,7 @@ import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -49,6 +50,10 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     }
 
     public Branch addBranch(BranchDTO branchDTO) {
+        return addBranch(branchDTO.condition());
+    }
+
+    public Branch addBranch(ValueDTO condition) {
         long branchId;
         if(branches.isEmpty()) {
             branchId = 1;
@@ -60,13 +65,13 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
             }
             branchId = maxId + 1;
         }
-        Branch branch = new Branch(branchId, branchDTO.condition(), new ScopeRT(getFlow()), this);
+        Branch branch = new Branch(branchId, condition, new ScopeRT(getFlow()), this);
         branches.add(branch);
         return branch;
     }
 
     public List<Branch> getBranches() {
-        return Collections.unmodifiableList(branches);
+        return new ArrayList<>(branches);
     }
 
     public Branch getBranch(long id) {

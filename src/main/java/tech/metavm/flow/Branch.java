@@ -52,6 +52,11 @@ public class Branch  {
         condition = ValueFactory.getValue(branchDTO.condition(), parsingContext);
     }
 
+    public void remove() {
+        owner.deleteBranch(this.id);
+        getScope().remove();
+    }
+
     public boolean checkCondition(FlowFrame frame) {
         return Boolean.TRUE.equals(condition.evaluate(frame));
     }

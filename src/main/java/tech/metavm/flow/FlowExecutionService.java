@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.object.instance.InstanceContextFactory;
+import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.util.NncUtils;
@@ -24,6 +25,9 @@ public class FlowExecutionService {
     @Autowired
     private InstanceContextFactory instanceContextFactory;
 
+    @Autowired
+    private InstanceLogService instanceLogService;
+
     public void execute(FlowExecutionRequest request) {
         EntityContext context = newContext();
         FlowRT flow = context.get(FlowRT.class, request.flowId());
@@ -32,6 +36,7 @@ public class FlowExecutionService {
         InstanceDTO argument = createArgument(flow.getInputType().getId(), request.fields());
         FlowStack stack = new FlowStack(flow, self, argument, instanceContext);
         stack.execute();
+        processLogs(instanceContext);
     }
 
     private InstanceDTO createArgument(long typeId, List<FieldValueDTO> fields) {
@@ -46,6 +51,15 @@ public class FlowExecutionService {
                 fieldValueDTO.fieldId(),
                 fieldValueDTO.value()
         );
+    }
+
+    private void processLogs(InstanceContext context) {
+        if(context.isAsyncLogProcessing()) {
+            instanceLogService.asyncProcess(context.getLogs());
+        }
+        else {
+            instanceLogService.process(context.getLogs());
+        }
     }
 
     private EntityContext newContext() {

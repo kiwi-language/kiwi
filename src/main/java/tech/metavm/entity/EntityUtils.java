@@ -16,6 +16,7 @@ import tech.metavm.util.Pair;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -168,7 +169,7 @@ public class EntityUtils {
     }
 
     public static Entity copyEntity(Entity entity) {
-        return (Entity) copyPojo(entity, new IdentityHashMap<>());
+        return (Entity) copyPojo(entity, new IdentityHashMap<>(), true);
     }
 
     public static List<Entity> getAllEntities(Entity entity) {
@@ -230,7 +231,7 @@ public class EntityUtils {
         if(object instanceof Entity entity) {
             return entity.context.getRef(getEntityType(entity), entity.id);
         }
-        return copyPojo(object, copyMap);
+        return copyPojo(object, copyMap, false);
     }
 
     private static boolean isShallow(Class<?> klass) {
@@ -291,11 +292,14 @@ public class EntityUtils {
         return Entity.class.isAssignableFrom(klass) || ENTITY_CLASSES.contains(klass);
     }
 
-    private static Object copyPojo(Object object, IdentityHashMap<Object, Object> copyMap) {
+    private static Object copyPojo(Object object, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
         Object copy = ReflectUtils.newInstance(object.getClass());
         copyMap.put(object, copy);
         List<Field> fields = ReflectUtils.getAllFields(object.getClass());
         for (Field field : fields) {
+            if(ignoreTransient && Modifier.isTransient(field.getModifiers())) {
+                continue;
+            }
             ReflectUtils.set(
                     copy,
                     field,

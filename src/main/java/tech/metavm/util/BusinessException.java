@@ -70,6 +70,10 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_FIELD_VALUE, field.getName(), value);
     }
 
+    public static BusinessException invalidValue(Type type, Object value) {
+        return new BusinessException(ErrorCode.INVALID_TYPE_VALUE, type.getName(), value);
+    }
+
     public static BusinessException fieldRequired(Field field) {
         return new BusinessException(ErrorCode.FIELD_REQUIRED, field.getName());
     }

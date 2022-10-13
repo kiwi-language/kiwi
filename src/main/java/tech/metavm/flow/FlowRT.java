@@ -20,7 +20,7 @@ public class FlowRT extends Entity {
     private final Type type;
     private final ScopeRT rootScope;
     private final Type inputType;
-    private long outputTypeId;
+    private Long outputTypeId;
 
     private final transient EntityColl<ScopeRT> scopes = new EntityColl<>();
     private final transient EntityColl<NodeRT<?>> nodes = new EntityColl<>();

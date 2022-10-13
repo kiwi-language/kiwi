@@ -65,8 +65,8 @@ public class Instance extends AbsInstance {
         this.version = 1;
 
         for (InstanceFieldDTO fieldDTO : instanceDTO.fields()) {
-            Field fieldMeta = getType().getField(fieldDTO.fieldId());
-            addField(new InstanceField(this, fieldMeta, fieldDTO.value()));
+            Field field = getType().getField(fieldDTO.fieldId());
+            addField(new InstanceField(this, field, fieldDTO));
         }
     }
 
@@ -132,7 +132,7 @@ public class Instance extends AbsInstance {
     }
 
     public void set(long fieldId, Object fieldValue) {
-        field(fieldId).setValue(fieldValue);
+        field(fieldId).setRawValue(fieldValue);
     }
 
     public Long getLong(String fieldName) {
@@ -181,7 +181,7 @@ public class Instance extends AbsInstance {
             if(field == null) {
                 throw BusinessException.fieldNotFound(fieldUpdate.fieldId());
             }
-            field.setValue(fieldUpdate.value());
+            field.setRawValue(fieldUpdate.value());
         }
     }
 

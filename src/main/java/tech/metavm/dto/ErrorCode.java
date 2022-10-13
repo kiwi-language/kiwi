@@ -22,6 +22,7 @@ public enum ErrorCode {
     INSTANCE_NOT_FOUND(301, "实例不存在(objectId: {})"),
     INVALID_FIELD_VALUE(302, "属性值错误，属性: {}, 值: {}"),
     FIELD_REQUIRED(303, "属性{}不能为空"),
+    INVALID_TYPE_VALUE(30, "数据格式错误，类型: {}, 值: {}"),
 
 
     // Flow相关错误

@@ -116,6 +116,7 @@ public class Field extends Entity {
         }
         Type type = context.resolveType(update);
         setType(type);
+        setName(update.name());
         setAccess(Access.getByCodeRequired(update.access()));
         setUnique(update.unique());
         setAsTitle(update.asTitle());
@@ -239,8 +240,8 @@ public class Field extends Entity {
         return column.name();
     }
 
-    public Object preprocessValue(Object value) {
-        return ValueParser.convertValue(getType().getCategory(), isArray(), value);
+    public Object preprocessValue(Object rawValue) {
+        return ValueFormatter.parse(rawValue, type);
     }
 
     public String getStrRawDefaultValue() {

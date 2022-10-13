@@ -1,10 +1,10 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.flow.ConstantValue;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.ValueDTO;
 import tech.metavm.object.meta.ChoiceOption;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
@@ -19,8 +19,11 @@ public class InstanceField {
     private final Field field;
     private Object value;
 
-    public InstanceField(Instance owner, Field field) {
-        this(owner, field, null);
+    public InstanceField(Instance owner, Field field, InstanceFieldDTO instanceFieldDTO) {
+        this.field = field;
+        this.owner = owner;
+        this.context = owner.getContext();
+        setRawValue(instanceFieldDTO.value());
     }
 
     public InstanceField(Instance owner, Field field, Object value) {
@@ -68,9 +71,12 @@ public class InstanceField {
         }
     }
 
+    public void setRawValue(Object rawValue) {
+        this.value = field.preprocessValue(rawValue);
+    }
+
     public void setValue(Object value) {
-        checkField();
-        this.value = field.preprocessValue(value);
+        this.value = value;
     }
 
     private Object check(Object value) {
@@ -168,8 +174,6 @@ public class InstanceField {
         }
     }
 
-    void checkField() {}
-
     public String getDisplayValue() {
         if(field.isArray()) {
             return "";
@@ -201,6 +205,12 @@ public class InstanceField {
                 return "";
             }
         }
+        else if(field.getConcreteType().isTime()) {
+            return ValueFormatter.formatTime((Long) value);
+        }
+        else if(field.getConcreteType().isDate()) {
+            return ValueFormatter.formatDate((Long) value);
+        }
         return NncUtils.toString(value);
     }
 
@@ -224,7 +234,7 @@ public class InstanceField {
                 field.getName(),
                 field.getType().getCategory().code(),
                 field.isArray(),
-                value,
+                ValueFormatter.format(value, field.getType()),
                 getDisplayValue(),
                 values
         );

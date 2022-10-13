@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityStore;
+import tech.metavm.entity.LoadingList;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
 import tech.metavm.object.meta.persistence.FieldPO;
@@ -68,6 +69,42 @@ public class TypeStore implements EntityStore<Type> {
         return types;
     }
 
+    public List<Field> getFieldsLoadingList(Type type) {
+        return new LoadingList<>(() -> loadFields(List.of(type)));
+    }
+
+    public List<ChoiceOption> getChoiceOptionsLoadingList(Type type) {
+        return new LoadingList<>(() -> loadChoiceOptions(List.of(type)));
+    }
+
+    private List<Field> loadFields(List<Type> types) {
+        if(NncUtils.isEmpty(types)) {
+            return List.of();
+        }
+        EntityContext context = types.get(0).getContext();
+        Map<Long, Type> typeMap = NncUtils.toMap(types, Entity::getId);
+        List<FieldPO> fieldPOs = fieldMapper.selectByOwnerIds(context.getTenantId(), NncUtils.map(types, Entity::getId));
+        return NncUtils.map(
+                fieldPOs,
+                fieldPO -> new Field(fieldPO, typeMap.get(fieldPO.getOwnerId()), context.getType(fieldPO.getTypeId()))
+        );
+    }
+
+    private List<ChoiceOption> loadChoiceOptions(List<Type> types) {
+        types = NncUtils.filter(types, Type::isEnum);
+        if(NncUtils.isEmpty(types)) {
+            return List.of();
+        }
+        EntityContext context = types.get(0).getContext();
+        Map<Long, Type> typeMap = NncUtils.toMap(types, Entity::getId);
+        List<InstancePO> instancePOs = instanceMapper.selectByModelIds(
+                context.getTenantId(),
+                NncUtils.map(types, Entity::getId),
+                0, MAX_NUM_OPTIONS
+        );
+        return NncUtils.map(instancePOs, instancePO -> new ChoiceOption(instancePO, typeMap.get(instancePO.modelId())));
+    }
+
     public long count(TypeQuery query) {
         return typeMapper.count(query);
     }
@@ -100,15 +137,16 @@ public class TypeStore implements EntityStore<Type> {
 
 
     public void loadFieldsAndOptions(List<Type> types, EntityContext context) {
-        long tenantId = context.getTenantId();
-        List<FieldPO> fieldPOs = fieldMapper.selectByOwnerIds(tenantId, NncUtils.map(types, Type::getId));
-        Map<Long, List<FieldPO>> fieldPOMap = NncUtils.toMultiMap(fieldPOs, FieldPO::getOwnerId);
-
-        Set<Long> fieldTypeIds = NncUtils.mapUnique(fieldPOs, FieldPO::getTypeId);
+        List<Field> fields = loadFields(types);
+        Map<Long, List<Field>> fieldMap = NncUtils.toMultiMap(fields, f -> f.getOwner().getId());
+        Set<Long> fieldTypeIds = NncUtils.mapUnique(fields, f -> f.getType().getId());
         Map<Long, Type> fieldTypeMap = NncUtils.toMap(
                 batchGet(fieldTypeIds, false, context),
                 Entity::getId
         );
+
+        List<ChoiceOption> options = loadChoiceOptions(NncUtils.filter(types, Type::isEnum));
+        Map<Long, List<ChoiceOption>> optionMap = NncUtils.toMultiMap(options, option -> option.getOwner().getId());
 
         List<Long> baseTypeIds = NncUtils.filterAndMap(
                 fieldTypeMap.values(),
@@ -120,17 +158,10 @@ public class TypeStore implements EntityStore<Type> {
             batchGet(baseTypeIdSet, false, context);
         }
         for (Type type : types) {
-            List<ChoiceOption> options = new ArrayList<>();
+            type.preloadFields(fieldMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
             if(type.isEnum()) {
-                List<InstancePO> instancePOs =
-                        instanceMapper.selectByModelIds(tenantId, List.of(type.getId()), 0, MAX_NUM_OPTIONS);
-                options.addAll(NncUtils.map(instancePOs, instancePO -> new ChoiceOption(instancePO, type)));
+                type.preloadChoiceOptions(optionMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
             }
-            List<Field> fields = NncUtils.map(
-                    fieldPOMap.get(type.getId()),
-                    fieldPO -> new Field(fieldPO, type, fieldTypeMap.get(fieldPO.getTypeId()))
-            );
-            type.initFieldsAndOptions(fields, options);
         }
     }
 

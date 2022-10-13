@@ -16,6 +16,7 @@ public enum NodeType {
     RETURN(9, ReturnNode.class),
     EXCEPTION(10, ExceptionNode.class),
     DIRECTORY_ACCESS(11, DirectoryAccessNode.class),
+    SUB_FLOW(12, SubFlowNode.class),
 
     ;
 
