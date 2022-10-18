@@ -77,9 +77,9 @@ public class ValueFormatter {
     }
 
     private static Object formatOne(Object value, Type type) {
-        if(type.isNullable()) {
-            type = type.getBaseType();
-        }
+//        if(type.isNullable()) {
+//            type = type.getBaseType();
+//        }
 //        if(type.isDate() || type.isTime()) {
 //            return formatTime((long) value);
 //        }

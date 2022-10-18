@@ -1,40 +1,39 @@
 {
-  "typeId": 22,
-  "fieldParams": [
-    {
-      "fieldId": 92,
-      "value": {
-        "type": 1,
-        "value": "0002"
+  "code": 0,
+  "message": null,
+  "data": {
+    "id": 71,
+    "typeId": 65,
+    "typeName": "page_variable_69",
+    "title": "69",
+    "fields": [
+      {
+        "fieldId": 168,
+        "fieldName": "pageId",
+        "type": 13,
+        "multiValued": false,
+        "value": 69,
+        "displayValue": "69",
+        "values": null
+      },
+      {
+        "fieldId": 169,
+        "fieldName": "textContent",
+        "type": 11,
+        "multiValued": false,
+        "value": null,
+        "displayValue": "",
+        "values": null
+      },
+      {
+        "fieldId": 171,
+        "fieldName": "测试关联",
+        "type": 0,
+        "multiValued": false,
+        "value": 61,
+        "displayValue": "20.0",
+        "values": null
       }
-    },
-    {
-      "fieldId": 93,
-      "value": {
-        "type": 3,
-        "value": "$1597.$98 - $1602.$1580"
-      }
-    },
-    {
-      "fieldId": 94,
-      "value": {
-        "type": 2,
-        "value": "1597"
-      }
-    },
-    {
-      "fieldId": 95,
-      "value": {
-        "type": 2,
-        "value": "1593-1599"
-      }
-    },
-    {
-      "fieldId": 1604,
-      "value": {
-        "type": 2,
-        "value": "1593-1601"
-      }
-    }
-  ]
+    ]
+  }
 }

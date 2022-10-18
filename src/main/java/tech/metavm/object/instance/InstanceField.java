@@ -4,6 +4,7 @@ import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.ValueDTO;
 import tech.metavm.object.meta.ChoiceOption;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
@@ -219,11 +220,12 @@ public class InstanceField {
     }
 
     public boolean isPrimitive() {
-        return field.isPrimitive();
+        Type fieldType = field.getType();
+        return fieldType.isPrimitive() || fieldType.isNullable() && fieldType.getBaseType().isPrimitive();
     }
 
     public boolean isGeneralRelation() {
-        return field.isComposite();
+        return !field.getConcreteType().isPrimitive();
     }
 
     public boolean isArray() {

@@ -245,13 +245,7 @@ public class Type extends Entity {
     }
 
     public boolean isNullable() {
-        Type b = this;
-        Type t = baseType;
-        while(t != null) {
-            b = t;
-            t = t.baseType;
-        }
-        return b.category == TypeCategory.NULLABLE;
+        return category == TypeCategory.NULLABLE;
     }
 
     public boolean isNotNull() {
