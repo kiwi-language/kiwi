@@ -2,6 +2,8 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityContext;
 import tech.metavm.flow.rest.FieldParamDTO;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
@@ -33,8 +35,18 @@ public class FieldParam {
     public InstanceFieldDTO evaluate(FlowFrame executionContext) {
         return InstanceFieldDTO.valueOf(
                 field.getId(),
-                NncUtils.get(value, v -> v.evaluate(executionContext))
+                NncUtils.get(value, v -> getFieldValue(v, executionContext))
         );
+    }
+
+    private Object getFieldValue(Value value, EvaluationContext evaluationContext) {
+        Object evaluated = value.evaluate(evaluationContext);
+        if(evaluated instanceof Instance instance) {
+            return instance.getId();
+        }
+        else {
+            return evaluated;
+        }
     }
 
     @Override

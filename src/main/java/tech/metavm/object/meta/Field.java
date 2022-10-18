@@ -31,7 +31,7 @@ public class Field extends Entity {
                 Access.getByCodeRequired(po.getAccess()),
                 po.getUnique(),
                 po.getAsTitle(),
-                DefaultValueUtil.convertFromStr(po.getDefaultValue(), type.getCategory()),
+                DefaultValueUtil.convertFromStr(po.getDefaultValue(), type),
                 Column.valueOf(po.getColumnName()),
                 type,
                 owner.getContext(),
@@ -102,7 +102,7 @@ public class Field extends Entity {
         return type;
     }
 
-    public TypeCategory getBaseTypeCategory() {
+    public TypeCategory getConcreteTypeCategory() {
         return getConcreteType().getCategory();
     }
 
@@ -299,7 +299,7 @@ public class Field extends Entity {
         return new FieldDTO(
                 id,
                 name,
-                getBaseTypeCategory().code(),
+                getConcreteTypeCategory().code(),
                 access.code(),
                 isNotNull(),
                 defaultValue,

@@ -24,8 +24,7 @@ public class ChoiceOption {
                 owner,
                 po.getString(ColumnNames.S0),
                 po.getInt(ColumnNames.I0),
-                po.version(),
-                false
+                po.version()
         );
     }
 
@@ -36,8 +35,7 @@ public class ChoiceOption {
                 owner,
                 optionDTO.name(),
                 optionDTO.order(),
-                1,
-                true
+                1
         );
     }
 
@@ -46,8 +44,7 @@ public class ChoiceOption {
                         Type type,
                         String name,
                         int order,
-                        long version,
-                        boolean addToType
+                        long version
     ) {
         this.tenantId = tenantId;
         this.id = id;
@@ -55,9 +52,7 @@ public class ChoiceOption {
         this.order = order;
         this.version = version;
         setName(name);
-        if(addToType) {
-            type.addChoiceOption(this);
-        }
+        type.addChoiceOption(this);
     }
 
     public long getTenantId() {

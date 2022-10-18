@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 
 import java.util.List;
@@ -17,25 +18,25 @@ public class DefaultValueUtil {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
 
-    public static Object convertFromStr(String str, TypeCategory typeCategory) {
+    public static Object convertFromStr(String str, Type type) {
         if(isNull(str)) {
             return null;
         }
-        if(typeCategory.isArray()) {
+        if(type.isArray()) {
             List<Object> values = NncUtils.readJSONString(str, new TypeReference<>() {});
-            return NncUtils.map(values, value -> convertFromStrOne(NncUtils.toString(value), typeCategory));
+            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), type.getBaseType()));
         }
         else {
-            return convertFromStrOne(str, typeCategory);
+            return convertFromStrOne(str, type.getConcreteType().getCategory());
         }
     }
 
     public static Object convertFromStrOne(String str, TypeCategory fieldType) {
         return switch (fieldType) {
-            case INT32, INT64, TABLE, TIME, DATE, ENUM, PAGE, INTERFACE, FLOW_INPUT, NULLABLE -> parseLong(str);
+            case INT32, INT64, TABLE, TIME, DATE, ENUM, PAGE, INTERFACE, FLOW_INPUT, FLOW_OUTPUT -> parseLong(str);
             case DOUBLE -> parseDouble(str);
             case BOOL -> parseBool(str);
-            case OBJECT, ARRAY -> null;
+            case OBJECT, ARRAY, NULLABLE -> null;
             case STRING -> str;
         };
     }

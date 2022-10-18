@@ -58,12 +58,12 @@ public class InstanceField {
     }
 
     public Object getResolvedValue() {
-        if(field.isTable()) {
+        if(field.isTable() || field.isEnum()) {
             if(field.isArray()) {
-                return NncUtils.map(getIds(), context::get);
+                return NncUtils.map(getValueIds(), context::get);
             }
             else {
-                return NncUtils.get(getId(), context::get);
+                return NncUtils.get(getValueId(), context::get);
             }
         }
         else {
@@ -134,8 +134,12 @@ public class InstanceField {
         return (Double) value;
     }
 
-    public List<Long> getIds() {
+    public List<Long> getValueIds() {
         return (List<Long>) value;
+    }
+
+    public Long getValueId() {
+        return (Long) value;
     }
 
     public Instance getInstance() {
@@ -228,11 +232,11 @@ public class InstanceField {
 
     public InstanceFieldDTO toDTO () {
         List<ValueDTO> values = isArray() ?
-            NncUtils.map(getIds(), destId -> new ValueDTO(destId, getDisplayValue(destId))) : null;
+            NncUtils.map(getValueIds(), destId -> new ValueDTO(destId, getDisplayValue(destId))) : null;
         return new InstanceFieldDTO(
                 field.getId(),
                 field.getName(),
-                field.getType().getCategory().code(),
+                field.getConcreteTypeCategory().code(),
                 field.isArray(),
                 ValueFormatter.format(value, field.getType()),
                 getDisplayValue(),

@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.ChoiceOption;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
@@ -92,6 +93,16 @@ public class ExpressionEvaluator {
         Object firstValue = evaluate(binaryExpression.getFirst()),
                 secondValue = evaluate(binaryExpression.getSecond());
         if(op == Operator.EQ) {
+            if(firstValue instanceof Instance instance && secondValue instanceof String title) {
+                if(instance.getType().isEnum()) {
+                    ChoiceOption opt = NncUtils.filterOne(
+                            instance.getType().getChoiceOptions(),
+                            option -> Objects.equals(option.getId(), instance.getId())
+                    );
+                    String optionName = NncUtils.get(opt, ChoiceOption::getName);
+                    return Objects.equals(optionName, title);
+                }
+            }
             return Objects.equals(firstValue, secondValue);
         }
         if(op == Operator.NE) {

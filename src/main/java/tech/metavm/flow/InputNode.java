@@ -56,21 +56,14 @@ public class InputNode extends NodeRT<InputParamDTO> {
         return new InputFieldDTO(
                 fieldDTO.id(),
                 fieldDTO.name(),
-                fieldDTO.type(),
-                fieldDTO.targetId(),
-                fieldDTO.defaultValue(),
-                fieldDTO.required()
+                fieldDTO.typeId(),
+                fieldDTO.defaultValue()
         );
     }
 
     @Override
     public void remove() {
-        context.remove(this.objectType);
         super.remove();
-    }
-
-    public Type getObjectType() {
-        return objectType;
     }
 
     @Override

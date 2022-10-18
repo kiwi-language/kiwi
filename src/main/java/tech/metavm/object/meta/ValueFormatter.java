@@ -30,9 +30,7 @@ public class ValueFormatter {
     }
 
     private static Object parseOne(Object rawValue, Type type) {
-        if(type.isNullable()) {
-            type = type.getBaseType();
-        }
+        type = type.getConcreteType();
         TypeCategory typeCategory = type.getCategory();
         if(typeCategory.isInt32()) {
             if(ValueUtil.isNumber(rawValue)) {

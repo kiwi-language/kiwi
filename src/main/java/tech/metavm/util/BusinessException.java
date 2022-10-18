@@ -8,6 +8,8 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 
+import java.util.List;
+
 public class BusinessException extends RuntimeException {
 
     private final ErrorCode errorCode;
@@ -62,6 +64,10 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
     }
 
+    public static BusinessException typeNotFound(long typeId) {
+        throw new BusinessException(ErrorCode.TYPE_NOT_FOUND, typeId);
+    }
+
     public static BusinessException fieldNotFound(long fieldId) {
         throw new BusinessException(ErrorCode.FIELD_NOT_FOUND, fieldId);
     }
@@ -72,6 +78,21 @@ public class BusinessException extends RuntimeException {
 
     public static BusinessException invalidValue(Type type, Object value) {
         return new BusinessException(ErrorCode.INVALID_TYPE_VALUE, type.getName(), value);
+    }
+
+    public static BusinessException typeReferredByFields(Type type, List<String> fieldNames) {
+        List<String> quotedFieldNames = NncUtils.map(fieldNames, s -> "\"" + s + "\"");
+        return new BusinessException(
+                ErrorCode.ERROR_DELETING_TYPE,
+                "\"" + type.getName() + "\"被以下表格列使用：" + NncUtils.join(quotedFieldNames)
+        );
+    }
+
+    public static BusinessException typeReferredByFlows(List<String> flowNames) {
+        return new BusinessException(
+                ErrorCode.ERROR_DELETING_TYPE,
+                "类型被其他流程使用: " + NncUtils.join(flowNames)
+        );
     }
 
     public static BusinessException fieldRequired(Field field) {

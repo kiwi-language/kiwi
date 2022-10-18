@@ -9,6 +9,7 @@ public enum TypeCategory {
     ENUM(1, ColumnType.INT64),
     INTERFACE(2),
     FLOW_INPUT(3),
+    FLOW_OUTPUT(9),
     PAGE(4),
     ARRAY(5),
     NULLABLE(7),
@@ -104,5 +105,9 @@ public enum TypeCategory {
 
     public boolean isNotNull() {
         return !isNullable();
+    }
+
+    public boolean hasFields() {
+        return this == TABLE || this == PAGE || this == FLOW_INPUT || this == FLOW_OUTPUT;
     }
 }

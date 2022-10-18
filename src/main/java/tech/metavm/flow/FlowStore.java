@@ -6,15 +6,14 @@ import tech.metavm.dto.Page;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityStore;
+import tech.metavm.entity.LoadingOption;
 import tech.metavm.flow.persistence.*;
 import tech.metavm.flow.rest.FlowQuery;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class FlowStore implements EntityStore<FlowRT> {
@@ -47,12 +46,34 @@ public class FlowStore implements EntityStore<FlowRT> {
         );
     }
 
+    public List<String> getReferringFlowNames(Type type) {
+        List<FlowPO> flowPOs = flowMapper.selectByInputTypeIds(List.of(type.getId()));
+        return NncUtils.filterAndMap(
+                flowPOs,
+                f -> !f.getTypeId().equals(type.getId()),
+                FlowPO::getName
+        );
+    }
+
+    public List<FlowRT> getByOwner(Type owner) {
+        List<FlowPO> flowPOs =  flowMapper.selectByOwnerIds(List.of(owner.getId()));
+        return createFromPOs(flowPOs, owner.getContext());
+    }
+
     @Override
-    public List<FlowRT> batchGet(Collection<Long> ids, EntityContext context) {
+    public List<FlowRT> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
         if(NncUtils.isEmpty(ids)) {
             return List.of();
         }
         List<FlowPO> flowPOs =  flowMapper.selectByIds(ids);
+        return createFromPOs(flowPOs, context);
+    }
+
+    private List<FlowRT> createFromPOs(List<FlowPO> flowPOs, EntityContext context) {
+        if(NncUtils.isEmpty(flowPOs)) {
+            return List.of();
+        }
+        List<Long> ids = NncUtils.map(flowPOs, FlowPO::getId);
         List<NodePO> nodePOs = nodeMapper.selectByFlowIds(ids);
         Map<Long, List<NodePO>> nodePOMap = NncUtils.toMultiMap(nodePOs, NodePO::getFlowId);
         List<ScopePO> scopePOs = scopeMapper.selectByFlowIds(ids);

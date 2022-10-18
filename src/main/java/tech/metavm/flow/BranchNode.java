@@ -8,23 +8,24 @@ import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
 public class BranchNode extends NodeRT<BranchParamDTO> {
 
+    private boolean inclusive;
     private final List<Branch> branches = new ArrayList<>();
 
     public BranchNode(NodeDTO nodeDTO, BranchParamDTO param, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        for (BranchDTO branchDTO : param.branches()) {
-            addBranch(branchDTO);
-        }
+        setParam(param);
+        branches.add(Branch.create(1L, this));
+        branches.add(Branch.createPreselected(this));
     }
 
     public BranchNode(NodePO nodePO, BranchParamDTO param, ScopeRT scope) {
         super(nodePO, scope);
+        setParam(param);
         for (BranchDTO branchDTO : param.branches()) {
             ScopeRT branchScope = getFromContext(ScopeRT.class, branchDTO.scope().id());
             branchScope.setOwner(this);
@@ -32,6 +33,7 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
                 new Branch(
                     branchDTO.id(),
                     branchDTO.condition(),
+                    branchDTO.preselected(),
                     branchScope,
                     this
                 )
@@ -41,12 +43,15 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     @Override
     protected void setParam(BranchParamDTO param) {
-
+        inclusive = param.inclusive();
     }
 
     @Override
     protected BranchParamDTO getParam(boolean persisting) {
-        return new BranchParamDTO(NncUtils.map(branches, branch -> branch.toDTO(!persisting, persisting)));
+        return new BranchParamDTO(
+                inclusive,
+                NncUtils.map(branches, branch -> branch.toDTO(!persisting, persisting))
+        );
     }
 
     public Branch addBranch(BranchDTO branchDTO) {
@@ -55,18 +60,15 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     public Branch addBranch(ValueDTO condition) {
         long branchId;
-        if(branches.isEmpty()) {
-            branchId = 1;
-        }
-        else {
-            long maxId = 1;
-            for (Branch branch : branches) {
+        long maxId = 1;
+        for (Branch branch : branches) {
+            if(!branch.isPreselected()) {
                 maxId = Math.max(branch.getId(), maxId);
             }
-            branchId = maxId + 1;
         }
-        Branch branch = new Branch(branchId, condition, new ScopeRT(getFlow()), this);
-        branches.add(branch);
+        branchId = maxId + 1;
+        Branch branch = new Branch(branchId, condition, false, new ScopeRT(getFlow()), this);
+        branches.add(branches.size() - 1, branch);
         return branch;
     }
 

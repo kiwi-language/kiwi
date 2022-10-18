@@ -1,18 +1,23 @@
 package tech.metavm.object.meta.persistence.query;
 
+import tech.metavm.object.meta.TypeCategory;
+
+import java.util.List;
 import java.util.Objects;
 
 public final class TypeQuery {
     private final long tenantId;
-    private final Integer type;
+    private final List<TypeCategory> categories;
     private final String searchText;
+    private final Boolean anonymous;
     private final int page;
     private final int pageSize;
 
-    public TypeQuery(long tenantId, Integer type, String searchText, int page, int pageSize) {
+    public TypeQuery(long tenantId, List<TypeCategory> categories, String searchText, Boolean anonymous, int page, int pageSize) {
         this.tenantId = tenantId;
-        this.type = type;
+        this.categories = categories;
         this.searchText = searchText;
+        this.anonymous = anonymous;
         this.page = page;
         this.pageSize = pageSize;
     }
@@ -52,8 +57,8 @@ public final class TypeQuery {
         return tenantId;
     }
 
-    public Integer type() {
-        return type;
+    public List<TypeCategory> getCategories() {
+        return categories;
     }
 
     public int page() {
@@ -66,5 +71,9 @@ public final class TypeQuery {
 
     public String getSearchText() {
         return searchText;
+    }
+
+    public Boolean getAnonymous() {
+        return anonymous;
     }
 }

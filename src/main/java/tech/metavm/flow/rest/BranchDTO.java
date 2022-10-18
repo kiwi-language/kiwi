@@ -4,6 +4,7 @@ public record BranchDTO(
         Long id,
         long ownerId,
         ValueDTO condition,
-        ScopeDTO scope
+        ScopeDTO scope,
+        boolean preselected
 )  {
 }

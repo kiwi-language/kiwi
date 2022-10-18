@@ -10,6 +10,9 @@ import tech.metavm.object.meta.PrimitiveTypeInitializer;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.NncUtils;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/type")
@@ -30,15 +33,12 @@ public class TypeController {
     @GetMapping
     public Result<Page<TypeDTO>> list(
             @RequestParam(value = "searchText", required = false) String searchText,
+            @RequestParam(value = "categoryCodes", required = false) String categoryCodes,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize
     ) {
-        try {
-            return Result.success(typeManager.query(searchText, page, pageSize));
-        }
-        catch (BusinessException e) {
-            return Result.failure(e.getErrorCode(), e.getParams());
-        }
+        List<Integer> categoryCodeList = NncUtils.isNotEmpty(categoryCodes) ? NncUtils.splitIntegers(categoryCodes) : null;
+        return Result.success(typeManager.query(searchText, categoryCodeList, page, pageSize));
     }
 
     @GetMapping("/{id:[0-9]+}")
@@ -58,6 +58,21 @@ public class TypeController {
         catch (BusinessException e) {
             return Result.failure(e.getErrorCode(), e.getParams());
         }
+    }
+
+    @GetMapping("/{id:[0-9]+}/array")
+    public Result<TypeDTO> getArrayType(@PathVariable("id") long id) {
+        return Result.success(typeManager.getArrayType(id));
+    }
+
+    @GetMapping("/{id:[0-9]+}/nullable")
+    public Result<TypeDTO> getNullableType(@PathVariable("id") long id) {
+        return Result.success(typeManager.getNullableType(id));
+    }
+
+    @GetMapping("/{id:[0-9]+}/nullable-array")
+    public Result<TypeDTO> getNullableArrayType(@PathVariable("id") long id) {
+        return Result.success(typeManager.getNullableArrayType(id));
     }
 
     @DeleteMapping("/{id:[0-9]+}")

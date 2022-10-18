@@ -75,6 +75,12 @@ public final class InstancePO {
         return version;
     }
 
+    public VersionPO nextVersion() {
+        return new VersionPO(
+                tenantId, id, version + 1
+        );
+    }
+
     public long syncVersion() {
         return syncVersion;
     }

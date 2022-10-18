@@ -8,6 +8,7 @@ import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.FlowExecutionException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -28,6 +29,7 @@ public class FlowFrame implements EvaluationContext {
     private final FlowStack stack;
 
     private State state = State.NORMAL;
+    private String exceptionMessage;
 
     public enum State {
         NORMAL,
@@ -70,11 +72,13 @@ public class FlowFrame implements EvaluationContext {
         return instanceContext.get(id);
     }
 
-    public void ret() {
+    public void ret(Instance returnValue) {
+        setResult(returnValue);
         state = State.RETURN;
     }
 
-    public void exception() {
+    public void exception(String message) {
+        this.exceptionMessage = message;
         state = State.EXCEPTION;
     }
 
@@ -111,8 +115,11 @@ public class FlowFrame implements EvaluationContext {
         for (;;) {
             NodeRT<?> node = pc;
             node.execute(this);
-            if(state == State.RETURN || state == State.EXCEPTION) {
+            if(state == State.RETURN ) {
                 return;
+            }
+            if(state == State.EXCEPTION) {
+                throw new FlowExecutionException(exceptionMessage);
             }
             if(stack.peek() != this) {
                 return;

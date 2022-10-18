@@ -4,11 +4,12 @@ import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 public interface EntityStore<T extends Entity> {
 
-    List<T> batchGet(Collection<Long> ids, EntityContext context);
+    List<T> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options);
 
     default void bulk(ChangeList<T> changeList) {
         batchInsert(changeList.inserts());

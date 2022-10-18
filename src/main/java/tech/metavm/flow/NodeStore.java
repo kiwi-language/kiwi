@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityStore;
+import tech.metavm.entity.LoadingOption;
+import tech.metavm.flow.persistence.FlowMapper;
 import tech.metavm.flow.persistence.NodeMapper;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.util.NncUtils;
@@ -17,14 +19,11 @@ public class NodeStore implements EntityStore<NodeRT> {
     @Autowired
     private NodeMapper nodeMapper;
 
-    @Autowired
-    private FlowStore flowStore;
-
     @Override
-    public List<NodeRT> batchGet(Collection<Long> ids, EntityContext context) {
+    public List<NodeRT> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
         List<NodePO> nodePOs =  nodeMapper.selectByIds(ids);
         Map<Long, List<NodePO>> nodeMap = NncUtils.toMultiMap(nodePOs, NodePO::getFlowId);
-        List<FlowRT> flows = flowStore.batchGet(nodeMap.keySet(), context);
+        List<FlowRT> flows = context.batchGet(FlowRT.class, nodeMap.keySet());
         Map<Long, FlowRT> flowMap = NncUtils.toMap(flows, Entity::getId);
         List<NodeRT> result = new ArrayList<>();
         for (Map.Entry<Long, List<NodePO>> entry : nodeMap.entrySet()) {

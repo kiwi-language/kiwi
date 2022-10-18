@@ -20,15 +20,16 @@ public class FlowRT extends Entity {
     private final Type type;
     private final ScopeRT rootScope;
     private final Type inputType;
-    private Long outputTypeId;
+    private final Type outputType;
 
     private final transient EntityColl<ScopeRT> scopes = new EntityColl<>();
     private final transient EntityColl<NodeRT<?>> nodes = new EntityColl<>();
     private transient long version = 1L;
 
-    public FlowRT(FlowDTO flowDTO, Type inputType, EntityContext context) {
+    public FlowRT(FlowDTO flowDTO, Type inputType, Type outputType, EntityContext context) {
         super(context);
         this.inputType = inputType;
+        this.outputType = outputType;
         setName(flowDTO.name());
         type = context.getType(flowDTO.typeId());
         rootScope = new ScopeRT(this);
@@ -38,6 +39,7 @@ public class FlowRT extends Entity {
         super(flowPO.getId(), context);
         this.type = getTypeFromContext(flowPO.getTypeId());
         this.inputType = getTypeFromContext(flowPO.getInputTypeId());
+        this.outputType = getTypeFromContext(flowPO.getOutputTypeId());
         setName(flowPO.getName());
 
         if(NncUtils.isNotEmpty(scopePOs)) {
@@ -101,7 +103,9 @@ public class FlowRT extends Entity {
                 name,
                 type.getId(),
                 rootScope.toDTO(true),
-                getType().toDTO()
+                getType().toDTO(),
+                inputType.getId(),
+                outputType.getId()
         );
     }
 
@@ -121,7 +125,8 @@ public class FlowRT extends Entity {
                 name,
                 type.getId(),
                 rootScope.getId(),
-                inputType.getId()
+                inputType.getId(),
+                outputType.getId()
         );
     }
 
@@ -146,7 +151,7 @@ public class FlowRT extends Entity {
     }
 
     public Type getOutputType() {
-        return NncUtils.get(outputTypeId, context::getType);
+        return outputType;
     }
 
     public NodeRT<?> getNode(long id) {
@@ -165,6 +170,17 @@ public class FlowRT extends Entity {
     void removeNode(NodeRT<?> node) {
         nodes.remove(node);
         version++;
+    }
+
+    void remove() {
+        scopes.forEach(ScopeRT::remove);
+        if(inputType.isAnonymous()) {
+            inputType.remove();
+        }
+        if(outputType.isAnonymous()) {
+            outputType.remove();
+        }
+        context.remove(this);
     }
 
     public NodeRT<?> getRootNode() {

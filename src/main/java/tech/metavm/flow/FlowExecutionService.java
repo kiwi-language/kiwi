@@ -28,15 +28,16 @@ public class FlowExecutionService {
     @Autowired
     private InstanceLogService instanceLogService;
 
-    public void execute(FlowExecutionRequest request) {
+    public InstanceDTO execute(FlowExecutionRequest request) {
         EntityContext context = newContext();
         FlowRT flow = context.get(FlowRT.class, request.flowId());
         InstanceContext instanceContext = newInstanceContext(context);
         Instance self = instanceContext.get(request.instanceId());
         InstanceDTO argument = createArgument(flow.getInputType().getId(), request.fields());
         FlowStack stack = new FlowStack(flow, self, argument, instanceContext);
-        stack.execute();
+        InstanceDTO result = stack.execute();
         processLogs(instanceContext);
+        return result;
     }
 
     private InstanceDTO createArgument(long typeId, List<FieldValueDTO> fields) {

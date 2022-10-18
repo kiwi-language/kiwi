@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityStore;
+import tech.metavm.entity.LoadingOption;
 import tech.metavm.flow.persistence.ScopeMapper;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.util.NncUtils;
@@ -16,14 +17,11 @@ public class ScopeStore implements EntityStore<ScopeRT> {
     @Autowired
     private ScopeMapper scopeMapper;
 
-    @Autowired
-    private FlowStore flowStore;
-
     @Override
-    public List<ScopeRT> batchGet(Collection<Long> ids, EntityContext context) {
+    public List<ScopeRT> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
         List<ScopePO> scopePOs = scopeMapper.batchSelect(ids);
         Set<Long> flowIds = NncUtils.mapUnique(scopePOs, ScopePO::getFlowId);
-        List<FlowRT> flows = flowStore.batchGet(flowIds, context);
+        List<FlowRT> flows = context.batchGet(FlowRT.class, flowIds, options);
         Map<Long, FlowRT> flowMap = NncUtils.toEntityMap(flows);
         List<ScopeRT> scopes = new ArrayList<>();
         for (ScopePO scopePO : scopePOs) {

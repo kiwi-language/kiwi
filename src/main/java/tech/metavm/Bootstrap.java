@@ -1,10 +1,15 @@
 package tech.metavm;
 
 import javassist.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Bootstrap {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(Bootstrap.class);
+
     public static void main(String[] args) throws Throwable {
+        LOGGER.info("Start from Bootstrap");
         ClassLoader appClassLoader = Bootstrap.class.getClassLoader();
         ClassPool pool = ClassPool.getDefault();
         Loader loader = new Loader(appClassLoader, pool);

@@ -10,11 +10,12 @@
     <result column="type_id" jdbcType="BIGINT" property="typeId" />
     <result column="root_scope_id" jdbcType="BIGINT" property="rootScopeId"/>
     <result column="input_type_id" jdbcType="BIGINT" property="inputTypeId"/>
+    <result column="output_type_id" jdbcType="BIGINT" property="outputTypeId"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, `name`, type_id, root_scope_id, input_type_id
+    id, tenant_id, `name`, type_id, root_scope_id, input_type_id, output_type_id
   </sql>
 
   <select id="selectByIds" parameterType="java.lang.Long" resultMap="BaseResultMap">
@@ -42,10 +43,11 @@
 
   <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
     <!--@mbg.generated-->
-    insert into flow (id, tenant_id, `name`, type_id, root_scope_id, input_type_id)
+    insert into flow (id, tenant_id, `name`, type_id, root_scope_id, input_type_id, output_type_id)
     values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.tenantId}, #{item.name},  #{item.typeId}, #{item.rootScopeId}, #{item.inputTypeId})
+      (#{item.id}, #{item.tenantId}, #{item.name},  #{item.typeId}, #{item.rootScopeId}, #{item.inputTypeId}
+      ,#{item.outputTypeId})
     </foreach>
 
   </insert>
@@ -98,6 +100,28 @@
     <if test="name != null and name != ''">
       and name like concat('%', #{name}, '%')
     </if>
+  </select>
+
+  <select id="selectByInputTypeIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    flow
+    where deleted_at = 0 and input_type_id in
+    <foreach collection="collection" item="inputTypeId" separator="," open="(" close=")">
+      #{inputTypeId}
+    </foreach>
+  </select>
+
+  <select id="selectByOwnerIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    flow
+    where deleted_at = 0 and type_id in
+    <foreach collection="collection" item="typeId" separator="," open="(" close=")">
+      #{typeId}
+    </foreach>
   </select>
 
 </mapper>

@@ -5,6 +5,8 @@ import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.object.instance.query.Expression;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.util.FlowExecutionException;
+import tech.metavm.util.NncUtils;
 
 import java.util.LinkedList;
 
@@ -21,7 +23,7 @@ public class FlowStack {
         stack.push(new FlowFrame(flow, self, argument, this));
     }
 
-    public void execute() {
+    public InstanceDTO execute() {
         while (!stack.isEmpty()) {
             FlowFrame frame = stack.peek();
             frame.execute();
@@ -35,10 +37,11 @@ public class FlowStack {
                 }
             }
             else if(frame.getState() == FlowFrame.State.EXCEPTION) {
-                return;
+                throw new FlowExecutionException("未知错误");
             }
         }
         instanceContext.finish();
+        return NncUtils.get(ret, Instance::toDTO);
     }
 
     FlowFrame pop() {

@@ -1,261 +1,40 @@
 {
-  "code": 0,
-  "message": null,
-  "data": {
-    "id": 1440,
-    "name": "出库",
-    "typeId": 21,
-    "rootScope": {
-      "id": 1444,
-      "nodes": [
-        {
-          "id": 1442,
-          "flowId": 1440,
-          "name": "当前记录",
-          "type": 0,
-          "prevId": null,
-          "outputTypeId": 21,
-          "param": null,
-          "outputType": {
-            "id": 21,
-            "name": "商品",
-            "type": 0,
-            "ephemeral": false,
-            "baseTypeId": null,
-            "desc": "商品信息",
-            "titleField": {
-              "name": "标题",
-              "type": 11,
-              "unique": false,
-              "defaultValue": null
-            },
-            "fields": [
-              {
-                "id": 96,
-                "name": "标题",
-                "type": 11,
-                "access": 1,
-                "required": true,
-                "defaultValue": null,
-                "unique": false,
-                "asTitle": true,
-                "multiValued": false,
-                "ownerId": 21,
-                "targetId": null,
-                "targetName": "文本",
-                "choiceOptions": [],
-                "typeId": 66
-              },
-              {
-                "id": 97,
-                "name": "库存",
-                "type": 13,
-                "access": 1,
-                "required": true,
-                "defaultValue": null,
-                "unique": false,
-                "asTitle": false,
-                "multiValued": false,
-                "ownerId": 21,
-                "targetId": null,
-                "targetName": "整数",
-                "choiceOptions": [],
-                "typeId": 69
-              },
-              {
-                "id": 98,
-                "name": "价格",
-                "type": 12,
-                "access": 1,
-                "required": true,
-                "defaultValue": null,
-                "unique": false,
-                "asTitle": false,
-                "multiValued": false,
-                "ownerId": 21,
-                "targetId": null,
-                "targetName": "数值",
-                "choiceOptions": [],
-                "typeId": 68
-              },
-              {
-                "id": 1099,
-                "name": "已上架",
-                "type": 16,
-                "access": 1,
-                "required": true,
-                "defaultValue": null,
-                "unique": false,
-                "asTitle": false,
-                "multiValued": false,
-                "ownerId": 21,
-                "targetId": null,
-                "targetName": "是否",
-                "choiceOptions": [],
-                "typeId": 67
-              }
-            ]
-          },
-          "scopeId": 1444
-        },
-        {
-          "id": 1443,
-          "flowId": 1440,
-          "name": "流程输入",
-          "type": 1,
-          "prevId": 1442,
-          "outputTypeId": 1441,
-          "param": {
-            "type": "1",
-            "typeId": 1441,
-            "fields": [
-              {
-                "id": 1445,
-                "name": "出库数量",
-                "type": 13,
-                "targetId": null,
-                "defaultValue": null,
-                "required": true
-              }
-            ]
-          },
-          "outputType": {
-            "id": 1441,
-            "name": "出库流程输入",
-            "type": 3,
-            "ephemeral": true,
-            "baseTypeId": null,
-            "desc": "流程输入",
-            "titleField": null,
-            "fields": [
-              {
-                "id": 1445,
-                "name": "出库数量",
-                "type": 13,
-                "access": 1,
-                "required": true,
-                "defaultValue": null,
-                "unique": false,
-                "asTitle": false,
-                "multiValued": false,
-                "ownerId": 1441,
-                "targetId": null,
-                "targetName": "整数",
-                "choiceOptions": [],
-                "typeId": 69
-              }
-            ]
-          },
-          "scopeId": 1444
-        },
-        {
-          "id": 1446,
-          "flowId": 1440,
-          "name": "子流程",
-          "type": 12,
-          "prevId": 1443,
-          "outputTypeId": null,
-          "param": {
-            "type": "12",
-            "self": {
-              "type": 2,
-              "value": "1442"
-            },
-            "flowId": 1226,
-            "fields": [
-              {
-                "fieldId": 1229,
-                "value": {
-                  "type": 2,
-                  "value": "1443-1445"
-                }
-              }
-            ]
-          },
-          "outputType": null,
-          "scopeId": 1444
-        }
-      ]
+  "typeId": 22,
+  "fieldParams": [
+    {
+      "fieldId": 92,
+      "value": {
+        "type": 1,
+        "value": "0002"
+      }
     },
-    "type": {
-      "id": 21,
-      "name": "商品",
-      "type": 0,
-      "ephemeral": false,
-      "baseTypeId": null,
-      "desc": "商品信息",
-      "titleField": {
-        "name": "标题",
-        "type": 11,
-        "unique": false,
-        "defaultValue": null
-      },
-      "fields": [
-        {
-          "id": 96,
-          "name": "标题",
-          "type": 11,
-          "access": 1,
-          "required": true,
-          "defaultValue": null,
-          "unique": false,
-          "asTitle": true,
-          "multiValued": false,
-          "ownerId": 21,
-          "targetId": null,
-          "targetName": "文本",
-          "choiceOptions": [],
-          "typeId": 66
-        },
-        {
-          "id": 97,
-          "name": "库存",
-          "type": 13,
-          "access": 1,
-          "required": true,
-          "defaultValue": null,
-          "unique": false,
-          "asTitle": false,
-          "multiValued": false,
-          "ownerId": 21,
-          "targetId": null,
-          "targetName": "整数",
-          "choiceOptions": [],
-          "typeId": 69
-        },
-        {
-          "id": 98,
-          "name": "价格",
-          "type": 12,
-          "access": 1,
-          "required": true,
-          "defaultValue": null,
-          "unique": false,
-          "asTitle": false,
-          "multiValued": false,
-          "ownerId": 21,
-          "targetId": null,
-          "targetName": "数值",
-          "choiceOptions": [],
-          "typeId": 68
-        },
-        {
-          "id": 1099,
-          "name": "已上架",
-          "type": 16,
-          "access": 1,
-          "required": true,
-          "defaultValue": null,
-          "unique": false,
-          "asTitle": false,
-          "multiValued": false,
-          "ownerId": 21,
-          "targetId": null,
-          "targetName": "是否",
-          "choiceOptions": [],
-          "typeId": 67
-        }
-      ]
+    {
+      "fieldId": 93,
+      "value": {
+        "type": 3,
+        "value": "$1597.$98 - $1602.$1580"
+      }
+    },
+    {
+      "fieldId": 94,
+      "value": {
+        "type": 2,
+        "value": "1597"
+      }
+    },
+    {
+      "fieldId": 95,
+      "value": {
+        "type": 2,
+        "value": "1593-1599"
+      }
+    },
+    {
+      "fieldId": 1604,
+      "value": {
+        "type": 2,
+        "value": "1593-1601"
+      }
     }
-  }
+  ]
 }

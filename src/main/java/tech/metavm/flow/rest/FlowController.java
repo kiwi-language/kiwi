@@ -2,10 +2,13 @@ package tech.metavm.flow.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
+import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.util.FlowExecutionException;
 
 @RestController
 @RequestMapping("/flow")
@@ -59,6 +62,11 @@ public class FlowController {
         }
     }
 
+    @GetMapping("/node/{id:[0-9]+}")
+    public Result<NodeDTO> getNode(@PathVariable("id") long nodeId) {
+        return Result.success(flowManager.getNode(nodeId));
+    }
+
     @DeleteMapping("/node/{id:[0-9]+}")
     public Result<Void> deleteNode(@PathVariable("id") long nodeId) {
         flowManager.deleteNode(nodeId);
@@ -83,9 +91,13 @@ public class FlowController {
     }
 
     @PostMapping("/execute")
-    public Result<Void> execute(@RequestBody FlowExecutionRequest request) {
-        flowExecutionService.execute(request);
-        return Result.success(null);
+    public Result<InstanceDTO> execute(@RequestBody FlowExecutionRequest request) {
+        try {
+            return Result.success(flowExecutionService.execute(request));
+        }
+        catch (FlowExecutionException e) {
+            return Result.failure(ErrorCode.FLOW_EXECUTION_FAILURE, new Object[] {e.getMessage()});
+        }
     }
 
 }

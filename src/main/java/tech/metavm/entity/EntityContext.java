@@ -29,9 +29,18 @@ public class EntityContext {
     }
 
     public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids) {
+        return batchGet(klass, ids, LoadingOption.none());
+    }
+
+    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids,
+                                               LoadingOption firstOption, LoadingOption...restOptions) {
+        return batchGet(klass, ids, LoadingOption.of(firstOption, restOptions));
+    }
+
+    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids, EnumSet<LoadingOption> options) {
         Class<?> entityType = EntityUtils.getEntityType(klass);
         List<EntityKey> keys = NncUtils.map(ids, id -> new EntityKey(entityType, id));
-        ensureLoaded(keys);
+        ensureLoaded(keys, options);
         return  (List<T>) NncUtils.map(keys, bufferContext::get);
     }
 
@@ -47,7 +56,7 @@ public class EntityContext {
     }
 
     public void remove(Entity entity) {
-        ensureLoaded(List.of(Objects.requireNonNull(entity.key())));
+        ensureLoaded(List.of(Objects.requireNonNull(entity.key())), EnumSet.noneOf(LoadingOption.class));
         Entity trueEntity = EntityUtils.extractTrueEntity(entity);
         if(trueEntity != null) {
             bufferContext.remove(trueEntity);
@@ -102,19 +111,19 @@ public class EntityContext {
         NncUtils.biForEach(newEntities, ids, Entity::initId);
     }
 
-    private void ensureLoaded(List<EntityKey> keys) {
+    private void ensureLoaded(List<EntityKey> keys, EnumSet<LoadingOption> options) {
         List<EntityKey> keysToLoad = NncUtils.filterNot(keys, this::isLoaded);
         if(NncUtils.isNotEmpty(keysToLoad)) {
-            doLoad(keysToLoad);
+            doLoad(keysToLoad, options);
         }
     }
 
-    private void doLoad(List<EntityKey> keys) {
+    private void doLoad(List<EntityKey> keys, EnumSet<LoadingOption> options) {
         loaded.addAll(keys);
         Map<Class<?>, List<Long>> idGroups = NncUtils.groupBy(keys, EntityKey::type, EntityKey::id);
         for (Map.Entry<Class<?>, List<Long>> entry : idGroups.entrySet()) {
             EntityStore<?> store = storeRegistry.getStore((Class)entry.getKey());
-            store.batchGet(NncUtils.deduplicate(entry.getValue()), this);
+            store.batchGet(NncUtils.deduplicate(entry.getValue()), this, options);
         }
     }
 
@@ -172,10 +181,10 @@ public class EntityContext {
             baseType = getType(fieldDTO.targetId());
         }
         if(fieldDTO.multiValued()) {
-            return getOrCreateArrayType(baseType);
+            return getArrayType(baseType);
         }
         else if(fieldDTO.nullable()) {
-            return getOrCreateNullableType(baseType);
+            return getNullableType(baseType);
         }
         else {
             return baseType;
@@ -195,7 +204,7 @@ public class EntityContext {
 //        }
 //    }
 
-    private Type getOrCreateNullableType(Type baseType) {
+    public Type getNullableType(Type baseType) {
         Type nullableType = getTypeStore().getNullableType(baseType, this);
         return Objects.requireNonNullElseGet(nullableType, () -> createNullableType(baseType));
     }
@@ -214,7 +223,7 @@ public class EntityContext {
         return nullableType;
     }
 
-    private Type getOrCreateArrayType(Type baseType) {
+    public Type getArrayType(Type baseType) {
         Type arrayType = getTypeStore().getArrayType(baseType, this);
         return Objects.requireNonNullElseGet(arrayType, () -> createArrayType(baseType));
     }
@@ -242,7 +251,7 @@ public class EntityContext {
     }
 
     public void loadFieldsAndOptions(List<Type> types) {
-        ((TypeStore) getStore(Type.class)).loadFieldsAndOptions(types, this);
+        ((TypeStore) getStore(Type.class)).loadFields(types, this);
     }
 
     private static class SubContext {
@@ -304,8 +313,4 @@ public class EntityContext {
 
     }
 
-    public static record EntityKey (
-            Class<?> type,
-            long id
-    ) {}
 }

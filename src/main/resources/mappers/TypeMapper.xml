@@ -30,11 +30,17 @@
     select count(1) from type where
     tenant_id=#{tenantId}
     and deleted_at = 0
-    <if test="type != null">
-      and category = #{type}
+    <if test="categories != null">
+      and category in
+      <foreach collection="categories" item="category" open="(" close=")" separator=",">
+        #{category.code}
+      </foreach>
     </if>
     <if test="searchText != null">
       and name like CONCAT('%', #{searchText}, '%')
+    </if>
+    <if test="anonymous != null">
+      and anonymous = #{anonymous}
     </if>
   </select>
 
@@ -44,16 +50,22 @@
     from
     type
     where deleted_at = 0
-    <if test="type != null">
-      and category = #{type}
+    <if test="categories != null">
+      and category in
+      <foreach collection="categories" item="category" open="(" close=")" separator=",">
+        #{category.code}
+      </foreach>
     </if>
     <if test="searchText != null">
       and name like CONCAT('%', #{searchText}, '%')
     </if>
+    <if test="anonymous != null">
+      and anonymous = #{anonymous}
+    </if>
     limit #{start}, #{limit}
   </select>
 
-  <select id="selectByElementTypeId" resultMap="BaseResultMap">
+  <select id="selectByBaseTypeId" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
     from

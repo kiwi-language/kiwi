@@ -27,6 +27,8 @@ public interface FieldMapper {
 
     List<FieldPO> selectByIds(Collection<Long> ids);
 
+    List<FieldPO> selectByTypeIds(Collection<Long> ids);
+
     List<FieldPO> selectByOwnerIds(@Param("tenantId") long tenantId,
                                    @Param("ownerIds") List<Long> ownerIds);
 

@@ -8,16 +8,15 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.flow.FlowManager;
 import tech.metavm.object.meta.persistence.query.TypeQuery;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TitleFieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.OptionUtil;
+import tech.metavm.util.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -27,22 +26,31 @@ public class TypeManager {
     public static final Logger LOGGER = LoggerFactory.getLogger(TypeManager.class);
 
     @Autowired
-    private TypeStore metadataStore;
+    private TypeStore typeStore;
+
+    @Autowired
+    private FieldStore fieldStore;
+
+    @Autowired
+    private FlowManager flowManager;
 
     @Autowired
     private EntityContextFactory contextFactory;
 
-    public Page<TypeDTO> query(String searchText, int page, int pageSize) {
+    public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, int page, int pageSize) {
         EntityContext context = newContext();
+        List<TypeCategory> categories = categoryCodes != null ?
+                NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired) : List.of(TypeCategory.TABLE);
         TypeQuery query = new TypeQuery(
                 ContextUtil.getTenantId(),
-                TypeCategory.TABLE.code(),
+                categories,
                 searchText,
+                false,
                 page,
                 pageSize
         );
-        long total = metadataStore.count(query);
-        List<Type> types = metadataStore.query(query, context);
+        long total = typeStore.count(query);
+        List<Type> types = typeStore.query(query, context);
         List<TypeDTO> dtoList = NncUtils.map(types, Type::toDTO);
         return new Page<>(dtoList, total);
     }
@@ -50,6 +58,35 @@ public class TypeManager {
     public TypeDTO getType(long id) {
         Type type = newContext().getType(id);
         return NncUtils.get(type, Type::toDTO);
+    }
+
+    public TypeDTO getArrayType(long id) {
+        return getDecoratedType(id, type -> type.getContext().getArrayType(type));
+    }
+
+    public TypeDTO getNullableType(long id) {
+        return getDecoratedType(id, type -> type.getContext().getNullableType(type));
+    }
+
+    public TypeDTO getNullableArrayType(long id) {
+        return getDecoratedType(id, type -> {
+            EntityContext context = type.getContext();
+            Type nullableType = context.getNullableType(type);
+            return context.getArrayType(nullableType);
+        });
+    }
+
+    private TypeDTO getDecoratedType(long id, java.util.function.Function<Type, Type> function) {
+        EntityContext context = newContext();
+        Type type = context.getType(id);
+        if(type == null) {
+            throw BusinessException.typeNotFound(id);
+        }
+        Type decoratedType = function.apply(type);
+        if(decoratedType.getId() == null) {
+            context.sync();
+        }
+        return decoratedType.toDTO();
     }
 
     @Transactional
@@ -152,9 +189,26 @@ public class TypeManager {
         if(type == null) {
             return;
         }
-        type.getFields().forEach(context::remove);
-        context.remove(type);
+        deleteType0(type, new HashSet<>());
         context.sync();
+    }
+
+    private void deleteType0(Type type, Set<Long> visited) {
+        if(visited.contains(type.getId())) {
+            throw new InternalException("Circular reference. type: " + type + " is already visited");
+        }
+        visited.add(type.getId());
+        EntityContext context = type.getContext();
+        List<Type> referringTypes = typeStore.getByBaseType(type, context);
+        if(NncUtils.isNotEmpty(referringTypes)) {
+            referringTypes.forEach(t -> deleteType0(t, visited));
+        }
+        List<String> referringFieldNames = fieldStore.getReferringFieldNames(type);
+        if(NncUtils.isNotEmpty(referringFieldNames)) {
+            throw BusinessException.typeReferredByFields(type, referringFieldNames);
+        }
+        flowManager.deleteByOwner(type);
+        type.remove();
     }
 
     public long saveField(FieldDTO fieldDTO) {

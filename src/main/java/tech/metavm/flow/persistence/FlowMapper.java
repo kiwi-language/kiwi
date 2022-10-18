@@ -15,6 +15,10 @@ public interface FlowMapper {
 
     List<FlowPO> selectByIds(Collection<Long> ids);
 
+    List<FlowPO> selectByOwnerIds(Collection<Long> ownerIds);
+
+    List<FlowPO> selectByInputTypeIds(Collection<Long> inputTypeIds);
+
     int batchUpdate(List<FlowPO> record);
 
     List<FlowPO> query(FlowQuery flowQueryDTO);

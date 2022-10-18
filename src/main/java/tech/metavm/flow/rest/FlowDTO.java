@@ -10,7 +10,9 @@ public record FlowDTO (
         String name,
         Long typeId,
         ScopeDTO rootScope,
-        TypeDTO type
+        TypeDTO type,
+        long inputTypeId,
+        long outputTypeId
 ) {
 
     public void requiredId() {

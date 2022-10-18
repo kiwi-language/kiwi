@@ -7,7 +7,7 @@ public enum ErrorCode {
     EMPTY_REQUEST(102,"请求参数为空"),
     INVALID_PARAMETERS(103, "请求参数错误：{}"),
 
-    // 模型相关错误
+    // 元数据相关错误
     INVALID_N_CLASS(201, "对象'{}'配置错误，原因: {}"),
     INVALID_N_FIELD(202, "属性'{}'配置错误，原因: {}"),
     DELETE_N_CLASS_ERROR(203, "对象'{}'删除失败，原因: {}"),
@@ -17,6 +17,8 @@ public enum ErrorCode {
     INVALID_SYMBOL_NAME(207, "名称{}不符合要求"),
     DUPLICATE_CHOICE_OPTION(208, "选项重复, ID: {}, 名称: {}, 序号: {}"),
     DUPLICATE_CHOICE_OPTION_PROP(209, "选项{}重复: {}"),
+    ERROR_DELETING_TYPE(209, "删除失败，原因: {}"),
+    TYPE_NOT_FOUND(210, "类型不存在, ID: {}"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "实例不存在(objectId: {})"),
@@ -32,11 +34,13 @@ public enum ErrorCode {
     MISSING_END_NODE(411, "缺失流程结束节点"),
     STACK_UNDERFLOW(412, "栈下溢出"),
     ILLEGAL_ACCESS(413, "无权限方案"),
+    FLOW_EXECUTION_FAILURE(414, "流程执行失败: {}"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),
     EXPRESSION_INVALID_VALUE(502, "表达式值错误，期望类型为：{}, 实际值微：{}"),
     FUNCTION_ARGUMENTS_INVALID(503, "函数{}参数不正确"),
+
 
 
     ;

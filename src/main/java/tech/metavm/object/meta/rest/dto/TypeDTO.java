@@ -7,11 +7,16 @@ public record TypeDTO(
         String name,
         int type,
         boolean ephemeral,
+        boolean anonymous,
         Long baseTypeId,
+        TypeDTO baseType,
         String desc,
         TitleFieldDTO titleField,
-        List<FieldDTO> fields
+        List<FieldDTO> fields,
+        List<ChoiceOptionDTO> choiceOptions
 // TODO return flow summaries , List<FlowSummaryDTO> flows
 ) {
+
+
 
 }

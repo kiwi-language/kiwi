@@ -95,6 +95,31 @@ public class NncUtils {
         return !isEmpty(coll);
     }
 
+    public static boolean isNotEmpty(String str) {
+        return !isEmpty(str);
+    }
+
+    public static long random() {
+        return new Random().nextLong();
+    }
+
+    public static List<Integer> splitIntegers(String str) {
+        if(isEmpty(str)) {
+            return List.of();
+        }
+        String[] splits = str.split(",");
+        List<Integer> results = new ArrayList<>();
+        for (String split : splits) {
+            try {
+                results.add(Integer.parseInt(split.trim()));
+            }
+            catch (NumberFormatException e) {
+                throw new InternalException("string '" + str + "' is not a valid integer list");
+            }
+        }
+        return results;
+    }
+
     public static <T> T first(List<T> list) {
         return isNotEmpty(list) ? list.get(0) : null;
     }

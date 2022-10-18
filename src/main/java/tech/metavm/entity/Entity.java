@@ -27,11 +27,11 @@ public class Entity {
         return id;
     }
 
-    public final EntityContext.EntityKey key() {
+    public final EntityKey key() {
         if(id == null) {
             return null;
         }
-        return new EntityContext.EntityKey(EntityUtils.getEntityType(this), id);
+        return new EntityKey(EntityUtils.getEntityType(this), id);
     }
 
     public final boolean isIdNull() {

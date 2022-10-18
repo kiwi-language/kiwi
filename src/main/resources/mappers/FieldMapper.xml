@@ -153,4 +153,17 @@
     </foreach>
   </select>
 
+  <select id="selectByTypeIds" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    field
+    where
+    deleted_at = 0 and
+    type_id in
+    <foreach collection="collection" item="typeId" separator="," open="(" close=")">
+      #{typeId}
+    </foreach>
+  </select>
+
 </mapper>

@@ -3,7 +3,6 @@ package tech.metavm.object.meta;
 import tech.metavm.constant.ColumnNames;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
 
