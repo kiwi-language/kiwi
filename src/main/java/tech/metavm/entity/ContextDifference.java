@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Pair;
 
@@ -19,7 +18,7 @@ public class ContextDifference {
         if(entity1 == null && entity2 == null) {
             return;
         }
-        Class<?> entityType = EntityUtils.getEntityType(NncUtils.anyNoneNull(entity1, entity2).getClass());
+        Class<?> entityType = EntityUtils.getEntityType(NncUtils.firstNonNull(entity1, entity2).getClass());
         EntityChange change = changeMap.computeIfAbsent(entityType, (k) -> new EntityChange());
         if(entity1 == null) {
             change.addToInsert(entity2);

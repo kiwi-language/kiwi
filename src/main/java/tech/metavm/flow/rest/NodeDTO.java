@@ -29,6 +29,20 @@ public record NodeDTO(
         );
     }
 
+    public NodeDTO copyWithNewParam(Object newParam) {
+        return new NodeDTO(
+                id,
+                flowId,
+                name,
+                type,
+                prevId,
+                outputTypeId,
+                newParam,
+                outputType,
+                scopeId
+        );
+    }
+
     public void ensureIdSet() {
         if(id == null) {
             throw BusinessException.invalidParams("objectId is required");

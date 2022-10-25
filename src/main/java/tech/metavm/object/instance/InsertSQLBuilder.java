@@ -22,14 +22,14 @@ public class InsertSQLBuilder {
     public String buildInsert() {
         List<String> allColumns = new ArrayList<>(columns);
         allColumns.add(ColumnNames.TENANT_ID);
-        allColumns.add(ColumnNames.N_CLASS_ID);
+        allColumns.add(ColumnNames.TYPE_ID);
 
         List<String> escapedColumns = NncUtils.map(allColumns, col -> "`" + col + "`");
         List<String> placeHolders = NncUtils.map(allColumns, col -> "?");
         return  "INSERT INTO `" + table +
-                "` (" +
+                "` (id, " +
                 NncUtils.join(escapedColumns) +
-                ") VALUES (" +
+                ") VALUES (?, " +
                 NncUtils.join(placeHolders) +
                 ")";
     }

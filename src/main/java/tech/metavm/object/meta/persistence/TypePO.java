@@ -1,5 +1,7 @@
 package tech.metavm.object.meta.persistence;
 
+import java.util.List;
+
 public class TypePO {
 
     private Long id;
@@ -16,7 +18,9 @@ public class TypePO {
 
     private Boolean anonymous;
 
-    private Long baseTypeId;
+    private Long rawTypeId;
+
+    private List<Long> typeArgumentIds;
 
     public Long getId() {
         return id;
@@ -62,12 +66,20 @@ public class TypePO {
         this.ephemeral = ephemeral;
     }
 
-    public Long getBaseTypeId() {
-        return baseTypeId;
+    public Long getRawTypeId() {
+        return rawTypeId;
     }
 
-    public void setBaseTypeId(Long baseTypeId) {
-        this.baseTypeId = baseTypeId;
+    public void setRawTypeId(Long rawTypeId) {
+        this.rawTypeId = rawTypeId;
+    }
+
+    public List<Long> getTypeArgumentIds() {
+        return typeArgumentIds;
+    }
+
+    public void setTypeArgumentIds(List<Long> typeArgumentIds) {
+        this.typeArgumentIds = typeArgumentIds;
     }
 
     public Boolean getAnonymous() {

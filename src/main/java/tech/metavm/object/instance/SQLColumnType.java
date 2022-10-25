@@ -5,7 +5,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.*;
 
-public enum ColumnType {
+public enum SQLColumnType {
 
     INT64("bigint", "long","l", 10),
     INT32("int", "integer", "i", 10),
@@ -33,14 +33,14 @@ public enum ColumnType {
 
     public static final List<String> COLUMN_NAMES;
 
-    final static Map<ColumnType, List<Column>> COLUMN_MAP;
+    final static Map<SQLColumnType, List<Column>> COLUMN_MAP;
 
     static {
         List<Column> columns = new ArrayList<>();
         List<String> columnNames = new ArrayList<>();
         List<Column> sqlColumns = new ArrayList<>();
-        Map<ColumnType, List<Column>> columnMap = new HashMap<>();
-        for (ColumnType columnType : values()) {
+        Map<SQLColumnType, List<Column>> columnMap = new HashMap<>();
+        for (SQLColumnType columnType : values()) {
             for(int i = 0; i < columnType.count; i++) {
                 Column column = new Column(columnType.prefix()+ i, columnType);
                 columns.add(column);
@@ -58,15 +58,15 @@ public enum ColumnType {
         SQL_COLUMNS_NAMES = NncUtils.map(sqlColumns, Column::name);
     }
 
-    ColumnType(String sqlName, String esType, String prefix, int count) {
+    SQLColumnType(String sqlName, String esType, String prefix, int count) {
         this.sqlType = sqlName;
         this.esType = esType;
         this.prefix = prefix;
         this.count = count;
     }
 
-    public static ColumnType getByColumnName(String columnName) {
-        for (ColumnType columnType : values()) {
+    public static SQLColumnType getByColumnName(String columnName) {
+        for (SQLColumnType columnType : values()) {
             if(columnType.checkColumnName(columnName)) {
                 return columnType;
             }
@@ -90,9 +90,9 @@ public enum ColumnType {
         return columnName != null && prefix != null && columnName.startsWith(prefix);
     }
 
-    public static Map<ColumnType, Queue<Column>> getColumnMap(List<Column> usedColumns) {
+    public static Map<SQLColumnType, Queue<Column>> getColumnMap(List<Column> usedColumns) {
         Set<Column> usedColumnSet = new HashSet<>(usedColumns);
-        Map<ColumnType, Queue<Column>> result = new HashMap<>();
+        Map<SQLColumnType, Queue<Column>> result = new HashMap<>();
         for (Column column : COLUMNS) {
             if(!usedColumnSet.contains(column)) {
                 result.computeIfAbsent(column.type(), k -> new LinkedList<>()).add(column);

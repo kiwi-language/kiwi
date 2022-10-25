@@ -57,7 +57,7 @@ public class ExpressionUtil {
     public static Expression fieldStartsWith(Field field, String value) {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
-                new FieldExpression(thisObject(field.getOwner()), field),
+                new FieldExpression(thisObject(field.getDeclaringType()), field),
                 new ConstantExpression(value)
         );
     }
@@ -65,7 +65,7 @@ public class ExpressionUtil {
     public static Expression fieldLike(Field field, String value) {
         return new BinaryExpression(
                 Operator.LIKE,
-                new FieldExpression(thisObject(field.getOwner()), field),
+                new FieldExpression(thisObject(field.getDeclaringType()), field),
                 new ConstantExpression(value)
         );
     }
@@ -73,7 +73,7 @@ public class ExpressionUtil {
     public static Expression fieldEq(Field field, Object value) {
         return new BinaryExpression(
                 Operator.EQ,
-                new FieldExpression(thisObject(field.getOwner()), field),
+                new FieldExpression(thisObject(field.getDeclaringType()), field),
                 new ConstantExpression(value)
         );
     }

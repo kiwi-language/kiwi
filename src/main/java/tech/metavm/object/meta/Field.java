@@ -15,7 +15,7 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 
 public class Field extends Entity {
     private String name;
-    private final Type owner;
+    private final Type declaringType;
     private Access access;
     private Object defaultValue;
     private boolean unique;
@@ -23,18 +23,18 @@ public class Field extends Entity {
     private final Column column;
     private Type type;
 
-    public Field(FieldPO po, Type owner, Type type) {
+    public Field(FieldPO po, Type declaringType, Type type) {
         this(
                 po.getId(),
                 po.getName(),
-                owner,
+                declaringType,
                 Access.getByCodeRequired(po.getAccess()),
                 po.getUnique(),
                 po.getAsTitle(),
                 DefaultValueUtil.convertFromStr(po.getDefaultValue(), type),
                 Column.valueOf(po.getColumnName()),
                 type,
-                owner.getContext(),
+                declaringType.getContext(),
                 false
         );
     }
@@ -69,7 +69,7 @@ public class Field extends Entity {
              boolean addToType
     ) {
         super(id, context);
-        this.owner = requireNonNull(owner, "属性所属类型");
+        this.declaringType = requireNonNull(owner, "属性所属类型");
         this.access = requireNonNull(access, "属性访问控制");
         this.type = type;
         this.asTitle = asTitle;
@@ -90,8 +90,8 @@ public class Field extends Entity {
         this.name = NameUtils.checkName(name);
     }
 
-    public Type getOwner() {
-        return owner;
+    public Type getDeclaringType() {
+        return declaringType;
     }
 
     public Access getAccess() {
@@ -111,11 +111,11 @@ public class Field extends Entity {
     }
 
     public void update(FieldDTO update) {
-        if(update.targetId() != null && !Objects.equals(getConcreteType().getId(), update.targetId())) {
-            throw BusinessException.invalidField(this, "关联类型不允许修改");
+        if(update.typeId() != null && !Objects.equals(type.getId(), update.typeId())) {
+            throw BusinessException.invalidField(this, "类型不允许修改");
         }
-        Type type = context.resolveType(update);
-        setType(type);
+//        Type type = context.getType(update.typeId());
+//        setType(type);
         setName(update.name());
         setAccess(Access.getByCodeRequired(update.access()));
         setUnique(update.unique());
@@ -150,16 +150,16 @@ public class Field extends Entity {
     }
 
     public void remove() {
-        owner.removeField(this);
+        declaringType.removeField(this);
         context.remove(this);
     }
 
-    public boolean isComposite() {
-        return !isPrimitive();
+    public boolean isCustomTyped() {
+        return !isGeneralPrimitive();
     }
 
     public boolean isTable() {
-        return type.isTable();
+        return type.isClass();
     }
 
     public boolean isEnum() {
@@ -179,11 +179,11 @@ public class Field extends Entity {
     }
 
     public boolean isInt64() {
-        return getConcreteType().isInt64();
+        return getConcreteType().isLong();
     }
 
     public boolean isNumber() {
-        return getConcreteType().isNumber();
+        return getConcreteType().isDouble();
     }
 
     public boolean isBool() {
@@ -202,6 +202,10 @@ public class Field extends Entity {
         return type.isPrimitive();
     }
 
+    public boolean isGeneralPrimitive() {
+        return type.isNotNull() ? type.isPrimitive() : type.getUnderlyingType().isPrimitive();
+    }
+
     public boolean isUnique() {
         return unique;
     }
@@ -216,7 +220,7 @@ public class Field extends Entity {
 
     public void setAsTitle(boolean asTitle) {
         if(asTitle) {
-            Field titleField = owner.getTileField();
+            Field titleField = declaringType.getTileField();
             if(titleField != null && !titleField.equals(this)) {
                 throw BusinessException.multipleTitleFields();
             }
@@ -224,12 +228,12 @@ public class Field extends Entity {
         this.asTitle = asTitle;
     }
 
-    public List<ChoiceOption> getChoiceOptions() {
-        return getConcreteType().isEnum() ? getConcreteType().getChoiceOptions() : List.of();
+    public List<EnumConstant> getChoiceOptions() {
+        return getConcreteType().isEnum() ? getConcreteType().getEnumConstants() : List.of();
     }
 
-    public ChoiceOption getOption(long id) {
-        return getConcreteType().getChoiceOption(id);
+    public EnumConstant getOption(long id) {
+        return getConcreteType().getEnumConstant(id);
     }
 
     public Column getColumn() {
@@ -249,7 +253,7 @@ public class Field extends Entity {
     }
 
     public String getFullName() {
-        return owner.getName() + "." + name;
+        return declaringType.getName() + "." + name;
     }
 
     public FieldPO toPO() {
@@ -257,10 +261,10 @@ public class Field extends Entity {
         po.setId(id);
         po.setTenantId(ContextUtil.getTenantId());
         po.setName(name);
-        po.setOwnerId(owner.getId());
+        po.setDeclaringTypeId(declaringType.getId());
         po.setUnique(unique);
-        po.setRequired(isNotNull());
-        po.setMultiValued(isArray());
+//        po.setRequired(isNotNull());
+//        po.setMultiValued(isArray());
         po.setDefaultValue(getStrRawDefaultValue());
         po.setAccess(access.code());
         po.setColumnName(NncUtils.get(column, Column::name));
@@ -280,7 +284,7 @@ public class Field extends Entity {
     }
 
     public FieldDTO toDTO() {
-        return toDTO(asTitle);
+        return toDTO(false);
     }
 
     public TitleFieldDTO toTitleDTO() {
@@ -295,22 +299,23 @@ public class Field extends Entity {
         );
     }
 
-    public FieldDTO toDTO(boolean asTitle) {
+    public FieldDTO toDTO(boolean withType) {
         return new FieldDTO(
                 id,
                 name,
-                getConcreteTypeCategory().code(),
+//                getConcreteTypeCategory().code(),
                 access.code(),
-                isNotNull(),
+//                isNotNull(),
                 defaultValue,
                 unique,
                 asTitle,
-                isArray(),
-                owner.getId(),
-                getConcreteType().isPrimitive() ? null : getConcreteType().getId(),
-                getConcreteType().getName(),
-                getChoiceOptionDTOs(),
-                type.getId()
+//                isArray(),
+                declaringType.getId(),
+//                getConcreteType().isPrimitive() ? null : getConcreteType().getId(),
+//                getConcreteType().getName(),
+//                getChoiceOptionDTOs(),
+                type.getId(),
+                withType ? type.toDTO(false, false, false) : null
         );
     }
 
@@ -335,7 +340,7 @@ public class Field extends Entity {
         return equals(that)
                 && Objects.equals(name, that.name)
                 && Objects.equals(type, that.type)
-                && Objects.equals(owner, that.owner)
+                && Objects.equals(declaringType, that.declaringType)
                 && Objects.equals(defaultValue, that.defaultValue)
                 && access == that.access
                 && unique == that.unique;

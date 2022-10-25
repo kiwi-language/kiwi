@@ -20,7 +20,7 @@ public class NodeStore implements EntityStore<NodeRT> {
     private NodeMapper nodeMapper;
 
     @Override
-    public List<NodeRT> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
+    public List<NodeRT> batchGet(Collection<Long> ids, EntityContext context, Set<LoadingOption> options) {
         List<NodePO> nodePOs =  nodeMapper.selectByIds(ids);
         Map<Long, List<NodePO>> nodeMap = NncUtils.toMultiMap(nodePOs, NodePO::getFlowId);
         List<FlowRT> flows = context.batchGet(FlowRT.class, nodeMap.keySet());
@@ -61,11 +61,11 @@ public class NodeStore implements EntityStore<NodeRT> {
     }
 
     @Override
-    public void batchDelete(List<Long> ids) {
-        if(NncUtils.isEmpty(ids)) {
+    public void batchDelete(List<NodeRT> nodes) {
+        if(NncUtils.isEmpty(nodes)) {
             return;
         }
-        nodeMapper.batchDelete(ids);
+        nodeMapper.batchDelete(NncUtils.map(nodes, Entity::getId));
     }
 
     @Override

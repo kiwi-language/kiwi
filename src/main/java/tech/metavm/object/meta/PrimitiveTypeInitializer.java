@@ -19,29 +19,32 @@ public class PrimitiveTypeInitializer {
     private TypeMapper typeMapper;
 
     private static record TypeInfo(
+            long id,
             String name,
             TypeCategory category
     ) {
     }
 
     public static final TypeInfo[] TYPE_INFO_LIST = new TypeInfo[] {
-            new TypeInfo("文本", TypeCategory.STRING),
-            new TypeInfo("是否", TypeCategory.BOOL),
-            new TypeInfo("数值", TypeCategory.DOUBLE),
-            new TypeInfo("整数", TypeCategory.INT64),
-            new TypeInfo("时间", TypeCategory.TIME),
-            new TypeInfo("日期", TypeCategory.DATE),
-            new TypeInfo("INT32", TypeCategory.INT32),
-            new TypeInfo("对象", TypeCategory.OBJECT),
+//            new TypeInfo(1, "对象", TypeCategory.OBJECT),
+            new TypeInfo(4, "INT32", TypeCategory.INT),
+            new TypeInfo(5, "整数", TypeCategory.LONG),
+            new TypeInfo(7, "数值", TypeCategory.DOUBLE),
+            new TypeInfo(8, "是否", TypeCategory.BOOL),
+            new TypeInfo(9, "文本", TypeCategory.STRING),
+            new TypeInfo(10, "时间", TypeCategory.TIME),
+            new TypeInfo(11, "日期", TypeCategory.DATE),
+            new TypeInfo(18, "数组", TypeCategory.CLASS),
+            new TypeInfo(19, "可空", TypeCategory.CLASS),
     };
 
     @Transactional
     public void execute() {
         List<TypePO> primTypes = typeMapper.getPrimitiveTypes();
-        Set<Integer> existingCodes = new HashSet<>(NncUtils.map(primTypes, TypePO::getCategory));
+        Set<Long> existingIds = new HashSet<>(NncUtils.map(primTypes, TypePO::getId));
         List<TypeInfo> types = new ArrayList<>();
         for (TypeInfo typeInfo : TYPE_INFO_LIST) {
-            if(!existingCodes.contains(typeInfo.category.code())) {
+            if(!existingIds.contains(typeInfo.id)) {
                 types.add(typeInfo);
             }
         }
@@ -53,6 +56,7 @@ public class PrimitiveTypeInitializer {
         for (TypeInfo typeInfo : types) {
             TypePO typePO = new TypePO();
             typePO.setTenantId(-1L);
+            typePO.setId(typeInfo.id);
             typePO.setCategory(typeInfo.category.code());
             typePO.setName(typeInfo.name);
             typePO.setEphemeral(true);

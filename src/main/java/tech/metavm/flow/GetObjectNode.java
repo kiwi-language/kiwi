@@ -31,7 +31,7 @@ public class GetObjectNode extends NodeRT<GetObjectParamDTO> {
 
     @Override
     protected void setParam(GetObjectParamDTO param) {
-        objectType = context.getType(param.typeId());
+        objectType = context.getTypeRef(param.typeId());
         objectId = ValueFactory.getValue(param.id(), getParsingContext());
     }
 

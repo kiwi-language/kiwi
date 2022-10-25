@@ -22,7 +22,7 @@ public class ValueFormatter {
             return null;
         }
         if(type.isArray()) {
-            return NncUtils.map((Collection<?>) rawValue, item -> parse(item, type.getBaseType()));
+            return NncUtils.map((Collection<?>) rawValue, item -> parse(item, type.getElementType()));
         }
         else {
             return parseOne(rawValue, type);
@@ -31,32 +31,28 @@ public class ValueFormatter {
 
     private static Object parseOne(Object rawValue, Type type) {
         type = type.getConcreteType();
-        TypeCategory typeCategory = type.getCategory();
-        if(typeCategory.isInt32()) {
+        if(type.isInt()) {
             if(ValueUtil.isNumber(rawValue)) {
                 return ((Number) rawValue).intValue();
             }
         }
-//        if(typeCategory.isDate() || typeCategory.isTime()) {
-//            return parseDate((String) rawValue);
-//        }
-        if(typeCategory.isInt64() || typeCategory.isComposite()
-                || typeCategory.isDate() || typeCategory.isTime()) {
+        if(type.isLong() || type.isClass() || type.isEnum()
+                || type.isDate() || type.isTime()) {
             if(ValueUtil.isNumber(rawValue)) {
                 return ((Number) rawValue).longValue();
             }
         }
-        if(typeCategory.isNumber()) {
+        if(type.isDouble()) {
             if(ValueUtil.isNumber(rawValue) || ValueUtil.isFloat(rawValue)) {
                 return ((Number) rawValue).doubleValue();
             }
         }
-        if(typeCategory.isBool()) {
+        if(type.isBool()) {
             if(ValueUtil.isBoolean(rawValue)) {
                 return rawValue;
             }
         }
-        if(typeCategory.isString()) {
+        if(type.isString()) {
             if(ValueUtil.isString(rawValue)) {
                 return rawValue;
             }
@@ -69,7 +65,7 @@ public class ValueFormatter {
             return null;
         }
         if(type.isArray()) {
-            return NncUtils.map((Collection<?>) value, item -> format(item, type.getBaseType()));
+            return NncUtils.map((Collection<?>) value, item -> format(item, type.getElementType()));
         }
         else {
             return formatOne(value, type);
@@ -77,10 +73,10 @@ public class ValueFormatter {
     }
 
     private static Object formatOne(Object value, Type type) {
-//        if(type.isNullable()) {
-//            type = type.getBaseType();
+//        if(category.isNullable()) {
+//            category = category.getBaseType();
 //        }
-//        if(type.isDate() || type.isTime()) {
+//        if(category.isDate() || category.isTime()) {
 //            return formatTime((long) value);
 //        }
 //        else {

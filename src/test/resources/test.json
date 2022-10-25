@@ -2,38 +2,259 @@
   "code": 0,
   "message": null,
   "data": {
-    "id": 71,
-    "typeId": 65,
-    "typeName": "page_variable_69",
-    "title": "69",
+    "id": 1607,
+    "name": "测试",
+    "category": 0,
+    "ephemeral": false,
+    "anonymous": false,
+    "rawType": null,
+    "typeArguments": [],
+    "desc": null,
     "fields": [
       {
-        "fieldId": 168,
-        "fieldName": "pageId",
-        "type": 13,
-        "multiValued": false,
-        "value": 69,
-        "displayValue": "69",
-        "values": null
+        "id": 1606,
+        "name": "标题",
+        "access": 1,
+        "defaultValue": null,
+        "unique": false,
+        "asTitle": true,
+        "declaringTypeId": 1607,
+        "typeId": 9,
+        "type": {
+          "id": 9,
+          "name": "文本",
+          "category": 6,
+          "ephemeral": false,
+          "anonymous": true,
+          "rawType": null,
+          "typeArguments": [],
+          "desc": "基础类型",
+          "fields": [],
+          "enumConstants": []
+        }
       },
       {
-        "fieldId": 169,
-        "fieldName": "textContent",
-        "type": 11,
-        "multiValued": false,
-        "value": null,
-        "displayValue": "",
-        "values": null
+        "id": 1610,
+        "name": "seq",
+        "access": 1,
+        "defaultValue": 1,
+        "unique": true,
+        "asTitle": false,
+        "declaringTypeId": 1607,
+        "typeId": 5,
+        "type": {
+          "id": 5,
+          "name": "整数",
+          "category": 6,
+          "ephemeral": false,
+          "anonymous": true,
+          "rawType": null,
+          "typeArguments": [],
+          "desc": "基础类型",
+          "fields": [],
+          "enumConstants": []
+        }
       },
       {
-        "fieldId": 171,
-        "fieldName": "测试关联",
-        "type": 0,
-        "multiValued": false,
-        "value": 61,
-        "displayValue": "20.0",
-        "values": null
+        "id": 1648,
+        "name": "multiSelect",
+        "access": 1,
+        "defaultValue": [
+          1646
+        ],
+        "unique": false,
+        "asTitle": false,
+        "declaringTypeId": 1607,
+        "typeId": 1647,
+        "type": {
+          "id": 1647,
+          "name": "数组<可空<multiSelect>>",
+          "category": 8,
+          "ephemeral": false,
+          "anonymous": true,
+          "rawType": {
+            "id": 18,
+            "name": "数组",
+            "category": 6,
+            "ephemeral": false,
+            "anonymous": true,
+            "rawType": null,
+            "typeArguments": [],
+            "desc": "基础类型",
+            "fields": [],
+            "enumConstants": []
+          },
+          "typeArguments": [
+            {
+              "id": 1643,
+              "name": "可空<multiSelect>",
+              "category": 8,
+              "ephemeral": false,
+              "anonymous": true,
+              "rawType": {
+                "id": 19,
+                "name": "可空",
+                "category": 6,
+                "ephemeral": false,
+                "anonymous": true,
+                "rawType": null,
+                "typeArguments": [],
+                "desc": "基础类型",
+                "fields": [],
+                "enumConstants": []
+              },
+              "typeArguments": [
+                {
+                  "id": 1645,
+                  "name": "multiSelect",
+                  "category": 1,
+                  "ephemeral": true,
+                  "anonymous": false,
+                  "rawType": null,
+                  "typeArguments": [],
+                  "desc": "multiSelect",
+                  "fields": [
+                    {
+                      "id": 1641,
+                      "name": "序号",
+                      "access": 1,
+                      "defaultValue": null,
+                      "unique": true,
+                      "asTitle": false,
+                      "declaringTypeId": 1645,
+                      "typeId": 4,
+                      "type": null
+                    },
+                    {
+                      "id": 1644,
+                      "name": "名称",
+                      "access": 1,
+                      "defaultValue": null,
+                      "unique": true,
+                      "asTitle": true,
+                      "declaringTypeId": 1645,
+                      "typeId": 9,
+                      "type": null
+                    }
+                  ],
+                  "enumConstants": [
+                    {
+                      "id": 1646,
+                      "ownerId": 1645,
+                      "ordinal": 0,
+                      "name": "op1"
+                    },
+                    {
+                      "id": 1642,
+                      "ownerId": 1645,
+                      "ordinal": 1,
+                      "name": "op2"
+                    }
+                  ]
+                }
+              ],
+              "desc": null,
+              "fields": [],
+              "enumConstants": []
+            }
+          ],
+          "desc": null,
+          "fields": [],
+          "enumConstants": []
+        }
+      },
+      {
+        "id": 1649,
+        "name": "coupon",
+        "access": 1,
+        "defaultValue": null,
+        "unique": false,
+        "asTitle": false,
+        "declaringTypeId": 1607,
+        "typeId": 1467,
+        "type": {
+          "id": 1467,
+          "name": "优惠券?",
+          "category": 7,
+          "ephemeral": false,
+          "anonymous": false,
+          "rawType": {
+            "id": 19,
+            "name": "可空",
+            "category": 6,
+            "ephemeral": false,
+            "anonymous": true,
+            "rawType": null,
+            "typeArguments": [],
+            "desc": "基础类型",
+            "fields": [],
+            "enumConstants": []
+          },
+          "typeArguments": [
+            {
+              "id": 23,
+              "name": "优惠券",
+              "category": 0,
+              "ephemeral": false,
+              "anonymous": false,
+              "rawType": null,
+              "typeArguments": [],
+              "desc": "优惠券",
+              "fields": [
+                {
+                  "id": 99,
+                  "name": "折扣额度",
+                  "access": 1,
+                  "defaultValue": null,
+                  "unique": false,
+                  "asTitle": true,
+                  "declaringTypeId": 23,
+                  "typeId": 7,
+                  "type": null
+                },
+                {
+                  "id": 100,
+                  "name": "适用商品",
+                  "access": 1,
+                  "defaultValue": null,
+                  "unique": false,
+                  "asTitle": false,
+                  "declaringTypeId": 23,
+                  "typeId": 21,
+                  "type": null
+                },
+                {
+                  "id": 103,
+                  "name": "状态",
+                  "access": 1,
+                  "defaultValue": 11,
+                  "unique": false,
+                  "asTitle": false,
+                  "declaringTypeId": 23,
+                  "typeId": 42,
+                  "type": null
+                },
+                {
+                  "id": 1566,
+                  "name": "优惠类型",
+                  "access": 1,
+                  "defaultValue": 90,
+                  "unique": false,
+                  "asTitle": false,
+                  "declaringTypeId": 23,
+                  "typeId": 1565,
+                  "type": null
+                }
+              ],
+              "enumConstants": []
+            }
+          ],
+          "desc": "可空类型",
+          "fields": [],
+          "enumConstants": []
+        }
       }
-    ]
+    ],
+    "enumConstants": []
   }
 }

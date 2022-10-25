@@ -10,8 +10,8 @@ import java.util.List;
 @Mapper
 public interface FieldMapper {
 
-    int deleteByOwnerId(@Param("tenantId") long tenantId,
-                        @Param("ownerId") long ownerId);
+    int deleteByDeclaringTypeId(@Param("tenantId") long tenantId,
+                                @Param("declaringTypeId") long declaringTypeId);
 
     void batchInsert(Collection<FieldPO> records);
 
@@ -29,19 +29,12 @@ public interface FieldMapper {
 
     List<FieldPO> selectByTypeIds(Collection<Long> ids);
 
-    List<FieldPO> selectByOwnerIds(@Param("tenantId") long tenantId,
-                                   @Param("ownerIds") List<Long> ownerIds);
+    List<FieldPO> selectByDeclaringTypeIds(@Param("tenantId") long tenantId,
+                                           @Param("declaringTypeIds") List<Long> declaringTypeIds);
 
     List<FieldPO> selectTitleFields(@Param("tenantId") long tenantId,
-                                    @Param("ownerIds") List<Long> ownerIds);
+                                    @Param("declaringTypeIds") List<Long> declaringTypeIds);
 
     void batchDelete(List<Long> ids);
 
-    int countByTargetId(@Param("tenantId") long tenantId,
-                        @Param("targetId") long targetId);
-
-    List<FieldPO> selectByTargetId(@Param("tenantId") long tenantId,
-                                   @Param("targetId") long targetId,
-                                   @Param("limit") int limit
-    );
 }

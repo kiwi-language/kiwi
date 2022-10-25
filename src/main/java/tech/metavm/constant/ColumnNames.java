@@ -6,7 +6,7 @@ public class ColumnNames {
 
     public static final String TENANT_ID = "tenant_id";
 
-    public static final String N_CLASS_ID = "n_class_id";
+    public static final String TYPE_ID = "type_id";
 
     public static final String TITLE = "title";
 

@@ -8,8 +8,8 @@ public enum ErrorCode {
     INVALID_PARAMETERS(103, "请求参数错误：{}"),
 
     // 元数据相关错误
-    INVALID_N_CLASS(201, "对象'{}'配置错误，原因: {}"),
-    INVALID_N_FIELD(202, "属性'{}'配置错误，原因: {}"),
+    INVALID_TYPE(201, "对象'{}'配置错误，原因: {}"),
+    INVALID_FIELD(202, "属性'{}'配置错误，原因: {}"),
     DELETE_N_CLASS_ERROR(203, "对象'{}'删除失败，原因: {}"),
     INVALID_DEFAULT_VALUE(204, "属性默认值错误: {}"),
     FIELD_NOT_FOUND(205, "属性不存在, ID: {}"),
@@ -19,6 +19,7 @@ public enum ErrorCode {
     DUPLICATE_CHOICE_OPTION_PROP(209, "选项{}重复: {}"),
     ERROR_DELETING_TYPE(209, "删除失败，原因: {}"),
     TYPE_NOT_FOUND(210, "类型不存在, ID: {}"),
+    INVALID_COLUMN(211, "列'{}'配置错误，原因: {}"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "实例不存在(objectId: {})"),

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.persistence.mappers;
 
+import tech.metavm.constant.ColumnNames;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class InstanceSQLBuilder {
                     .append(", version = ?");
         }
         buf.append(" WHERE tenant_id = ? and deleted_at = 0 AND ")
-                .append(params.byModelId() ? "n_class_id" : "id")
+                .append(params.byModelId() ? ColumnNames.TYPE_ID : ColumnNames.ID)
                 .append(" in (");
 
         for(int i = 0; i < params.numItems(); i++) {

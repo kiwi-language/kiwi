@@ -61,7 +61,7 @@ public class FlowStore implements EntityStore<FlowRT> {
     }
 
     @Override
-    public List<FlowRT> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
+    public List<FlowRT> batchGet(Collection<Long> ids, EntityContext context, Set<LoadingOption> options) {
         if(NncUtils.isEmpty(ids)) {
             return List.of();
         }
@@ -94,13 +94,6 @@ public class FlowStore implements EntityStore<FlowRT> {
     }
 
     @Override
-    public void bulk(ChangeList<FlowRT> changeList) {
-        batchInsert(changeList.inserts());
-        batchUpdate(changeList.updates());
-        batchDelete(NncUtils.map(changeList.deletes(), Entity::getId));
-    }
-
-    @Override
     public void batchInsert(List<FlowRT> flows) {
         if(NncUtils.isEmpty(flows)) {
             return;
@@ -118,11 +111,11 @@ public class FlowStore implements EntityStore<FlowRT> {
     }
 
     @Override
-    public void batchDelete(List<Long> ids) {
-        if(NncUtils.isEmpty(ids)) {
+    public void batchDelete(List<FlowRT> entities) {
+        if(NncUtils.isEmpty(entities)) {
             return;
         }
-        flowMapper.batchDelete(ids);
+        flowMapper.batchDelete(NncUtils.map(entities, Entity::getId));
     }
 
     @Override

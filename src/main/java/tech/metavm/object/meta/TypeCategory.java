@@ -1,38 +1,41 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.ColumnType;
+import tech.metavm.object.instance.SQLColumnType;
 
 import java.util.Arrays;
 
 public enum TypeCategory {
-    TABLE(0, ColumnType.INT64),
-    ENUM(1, ColumnType.INT64),
+    CLASS(0, SQLColumnType.INT64),
+    ENUM(1, SQLColumnType.INT64),
     INTERFACE(2),
+    PRIMITIVE(6),
     FLOW_INPUT(3),
     FLOW_OUTPUT(9),
     PAGE(4),
     ARRAY(5),
     NULLABLE(7),
-    OBJECT(8),
+    PARAMETERIZED(8),
 
-    STRING(11, ColumnType.VARCHAR64),
-    DOUBLE(12, ColumnType.FLOAT),
-    INT64(13, ColumnType.INT64),
-    BOOL(16, ColumnType.BOOL),
-    TIME(18, ColumnType.INT64),
-    DATE(19, ColumnType.INT64),
-    INT32(20, ColumnType.INT32),
+
+    STRING(11, SQLColumnType.VARCHAR64),
+    DOUBLE(12, SQLColumnType.FLOAT),
+    LONG(13, SQLColumnType.INT64),
+    BOOL(16, SQLColumnType.BOOL),
+    TIME(18, SQLColumnType.INT64),
+    DATE(19, SQLColumnType.INT64),
+    INT(20, SQLColumnType.INT32),
+    OBJECT(21),
     ;
 
     private final int code;
-    private final ColumnType columnType;
+    private final SQLColumnType columnType;
 
 
     TypeCategory(int code) {
         this(code, null);
     }
 
-    TypeCategory(int code, ColumnType columnType) {
+    TypeCategory(int code, SQLColumnType columnType) {
         this.code = code;
         this.columnType = columnType;
     }
@@ -47,8 +50,8 @@ public enum TypeCategory {
         return code;
     }
 
-    public boolean isTable() {
-        return this == TABLE;
+    public boolean isClass() {
+        return this == CLASS;
     }
 
     public boolean isEnum() {
@@ -60,16 +63,16 @@ public enum TypeCategory {
     }
 
     public boolean isPrimitive() {
-        return isString() || isDate() || isTime() || isNumber() || isInt32() || isInt64() || isBool() ;
+        return isString() || isDate() || isTime() || isNumber() || isInt32() || isInt64() || isBool();
     }
 
     public boolean isNullable() {
         return this == NULLABLE;
     }
 
-    public ColumnType getColumnType() {
-        return columnType;
-    }
+//    public ColumnType getColumnType() {
+//        return columnType;
+//    }
 
     public boolean isString() {
         return this == STRING;
@@ -84,11 +87,11 @@ public enum TypeCategory {
     }
 
     public boolean isInt64() {
-        return this == INT64;
+        return this == LONG;
     }
 
     public boolean isInt32() {
-        return this == INT32;
+        return this == INT;
     }
 
     public boolean isNumber() {
@@ -107,7 +110,7 @@ public enum TypeCategory {
         return !isNullable();
     }
 
-    public boolean hasFields() {
-        return this == TABLE || this == PAGE || this == FLOW_INPUT || this == FLOW_OUTPUT;
+    public boolean isEntity() {
+        return this == CLASS;
     }
 }

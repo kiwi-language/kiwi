@@ -12,11 +12,7 @@ public class InstanceContextFactory {
     private InstanceStore instanceStore;
 
     public InstanceContext createContext(EntityContext entityContext) {
-        return createContext(ContextUtil.getTenantId(), entityContext);
-    }
-
-    public InstanceContext createContext(long tenantId, EntityContext entityContext) {
-        return new InstanceContext(tenantId, true, instanceStore, entityContext);
+        return new InstanceContext( true, instanceStore, entityContext);
     }
 
 }

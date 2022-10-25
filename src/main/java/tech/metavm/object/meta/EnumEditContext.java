@@ -3,6 +3,7 @@ package tech.metavm.object.meta;
 import tech.metavm.constant.ColumnNames;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
+import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
 
@@ -18,7 +19,7 @@ public class EnumEditContext {
     private final String name;
     private final boolean anonymous;
     private final List<ChoiceOptionDTO> optionDTOs;
-    private final List<ChoiceOption> defaultOptions = new ArrayList<>();
+    private final List<EnumConstant> defaultOptions = new ArrayList<>();
     private final EntityContext entityContext;
     private Type type;
 
@@ -59,13 +60,14 @@ public class EnumEditContext {
         type.setName(name);
         type.setAnonymous(anonymous);
         if(optionDTOs != null) {
+            int ordinal = 0;
             for (ChoiceOptionDTO optionDTO : optionDTOs) {
-                ChoiceOption option;
+                EnumConstant option;
                 if (optionDTO.id() == null) {
-                    option = new ChoiceOption(optionDTO, type);
+                    option = new EnumConstant(optionDTO, ordinal++, type);
                 } else {
-                    option = type.getChoiceOption(optionDTO.id());
-                    option.update(optionDTO);
+                    option = type.getEnumConstant(optionDTO.id());
+                    option.update(convertToEnumConstant(optionDTO, ordinal++));
                 }
                 if (optionDTO.defaultSelected()) {
                     defaultOptions.add(option);
@@ -74,12 +76,22 @@ public class EnumEditContext {
         }
     }
 
+    private EnumConstantDTO convertToEnumConstant(ChoiceOptionDTO choiceOptionDTO, int ordinal) {
+        return new EnumConstantDTO(
+                choiceOptionDTO.id(),
+                0L,
+                ordinal,
+                choiceOptionDTO.name()
+        );
+    }
+
     private Type createType() {
         type = new Type(
                 name,
                 TypeCategory.ENUM,
                 anonymous,
                 false,
+                null,
                 null,
                 name,
                 entityContext
@@ -94,7 +106,7 @@ public class EnumEditContext {
                 null,
                 NAME_FIELD,
                 type,
-                Access.Public,
+                Access.GLOBAL,
                 true,
                 true,
                 null,
@@ -108,12 +120,12 @@ public class EnumEditContext {
                 null,
                 ORDER_FIELD,
                 type,
-                Access.Public,
+                Access.GLOBAL,
                 true,
                 false,
                 null,
                 Column.valueOf(ColumnNames.I0),
-                entityContext.getTypeByCategory(TypeCategory.INT32),
+                entityContext.getTypeByCategory(TypeCategory.INT),
                 entityContext,
                 false
         );
@@ -123,7 +135,7 @@ public class EnumEditContext {
         return type;
     }
 
-    public List<ChoiceOption> getDefaultOptions() {
+    public List<EnumConstant> getDefaultOptions() {
         return defaultOptions;
     }
 

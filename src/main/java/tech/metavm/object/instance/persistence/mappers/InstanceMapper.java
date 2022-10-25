@@ -1,9 +1,12 @@
 package tech.metavm.object.instance.persistence.mappers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 import tech.metavm.constant.ColumnNames;
-import tech.metavm.object.instance.ColumnType;
+import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.InsertSQLBuilder;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.InstanceTitlePO;
@@ -22,6 +25,8 @@ import static tech.metavm.object.instance.ObjectTableConstant.TABLE_INSTANCE;
 @Component
 public class InstanceMapper {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(InstanceMapper.class);
+
     @Autowired
     private DataSource dataSource;
     
@@ -38,14 +43,14 @@ public class InstanceMapper {
         InsertSQLBuilder sqlBuilder = new InsertSQLBuilder(TABLE_INSTANCE);
         sqlBuilder.addColumn(TITLE);
         sqlBuilder.addColumn(VERSION);
-        ColumnType.sqlColumnNames().forEach(sqlBuilder::addColumn);
+        SQLColumnType.sqlColumnNames().forEach(sqlBuilder::addColumn);
         INSERT_SQL = sqlBuilder.buildInsert();
         UPDATE_SQL = sqlBuilder.buildUpdate();
     }
 
     public int batchInsert(Collection<InstancePO> records) {
+        Connection connection = getConnection();
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(INSERT_SQL)
         ) {
             addUpdate(stmt, records, false);
@@ -70,11 +75,14 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
     public int updateSyncVersion(List<VersionPO> versions) {
+        Connection connection = getConnection();
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(UPDATE_SYNC_VERSION_SQL)
         ) {
             for (VersionPO version : versions) {
@@ -88,11 +96,14 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
     public int batchUpdate(List<InstancePO> records) {
+        Connection connection = getConnection();
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(UPDATE_SQL)
         ) {
             addUpdate(stmt, records, true);
@@ -101,14 +112,20 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
     private void addUpdate(PreparedStatement stmt, Collection<InstancePO> records, boolean forUpdate) throws SQLException {
         for (InstancePO record : records) {
             int index = 1;
+            if(!forUpdate) {
+                stmt.setLong(index++, record.id());
+            }
             stmt.setString(index++, record.title());
             stmt.setLong(index++, record.version());
-            for (String column : ColumnType.sqlColumnNames()) {
+            for (String column : SQLColumnType.sqlColumnNames()) {
                 stmt.setObject(index++, record.get(column));
             }
             stmt.setLong(index++, record.tenantId());
@@ -116,15 +133,15 @@ public class InstanceMapper {
                 stmt.setLong(index, record.id());
             }
             else {
-                stmt.setLong(index, record.modelId());
+                stmt.setLong(index, record.typeId());
             }
             stmt.addBatch();
         }
     }
 
-    public int batchDelete(long tenantId, List<VersionPO> versions) {
+    public int batchDelete(long tenantId, Collection<VersionPO> versions) {
+        Connection connection = getConnection();
         try (
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(batchDeleteSQL());
         ) {
             long now = System.currentTimeMillis();
@@ -141,10 +158,14 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
-    public List<InstancePO> selectByIds(long tenantId, List<Long> ids) {
-        try(Connection connection = dataSource.getConnection();
+    public List<InstancePO> selectByIds(long tenantId, Collection<Long> ids) {
+        Connection connection = getConnection();
+        try(
             PreparedStatement stmt = connection.prepareStatement(selectByIdsSQL(ids.size()));
         ) {
             stmt.setLong(1, tenantId);
@@ -157,6 +178,9 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error, tenantId: " + tenantId + ", objectId: " + ids, e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
     private List<InstancePO> executeQuery(PreparedStatement stmt) throws SQLException {
@@ -166,12 +190,12 @@ public class InstanceMapper {
                 InstancePO record = InstancePO.newInstance(
                         resultSet.getLong(ColumnNames.TENANT_ID),
                         resultSet.getLong(ID),
-                        resultSet.getLong(ColumnNames.N_CLASS_ID),
+                        resultSet.getLong(ColumnNames.TYPE_ID),
                         resultSet.getString(TITLE),
                         resultSet.getLong(VERSION),
                         resultSet.getLong(SYNC_VERSION)
                 );
-                for (String column : ColumnType.sqlColumnNames()) {
+                for (String column : SQLColumnType.sqlColumnNames()) {
                     record.put(column, resultSet.getObject(column));
                 }
                 records.add(record);
@@ -204,8 +228,8 @@ public class InstanceMapper {
     }
 
     public long countByModelIds(long tenantId, List<Long> typeIds) {
+        Connection connection = getConnection();
         try(
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(countByModelIdsSQL(typeIds.size()));
         ) {
             stmt.setLong(1, tenantId);
@@ -218,11 +242,14 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
     public List<InstancePO> selectByModelIds(long tenantId, List<Long> modelIds, long start, long limit) {
+        Connection connection = getConnection() ;
         try(
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(selectByModelIdsSQL(modelIds.size()))
         ) {
             stmt.setLong(1, tenantId);
@@ -237,11 +264,14 @@ public class InstanceMapper {
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
         }
+        finally {
+            closeConnection(connection);
+        }
     }
 
     public List<InstanceTitlePO> selectTitleByIds(long tenantId, List<Long> ids) {
+        Connection connection = getConnection();
         try(
-                Connection connection = dataSource.getConnection();
                 PreparedStatement stmt = connection.prepareStatement(selectTitleByIdsSQL(ids.size()))
         ) {
             stmt.setLong(1, tenantId);
@@ -253,6 +283,9 @@ public class InstanceMapper {
         }
         catch (SQLException e) {
             throw new RuntimeException("SQL Error", e);
+        }
+        finally {
+            closeConnection(connection);
         }
     }
 
@@ -280,6 +313,21 @@ public class InstanceMapper {
                 .select(ID, TITLE)
                 .whereIn(ID, numItems)
                 .build();
+    }
+
+    private Connection getConnection() {
+        return DataSourceUtils.getConnection(dataSource);
+    }
+
+    private void closeConnection(Connection connection) {
+        try {
+            if (!DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+                DataSourceUtils.doCloseConnection(connection, dataSource);
+            }
+        }
+        catch (SQLException e) {
+            LOGGER.error("fail to close connection", e);
+        }
     }
 
 }

@@ -11,14 +11,13 @@ import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.object.meta.persistence.query.TypeQuery;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TitleFieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.*;
+import tech.metavm.util.BusinessException;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class TypeManager {
@@ -39,8 +38,13 @@ public class TypeManager {
 
     public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, int page, int pageSize) {
         EntityContext context = newContext();
+        return query(searchText, categoryCodes, page, pageSize, context);
+    }
+
+    public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, int page, int pageSize, EntityContext context) {
+
         List<TypeCategory> categories = categoryCodes != null ?
-                NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired) : List.of(TypeCategory.TABLE);
+                NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired) : List.of(TypeCategory.CLASS);
         TypeQuery query = new TypeQuery(
                 ContextUtil.getTenantId(),
                 categories,
@@ -51,48 +55,35 @@ public class TypeManager {
         );
         long total = typeStore.count(query);
         List<Type> types = typeStore.query(query, context);
-        List<TypeDTO> dtoList = NncUtils.map(types, Type::toDTO);
+        List<TypeDTO> dtoList = NncUtils.map(types, t -> t.toDTO(true, false, false));
         return new Page<>(dtoList, total);
     }
 
-    public TypeDTO getType(long id) {
+    public TypeDTO getType(long id, boolean includingFields, boolean includingFieldTypes) {
         Type type = newContext().getType(id);
-        return NncUtils.get(type, Type::toDTO);
+        return NncUtils.get(type, t -> t.toDTO(false, includingFields, includingFieldTypes));
     }
 
     public TypeDTO getArrayType(long id) {
-        return getDecoratedType(id, type -> type.getContext().getArrayType(type));
+        EntityContext context = newContext();
+        return context.getType(id).getArrayType().toDTO();
     }
 
     public TypeDTO getNullableType(long id) {
-        return getDecoratedType(id, type -> type.getContext().getNullableType(type));
+        EntityContext context = newContext();
+        return context.getType(id).getNullableType().toDTO();
     }
 
     public TypeDTO getNullableArrayType(long id) {
-        return getDecoratedType(id, type -> {
-            EntityContext context = type.getContext();
-            Type nullableType = context.getNullableType(type);
-            return context.getArrayType(nullableType);
-        });
-    }
-
-    private TypeDTO getDecoratedType(long id, java.util.function.Function<Type, Type> function) {
         EntityContext context = newContext();
-        Type type = context.getType(id);
-        if(type == null) {
-            throw BusinessException.typeNotFound(id);
-        }
-        Type decoratedType = function.apply(type);
-        if(decoratedType.getId() == null) {
-            context.sync();
-        }
-        return decoratedType.toDTO();
+        return context.getType(id).getNullableType().getArrayType().toDTO();
     }
 
     @Transactional
     public long saveType(TypeDTO typeDTO) {
         EntityContext context = newContext();
-        Type type = saveType(typeDTO, context);
+//        Type category = saveType(typeDTO, context);
+        Type type = saveTypeWithFields(typeDTO, context);
         context.sync();
         return type.getId();
     }
@@ -131,61 +122,31 @@ public class TypeManager {
     public Type createType(TypeDTO typeDTO, EntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "名称");
         ensureTypeNameAvailable(typeDTO, context);
-        Type type = new Type(typeDTO, context);
-        saveTitleField(typeDTO.titleField(), type, context);
-        return type;
+        return new Type(typeDTO, context);
     }
 
     public Type updateType(TypeDTO typeDTO, EntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "名称");
         NncUtils.requireNonNull(typeDTO.id(), "ID");
-        Type type = context.getType(typeDTO.id());
+        Type type = context.getTypeRef(typeDTO.id());
         if(!type.getName().equals(typeDTO.name())) {
             ensureTypeNameAvailable(typeDTO, context);
         }
         type.update(typeDTO);
-        saveTitleField(typeDTO.titleField(), type, context);
         return type;
-    }
-
-    private void saveTitleField(TitleFieldDTO titleFieldDTO, Type type, EntityContext context) {
-        if(titleFieldDTO != null) {
-            Field titleField = type.getTileField();
-            TypeCategory titleTypeCategory = TypeCategory.getByCodeRequired(titleFieldDTO.type());
-            Type titleType = context.getTypeByCategory(titleTypeCategory);
-            if (titleField == null) {
-                new Field(
-                        null,
-                        titleFieldDTO.name(),
-                        type,
-                        Access.Public,
-                        titleFieldDTO.unique(),
-                        true,
-                        null,
-                        null,
-                        titleType,
-                        context,
-                        false
-                );
-            } else {
-                titleField.setName(titleFieldDTO.name());
-                titleField.setUnique(titleFieldDTO.unique());
-                titleField.setDefaultValue(titleFieldDTO.defaultValue());
-            }
-        }
     }
 
     private void ensureTypeNameAvailable(TypeDTO typeDTO, EntityContext context) {
         Type typeWithSameName = context.getTypeByName(typeDTO.name());
-        if (typeWithSameName != null) {
-            throw BusinessException.invalidNClass(typeDTO, "对象名称已存在");
+        if (typeWithSameName != null && !typeWithSameName.isAnonymous()) {
+            throw BusinessException.invalidType(typeDTO, "对象名称已存在");
         }
     }
 
     @Transactional
     public void deleteType(long id) {
         EntityContext context = newContext();
-        Type type = context.getType(id);
+        Type type = context.getTypeRef(id);
         if(type == null) {
             return;
         }
@@ -195,13 +156,13 @@ public class TypeManager {
 
     private void deleteType0(Type type, Set<Long> visited) {
         if(visited.contains(type.getId())) {
-            throw new InternalException("Circular reference. type: " + type + " is already visited");
+            throw new InternalException("Circular reference. category: " + type + " is already visited");
         }
         visited.add(type.getId());
         EntityContext context = type.getContext();
-        List<Type> referringTypes = typeStore.getByBaseType(type, context);
-        if(NncUtils.isNotEmpty(referringTypes)) {
-            referringTypes.forEach(t -> deleteType0(t, visited));
+        List<Type> dependentTypes = context.getTypeStore().getDependentTypes(type);
+        if(NncUtils.isNotEmpty(dependentTypes)) {
+            dependentTypes.forEach(t -> deleteType0(t, visited));
         }
         List<String> referringFieldNames = fieldStore.getReferringFieldNames(type);
         if(NncUtils.isNotEmpty(referringFieldNames)) {
@@ -228,63 +189,64 @@ public class TypeManager {
     }
 
     public Field createField(FieldDTO fieldDTO, EntityContext context) {
-        Type owner = context.getType(fieldDTO.ownerId());
-        TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
-        Type type;
-        Object defaultValue;
-        if(typeCategory.isEnum()) {
-            EnumEditContext enumContext = saveEnumType(fieldDTO, context);
-            type = enumContext.getType();
-            defaultValue = OptionUtil.getDefaultValue(enumContext.getDefaultOptions(), fieldDTO.multiValued());
-        }
-        else {
-            type = context.resolveType(fieldDTO);
-            defaultValue = fieldDTO.defaultValue();
-        }
-        Field field = new Field(fieldDTO, owner, type);
-        field.setDefaultValue(defaultValue);
-        return field;
+        Type owner = context.getType(fieldDTO.declaringTypeId());
+        Type type = context.getType(fieldDTO.typeId());
+        return new Field(fieldDTO, owner, type);
+//        TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
+//        Object defaultValue;
+//        if(typeCategory.isEnum()) {
+//            EnumEditContext enumContext = saveEnumType(fieldDTO, context);
+//            type = enumContext.getType();
+//            defaultValue = OptionUtil.getDefaultValue(enumContext.getDefaultOptions(), type.isArray());
+//        }
+//        else {
+//            type = context.getType(fieldDTO.typeId());
+//            defaultValue = fieldDTO.defaultValue();
+//        }
+//        return new Field(fieldDTO, owner, type);
+//        field.setDefaultValue(defaultValue);
+//        return field;
     }
 
     public Field updateField(FieldDTO fieldDTO, EntityContext context) {
-        NncUtils.require(fieldDTO.id(), "列ID");
-        TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
+        NncUtils.requireNonNull(fieldDTO.id(), "列ID必填");
+//        TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
         Field field = context.get(Field.class, fieldDTO.id());
         field.update(fieldDTO);
-        if(typeCategory.isEnum()) {
-            EnumEditContext enumContext = saveEnumType(fieldDTO, context);
-            Object defaultValue = OptionUtil.getDefaultValue(enumContext.getDefaultOptions(), fieldDTO.multiValued());
-            field.setDefaultValue(defaultValue);
-        }
+//        if(typeCategory.isEnum()) {
+//            EnumEditContext enumContext = saveEnumType(fieldDTO, context);
+//            Object defaultValue = OptionUtil.getDefaultValue(enumContext.getDefaultOptions(), field.isArray());
+//            field.setDefaultValue(defaultValue);
+//        }
         return field;
     }
 
-    private EnumEditContext saveEnumType(FieldDTO fieldDTO, EntityContext context) {
-        EnumEditContext enumEditContext = new EnumEditContext(
-                fieldDTO.targetId(),
-                fieldDTO.name(),
-                true,
-                fieldDTO.choiceOptions(),
-                context
-        );
-        enumEditContext.execute();
-        return enumEditContext;
-    }
+//    private EnumEditContext saveEnumType(FieldDTO fieldDTO, EntityContext context) {
+//        EnumEditContext enumEditContext = new EnumEditContext(
+//                fieldDTO.typeId(),
+//                fieldDTO.name(),
+//                true,
+//                fieldDTO.choiceOptions(),
+//                context
+//        );
+//        enumEditContext.execute();
+//        return enumEditContext;
+//    }
 
     public FieldDTO getField(long fieldId) {
-        Field field = newContext().getField(fieldId);
+        Field field = newContext().getFieldRef(fieldId);
         return NncUtils.get(field, Field::toDTO);
     }
 
     @Transactional
     public void removeField(long fieldId) {
         EntityContext context = newContext();
-        removeField(context.getField(fieldId), context);
+        removeField(context.getFieldRef(fieldId), context);
         context.sync();
     }
 
     private void removeField(Field field, EntityContext context) {
-        if(field.isComposite()) {
+        if(field.isCustomTyped()) {
             Type type = field.getType();
             if(type.isAnonymous()) {
                 context.remove(type);
@@ -296,7 +258,7 @@ public class TypeManager {
     @Transactional
     public void setFieldAsTitle(long fieldId) {
         EntityContext context = newContext();
-        Field field = context.getField(fieldId);
+        Field field = context.getFieldRef(fieldId);
         if(field.isAsTitle()) {
             return;
         }

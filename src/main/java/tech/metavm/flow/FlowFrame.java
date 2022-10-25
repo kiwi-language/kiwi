@@ -83,7 +83,7 @@ public class FlowFrame implements EvaluationContext {
     }
 
     public void deleteInstance(long id) {
-        instanceContext.delete(id);
+        instanceContext.remove(id);
     }
 
     public void setInstanceField(Instance instance, Field field, Object value) {
@@ -97,15 +97,15 @@ public class FlowFrame implements EvaluationContext {
     }
 
     private void checkAccess(Field field) {
-        if(field.getAccess() == Access.Public) {
+        if(field.getAccess() == Access.GLOBAL) {
             return;
         }
-        if(field.getAccess() == Access.Protected) {
+        if(field.getAccess() == Access.MODULE) {
             return;
         }
 
-        if(field.getAccess() == Access.Private) {
-            if(!field.getOwner().equals(owner)) {
+        if(field.getAccess() == Access.CLASS) {
+            if(!field.getDeclaringType().equals(owner)) {
                 throw BusinessException.illegalAccess();
             }
         }
@@ -150,7 +150,7 @@ public class FlowFrame implements EvaluationContext {
             }
             if(!outputType.isInstance(result)) {
                 throw new InternalException("Node " + node + " returned a result '" + result
-                        + "' that does not match the output type: " + outputType);
+                        + "' that does not match the output category: " + outputType);
             }
         }
     }

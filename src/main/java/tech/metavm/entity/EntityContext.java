@@ -1,21 +1,19 @@
 package tech.metavm.entity;
 
 import tech.metavm.infra.IdService;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.object.meta.TypeStore;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.meta.*;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class EntityContext {
 
-    public final long tenantId;
-    private final SubContext headContext = new SubContext();
-    private final SubContext bufferContext = new SubContext();
+    private final long tenantId;
+    private final SubContext<Entity> headContext = new SubContext<>();
+    private final SubContext<Entity> bufferContext = new SubContext<>();
     private final StoreRegistry storeRegistry;
     private final IdService idService;
     private final Set<EntityKey> loaded = new HashSet<>();
@@ -37,7 +35,7 @@ public class EntityContext {
         return batchGet(klass, ids, LoadingOption.of(firstOption, restOptions));
     }
 
-    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids, EnumSet<LoadingOption> options) {
+    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids, Set<LoadingOption> options) {
         Class<?> entityType = EntityUtils.getEntityType(klass);
         List<EntityKey> keys = NncUtils.map(ids, id -> new EntityKey(entityType, id));
         ensureLoaded(keys, options);
@@ -45,7 +43,11 @@ public class EntityContext {
     }
 
     public <T extends Entity> T get(Class<T> klass, long id) {
-        return NncUtils.first(batchGet(klass, List.of(id)));
+        return get(klass, id, LoadingOption.none());
+    }
+
+    public <T extends Entity> T get(Class<T> klass, long id, Set<LoadingOption> options) {
+        return NncUtils.getFirst(batchGet(klass, List.of(id), options));
     }
 
     public void add(Entity entity) {
@@ -83,7 +85,7 @@ public class EntityContext {
 //    }
 
     public void sync() {
-        initIds();
+        bufferContext.initIds(getIdGenerator());
         ContextDifference difference = new ContextDifference();
         difference.diff(headContext.getEntities(), bufferContext.getEntities());
 
@@ -102,23 +104,18 @@ public class EntityContext {
         }
     }
 
-    private void initIds() {
-        List<Entity> newEntities = NncUtils.filter(bufferContext.entities(), Entity::isIdNull);
-        if(NncUtils.isEmpty(newEntities)) {
-            return;
-        }
-        List<Long> ids = idService.allocateIds(tenantId, newEntities.size());
-        NncUtils.biForEach(newEntities, ids, Entity::initId);
+    private Function<Integer, List<Long>> getIdGenerator() {
+        return (size) -> idService.allocateIds(tenantId, size);
     }
 
-    private void ensureLoaded(List<EntityKey> keys, EnumSet<LoadingOption> options) {
+    private void ensureLoaded(List<EntityKey> keys, Set<LoadingOption> options) {
         List<EntityKey> keysToLoad = NncUtils.filterNot(keys, this::isLoaded);
         if(NncUtils.isNotEmpty(keysToLoad)) {
             doLoad(keysToLoad, options);
         }
     }
 
-    private void doLoad(List<EntityKey> keys, EnumSet<LoadingOption> options) {
+    private void doLoad(List<EntityKey> keys, Set<LoadingOption> options) {
         loaded.addAll(keys);
         Map<Class<?>, List<Long>> idGroups = NncUtils.groupBy(keys, EntityKey::type, EntityKey::id);
         for (Map.Entry<Class<?>, List<Long>> entry : idGroups.entrySet()) {
@@ -150,8 +147,62 @@ public class EntityContext {
         return loaded.contains(key);
     }
 
-    public Type getType(long typeId) {
+    public Type getTypeRef(long typeId) {
         return getRef(Type.class, typeId);
+    }
+
+    public Type getType(long typeId) {
+        return getType(typeId, LoadingOption.none());
+    }
+
+    public Type getType(long typeId, Set<LoadingOption> options) {
+        Type type = get(Type.class, typeId, options);
+        NncUtils.requireNonNull(type, () -> BusinessException.typeNotFound(typeId));
+        return type;
+    }
+
+    public Type getPrimitiveType(long id) {
+        return get(Type.class, id);
+    }
+
+    public Type getObjectType() {
+        return getPrimitiveType(PrimitiveTypes.OBJECT.id());
+    }
+
+    public Type getIntType() {
+        return getPrimitiveType(PrimitiveTypes.INT.id());
+    }
+
+    public Type getLongType() {
+        return getPrimitiveType(PrimitiveTypes.LONG.id());
+    }
+
+    public Type getDoubleType() {
+        return getPrimitiveType(PrimitiveTypes.DOUBLE.id());
+    }
+
+    public Type getStringType() {
+        return getPrimitiveType(PrimitiveTypes.STRING.id());
+    }
+
+    public Type getBoolType() {
+        return getPrimitiveType(PrimitiveTypes.BOOL.id());
+    }
+
+    public Type getDateType() {
+        return getPrimitiveType(PrimitiveTypes.DATE.id());
+    }
+
+    public Type getTimeType() {
+        return getPrimitiveType(PrimitiveTypes.TIME.id());
+    }
+
+    public Type getRawNullableType() {
+        return getPrimitiveType(PrimitiveTypes.NULLABLE.id());
+    }
+
+    public Type getRawArrayType() {
+        return getPrimitiveType(PrimitiveTypes.ARRAY.id());
     }
 
     public Type getTypeByCategory(TypeCategory category) {
@@ -170,147 +221,58 @@ public class EntityContext {
         return tenantId;
     }
 
-    public Type resolveType(FieldDTO fieldDTO) {
-        Type baseType;
-        TypeCategory type = TypeCategory.getByCodeRequired(fieldDTO.type());
-        if(type.isPrimitive()) {
-            baseType = getTypeByCategory(TypeCategory.getByCodeRequired(fieldDTO.type()));
-        }
-        else {
-            NncUtils.require(fieldDTO.targetId());
-            baseType = getType(fieldDTO.targetId());
-        }
-        if(fieldDTO.multiValued()) {
-            return getArrayType(baseType);
-        }
-        else if(fieldDTO.nullable()) {
-            return getNullableType(baseType);
-        }
-        else {
-            return baseType;
-        }
-    }
-
-
-//    public Type resolveType(Type baseType, boolean nullable, boolean isArray) {
-//        if(nullable) {
-//            return getOrCreateArrayType(baseType);
+//    public Type resolveType(FieldDTO fieldDTO) {
+//        Type baseType;
+//        TypeCategory type = TypeCategory.getByCodeRequired(fieldDTO.type());
+//        if(type.isPrimitive()) {
+//            baseType = getTypeByCategory(TypeCategory.getByCodeRequired(fieldDTO.type()));
 //        }
-//        else if(isArray) {
-//            return getOrCreateArrayType(baseType);
+//        else {
+//            NncUtils.require(fieldDTO.targetId());
+//            baseType = getTypeRef(fieldDTO.targetId());
+//        }
+//        if(fieldDTO.multiValued()) {
+//            return getArrayType(baseType);
+//        }
+//        else if(fieldDTO.nullable()) {
+//            return getParameterizedType(baseType);
 //        }
 //        else {
 //            return baseType;
 //        }
 //    }
 
-    public Type getNullableType(Type baseType) {
-        Type nullableType = getTypeStore().getNullableType(baseType, this);
-        return Objects.requireNonNullElseGet(nullableType, () -> createNullableType(baseType));
+
+//    public Type resolveType(Type elementType, boolean nullable, boolean isArray) {
+//        if(nullable) {
+//            return getOrCreateArrayType(elementType);
+//        }
+//        else if(isArray) {
+//            return getOrCreateArrayType(elementType);
+//        }
+//        else {
+//            return elementType;
+//        }
+//    }
+
+    public Type getParameterizedType(Type rawType, List<Type> typeArguments) {
+        return getTypeStore().getParameterizedType(rawType, typeArguments, this);
     }
 
-    private Type createNullableType(Type baseType) {
-        Type nullableType = new Type(
-                baseType.getName() + "?",
-                TypeCategory.NULLABLE,
-                false,
-                baseType.isEphemeral(),
-                baseType,
-                "可空类型",
-                this
-        );
-        add(nullableType);
-        return nullableType;
+    public Field getField(long id) {
+        return get(Field.class, id);
     }
 
-    public Type getArrayType(Type baseType) {
-        Type arrayType = getTypeStore().getArrayType(baseType, this);
-        return Objects.requireNonNullElseGet(arrayType, () -> createArrayType(baseType));
-    }
-
-    private Type createArrayType(Type baseType) {
-        Type arrayType = new Type(
-                baseType.getName() + "[]",
-                TypeCategory.ARRAY,
-                false,
-                baseType.isEphemeral(),
-                baseType,
-                "数组",
-                this
-        );
-        add(arrayType);
-        return arrayType;
-    }
-
-    public Field getField(long fieldId) {
-        return getRef(Field.class, fieldId);
+    public Field getFieldRef(long id) {
+        return getRef(Field.class, id);
     }
 
     public <T extends Entity> EntityStore<T> getStore(Class<T> type) {
         return storeRegistry.getStore(type);
     }
 
-    public void loadFieldsAndOptions(List<Type> types) {
-        ((TypeStore) getStore(Type.class)).loadFields(types, this);
-    }
-
-    private static class SubContext {
-        private final IdentityHashMap<Entity, Entity> entities = new IdentityHashMap<>();
-        private final Map<EntityKey, Entity> entityMap = new HashMap<>();
-
-        Entity get(EntityKey key) {
-            return entityMap.get(key);
-        }
-
-        void add(Entity entity) {
-            Objects.requireNonNull(entity);
-            if(entity.key() != null) {
-                Entity existing = entityMap.remove(entity.key());
-                if(existing != null) {
-                    entities.remove(existing);
-                }
-                entityMap.put(entity.key(), entity);
-            }
-            entities.put(entity, entity);
-        }
-
-        public Collection<Entity> entities() {
-            return entities.values();
-        }
-
-        void clear() {
-            entities.clear();
-            entityMap.clear();
-        }
-
-        boolean remove(Entity entity) {
-            Entity removed = entities.remove(entity);
-            if(removed != null) {
-                if(removed.key() != null) {
-                    entityMap.remove(removed.key());
-                }
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
-
-//        boolean remove(long objectId) {
-//            Entity entity = entityMap.get(objectId);
-//            if(entity != null) {
-//                entities.remove(entity);
-//                return true;
-//            }
-//            else {
-//                return false;
-//            }
-//        }
-
-        List<Entity> getEntities() {
-            return new ArrayList<>(entities.values());
-        }
-
+    public IdService getIdService() {
+        return idService;
     }
 
 }

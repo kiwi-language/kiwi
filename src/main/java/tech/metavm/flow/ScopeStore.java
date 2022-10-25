@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityStore;
 import tech.metavm.entity.LoadingOption;
@@ -18,7 +19,7 @@ public class ScopeStore implements EntityStore<ScopeRT> {
     private ScopeMapper scopeMapper;
 
     @Override
-    public List<ScopeRT> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
+    public List<ScopeRT> batchGet(Collection<Long> ids, EntityContext context, Set<LoadingOption> options) {
         List<ScopePO> scopePOs = scopeMapper.batchSelect(ids);
         Set<Long> flowIds = NncUtils.mapUnique(scopePOs, ScopePO::getFlowId);
         List<FlowRT> flows = context.batchGet(FlowRT.class, flowIds, options);
@@ -44,8 +45,8 @@ public class ScopeStore implements EntityStore<ScopeRT> {
     }
 
     @Override
-    public void batchDelete(List<Long> ids) {
-        scopeMapper.batchDelete(ids);
+    public void batchDelete(List<ScopeRT> scopes) {
+        scopeMapper.batchDelete(NncUtils.map(scopes, Entity::getId));
     }
 
     @Override

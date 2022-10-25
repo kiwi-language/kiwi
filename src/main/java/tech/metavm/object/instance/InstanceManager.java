@@ -103,7 +103,7 @@ public class InstanceManager {
     public void delete(long id, boolean asyncLogProcessing) {
         InstanceContext context = createContext(asyncLogProcessing);
         transactionTemplate.execute(status -> {
-            context.delete(id);
+            context.remove(id);
             context.finish();
             return null;
         });
@@ -167,7 +167,7 @@ public class InstanceManager {
 
     private InstanceContext createContext(long tenantId, boolean asyncLogProcessing) {
         EntityContext entityContext = entityContextFactory.newContext(tenantId);
-        return new InstanceContext(tenantId, asyncLogProcessing, instanceStore, entityContext);
+        return new InstanceContext(asyncLogProcessing, instanceStore, entityContext);
     }
 
 }

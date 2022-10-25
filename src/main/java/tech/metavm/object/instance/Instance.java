@@ -33,7 +33,7 @@ public class Instance extends AbsInstance {
     public Instance(InstancePO record,
                     List<RelationPO> relations,
                     InstanceContext context) {
-        super(record.id(), context.getType(record.modelId()));
+        super(record.id(), context.getType(record.typeId()));
         this.context = context;
         tenantId = record.tenantId();
         version = record.version();
@@ -43,7 +43,7 @@ public class Instance extends AbsInstance {
 
         for (Field field : getType().getFields()) {
             Object fieldValue;
-            if(field.isPrimitive()) {
+            if(field.isGeneralPrimitive()) {
                 fieldValue = record.get(field.getColumn().name());
             }
             else if(field.isSingleValued()) {
@@ -96,6 +96,10 @@ public class Instance extends AbsInstance {
         else {
             return field.getResolvedValue();
         }
+    }
+
+    public boolean isPersistent() {
+        return type.isPersistent();
     }
 
     public Object getRaw(List<Long> fieldPath) {
@@ -233,7 +237,7 @@ public class Instance extends AbsInstance {
     private Map<String, Object> getTableData() {
         Map<String, Object> rawData = new HashMap<>();
         for (InstanceField field : fields()) {
-            if(field.isPrimitive()) {
+            if(field.isGeneralPrimitive()) {
                 rawData.put(field.getColumnName(), field.getColumnValue());
             }
         }
@@ -244,6 +248,7 @@ public class Instance extends AbsInstance {
         return name2field.values();
     }
 
+    @Override
     public Instance copy() {
         Instance copy = new Instance(
                 tenantId,
@@ -266,6 +271,6 @@ public class Instance extends AbsInstance {
 
     @Override
     public String toString() {
-        return "Instance {type: " + getType().getName() + ", id: " + getId() + ", title: " + getTitle() + "}";
+        return "Instance {category: " + getType().getName() + ", id: " + getId() + ", title: " + getTitle() + "}";
     }
 }

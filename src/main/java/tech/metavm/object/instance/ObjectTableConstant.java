@@ -22,7 +22,7 @@ public class ObjectTableConstant {
         List<String> columns = new ArrayList<>();
 
         columns.add(ColumnNames.TENANT_ID);
-        columns.add(ColumnNames.N_CLASS_ID);
+        columns.add(ColumnNames.TYPE_ID);
 
         for(int i = 0; i < NUM_BIGINT; i++) {
             columns.add("l" + i);

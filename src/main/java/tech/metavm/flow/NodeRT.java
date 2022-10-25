@@ -145,7 +145,7 @@ public abstract class NodeRT<P> extends Entity {
                 NncUtils.get(predecessor, Entity::getId),
                 NncUtils.get(outputType, Entity::getId),
                 getParam(false),
-                NncUtils.get(getOutputType(), Type::toDTO),
+                NncUtils.get(getOutputType(), t -> t.toDTO(true, true, true)),
                 scope.getId()
         );
     }

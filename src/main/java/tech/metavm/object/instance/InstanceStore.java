@@ -27,10 +27,11 @@ public class InstanceStore {
     private RelationMapper relationMapper;
 
     public void save(ContextDifference diff) {
-        Map<InstancePO, Instance> toInsertMap = NncUtils.toIdentityMap(diff.instancesToInsert(), Instance::toPO);
+//        Map<InstancePO, Instance> toInsertMap = NncUtils.toIdentityMap(diff.instancesToInsert(), Instance::toPO);
         if(NncUtils.isNotEmpty(diff.instancesToInsert())) {
-            instanceMapper.batchInsert(toInsertMap.keySet());
-            toInsertMap.forEach((po, instance) -> instance.initId(po.id()));
+//            instanceMapper.batchInsert(toInsertMap.keySet());
+//            toInsertMap.forEach((po, instance) -> instance.initId(po.id()));
+            instanceMapper.batchInsert(NncUtils.map(diff.instancesToInsert(), Instance::toPO));
         }
         if(NncUtils.isNotEmpty(diff.instanceToUpdate())) {
             instanceMapper.batchUpdate(NncUtils.map(diff.instanceToUpdate(), Instance::toPO));

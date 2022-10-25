@@ -17,7 +17,6 @@ import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.TypeStore;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.NncUtils;
@@ -82,7 +81,7 @@ public class InstanceSearchService {
 
     private Map<String, Object> buildSource(long tenantId, InstanceDTO instance) {
         EntityContext entityContext = contextFactory.newContext();
-        Type type = entityContext.getType(instance.typeId());
+        Type type = entityContext.getTypeRef(instance.typeId());
         Map<String, Object> source = new HashMap<>();
         source.put(TENANT_ID, tenantId);
         source.put(TYPE_ID, instance.typeId());

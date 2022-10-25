@@ -4,16 +4,18 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.LoadingList;
-import tech.metavm.object.instance.ColumnType;
+import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.persistence.TypePO;
+import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class Type extends Entity {
@@ -21,19 +23,21 @@ public class Type extends Entity {
     private boolean anonymous;
     private String name;
     private final TypeCategory category;
-    private final Type baseType;
-    private String desc;
+    private final @Nullable Type rawType;
+    private final @Nullable List<Type> typeArguments;
+    private @Nullable String desc;
     private transient final List<Field> fields;
-    private final List<ChoiceOption> choiceOptions;
+    private transient final List<EnumConstant> enumConstants;
 
     public Type(TypeDTO typeDTO, EntityContext context) {
         this(
                 typeDTO.id(),
                 typeDTO.name(),
-                TypeCategory.getByCodeRequired(typeDTO.type()),
+                TypeCategory.getByCodeRequired(typeDTO.category()),
                 typeDTO.anonymous(),
                 typeDTO.ephemeral(),
-                NncUtils.get(typeDTO.baseTypeId(), context::getType),
+                NncUtils.get(typeDTO.rawType(), TypeDTO::id, context::getTypeRef),
+                NncUtils.map(typeDTO.typeArguments(), TypeDTO::id, context::getTypeRef),
                 typeDTO.desc(),
                 new ArrayList<>(),
                 new ArrayList<>(),
@@ -48,7 +52,8 @@ public class Type extends Entity {
                 TypeCategory.getByCodeRequired(po.getCategory()),
                 po.getAnonymous(),
                 po.getEphemeral(),
-                NncUtils.get(po.getBaseTypeId(), context::getType),
+                NncUtils.get(po.getRawTypeId(), context::getTypeRef),
+                NncUtils.map(po.getTypeArgumentIds(), context::getTypeRef),
                 po.getDesc(),
                 null,
                 choiceOptions,
@@ -61,7 +66,8 @@ public class Type extends Entity {
             TypeCategory type,
             boolean anonymous,
             boolean ephemeral,
-            Type baseType,
+            Type rawType,
+            List<Type> typeArguments,
             String desc,
             EntityContext context) {
         this(
@@ -70,7 +76,8 @@ public class Type extends Entity {
                 type,
                 anonymous,
                 ephemeral,
-                baseType,
+                rawType,
+                typeArguments,
                 desc,
                 new ArrayList<>(),
                 new ArrayList<>(),
@@ -78,14 +85,15 @@ public class Type extends Entity {
         );
     }
 
-    private Type(
+    Type(
                 Long id,
                 String name,
                 TypeCategory type,
                 boolean anonymous,
                 boolean ephemeral,
-                Type baseType,
-                String desc,
+                @Nullable Type rawType,
+                @Nullable List<Type> typeArguments,
+                @Nullable String desc,
                 List<Field> fields,
                 List<InstancePO> choiceOptionPOs,
                 EntityContext context) {
@@ -95,14 +103,15 @@ public class Type extends Entity {
         this.category = type;
         this.anonymous = anonymous;
         this.ephemeral = ephemeral;
-        this.baseType = baseType;
+        this.rawType = rawType;
+        this.typeArguments = typeArguments;
         this.desc = desc;
         TypeStore typeStore = context.getTypeStore();
         this.fields = fields != null ? fields : typeStore.getFieldsLoadingList(this);
-        this.choiceOptions = new ArrayList<>();
+        this.enumConstants = new ArrayList<>();
         if (NncUtils.isNotEmpty(choiceOptionPOs)) {
             for (InstancePO choiceOption : choiceOptionPOs) {
-                new ChoiceOption(choiceOption, this);
+                new EnumConstant(choiceOption, this);
             }
         }
     }
@@ -128,7 +137,7 @@ public class Type extends Entity {
         this.anonymous = anonymous;
     }
 
-    public void setDesc(String desc) {
+    public void setDesc(@Nullable String desc) {
         this.desc = desc;
     }
 
@@ -157,19 +166,15 @@ public class Type extends Entity {
 //    }
 
     public List<Field> getFields() {
-        return Collections.unmodifiableList(fields());
+        return Collections.unmodifiableList(fields);
     }
 
     public Type getArrayType() {
-        return getContext().getTypeStore().getArrayType(this, getContext());
+        return context.getParameterizedType(context.getRawArrayType(), List.of(this));
     }
 
-    private List<Field> fields() {
-        return fields;
-    }
-
-    private List<ChoiceOption> choiceOptions() {
-        return choiceOptions;
+    public Type getNullableType() {
+        return context.getParameterizedType(context.getRawNullableType(), List.of(this));
     }
 
     void initField(Field field) {
@@ -186,74 +191,86 @@ public class Type extends Entity {
         if(field.isAsTitle() && getTileField() != null) {
             throw BusinessException.multipleTitleFields();
         }
-        fields().add(field);
+        fields.add(field);
     }
 
-    public void addChoiceOption(ChoiceOption option) {
-        for (ChoiceOption choiceOption : choiceOptions()) {
-            if(option.getId() != null && option.getId().equals(choiceOption.getId())
-                    || option.getName().equals(choiceOption.getName())
-                    || option.getOrder() == choiceOption.getOrder()) {
-                throw BusinessException.duplicateOption(option);
+    public void addEnumConstant(EnumConstant enumConstant) {
+        for (EnumConstant e : enumConstants) {
+            if(enumConstant.getId() != null && enumConstant.getId().equals(e.getId())
+                    || enumConstant.getName().equals(e.getName())
+                    || enumConstant.getOrdinal() == e.getOrdinal()) {
+                throw BusinessException.duplicateOption(enumConstant);
             }
         }
-        choiceOptions().add(option);
+        enumConstants.add(enumConstant);
     }
 
     public boolean isEnum() {
         return category.isEnum();
     }
 
-    public boolean isTable() {
-        return category.isTable();
+    public boolean isClass() {
+        return category.isClass();
     }
 
     public boolean isArray() {
-        return category.isArray();
+        return rawTypeEquals(context.getRawArrayType());
     }
 
     public boolean isPrimitive() {
-        return category.isPrimitive();
+        return isString() || isBool() || isTime() || isDate() || isDouble() || isInt() || isLong();
     }
 
     public boolean isString() {
-        return category == TypeCategory.STRING;
+        return equals(context.getStringType());
     }
 
     public boolean isBool() {
-        return category == TypeCategory.BOOL;
+        return equals(context.getBoolType());
     }
 
     public boolean isTime() {
-        return category == TypeCategory.TIME;
+        return equals(context.getTimeType());
     }
 
     public boolean isDate() {
-        return category == TypeCategory.DATE;
+        return equals(context.getDateType());
     }
 
-    public boolean isNumber() {
-        return category == TypeCategory.DOUBLE;
+    public boolean isDouble() {
+        return equals(context.getDoubleType());
     }
 
-    public boolean isInt64() {
-        return category == TypeCategory.INT64;
+    public boolean isLong() {
+        return equals(context.getLongType());
     }
 
-    public boolean isInt32() {
-        return category == TypeCategory.INT32;
+    public boolean isInt() {
+        return equals(context.getIntType());
     }
 
     public boolean isNullable() {
-        return category == TypeCategory.NULLABLE;
+        return rawTypeEquals(context.getRawNullableType());
+    }
+
+    public boolean rawTypeEquals(Type type) {
+        return Objects.equals(rawType, type);
     }
 
     public boolean isNotNull() {
         return !isNullable();
     }
 
-    public Type getBaseType() {
-        return baseType;
+    public Type getElementType() {
+        NncUtils.requireTrue(isArray(), () -> new InternalException("Type " + id + " is not an array"));
+        Objects.requireNonNull(typeArguments);
+        return typeArguments.get(0);
+    }
+
+    public Type getUnderlyingType() {
+        NncUtils.requireTrue(isNullable(), () -> new InternalException("Type " + id + " is not nullable"));
+        Objects.requireNonNull(typeArguments);
+        return typeArguments.get(0);
     }
 
     public boolean isEphemeral() {
@@ -265,7 +282,7 @@ public class Type extends Entity {
     }
 
     public Field getField(long fieldId) {
-        return NncUtils.filterOne(fields(), f -> f.getId() == fieldId);
+        return NncUtils.filterOne(fields, f -> f.getId() == fieldId);
     }
 
     public Field getFieldNyPath(String fieldPath) {
@@ -285,53 +302,74 @@ public class Type extends Entity {
     }
 
     public Field getFieldByName(String fieldName) {
-        return NncUtils.filterOne(fields(), f -> f.getName().equals(fieldName));
+        return NncUtils.filterOne(fields, f -> f.getName().equals(fieldName));
     }
 
     Column allocateColumn(Field field) {
-        TypeCategory fieldTypeCategory = field.getConcreteTypeCategory();
-        if(fieldTypeCategory.getColumnType() == null) {
+        Type fieldType = field.getType();
+        if(fieldType.getColumnType() == null) {
             return null;
         }
         List<Column> usedColumns = NncUtils.filterAndMap(
-                fields(),
+                fields,
                 f -> !f.equals(field),
                 Field::getColumn
         );
-        Map<ColumnType, Queue<Column>> columnMap = ColumnType.getColumnMap(usedColumns);
-        Queue<Column> columns = columnMap.get(fieldTypeCategory.getColumnType());
+        Map<SQLColumnType, Queue<Column>> columnMap = SQLColumnType.getColumnMap(usedColumns);
+        Queue<Column> columns = columnMap.get(fieldType.getColumnType());
         if(columns.isEmpty()) {
             throw BusinessException.invalidField(field, "属性数量超出限制");
         }
         return columns.poll();
     }
 
+    private SQLColumnType getColumnType() {
+        if(isArray()) {
+            return getElementType().getColumnType();
+        }
+        if(isNullable()) {
+            return getUnderlyingType().getColumnType();
+        }
+        if(isPrimitive()) {
+            return PrimitiveTypes.get(this.id).columnType();
+        }
+        if(isClass() || isEnum()) {
+            return SQLColumnType.INT64;
+        }
+        return null;
+    }
+
     public Field getFieldNyNameRequired(String fieldName) {
         return NncUtils.filterOneRequired(
-                fields(),
+                fields,
                 f -> f.getName().equals(fieldName),
                 "field not found: " + fieldName
         );
     }
 
-    public List<ChoiceOption> getChoiceOptions() {
-        return choiceOptions();
+    public List<EnumConstant> getEnumConstants() {
+        return Collections.unmodifiableList(enumConstants);
     }
 
     public boolean isAnonymous() {
         return anonymous;
     }
 
-    public ChoiceOption getChoiceOption(long id) {
+    public EnumConstant getEnumConstant(long id) {
         return NncUtils.filterOneRequired(
-                choiceOptions(),
+                enumConstants,
                 opt -> opt.getId() == id,
                 "选项ID不存在: " + id
         );
     }
 
     public void remove() {
-        new ArrayList<>(fields).forEach(Field::remove);
+        if(NncUtils.isNotEmpty(fields)) {
+            new ArrayList<>(fields).forEach(Field::remove);
+        }
+        if(NncUtils.isNotEmpty(enumConstants)) {
+            new ArrayList<>(enumConstants).forEach(context::remove);
+        }
         context.remove(this);
     }
 
@@ -352,10 +390,15 @@ public class Type extends Entity {
         po.setId(id);
         po.setAnonymous(anonymous);
         po.setEphemeral(ephemeral);
-        po.setBaseTypeId(NncUtils.get(baseType, Entity::getId));
+        po.setRawTypeId(NncUtils.get(rawType, Entity::getId));
+        po.setTypeArgumentIds(NncUtils.map(typeArguments, Type::getId));
         po.setCategory(category.code());
         po.setDesc(desc);
         return po;
+    }
+
+    protected Type getFirstTypeArgument() {
+        return NncUtils.getFirst(typeArguments);
     }
 
     public boolean isInstance(Instance instance) {
@@ -363,31 +406,46 @@ public class Type extends Entity {
     }
 
     public TypeDTO toDTO() {
+        return toDTO(true, true, false);
+    }
+
+    public TypeDTO toDTO(boolean withTitleField, boolean withFields, boolean withFieldTypes) {
         return new TypeDTO(
                 id,
                 name,
                 category.code(),
                 anonymous,
                 ephemeral,
-                NncUtils.get(baseType, Entity::getId),
-                NncUtils.get(baseType, Type::toDTO),
+                NncUtils.get(rawType, Type::toDTO),
+                NncUtils.map(typeArguments, Type::toDTO),
                 desc,
-                NncUtils.get(getTileField(), Field::toTitleDTO),
-                NncUtils.map(fields(), Field::toDTO),
-                List.of() // TODO return options
+                getFieldDTOs(withFields, withTitleField, withFieldTypes),
+                NncUtils.sortByIntAndMap(enumConstants, EnumConstant::getOrdinal, EnumConstant::toDTO)
         );
     }
 
+    private List<FieldDTO> getFieldDTOs(boolean withFields, boolean withTitleField, boolean withFieldTypes) {
+        if(withFields) {
+            return NncUtils.map(fields, f -> f.toDTO(withFieldTypes));
+        }
+        else if(withTitleField) {
+            return NncUtils.filterAndMap(fields, Field::isAsTitle, f -> f.toDTO(withFieldTypes));
+        }
+        else {
+            return List.of();
+        }
+    }
+
     public Field getTileField() {
-        return NncUtils.filterOne(fields(), Field::isAsTitle);
+        return NncUtils.filterOne(fields, Field::isAsTitle);
     }
 
     public Type getConcreteType() {
         Type t = this;
-        Type b = baseType;
+        Type b = getFirstTypeArgument();
         while(b != null) {
             t = b;
-            b = b.baseType;
+            b = b.getFirstTypeArgument();
         }
         return t;
     }

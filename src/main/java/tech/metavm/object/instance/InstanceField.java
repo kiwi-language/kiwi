@@ -2,18 +2,20 @@ package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.ValueDTO;
-import tech.metavm.object.meta.ChoiceOption;
+import tech.metavm.object.meta.EnumConstant;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
+import java.text.DecimalFormat;
 import java.util.List;
 
 public class InstanceField {
+
+    public static final DecimalFormat DF = new DecimalFormat("0.##");
 
     private final InstanceContext context;
     private final Instance owner;
@@ -87,7 +89,7 @@ public class InstanceField {
             }
             return null;
         }
-        if(field.isInt64() || field.isTime() || field.isComposite()) {
+        if(field.isInt64() || field.isTime() || field.isCustomTyped()) {
             if(ValueUtil.isInteger(value)) {
                 return ((Number) value).longValue();
             }
@@ -158,7 +160,7 @@ public class InstanceField {
     }
 
     public List<Long> getDestInstanceIds() {
-        if(isPrimitive()) {
+        if(isGeneralPrimitive()) {
             throw new UnsupportedOperationException("getDestInstanceIds is only supported for relation fields");
         }
         return getIdList();
@@ -194,9 +196,9 @@ public class InstanceField {
             return NncUtils.filterOneAndMap(
                     field.getChoiceOptions(),
                     opt -> opt.getId().equals(value),
-                    ChoiceOption::getName);
+                    EnumConstant::getName);
         }
-        else if(field.getConcreteType().isTable()) {
+        else if(field.getConcreteType().isClass()) {
             return context.getTitle((Long) value);
         }
         else if(field.getConcreteType().isBool()) {
@@ -210,6 +212,9 @@ public class InstanceField {
                 return "";
             }
         }
+        else if (field.getConcreteType().isDouble()) {
+            return DF.format(value);
+        }
         else if(field.getConcreteType().isTime()) {
             return ValueFormatter.formatTime((Long) value);
         }
@@ -220,8 +225,11 @@ public class InstanceField {
     }
 
     public boolean isPrimitive() {
-        Type fieldType = field.getType();
-        return fieldType.isPrimitive() || fieldType.isNullable() && fieldType.getBaseType().isPrimitive();
+        return field.isPrimitive();
+    }
+
+    public boolean isGeneralPrimitive() {
+        return field.isGeneralPrimitive();
     }
 
     public boolean isGeneralRelation() {

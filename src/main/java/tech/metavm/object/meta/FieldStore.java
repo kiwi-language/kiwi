@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityStore;
 import tech.metavm.entity.LoadingOption;
@@ -23,14 +24,14 @@ public class FieldStore implements EntityStore<Field> {
     private TypeMapper typeMapper;
 
     @Override
-    public List<Field> batchGet(Collection<Long> ids, EntityContext context, EnumSet<LoadingOption> options) {
+    public List<Field> batchGet(Collection<Long> ids, EntityContext context, Set<LoadingOption> options) {
         List<FieldPO> fieldPOs = fieldMapper.selectByIds(ids);
-        Set<Long> ownerIds = NncUtils.mapUnique(fieldPOs, FieldPO::getOwnerId);
+        Set<Long> ownerIds = NncUtils.mapUnique(fieldPOs, FieldPO::getDeclaringTypeId);
         List<Type> types = context.batchGet(Type.class, ownerIds, options);
         Map<Long, Type> typeMap = NncUtils.toMap(types, Type::getId);
         List<Field> results = new ArrayList<>();
         for (FieldPO fieldPO : fieldPOs) {
-            Type owner = typeMap.get(fieldPO.getOwnerId());
+            Type owner = typeMap.get(fieldPO.getDeclaringTypeId());
             Field field = NncUtils.get(owner, t -> t.getField(fieldPO.getId()));
             if(field != null) {
                 results.add(field);
@@ -44,12 +45,12 @@ public class FieldStore implements EntityStore<Field> {
         if(NncUtils.isEmpty(fieldPOs)) {
             return List.of();
         }
-        Set<Long> ownerIds = NncUtils.mapUnique(fieldPOs, FieldPO::getOwnerId);
+        Set<Long> ownerIds = NncUtils.mapUnique(fieldPOs, FieldPO::getDeclaringTypeId);
         List<TypePO> typePOs = typeMapper.selectByIds(ownerIds);
         Map<Long, TypePO> typePOMap = NncUtils.toMap(typePOs, TypePO::getId);
         List<String> results = new ArrayList<>();
         for (FieldPO fieldPO : fieldPOs) {
-            TypePO owner = typePOMap.get(fieldPO.getOwnerId());
+            TypePO owner = typePOMap.get(fieldPO.getDeclaringTypeId());
             if(owner != null && !owner.getId().equals(type.getId())) {
                 results.add(owner.getName() + "." + fieldPO.getName());
             }
@@ -68,8 +69,8 @@ public class FieldStore implements EntityStore<Field> {
     }
 
     @Override
-    public void batchDelete(List<Long> ids) {
-        fieldMapper.batchDelete(ids);
+    public void batchDelete(List<Field> fields) {
+        fieldMapper.batchDelete(NncUtils.map(fields, Entity::getId));
     }
 
     @Override

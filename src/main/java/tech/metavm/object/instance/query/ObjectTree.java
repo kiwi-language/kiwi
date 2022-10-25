@@ -28,7 +28,7 @@ public class ObjectTree extends NTree {
             if(fieldValue == null) {
                 continue;
             }
-            if(field.isPrimitive()) {
+            if(field.isGeneralPrimitive()) {
                 addField(new ValueTree(childPath, fieldValue));
             }
             else if(field.isSingleValued()) {

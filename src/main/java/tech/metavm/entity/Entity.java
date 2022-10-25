@@ -5,7 +5,7 @@ import tech.metavm.object.meta.Type;
 
 import java.util.Objects;
 
-public class Entity {
+public class Entity implements Identifiable {
 
     private boolean persisted;
     protected Long id;
@@ -65,6 +65,11 @@ public class Entity {
         this.persisted = persisted;
     }
 
+    @Override
+    public Entity copy() {
+        return EntityUtils.copyEntity(this);
+    }
+
     public EntityContext getContext() {
         return context;
     }
@@ -75,11 +80,11 @@ public class Entity {
     }
 
     public Type getTypeFromContext(long typeId) {
-        return context.getType(typeId);
+        return context.getTypeRef(typeId);
     }
 
     public Field getFieldFromContext(long fieldId) {
-        return context.getField(fieldId);
+        return context.getFieldRef(fieldId);
     }
 
     @Override

@@ -16,7 +16,7 @@ public class FieldParam {
     private final Value value;
 
     public FieldParam(FieldParamDTO dto, EntityContext context, ParsingContext parsingContext) {
-        this.field = context.getField(dto.fieldId());
+        this.field = context.getFieldRef(dto.fieldId());
         this.value = ValueFactory.getValue(dto.value(), parsingContext);
     }
 

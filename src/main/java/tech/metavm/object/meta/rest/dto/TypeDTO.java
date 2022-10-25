@@ -5,15 +5,18 @@ import java.util.List;
 public record TypeDTO(
         Long id,
         String name,
-        int type,
+        int category,
         boolean ephemeral,
         boolean anonymous,
-        Long baseTypeId,
-        TypeDTO baseType,
+//        Long elementTypeId,
+//        Long underlyingTypeId,
+//        TypeDTO elementType,
+//        TypeDTO underlyingType,
+        TypeDTO rawType,
+        List<TypeDTO> typeArguments,
         String desc,
-        TitleFieldDTO titleField,
         List<FieldDTO> fields,
-        List<ChoiceOptionDTO> choiceOptions
+        List<EnumConstantDTO> enumConstants
 // TODO return flow summaries , List<FlowSummaryDTO> flows
 ) {
 

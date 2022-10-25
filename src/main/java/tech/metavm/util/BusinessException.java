@@ -2,9 +2,10 @@ package tech.metavm.util;
 
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.query.Function;
-import tech.metavm.object.meta.ChoiceOption;
+import tech.metavm.object.meta.EnumConstant;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.rest.dto.ColumnDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 
@@ -27,8 +28,8 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_PARAMETERS, detail);
     }
 
-    public static BusinessException invalidNClass(TypeDTO typeDTO, String reason) {
-        return new BusinessException(ErrorCode.INVALID_N_CLASS, typeDTO.name(), reason);
+    public static BusinessException invalidType(TypeDTO typeDTO, String reason) {
+        return new BusinessException(ErrorCode.INVALID_TYPE, typeDTO.name(), reason);
     }
 
     public static BusinessException deleteNClassError(Type nClass, String reason) {
@@ -36,7 +37,11 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException invalidField(FieldDTO field, String reason) {
-        throw new BusinessException(ErrorCode.INVALID_N_FIELD, field.name(), reason);
+        throw new BusinessException(ErrorCode.INVALID_FIELD, field.name(), reason);
+    }
+
+    public static BusinessException invalidColumn(ColumnDTO column, String reason) {
+        throw new BusinessException(ErrorCode.INVALID_FIELD, column.name(), reason);
     }
 
     public static BusinessException duplicateOptionName(String optionName) {
@@ -47,17 +52,17 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION_PROP, "序号", order);
     }
 
-    public static BusinessException duplicateOption(ChoiceOption choiceOption) {
+    public static BusinessException duplicateOption(EnumConstant choiceOption) {
         throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION,
-                choiceOption.getId(), choiceOption.getName(), choiceOption.getOrder());
+                choiceOption.getId(), choiceOption.getName(), choiceOption.getOrdinal());
     }
 
     public static BusinessException invalidField(Field field, String reason) {
-        throw new BusinessException(ErrorCode.INVALID_N_FIELD, field.getName(), reason);
+        throw new BusinessException(ErrorCode.INVALID_FIELD, field.getName(), reason);
     }
 
     public static BusinessException invalidField(String fieldName, String reason) {
-        throw new BusinessException(ErrorCode.INVALID_N_FIELD, fieldName, reason);
+        throw new BusinessException(ErrorCode.INVALID_FIELD, fieldName, reason);
     }
 
     public static BusinessException instanceNotFound(long id) {

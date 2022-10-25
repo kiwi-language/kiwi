@@ -8,21 +8,19 @@ public class FieldPO {
 
     private String name;
 
-    private Long ownerId;
-
-//    private Integer typeCategory;
+    private Long declaringTypeId;
 
     private Integer access;
 
-    private Boolean required;
+//    private Boolean required;
 
     private Boolean unique;
 
-    private Boolean multiValued;
+//    private Boolean multiValued;
 
     private String defaultValue;
 
-    private Long targetId;
+//    private Long targetId;
 
     private String columnName;
 
@@ -54,25 +52,25 @@ public class FieldPO {
         this.name = name;
     }
 
-    public Long getOwnerId() {
-        return ownerId;
+    public Long getDeclaringTypeId() {
+        return declaringTypeId;
     }
 
-    public void setOwnerId(Long ownerId) {
-        this.ownerId = ownerId;
+    public void setDeclaringTypeId(Long declaringTypeId) {
+        this.declaringTypeId = declaringTypeId;
     }
 
 //    public Integer getTypeCategory() {
 //        return typeCategory;
 //    }
 
-    public Boolean getRequired() {
-        return required;
-    }
+//    public Boolean getRequired() {
+//        return required;
+//    }
 
-    public void setRequired(Boolean required) {
-        this.required = required;
-    }
+//    public void setRequired(Boolean required) {
+//        this.required = required;
+//    }
 
     public Boolean getUnique() {
         return unique;
@@ -102,13 +100,13 @@ public class FieldPO {
         this.access = access;
     }
 
-    public Long getTargetId() {
-        return targetId;
-    }
+//    public Long getTargetId() {
+//        return targetId;
+//    }
 
-    public void setTargetId(Long targetId) {
-        this.targetId = targetId;
-    }
+//    public void setTargetId(Long targetId) {
+//        this.targetId = targetId;
+//    }
 
     public String getColumnName() {
         return columnName;
@@ -126,13 +124,13 @@ public class FieldPO {
         this.asTitle = asTitle;
     }
 
-    public Boolean getMultiValued() {
-        return multiValued;
-    }
+//    public Boolean getMultiValued() {
+//        return multiValued;
+//    }
 
-    public void setMultiValued(Boolean multiValued) {
-        this.multiValued = multiValued;
-    }
+//    public void setMultiValued(Boolean multiValued) {
+//        this.multiValued = multiValued;
+//    }
 
     public Long getTypeId() {
         return typeId;

@@ -9,6 +9,7 @@ import tech.metavm.entity.Entity;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class NncUtils {
 
@@ -56,7 +57,11 @@ public class NncUtils {
         }
     }
 
-    public static <T> T anyNoneNull(T t1, T t2) {
+    public static <T> T anyNonNull(T t1, T t2) {
+        return t1 != null ? t1 : t2;
+    }
+
+    public static <T> T firstNonNull(T t1, T t2) {
         if(t1 == null && t2 == null) {
             throw new IllegalArgumentException("Arguments can't both be null");
         }
@@ -120,8 +125,12 @@ public class NncUtils {
         return results;
     }
 
-    public static <T> T first(List<T> list) {
-        return isNotEmpty(list) ? list.get(0) : null;
+    public static <T, R> R getFirst(List<T> list, Function<T, R> mapping) {
+        return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
+    }
+
+    public static <T> T getFirst(List<T> list) {
+        return getFirst(list, Function.identity());
     }
 
     public static boolean isNotEmpty(Map<?,?> map) {
@@ -149,6 +158,11 @@ public class NncUtils {
         return merged;
     }
 
+    public static <T> Set<T> mergeUnique(Collection<T> coll1, Collection<T> coll2) {
+        Set<T> merged = new HashSet<>(coll1);
+        merged.addAll(coll2);
+        return merged;
+    }
 
     public static <T> List<T> merge(List<List<T>> collections) {
         List<T> merged = new ArrayList<>();
@@ -163,6 +177,10 @@ public class NncUtils {
             return List.of();
         }
         return source.stream().map(mapping).collect(Collectors.toList());
+    }
+
+    public static <T, M, R> List<R> map(Collection<T> source, Function<T, M> mapping1, Function<M, R> mapping2) {
+        return map(map(source, mapping1), mapping2);
     }
 
     public static <T, K, V> Map<K, List<V>> groupBy(List<T> list, Function<T, K> keyMapping, Function<T, V> valueMapping) {
@@ -194,6 +212,18 @@ public class NncUtils {
             sum += num;
         }
         return sum;
+    }
+
+    public static <T> List<T> sort(Collection<T> list, Comparator<T> comparator) {
+        return sortAndMap(list, comparator, Function.identity());
+    }
+
+    public static <T> List<T> sortByInt(Collection<T> list, ToIntFunction<T> intMapper) {
+        return sortAndMap(list, Comparator.comparingInt(intMapper), Function.identity());
+    }
+
+    public static <T, R> List<R> sortByIntAndMap(Collection<T> list, ToIntFunction<T> intFunc, Function<T, R> mapper) {
+        return sortAndMap(list, Comparator.comparingInt(intFunc), mapper);
     }
 
     public static <T, R> List<R> sortAndMap(Collection<T> list, Comparator<T> comparator, Function<T, R> mapper) {
@@ -270,6 +300,11 @@ public class NncUtils {
         return Arrays.stream(str.split(delimiter))
                 .map(mapping)
                 .collect(Collectors.toList());
+    }
+
+    public static <T> T filterOneRequired(T[] array, Predicate<T> filter) {
+        return Arrays.stream(array).filter(filter).findAny()
+                .orElseThrow(InternalException::new);
     }
 
     public static <T> T filterOneRequired(Collection<T> list, Predicate<T> filter, String errorMessage) {
@@ -386,7 +421,7 @@ public class NncUtils {
     }
 
     public static <T, K> List<Pair<Entity>> buildEntityPairs(Collection<Entity> list1, Collection<Entity> list2) {
-        return buildPairs(list1, list2, Entity::getId);
+        return buildPairs(list1, list2, Entity::key);
     }
 
     public static <T> List<Pair<T>> buildPairs(Collection<T> coll1, Collection<T> coll2) {
@@ -439,23 +474,20 @@ public class NncUtils {
     }
 
     public static <T,R> List<R> flatMap(Collection<T> list, Function<T, Collection<R>> mapping) {
-        List<R> result = new ArrayList<>();
-        for (T item : list) {
-            result.addAll(mapping.apply(item));
-        }
-        return result;
+        return flatMapAndFilter(list, mapping, e -> true);
     }
 
-    public static void require(Object nonNull, String fieldName) {
-        if(nonNull == null) {
-            throw BusinessException.invalidParams(fieldName + "必填");
+    public static <T,R> List<R> flatMapAndFilter(Collection<T> list, Function<T, Collection<R>> mapping, Predicate<R> filter) {
+        if(NncUtils.isEmpty(list)) {
+            return List.of();
         }
-    }
-
-    public static void require(Object nonNull) {
-        if(nonNull == null) {
-            throw new NullPointerException();
-        }
+        return list.stream()
+                .flatMap(e ->{
+                    Collection<R> coll = mapping.apply(e);
+                    return coll != null ? coll.stream() : Stream.empty();
+                })
+                .filter(filter)
+                .collect(Collectors.toList());
     }
 
     public static <T,R> List<R> flatMap(T[] array, Function<T, List<R>> mapping) {
@@ -482,6 +514,11 @@ public class NncUtils {
         return t != null ? mapping.apply(t) : null;
     }
 
+
+    public static <T, M, R> R get(T t, Function<T, M> mapping1, Function<M, R> mapping2) {
+        return get(get(t, mapping1), mapping2);
+    }
+
     public static <T> void updateIfNotNull(T value, Consumer<T> update) {
         updateIfNotNull(value, Function.identity(), update);
     }
@@ -492,11 +529,45 @@ public class NncUtils {
         }
     }
 
-    public static <T> T requireNonNull(T value, String label) {
+    public static <T> T requireNonNull(T value, String message) {
+        return requireNonNull(value, () -> BusinessException.invalidParams(message));
+    }
+
+    public static <T> T requireNonNull(T value, Supplier<RuntimeException> exceptionSupplier) {
         if(value == null) {
-            throw BusinessException.invalidParams(label + "不能为空");
+            throw exceptionSupplier.get();
         }
         return value;
+    }
+
+    public static void requireTrue(boolean value, Supplier<RuntimeException> exceptionSupplier) {
+        if(!value) {
+            throw exceptionSupplier.get();
+        }
+    }
+
+    public static void requireNotEmpty(Collection<?> collection, String message) {
+        if(isEmpty(collection)) {
+            throw BusinessException.invalidParams(message);
+        }
+    }
+
+    public static <E> void addIfNotNull(List<E> list, E item) {
+        if(item != null) {
+            list.add(item);
+        }
+    }
+
+    public static <T, R> List<R> splitAndMerge(Collection<T> source,
+                                               Predicate<T> test,
+                                               Function<List<T>, List<R>> loader1,
+                                               Function<List<T>, List<R>> loader2)
+    {
+        List<T> list1 = filter(source, test);
+        List<T> list2 = filterNot(source, test);
+        List<R> result1 = isNotEmpty(list1) ? loader1.apply(list1) : List.of();
+        List<R> result2 = isNotEmpty(list2) ? loader2.apply(list2) : List.of();
+        return merge(result1, result2);
     }
 
 }

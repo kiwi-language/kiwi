@@ -11,13 +11,15 @@
     <result column="category" jdbcType="INTEGER" property="category"/>
     <result column="desc" jdbcType="VARCHAR" property="desc"/>
     <result column="ephemeral" jdbcType="BOOLEAN" property="ephemeral"/>
-    <result column="base_type_id" jdbcType="BIGINT" property="baseTypeId"/>
     <result column="anonymous" jdbcType="BOOLEAN" property="anonymous"/>
+    <result column="raw_type_id" jdbcType="BIGINT" property="rawTypeId"/>
+    <result column="type_argument_ids" jdbcType="VARCHAR" property="typeArgumentIds"
+            typeHandler="tech.metavm.util.IdStringTypeHandler"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, `name`, category, `desc`, ephemeral, base_type_id, anonymous
+    id, tenant_id, `name`, category, `desc`, ephemeral, anonymous, raw_type_id, type_argument_ids
   </sql>
 
   <select id="selectByName" resultMap="BaseResultMap">
@@ -65,13 +67,13 @@
     limit #{start}, #{limit}
   </select>
 
-  <select id="selectByBaseTypeId" resultMap="BaseResultMap">
+  <select id="selectByElementTypeId" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
     from
     type
     where
-    base_type_id = #{elementTypeId}
+    element_type_id = #{elementTypeId}
     and deleted_at = 0
   </select>
 
@@ -79,7 +81,7 @@
     select
     <include refid="Base_Column_List"/>
     from type
-    where tenant_id = -1 and category > 10 and deleted_at = 0
+    where tenant_id = -1 and id &lt;= 20 and deleted_at = 0
   </select>
 
   <select id="selectByCode" resultMap="BaseResultMap">
@@ -89,12 +91,38 @@
     where category = #{code}
   </select>
 
-  <select id="selectByCategoryAndBaseId" resultMap="BaseResultMap">
+  <select id="selectParameterized" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
     from type
-    where category = #{category} and base_type_id = #{baseTypeId} and deleted_at = 0
+    where
+        tenant_id = #{tenantId}
+        and raw_type_id = #{rawTypeId}
+        and type_argument_ids = #{typeArgumentIds, typeHandler=tech.metavm.util.IdStringTypeHandler}
+        and deleted_at = 0
   </select>
+
+  <select id="selectByRawTypeId" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from type
+    where
+    tenant_id = #{tenantId}
+    and raw_type_id = #{rawTypeId}
+    and deleted_at = 0
+  </select>
+
+  <select id="selectByTypeArgumentId" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from type
+    where
+    tenant_id = #{tenantId}
+    and concat(',', type_argument_ids, ',') like concat(',', #{typeArgumentId}, ',')
+    and deleted_at = 0
+  </select>
+
+
 
   <select id="selectByIds" resultMap="BaseResultMap">
     select
@@ -110,11 +138,13 @@
 
   <insert id="batchInsert">
     <!--@mbg.generated-->
-    insert into type (id, tenant_id, `name`, category, `desc`, ephemeral, base_type_id, anonymous)
+    insert into type (id, tenant_id, `name`, category, `desc`, ephemeral, anonymous,
+    raw_type_id, type_argument_ids)
     values
     <foreach collection="collection" item="item" separator=",">
       (#{item.id}, #{item.tenantId}, #{item.name}, #{item.category}, #{item.desc}, #{item.ephemeral},
-      #{item.baseTypeId}, #{item.anonymous})
+      #{item.anonymous}, #{item.rawTypeId},
+      #{item.typeArgumentIds, typeHandler=tech.metavm.util.IdStringTypeHandler})
     </foreach>
 
   </insert>
@@ -139,8 +169,8 @@
         <if test="item.ephemeral != null">
           ephemeral = #{item.ephemeral},
         </if>
-        <if test="item.baseTypeId != null">
-          base_type_id = #{item.baseTypeId},
+        <if test="item.typeArgumentIds != null">
+          type_argument_ids = #{item.typeArgumentIds, typeHandler=tech.metavm.util.IdStringTypeHandler},
         </if>
         <if test="item.anonymous != null">
           anonymous = #{item.anonymous},

@@ -40,7 +40,7 @@ public class InstanceQueryService {
         if(NncUtils.isEmpty(queryDTO.searchText())) {
             return null;
         }
-        Type type = contextFactory.newContext(tenantId).getType(queryDTO.typeId());
+        Type type = contextFactory.newContext(tenantId).getTypeRef(queryDTO.typeId());
         Field titleField = type.getTileField();
         if(titleField == null) {
             return null;

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceContext;
-import tech.metavm.object.meta.ChoiceOption;
+import tech.metavm.object.meta.EnumConstant;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
@@ -33,7 +33,7 @@ public class EntityUtils {
 
     public static final Set<Class<?>> ENTITY_CLASSES = Set.of(
         Type.class, tech.metavm.object.meta.Field.class, Instance.class,
-            ChoiceOption.class
+            EnumConstant.class
     );
 
     public static final Set<Class<?>> CONTEXT_CLASSES = Set.of(
@@ -263,7 +263,7 @@ public class EntityUtils {
             tmp = tmp.getSuperclass();
         }
         if (tmp == Object.class) {
-            throw new RuntimeException("type " + type.getName() + " is not an entity type");
+            throw new RuntimeException("category " + type.getName() + " is not an entity category");
         }
         return tmp;
     }

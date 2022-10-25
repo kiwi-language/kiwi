@@ -7,7 +7,7 @@ import java.util.Objects;
 public final class InstancePO {
     private final long tenantId;
     private Long id;
-    private final long modelId;
+    private final long typeId;
     private final String title;
     private final Map<String, Object> data;
     private final long version;
@@ -16,7 +16,7 @@ public final class InstancePO {
     public InstancePO(
             long tenantId,
             Long id,
-            long modelId,
+            long typeId,
             String title,
             Map<String, Object> data,
             long version,
@@ -24,7 +24,7 @@ public final class InstancePO {
     ) {
         this.tenantId = tenantId;
         this.id = id;
-        this.modelId = modelId;
+        this.typeId = typeId;
         this.title = title;
         this.data = data;
         this.version = version;
@@ -59,8 +59,8 @@ public final class InstancePO {
         return id;
     }
 
-    public long modelId() {
-        return modelId;
+    public long typeId() {
+        return typeId;
     }
 
     public String title() {
@@ -96,7 +96,7 @@ public final class InstancePO {
         var that = (InstancePO) obj;
         return this.tenantId == that.tenantId &&
                 Objects.equals(this.id, that.id) &&
-                this.modelId == that.modelId &&
+                this.typeId == that.typeId &&
                 Objects.equals(this.title, that.title) &&
                 Objects.equals(this.data, that.data) &&
                 this.version == that.version &&
@@ -105,7 +105,7 @@ public final class InstancePO {
 
     @Override
     public int hashCode() {
-        return Objects.hash(tenantId, id, modelId, title, data, version, syncVersion);
+        return Objects.hash(tenantId, id, typeId, title, data, version, syncVersion);
     }
 
     @Override
@@ -113,7 +113,7 @@ public final class InstancePO {
         return "InstancePO[" +
                 "tenantId=" + tenantId + ", " +
                 "objectId=" + id + ", " +
-                "modelId=" + modelId + ", " +
+                "modelId=" + typeId + ", " +
                 "title=" + title + ", " +
                 "data=" + data + ", " +
                 "version=" + version + ", " +

@@ -2,6 +2,8 @@ package tech.metavm.object.instance.search;
 
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
+import tech.metavm.constant.ColumnNames;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;

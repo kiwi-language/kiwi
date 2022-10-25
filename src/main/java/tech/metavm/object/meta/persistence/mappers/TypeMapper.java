@@ -19,13 +19,25 @@ public interface TypeMapper {
 
     TypePO selectByName(@Param("tenantId") long tenantId, @Param("name") String name);
 
-    List<TypePO> selectByBaseTypeId(@Param("tenantId") long tenantId,
-                              @Param("elementTypeId") long elementTypeId);
+    TypePO selectByElementTypeId(@Param("tenantId") long tenantId,
+                                       @Param("elementTypeId") long elementTypeId);
 
-    TypePO selectByCategoryAndBaseId(
-            @Param("category") int category,
-            @Param("baseTypeId") long baseTypeId
+    TypePO selectParameterized(
+            @Param("tenantId") long tenantId,
+            @Param("rawTypeId") long rawTypeId,
+            @Param("typeArgumentIds") List<Long> typeArgumentIds
         );
+
+    List<TypePO> selectByRawTypeId(
+            @Param("tenantId") long tenantId,
+            @Param("rawTypeId") long rawTypeId
+    );
+
+
+    List<TypePO> selectByTypeArgumentId(
+            @Param("tenantId") long tenantId,
+            @Param("typeArgumentId") long typeArgumentId
+    );
 
     void batchInsert(List<TypePO> typePOs);
 

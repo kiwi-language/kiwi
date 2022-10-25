@@ -24,21 +24,31 @@ public class DefaultValueUtil {
         }
         if(type.isArray()) {
             List<Object> values = NncUtils.readJSONString(str, new TypeReference<>() {});
-            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), type.getBaseType()));
+            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), type.getElementType()));
+        }
+        else if(type.isNullable()) {
+            return convertFromStr(str, type.getUnderlyingType());
         }
         else {
-            return convertFromStrOne(str, type.getConcreteType().getCategory());
+            return convertFromStrOne(str, type);
         }
     }
 
-    public static Object convertFromStrOne(String str, TypeCategory fieldType) {
-        return switch (fieldType) {
-            case INT32, INT64, TABLE, TIME, DATE, ENUM, PAGE, INTERFACE, FLOW_INPUT, FLOW_OUTPUT -> parseLong(str);
-            case DOUBLE -> parseDouble(str);
-            case BOOL -> parseBool(str);
-            case OBJECT, ARRAY, NULLABLE -> null;
-            case STRING -> str;
-        };
+    private static Object convertFromStrOne(String str, Type type) {
+        if(type.isInt() || type.isLong() || type.isDate()
+                || type.isTime() || type.isClass() || type.isEnum()) {
+            return parseLong(str);
+        }
+        if(type.isDouble()) {
+            return parseDouble(str);
+        }
+        if(type.isBool()) {
+            return parseBool(str);
+        }
+        if(type.isString()) {
+            return str;
+        }
+        throw new InternalException("Unexpected type: " + type.getName());
     }
 
     private static boolean isNull(String str) {

@@ -4,6 +4,7 @@ import tech.metavm.object.meta.BuiltinTypes;
 import tech.metavm.object.meta.Type;
 
 import java.util.Arrays;
+
 import static tech.metavm.object.instance.query.OperatorTypes.*;
 
 public enum Operator {

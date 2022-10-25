@@ -7,18 +7,16 @@ import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.flow.rest.*;
-import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.object.meta.TypeManager;
+import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
+import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 @Component
 public class FlowManager {
@@ -118,6 +116,7 @@ public class FlowManager {
             throw BusinessException.flowNotFound(nodeDTO.flowId());
         }
         ScopeRT scope = context.get(ScopeRT.class, nodeDTO.scopeId());
+        nodeDTO = beforeNodeChange(nodeDTO, flow);
         NodeRT<?> node = NodeFactory.getFlowNode(nodeDTO, scope);
         context.sync();
         return node.toDTO();
@@ -137,36 +136,69 @@ public class FlowManager {
         if(node == null) {
             throw BusinessException.nodeNotFound(nodeDTO.id());
         }
-        if(node instanceof InputNode inputNode) {
-            updateInputType(nodeDTO, inputNode);
-        }
-        if(node instanceof ReturnNode returnNode) {
-            updateOutputType(nodeDTO, returnNode);
-        }
+        nodeDTO = beforeNodeChange(nodeDTO, node.getFlow());
         node.update(nodeDTO);
         context.sync();
         return node.toDTO();
     }
 
-    private void updateInputType(NodeDTO nodeDTO, InputNode node) {
+    private NodeDTO beforeNodeChange(NodeDTO nodeDTO, FlowRT flow) {
+        if(nodeDTO.type() == NodeType.INPUT.code()) {
+            return updateInputType(nodeDTO, flow);
+        }
+        if(nodeDTO.type() == NodeType.RETURN.code()) {
+            return updateOutputType(nodeDTO, flow);
+        }
+        return nodeDTO;
+    }
+
+    private NodeDTO updateInputType(NodeDTO nodeDTO, FlowRT flow) {
         InputParamDTO inputParam = nodeDTO.getParam();
-        FlowRT flow = node.getFlow();
         long typeId = flow.getInputType().getId();
         List<FieldDTO> fieldDTOs = NncUtils.map(
                 inputParam.fields(),
                 inputField -> convertToFieldDTO(inputField, flow)
         );
-        saveInputType(typeId, fieldDTOs, flow.getName(), flow.getContext());
+        Type inputType = saveInputType(typeId, fieldDTOs, flow.getName(), flow.getContext());
+        flow.getContext().sync();
+        InputParamDTO newParam = new InputParamDTO(
+                inputType.getId(),
+                NncUtils.map(inputType.getFields(), f -> new InputFieldDTO(
+                        f.getId(),
+                        f.getName(),
+                        f.getType().getId(),
+                        f.getDefaultValue())
+                )
+        );
+        return nodeDTO.copyWithNewParam(newParam);
     }
 
-    private void updateOutputType(NodeDTO nodeDTO, ReturnNode node) {
+    private NodeDTO updateOutputType(NodeDTO nodeDTO, FlowRT flow) {
         ReturnParamDTO param = nodeDTO.getParam();
-        FlowRT flow = node.getFlow();
-        List<FieldDTO> fieldDTOs = NncUtils.map(
+        List<FieldDTO> existingFields = NncUtils.filterAndMap(
                 param.fields(),
-                outputField -> convertToFieldDTO(outputField, flow)
+                f -> f.id() != null,
+                f -> convertToFieldDTO(f, flow)
         );
-        saveOutputType(flow.getOutputType().getId(), fieldDTOs, flow.getName(), flow.getContext());
+        saveOutputType(flow.getOutputType().getId(), existingFields, flow.getName(), flow.getContext());
+        Map<OutputFieldDTO, Field> newFieldMap = new IdentityHashMap<>();
+        for (OutputFieldDTO field : param.fields()) {
+            if(field.id() == null) {
+                newFieldMap.put(
+                        field,
+                        typeManager.saveField(convertToFieldDTO(field, flow), flow.getContext())
+                );
+            }
+        }
+        flow.getContext().sync();
+        return nodeDTO.copyWithNewParam(
+                new ReturnParamDTO(
+                        NncUtils.map(
+                                param.fields(),
+                                f -> f.id() != null ? f : f.copyWithId(newFieldMap.get(f).getId())
+                        )
+                )
+        );
     }
 
     private FieldDTO convertToFieldDTO(InputFieldDTO inputFieldDTO, FlowRT flow) {
@@ -175,8 +207,8 @@ public class FlowManager {
                 flow.getInputType().getId(),
                 inputFieldDTO.name(),
                 inputFieldDTO.defaultValue(),
-                inputFieldDTO.typeId(),
-                flow);
+                inputFieldDTO.typeId()
+        );
     }
 
     private FieldDTO convertToFieldDTO(OutputFieldDTO inputFieldDTO, FlowRT flow) {
@@ -185,27 +217,27 @@ public class FlowManager {
                 flow.getOutputType().getId(),
                 inputFieldDTO.name(),
                 null,
-                inputFieldDTO.typeId(),
-                flow);
+                inputFieldDTO.typeId()
+                );
     }
 
-    private FieldDTO convertToFieldDTO(Long id, long ownerId, String name, Object defaultValue, long typeId, FlowRT flow) {
-        Type type = flow.getContext().getType(typeId);
+    private FieldDTO convertToFieldDTO(Long id, long ownerId, String name, Object defaultValue, long typeId) {
         return new FieldDTO(
                 id,
                 name,
-                type.getCategory().code(),
-                Access.Private.code(),
-                type.isNotNull(),
+//                type.getCategory().code(),
+                Access.CLASS.code(),
+//                type.isNotNull(),
                 defaultValue,
                 false,
                 false,
-                type.isArray(),
+//                type.isArray(),
                 ownerId,
-                type.getConcreteType().getId(),
-                type.getConcreteType().getName(),
-                List.of(),
-                type.getId()
+//                type.getConcreteType().getId(),
+//                type.getConcreteType().getName(),
+//                List.of(),
+                typeId,
+                null
         );
     }
 
@@ -227,13 +259,12 @@ public class FlowManager {
         TypeDTO typeDTO = new TypeDTO(
                 id,
                 getInputTypeName(flowName),
-                TypeCategory.FLOW_INPUT.code(),
+                TypeCategory.CLASS.code(),
                 true,
                 true,
                 null,
                 null,
                 "流程输入",
-                null,
                 fieldDTOs,
                 List.of()
         );
@@ -244,13 +275,13 @@ public class FlowManager {
         TypeDTO typeDTO = new TypeDTO(
                 id,
                 getOutputTypeName(flowName),
-                TypeCategory.FLOW_OUTPUT.code(),
+                TypeCategory.CLASS.code(),
                 true,
                 true,
                 null,
                 null,
                 "流程输出",
-                null,
+//                null,
                 fieldDTOs,
                 List.of()
         );
@@ -298,7 +329,7 @@ public class FlowManager {
 
     @Transactional
     public BranchDTO updateBranch(long ownerId, BranchDTO branchDTO) {
-        NncUtils.require(branchDTO.id(), "分支ID");
+        NncUtils.requireNonNull(branchDTO.id(), "分支ID必填");
         EntityContext context = newContext();
         NodeRT<?> owner = context.get(NodeRT.class, ownerId);
         if(owner == null) {

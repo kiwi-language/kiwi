@@ -1,8 +1,9 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.entity.Identifiable;
 import tech.metavm.object.meta.Type;
 
-public abstract class AbsInstance {
+public abstract class AbsInstance implements Identifiable {
 
     private Long id;
     protected final Type type;

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.constant.ColumnNames;
 import tech.metavm.util.Column;
 
 public class ObjectTableGenerator {
@@ -12,10 +13,10 @@ public class ObjectTableGenerator {
     public static void main(String[] args) {
         TableSQLBuilder builder = new TableSQLBuilder("instance");
 
-        builder.addColumn("id", ColumnType.INT64, true, null, "ID", true, true);
-        builder.addColumn("tenant_id", ColumnType.INT64, true, null, "租户ID");
-        builder.addColumn("n_class_id", ColumnType.INT64, true, null, "类ID");
-        builder.addColumn("deleted_at", ColumnType.INT64, true, 0, "删除时间戳");
+        builder.addColumn(ColumnNames.ID, SQLColumnType.INT64, true, null, "ID", true, true);
+        builder.addColumn(ColumnNames.TENANT_ID, SQLColumnType.INT64, true, null, "租户ID");
+        builder.addColumn(ColumnNames.TYPE_ID, SQLColumnType.INT64, true, null, "类ID");
+        builder.addColumn(ColumnNames.DELETED_AT, SQLColumnType.INT64, true, 0, "删除时间戳");
 //
 //        for(int i = 0; i < NUM_INTEGER; i++) {
 //            builder.addColumn("i" + i, ColumnType.INT);
@@ -30,7 +31,7 @@ public class ObjectTableGenerator {
 //            builder.addColumn("b" + i, ColumnType.BOOL);
 //        }
 
-        for (Column column : ColumnType.columns()) {
+        for (Column column : SQLColumnType.columns()) {
             builder.addColumn(column.name(), column.type());
         }
 

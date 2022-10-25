@@ -31,7 +31,7 @@ public class FlowRT extends Entity {
         this.inputType = inputType;
         this.outputType = outputType;
         setName(flowDTO.name());
-        type = context.getType(flowDTO.typeId());
+        type = context.getTypeRef(flowDTO.typeId());
         rootScope = new ScopeRT(this);
     }
 

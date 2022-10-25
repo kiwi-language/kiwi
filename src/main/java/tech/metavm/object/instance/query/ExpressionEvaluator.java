@@ -1,10 +1,9 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.ChoiceOption;
+import tech.metavm.object.meta.EnumConstant;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
 
 import java.util.List;
 import java.util.Objects;
@@ -95,11 +94,11 @@ public class ExpressionEvaluator {
         if(op == Operator.EQ) {
             if(firstValue instanceof Instance instance && secondValue instanceof String title) {
                 if(instance.getType().isEnum()) {
-                    ChoiceOption opt = NncUtils.filterOne(
-                            instance.getType().getChoiceOptions(),
+                    EnumConstant opt = NncUtils.filterOne(
+                            instance.getType().getEnumConstants(),
                             option -> Objects.equals(option.getId(), instance.getId())
                     );
-                    String optionName = NncUtils.get(opt, ChoiceOption::getName);
+                    String optionName = NncUtils.get(opt, EnumConstant::getName);
                     return Objects.equals(optionName, title);
                 }
             }

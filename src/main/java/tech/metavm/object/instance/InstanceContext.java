@@ -1,6 +1,9 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityKey;
+import tech.metavm.entity.SubContext;
+import tech.metavm.infra.IdService;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Type;
@@ -15,22 +18,24 @@ public class InstanceContext {
 
     private final long tenantId;
     private final Map<Long, Optional<String>> titleMap = new HashMap<>();
-    private final SubContext headSubContext = new SubContext();
-    private final SubContext bufferSubContext = new SubContext();
+    private final SubContext<Instance> headSubContext = new SubContext<>();
+    private final SubContext<Instance> bufferSubContext = new SubContext<>();
     private final Set<Long> loadedIds = new HashSet<>();
     private final Map<Long, ModelLoadInfo> modelLoading = new HashMap<>();
     private final InstanceStore instanceStore;
     private final EntityContext entityContext;
     private final boolean asyncLogProcessing;
+    private final IdService idService;
 
     private List<InstanceLog> logs;
     private boolean finished;
 
-    public InstanceContext(long tenantId, boolean asyncLogProcessing, InstanceStore instanceStore, EntityContext entityContext) {
-        this.tenantId = tenantId;
+    public InstanceContext(boolean asyncLogProcessing, InstanceStore instanceStore, EntityContext entityContext) {
+        this.tenantId = entityContext.getTenantId();
         this.asyncLogProcessing = asyncLogProcessing;
         this.instanceStore = instanceStore;
         this.entityContext = entityContext;
+        this.idService = entityContext.getIdService();
     }
 
     public List<Instance> loadByModelId(long modelId) {
@@ -45,7 +50,7 @@ public class InstanceContext {
 
     public Instance get(long id) {
         ensureLoaded(id);
-        Instance instance = bufferSubContext.get(id);
+        Instance instance = getBuffered(id);
         if(instance == null) {
             throw new RuntimeException("Instance " + id + " not found");
         }
@@ -58,7 +63,7 @@ public class InstanceContext {
         doLoad(new LoadRequest(idsToLoad));
         List<Instance> instances = new ArrayList<>();
         for (Long id : ids) {
-            Instance instance = bufferSubContext.get(id);
+            Instance instance = getBuffered(id);
             if(instance == null) {
                 throw new RuntimeException("Instance not found for objectId: " + id);
             }
@@ -91,8 +96,16 @@ public class InstanceContext {
         return instance;
     }
 
-    public void delete(long id) {
-        bufferSubContext.delete(get(id));
+    public void remove(long id) {
+        bufferSubContext.remove(get(id));
+    }
+
+    private Instance getBuffered(long id) {
+        return bufferSubContext.get(key(id));
+    }
+
+    private EntityKey key(long id) {
+        return new EntityKey(Instance.class, id);
     }
 
     private void ensureLoaded(long id) {
@@ -155,31 +168,31 @@ public class InstanceContext {
     }
 
     public Type getType(long typeId) {
-        return entityContext.getType(typeId);
+        return entityContext.getTypeRef(typeId);
     }
 
     public void finish() {
         if(finished) {
             throw new IllegalStateException("Already finished");
         }
+        bufferSubContext.initIds((size) -> idService.allocateIds(tenantId, size));
         finished = true;
         ContextDifference difference = diff();
         instanceStore.save(difference);
         logs = difference.buildLogs();
-        commit();
+        headSubContext.rebuildFrom(bufferSubContext);
     }
 
     public List<InstanceLog> getLogs() {
         return logs;
     }
 
-    private void commit() {
-        headSubContext.rebuildFrom(bufferSubContext);
-    }
-
     private ContextDifference diff() {
         ContextDifference diff = new ContextDifference(tenantId);
-        diff.diff(headSubContext.getPersistentInstances(), bufferSubContext.getPersistentInstances());
+        diff.diff(
+                headSubContext.getFiltered(Instance::isPersistent),
+                bufferSubContext.getFiltered(Instance::isPersistent)
+        );
         return diff;
     }
 
@@ -195,39 +208,39 @@ public class InstanceContext {
         }
     }
 
-    private static class SubContext {
-        private final Map<Long, Instance> instanceMap = new HashMap<>();
-
-        public Instance get(long id) {
-            return instanceMap.get(id);
-        }
-
-        public void add(Instance instance) {
-            instanceMap.put(instance.getId(), instance);
-        }
-
-        public void delete(Instance instance) {
-            if(instanceMap.remove(instance.getId()) == null) {
-                throw new RuntimeException("Instance not found, objectId: " + instance.getId());
-            }
-        }
-
-        Collection<Instance> getInstances() {
-            return instanceMap.values();
-        }
-
-        Collection<Instance> getPersistentInstances() {
-            return NncUtils.filter(getInstances(), inst -> inst.getType().isPersistent());
-        }
-
-        void rebuildFrom(SubContext that) {
-            instanceMap.clear();
-            that.instanceMap.forEach((id, instance) ->
-                instanceMap.put(id, instance.copy())
-            );
-        }
-
-    }
+//    private static class SubContext {
+//        private final Map<Long, Instance> instanceMap = new HashMap<>();
+//
+//        public Instance get(long id) {
+//            return instanceMap.get(id);
+//        }
+//
+//        public void add(Instance instance) {
+//            instanceMap.put(instance.getId(), instance);
+//        }
+//
+//        public void delete(Instance instance) {
+//            if(instanceMap.remove(instance.getId()) == null) {
+//                throw new RuntimeException("Instance not found, objectId: " + instance.getId());
+//            }
+//        }
+//
+//        Collection<Instance> getInstances() {
+//            return instanceMap.values();
+//        }
+//
+//        Collection<Instance> getPersistentInstances() {
+//            return NncUtils.filter(getInstances(), inst -> inst.getType().isPersistent());
+//        }
+//
+//        void rebuildFrom(SubContext that) {
+//            instanceMap.clear();
+//            that.instanceMap.forEach((id, instance) ->
+//                instanceMap.put(id, instance.copy())
+//            );
+//        }
+//
+//    }
 
     private static class ModelLoadInfo {
         private final long modelId;

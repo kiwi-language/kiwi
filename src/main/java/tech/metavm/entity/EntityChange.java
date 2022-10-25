@@ -30,7 +30,7 @@ public class EntityChange {
             store.batchUpdate((List) toUpdate);
         }
         if(NncUtils.isNotEmpty(toDelete)) {
-            store.batchDelete(NncUtils.map(toDelete, Entity::getId));
+            store.batchDelete((List) toDelete);
         }
     }
 

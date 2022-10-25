@@ -45,7 +45,7 @@ public class ValueUtil {
         if(isConvertible(type2, type1)) {
             return type1;
         }
-        throw new InternalException("type " + type1 + " and type " + type2 + " are incompatible");
+        throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
     }
 
     public static Type getConvertibleType(List<Type> types) {

@@ -5,9 +5,9 @@ import tech.metavm.util.BusinessException;
 import java.util.Arrays;
 
 public enum Access {
-    Public(1),
-    Protected(2),
-    Private(3)
+    GLOBAL(1),
+    MODULE(2),
+    CLASS(3)
 
     ;
 

@@ -42,8 +42,12 @@ public class TypeController {
     }
 
     @GetMapping("/{id:[0-9]+}")
-    public Result<TypeDTO> get(@PathVariable("id") long id) {
-        TypeDTO typeDTO = typeManager.getType(id);
+    public Result<TypeDTO> get(
+            @PathVariable("id") long id,
+            @RequestParam(value = "includingFields", defaultValue = "true") boolean includingFields,
+            @RequestParam(value = "includingFieldTypes", defaultValue = "false") boolean includingFieldTypes
+    ) {
+        TypeDTO typeDTO = typeManager.getType(id, includingFields, includingFieldTypes);
         if(typeDTO == null) {
             return Result.failure(ErrorCode.RECORD_NOT_FOUND);
         }

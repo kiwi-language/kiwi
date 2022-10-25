@@ -59,7 +59,7 @@ public class FlowLoadingBuffer implements EvaluationContext {
         /*
         Case one:
         Instance is also a field expression. We should simplify it.
-        In that way, the type of instance expression is limited.
+        In that way, the category of instance expression is limited.
         This works but restricts the generality of the architecture.
 
         What if we make no assumption of the instance expression?
