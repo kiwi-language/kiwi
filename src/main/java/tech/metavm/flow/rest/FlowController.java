@@ -37,7 +37,7 @@ public class FlowController {
 
     @PostMapping
     public Result<Long> save(@RequestBody FlowDTO flow) {
-        if(flow.id() == null) {
+        if(flow.id() == null || flow.id() == 0L) {
             return Result.success(flowManager.create(flow));
         }
         else {
@@ -54,7 +54,7 @@ public class FlowController {
 
     @PostMapping("/node")
     public Result<NodeDTO> saveNode(@RequestBody NodeDTO node) {
-        if(node.id() == null) {
+        if(node.id() == null || node.id() == 0L) {
             return Result.success(flowManager.createNode(node));
         }
         else {
@@ -75,7 +75,7 @@ public class FlowController {
 
     @PostMapping("/node/{ownerId:[0-9]+}/branch")
     public Result<BranchDTO> saveBranch(@PathVariable("ownerId") long ownerId, @RequestBody BranchDTO branchDTO) {
-        if(branchDTO.id() == null) {
+        if(branchDTO.id() == null || branchDTO.id() == 0L) {
             return Result.success(flowManager.createBranch(ownerId, branchDTO));
         }
         else {

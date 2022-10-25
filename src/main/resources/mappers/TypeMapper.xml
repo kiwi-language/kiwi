@@ -67,16 +67,6 @@
     limit #{start}, #{limit}
   </select>
 
-  <select id="selectByElementTypeId" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List"/>
-    from
-    type
-    where
-    element_type_id = #{elementTypeId}
-    and deleted_at = 0
-  </select>
-
   <select id="getPrimitiveTypes" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>

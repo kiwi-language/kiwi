@@ -35,7 +35,7 @@ public class InstanceController {
 
     @PostMapping
     public Result<Long> upsert(@RequestBody InstanceDTO instance) {
-        if(instance.id() == null) {
+        if(instance.id() == null || instance.id() == 0L) {
             return Result.success(instanceManager.create(instance, false));
         }
         else {

@@ -99,7 +99,7 @@ public class TypeManager {
 
     public Type saveTypeWithFields(TypeDTO typeDTO, EntityContext context) {
         Type type;
-        if(typeDTO.id() == null) {
+        if(typeDTO.id() == null || typeDTO.id() == 0L) {
             type = createType(typeDTO, context);
         }
         else {
@@ -180,7 +180,7 @@ public class TypeManager {
     }
 
     public Field saveField(FieldDTO fieldDTO, EntityContext context) {
-        if(fieldDTO.id() == null) {
+        if(fieldDTO.id() == null || fieldDTO.id() == 0L) {
             return createField(fieldDTO, context);
         }
         else {

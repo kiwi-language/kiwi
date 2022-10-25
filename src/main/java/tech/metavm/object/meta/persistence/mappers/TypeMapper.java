@@ -19,9 +19,6 @@ public interface TypeMapper {
 
     TypePO selectByName(@Param("tenantId") long tenantId, @Param("name") String name);
 
-    TypePO selectByElementTypeId(@Param("tenantId") long tenantId,
-                                       @Param("elementTypeId") long elementTypeId);
-
     TypePO selectParameterized(
             @Param("tenantId") long tenantId,
             @Param("rawTypeId") long rawTypeId,

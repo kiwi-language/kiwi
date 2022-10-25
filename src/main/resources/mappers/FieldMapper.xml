@@ -97,7 +97,7 @@
 
   <update id="deleteByDeclaringTypeId">
     update field set deleted_at = unix_timestamp() * 1000
-    where tenant_id = #{tenantId} and owner_id = #{declaringTypeId} and deleted_at = 0
+    where tenant_id = #{tenantId} and declaring_type_id = #{declaringTypeId} and deleted_at = 0
   </update>
 
   <update id="updateAsTitle">
