@@ -8,25 +8,24 @@ import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class ContextDifference {
 
-    private final long tenantId;
+    private final InstanceContext context;
     private final List<Instance> insertingList = new ArrayList<>();
 
     private final List<Instance> instancesToInsert = new ArrayList<>();
     private final List<Instance> instancesToUpdate = new ArrayList<>();
-    private final List<VersionPO> instanceIdsToRemove = new ArrayList<>();
+    private final List<Instance> instanceIdsToRemove = new ArrayList<>();
 
     private final List<InstanceRelation> relationsToInsert = new ArrayList<>();
     private final List<InstanceRelation> relationsToRemove = new ArrayList<>();
 
-    public ContextDifference(long tenantId) {
-        this.tenantId = tenantId;
+    private final Map<String, Object> attributes = new HashMap<>();
+
+    public ContextDifference(InstanceContext context) {
+        this.context = context;
     }
 
     public void diff(Collection<Instance> beforeList, Collection<Instance> afterList) {
@@ -46,7 +45,7 @@ public class ContextDifference {
             relationsToInsert.addAll(after.getRelations());
         }
         else if(after == null) {
-            instanceIdsToRemove.add(before.nextVersion());
+            instanceIdsToRemove.add(before);
             relationsToRemove.addAll(before.getRelations());
         }
         else {
@@ -72,15 +71,27 @@ public class ContextDifference {
         return false;
     }
 
-    public List<Instance> instancesToInsert() {
+    public List<Instance> getInstancesAfter() {
+        return NncUtils.merge(inserts(), updates());
+    }
+
+    public List<Instance> getInstancesBefore() {
+        return NncUtils.merge(updates(), deletes());
+    }
+
+    public List<Instance> inserts() {
         return instancesToInsert;
     }
 
-    public List<Instance> instanceToUpdate() {
+    public List<Instance> updates() {
         return instancesToUpdate;
     }
 
-    public List<VersionPO> instanceIdsToRemove() {
+    public List<VersionPO> deleteVersions() {
+        return NncUtils.map(instanceIdsToRemove, Instance::nextVersion);
+    }
+
+    public List<Instance> deletes() {
         return instanceIdsToRemove;
     }
 
@@ -97,18 +108,26 @@ public class ContextDifference {
     }
 
     public long tenantId() {
-        return tenantId;
+        return context.getTenantId();
+    }
+
+    public Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+
+    public void setAttribute(String key, Object value) {
+        attributes.put(key, value);
     }
 
     public List<InstanceLog> buildLogs() {
         List<InstanceLog> logs = new ArrayList<>();
-        for (Instance instance : instancesToInsert) {
+        for (Instance instance : inserts()) {
             logs.add(InstanceLog.insert(instance));
         }
-        for (Instance instance : instancesToUpdate) {
+        for (Instance instance : updates()) {
             logs.add(InstanceLog.update(instance));
         }
-        for (VersionPO version : instanceIdsToRemove) {
+        for (VersionPO version : deleteVersions()) {
             logs.add(InstanceLog.delete(version));
         }
         return logs;

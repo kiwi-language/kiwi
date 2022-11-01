@@ -4,7 +4,8 @@ public record FlowSummaryDTO(
     long id,
     String name,
     long typeId,
-    Long inputTypeId
+    Long inputTypeId,
+    Long outputTypeId
 ) {
 
 }

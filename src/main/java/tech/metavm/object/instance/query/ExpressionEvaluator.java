@@ -94,7 +94,7 @@ public class ExpressionEvaluator {
         if(op == Operator.EQ) {
             if(firstValue instanceof Instance instance && secondValue instanceof String title) {
                 if(instance.getType().isEnum()) {
-                    EnumConstant opt = NncUtils.filterOne(
+                    EnumConstant opt = NncUtils.find(
                             instance.getType().getEnumConstants(),
                             option -> Objects.equals(option.getId(), instance.getId())
                     );

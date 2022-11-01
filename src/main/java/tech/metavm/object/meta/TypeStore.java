@@ -5,8 +5,10 @@ import org.springframework.stereotype.Component;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
+import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.persistence.TypePO;
+import tech.metavm.object.meta.persistence.mappers.ConstraintMapper;
 import tech.metavm.object.meta.persistence.mappers.FieldMapper;
 import tech.metavm.object.meta.persistence.mappers.TypeMapper;
 import tech.metavm.object.meta.persistence.query.TypeQuery;
@@ -26,7 +28,13 @@ public class TypeStore implements EntityStore<Type> {
     private FieldMapper fieldMapper;
 
     @Autowired
+    private ConstraintMapper constraintMapper;
+
+    @Autowired
     private InstanceMapper instanceMapper;
+
+    @Autowired
+    private InstanceEntityStore instanceEntityStore;
 
     public Type getParameterizedType(Type rawType, List<Type> typeArguments, EntityContext context) {
         Objects.requireNonNull(rawType, "rawType is required");
@@ -93,13 +101,18 @@ public class TypeStore implements EntityStore<Type> {
                 TypePO::getId
         );
 
-        Map<Long, List<InstancePO>> optionMap =
-                NncUtils.toMultiMap(loadChoiceOptionPOs(enumIds, context), InstancePO::typeId);
+        Map<Long, List<EnumConstant>> enumConstantMap =
+                NncUtils.toMultiMap(loadEnumConstants(enumIds, context), ec -> ec.getType().getId());
 
-        List<Type> types = NncUtils.map(typePOs, typePO -> new Type(typePO, optionMap.get(typePO.getId()), context));
+        List<Type> types = NncUtils.map(typePOs, typePO -> new Type(typePO, enumConstantMap.get(typePO.getId()), context));
         List<Type> pojoOrEnums = NncUtils.filter(types, t -> hasFieldsOrOptions(t.getCategory()));
-        if(!options.contains(LoadingOption.FIELDS_LAZY_LOADING) && NncUtils.isNotEmpty(pojoOrEnums)) {
-            loadFields(pojoOrEnums, context);
+        if(NncUtils.isNotEmpty(pojoOrEnums)) {
+            if (!options.contains(LoadingOption.FIELDS_LAZY_LOADING)) {
+                preloadFields(pojoOrEnums, context);
+            }
+            if(!options.contains(LoadingOption.CONSTRAINTS_LAZY_LOADING)) {
+                preloadConstraints(pojoOrEnums);
+            }
         }
         return types;
     }
@@ -112,9 +125,13 @@ public class TypeStore implements EntityStore<Type> {
         return new LoadingList<>(() -> loadFields(List.of(type)));
     }
 
-    public List<EnumConstant> getChoiceOptionsLoadingList(Type type) {
-        return new LoadingList<>(() -> loadChoiceOptions(List.of(type)));
+    public List<ConstraintRT<?>> getConstraintsLoadingList(Type type) {
+        return new LoadingList<>(() -> loadConstraints(List.of(type)));
     }
+
+//    public List<EnumConstant> getChoiceOptionsLoadingList(Type type) {
+//        return new LoadingList<>(() -> loadChoiceOptions(List.of(type)));
+//    }
 
     private List<Field> loadFields(List<Type> types) {
         if(NncUtils.isEmpty(types)) {
@@ -122,39 +139,61 @@ public class TypeStore implements EntityStore<Type> {
         }
         EntityContext context = types.get(0).getContext();
         Map<Long, Type> typeMap = NncUtils.toMap(types, Entity::getId);
-        List<FieldPO> fieldPOs = fieldMapper.selectByDeclaringTypeIds(context.getTenantId(), NncUtils.map(types, Entity::getId));
+        List<FieldPO> fieldPOs = NncUtils.splitAndMerge(
+                types,
+                Type::isStandard,
+                this::loadStdFieldPOs,
+                this::loadCustomFieldPOs
+        );
         return NncUtils.map(
                 fieldPOs,
                 fieldPO -> new Field(fieldPO, typeMap.get(fieldPO.getDeclaringTypeId()), context.getTypeRef(fieldPO.getTypeId()))
         );
     }
 
+    private List<FieldPO> loadStdFieldPOs(List<Type> types) {
+        return NncUtils.flatMap(types, t -> StdTypeManager.getFieldPOs(t.getId()));
+    }
+
+    private List<FieldPO> loadCustomFieldPOs(List<Type> types) {
+        if(NncUtils.isEmpty(types)) {
+            return List.of();
+        }
+        return fieldMapper.selectByDeclaringTypeIds(types.get(0).getTenantId(), NncUtils.map(types, Entity::getId));
+    }
+
+    private List<EnumConstant> loadEnumConstants(List<Long> typeIds, EntityContext context) {
+        if(NncUtils.isEmpty(typeIds)) {
+            return List.of();
+        }
+        return instanceEntityStore.getByTypeIds(EnumConstant.class, typeIds, context);
+    }
 
     private List<InstancePO> loadChoiceOptionPOs(List<Long> typeIds, EntityContext context) {
         if(NncUtils.isEmpty(typeIds)) {
             return List.of();
         }
-        return instanceMapper.selectByModelIds(
+        return instanceMapper.selectByTypeIds(
                 context.getTenantId(),
                 typeIds,
                 0, MAX_NUM_OPTIONS * typeIds.size()
         );
     }
 
-    private List<EnumConstant> loadChoiceOptions(List<Type> types) {
-        types = NncUtils.filter(types, Type::isEnum);
-        if(NncUtils.isEmpty(types)) {
-            return List.of();
-        }
-        EntityContext context = types.get(0).getContext();
-        Map<Long, Type> typeMap = NncUtils.toMap(types, Entity::getId);
-        List<InstancePO> instancePOs = instanceMapper.selectByModelIds(
-                context.getTenantId(),
-                NncUtils.map(types, Entity::getId),
-                0, MAX_NUM_OPTIONS * types.size()
-        );
-        return NncUtils.map(instancePOs, instancePO -> new EnumConstant(instancePO, typeMap.get(instancePO.typeId())));
-    }
+//    private List<EnumConstant> loadChoiceOptions(List<Type> types) {
+//        types = NncUtils.filter(types, Type::isEnum);
+//        if(NncUtils.isEmpty(types)) {
+//            return List.of();
+//        }
+//        EntityContext context = types.get(0).getContext();
+//        Map<Long, Type> typeMap = NncUtils.toMap(types, Entity::getId);
+//        List<InstancePO> instancePOs = instanceMapper.selectByTypeIds(
+//                context.getTenantId(),
+//                NncUtils.map(types, Entity::getId),
+//                0, MAX_NUM_OPTIONS * types.size()
+//        );
+//        return NncUtils.map(instancePOs, instancePO -> new EnumConstant(instancePO, typeMap.get(instancePO.typeId())));
+//    }
 
     public long count(TypeQuery query) {
         return typeMapper.count(query);
@@ -169,7 +208,7 @@ public class TypeStore implements EntityStore<Type> {
                 poList,
                 po -> new Type(po, List.of(), context)
         );
-        loadFields(types, context);
+        preloadFields(types, context);
         return types;
     }
 
@@ -178,32 +217,66 @@ public class TypeStore implements EntityStore<Type> {
         if(NncUtils.isEmpty(ids)) {
             return List.of();
         }
-        return NncUtils.splitAndMerge(
+        List<TypePO> typePOs = NncUtils.splitAndMerge(
                 ids,
-                PrimitiveTypes::isPrimitiveTypeId,
-                primitiveIds -> loadPrimitive(primitiveIds, context),
-                nonPrimitiveIds -> load(nonPrimitiveIds, context, options)
+                StdTypeManager::isStandardTypeId,
+                this::loadStdTypePOs,
+                this::loadCustomTypePOs
         );
-    }
-
-    private List<Type> loadPrimitive(List<Long> ids, EntityContext context) {
-        return NncUtils.map(ids, id -> new Type(PrimitiveTypes.get(id).typeDTO(), context));
-    }
-
-    private List<Type> load(List<Long> ids, EntityContext context, Set<LoadingOption> options) {
-        List<TypePO> typePOs = typeMapper.selectByIds(ids);
         return createFromPOs(typePOs, context, options);
     }
 
-    public void loadFields(List<Type> types, EntityContext context) {
+    private List<TypePO> loadStdTypePOs(List<Long> ids) {
+        return NncUtils.map(ids, this::loadStdTypePO);
+    }
+
+    private TypePO loadStdTypePO(long id) {
+        return StdTypeManager.getTypePO(id);
+    }
+
+    private List<TypePO> loadCustomTypePOs(List<Long> ids) {
+        return typeMapper.selectByIds(ids);
+    }
+
+    private void preloadFields(List<Type> types, EntityContext context) {
         List<Field> fields = loadFields(types);
         Map<Long, List<Field>> fieldMap = NncUtils.toMultiMap(fields, f -> f.getDeclaringType().getId());
         Set<Long> fieldTypeIds = NncUtils.mapUnique(fields, f -> f.getType().getId());
         context.batchGet(Type.class, fieldTypeIds, LoadingOption.FIELDS_LAZY_LOADING);
-
         for (Type type : types) {
             type.preloadFields(fieldMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
         }
+    }
+
+    private void preloadConstraints(List<Type> types) {
+        List<ConstraintRT<?>> constraints = loadConstraints(types);
+        Map<Long, List<ConstraintRT<?>>> constraintMap = NncUtils.toMultiMap(constraints, c -> c.getType().getId());
+        for (Type type : types) {
+            type.preloadConstraints(constraintMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
+        }
+    }
+
+    public List<ConstraintRT<?>> loadConstraints(List<Type> types) {
+        Map<Long, Type> typeMap = NncUtils.toEntityMap(types);
+        List<ConstraintPO> constraintPOs = NncUtils.splitAndMerge(
+                types,
+                Type::isStandard,
+                this::loadStdConstraintsPOs,
+                this::loadCustomConstraintsPOs
+        );
+        return NncUtils.map(
+                constraintPOs,
+                c -> ConstraintFactory.createFromPO(c, typeMap.get(c.getTypeId()))
+        );
+    }
+
+    private List<ConstraintPO> loadStdConstraintsPOs(List<Type> types) {
+        return NncUtils.flatMap(types, t -> StdTypeManager.getConstraintPOs(t.getId()));
+    }
+
+
+    private List<ConstraintPO> loadCustomConstraintsPOs(List<Type> types) {
+        return constraintMapper.selectByTypeIds(NncUtils.mapUnique(types, Entity::getId));
     }
 
     @Override

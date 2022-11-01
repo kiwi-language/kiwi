@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface TypeMapper {
 
-    List<TypePO> getPrimitiveTypes();
+    List<TypePO> getStandardTypes();
 
     TypePO selectByCode(int code);
 
@@ -36,11 +36,11 @@ public interface TypeMapper {
             @Param("typeArgumentId") long typeArgumentId
     );
 
-    void batchInsert(List<TypePO> typePOs);
+    void batchInsert(Collection<TypePO> typePOs);
 
-    int batchUpdate(List<TypePO> typePOs);
+    int batchUpdate(Collection<TypePO> typePOs);
 
-    int batchDelete(List<Long> ids);
+    int batchDelete(Collection<Long> ids);
 
     long count(TypeQuery query);
 

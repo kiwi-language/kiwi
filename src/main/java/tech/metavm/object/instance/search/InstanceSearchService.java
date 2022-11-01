@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
@@ -80,7 +81,7 @@ public class InstanceSearchService {
     }
 
     private Map<String, Object> buildSource(long tenantId, InstanceDTO instance) {
-        EntityContext entityContext = contextFactory.newContext();
+        EntityContext entityContext = contextFactory.newContext(tenantId);
         Type type = entityContext.getTypeRef(instance.typeId());
         Map<String, Object> source = new HashMap<>();
         source.put(TENANT_ID, tenantId);
@@ -90,7 +91,7 @@ public class InstanceSearchService {
             InstanceFieldDTO instanceField = instanceFieldMap.get(field.getId());
             Object fieldValue = ValueFormatter.parse(instanceField.value(), field.getType());
             source.put(field.getColumnName(), fieldValue);
-            if(field.isString()) {
+            if(field.getColumn().type() == SQLColumnType.VARCHAR64) {
                 source.put(field.getColumn().fuzzyName(), fieldValue);
             }
         }

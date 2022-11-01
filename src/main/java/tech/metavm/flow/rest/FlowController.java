@@ -73,17 +73,17 @@ public class FlowController {
         return Result.success(null);
     }
 
-    @PostMapping("/node/{ownerId:[0-9]+}/branch")
-    public Result<BranchDTO> saveBranch(@PathVariable("ownerId") long ownerId, @RequestBody BranchDTO branchDTO) {
+    @PostMapping("/node/branch")
+    public Result<BranchDTO> saveBranch(@RequestBody BranchDTO branchDTO) {
         if(branchDTO.id() == null || branchDTO.id() == 0L) {
-            return Result.success(flowManager.createBranch(ownerId, branchDTO));
+            return Result.success(flowManager.createBranch(branchDTO));
         }
         else {
-            return Result.success(flowManager.updateBranch(ownerId, branchDTO));
+            return Result.success(flowManager.updateBranch(branchDTO));
         }
     }
 
-    @DeleteMapping("/node/{ownerId:[0-9]+}/branch/{id:[0-9]+}")
+    @DeleteMapping("/node/branch/{ownerId:[0-9]+}/{id:[0-9]+}")
     public Result<Void> deleteBranch(@PathVariable("ownerId") long ownerId,
                                      @PathVariable("id") long id) {
         flowManager.deleteBranch(ownerId, id);

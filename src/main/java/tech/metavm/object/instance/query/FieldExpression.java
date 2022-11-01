@@ -20,6 +20,7 @@ public class FieldExpression extends Expression {
     }
 
     public FieldExpression(Expression instance, Type type, List<Long> fieldPath) {
+        super(type.getContext());
         this.instance = instance;
         Type tmp = type;
         List<Field> fields = new ArrayList<>();
@@ -32,6 +33,7 @@ public class FieldExpression extends Expression {
     }
 
     public FieldExpression(Expression instance, List<Field> fieldPath) {
+        super(instance.context);
         this.instance = instance;
         this.fieldPath = fieldPath;
     }

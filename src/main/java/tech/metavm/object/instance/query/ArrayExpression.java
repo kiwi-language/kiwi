@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
@@ -12,7 +13,8 @@ public class ArrayExpression extends Expression {
 
     private final List<Expression> expressions;
 
-    public ArrayExpression(List<Expression> expressions) {
+    public ArrayExpression(List<Expression> expressions, EntityContext context) {
+        super(context);
         this.expressions = Collections.unmodifiableList(expressions);
     }
 
@@ -22,10 +24,10 @@ public class ArrayExpression extends Expression {
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
             expressions.addAll(rest);
             expressions.add(second);
-            return new ArrayExpression(expressions);
+            return new ArrayExpression(expressions, first.context);
         }
         else {
-            return new ArrayExpression(List.of(first, second));
+            return new ArrayExpression(List.of(first, second), first.context);
         }
     }
 

@@ -27,9 +27,10 @@ public class TableManager {
     public TableDTO get(long id) {
         EntityContext context = entityContextFactory.newContext();
         Type type = context.getType(id);
-        return NncUtils.get(type, this::convertToTable);
+        return NncUtils.get(type, Type::toDTO, t -> convertToTable(t, context));
     }
 
+    @Transactional
     public TableDTO save(TableDTO table) {
         EntityContext context = entityContextFactory.newContext();
         TypeDTO typeDTO = new TypeDTO(
@@ -42,21 +43,28 @@ public class TableManager {
                 null,
                 table.desc(),
                 List.of(),
+                List.of(),
                 List.of()
         );
         Type type = typeManager.saveType(typeDTO, context);
         NncUtils.map(table.fields(), column -> saveField(column, context));
         saveTitleField(table.titleField(), type, context);
-        context.sync();
-        return convertToTable(type);
+        context.finish();
+        return convertToTable(type.toDTO(), context);
     }
 
     private void saveTitleField(TitleFieldDTO titleFieldDTO, Type type, EntityContext context) {
         if(titleFieldDTO != null) {
             Field titleField = type.getTileField();
-            TypeCategory titleTypeCategory = TypeCategory.getByCodeRequired(titleFieldDTO.type());
-            Type titleType = context.getTypeByCategory(titleTypeCategory);
             if (titleField == null) {
+                Type titleFieldType = getType(
+                        titleFieldDTO.name(),
+                        titleFieldDTO.type(),
+                        true,
+                        false,
+                        null,
+                        context
+                );
                 new Field(
                         null,
                         titleFieldDTO.name(),
@@ -66,7 +74,7 @@ public class TableManager {
                         true,
                         null,
                         null,
-                        titleType,
+                        titleFieldType,
                         context,
                         false
                 );
@@ -78,24 +86,11 @@ public class TableManager {
         }
     }
 
-    private TableDTO convertToTable(Type type) {
-        return new TableDTO(
-                type.getId(),
-                type.getName(),
-                type.getDesc(),
-                type.isEphemeral(),
-                type.isAnonymous(),
-                NncUtils.get(type.getTileField(), Field::toTitleDTO),
-                NncUtils.map(type.getFields(), f -> convertToColumnDTO(f.toDTO(), f.getType()))
-        );
-    }
-
     @Transactional
     public long saveColumn(ColumnDTO column) {
         EntityContext context = entityContextFactory.newContext();
-        Type owner = context.getType(column.ownerId());
         Field field = saveField(column, context);
-        context.sync();
+        context.finish();
         return field.getId();
     }
 
@@ -203,7 +198,13 @@ public class TableManager {
         if(concreteType.isClass()) {
             return ColumnType.TABLE;
         }
-        throw new InternalException("Can not get filed type for type: " + concreteType.getId());
+        if(concreteType.isTime()) {
+            return ColumnType.TIME;
+        }
+        if(concreteType.isDate()) {
+            return ColumnType.DATE;
+        }
+        throw new InternalException("Can not get column type for type: " + concreteType.getId());
     }
 
     private List<ChoiceOptionDTO> getChoiceOptions(List<EnumConstant> enumConstants, Object fieldDefaultValue) {
@@ -230,14 +231,19 @@ public class TableManager {
     }
 
     private Type getType(ColumnDTO column, Type concreteType, EntityContext context) {
-        ColumnType columnType = ColumnType.getByCode(column.type());
+        return getType(column.name(), column.type(), column.required(), column.multiValued(), concreteType, context);
+    }
+
+    private Type getType(String name, int columnTypeCode, boolean required, boolean multiValued,
+                         Type concreteType, EntityContext context) {
+        ColumnType columnType = ColumnType.getByCode(columnTypeCode);
         Type type;
         if(concreteType != null) {
             type = concreteType;
-            if (!column.required()) {
+            if (!required) {
                 type = type.getNullableType();
             }
-            if (column.multiValued()) {
+            if (multiValued) {
                 type = type.getArrayType();
             }
         }
@@ -245,10 +251,10 @@ public class TableManager {
             type = context.getType(columnType.getTypeId());
         }
         else {
-            throw BusinessException.invalidColumn(column, "未选择列类型或未选择关联表格");
+            throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
         }
         if(type.getId() == null) {
-            context.sync();
+            context.initIds();
         }
         return type;
     }
@@ -269,7 +275,7 @@ public class TableManager {
     }
 
     private TableDTO convertToTable(TypeDTO typeDTO, EntityContext context) {
-        FieldDTO titleField = NncUtils.filterOne(typeDTO.fields(), FieldDTO::asTitle);
+        FieldDTO titleField = NncUtils.find(typeDTO.fields(), FieldDTO::asTitle);
         return new TableDTO(
                 typeDTO.id(),
                 typeDTO.name(),
@@ -277,7 +283,7 @@ public class TableManager {
                 typeDTO.ephemeral(),
                 typeDTO.anonymous(),
                 NncUtils.get(titleField, f -> convertToTitleField(f, context)),
-                List.of()
+                NncUtils.map(typeDTO.fields(), f -> convertToColumnDTO(f , context.getType(f.typeId())))
         );
     }
 
@@ -302,34 +308,34 @@ public class TableManager {
     }
 
     private enum ColumnType {
-        STRING(1, PrimitiveTypes.STRING),
-        DOUBLE(2, PrimitiveTypes.DOUBLE),
-        LONG(3, PrimitiveTypes.LONG),
-        BOOL(6, PrimitiveTypes.BOOL),
+        STRING(1, StdTypeConstants.STRING),
+        DOUBLE(2, StdTypeConstants.DOUBLE),
+        LONG(3, StdTypeConstants.LONG),
+        BOOL(6, StdTypeConstants.BOOL),
         ENUM(7, null),
-        TIME(9, PrimitiveTypes.TIME),
+        TIME(9, StdTypeConstants.TIME),
         TABLE(10, null),
-        DATE(13, PrimitiveTypes.DATE),
+        DATE(13, StdTypeConstants.DATE),
 
         ;
 
         private final int code;
 
         @Nullable
-        private final PrimitiveType type;
+        private final Long typeId;
 
-        ColumnType(int code, @Nullable PrimitiveType type) {
+        ColumnType(int code, @Nullable Long typeId) {
             this.code = code;
-            this.type = type;
+            this.typeId = typeId;
         }
 
         @Nullable
         public Long getTypeId() {
-            return NncUtils.get(type, PrimitiveType::id);
+            return typeId;
         }
 
         static ColumnType getByCode(int code) {
-            return NncUtils.filterOneRequired(values(), v -> v.code == code);
+            return NncUtils.findRequired(values(), v -> v.code == code);
         }
 
     }

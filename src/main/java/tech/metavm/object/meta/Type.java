@@ -4,9 +4,11 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.LoadingList;
-import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.InstanceContext;
+import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -28,6 +30,7 @@ public class Type extends Entity {
     private @Nullable String desc;
     private transient final List<Field> fields;
     private transient final List<EnumConstant> enumConstants;
+    private transient final List<ConstraintRT<?>> constraints;
 
     public Type(TypeDTO typeDTO, EntityContext context) {
         this(
@@ -41,11 +44,12 @@ public class Type extends Entity {
                 typeDTO.desc(),
                 new ArrayList<>(),
                 new ArrayList<>(),
+                new ArrayList<>(),
                 context
         );
     }
 
-    public Type(TypePO po, List<InstancePO> choiceOptions, EntityContext context) {
+    public Type(TypePO po, List<EnumConstant> enumConstants, EntityContext context) {
         this(
                 po.getId(),
                 po.getName(),
@@ -56,7 +60,8 @@ public class Type extends Entity {
                 NncUtils.map(po.getTypeArgumentIds(), context::getTypeRef),
                 po.getDesc(),
                 null,
-                choiceOptions,
+                enumConstants,
+                null,
                 context
         );
     }
@@ -81,6 +86,7 @@ public class Type extends Entity {
                 desc,
                 new ArrayList<>(),
                 new ArrayList<>(),
+                new ArrayList<>(),
                 context
         );
     }
@@ -95,7 +101,8 @@ public class Type extends Entity {
                 @Nullable List<Type> typeArguments,
                 @Nullable String desc,
                 List<Field> fields,
-                List<InstancePO> choiceOptionPOs,
+                List<EnumConstant> enumConstants,
+                List<ConstraintRT<?>> constraints,
                 EntityContext context) {
         super(id, context);
         this.id = id;
@@ -107,13 +114,14 @@ public class Type extends Entity {
         this.typeArguments = typeArguments;
         this.desc = desc;
         TypeStore typeStore = context.getTypeStore();
-        this.fields = fields != null ? fields : typeStore.getFieldsLoadingList(this);
-        this.enumConstants = new ArrayList<>();
-        if (NncUtils.isNotEmpty(choiceOptionPOs)) {
-            for (InstancePO choiceOption : choiceOptionPOs) {
-                new EnumConstant(choiceOption, this);
-            }
-        }
+        this.fields = fields != null ? new ArrayList<>(fields) : typeStore.getFieldsLoadingList(this);
+        this.constraints = constraints != null ? new ArrayList<>(constraints) : typeStore.getConstraintsLoadingList(this);
+        this.enumConstants = enumConstants != null ? new ArrayList<>(enumConstants) : new ArrayList<>();
+//        if (NncUtils.isNotEmpty(enumConstants)) {
+//            for (InstancePO choiceOption : enumConstants) {
+//                new EnumConstant(choiceOption, this);
+//            }
+//        }
     }
 
     public TypeCategory getCategory() {
@@ -145,6 +153,10 @@ public class Type extends Entity {
         return desc;
     }
 
+    public boolean isStandard() {
+        return StdTypeManager.isStandardTypeId(id);
+    }
+
     void preloadFields(List<Field> fields) {
         if(this.fields instanceof LoadingList<Field> loadingList) {
             if(!loadingList.isLoaded()) {
@@ -155,6 +167,18 @@ public class Type extends Entity {
             throw new InternalException("the list of fields is not a loading list");
         }
     }
+
+    void preloadConstraints(List<ConstraintRT<?>> constraints) {
+        if(this.constraints instanceof LoadingList<ConstraintRT<?>> loadingList) {
+            if(!loadingList.isLoaded()) {
+                loadingList.preload(constraints);
+            }
+        }
+        else {
+            throw new InternalException("the list of fields is not a loading list");
+        }
+    }
+
 //
 //    void preloadChoiceOptions(List<ChoiceOption> choiceOptions) {
 //        if(this.choiceOptions instanceof LoadingList<ChoiceOption> loadingList) {
@@ -164,6 +188,10 @@ public class Type extends Entity {
 //            throw new InternalException("the list of fields is not a loading list");
 //        }
 //    }
+
+    public Instance newInstance() {
+        return context.getInstanceContext().add(InstanceDTO.valueOf(id, List.of()));
+    }
 
     public List<Field> getFields() {
         return Collections.unmodifiableList(fields);
@@ -203,6 +231,18 @@ public class Type extends Entity {
             }
         }
         enumConstants.add(enumConstant);
+    }
+
+    public void addConstraint(ConstraintRT<?> constraint) {
+        this.constraints.add(constraint);
+    }
+
+    public void removeConstraint(long id) {
+        this.constraints.removeIf(c -> c.getId() == id);
+    }
+
+    public UniqueConstraintRT getUniqueConstraint(List<Field> fields) {
+        return NncUtils.find(getUniqueConstraints(), c -> c.getFields().equals(fields));
     }
 
     public boolean isEnum() {
@@ -282,7 +322,7 @@ public class Type extends Entity {
     }
 
     public Field getField(long fieldId) {
-        return NncUtils.filterOne(fields, f -> f.getId() == fieldId);
+        return NncUtils.find(fields, f -> f.getId() == fieldId);
     }
 
     public Field getFieldNyPath(String fieldPath) {
@@ -302,7 +342,7 @@ public class Type extends Entity {
     }
 
     public Field getFieldByName(String fieldName) {
-        return NncUtils.filterOne(fields, f -> f.getName().equals(fieldName));
+        return NncUtils.find(fields, f -> f.getName().equals(fieldName));
     }
 
     Column allocateColumn(Field field) {
@@ -323,6 +363,10 @@ public class Type extends Entity {
         return columns.poll();
     }
 
+    public String getFieldColumnName(long fieldId) {
+        return NncUtils.get(getField(fieldId), Field::getColumn, Column::name);
+    }
+
     private SQLColumnType getColumnType() {
         if(isArray()) {
             return getElementType().getColumnType();
@@ -331,7 +375,7 @@ public class Type extends Entity {
             return getUnderlyingType().getColumnType();
         }
         if(isPrimitive()) {
-            return PrimitiveTypes.get(this.id).columnType();
+            return StdTypeManager.getSQLColumnType(this.id);
         }
         if(isClass() || isEnum()) {
             return SQLColumnType.INT64;
@@ -420,6 +464,7 @@ public class Type extends Entity {
                 NncUtils.map(typeArguments, Type::toDTO),
                 desc,
                 getFieldDTOs(withFields, withTitleField, withFieldTypes),
+                NncUtils.map(constraints, ConstraintRT::toDTO),
                 NncUtils.sortByIntAndMap(enumConstants, EnumConstant::getOrdinal, EnumConstant::toDTO)
         );
     }
@@ -437,7 +482,31 @@ public class Type extends Entity {
     }
 
     public Field getTileField() {
-        return NncUtils.filterOne(fields, Field::isAsTitle);
+        return NncUtils.find(fields, Field::isAsTitle);
+    }
+
+    public <T extends ConstraintRT<?>> List<T> getConstraints(Class<T> constraintType) {
+        return NncUtils.filterAndMap(
+                constraints,
+                constraintType::isInstance,
+                constraintType::cast
+        );
+    }
+
+    public <T extends ConstraintRT<?>> T getConstraint(Class<T> constraintType, long id) {
+        return NncUtils.find(getConstraints(constraintType), c -> c.getId() == id);
+    }
+
+    public ConstraintRT<?> getConstraint(long id) {
+        return NncUtils.find(constraints, c -> c.getId() == id);
+    }
+
+    public List<UniqueConstraintRT> getUniqueConstraints() {
+        return getConstraints(UniqueConstraintRT.class);
+    }
+
+    public UniqueConstraintRT getUniqueConstraint(long id) {
+        return getConstraint(UniqueConstraintRT.class, id);
     }
 
     public Type getConcreteType() {

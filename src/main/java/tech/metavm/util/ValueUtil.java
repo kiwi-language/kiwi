@@ -1,9 +1,7 @@
 package tech.metavm.util;
 
-import com.fasterxml.jackson.core.sym.NameN;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.BuiltinTypes;
 import tech.metavm.object.meta.Type;
 
 import java.util.Collection;
@@ -13,21 +11,21 @@ import java.util.List;
 
 public class ValueUtil {
 
-    public static Type getValueType(Object value) {
+    public static Type getValueType(Object value, EntityContext context) {
         if(value instanceof String) {
-            return BuiltinTypes.getString();
+            return context.getBoolType();
         }
         if(isFloat(value)) {
-            return BuiltinTypes.getDouble();
+            return context.getDoubleType();
         }
         if(isInteger(value)) {
-            return BuiltinTypes.getInt64();
+            return context.getLongType();
         }
         if(isBoolean(value)) {
-            return BuiltinTypes.getBool();
+            return context.getBoolType();
         }
         if(isTime(value)) {
-            return BuiltinTypes.getTime();
+            return context.getTimeType();
         }
         if(value instanceof Instance instance) {
             return instance.getType();
@@ -69,24 +67,26 @@ public class ValueUtil {
 
     public static Type getCompatible(List<Type> types) {
         NncUtils.requireMinimumSize(types, 1);
+        EntityContext context = types.get(0).getContext();
         Iterator<Type> it = types.iterator();
         Type compatibleType = it.next();
         while (it.hasNext()) {
             Type t = it.next();
             if (!t.equals(compatibleType)) {
-                return BuiltinTypes.getObject();
+                return context.getObjectType();
             }
         }
         return compatibleType;
     }
 
     public static boolean isConvertible(Type from, Type to) {
+        EntityContext context = from.getContext();
         if(from.isPrimitive() && to.isPrimitive()) {
-            if(to.equals(BuiltinTypes.getDouble())) {
-                return from.equals(BuiltinTypes.getInt32()) || from.equals(BuiltinTypes.getInt64());
+            if(to.equals(context.getDoubleType())) {
+                return from.equals(context.getIntType()) || from.equals(context.getLongType());
             }
-            if(to.equals(BuiltinTypes.getInt64())) {
-                return from.equals(BuiltinTypes.getInt32());
+            if(to.equals(context.getLongType())) {
+                return from.equals(context.getIntType());
             }
         }
         return false;

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.Type;
 
 import java.util.ArrayList;
@@ -7,9 +8,15 @@ import java.util.List;
 
 public abstract class Expression {
 
+    protected final EntityContext context;
+
     public abstract String buildSelf(VarType symbolType);
 
     public abstract int precedence();
+
+    protected Expression(EntityContext context) {
+        this.context = context;
+    }
 
     public final String build(VarType symbolType, boolean withParenthesis) {
         String expr = buildSelf(symbolType);

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.tenant.persistence.mapper.TenantMapper">
+
+  <resultMap id="BaseResultMap" type="tech.metavm.tenant.persistence.TenantPO">
+    <!--@mbg.generated-->
+    <!--@Table `tenant`-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="name" jdbcType="BIGINT" property="name"/>
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, name, created_at, updated_at, deleted_at
+  </sql>
+
+  <select id="selectById" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    `tenant`
+    where id = #{id}
+    and deleted_at = 0
+  </select>
+
+  <insert id="insert">
+    <!--@mbg.generated-->
+    insert into `tenant` (id, name) values (#{id}, #{name})
+  </insert>
+
+  <update id="update">
+    <!--@mbg.generated-->
+      update `tenant`
+      <set>
+        <if test="name != null">
+          `name` = #{name}
+        </if>
+      </set>
+      where id = #{id} and deleted_at = 0
+  </update>
+
+  <update id="delete">
+    update `tenant`
+    set deleted_at = unix_timestamp() * 1000
+    where
+    deleted_at = 0 and
+    id = #{id}
+  </update>
+
+  <select id="query" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    `tenant`
+    where deleted_at = 0
+    <if test="searchText != null">
+      and concat(',', name, ',') LIKE concat(',', #{searchText}, ',')
+    </if>
+    limit #{start}, #{limit}
+  </select>
+
+  <select id="count" resultType="java.lang.Long">
+    select
+    count(1)
+    from
+    `tenant`
+    where deleted_at = 0
+    <if test="searchText != null">
+      and concat(',', name, ',') LIKE concat(',', #{searchText}, ',')
+    </if>
+  </select>
+
+</mapper>

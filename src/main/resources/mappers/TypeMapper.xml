@@ -4,7 +4,7 @@
 
   <resultMap id="BaseResultMap" type="tech.metavm.object.meta.persistence.TypePO">
     <!--@mbg.generated-->
-    <!--@Table type-->
+    <!--@Table kind-->
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
     <result column="name" jdbcType="VARCHAR" property="name" />
@@ -25,7 +25,7 @@
   <select id="selectByName" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
-    from type where name = #{name} and deleted_at = 0 limit 1
+    from type where tenant_id = #{tenantId} and name = #{name} and deleted_at = 0 limit 1
   </select>
 
   <select id="count" resultType="long">
@@ -51,7 +51,7 @@
     <include refid="Base_Column_List"/>
     from
     type
-    where deleted_at = 0
+    where deleted_at = 0 and (tenant_id = #{tenantId} or tenant_id = -1)
     <if test="categories != null">
       and category in
       <foreach collection="categories" item="category" open="(" close=")" separator=",">
@@ -67,11 +67,11 @@
     limit #{start}, #{limit}
   </select>
 
-  <select id="getPrimitiveTypes" resultMap="BaseResultMap">
+  <select id="getStandardTypes" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
     from type
-    where tenant_id = -1 and id &lt;= 20 and deleted_at = 0
+    where tenant_id = -1 and id &lt;= 1000 and deleted_at = 0
   </select>
 
   <select id="selectByCode" resultMap="BaseResultMap">
@@ -158,6 +158,9 @@
         </if>
         <if test="item.ephemeral != null">
           ephemeral = #{item.ephemeral},
+        </if>
+        <if test="item.rawTypeId != null">
+          raw_type_id = #{item.rawTypeId},
         </if>
         <if test="item.typeArgumentIds != null">
           type_argument_ids = #{item.typeArgumentIds, typeHandler=tech.metavm.util.IdStringTypeHandler},

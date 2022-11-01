@@ -6,10 +6,10 @@ import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
 import tech.metavm.object.meta.TypeManager;
-import tech.metavm.object.meta.PrimitiveTypeInitializer;
+import tech.metavm.object.meta.StdTypeManager;
+import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -22,11 +22,11 @@ public class TypeController {
     private TypeManager typeManager;
 
     @Autowired
-    private PrimitiveTypeInitializer primitiveTypeInitializer;
+    private StdTypeManager primitiveTypeInitializer;
 
     @PostMapping("/init-primitives")
     public Result<Void> initPrimitives() {
-        primitiveTypeInitializer.execute();
+        primitiveTypeInitializer.initialize();
         return Result.success(null);
     }
 
@@ -56,12 +56,7 @@ public class TypeController {
 
     @PostMapping
     public Result<Long> save(@RequestBody TypeDTO typeDTO) {
-        try {
-            return Result.success(typeManager.saveType(typeDTO));
-        }
-        catch (BusinessException e) {
-            return Result.failure(e.getErrorCode(), e.getParams());
-        }
+        return Result.success(typeManager.saveType(typeDTO));
     }
 
     @GetMapping("/{id:[0-9]+}/array")
@@ -81,44 +76,29 @@ public class TypeController {
 
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
-        try {
-            typeManager.deleteType(id);
-            return Result.success(null);
-        }
-        catch (BusinessException e) {
-            return Result.failure(e.getErrorCode(), e.getParams());
-        }
+        typeManager.deleteType(id);
+        return Result.success(null);
     }
 
     @GetMapping("/field/{id:[0-9]+}")
     public Result<FieldDTO> getField(@PathVariable("id") long fieldId) {
-        try {
-            return Result.success(typeManager.getField(fieldId));
-        }
-        catch (BusinessException e) {
-            return Result.failure(e.getErrorCode(), e.getParams());
-        }
+        return Result.success(typeManager.getField(fieldId));
     }
 
     @PostMapping("/field")
     public Result<Long> saveField(@RequestBody FieldDTO field) {
-        try {
-            return Result.success(typeManager.saveField(field));
-        }
-        catch (BusinessException e) {
-            return Result.failure(e.getErrorCode(), e.getParams());
-        }
+        return Result.success(typeManager.saveField(field));
+    }
+
+    @PostMapping("/constraint")
+    public Result<Long> saveConstraint(@RequestBody ConstraintDTO constraint) {
+        return Result.success(typeManager.saveConstraint(constraint));
     }
 
     @DeleteMapping("/field/{id:[0-9]+}")
     public Result<Void> deleteField(@PathVariable("id") long id) {
-        try {
-            typeManager.removeField(id);
-            return Result.success(null);
-        }
-        catch (BusinessException e) {
-            return Result.failure(e.getErrorCode(), e.getParams());
-        }
+        typeManager.removeField(id);
+        return Result.success(null);
     }
 
     @PostMapping("/field/{id:[0-9]+}/set-as-title")

@@ -10,12 +10,14 @@ import java.util.List;
 @Mapper
 public interface FieldMapper {
 
+    List<FieldPO> getStandardFields();
+
     int deleteByDeclaringTypeId(@Param("tenantId") long tenantId,
                                 @Param("declaringTypeId") long declaringTypeId);
 
     void batchInsert(Collection<FieldPO> records);
 
-    int batchUpdate(List<FieldPO> records);
+    int batchUpdate(Collection<FieldPO> records);
 
     void updateAsTitle(@Param("tenantId") long tenantId,
                        @Param("id") long id,
@@ -35,6 +37,6 @@ public interface FieldMapper {
     List<FieldPO> selectTitleFields(@Param("tenantId") long tenantId,
                                     @Param("declaringTypeIds") List<Long> declaringTypeIds);
 
-    void batchDelete(List<Long> ids);
+    void batchDelete(Collection<Long> ids);
 
 }

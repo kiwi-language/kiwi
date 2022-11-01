@@ -1,7 +1,12 @@
 package tech.metavm.entity;
 
 import tech.metavm.infra.IdService;
+import tech.metavm.object.instance.ContextPlugin;
+import tech.metavm.object.instance.InstanceContext;
+import tech.metavm.object.instance.InstanceStore;
+import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.meta.*;
+import tech.metavm.user.RoleRT;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
@@ -9,8 +14,11 @@ import tech.metavm.util.NncUtils;
 import java.util.*;
 import java.util.function.Function;
 
+import static tech.metavm.object.meta.StdTypeConstants.*;
+
 public class EntityContext {
 
+    private boolean finished;
     private final long tenantId;
     private final SubContext<Entity> headContext = new SubContext<>();
     private final SubContext<Entity> bufferContext = new SubContext<>();
@@ -19,11 +27,25 @@ public class EntityContext {
     private final Set<EntityKey> loaded = new HashSet<>();
     private final IdentitySet<Entity> loadedInstances = new IdentitySet<>();
     private final Map<EntityKey, Entity> refMap = new HashMap<>();
+    private final InstanceContext instanceContext;
 
-    public EntityContext(long tenantId, StoreRegistry storeRegistry, IdService idService) {
+    public EntityContext(long tenantId,
+                         StoreRegistry storeRegistry,
+                         IdService idService,
+                         InstanceStore instanceStore,
+                         InstanceLogService instanceLogService,
+                         boolean asyncProcessLogs,
+                         List<ContextPlugin> plugins) {
         this.tenantId = tenantId;
         this.storeRegistry = storeRegistry;
         this.idService = idService;
+        instanceContext = new InstanceContext(
+                asyncProcessLogs,
+                instanceStore,
+                instanceLogService,
+                this,
+                plugins
+        );
     }
 
     public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids) {
@@ -84,8 +106,17 @@ public class EntityContext {
 //        }
 //    }
 
-    public void sync() {
+    public void initIds() {
+        instanceContext.initIds();
         bufferContext.initIds(getIdGenerator());
+    }
+
+    public void finish() {
+        if(finished) {
+            throw new IllegalStateException("Already finished");
+        }
+        finished = true;
+        initIds();
         ContextDifference difference = new ContextDifference();
         difference.diff(headContext.getEntities(), bufferContext.getEntities());
 
@@ -102,6 +133,7 @@ public class EntityContext {
             entity.setPersisted(true);
             headContext.add(EntityUtils.copyEntity(entity));
         }
+        instanceContext.finish();
     }
 
     private Function<Integer, List<Long>> getIdGenerator() {
@@ -161,48 +193,60 @@ public class EntityContext {
         return type;
     }
 
-    public Type getPrimitiveType(long id) {
-        return get(Type.class, id);
+    public RoleRT getRole(long roleId) {
+        return get(RoleRT.class, roleId);
+    }
+
+    public RoleRT getRoleRef(long roleId) {
+        return getRef(RoleRT.class, roleId);
     }
 
     public Type getObjectType() {
-        return getPrimitiveType(PrimitiveTypes.OBJECT.id());
+        return getType(OBJECT);
     }
 
     public Type getIntType() {
-        return getPrimitiveType(PrimitiveTypes.INT.id());
+        return getType(INT);
     }
 
     public Type getLongType() {
-        return getPrimitiveType(PrimitiveTypes.LONG.id());
+        return getType(LONG);
     }
 
     public Type getDoubleType() {
-        return getPrimitiveType(PrimitiveTypes.DOUBLE.id());
+        return getType(DOUBLE);
     }
 
     public Type getStringType() {
-        return getPrimitiveType(PrimitiveTypes.STRING.id());
+        return getType(STRING);
     }
 
     public Type getBoolType() {
-        return getPrimitiveType(PrimitiveTypes.BOOL.id());
+        return getType(BOOL);
+    }
+
+    public Type getUserType() {
+        return getType(USER.ID);
+    }
+
+    public Type getRoleType() {
+        return getType(ROLE.ID);
     }
 
     public Type getDateType() {
-        return getPrimitiveType(PrimitiveTypes.DATE.id());
+        return getType(DATE);
     }
 
     public Type getTimeType() {
-        return getPrimitiveType(PrimitiveTypes.TIME.id());
+        return getType(TIME);
     }
 
     public Type getRawNullableType() {
-        return getPrimitiveType(PrimitiveTypes.NULLABLE.id());
+        return getType(NULLABLE);
     }
 
     public Type getRawArrayType() {
-        return getPrimitiveType(PrimitiveTypes.ARRAY.id());
+        return getType(ARRAY);
     }
 
     public Type getTypeByCategory(TypeCategory category) {
@@ -217,43 +261,13 @@ public class EntityContext {
         return (TypeStore) storeRegistry.getStore(Type.class);
     }
 
+    public InstanceContext getInstanceContext() {
+        return instanceContext;
+    }
+
     public long getTenantId() {
         return tenantId;
     }
-
-//    public Type resolveType(FieldDTO fieldDTO) {
-//        Type baseType;
-//        TypeCategory type = TypeCategory.getByCodeRequired(fieldDTO.type());
-//        if(type.isPrimitive()) {
-//            baseType = getTypeByCategory(TypeCategory.getByCodeRequired(fieldDTO.type()));
-//        }
-//        else {
-//            NncUtils.require(fieldDTO.targetId());
-//            baseType = getTypeRef(fieldDTO.targetId());
-//        }
-//        if(fieldDTO.multiValued()) {
-//            return getArrayType(baseType);
-//        }
-//        else if(fieldDTO.nullable()) {
-//            return getParameterizedType(baseType);
-//        }
-//        else {
-//            return baseType;
-//        }
-//    }
-
-
-//    public Type resolveType(Type elementType, boolean nullable, boolean isArray) {
-//        if(nullable) {
-//            return getOrCreateArrayType(elementType);
-//        }
-//        else if(isArray) {
-//            return getOrCreateArrayType(elementType);
-//        }
-//        else {
-//            return elementType;
-//        }
-//    }
 
     public Type getParameterizedType(Type rawType, List<Type> typeArguments) {
         return getTypeStore().getParameterizedType(rawType, typeArguments, this);

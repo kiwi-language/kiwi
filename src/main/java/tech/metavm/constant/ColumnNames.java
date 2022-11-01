@@ -26,4 +26,10 @@ public class ColumnNames {
 
     public static final String S0 = "s0";
 
+    public static final String S1 = "s1";
+
+    public static final String S2 = "s2";
+
+    public static final String T0 = "t0";
+
 }

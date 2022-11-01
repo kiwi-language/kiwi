@@ -8,6 +8,7 @@ public class NodeExpression extends Expression {
     private final NodeRT<?> node;
 
     public NodeExpression(NodeRT<?> node) {
+        super(node.getContext());
         this.node = node;
     }
 

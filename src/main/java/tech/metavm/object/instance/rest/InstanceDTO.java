@@ -10,6 +10,10 @@ public record InstanceDTO(
         List<InstanceFieldDTO> fields
 ) {
 
+    public static InstanceDTO valueOf(Long id, long typeId, String title, List<InstanceFieldDTO> fields){
+        return new InstanceDTO(id, typeId, null, title, fields);
+    }
+
     public static InstanceDTO valueOf(long typeId, List<InstanceFieldDTO> fields) {
         return valueOf(null, typeId, fields);
     }

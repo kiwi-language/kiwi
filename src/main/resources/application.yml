@@ -17,3 +17,11 @@ mybatis:
     map-underscore-to-camel-case: true
   type-aliases-package: tech.nonocode.object.meta.persistence
 
+metavm:
+  token:
+    encrypt:
+      certificate: /etc/metavm/encrypt_key.pub
+      key: /etc/metavm/encrypt_key
+    sign:
+      certificate: /etc/metavm/sign_key.pub
+      key: /etc/metavm/sign_key

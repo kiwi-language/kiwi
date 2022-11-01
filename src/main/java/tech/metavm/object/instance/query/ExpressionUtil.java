@@ -58,7 +58,7 @@ public class ExpressionUtil {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value)
+                new ConstantExpression(value, field.getContext())
         );
     }
 
@@ -66,7 +66,7 @@ public class ExpressionUtil {
         return new BinaryExpression(
                 Operator.LIKE,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value)
+                new ConstantExpression(value, field.getContext())
         );
     }
 
@@ -74,7 +74,7 @@ public class ExpressionUtil {
         return new BinaryExpression(
                 Operator.EQ,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value)
+                new ConstantExpression(value, field.getContext())
         );
     }
 

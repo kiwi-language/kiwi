@@ -23,7 +23,7 @@ public class FlowStack {
         stack.push(new FlowFrame(flow, self, argument, this));
     }
 
-    public InstanceDTO execute() {
+    public Instance execute() {
         while (!stack.isEmpty()) {
             FlowFrame frame = stack.peek();
             frame.execute();
@@ -40,8 +40,7 @@ public class FlowStack {
                 throw new FlowExecutionException("未知错误");
             }
         }
-        instanceContext.finish();
-        return NncUtils.get(ret, Instance::toDTO);
+        return ret;
     }
 
     FlowFrame pop() {

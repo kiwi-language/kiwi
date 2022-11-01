@@ -85,7 +85,7 @@ public class InstanceManager {
             context.finish();
             return null;
         });
-        processLogs(context);
+//        context.processLogs();;
     }
 
     public long create(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
@@ -96,7 +96,7 @@ public class InstanceManager {
                 return instance.getId();
             }
         );
-        processLogs(context);
+//        context.processLogs();
         return id;
     }
 
@@ -107,7 +107,7 @@ public class InstanceManager {
             context.finish();
             return null;
         });
-        processLogs(context);
+//        context.processLogs();
     }
 
     public Page<InstanceDTO> query(InstanceQueryDTO query) {
@@ -139,15 +139,6 @@ public class InstanceManager {
         );
     }
 
-    private void processLogs(InstanceContext context) {
-        if(context.isAsyncLogProcessing()) {
-            instanceLogService.asyncProcess(context.getLogs());
-        }
-        else {
-            instanceLogService.process(context.getLogs());
-        }
-    }
-
     @Transactional
     public void onSyncSuccess(List<InstanceLog> logs) {
         instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));
@@ -166,8 +157,8 @@ public class InstanceManager {
     }
 
     private InstanceContext createContext(long tenantId, boolean asyncLogProcessing) {
-        EntityContext entityContext = entityContextFactory.newContext(tenantId);
-        return new InstanceContext(asyncLogProcessing, instanceStore, entityContext);
+        EntityContext entityContext = entityContextFactory.newContext(tenantId, asyncLogProcessing);
+        return entityContext.getInstanceContext();
     }
 
 }

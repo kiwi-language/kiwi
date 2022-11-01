@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
@@ -9,7 +10,8 @@ public class ConstantExpression extends Expression {
 
     private final Object value;
 
-    public ConstantExpression(Object value) {
+    public ConstantExpression(Object value, EntityContext context) {
+        super(context);
         this.value = value;
     }
 
@@ -27,7 +29,7 @@ public class ConstantExpression extends Expression {
 
     @Override
     public Type getType() {
-        return ValueUtil.getValueType(value);
+        return ValueUtil.getValueType(value, context);
     }
 
     @Override

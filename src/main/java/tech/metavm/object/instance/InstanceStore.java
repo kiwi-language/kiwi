@@ -2,17 +2,15 @@ package tech.metavm.object.instance;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import tech.metavm.constant.ColumnNames;
-import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.InstanceTitlePO;
-import tech.metavm.object.instance.persistence.RelationPO;
-import tech.metavm.object.instance.persistence.VersionPO;
+import tech.metavm.object.instance.persistence.*;
+import tech.metavm.object.instance.persistence.mappers.IndexItemMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.RelationMapper;
-import tech.metavm.object.meta.persistence.FieldPO;
+import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -20,24 +18,26 @@ import java.util.function.Function;
 @Component
 public class InstanceStore {
 
+    private static final long MAX_INSTANCES_PER_TYPE = 50;
+
     @Autowired
     private InstanceMapper instanceMapper;
 
     @Autowired
     private RelationMapper relationMapper;
 
+    @Autowired
+    private IndexItemMapper indexItemMapper;
+
     public void save(ContextDifference diff) {
-//        Map<InstancePO, Instance> toInsertMap = NncUtils.toIdentityMap(diff.instancesToInsert(), Instance::toPO);
-        if(NncUtils.isNotEmpty(diff.instancesToInsert())) {
-//            instanceMapper.batchInsert(toInsertMap.keySet());
-//            toInsertMap.forEach((po, instance) -> instance.initId(po.id()));
-            instanceMapper.batchInsert(NncUtils.map(diff.instancesToInsert(), Instance::toPO));
+        if(NncUtils.isNotEmpty(diff.inserts())) {
+            instanceMapper.batchInsert(NncUtils.map(diff.inserts(), Instance::toPO));
         }
-        if(NncUtils.isNotEmpty(diff.instanceToUpdate())) {
-            instanceMapper.batchUpdate(NncUtils.map(diff.instanceToUpdate(), Instance::toPO));
+        if(NncUtils.isNotEmpty(diff.updates())) {
+            instanceMapper.batchUpdate(NncUtils.map(diff.updates(), Instance::toPO));
         }
-        if(NncUtils.isNotEmpty(diff.instanceIdsToRemove())) {
-            instanceMapper.batchDelete(diff.tenantId(), diff.instanceIdsToRemove());
+        if(NncUtils.isNotEmpty(diff.deleteVersions())) {
+            instanceMapper.batchDelete(diff.tenantId(), diff.deleteVersions());
         }
         if(NncUtils.isNotEmpty(diff.relationsToInsert())) {
             relationMapper.batchInsert(NncUtils.map(diff.relationsToInsert(), InstanceRelation::toPO));
@@ -47,16 +47,21 @@ public class InstanceStore {
         }
     }
 
+    public List<Instance> selectByKey(IndexKeyPO key, InstanceContext context) {
+        List<IndexItemPO> indexItems = indexItemMapper.selectByKeys(context.getTenantId(), List.of(key));
+        return context.batchGet(NncUtils.map(indexItems, IndexItemPO::getInstanceId));
+    }
+
     public boolean updateSyncVersion(List<VersionPO> versions) {
         return instanceMapper.updateSyncVersion(versions) == versions.size();
     }
 
-    public List<Instance> loadByModelIds(List<Long> modelIds, long start, long limit, InstanceContext context) {
-        List<InstancePO> records = instanceMapper.selectByModelIds(context.getTenantId(), modelIds, start, limit);
+    public List<Instance> loadByTypeIds(List<Long> modelIds, long start, long limit, InstanceContext context) {
+        List<InstancePO> records = instanceMapper.selectByTypeIds(context.getTenantId(), modelIds, start, limit);
         return createInstances(records, context);
     }
 
-    public List<Instance> load(List<Long> ids, InstanceContext context) {
+    public List<Instance> load(Collection<Long> ids, InstanceContext context) {
         if(NncUtils.isEmpty(ids)) {
             return List.of();
         }
@@ -95,4 +100,9 @@ public class InstanceStore {
         return NncUtils.toMap(titlePOs, InstanceTitlePO::id, InstanceTitlePO::title);
     }
 
+    public List<Instance> getByTypeIds(Collection<Long> typeIds, InstanceContext context) {
+        List<InstancePO> instancePOs = instanceMapper.selectByTypeIds(context.getTenantId(), typeIds, 0,
+                typeIds.size() * MAX_INSTANCES_PER_TYPE);
+        return context.batchGet(NncUtils.map(instancePOs, InstancePO::id));
+    }
 }

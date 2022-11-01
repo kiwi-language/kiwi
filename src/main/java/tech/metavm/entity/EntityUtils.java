@@ -260,10 +260,13 @@ public class EntityUtils {
     public static <T> Class<?> getEntityType(Class<T> type) {
         Class<?> tmp = type;
         while (tmp.getSuperclass() != Entity.class && tmp != Object.class) {
+            if(tmp.isAnnotationPresent(EntityType.class)) {
+                return tmp;
+            }
             tmp = tmp.getSuperclass();
         }
         if (tmp == Object.class) {
-            throw new RuntimeException("category " + type.getName() + " is not an entity category");
+            throw new RuntimeException("Class '" + type.getName() + "' is not an entity type");
         }
         return tmp;
     }

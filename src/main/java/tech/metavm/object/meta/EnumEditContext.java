@@ -64,7 +64,7 @@ public class EnumEditContext {
             for (ChoiceOptionDTO optionDTO : optionDTOs) {
                 EnumConstant option;
                 if (optionDTO.id() == null) {
-                    option = new EnumConstant(optionDTO, ordinal++, type);
+                    option = new EnumConstant(convertToEnumConstant(optionDTO, ordinal++), type);
                 } else {
                     option = type.getEnumConstant(optionDTO.id());
                     option.update(convertToEnumConstant(optionDTO, ordinal++));

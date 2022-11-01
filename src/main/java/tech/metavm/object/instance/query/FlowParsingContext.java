@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityContext;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.meta.Field;
@@ -13,23 +14,26 @@ import java.util.Objects;
 public class FlowParsingContext implements ParsingContext {
 
     public static FlowParsingContext create(NodeRT<?> currentNode) {
-        return new FlowParsingContext(currentNode.getGlobalPredecessor());
+        return new FlowParsingContext(currentNode.getContext(), currentNode.getGlobalPredecessor());
     }
 
     public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor) {
         return new FlowParsingContext(
+                scope.getContext(),
                 predecessor != null ?
                         predecessor
                         : NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor)
         );
     }
 
+    private final EntityContext context;
     private final NodeRT<?> lastNode;
     private long lastBuiltVersion = 0L;
     private final Map<Long, NodeRT<?>> id2node = new HashMap<>();
     private final Map<String, NodeRT<?>> name2node = new HashMap<>();
 
-    public FlowParsingContext(NodeRT<?> lastNode) {
+    public FlowParsingContext(EntityContext context, NodeRT<?> lastNode) {
+        this.context = context;
         this.lastNode = lastNode;
     }
 
@@ -68,6 +72,11 @@ public class FlowParsingContext implements ParsingContext {
             List<Field> fields = TypeParsingContext.getFields(node.getOutputType(), fieldPath);
             return new FieldExpression(new NodeExpression(node), fields);
         }
+    }
+
+    @Override
+    public EntityContext getEntityContext() {
+        return context;
     }
 
     private NodeRT<?> getNode(Var var) {

@@ -17,7 +17,10 @@ public abstract class AbsInstance implements Identifiable {
             throw new IllegalStateException("objectId already initialized");
         }
         this.id = id;
+        onIdInitialized(id);
     }
+
+    protected void onIdInitialized(long id) {}
 
     public Type getType() {
         return type;

@@ -10,6 +10,7 @@ import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.object.meta.persistence.query.TypeQuery;
+import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
@@ -82,9 +83,8 @@ public class TypeManager {
     @Transactional
     public long saveType(TypeDTO typeDTO) {
         EntityContext context = newContext();
-//        Type category = saveType(typeDTO, context);
-        Type type = saveTypeWithFields(typeDTO, context);
-        context.sync();
+        Type type = saveTypeWithContent(typeDTO, context);
+        context.finish();
         return type.getId();
     }
 
@@ -97,7 +97,7 @@ public class TypeManager {
         }
     }
 
-    public Type saveTypeWithFields(TypeDTO typeDTO, EntityContext context) {
+    public Type saveTypeWithContent(TypeDTO typeDTO, EntityContext context) {
         Type type;
         if(typeDTO.id() == null || typeDTO.id() == 0L) {
             type = createType(typeDTO, context);
@@ -151,7 +151,7 @@ public class TypeManager {
             return;
         }
         deleteType0(type, new HashSet<>());
-        context.sync();
+        context.finish();
     }
 
     private void deleteType0(Type type, Set<Long> visited) {
@@ -172,10 +172,11 @@ public class TypeManager {
         type.remove();
     }
 
+    @Transactional
     public long saveField(FieldDTO fieldDTO) {
         EntityContext context = newContext();
         Field field = saveField(fieldDTO, context);
-        context.sync();
+        context.finish();
         return field.getId();
     }
 
@@ -192,46 +193,14 @@ public class TypeManager {
         Type owner = context.getType(fieldDTO.declaringTypeId());
         Type type = context.getType(fieldDTO.typeId());
         return new Field(fieldDTO, owner, type);
-//        TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
-//        Object defaultValue;
-//        if(typeCategory.isEnum()) {
-//            EnumEditContext enumContext = saveEnumType(fieldDTO, context);
-//            type = enumContext.getType();
-//            defaultValue = OptionUtil.getDefaultValue(enumContext.getDefaultOptions(), type.isArray());
-//        }
-//        else {
-//            type = context.getType(fieldDTO.typeId());
-//            defaultValue = fieldDTO.defaultValue();
-//        }
-//        return new Field(fieldDTO, owner, type);
-//        field.setDefaultValue(defaultValue);
-//        return field;
     }
 
     public Field updateField(FieldDTO fieldDTO, EntityContext context) {
         NncUtils.requireNonNull(fieldDTO.id(), "列ID必填");
-//        TypeCategory typeCategory = TypeCategory.getByCodeRequired(fieldDTO.type());
         Field field = context.get(Field.class, fieldDTO.id());
         field.update(fieldDTO);
-//        if(typeCategory.isEnum()) {
-//            EnumEditContext enumContext = saveEnumType(fieldDTO, context);
-//            Object defaultValue = OptionUtil.getDefaultValue(enumContext.getDefaultOptions(), field.isArray());
-//            field.setDefaultValue(defaultValue);
-//        }
         return field;
     }
-
-//    private EnumEditContext saveEnumType(FieldDTO fieldDTO, EntityContext context) {
-//        EnumEditContext enumEditContext = new EnumEditContext(
-//                fieldDTO.typeId(),
-//                fieldDTO.name(),
-//                true,
-//                fieldDTO.choiceOptions(),
-//                context
-//        );
-//        enumEditContext.execute();
-//        return enumEditContext;
-//    }
 
     public FieldDTO getField(long fieldId) {
         Field field = newContext().getFieldRef(fieldId);
@@ -242,7 +211,7 @@ public class TypeManager {
     public void removeField(long fieldId) {
         EntityContext context = newContext();
         removeField(context.getFieldRef(fieldId), context);
-        context.sync();
+        context.finish();
     }
 
     private void removeField(Field field, EntityContext context) {
@@ -263,11 +232,27 @@ public class TypeManager {
             return;
         }
         field.setAsTitle(true);
-        context.sync();
+        context.finish();
     }
 
     private EntityContext newContext() {
         return contextFactory.newContext();
+    }
+
+    @Transactional
+    public long saveConstraint(ConstraintDTO constraintDTO) {
+        EntityContext context = newContext();
+        Type type = context.getType(constraintDTO.typeId());
+        ConstraintRT<?> constraint;
+        if(constraintDTO.id() == null || constraintDTO.id() == 0L) {
+            constraint = ConstraintFactory.createFromDTO(constraintDTO, type);
+        }
+        else {
+            constraint = context.get(ConstraintRT.class, constraintDTO.id());
+            constraint.update(constraintDTO);
+        }
+        context.finish();
+        return constraint.getId();
     }
 
 }

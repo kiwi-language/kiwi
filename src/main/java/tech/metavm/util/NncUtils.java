@@ -6,6 +6,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import tech.metavm.entity.Entity;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
@@ -23,6 +28,13 @@ public class NncUtils {
         if(collection.size() < minSize) {
             throw new InternalException("collection has less elements than required. Minimum size: " + minSize );
         }
+    }
+
+    public static byte[] readFromFile(String filePath) throws IOException {
+        InputStream inputStream = new FileInputStream(filePath);
+        byte[] bytes = new byte[inputStream.available()];
+        inputStream.read(bytes);
+        return bytes;
     }
 
     public static String toJSONString(Object object) {
@@ -288,9 +300,14 @@ public class NncUtils {
         );
     }
 
-    public static <T> T filterOne(Collection<T> list, Predicate<T> filter) {
+    public static <T> T find(Collection<T> list, Predicate<T> filter) {
         return list.stream().filter(filter).findAny().orElse(null);
     }
+
+    public static <T> T find(T[] array, Predicate<T> filter) {
+        return Arrays.stream(array).filter(filter).findAny().orElse(null);
+    }
+
 
     public static <R> List<R> splitAndMap(String str, Function<String, R> mapping) {
         return splitAndMap(str, ",", mapping);
@@ -302,9 +319,15 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <T> T filterOneRequired(T[] array, Predicate<T> filter) {
+    public static <T> T findRequired(T[] array, Predicate<T> filter) {
         return Arrays.stream(array).filter(filter).findAny()
                 .orElseThrow(InternalException::new);
+    }
+
+    public static <T> void invokeIfNotEmpty(Collection<T> collection, Consumer<Collection<T>> action) {
+        if(isNotEmpty(collection)) {
+            action.accept(collection);
+        }
     }
 
     public static <T> T filterOneRequired(Collection<T> list, Predicate<T> filter, String errorMessage) {
@@ -342,6 +365,13 @@ public class NncUtils {
 
     public static <K, T> Map<K, T> toMap(Collection<T> list, Function<T, K> keyMapper) {
         return toMap(list, keyMapper, Function.identity());
+    }
+
+    public static <K, T> Map<K, T> toMap(T[] array, Function<T, K> keyMapper) {
+        if(array == null) {
+            return Map.of();
+        }
+        return toMap(Arrays.asList(array), keyMapper, Function.identity());
     }
 
     public static <T extends Entity> Map<Long, T> toEntityMap(Collection<T> coll) {
@@ -514,9 +544,23 @@ public class NncUtils {
         return t != null ? mapping.apply(t) : null;
     }
 
+    public static <T, R> R orElse(T t, Function<T, R> mapping, Supplier<R> elseSupplier) {
+        return t != null ? mapping.apply(t) : elseSupplier.get();
+    }
+
 
     public static <T, M, R> R get(T t, Function<T, M> mapping1, Function<M, R> mapping2) {
         return get(get(t, mapping1), mapping2);
+    }
+
+    public static <T> void invoke(T t, Consumer<T> action) {
+        if(t != null) {
+            action.accept(t);
+        }
+    }
+
+    public static <T, R> void getAndInvoke(T t, Function<T, R> mapper, Consumer<R> action) {
+        invoke(get(t, mapper), action);
     }
 
     public static <T> void updateIfNotNull(T value, Consumer<T> update) {
@@ -527,6 +571,10 @@ public class NncUtils {
         if(value != null) {
             update.accept(mapper.apply(value));
         }
+    }
+
+    public static <T> T requireNonNull(T value) {
+        return requireNonNull(value, "参数不能为空");
     }
 
     public static <T> T requireNonNull(T value, String message) {
@@ -570,4 +618,10 @@ public class NncUtils {
         return merge(result1, result2);
     }
 
+    public static <T> boolean anyMatch(Collection<T> collection, Predicate<T> predicate) {
+        if (isEmpty(collection)) {
+            return false;
+        }
+        return collection.stream().anyMatch(predicate);
+    }
 }

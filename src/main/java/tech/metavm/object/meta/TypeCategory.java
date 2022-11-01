@@ -70,10 +70,6 @@ public enum TypeCategory {
         return this == NULLABLE;
     }
 
-//    public ColumnType getColumnType() {
-//        return columnType;
-//    }
-
     public boolean isString() {
         return this == STRING;
     }

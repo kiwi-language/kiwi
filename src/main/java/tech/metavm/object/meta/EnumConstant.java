@@ -1,39 +1,44 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.constant.ColumnNames;
-import tech.metavm.entity.Entity;
-import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.VersionPO;
+import tech.metavm.constant.FieldNames;
+import tech.metavm.entity.InstanceEntity;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.NameUtils;
 
-import java.util.Map;
-import java.util.Objects;
+import java.util.List;
 
-public class EnumConstant extends Entity {
+public class EnumConstant extends InstanceEntity {
     private final Type declaringType;
     private String name;
     private int ordinal;
 
-    private transient final long version;
-
-    public EnumConstant(InstancePO po, Type declaringType) {
-        this(
-                po.id(),
-                declaringType,
-                po.getString(ColumnNames.S0),
-                po.getInt(ColumnNames.I0),
-                po.version()
-        );
+    public EnumConstant(Instance instance) {
+        super(instance);
+        declaringType = instance.getType();
+        name = instance.getString(FieldNames.NAME);
+        ordinal = instance.getInt(FieldNames.ORDINAL);
     }
+//
+//    public EnumConstant(InstancePO po, Type declaringType) {
+//        this(
+//                po.id(),
+//                declaringType,
+//                po.getString(ColumnNames.S0),
+//                po.getInt(ColumnNames.I0),
+//                po.version()
+//        );
+//    }
 
-    public EnumConstant(ChoiceOptionDTO optionDTO, int ordinal, Type owner) {
+    public EnumConstant(EnumConstantDTO enumConstantDTO, Type owner) {
         this(
-                optionDTO.id(),
+                enumConstantDTO.id(),
                 owner,
-                optionDTO.name(),
-                ordinal,
+                enumConstantDTO.name(),
+                enumConstantDTO.ordinal(),
                 1
         );
     }
@@ -45,17 +50,12 @@ public class EnumConstant extends Entity {
                         int order,
                         long version
     ) {
-        super(id, type.getContext());
+        super(type);
         this.id = id;
         this.declaringType = type;
         this.ordinal = order;
-        this.version = version;
         setName(name);
         type.addEnumConstant(this);
-    }
-
-    public VersionPO nextVersion() {
-        return new VersionPO(getTenantId(), id, version + 1);
     }
 
     public Type getDeclaringType() {
@@ -83,28 +83,6 @@ public class EnumConstant extends Entity {
         this.ordinal = ordinal;
     }
 
-    public boolean contentEquals(EnumConstant that) {
-        return equals(that)
-                && Objects.equals(declaringType, that.declaringType)
-                && Objects.equals(name, that.name)
-                && Objects.equals(ordinal, that.ordinal);
-    }
-
-    public InstancePO toPO() {
-        return new InstancePO(
-                getTenantId(),
-                id,
-                declaringType.getId(),
-                name,
-                Map.of(
-                    ColumnNames.S0, name,
-                    ColumnNames.I0, ordinal
-                ),
-                version,
-                0
-        );
-    }
-
     public EnumConstantDTO toDTO() {
         return new EnumConstantDTO(
                 id,
@@ -123,4 +101,16 @@ public class EnumConstant extends Entity {
         );
     }
 
+    @Override
+    protected InstanceDTO toInstanceDTO() {
+        return InstanceDTO.valueOf(
+                id,
+                type.getId(),
+                name,
+                List.of(
+                        InstanceFieldDTO.valueOf(type.getFieldByName(FieldNames.NAME).getId(), name),
+                        InstanceFieldDTO.valueOf(type.getFieldByName(FieldNames.ORDINAL).getId(), ordinal)
+                )
+        );
+    }
 }

@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import java.util.*;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
@@ -53,5 +54,20 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         return new ChangeList<>(inserted, updated, deleted);
     }
 
+    public void apply(
+            Consumer<List<T>> insertsConsumer,
+            Consumer<List<T>> updatesConsumer,
+            Consumer<List<T>> deletesConsumer
+    ) {
+        if(NncUtils.isNotEmpty(inserts)) {
+            insertsConsumer.accept(inserts);
+        }
+        if(NncUtils.isNotEmpty(updates)) {
+            updatesConsumer.accept(updates);
+        }
+        if(NncUtils.isNotEmpty(deletes)) {
+            deletesConsumer.accept(deletes);
+        }
+    }
 
 }

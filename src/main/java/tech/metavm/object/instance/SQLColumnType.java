@@ -12,7 +12,7 @@ public enum SQLColumnType {
     VARCHAR64("varchar(64)", "keyword","s", 10),
     BOOL("bool", "boolean",  "b",10),
     FLOAT("double", "double", "d", 10),
-    TEXT(null, "text","t", 10),
+    TEXT("varchar(1024)", "text","t", 2),
     RELATION(null, "keyword", "r", 10);
 
     ;

@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.instance.persistence.RelationTarget;
 
+import java.util.Collection;
 import java.util.List;
 
 @Mapper
@@ -15,9 +16,9 @@ public interface RelationMapper {
     int batchInsert(List<RelationPO> records);
 
     List<RelationPO> selectBySourceIds(@Param("tenantId") long tenantId,
-                                       @Param("sourceIds") List<Long> sourceIds);
+                                       @Param("sourceIds") Collection<Long> sourceIds);
 
     List<RelationPO> selectByTargets(@Param("tenantId") long tenantId,
-                                     @Param("targets") List<RelationTarget> targets);
+                                     @Param("targets") Collection<RelationTarget> targets);
 
 }

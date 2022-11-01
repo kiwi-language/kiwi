@@ -25,7 +25,7 @@ public enum ErrorCode {
     INSTANCE_NOT_FOUND(301, "实例不存在(objectId: {})"),
     INVALID_FIELD_VALUE(302, "属性值错误，属性: {}, 值: {}"),
     FIELD_REQUIRED(303, "属性{}不能为空"),
-    INVALID_TYPE_VALUE(30, "数据格式错误，类型: {}, 值: {}"),
+    INVALID_TYPE_VALUE(304, "数据格式错误，类型: {}, 值: {}"),
 
 
     // Flow相关错误
@@ -42,6 +42,19 @@ public enum ErrorCode {
     EXPRESSION_INVALID_VALUE(502, "表达式值错误，期望类型为：{}, 实际值微：{}"),
     FUNCTION_ARGUMENTS_INVALID(503, "函数{}参数不正确"),
 
+
+    // 用户相关
+    AUTH_FAILED(601, "用户名或密码错误"),
+    LOGIN_NAME_NOT_FOUND(602, "账号'{}'不存在"),
+    INVALID_TOKEN(603, "登陆信息过期，请重新登陆"),
+    USER_NOT_FOUND(604, "用户(id:{})不存在"),
+    ROLE_NOT_FOUND(604, "角色(id:{})不存在"),
+    VERIFICATION_FAILED(605, "请先登录"),
+
+
+    // Constraint
+    DUPLICATE_KEY(701, "唯一属性'{}'重复"),
+    CONSTRAINT_CHECK_FAILED(702, "记录'{}'约束条件'{}'校验不通过"),
 
 
     ;

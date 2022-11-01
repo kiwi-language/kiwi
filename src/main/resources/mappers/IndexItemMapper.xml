@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.object.instance.persistence.mappers.IndexItemMapper">
+  <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.IndexItemPO">
+    <!--@mbg.generated-->
+    <!--@Table index_item-->
+    <result property="constraintId" jdbcType="BIGINT" column="constraint_id"/>
+    <result property="column1" jdbcType="VARCHAR" column="column1"/>
+    <result property="column2" jdbcType="VARCHAR" column="column2"/>
+    <result property="column3" jdbcType="VARCHAR" column="column3"/>
+    <result property="instanceId" jdbcType="BIGINT" column="instance_id"/>
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    constraint_id, column1, column2, column3, instance_id
+  </sql>
+
+  <update id="batchDelete">
+    <!--@mbg.generated-->
+    delete from index_item
+    where
+    (tenant_id, constraint_id, column1, column2, column3) in
+    <foreach collection="collection" item="item" open="(" close=")" separator=",">
+      (#{item.tenantId}, #{item.constraintId}, #{item.column1}, #{item.column2}, #{item.column3})
+    </foreach>
+  </update>
+
+  <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+    <!--@mbg.generated-->
+    insert into index_item (tenant_id, constraint_id, column1, column2, column3, instance_id)
+    values
+    <foreach collection="collection" item="item" separator=",">
+      (#{item.tenantId}, #{item.constraintId}, #{item.column1}, #{item.column2}, #{item.column3}, #{item.instanceId})
+    </foreach>
+  </insert>
+
+  <select id="countByKeys" resultType="java.lang.Long">
+    select
+    count(1)
+    from
+    index_item
+    where
+    tenant_id = #{tenantId} and
+    (constraint_id, column1, column2, column3) in
+    <foreach collection="keys" item="item" open="(" close=")" separator=",">
+      (#{item.constraintId}, #{item.column1}, #{item.column2}, #{item.column3})
+    </foreach>
+  </select>
+
+  <select id="selectByKeys" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    index_item
+    where
+    tenant_id = #{tenantId} and
+    (constraint_id, column1, column2, column3) in
+    <foreach collection="keys" item="item" open="(" close=")" separator=",">
+      (#{item.constraintId}, #{item.column1}, #{item.column2}, #{item.column3})
+    </foreach>
+  </select>
+
+  <select id="selectByInstanceIdsOrKeys" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    index_item
+    where
+    tenant_id = #{tenantId} and
+    <trim suffixOverrides="or">
+      <if test="instanceIds != null and instanceIds.size() != 0">
+        instance_id in
+        <foreach collection="instanceIds" item="item" open="(" close=")" separator=",">
+          #{item}
+        </foreach>
+        or
+      </if>
+      <if test="keys != null and keys.size() != 0">
+      (constraint_id, column1, column2, column3) in
+        <foreach collection="keys" item="item" open="(" close=")" separator=",">
+          (#{item.constraintId}, #{item.column1}, #{item.column2}, #{item.column3})
+        </foreach>
+        or
+      </if>
+    </trim>
+  </select>
+</mapper>

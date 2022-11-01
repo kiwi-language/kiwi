@@ -63,7 +63,7 @@ public class ExpressionParser {
             }
             else {
                 if(token.isConstant()) {
-                    exprStack.push(new ConstantExpression(token.value()));
+                    exprStack.push(new ConstantExpression(token.value(), context.getEntityContext()));
                 }
                 else {
                     exprStack.push(parseField(token.getName()));
@@ -103,7 +103,7 @@ public class ExpressionParser {
         Op op = opStack.pop();
         if(op.isFunc()) {
             Expression arg = popExprRequired();
-            exprStack.push(new FunctionExpression(op.func(), arg));
+            exprStack.push(new FunctionExpression(op.func(), arg, context.getEntityContext()));
         }
         else if(op.isComma()) {
             Expression second = popExprRequired(), first = popExprRequired();

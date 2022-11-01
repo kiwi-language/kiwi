@@ -25,7 +25,8 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         }
         catch (Exception e) {
-            if(e.getCause() instanceof BusinessException bizExp) {
+            BusinessException bizExp = extractBusinessException(e);
+            if(bizExp != null) {
                 Result<?> failureResult = Result.failure(bizExp.getErrorCode(), bizExp.getParams());
                 response.setCharacterEncoding("UTF-8");
                 response.getWriter().write(NncUtils.toJSONString(failureResult));
@@ -35,6 +36,16 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
                 throw e;
             }
         }
+    }
+
+    private BusinessException extractBusinessException(Exception e) {
+        if(e instanceof BusinessException bizExp) {
+            return bizExp;
+        }
+        if(e.getCause() instanceof BusinessException bizExp) {
+            return bizExp;
+        }
+        return null;
     }
 
 }

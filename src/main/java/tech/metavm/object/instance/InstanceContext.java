@@ -1,10 +1,14 @@
 package tech.metavm.object.instance;
 
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityKey;
 import tech.metavm.entity.SubContext;
 import tech.metavm.infra.IdService;
 import tech.metavm.object.instance.log.InstanceLog;
+import tech.metavm.object.instance.log.InstanceLogService;
+import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
@@ -26,24 +30,32 @@ public class InstanceContext {
     private final EntityContext entityContext;
     private final boolean asyncLogProcessing;
     private final IdService idService;
+    private final List<ContextPlugin> plugins;
+    private final InstanceLogService instanceLogService;
 
     private List<InstanceLog> logs;
     private boolean finished;
 
-    public InstanceContext(boolean asyncLogProcessing, InstanceStore instanceStore, EntityContext entityContext) {
+    public InstanceContext(boolean asyncLogProcessing,
+                           InstanceStore instanceStore,
+                           InstanceLogService instanceLogService,
+                           EntityContext entityContext,
+                           List<ContextPlugin> plugins) {
         this.tenantId = entityContext.getTenantId();
         this.asyncLogProcessing = asyncLogProcessing;
+        this.instanceLogService = instanceLogService;
         this.instanceStore = instanceStore;
         this.entityContext = entityContext;
         this.idService = entityContext.getIdService();
+        this.plugins = plugins;
     }
 
-    public List<Instance> loadByModelId(long modelId) {
-        return loadByModelIds(List.of(modelId));
+    public List<Instance> loadByTypeId(long typeId) {
+        return loadByTypeIds(List.of(typeId));
     }
 
-    public List<Instance> loadByModelIds(List<Long> modelIds) {
-        List<Instance> instances = instanceStore.loadByModelIds(modelIds, 0L, DEFAULT_LIMIT, this);
+    public List<Instance> loadByTypeIds(List<Long> typeIds) {
+        List<Instance> instances = instanceStore.loadByTypeIds(typeIds, 0L, DEFAULT_LIMIT, this);
         instances.forEach(this::addToContext);
         return instances;
     }
@@ -57,7 +69,10 @@ public class InstanceContext {
         return instance;
     }
 
-    public List<Instance> batchGet(List<Long> ids) {
+    public List<Instance> batchGet(Collection<Long> ids) {
+        if(NncUtils.isEmpty(ids)) {
+            return List.of();
+        }
         ids = NncUtils.deduplicate(ids);
         List<Long> idsToLoad = NncUtils.filterNot(ids, this::isLoaded);
         doLoad(new LoadRequest(idsToLoad));
@@ -70,6 +85,14 @@ public class InstanceContext {
             instances.add(instance);
         }
         return instances;
+    }
+
+    public List<Instance> getByKey(IndexKeyPO indexKey) {
+        return instanceStore.selectByKey(indexKey, this);
+    }
+
+    public List<Instance> getByTypeIds(Collection<Long> typeIds) {
+        return instanceStore.getByTypeIds(typeIds, this);
     }
 
     public Instance upsert(InstanceDTO instanceDTO) {
@@ -171,24 +194,32 @@ public class InstanceContext {
         return entityContext.getTypeRef(typeId);
     }
 
+    public void initIds() {
+        bufferSubContext.initIds((size) -> idService.allocateIds(tenantId, size));
+    }
+
     public void finish() {
         if(finished) {
             throw new IllegalStateException("Already finished");
         }
-        bufferSubContext.initIds((size) -> idService.allocateIds(tenantId, size));
         finished = true;
+        initIds();
         ContextDifference difference = diff();
+
+        for (ContextPlugin plugin : plugins) {
+            plugin.beforeSaving(difference);
+        }
         instanceStore.save(difference);
+        for (ContextPlugin plugin : plugins) {
+            plugin.afterSaving(difference);
+        }
         logs = difference.buildLogs();
         headSubContext.rebuildFrom(bufferSubContext);
-    }
-
-    public List<InstanceLog> getLogs() {
-        return logs;
+        registerTransactionSynchronization();
     }
 
     private ContextDifference diff() {
-        ContextDifference diff = new ContextDifference(tenantId);
+        ContextDifference diff = new ContextDifference(this);
         diff.diff(
                 headSubContext.getFiltered(Instance::isPersistent),
                 bufferSubContext.getFiltered(Instance::isPersistent)
@@ -196,8 +227,28 @@ public class InstanceContext {
         return diff;
     }
 
-    public boolean isAsyncLogProcessing() {
-        return asyncLogProcessing;
+    private void processLogs() {
+        if(asyncLogProcessing) {
+            instanceLogService.asyncProcess(logs);
+        }
+        else {
+            instanceLogService.process(logs);
+        }
+    }
+
+    private void registerTransactionSynchronization() {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        processLogs();
+                    }
+                }
+        );
+    }
+
+    public EntityContext getEntityContext() {
+        return entityContext;
     }
 
     private static record LoadRequest (
@@ -207,40 +258,6 @@ public class InstanceContext {
             return new LoadRequest(List.of(id));
         }
     }
-
-//    private static class SubContext {
-//        private final Map<Long, Instance> instanceMap = new HashMap<>();
-//
-//        public Instance get(long id) {
-//            return instanceMap.get(id);
-//        }
-//
-//        public void add(Instance instance) {
-//            instanceMap.put(instance.getId(), instance);
-//        }
-//
-//        public void delete(Instance instance) {
-//            if(instanceMap.remove(instance.getId()) == null) {
-//                throw new RuntimeException("Instance not found, objectId: " + instance.getId());
-//            }
-//        }
-//
-//        Collection<Instance> getInstances() {
-//            return instanceMap.values();
-//        }
-//
-//        Collection<Instance> getPersistentInstances() {
-//            return NncUtils.filter(getInstances(), inst -> inst.getType().isPersistent());
-//        }
-//
-//        void rebuildFrom(SubContext that) {
-//            instanceMap.clear();
-//            that.instanceMap.forEach((id, instance) ->
-//                instanceMap.put(id, instance.copy())
-//            );
-//        }
-//
-//    }
 
     private static class ModelLoadInfo {
         private final long modelId;

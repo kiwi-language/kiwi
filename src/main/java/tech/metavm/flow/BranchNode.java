@@ -77,7 +77,7 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     }
 
     public Branch getBranch(long id) {
-        return NncUtils.filterOne(branches, branch -> branch.getId() == id);
+        return NncUtils.find(branches, branch -> branch.getId() == id);
     }
 
     public Branch deleteBranch(long id) {

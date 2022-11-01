@@ -2,14 +2,13 @@ package tech.metavm.flow;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.flow.rest.FieldValueDTO;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceContext;
-import tech.metavm.object.instance.InstanceContextFactory;
-import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.util.NncUtils;
@@ -22,22 +21,17 @@ public class FlowExecutionService {
     @Autowired
     private EntityContextFactory entityContextFactory;
 
-    @Autowired
-    private InstanceContextFactory instanceContextFactory;
-
-    @Autowired
-    private InstanceLogService instanceLogService;
-
+    @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
         EntityContext context = newContext();
         FlowRT flow = context.get(FlowRT.class, request.flowId());
-        InstanceContext instanceContext = newInstanceContext(context);
+        InstanceContext instanceContext = context.getInstanceContext();
         Instance self = instanceContext.get(request.instanceId());
         InstanceDTO argument = createArgument(flow.getInputType().getId(), request.fields());
         FlowStack stack = new FlowStack(flow, self, argument, instanceContext);
-        InstanceDTO result = stack.execute();
-        processLogs(instanceContext);
-        return result;
+        Instance result = stack.execute();
+        instanceContext.finish();
+        return NncUtils.get(result, Instance::toDTO);
     }
 
     private InstanceDTO createArgument(long typeId, List<FieldValueDTO> fields) {
@@ -54,21 +48,8 @@ public class FlowExecutionService {
         );
     }
 
-    private void processLogs(InstanceContext context) {
-        if(context.isAsyncLogProcessing()) {
-            instanceLogService.asyncProcess(context.getLogs());
-        }
-        else {
-            instanceLogService.process(context.getLogs());
-        }
-    }
-
     private EntityContext newContext() {
         return entityContextFactory.newContext();
-    }
-
-    private InstanceContext newInstanceContext(EntityContext entityContext) {
-        return instanceContextFactory.createContext(entityContext);
     }
 
 }

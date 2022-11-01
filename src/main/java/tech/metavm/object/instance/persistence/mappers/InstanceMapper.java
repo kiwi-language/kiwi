@@ -247,14 +247,14 @@ public class InstanceMapper {
         }
     }
 
-    public List<InstancePO> selectByModelIds(long tenantId, List<Long> modelIds, long start, long limit) {
+    public List<InstancePO> selectByTypeIds(long tenantId, Collection<Long> typeIds, long start, long limit) {
         Connection connection = getConnection() ;
         try(
-                PreparedStatement stmt = connection.prepareStatement(selectByModelIdsSQL(modelIds.size()))
+                PreparedStatement stmt = connection.prepareStatement(selectByModelIdsSQL(typeIds.size()))
         ) {
             stmt.setLong(1, tenantId);
             int index = 2;
-            for(Long id : modelIds) {
+            for(Long id : typeIds) {
                 stmt.setLong(index++, id);
             }
             stmt.setLong(index++, start);

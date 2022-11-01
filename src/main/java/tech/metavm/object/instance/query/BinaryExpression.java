@@ -12,6 +12,7 @@ public class BinaryExpression extends Expression {
     private final Expression second;
 
     public BinaryExpression(Operator operator, Expression first, Expression second) {
+        super(first.context);
         this.operator = operator;
         this.first = first;
         this.second = second;
@@ -43,8 +44,8 @@ public class BinaryExpression extends Expression {
 
     @Override
     public Type getType() {
-        if(operator.resultType() != null) {
-            return operator.resultType();
+        if(operator.resultType(context) != null) {
+            return operator.resultType(context);
         }
         return ValueUtil.getConvertibleType(first.getType(), second.getType());
     }

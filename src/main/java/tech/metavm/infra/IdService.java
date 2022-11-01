@@ -42,6 +42,10 @@ public class IdService {
         return results;
     }
 
+    public Long allocateId(long tenantId) {
+        return allocateIds(tenantId, 1).get(0);
+    }
+
     private int bulkNum(long tenantId) {
         return (int) (tenantId % NUM_BULKS);
     }

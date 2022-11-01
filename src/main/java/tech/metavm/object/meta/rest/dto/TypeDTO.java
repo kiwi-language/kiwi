@@ -1,5 +1,7 @@
 package tech.metavm.object.meta.rest.dto;
 
+import tech.metavm.object.instance.rest.ConditionDTO;
+
 import java.util.List;
 
 public record TypeDTO(
@@ -16,6 +18,7 @@ public record TypeDTO(
         List<TypeDTO> typeArguments,
         String desc,
         List<FieldDTO> fields,
+        List<ConstraintDTO> constraints,
         List<EnumConstantDTO> enumConstants
 // TODO return flow summaries , List<FlowSummaryDTO> flows
 ) {

@@ -4,12 +4,11 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.meta.persistence.FieldPO;
-import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TitleFieldDTO;
 import tech.metavm.util.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 
@@ -18,7 +17,6 @@ public class Field extends Entity {
     private final Type declaringType;
     private Access access;
     private Object defaultValue;
-    private boolean unique;
     private boolean asTitle;
     private final Column column;
     private Type type;
@@ -114,13 +112,12 @@ public class Field extends Entity {
         if(update.typeId() != null && !Objects.equals(type.getId(), update.typeId())) {
             throw BusinessException.invalidField(this, "类型不允许修改");
         }
-//        Type type = context.getType(update.typeId());
-//        setType(type);
         setName(update.name());
         setAccess(Access.getByCodeRequired(update.access()));
         setUnique(update.unique());
         setAsTitle(update.asTitle());
         setDefaultValue(update.defaultValue());
+        setUnique(update.unique());
     }
 
     public void setType(Type type) {
@@ -144,9 +141,15 @@ public class Field extends Entity {
 
     public void setUnique(boolean unique) {
         if(unique && isArray()) {
-            throw BusinessException.invalidField(this, "当前属性类型不支持唯一性约束");
+            throw BusinessException.invalidField(this, "数组不支持唯一性约束");
         }
-        this.unique = unique;
+        UniqueConstraintRT constraint = declaringType.getUniqueConstraint(List.of(this));
+        if(constraint != null && !unique) {
+            declaringType.removeConstraint(constraint.getId());
+        }
+        if(constraint == null && unique) {
+            declaringType.addConstraint(ConstraintFactory.newUniqueConstraint(List.of(this)));
+        }
     }
 
     public void remove() {
@@ -207,7 +210,7 @@ public class Field extends Entity {
     }
 
     public boolean isUnique() {
-        return unique;
+        return declaringType.getUniqueConstraint(List.of(this)) != null;
     }
 
     public boolean isNotNull() {
@@ -232,10 +235,6 @@ public class Field extends Entity {
         return getConcreteType().isEnum() ? getConcreteType().getEnumConstants() : List.of();
     }
 
-    public EnumConstant getOption(long id) {
-        return getConcreteType().getEnumConstant(id);
-    }
-
     public Column getColumn() {
         return column;
     }
@@ -252,7 +251,7 @@ public class Field extends Entity {
         return DefaultValueUtil.convertToStr(defaultValue, getType().getCategory().code(), isArray());
     }
 
-    public String getFullName() {
+    public String getFullyQualifiedName() {
         return declaringType.getName() + "." + name;
     }
 
@@ -262,9 +261,7 @@ public class Field extends Entity {
         po.setTenantId(ContextUtil.getTenantId());
         po.setName(name);
         po.setDeclaringTypeId(declaringType.getId());
-        po.setUnique(unique);
-//        po.setRequired(isNotNull());
-//        po.setMultiValued(isArray());
+        po.setUnique(isUnique());
         po.setDefaultValue(getStrRawDefaultValue());
         po.setAccess(access.code());
         po.setColumnName(NncUtils.get(column, Column::name));
@@ -273,77 +270,22 @@ public class Field extends Entity {
         return po;
     }
 
-    public Set<Long> getDefaultSelectedOptionIds() {
-        if(defaultValue instanceof Long) {
-            return Set.of((Long) defaultValue);
-        }
-        if(defaultValue instanceof Collection) {
-            return new HashSet<>((Collection) defaultValue);
-        }
-        return Set.of();
-    }
-
     public FieldDTO toDTO() {
         return toDTO(false);
-    }
-
-    public TitleFieldDTO toTitleDTO() {
-        if(!asTitle) {
-            throw new RuntimeException("Field " + name + " is not the title field");
-        }
-        return new TitleFieldDTO(
-                name,
-                getType().getCategory().code(),
-                unique,
-                defaultValue
-        );
     }
 
     public FieldDTO toDTO(boolean withType) {
         return new FieldDTO(
                 id,
                 name,
-//                getConcreteTypeCategory().code(),
                 access.code(),
-//                isNotNull(),
                 defaultValue,
-                unique,
+                isUnique(),
                 asTitle,
-//                isArray(),
                 declaringType.getId(),
-//                getConcreteType().isPrimitive() ? null : getConcreteType().getId(),
-//                getConcreteType().getName(),
-//                getChoiceOptionDTOs(),
                 type.getId(),
                 withType ? type.toDTO(false, false, false) : null
         );
-    }
-
-    private List<ChoiceOptionDTO> getChoiceOptionDTOs() {
-        return getConcreteType().isEnum() ? OptionUtil.getOptionDTOs(getConcreteType(), getDefaultSelectedOptionIds()) : List.of();
-    }
-//
-//    @Override
-//    public boolean equals(Object o) {
-//        if (this == o) return true;
-//        if (o == null || getClass() != o.getClass()) return false;
-//        Field nField = (Field) o;
-//        return tenantId == nField.tenantId && Objects.equals(objectId, nField.objectId);
-//    }
-//
-//    @Override
-//    public int hashCode() {
-//        return Objects.hash(tenantId, objectId);
-//    }
-
-    public boolean contentEquals(Field that) {
-        return equals(that)
-                && Objects.equals(name, that.name)
-                && Objects.equals(type, that.type)
-                && Objects.equals(declaringType, that.declaringType)
-                && Objects.equals(defaultValue, that.defaultValue)
-                && access == that.access
-                && unique == that.unique;
     }
 
     public boolean isTime() {

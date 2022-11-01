@@ -22,6 +22,29 @@ public class TypePO {
 
     private List<Long> typeArgumentIds;
 
+    public TypePO() {
+    }
+
+    public TypePO(Long id,
+                  Long tenantId,
+                  String name,
+                  int category,
+                  String desc,
+                  Boolean ephemeral,
+                  Boolean anonymous,
+                  Long rawTypeId,
+                  List<Long> typeArgumentIds) {
+        this.id = id;
+        this.tenantId = tenantId;
+        this.name = name;
+        this.category = category;
+        this.desc = desc;
+        this.ephemeral = ephemeral;
+        this.anonymous = anonymous;
+        this.rawTypeId = rawTypeId;
+        this.typeArgumentIds = typeArgumentIds;
+    }
+
     public Long getId() {
         return id;
     }

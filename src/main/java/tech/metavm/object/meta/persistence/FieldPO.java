@@ -12,21 +12,40 @@ public class FieldPO {
 
     private Integer access;
 
-//    private Boolean required;
-
     private Boolean unique;
 
-//    private Boolean multiValued;
-
     private String defaultValue;
-
-//    private Long targetId;
 
     private String columnName;
 
     private Boolean asTitle;
 
     private Long typeId;
+
+    public FieldPO() {
+    }
+
+    public FieldPO(Long id,
+                   Long tenantId,
+                   String name,
+                   Long declaringTypeId,
+                   Integer access,
+                   Boolean unique,
+                   String defaultValue,
+                   String columnName,
+                   Boolean asTitle,
+                   Long typeId) {
+        this.id = id;
+        this.tenantId = tenantId;
+        this.name = name;
+        this.declaringTypeId = declaringTypeId;
+        this.access = access;
+        this.unique = unique;
+        this.defaultValue = defaultValue;
+        this.columnName = columnName;
+        this.asTitle = asTitle;
+        this.typeId = typeId;
+    }
 
     public Long getId() {
         return id;

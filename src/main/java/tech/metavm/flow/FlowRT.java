@@ -114,7 +114,8 @@ public class FlowRT extends Entity {
                 id,
                 name,
                 type.getId(),
-                NncUtils.get(getInputType(), Entity::getId)
+                NncUtils.get(getInputType(), Entity::getId),
+                NncUtils.get(getOutputType(), Entity::getId)
         );
     }
 
@@ -172,7 +173,7 @@ public class FlowRT extends Entity {
         version++;
     }
 
-    void remove() {
+    public void remove() {
         scopes.forEach(ScopeRT::remove);
         if(inputType.isAnonymous()) {
             inputType.remove();
@@ -193,7 +194,7 @@ public class FlowRT extends Entity {
     }
 
     public NodeRT<?> getNodeByName(String nodeName) {
-        return NncUtils.filterOne(nodes, n -> n.getName().equals(nodeName));
+        return NncUtils.find(nodes, n -> n.getName().equals(nodeName));
     }
 
     public long getVersion() {

@@ -87,6 +87,10 @@ public class Entity implements Identifiable {
         return context.getFieldRef(fieldId);
     }
 
+    public void remove() {
+        context.remove(this);
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;

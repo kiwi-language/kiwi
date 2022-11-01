@@ -1,11 +1,9 @@
 package tech.metavm.util;
 
 import tech.metavm.dto.ErrorCode;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Function;
-import tech.metavm.object.meta.EnumConstant;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.rest.dto.ColumnDTO;
+import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 
@@ -40,8 +38,8 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.INVALID_FIELD, field.name(), reason);
     }
 
-    public static BusinessException invalidColumn(ColumnDTO column, String reason) {
-        throw new BusinessException(ErrorCode.INVALID_FIELD, column.name(), reason);
+    public static BusinessException invalidColumn(String columnName, String reason) {
+        throw new BusinessException(ErrorCode.INVALID_FIELD, columnName, reason);
     }
 
     public static BusinessException duplicateOptionName(String optionName) {
@@ -67,6 +65,18 @@ public class BusinessException extends RuntimeException {
 
     public static BusinessException instanceNotFound(long id) {
         throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
+    }
+
+    public static BusinessException loginNameNotFound(String loginName) {
+        return new BusinessException(ErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
+    }
+
+    public static BusinessException authFailed() {
+        return new BusinessException(ErrorCode.AUTH_FAILED);
+    }
+
+    public static BusinessException verificationFailed() {
+        return new BusinessException(ErrorCode.VERIFICATION_FAILED);
     }
 
     public static BusinessException typeNotFound(long typeId) {
@@ -152,6 +162,35 @@ public class BusinessException extends RuntimeException {
 
     public static BusinessException invalidFuncArguments(Function function) {
         return new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_INVALID, function.name());
+    }
+
+    public static BusinessException duplicateKey(Instance instance, long constraintId) {
+        UniqueConstraintRT constraint = instance.getType().getUniqueConstraint(constraintId);
+        return new BusinessException(
+                ErrorCode.INVALID_SYMBOL_NAME,
+                NncUtils.join(constraint.getFields(), Field::getName)
+        );
+    }
+
+    public static BusinessException constraintCheckFailed(Instance instance, CheckConstraintRT constraint) {
+        throw new BusinessException(
+                ErrorCode.CONSTRAINT_CHECK_FAILED,
+                instance.getTitle(),
+                constraint.getDesc()
+        );
+    }
+
+    public static BusinessException invalidToken() {
+        throw new BusinessException(ErrorCode.INVALID_TOKEN);
+    }
+
+
+    public static RuntimeException userNotFound(long id) {
+        throw new BusinessException(ErrorCode.USER_NOT_FOUND, id);
+    }
+
+    public static RuntimeException roleNotFound(long id) {
+        throw new BusinessException(ErrorCode.ROLE_NOT_FOUND, id);
     }
 
     public ErrorCode getErrorCode() {

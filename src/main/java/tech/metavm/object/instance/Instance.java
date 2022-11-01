@@ -1,16 +1,19 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.instance.persistence.VersionPO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.UniqueConstraintRT;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.LongConsumer;
 
 public class Instance extends AbsInstance {
 
@@ -20,6 +23,7 @@ public class Instance extends AbsInstance {
     private final InstanceContext context;
     private final Map<Long, InstanceField> id2field = new LinkedHashMap<>();
     private final Map<String, InstanceField> name2field = new LinkedHashMap<>();
+    private final transient List<LongConsumer> idInitCallbacks = new ArrayList<>();
 
     private Instance(long tenantId, Type type, Long id, List<InstanceField> fields, InstanceContext context, long version, long syncVersion) {
         super(id, type);
@@ -64,10 +68,21 @@ public class Instance extends AbsInstance {
         this.tenantId = tenantId;
         this.version = 1;
 
-        for (InstanceFieldDTO fieldDTO : instanceDTO.fields()) {
-            Field field = getType().getField(fieldDTO.fieldId());
+        Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
+        for (Field field : type.getFields()) {
+            InstanceFieldDTO fieldDTO = fieldDTOMap.computeIfAbsent(
+                    field.getId(), fieldId -> InstanceFieldDTO.valueOf(fieldId, null)
+            );
             addField(new InstanceField(this, field, fieldDTO));
         }
+    }
+
+    public List<IndexItemPO> getUniqueKeys() {
+        List<UniqueConstraintRT> uniqueConstraints = type.getConstraints(UniqueConstraintRT.class);
+        return NncUtils.map(
+                uniqueConstraints,
+                c -> c.getKey(this)
+        );
     }
 
     private void initFields(List<InstanceField> fields) {
@@ -114,6 +129,11 @@ public class Instance extends AbsInstance {
         }
     }
 
+    @Override
+    protected void onIdInitialized(long id) {
+        idInitCallbacks.forEach(callback -> callback.accept(id));
+    }
+
     public Object getRaw(String fieldPath) {
         int idx = fieldPath.indexOf('.');
         if(idx == -1) {
@@ -139,8 +159,28 @@ public class Instance extends AbsInstance {
         field(fieldId).setRawValue(fieldValue);
     }
 
+    public String getString(long fieldId) {
+        return (String) getRaw(field(fieldId).getField());
+    }
+
+    public String getString(String fieldName) {
+        return (String) getRaw(field(fieldName).getField());
+    }
+
+    public Integer getInt(long fieldId) {
+        return (Integer) getRaw(fieldId);
+    }
+
+    public Integer getInt(String fieldName) {
+        return (Integer) getRaw(fieldName);
+    }
+
     public Long getLong(String fieldName) {
         return (Long) getRaw(fieldName);
+    }
+
+    public List<Long> getLongList(long fieldId) {
+        return (List<Long>) getRaw(fieldId);
     }
 
     public List<Long> getLongList(String fieldName) {
@@ -149,6 +189,15 @@ public class Instance extends AbsInstance {
 
     public Object getRaw(Field field) {
         return id2field.get(field.getId()).getValue();
+    }
+
+    public String getIndexValue(Field field) {
+        Object rawValue = getRaw(field);
+        return NncUtils.orElse(
+                rawValue,
+                r -> r.toString().replace("\0", "\0\0"),
+                () -> "\0"
+        );
     }
 
     public Object getRaw(long fieldId) {
@@ -265,8 +314,12 @@ public class Instance extends AbsInstance {
         return copy;
     }
 
-    InstanceContext getContext() {
+    public InstanceContext getContext() {
         return context;
+    }
+
+    public void addIdInitCallback(LongConsumer idInitCallback) {
+        idInitCallbacks.add(idInitCallback);
     }
 
     @Override

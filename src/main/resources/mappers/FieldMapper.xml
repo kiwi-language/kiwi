@@ -141,4 +141,12 @@
     </foreach>
   </select>
 
+  <select id="getStandardFields" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    field
+    where tenant_id = -1 and deleted_at = 0 and id &lt;= 1000
+  </select>
+
 </mapper>

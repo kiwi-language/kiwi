@@ -7,6 +7,7 @@ public class ThisExpression extends Expression {
     private final Type type;
 
     public ThisExpression(Type type) {
+        super(type.getContext());
         this.type = type;
     }
 

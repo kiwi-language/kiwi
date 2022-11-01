@@ -48,7 +48,7 @@ public class FlowManager {
         NodeRT<?> selfNode = createSelfNode(flow);
         NodeRT<?> inputNode = createInputNode(flow, selfNode);
         createReturnNode(flow, inputNode);
-        context.sync();
+        context.finish();
         return flow.getId();
     }
 
@@ -92,7 +92,7 @@ public class FlowManager {
         }
         flow.update(flowDTO);
         flow.getInputType().setName(getInputTypeName(flow.getName()));
-        context.sync();
+        context.finish();
     }
 
     @Transactional
@@ -100,7 +100,7 @@ public class FlowManager {
         EntityContext context = newContext();
         FlowRT flow = context.get(FlowRT.class, id);
         flow.remove();
-        context.sync();
+        context.finish();
     }
 
     public void deleteByOwner(Type owner) {
@@ -118,7 +118,7 @@ public class FlowManager {
         ScopeRT scope = context.get(ScopeRT.class, nodeDTO.scopeId());
         nodeDTO = beforeNodeChange(nodeDTO, flow);
         NodeRT<?> node = NodeFactory.getFlowNode(nodeDTO, scope);
-        context.sync();
+        context.finish();
         return node.toDTO();
     }
 
@@ -138,7 +138,7 @@ public class FlowManager {
         }
         nodeDTO = beforeNodeChange(nodeDTO, node.getFlow());
         node.update(nodeDTO);
-        context.sync();
+        context.finish();
         return node.toDTO();
     }
 
@@ -160,7 +160,7 @@ public class FlowManager {
                 inputField -> convertToFieldDTO(inputField, flow)
         );
         Type inputType = saveInputType(typeId, fieldDTOs, flow.getName(), flow.getContext());
-        flow.getContext().sync();
+        flow.getContext().initIds();
         InputParamDTO newParam = new InputParamDTO(
                 inputType.getId(),
                 NncUtils.map(inputType.getFields(), f -> new InputFieldDTO(
@@ -190,7 +190,7 @@ public class FlowManager {
                 );
             }
         }
-        flow.getContext().sync();
+        flow.getContext().initIds();
         return nodeDTO.copyWithNewParam(
                 new ReturnParamDTO(
                         NncUtils.map(
@@ -225,16 +225,16 @@ public class FlowManager {
         return new FieldDTO(
                 id,
                 name,
-//                type.getCategory().code(),
+//                kind.getCategory().code(),
                 Access.CLASS.code(),
-//                type.isNotNull(),
+//                kind.isNotNull(),
                 defaultValue,
                 false,
                 false,
-//                type.isArray(),
+//                kind.isArray(),
                 ownerId,
-//                type.getConcreteType().getId(),
-//                type.getConcreteType().getName(),
+//                kind.getConcreteType().getId(),
+//                kind.getConcreteType().getName(),
 //                List.of(),
                 typeId,
                 null
@@ -252,7 +252,7 @@ public class FlowManager {
         if(node instanceof BranchNode branchNode) {
             branchNode.getBranches().forEach(Branch::remove);
         }
-        context.sync();
+        context.finish();
     }
 
     private Type saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, EntityContext context) {
@@ -266,9 +266,10 @@ public class FlowManager {
                 null,
                 "流程输入",
                 fieldDTOs,
+                List.of(),
                 List.of()
         );
-        return typeManager.saveTypeWithFields(typeDTO, context);
+        return typeManager.saveTypeWithContent(typeDTO, context);
     }
 
     private Type saveOutputType(Long id, List<FieldDTO> fieldDTOs, String flowName, EntityContext context) {
@@ -283,9 +284,10 @@ public class FlowManager {
                 "流程输出",
 //                null,
                 fieldDTOs,
+                List.of(),
                 List.of()
         );
-        return typeManager.saveTypeWithFields(typeDTO, context);
+        return typeManager.saveTypeWithContent(typeDTO, context);
     }
 
     private String getInputTypeName(String flowName) {
@@ -314,26 +316,26 @@ public class FlowManager {
     }
 
     @Transactional
-    public BranchDTO createBranch(long ownerId, BranchDTO branchDTO) {
+    public BranchDTO createBranch(BranchDTO branchDTO) {
         EntityContext context = newContext();
-        NodeRT<?> nodeRT = context.get(NodeRT.class, ownerId);
+        NodeRT<?> nodeRT = context.get(NodeRT.class, branchDTO.ownerId());
         if(nodeRT instanceof BranchNode branchNode) {
             Branch branch = branchNode.addBranch(branchDTO);
-            context.sync();
+            context.finish();
             return branch.toDTO(true, false);
         }
         else {
-            throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
+            throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
         }
     }
 
     @Transactional
-    public BranchDTO updateBranch(long ownerId, BranchDTO branchDTO) {
+    public BranchDTO updateBranch(BranchDTO branchDTO) {
         NncUtils.requireNonNull(branchDTO.id(), "分支ID必填");
         EntityContext context = newContext();
-        NodeRT<?> owner = context.get(NodeRT.class, ownerId);
+        NodeRT<?> owner = context.get(NodeRT.class, branchDTO.ownerId());
         if(owner == null) {
-            throw BusinessException.nodeNotFound(ownerId);
+            throw BusinessException.nodeNotFound(branchDTO.ownerId());
         }
         if(owner instanceof BranchNode branchNode) {
             Branch branch = branchNode.getBranch(branchDTO.id());
@@ -341,11 +343,11 @@ public class FlowManager {
                 throw BusinessException.branchNotFound(branchDTO.id());
             }
             branch.update(branchDTO);
-            context.sync();
+            context.finish();
             return branch.toDTO(true, false);
         }
         else {
-            throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
+            throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
         }
     }
 
@@ -359,7 +361,7 @@ public class FlowManager {
                 throw BusinessException.branchNotFound(branchId);
             }
             branch.remove();
-            context.sync();
+            context.finish();
         }
         else {
             throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
