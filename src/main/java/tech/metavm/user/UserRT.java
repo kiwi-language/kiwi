@@ -22,7 +22,7 @@ public class UserRT extends InstanceEntity {
 
     private final String loginName;
 
-    private String password;
+//    private String password;
 
     private String name;
 
@@ -32,7 +32,7 @@ public class UserRT extends InstanceEntity {
         super(instance);
         name = instance.getString(USER.FID_NAME);
         loginName = instance.getString(USER.FID_LOGIN_NAME);
-        password = instance.getString(USER.FID_PASSWORD);
+//        password = instance.getString(USER.FID_PASSWORD);
         List<Long> roleIds = instance.getLongList(USER.FID_ROLES);
         roles = new ArrayList<>(
                 NncUtils.map(roleIds, roleId -> context.getRef(RoleRT.class, roleId))
@@ -48,7 +48,7 @@ public class UserRT extends InstanceEntity {
         ));
         loginName = userDTO.loginName();
         setNickname(userDTO.name());
-        setPassword(userDTO.password());
+//        setPassword(userDTO.password());
         roles = NncUtils.map(userDTO.roleIds(), rId -> context.get(RoleRT.class, rId));
     }
 
@@ -69,11 +69,11 @@ public class UserRT extends InstanceEntity {
     }
 
     public void setPassword(String password) {
-        this.password = EncodingUtils.md5(password);
+        instance.setRawFieldValue(InstanceFieldDTO.valueOf(USER.FID_PASSWORD, password));
     }
 
     public String getPassword() {
-        return password;
+        return instance.getString(USER.FID_PASSWORD);
     }
 
     public String getName() {
@@ -109,7 +109,7 @@ public class UserRT extends InstanceEntity {
                 List.of(
                         InstanceFieldDTO.valueOf(USER.FID_LOGIN_NAME, loginName),
                         InstanceFieldDTO.valueOf(USER.FID_NAME, name),
-                        InstanceFieldDTO.valueOf(USER.FID_PASSWORD, password),
+//                        InstanceFieldDTO.valueOf(USER.FID_PASSWORD, password),
                         InstanceFieldDTO.valueOf(USER.FID_ROLES, NncUtils.map(roles, Entity::getId))
                 )
         );

@@ -150,7 +150,7 @@ public class Field extends Entity {
             declaringType.removeConstraint(constraint.getId());
         }
         if(constraint == null && unique) {
-            declaringType.addConstraint(ConstraintFactory.newUniqueConstraint(List.of(this)));
+            ConstraintFactory.newUniqueConstraint(List.of(this));
         }
     }
 

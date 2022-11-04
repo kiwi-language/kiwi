@@ -56,7 +56,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         if(instance != null) {
             for (FieldParam fieldParam : fieldParams) {
                 InstanceFieldDTO instanceFieldDTO = fieldParam.evaluate(frame);
-                instance.setRawFieldValue(fieldParam.getField().getId(), instanceFieldDTO);
+                instance.setRawFieldValue(instanceFieldDTO);
             }
         }
     }

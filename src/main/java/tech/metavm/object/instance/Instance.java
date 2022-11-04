@@ -154,8 +154,8 @@ public class Instance extends AbsInstance {
         return field(fieldName).getInstance();
     }
 
-    public void setRawFieldValue(long fieldId, InstanceFieldDTO fieldValue) {
-        field(fieldId).set(fieldValue);
+    public void setRawFieldValue(InstanceFieldDTO fieldValue) {
+        field(fieldValue.fieldId()).set(fieldValue);
     }
 
     public String getString(long fieldId) {
