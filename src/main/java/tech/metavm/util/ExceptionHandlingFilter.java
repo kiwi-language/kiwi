@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Result;
 
 import javax.servlet.FilterChain;
@@ -28,6 +29,9 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
             BusinessException bizExp = extractBusinessException(e);
             if(bizExp != null) {
                 Result<?> failureResult = Result.failure(bizExp.getErrorCode(), bizExp.getParams());
+                if(bizExp.getErrorCode() == ErrorCode.VERIFICATION_FAILED) {
+                    response.setStatus(401);
+                }
                 response.setCharacterEncoding("UTF-8");
                 response.getWriter().write(NncUtils.toJSONString(failureResult));
                 LOGGER.info("business exception", bizExp);
