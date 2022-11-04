@@ -16,9 +16,9 @@ public abstract class ConstraintRT<T> extends Entity {
         this.type = type;
     }
 
-    public ConstraintRT(ConstraintDTO constraintDTO, Type type) {
+    public ConstraintRT(ConstraintKind kind, Type type) {
         super(type.getContext());
-        kind = ConstraintKind.getByCode(constraintDTO.kind());
+        this.kind = kind;
         this.type = type;
         type.addConstraint(this);
     }

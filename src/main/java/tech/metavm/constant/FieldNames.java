@@ -8,8 +8,8 @@ public class FieldNames {
 
     public static final String LOGIN_NAME = "loginName";
 
-    public static final String NAME = "name";
+    public static final String NAME = "名称";
 
-    public static final String ORDINAL = "ordinal";
+    public static final String ORDINAL = "序号";
 
 }

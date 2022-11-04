@@ -1,9 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.*;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -52,6 +49,9 @@ public class ValueFormatter {
                 return rawValue;
             }
         }
+        if(type.isPassword()) {
+            return EncodingUtils.md5((String) rawValue);
+        }
         if(type.isString()) {
             if(ValueUtil.isString(rawValue)) {
                 return rawValue;
@@ -80,7 +80,10 @@ public class ValueFormatter {
 //            return formatTime((long) value);
 //        }
 //        else {
-            return value;
+        if(type.isPassword()) {
+            return null;
+        }
+        return value;
 //        }
     }
 

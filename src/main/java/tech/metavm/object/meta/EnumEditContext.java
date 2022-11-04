@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.constant.ColumnNames;
+import tech.metavm.constant.FieldNames;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
@@ -11,9 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EnumEditContext {
-
-    public static final String ORDER_FIELD = "序号";
-    public static final String NAME_FIELD = "名称";
 
     private final Long id;
     private final String name;
@@ -97,14 +95,14 @@ public class EnumEditContext {
                 entityContext
         );
         createFields();
+        entityContext.initIds();
         return type;
     }
 
     private void createFields() {
-
         new Field(
                 null,
-                NAME_FIELD,
+                FieldNames.NAME,
                 type,
                 Access.GLOBAL,
                 true,
@@ -113,12 +111,12 @@ public class EnumEditContext {
                 Column.valueOf(ColumnNames.S0),
                 entityContext.getTypeByCategory(TypeCategory.STRING),
                 entityContext,
-                false
+                true
         );
 
         new Field(
                 null,
-                ORDER_FIELD,
+                FieldNames.ORDINAL,
                 type,
                 Access.GLOBAL,
                 true,
@@ -127,7 +125,7 @@ public class EnumEditContext {
                 Column.valueOf(ColumnNames.I0),
                 entityContext.getTypeByCategory(TypeCategory.INT),
                 entityContext,
-                false
+                true
         );
     }
 

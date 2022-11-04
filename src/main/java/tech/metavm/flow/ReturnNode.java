@@ -82,7 +82,7 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
             "临时对象",
                 getFieldValues(frame)
         );
-        Instance instance = new Instance(getTenantId(), instanceDTO, frame.getStack().getInstanceContext());
+        Instance instance = new Instance(instanceDTO, frame.getStack().getInstanceContext());
         frame.ret(instance);
     }
 

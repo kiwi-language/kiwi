@@ -5,6 +5,7 @@ import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.object.instance.InstanceListener;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
@@ -26,8 +27,8 @@ public abstract class InstanceEntity extends Entity {
         instance.addIdInitCallback(this::initId);
     }
 
-    public InstanceEntity(Type type) {
-        this(type.newInstance());
+    public InstanceEntity(Type type, List<InstanceFieldDTO> fields) {
+        this(type.newInstance(fields));
     }
 
     public VersionPO nextVersion() {

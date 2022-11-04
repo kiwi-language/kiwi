@@ -12,54 +12,24 @@ import tech.metavm.util.NameUtils;
 import java.util.List;
 
 public class EnumConstant extends InstanceEntity {
-    private final Type declaringType;
     private String name;
     private int ordinal;
 
     public EnumConstant(Instance instance) {
         super(instance);
-        declaringType = instance.getType();
         name = instance.getString(FieldNames.NAME);
         ordinal = instance.getInt(FieldNames.ORDINAL);
     }
-//
-//    public EnumConstant(InstancePO po, Type declaringType) {
-//        this(
-//                po.id(),
-//                declaringType,
-//                po.getString(ColumnNames.S0),
-//                po.getInt(ColumnNames.I0),
-//                po.version()
-//        );
-//    }
 
-    public EnumConstant(EnumConstantDTO enumConstantDTO, Type owner) {
-        this(
-                enumConstantDTO.id(),
-                owner,
-                enumConstantDTO.name(),
-                enumConstantDTO.ordinal(),
-                1
-        );
-    }
-
-    public EnumConstant(
-                        Long id,
-                        Type type,
-                        String name,
-                        int order,
-                        long version
-    ) {
-        super(type);
-        this.id = id;
-        this.declaringType = type;
-        this.ordinal = order;
-        setName(name);
+    public EnumConstant(EnumConstantDTO dto, Type owner) {
+        super(owner, List.of(
+                InstanceFieldDTO.valueOf(owner.getFieldByName(FieldNames.NAME).getId(), dto.name()),
+                InstanceFieldDTO.valueOf(owner.getFieldByName(FieldNames.ORDINAL).getId(), dto.ordinal())
+        ));
+        this.id = dto.id();
+        this.ordinal = dto.ordinal();
+        setName(dto.name());
         type.addEnumConstant(this);
-    }
-
-    public Type getDeclaringType() {
-        return declaringType;
     }
 
     public String getName() {
@@ -86,7 +56,7 @@ public class EnumConstant extends InstanceEntity {
     public EnumConstantDTO toDTO() {
         return new EnumConstantDTO(
                 id,
-                declaringType.getId(),
+                type.getId(),
                 ordinal,
                 name
         );

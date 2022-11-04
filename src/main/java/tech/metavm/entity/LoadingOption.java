@@ -7,6 +7,7 @@ import java.util.Set;
 public enum LoadingOption {
     FIELDS_LAZY_LOADING,
     CONSTRAINTS_LAZY_LOADING,
+    ENUM_CONSTANTS_LAZY_LOADING,
 
     ;
 

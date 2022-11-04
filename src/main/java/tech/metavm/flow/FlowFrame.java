@@ -86,11 +86,6 @@ public class FlowFrame implements EvaluationContext {
         instanceContext.remove(id);
     }
 
-    public void setInstanceField(Instance instance, Field field, Object value) {
-        checkAccess(field);
-        instance.set(field.getId(), value);
-    }
-
     public Object getInstanceField(Instance instance, Field field) {
         checkAccess(field);
         return instance.getRaw(field);

@@ -19,7 +19,7 @@ public class ContextDifference {
             return;
         }
         Class<?> entityType = EntityUtils.getEntityType(NncUtils.firstNonNull(entity1, entity2).getClass());
-        EntityChange change = changeMap.computeIfAbsent(entityType, (k) -> new EntityChange());
+        EntityChange change = changeMap.computeIfAbsent(entityType, (k) -> new EntityChange(k));
         if(entity1 == null) {
             change.addToInsert(entity2);
         }

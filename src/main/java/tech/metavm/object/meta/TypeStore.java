@@ -95,16 +95,7 @@ public class TypeStore implements EntityStore<Type> {
                 NncUtils.flatMapAndFilter(typePOs, TypePO::getTypeArgumentIds, Objects::nonNull)
         );
         context.batchGet(Type.class, dependencyTypeIds, options);
-        List<Long> enumIds = NncUtils.filterAndMap(
-                typePOs,
-                typePO -> typePO.getCategory() == TypeCategory.ENUM.code(),
-                TypePO::getId
-        );
-
-        Map<Long, List<EnumConstant>> enumConstantMap =
-                NncUtils.toMultiMap(loadEnumConstants(enumIds, context), ec -> ec.getType().getId());
-
-        List<Type> types = NncUtils.map(typePOs, typePO -> new Type(typePO, enumConstantMap.get(typePO.getId()), context));
+        List<Type> types = NncUtils.map(typePOs, typePO -> new Type(typePO, context));
         List<Type> pojoOrEnums = NncUtils.filter(types, t -> hasFieldsOrOptions(t.getCategory()));
         if(NncUtils.isNotEmpty(pojoOrEnums)) {
             if (!options.contains(LoadingOption.FIELDS_LAZY_LOADING)) {
@@ -114,11 +105,15 @@ public class TypeStore implements EntityStore<Type> {
                 preloadConstraints(pojoOrEnums);
             }
         }
+        List<Type> enumTypes = NncUtils.filter(types, Type::isEnum);
+        if(NncUtils.isNotEmpty(enumTypes) && !options.contains(LoadingOption.ENUM_CONSTANTS_LAZY_LOADING)) {
+            preloadEnumConstants(enumTypes);
+        }
         return types;
     }
 
     private boolean hasFieldsOrOptions(TypeCategory category) {
-        return category == TypeCategory.ENUM || category.isEntity();
+        return category == TypeCategory.ENUM || category == TypeCategory.CLASS;
     }
 
     public List<Field> getFieldsLoadingList(Type type) {
@@ -127,6 +122,11 @@ public class TypeStore implements EntityStore<Type> {
 
     public List<ConstraintRT<?>> getConstraintsLoadingList(Type type) {
         return new LoadingList<>(() -> loadConstraints(List.of(type)));
+    }
+
+
+    public List<EnumConstant> getEnumConstantsLoadingList(Type type) {
+        return new LoadingList<>(() -> loadEnumConstants(List.of(type)));
     }
 
 //    public List<EnumConstant> getChoiceOptionsLoadingList(Type type) {
@@ -162,11 +162,13 @@ public class TypeStore implements EntityStore<Type> {
         return fieldMapper.selectByDeclaringTypeIds(types.get(0).getTenantId(), NncUtils.map(types, Entity::getId));
     }
 
-    private List<EnumConstant> loadEnumConstants(List<Long> typeIds, EntityContext context) {
-        if(NncUtils.isEmpty(typeIds)) {
+    private List<EnumConstant> loadEnumConstants(List<Type> types) {
+        types = NncUtils.filter(types, Type::isEnum);
+        if(NncUtils.isEmpty(types)) {
             return List.of();
         }
-        return instanceEntityStore.getByTypeIds(EnumConstant.class, typeIds, context);
+        EntityContext context = types.get(0).getContext();
+        return instanceEntityStore.getByTypeIds(EnumConstant.class, NncUtils.map(types, Entity::getId), context);
     }
 
     private List<InstancePO> loadChoiceOptionPOs(List<Long> typeIds, EntityContext context) {
@@ -206,7 +208,7 @@ public class TypeStore implements EntityStore<Type> {
         }
         List<Type> types = NncUtils.map(
                 poList,
-                po -> new Type(po, List.of(), context)
+                po -> new Type(po, context)
         );
         preloadFields(types, context);
         return types;
@@ -239,20 +241,42 @@ public class TypeStore implements EntityStore<Type> {
     }
 
     private void preloadFields(List<Type> types, EntityContext context) {
+        if(NncUtils.isEmpty(types)) {
+            return;
+        }
         List<Field> fields = loadFields(types);
         Map<Long, List<Field>> fieldMap = NncUtils.toMultiMap(fields, f -> f.getDeclaringType().getId());
         Set<Long> fieldTypeIds = NncUtils.mapUnique(fields, f -> f.getType().getId());
-        context.batchGet(Type.class, fieldTypeIds, LoadingOption.FIELDS_LAZY_LOADING);
+        context.batchGet(Type.class, fieldTypeIds,
+                LoadingOption.FIELDS_LAZY_LOADING,
+                LoadingOption.CONSTRAINTS_LAZY_LOADING,
+                LoadingOption.ENUM_CONSTANTS_LAZY_LOADING
+        );
         for (Type type : types) {
             type.preloadFields(fieldMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
         }
     }
 
     private void preloadConstraints(List<Type> types) {
+        if(NncUtils.isEmpty(types)) {
+            return;
+        }
         List<ConstraintRT<?>> constraints = loadConstraints(types);
         Map<Long, List<ConstraintRT<?>>> constraintMap = NncUtils.toMultiMap(constraints, c -> c.getType().getId());
         for (Type type : types) {
             type.preloadConstraints(constraintMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
+        }
+    }
+
+    private void preloadEnumConstants(List<Type> types) {
+        if(NncUtils.isEmpty(types)) {
+            return;
+        }
+        List<EnumConstant> enumConstants = loadEnumConstants(types);
+        Map<Long, List<EnumConstant>> enumConstantMap =
+                NncUtils.toMultiMap(enumConstants, c -> c.getType().getId());
+        for (Type type : types) {
+            type.preloadEnumConstants(enumConstantMap.computeIfAbsent(type.getId(), k -> new ArrayList<>()));
         }
     }
 

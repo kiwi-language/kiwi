@@ -60,12 +60,11 @@ public class Instance extends AbsInstance {
         }
     }
 
-    public Instance(long tenantId,
-                    InstanceDTO instanceDTO,
+    public Instance(InstanceDTO instanceDTO,
                     InstanceContext context) {
         super(instanceDTO.id(), context.getType(instanceDTO.typeId()));
         this.context = context;
-        this.tenantId = tenantId;
+        this.tenantId = context.getTenantId();
         this.version = 1;
 
         Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
@@ -155,8 +154,8 @@ public class Instance extends AbsInstance {
         return field(fieldName).getInstance();
     }
 
-    public void set(long fieldId, Object fieldValue) {
-        field(fieldId).setRawValue(fieldValue);
+    public void setRawFieldValue(long fieldId, InstanceFieldDTO fieldValue) {
+        field(fieldId).set(fieldValue);
     }
 
     public String getString(long fieldId) {
@@ -234,7 +233,7 @@ public class Instance extends AbsInstance {
             if(field == null) {
                 throw BusinessException.fieldNotFound(fieldUpdate.fieldId());
             }
-            field.setRawValue(fieldUpdate.value());
+            field.set(fieldUpdate);
         }
     }
 

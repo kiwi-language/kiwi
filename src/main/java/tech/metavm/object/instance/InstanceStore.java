@@ -2,17 +2,16 @@ package tech.metavm.object.instance;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tech.metavm.entity.LoadingOption;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.persistence.mappers.IndexItemMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.RelationMapper;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
@@ -66,6 +65,8 @@ public class InstanceStore {
             return List.of();
         }
         List<InstancePO> records = instanceMapper.selectByIds(context.getTenantId(), ids);
+        Set<Long> typeIds = NncUtils.mapUnique(records, InstancePO::typeId);
+        context.getEntityContext().batchGet(Type.class, typeIds, LoadingOption.ENUM_CONSTANTS_LAZY_LOADING);
         return createInstances(records, context);
     }
 

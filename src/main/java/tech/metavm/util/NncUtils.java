@@ -100,6 +100,13 @@ public class NncUtils {
         return str == null || str.length() == 0 || str.trim().length() == 0;
     }
 
+    public static boolean isEmptyValue(Object value) {
+        if(value instanceof String str) {
+            return isEmpty(str);
+        }
+        return value == null;
+    }
+
     public static boolean isEmpty(Collection<?> coll) {
         return coll == null || coll.isEmpty();
     }

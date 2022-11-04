@@ -38,6 +38,10 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.INVALID_FIELD, field.name(), reason);
     }
 
+    public static BusinessException fieldValueRequired(Field field) {
+        throw new BusinessException(ErrorCode.FIELD_VALUE_REQUIRED, field.getName());
+    }
+
     public static BusinessException invalidColumn(String columnName, String reason) {
         throw new BusinessException(ErrorCode.INVALID_FIELD, columnName, reason);
     }
@@ -167,7 +171,7 @@ public class BusinessException extends RuntimeException {
     public static BusinessException duplicateKey(Instance instance, long constraintId) {
         UniqueConstraintRT constraint = instance.getType().getUniqueConstraint(constraintId);
         return new BusinessException(
-                ErrorCode.INVALID_SYMBOL_NAME,
+                ErrorCode.DUPLICATE_KEY,
                 NncUtils.join(constraint.getFields(), Field::getName)
         );
     }

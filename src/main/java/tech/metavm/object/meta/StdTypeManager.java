@@ -85,6 +85,7 @@ public class StdTypeManager {
             TypeInfo.create(STRING, "文本", TypeCategory.STRING, SQLColumnType.VARCHAR64),
             TypeInfo.create(TIME, "时间", TypeCategory.TIME, SQLColumnType.INT64),
             TypeInfo.create(DATE, "日期", TypeCategory.DATE, SQLColumnType.INT64),
+            TypeInfo.create(PASSWORD, "密码", TypeCategory.PRIMITIVE, SQLColumnType.VARCHAR64),
             TypeInfo.create(ARRAY, "数组", TypeCategory.ARRAY, SQLColumnType.INT64),
             TypeInfo.create(NULLABLE, "可空", TypeCategory.NULLABLE, SQLColumnType.INT64),
             TypeInfo.create(ROLE.ID, "角色", TypeCategory.CLASS, SQLColumnType.INT64,
@@ -96,7 +97,7 @@ public class StdTypeManager {
                     List.of(
                             FieldInfo.createUniqueString(USER.FID_LOGIN_NAME, "账号", S0),
                             FieldInfo.createTitle(USER.FID_NAME, "名称", S1),
-                            FieldInfo.createString(USER.FID_PASSWORD, "密码", T0),
+                            FieldInfo.createPassword(USER.FID_PASSWORD, "密码", S2),
                             FieldInfo.createReference(USER.FID_ROLES, getArrayId(ROLE.ID), "角色", L0)
                     ),
                     List.of(

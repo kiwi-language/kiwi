@@ -14,6 +14,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class TableManager {
@@ -97,7 +98,7 @@ public class TableManager {
     public ColumnDTO getColumn(long id) {
         EntityContext context = entityContextFactory.newContext();
         FieldDTO fieldDTO = context.getField(id).toDTO();
-        if(fieldDTO == null) {
+        if(fieldDTO == null || !isVisible(fieldDTO)) {
             return null;
         }
         return convertToColumnDTO(fieldDTO, context.getType(fieldDTO.typeId()));
@@ -283,8 +284,20 @@ public class TableManager {
                 typeDTO.ephemeral(),
                 typeDTO.anonymous(),
                 NncUtils.get(titleField, f -> convertToTitleField(f, context)),
-                NncUtils.map(typeDTO.fields(), f -> convertToColumnDTO(f , context.getType(f.typeId())))
+                NncUtils.filterAndMap(
+                        typeDTO.fields(),
+                        this::isVisible,
+                        f -> convertToColumnDTO(f , context.getType(f.typeId()))
+                )
         );
+    }
+
+    private static final Set<Long> FIELD_TYPE_BLACKLIST = Set.of(
+            StdTypeConstants.PASSWORD
+    ) ;
+
+    private boolean isVisible(FieldDTO fieldDTO) {
+        return !FIELD_TYPE_BLACKLIST.contains(fieldDTO.typeId());
     }
 
     private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, EntityContext context) {
@@ -316,7 +329,6 @@ public class TableManager {
         TIME(9, StdTypeConstants.TIME),
         TABLE(10, null),
         DATE(13, StdTypeConstants.DATE),
-
         ;
 
         private final int code;

@@ -20,6 +20,8 @@ public class StdTypeConstants {
 
     public static final long DATE = 11L;
 
+    public static final long PASSWORD = 12L;
+
     public static final long ARRAY = 18L;
 
     public static final long NULLABLE = 19L;

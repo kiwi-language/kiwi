@@ -20,8 +20,13 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
     }
 
     public UniqueConstraintRT(ConstraintDTO constraintDTO, UniqueConstraintParam param, Type type) {
-        super(constraintDTO, type);
+        super(ConstraintKind.UNIQUE, type);
         setParam(param);
+    }
+
+    public UniqueConstraintRT(List<Field> fields, Type type) {
+        super(ConstraintKind.UNIQUE, type);
+        this.fields = new ArrayList<>(fields);
     }
 
     public void setParam(UniqueConstraintParam param) {

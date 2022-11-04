@@ -27,7 +27,7 @@ public final class EntityMethodHandler implements MethodHandler {
     }
 
     public Entity getEntity() {
-        return context.get(entityType, entityId);
+        return context.get(entityType, entityId, LoadingOption.of(LoadingOption.ENUM_CONSTANTS_LAZY_LOADING));
     }
 
     public Class<?> getEntityType() {

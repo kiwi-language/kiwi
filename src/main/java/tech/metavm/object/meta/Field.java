@@ -27,7 +27,7 @@ public class Field extends Entity {
                 po.getName(),
                 declaringType,
                 Access.getByCodeRequired(po.getAccess()),
-                po.getUnique(),
+                null,
                 po.getAsTitle(),
                 DefaultValueUtil.convertFromStr(po.getDefaultValue(), type),
                 Column.valueOf(po.getColumnName()),
@@ -58,7 +58,7 @@ public class Field extends Entity {
              String name,
              Type owner,
              Access access,
-             boolean unique,
+             Boolean unique,
              boolean asTitle,
              Object defaultValue,
              Column column,
@@ -73,7 +73,9 @@ public class Field extends Entity {
         this.asTitle = asTitle;
         this.column = column != null ? column : owner.allocateColumn(this);
         setName(name);
-        setUnique(unique);
+        if(unique != null) {
+            setUnique(unique);
+        }
         setDefaultValue(defaultValue);
         if(addToType) {
             owner.addField(this);

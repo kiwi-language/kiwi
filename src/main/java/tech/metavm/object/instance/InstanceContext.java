@@ -105,7 +105,7 @@ public class InstanceContext {
     }
 
     public Instance add(InstanceDTO instanceDTO) {
-        Instance instance = new Instance(tenantId, instanceDTO, this);
+        Instance instance = new Instance(instanceDTO, this);
         bufferSubContext.add(instance);
         return instance;
     }

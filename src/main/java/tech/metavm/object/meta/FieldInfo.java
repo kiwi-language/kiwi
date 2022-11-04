@@ -33,6 +33,17 @@ public record FieldInfo(
         );
     }
 
+    static FieldInfo createPassword(long id, String name, String columnName) {
+        return new FieldInfo(
+                id,
+                StdTypeConstants.PASSWORD,
+                name,
+                false,
+                false,
+                columnName
+        );
+    }
+
     static FieldInfo createTitle(long id, String name, String columnName) {
         return new FieldInfo(
                 id,

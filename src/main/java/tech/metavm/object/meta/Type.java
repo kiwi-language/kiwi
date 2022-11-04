@@ -6,9 +6,11 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.LoadingList;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceContext;
+import tech.metavm.object.instance.InstanceField;
 import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -49,7 +51,7 @@ public class Type extends Entity {
         );
     }
 
-    public Type(TypePO po, List<EnumConstant> enumConstants, EntityContext context) {
+    public Type(TypePO po, EntityContext context) {
         this(
                 po.getId(),
                 po.getName(),
@@ -60,7 +62,7 @@ public class Type extends Entity {
                 NncUtils.map(po.getTypeArgumentIds(), context::getTypeRef),
                 po.getDesc(),
                 null,
-                enumConstants,
+                null,
                 null,
                 context
         );
@@ -116,12 +118,7 @@ public class Type extends Entity {
         TypeStore typeStore = context.getTypeStore();
         this.fields = fields != null ? new ArrayList<>(fields) : typeStore.getFieldsLoadingList(this);
         this.constraints = constraints != null ? new ArrayList<>(constraints) : typeStore.getConstraintsLoadingList(this);
-        this.enumConstants = enumConstants != null ? new ArrayList<>(enumConstants) : new ArrayList<>();
-//        if (NncUtils.isNotEmpty(enumConstants)) {
-//            for (InstancePO choiceOption : enumConstants) {
-//                new EnumConstant(choiceOption, this);
-//            }
-//        }
+        this.enumConstants = enumConstants != null ? new ArrayList<>(enumConstants) : typeStore.getEnumConstantsLoadingList(this);
     }
 
     public TypeCategory getCategory() {
@@ -179,6 +176,17 @@ public class Type extends Entity {
         }
     }
 
+    void preloadEnumConstants(List<EnumConstant> enumConstants) {
+        if(this.enumConstants instanceof LoadingList<EnumConstant> loadingList) {
+            if(!loadingList.isLoaded()) {
+                loadingList.preload(enumConstants);
+            }
+        }
+        else {
+            throw new InternalException("the list of fields is not a loading list");
+        }
+    }
+
 //
 //    void preloadChoiceOptions(List<ChoiceOption> choiceOptions) {
 //        if(this.choiceOptions instanceof LoadingList<ChoiceOption> loadingList) {
@@ -189,8 +197,8 @@ public class Type extends Entity {
 //        }
 //    }
 
-    public Instance newInstance() {
-        return context.getInstanceContext().add(InstanceDTO.valueOf(id, List.of()));
+    public Instance newInstance(List<InstanceFieldDTO> fields) {
+        return context.getInstanceContext().add(InstanceDTO.valueOf(id, fields));
     }
 
     public List<Field> getFields() {
@@ -258,7 +266,7 @@ public class Type extends Entity {
     }
 
     public boolean isPrimitive() {
-        return isString() || isBool() || isTime() || isDate() || isDouble() || isInt() || isLong();
+        return isString() || isBool() || isTime() || isDate() || isDouble() || isInt() || isLong() || isPassword();
     }
 
     public boolean isString() {
@@ -275,6 +283,10 @@ public class Type extends Entity {
 
     public boolean isDate() {
         return equals(context.getDateType());
+    }
+
+    public boolean isPassword() {
+        return equals(context.getPasswordType());
     }
 
     public boolean isDouble() {

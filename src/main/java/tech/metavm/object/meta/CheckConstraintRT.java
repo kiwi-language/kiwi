@@ -18,7 +18,7 @@ public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
     }
 
     public CheckConstraintRT(ConstraintDTO constraintDTO, CheckConstraintParam param, Type type) {
-        super(constraintDTO, type);
+        super(ConstraintKind.CHECK, type);
         setParam(param);
     }
 

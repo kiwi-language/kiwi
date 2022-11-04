@@ -21,7 +21,9 @@ public class RoleRT extends InstanceEntity {
     }
 
     public RoleRT(RoleDTO roleDTO, EntityContext context) {
-        super(context.getRoleType());
+        super(context.getRoleType(), List.of(
+                InstanceFieldDTO.valueOf(ROLE.FID_NAME, roleDTO.name())
+        ));
         setName(roleDTO.name());
     }
 

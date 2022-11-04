@@ -7,6 +7,7 @@ import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
+import tech.metavm.object.meta.StdTypeConstants;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.NncUtils;
@@ -39,7 +40,11 @@ public class UserRT extends InstanceEntity {
     }
 
     public UserRT(UserDTO userDTO, EntityContext context) {
-        super(context.getUserType());
+        super(context.getUserType(), List.of(
+                InstanceFieldDTO.valueOf(USER.FID_NAME, userDTO.name()),
+                InstanceFieldDTO.valueOf(USER.FID_PASSWORD, userDTO.password()),
+                InstanceFieldDTO.valueOf(USER.FID_ROLES, userDTO.roleIds())
+        ));
         loginName = userDTO.loginName();
         setNickname(userDTO.name());
         setPassword(userDTO.password());

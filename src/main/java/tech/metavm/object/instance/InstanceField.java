@@ -26,10 +26,10 @@ public class InstanceField {
         this.field = field;
         this.owner = owner;
         this.context = owner.getContext();
-        setRawValue(instanceFieldDTO.value());
+        set(instanceFieldDTO);
     }
 
-    public InstanceField(Instance owner, Field field, Object value) {
+    InstanceField(Instance owner, Field field, Object value) {
         this.field = field;
         this.owner = owner;
         this.context = owner.getContext();
@@ -74,11 +74,15 @@ public class InstanceField {
         }
     }
 
-    public void setRawValue(Object rawValue) {
-        this.value = field.preprocessValue(rawValue);
+    public void set(InstanceFieldDTO instanceFieldDTO) {
+        Object rawValue = instanceFieldDTO.value();
+        if(NncUtils.isEmptyValue(rawValue) && field.isNotNull()) {
+            throw BusinessException.fieldValueRequired(field);
+        }
+        setValue(field.preprocessValue(rawValue));
     }
 
-    public void setValue(Object value) {
+    private void setValue(Object value) {
         this.value = value;
     }
 
@@ -220,6 +224,9 @@ public class InstanceField {
         }
         else if(field.getConcreteType().isDate()) {
             return ValueFormatter.formatDate((Long) value);
+        }
+        else if(field.getConcreteType().isPassword()) {
+            return "******";
         }
         return NncUtils.toString(value);
     }

@@ -120,11 +120,11 @@ public class EntityContext {
         ContextDifference difference = new ContextDifference();
         difference.diff(headContext.getEntities(), bufferContext.getEntities());
 
-        for (Map.Entry<Class<?>, EntityChange> entry : difference.getChangeMap().entrySet()) {
-            Class klass = entry.getKey();
-            EntityChange change = entry.getValue();
+        List<EntityChange> changes = new ArrayList<>(difference.getChangeMap().values());
+        Collections.sort(changes);
+        for (EntityChange change : changes) {
             if(!change.isEmpty()) {
-                EntityStore<?> store = storeRegistry.getStore(klass);
+                EntityStore<?> store = storeRegistry.getStore((Class)change.getEntityType());
                 change.apply(store);
             }
         }
@@ -239,6 +239,10 @@ public class EntityContext {
 
     public Type getTimeType() {
         return getType(TIME);
+    }
+
+    public Type getPasswordType() {
+        return getType(PASSWORD);
     }
 
     public Type getRawNullableType() {

@@ -29,18 +29,8 @@ public class ConstraintFactory {
 
     public static UniqueConstraintRT newUniqueConstraint(List<Field> fields) {
         NncUtils.requireNotEmpty(fields, "字段列表不能未空");
-        Type type = fields.get(0).getType();
-        return (UniqueConstraintRT) createFromDTO(
-                new ConstraintDTO(
-                        null,
-                        ConstraintKind.UNIQUE.code(),
-                        type.getId(),
-                        new UniqueConstraintParam(
-                                NncUtils.map(fields, Entity::getId)
-                        )
-                ),
-                type
-        );
+        Type type = fields.get(0).getDeclaringType();
+        return new UniqueConstraintRT(fields, type);
     }
 
 }
