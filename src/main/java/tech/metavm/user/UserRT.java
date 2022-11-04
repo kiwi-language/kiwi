@@ -41,6 +41,7 @@ public class UserRT extends InstanceEntity {
 
     public UserRT(UserDTO userDTO, EntityContext context) {
         super(context.getUserType(), List.of(
+                InstanceFieldDTO.valueOf(USER.FID_LOGIN_NAME, userDTO.loginName()),
                 InstanceFieldDTO.valueOf(USER.FID_NAME, userDTO.name()),
                 InstanceFieldDTO.valueOf(USER.FID_PASSWORD, userDTO.password()),
                 InstanceFieldDTO.valueOf(USER.FID_ROLES, userDTO.roleIds())
