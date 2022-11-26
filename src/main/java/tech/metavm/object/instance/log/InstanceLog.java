@@ -2,15 +2,16 @@ package tech.metavm.object.instance.log;
 
 import tech.metavm.object.instance.ChangeType;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.VersionPO;
 
 public class InstanceLog {
 
-    public static InstanceLog insert(Instance instance) {
+    public static InstanceLog insert(InstancePO instance) {
         return new InstanceLog(instance.getTenantId(), instance.getId(), ChangeType.INSERT, instance.getVersion());
     }
 
-    public static InstanceLog update(Instance instance) {
+    public static InstanceLog update(InstancePO instance) {
         return new InstanceLog(instance.getTenantId(), instance.getId(), ChangeType.UPDATE, instance.getVersion());
     }
 

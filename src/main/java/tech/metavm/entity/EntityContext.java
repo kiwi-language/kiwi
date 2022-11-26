@@ -1,296 +1,356 @@
 package tech.metavm.entity;
 
+import tech.metavm.flow.FlowRT;
+import tech.metavm.flow.NodeRT;
+import tech.metavm.flow.ScopeRT;
 import tech.metavm.infra.IdService;
-import tech.metavm.object.instance.ContextPlugin;
-import tech.metavm.object.instance.InstanceContext;
-import tech.metavm.object.instance.InstanceStore;
-import tech.metavm.object.instance.log.InstanceLogService;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.persistence.ConstraintPO;
+import tech.metavm.object.meta.persistence.FieldPO;
+import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.user.RoleRT;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.IdentitySet;
+import tech.metavm.user.UserRT;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
+import tech.metavm.util.ValueUtil;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
-import static tech.metavm.object.meta.StdTypeConstants.*;
+import static tech.metavm.object.meta.IdConstants.TENANT;
 
-public class EntityContext {
+public class EntityContext implements CompositeTypeFactory, ModelMap, InstanceMap {
 
-    private boolean finished;
-    private final long tenantId;
-    private final SubContext<Entity> headContext = new SubContext<>();
-    private final SubContext<Entity> bufferContext = new SubContext<>();
-    private final StoreRegistry storeRegistry;
+    private final Map<EntityKey, Entity> entityMap = new HashMap<>();
+    private final Set<Entity> entities = new LinkedHashSet<>();
+    private final Set<Object> values = new HashSet<>();
     private final IdService idService;
-    private final Set<EntityKey> loaded = new HashSet<>();
-    private final IdentitySet<Entity> loadedInstances = new IdentitySet<>();
-    private final Map<EntityKey, Entity> refMap = new HashMap<>();
     private final InstanceContext instanceContext;
+    private final IdentityHashMap<Object, IInstance> model2instance = new IdentityHashMap<>();
+    private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
 
-    public EntityContext(long tenantId,
-                         StoreRegistry storeRegistry,
-                         IdService idService,
-                         InstanceStore instanceStore,
-                         InstanceLogService instanceLogService,
-                         boolean asyncProcessLogs,
-                         List<ContextPlugin> plugins) {
-        this.tenantId = tenantId;
-        this.storeRegistry = storeRegistry;
-        this.idService = idService;
-        instanceContext = new InstanceContext(
-                asyncProcessLogs,
-                instanceStore,
-                instanceLogService,
-                this,
-                plugins
-        );
+    public EntityContext(InstanceContext instanceContext) {
+        this.instanceContext = instanceContext;
+        idService = instanceContext.getIdService();
     }
 
-    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids) {
-        return batchGet(klass, ids, LoadingOption.none());
+    @Override
+    public <T> T get(Class<T> klass, IInstance instance) {
+        return EntityProxyFactory.getProxyInstance(klass, instance, this::getReal);
     }
 
-    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids,
-                                               LoadingOption firstOption, LoadingOption...restOptions) {
-        return batchGet(klass, ids, LoadingOption.of(firstOption, restOptions));
+    Object getReal(Instance instance) {
+        return instance2model.computeIfAbsent(instance, this::createModel);
     }
 
-    public <T extends Entity> List<T> batchGet(Class<T> klass, Collection<Long> ids, Set<LoadingOption> options) {
-        Class<?> entityType = EntityUtils.getEntityType(klass);
-        List<EntityKey> keys = NncUtils.map(ids, id -> new EntityKey(entityType, id));
-        ensureLoaded(keys, options);
-        return  (List<T>) NncUtils.map(keys, bufferContext::get);
+    private Object createModel(Instance instance) {
+        return EntityTypeRegistry.createEntity(instance, this);
     }
 
-    public <T extends Entity> T get(Class<T> klass, long id) {
-        return get(klass, id, LoadingOption.none());
-    }
-
-    public <T extends Entity> T get(Class<T> klass, long id, Set<LoadingOption> options) {
-        return NncUtils.getFirst(batchGet(klass, List.of(id), options));
-    }
-
-    public void add(Entity entity) {
-        if(entity.isPersisted()) {
-            throw new RuntimeException("Can not add an already persisted entity, objectId: " + entity.getId());
+    public void bind(Object model) {
+        if(model instanceof Entity entity) {
+            NncUtils.requireTrue(entity.getId() == null, "Can not bind a persisted entity");
+            entities.add(entity);
         }
-        bufferContext.add(entity);
-    }
-
-    public void remove(Entity entity) {
-        ensureLoaded(List.of(Objects.requireNonNull(entity.key())), EnumSet.noneOf(LoadingOption.class));
-        Entity trueEntity = EntityUtils.extractTrueEntity(entity);
-        if(trueEntity != null) {
-            bufferContext.remove(trueEntity);
+        else {
+            values.add(model);
         }
     }
 
-    public <T> T getRef(Class<T> type, long id) {
-        Object ref = refMap.computeIfAbsent(
-                new EntityKey(type, id),
-                k -> (Entity) EntityProxyFactory.getProxyInstance(type, id, this)
-        );
-        return (T) ref;
+    public Type getTenantType() {
+        return getType(TENANT.ID);
     }
 
-//    public  <T extends Entity> boolean remove(Class<T> entityType, long objectId) {
-//        T entity = get(entityType, objectId);
-//        if(entity != null) {
-//            bufferContext.remove(entity);
-//            return true;
-//        }
-//        else {
-//            return false;
-//        }
-//    }
+    @SuppressWarnings("unused")
+    public <T extends Entity> Table<T> getArray(Class<T> elementType, long id) {
+        return new Table<>(
+                () -> NncUtils.map(
+                        ((InstanceArray) instanceContext.get(id)).getElements(),
+                        instance -> createEntity(elementType, instance)
+                )
+        );
+    }
 
-    public void initIds() {
-        instanceContext.initIds();
-        bufferContext.initIds(getIdGenerator());
+    @SuppressWarnings("unused")
+    public UserRT getUser(long id) {
+        return getEntity(UserRT.class, id);
+    }
+
+    public RoleRT getRole(long id) {
+        return getEntity(RoleRT.class, id);
+    }
+    public FlowRT getFlow(long id) {
+        return getEntity(FlowRT.class, id);
+    }
+
+    public ScopeRT getScope(long id) {
+        return getEntity(ScopeRT.class, id);
+    }
+
+    public Type getType(long id) {
+        return getEntity(Type.class, id);
+    }
+
+    public Field getField(long id) {
+        return getEntity(Field.class, id);
+    }
+
+    public NodeRT<?> getNode(long id) {
+        return getEntity(NodeRT.class, id);
+    }
+
+    @SuppressWarnings("unused")
+    public ConstraintRT<UniqueConstraintParam> getConstraint(long id) {
+        return getEntity(ConstraintRT.class, id);
+    }
+
+    @SuppressWarnings("unused")
+    public UniqueConstraintRT getUniqueConstraint(long id) {
+        return getEntity(UniqueConstraintRT.class, id);
+    }
+
+    @SuppressWarnings("unused")
+    public CheckConstraintRT getCheckConstraint(long id) {
+        return getEntity(CheckConstraintRT.class, id);
+    }
+
+    public <T extends Entity> T getEntity(Class<T> entityType, long id) {
+        EntityKey entityKey = new EntityKey(entityType, id);
+        if(entityMap.containsKey(entityKey)) {
+            return entityType.cast(entityMap.get(entityKey));
+        }
+        instanceContext.load(id, LoadingOption.none());
+        return getRef(entityType, id);
+    }
+
+    public <T extends Enum<?>> T getEnum(Class<T> klass, long id) {
+        return EntityTypeRegistry.getEnumConstant(klass, id);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T get(Class<T> klass, long id) {
+        if(Entity.class.isAssignableFrom(klass)) {
+            return (T) getEntity(klass.asSubclass(Entity.class), id);
+        }
+        else if(Enum.class.isAssignableFrom(klass)) {
+            return (T) getEnum(klass.asSubclass(Enum.class), id);
+        }
+        else {
+            throw new InternalException("Invalid model type: " + klass.getName());
+        }
+    }
+
+    public <T extends Entity> T getRef(Class<T> entityType, long id) {
+        return EntityProxyFactory.getProxyInstance(entityType, instanceContext.get(id), this::getReal);
     }
 
     public void finish() {
-        if(finished) {
-            throw new IllegalStateException("Already finished");
-        }
-        finished = true;
-        initIds();
-        ContextDifference difference = new ContextDifference();
-        difference.diff(headContext.getEntities(), bufferContext.getEntities());
-
-        List<EntityChange> changes = new ArrayList<>(difference.getChangeMap().values());
-        Collections.sort(changes);
-        for (EntityChange change : changes) {
-            if(!change.isEmpty()) {
-                EntityStore<?> store = storeRegistry.getStore((Class)change.getEntityType());
-                change.apply(store);
-            }
-        }
-        headContext.clear();
-        for (Entity entity : bufferContext.getEntities()) {
-            entity.setPersisted(true);
-            headContext.add(EntityUtils.copyEntity(entity));
-        }
+        entities.forEach(this::writeEntity);
         instanceContext.finish();
     }
 
-    private Function<Integer, List<Long>> getIdGenerator() {
-        return (size) -> idService.allocateIds(tenantId, size);
-    }
-
-    private void ensureLoaded(List<EntityKey> keys, Set<LoadingOption> options) {
-        List<EntityKey> keysToLoad = NncUtils.filterNot(keys, this::isLoaded);
-        if(NncUtils.isNotEmpty(keysToLoad)) {
-            doLoad(keysToLoad, options);
+    private void writeEntity(Entity entity) {
+        if(entity.getId() == null) {
+            instanceContext.bind(
+                    EntityTypeRegistry.createInstance(entity, this)
+            );
+        }
+        else {
+            EntityTypeRegistry.updateInstance(
+                entity, instanceContext.get(entity.getId()), this
+            );
         }
     }
 
-    private void doLoad(List<EntityKey> keys, Set<LoadingOption> options) {
-        loaded.addAll(keys);
-        Map<Class<?>, List<Long>> idGroups = NncUtils.groupBy(keys, EntityKey::type, EntityKey::id);
-        for (Map.Entry<Class<?>, List<Long>> entry : idGroups.entrySet()) {
-            EntityStore<?> store = storeRegistry.getStore((Class)entry.getKey());
-            store.batchGet(NncUtils.deduplicate(entry.getValue()), this, options);
+    @SuppressWarnings("unused")
+    public Table<EnumConstantRT> getEnumConstants(Type declaringType) {
+        return createLoadingList(EnumConstantRT.class, instanceContext.getByType(declaringType));
+    }
+
+    public Table<Field> getFields(Type type) {
+        return new Table<>(selectByKey(FieldPO.INDEX_DECLARING_TYPE_ID, type));
+    }
+
+    @SuppressWarnings("unused")
+    public Table<ConstraintRT<?>> getConstraints(Type type) {
+        return selectByKey(ConstraintPO.INDEX_DECLARING_TYPE_ID, type);
+    }
+
+    public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {
+        return selectByKey(indexDef, values).getFirst();
+    }
+
+    public <T extends Entity> Table<T> selectByKey(IndexDef<T> indexDef,
+                                                     Object...values) {
+        IndexKeyPO indexKey = createIndexKey(indexDef, values);
+        List<IInstance> instances = instanceContext.selectByKey(indexKey);
+        return new Table<>(
+                () -> NncUtils.map(
+                        instances,
+                        inst -> createEntity(indexDef.getEntityType(), inst)
+                )
+        );
+    }
+
+    private <T extends Entity> Table<T> createLoadingList(Class<T> entityType, List<IInstance> instances) {
+        return new Table<>(
+                () -> NncUtils.map(
+                        instances,
+                        inst -> entityType.cast(EntityTypeRegistry.createEntity(getRealInstance(inst), this))
+                )
+        );
+    }
+
+    public static Instance getRealInstance(IInstance instance) {
+        if(instance instanceof Instance realInstance) {
+            return realInstance;
         }
+        if(instance instanceof InstanceRef instanceRef) {
+            return instanceRef.getRealInstance();
+        }
+        if(instance instanceof InstanceArrayRef instanceArrayRef) {
+            return instanceArrayRef.getRealInstanceArray();
+        }
+        throw new InternalException("can not get real instance from: " + instance);
     }
 
-    protected void bind(Entity entity) {
-//        if(!isLoaded(entity)) {
-            loadedInstances.add(entity);
-            bufferContext.add(entity);
-            if(entity.isPersisted()) {
-                loaded.add(entity.key());
-                headContext.add(EntityUtils.copyEntity(entity));
-            }
-//        }
+    public <T extends Entity> Table<T> selectByKey(Class<T> entityClass, IndexKeyPO indexKeyPO) {
+        List<IInstance> instances = instanceContext.selectByKey(indexKeyPO);
+        return new Table<>(getEntityLoader(entityClass, instances));
     }
 
-//    protected long allocateId() {
-//        return idService.allocateIds(tenantId, 1).get(0);
-//    }
-
-    public boolean isLoaded(Entity entity) {
-        return loadedInstances.contains(entity);
+    private <T extends Entity> Supplier<Collection<T>> getEntityLoader(
+            Class<T> entityClass,
+            Collection<IInstance> instances) {
+        return () -> NncUtils.map(
+                        instances,
+                        inst -> entityClass.cast(EntityTypeRegistry.createEntity(getRealInstance(inst), this))
+                );
     }
 
-    public boolean isLoaded(EntityKey key) {
-        return loaded.contains(key);
+    private <T extends Entity> T createEntity(Class<T> entityType, IInstance instance) {
+        return entityType.cast(EntityTypeRegistry.createEntity(getRealInstance(instance), this));
     }
 
-    public Type getTypeRef(long typeId) {
-        return getRef(Type.class, typeId);
+    @SuppressWarnings("unused")
+    private Object createEntity(IInstance instance) {
+        return EntityTypeRegistry.createEntity(getRealInstance(instance), this);
     }
 
-    public Type getType(long typeId) {
-        return getType(typeId, LoadingOption.none());
+    public long getTenantId() {
+        return instanceContext.getTenantId();
     }
 
-    public Type getType(long typeId, Set<LoadingOption> options) {
-        Type type = get(Type.class, typeId, options);
-        NncUtils.requireNonNull(type, () -> BusinessException.typeNotFound(typeId));
-        return type;
-    }
-
-    public RoleRT getRole(long roleId) {
-        return get(RoleRT.class, roleId);
-    }
-
-    public RoleRT getRoleRef(long roleId) {
-        return getRef(RoleRT.class, roleId);
-    }
-
-    public Type getObjectType() {
-        return getType(OBJECT);
-    }
-
-    public Type getIntType() {
-        return getType(INT);
-    }
-
-    public Type getLongType() {
-        return getType(LONG);
-    }
-
-    public Type getDoubleType() {
-        return getType(DOUBLE);
-    }
-
-    public Type getStringType() {
-        return getType(STRING);
-    }
-
-    public Type getBoolType() {
-        return getType(BOOL);
-    }
-
-    public Type getUserType() {
-        return getType(USER.ID);
-    }
-
-    public Type getRoleType() {
-        return getType(ROLE.ID);
-    }
-
-    public Type getDateType() {
-        return getType(DATE);
-    }
-
-    public Type getTimeType() {
-        return getType(TIME);
-    }
-
-    public Type getPasswordType() {
-        return getType(PASSWORD);
-    }
-
-    public Type getRawNullableType() {
-        return getType(NULLABLE);
-    }
-
-    public Type getRawArrayType() {
-        return getType(ARRAY);
-    }
-
-    public Type getTypeByCategory(TypeCategory category) {
-        return getTypeStore().getByCategory(category, this);
-    }
-
-    public Type getTypeByName(String name) {
-        return getTypeStore().getByName(name, this);
-    }
-
-    public TypeStore getTypeStore() {
-        return (TypeStore) storeRegistry.getStore(Type.class);
+    public void remove(Entity entity) {
+        if(entity.getId() != null) {
+            entityMap.remove(entity.key());
+            instanceContext.remove(instanceContext.get(entity.getId()));
+        }
+        entities.remove(entity);
     }
 
     public InstanceContext getInstanceContext() {
         return instanceContext;
     }
 
-    public long getTenantId() {
-        return tenantId;
+    public <T extends Entity> T getByUniqueKey(Class<T> entityType, IndexDef<?> uniqueConstraintDef, Object...fieldValues) {
+        IndexKeyPO indexKey = createIndexKey(uniqueConstraintDef, fieldValues);
+        IInstance instance = instanceContext.selectByUniqueKey(indexKey);
+        return getEntity(entityType, instance.getId());
+    }
+
+    private IndexKeyPO createIndexKey(IndexDef<?> uniqueConstraintDef, Object...values) {
+        ConstraintPO constraint = EntityTypeRegistry.getUniqueConstraint(uniqueConstraintDef);
+        return IndexKeyPO.create(constraint.getId(), Arrays.asList(values));
     }
 
     public Type getParameterizedType(Type rawType, List<Type> typeArguments) {
-        return getTypeStore().getParameterizedType(rawType, typeArguments, this);
+        Type pType = getByUniqueKey(
+                Type.class,
+                TypePO.UNIQUE_RAW_TYPE_AND_TYPE_ARGS,
+                rawType.getId(),
+                NncUtils.join(typeArguments, t -> t.getId().toString())
+        );
+        if(pType == null) {
+            pType = new Type(
+                    rawType.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + ">",
+                    StandardTypes.OBJECT,
+                    rawType.equals(StandardTypes.ARRAY) ? TypeCategory.ARRAY : TypeCategory.CLASS,
+                    false,
+                    false,
+                    rawType,
+                    typeArguments,
+                    null,
+                    null
+            );
+        }
+        return pType;
     }
 
-    public Field getField(long id) {
-        return get(Field.class, id);
+    @Override
+    public Type getUnionType(Set<Type> typeMembers) {
+        boolean allPersisted = NncUtils.allMatch(typeMembers, t -> t.getId() != null);
+        if(allPersisted) {
+            List<Type> types = new ArrayList<>(typeMembers);
+            types.sort(Comparator.comparingLong(Entity::getId));
+            Type pType = getByUniqueKey(
+                    Type.class,
+                    TypePO.UNIQUE_TYPE_ELEMENTS,
+                    NncUtils.join(types, t -> t.getId().toString())
+            );
+            if(pType != null) {
+                return pType;
+            }
+        }
+        return new Type(
+                NncUtils.join(typeMembers, Type::getName, "|"),
+                ValueUtil.getCommonSuperType(typeMembers),
+                TypeCategory.UNION
+        );
     }
 
-    public Field getFieldRef(long id) {
-        return getRef(Field.class, id);
+    public void initIds() {
+        instanceContext.initIds();
+        List<Entity> entitiesToInitId = NncUtils.filter(entities, entity -> entity.getId() == null);
+        Map<Type, Integer> countMap = NncUtils.mapAndCount(
+                entitiesToInitId,
+                EntityTypeRegistry::getType
+        );
+        Map<Type, List<Entity>> type2entities = NncUtils.toMultiMap(
+                entitiesToInitId,
+                EntityTypeRegistry::getType
+        );
+
+        Map<Type, List<Long>> idMap = idService.allocate(getTenantId(), countMap);
+        idMap.forEach((type, ids) -> NncUtils.biForEach(
+                type2entities.get(type),
+                ids,
+                Entity::initId
+        ));
     }
 
-    public <T extends Entity> EntityStore<T> getStore(Class<T> type) {
-        return storeRegistry.getStore(type);
+    @SuppressWarnings("unused")
+    public Entity getRealEntity(EntityKey key) {
+        if(!entityMap.containsKey(key)) {
+            IInstance instance = instanceContext.get(key.id());
+            Entity entity = EntityTypeRegistry.createEntity(getRealInstance(instance), this);
+            entityMap.put(key, entity);
+        }
+        return entityMap.get(key);
     }
 
-    public IdService getIdService() {
-        return idService;
+    @Override
+    public IInstance getByModel(Object model) {
+        return model2instance.computeIfAbsent(model, this::createInstanceFromModel);
+    }
+
+    private IInstance createInstanceFromModel(Object model) {
+        Instance instance = EntityTypeRegistry.createInstance(model, this);
+        instanceContext.bind(instance);
+        return instance;
     }
 
 }

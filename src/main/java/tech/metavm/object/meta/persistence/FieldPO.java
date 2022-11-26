@@ -1,10 +1,17 @@
 package tech.metavm.object.meta.persistence;
 
-public class FieldPO {
+import tech.metavm.entity.EntityPO;
+import tech.metavm.entity.Identifiable;
+import tech.metavm.entity.IndexDef;
+import tech.metavm.object.meta.Field;
 
-    private Long id;
+public class FieldPO extends EntityPO implements Identifiable {
 
-    private Long tenantId;
+    public static final IndexDef<Field> INDEX_DECLARING_TYPE_ID
+            = new IndexDef<>(Field.class, "declaringTypeId");
+
+    public static final IndexDef<Field> INDEX_TYPE_ID
+            = new IndexDef<>(Field.class, "typeId");
 
     private String name;
 
@@ -35,8 +42,7 @@ public class FieldPO {
                    String columnName,
                    Boolean asTitle,
                    Long typeId) {
-        this.id = id;
-        this.tenantId = tenantId;
+        super(id, tenantId);
         this.name = name;
         this.declaringTypeId = declaringTypeId;
         this.access = access;
@@ -45,22 +51,6 @@ public class FieldPO {
         this.columnName = columnName;
         this.asTitle = asTitle;
         this.typeId = typeId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(Long tenantId) {
-        this.tenantId = tenantId;
     }
 
     public String getName() {

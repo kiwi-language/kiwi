@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
@@ -54,11 +55,15 @@ public class ExpressionUtil {
         return new BinaryExpression(Operator.ADD, first, second);
     }
 
+    public static Expression constant(Object value/*, InstanceContext context*/) {
+        return new ConstantExpression(value/*, context*/);
+    }
+
     public static Expression fieldStartsWith(Field field, String value) {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value, field.getContext())
+                new ConstantExpression(value/*, field.getContext().getInstanceContext()*/)
         );
     }
 
@@ -66,7 +71,7 @@ public class ExpressionUtil {
         return new BinaryExpression(
                 Operator.LIKE,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value, field.getContext())
+                new ConstantExpression(value/*, field.getContext().getInstanceContext()*/)
         );
     }
 
@@ -74,7 +79,7 @@ public class ExpressionUtil {
         return new BinaryExpression(
                 Operator.EQ,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value, field.getContext())
+                new ConstantExpression(value/*, field.getContext().getInstanceContext()*/)
         );
     }
 
@@ -124,6 +129,15 @@ public class ExpressionUtil {
 
     public static boolean isAllNumeric(Object first, Object second) {
         return ValueUtil.isNumber(first) && ValueUtil.isNumber(second);
+    }
+
+    public static boolean isConstantTrue(Expression expression) {
+        if(expression instanceof ConstantExpression constantExpression) {
+            return Boolean.TRUE.equals(constantExpression.getValue());
+        }
+        else {
+            return false;
+        }
     }
 
     public static Long castInteger(Object value) {

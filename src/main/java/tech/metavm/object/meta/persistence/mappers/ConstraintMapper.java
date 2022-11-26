@@ -22,4 +22,13 @@ public interface ConstraintMapper {
     void batchDelete(Collection<Long> ids);
 
     List<ConstraintPO> getStandardConstraints();
+
+    long countByTypeId(@Param("typeId") long typeId);
+
+    List<ConstraintPO> selectByTypeId(
+            @Param("typeId") long typeId,
+            @Param("start") long start,
+            @Param("limit") long limit
+    );
+
 }

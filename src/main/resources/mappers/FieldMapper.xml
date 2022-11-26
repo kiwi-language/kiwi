@@ -42,7 +42,7 @@
   </insert>
 
   <update id="batchUpdate">
-    <foreach collection="list" item="item" separator=";">
+    <foreach collection="collection" item="item" separator=";">
       update field
       <set>
        <if test="item.name != null">
@@ -88,7 +88,7 @@
     <include refid="Base_Column_List"/>
     from
     field
-    where tenant_id = #{tenantId} and deleted_at = 0 and
+    where deleted_at = 0 and
     declaring_type_id in
     <foreach collection="declaringTypeIds" item="ownerId" open="(" close=")" separator=",">
       #{ownerId}

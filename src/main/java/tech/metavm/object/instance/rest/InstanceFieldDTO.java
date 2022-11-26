@@ -1,15 +1,12 @@
 package tech.metavm.object.instance.rest;
 
-import java.util.List;
-
 public record InstanceFieldDTO(
         long fieldId,
         String fieldName,
         Integer type,
         Boolean multiValued,
         Object value,
-        String displayValue,
-        List<ValueDTO> values
+        String displayValue
 ) {
 
     public static InstanceFieldDTO valueOf(long fieldId, Object value) {
@@ -19,7 +16,6 @@ public record InstanceFieldDTO(
                 null,
                 null,
                 value,
-                null,
                 null
         );
     }

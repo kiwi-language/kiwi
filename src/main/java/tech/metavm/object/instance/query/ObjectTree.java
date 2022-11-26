@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 
@@ -20,7 +20,7 @@ public class ObjectTree extends NTree {
         return instanceId;
     }
 
-    public void setInstance(Instance instance) {
+    public void setInstance(IInstance instance) {
         Type type = instance.getType();
         for (Path childPath : path.getChildren()) {
             Field field = type.getFieldByName(childPath.getName());

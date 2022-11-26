@@ -2,37 +2,48 @@ package tech.metavm.flow;
 
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.*;
+import tech.metavm.object.meta.Type;
 
 public class ReferenceValue extends Value {
 
-    private final long nodeId;
-    private final long fieldId;
+//    private final String nodeId;
+//    private final String fieldId;
     private final transient Expression expression;
 
     public ReferenceValue(ValueDTO valueDTO, ParsingContext parsingContext) {
-        super(valueDTO);
+        super(valueDTO/*, parsingContext.getInstanceContext()*/);
         String value = (String) valueDTO.value();
-        if(value.contains("-")) {
-            String[] splits = value.split("-");
-            nodeId = Long.parseLong(splits[0]);
-            fieldId = Long.parseLong(splits[1]);
-            expression = parsingContext.parse(Var.idVars(nodeId, fieldId));
-        }
-        else {
-            nodeId = Long.parseLong(value);
-            fieldId = -1L;
-            expression = parsingContext.parse(Var.idVars(nodeId));
-        }
+//        if(value.contains(".")) {
+//            String[] splits = value.split("\\.");
+//            nodeId = splits[0];
+//            fieldId = splits[1];
+            expression = ExpressionParser.parse(value, parsingContext);
+//        }
+//        else {
+//            nodeId = value;
+//            fieldId = null;
+//            expression = ExpressionParser.parse(value, parsingContext);
+//        }
     }
 
     @Override
     protected Object getDTOValue(boolean persisting) {
-        if(fieldId >= 0L) {
-            return nodeId + "-" + fieldId;
-        }
-        else {
-            return nodeId + "";
-        }
+        return expression.buildSelf(persisting ? VarType.ID : VarType.NAME);
+//        if(fieldId != null) {
+//            return nodeId + "." + fieldId;
+//        }
+//        else {
+//            return nodeId + "";
+//        }
+    }
+
+    @Override
+    public Type getType() {
+        return expression.getType();
+    }
+
+    public Expression getExpression() {
+        return expression;
     }
 
     @Override

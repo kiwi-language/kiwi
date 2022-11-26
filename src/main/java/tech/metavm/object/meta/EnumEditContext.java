@@ -1,12 +1,9 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.constant.ColumnNames;
-import tech.metavm.constant.FieldNames;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.Column;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +14,7 @@ public class EnumEditContext {
     private final String name;
     private final boolean anonymous;
     private final List<ChoiceOptionDTO> optionDTOs;
-    private final List<EnumConstant> defaultOptions = new ArrayList<>();
+    private final List<EnumConstantRT> defaultOptions = new ArrayList<>();
     private final EntityContext entityContext;
     private Type type;
 
@@ -37,6 +34,7 @@ public class EnumEditContext {
         init();
         validate();
         update();
+        entityContext.initIds();
     }
 
     private void init() {
@@ -60,9 +58,9 @@ public class EnumEditContext {
         if(optionDTOs != null) {
             int ordinal = 0;
             for (ChoiceOptionDTO optionDTO : optionDTOs) {
-                EnumConstant option;
+                EnumConstantRT option;
                 if (optionDTO.id() == null) {
-                    option = new EnumConstant(convertToEnumConstant(optionDTO, ordinal++), type);
+                    option = new EnumConstantRT(convertToEnumConstant(optionDTO, ordinal++), type);
                 } else {
                     option = type.getEnumConstant(optionDTO.id());
                     option.update(convertToEnumConstant(optionDTO, ordinal++));
@@ -84,56 +82,54 @@ public class EnumEditContext {
     }
 
     private Type createType() {
-        type = new Type(
-                name,
-                TypeCategory.ENUM,
-                anonymous,
-                false,
-                null,
-                null,
-                name,
-                entityContext
-        );
-        createFields();
+        type = TypeFactory.createEnum(name, anonymous);
+//                entityContext.getEnumType(),
+//                TypeCategory.ENUM,
+//                anonymous,
+//                false,
+//                null,
+//                null,
+//                name,
+//                entityContext
+//        );
+//        createFields();
         entityContext.initIds();
         return type;
     }
 
-    private void createFields() {
-        new Field(
-                null,
-                FieldNames.NAME,
-                type,
-                Access.GLOBAL,
-                true,
-                true,
-                null,
-                Column.valueOf(ColumnNames.S0),
-                entityContext.getTypeByCategory(TypeCategory.STRING),
-                entityContext,
-                true
-        );
-
-        new Field(
-                null,
-                FieldNames.ORDINAL,
-                type,
-                Access.GLOBAL,
-                true,
-                false,
-                null,
-                Column.valueOf(ColumnNames.I0),
-                entityContext.getTypeByCategory(TypeCategory.INT),
-                entityContext,
-                true
-        );
-    }
+//    private void createFields() {
+//        new Field(
+//                FieldNames.NAME,
+//                type,
+//                Access.GLOBAL,
+//                true,
+//                true,
+//                null,
+//                Column.valueOf(ColumnNames.S0),
+//                entityContext.getStringType(),
+//                entityContext,
+//                true
+//        );
+//
+//        new Field(
+//                FieldNames.ORDINAL,
+//                type,
+//                Access.GLOBAL,
+//                true,
+//                false,
+//                null,
+//                Column.valueOf(ColumnNames.I0),
+//                entityContext.getIntType(),
+//                entityContext,
+//                true
+//        );
+//    }
 
     public Type getType() {
         return type;
     }
 
-    public List<EnumConstant> getDefaultOptions() {
+    public List<EnumConstantRT> getDefaultOptions() {
         return defaultOptions;
     }
 

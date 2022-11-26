@@ -1,6 +1,5 @@
 package tech.metavm.object.meta;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.EntityUtils;
@@ -19,22 +18,25 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static tech.metavm.constant.ColumnNames.*;
-import static tech.metavm.object.meta.StdTypeConstants.*;
+import static tech.metavm.object.meta.IdConstants.*;
 
 @Component
 public class StdTypeManager {
 
-    @Autowired
-    private TypeMapper typeMapper;
+    private final TypeMapper typeMapper;
+    private final FieldMapper fieldMapper;
+    private final ConstraintMapper constraintMapper;
 
-    @Autowired
-    private FieldMapper fieldMapper;
-
-    @Autowired
-    private ConstraintMapper constraintMapper;
+    public StdTypeManager(TypeMapper typeMapper, FieldMapper fieldMapper, ConstraintMapper constraintMapper) {
+        this.typeMapper = typeMapper;
+        this.fieldMapper = fieldMapper;
+        this.constraintMapper = constraintMapper;
+    }
 
     @Transactional
     public void initialize() {
@@ -70,14 +72,16 @@ public class StdTypeManager {
         for (UniqueConstraintInfo constraint : typeInfo.uniqueConstraints()) {
             context.addConstraint(constraint.toPO(typeInfo.id()));
         }
-        context.addType(typeInfo.getArrayPO());
-        context.addType(typeInfo.getNullablePO());
+        if(typeInfo.category() != TypeCategory.ARRAY) {
+            context.addType(typeInfo.getArrayPO());
+        }
+        if(typeInfo.category() != TypeCategory.NULLABLE && typeInfo.category() != TypeCategory.ARRAY) {
+            context.addType(typeInfo.getNullablePO());
+        }
     }
 
-    public static final int MASK_SHIFT = 8;
-
     public static final TypeInfo[] TYPE_INFO_LIST = new TypeInfo[] {
-            TypeInfo.create(OBJECT, "对象", TypeCategory.OBJECT, SQLColumnType.INT64),
+            TypeInfo.createClass(OBJECT, "对象"),
             TypeInfo.create(INT, "INT32", TypeCategory.INT, SQLColumnType.INT32),
             TypeInfo.create(LONG, "整数", TypeCategory.LONG, SQLColumnType.INT64),
             TypeInfo.create(DOUBLE, "数值", TypeCategory.DOUBLE, SQLColumnType.FLOAT),
@@ -87,13 +91,36 @@ public class StdTypeManager {
             TypeInfo.create(DATE, "日期", TypeCategory.DATE, SQLColumnType.INT64),
             TypeInfo.create(PASSWORD, "密码", TypeCategory.PRIMITIVE, SQLColumnType.VARCHAR64),
             TypeInfo.create(ARRAY, "数组", TypeCategory.ARRAY, SQLColumnType.INT64),
-            TypeInfo.create(NULLABLE, "可空", TypeCategory.NULLABLE, SQLColumnType.INT64),
-            TypeInfo.create(ROLE.ID, "角色", TypeCategory.CLASS, SQLColumnType.INT64,
+            TypeInfo.create(NULL, "空", TypeCategory.NULL, SQLColumnType.INT64),
+            TypeInfo.createClass(TENANT.ID, "租户"),
+            TypeInfo.createClass(TYPE.ID, "类型"),
+            TypeInfo.createClass(FIELD.ID, "字段"),
+            TypeInfo.createClass(UNIQUE_CONSTRAINT.ID, "唯一约束"),
+            TypeInfo.createClass(CHECK_CONSTRAINT.ID, "校验约束"),
+            TypeInfo.createClass(FLOW.ID, "流程"),
+            TypeInfo.createClass(SCOPE.ID, "范围"),
+            TypeInfo.createClass(ADD_OBJECT_NODE.ID, "新增对象节点"),
+            TypeInfo.createClass(UPDATE_OBJECT_NODE.ID, "更新对象节点"),
+            TypeInfo.createClass(DELETE_OBJECT_NODE.ID, "删除对象节点"),
+            TypeInfo.createClass(GET_OBJECT_NODE.ID, "查询对象节点"),
+            TypeInfo.createClass(GET_RELATION_NODE.ID, "查询关联对象节点"),
+            TypeInfo.createClass(DIRECTORY_ACCESS_NODE.ID, "查询目录节点"),
+            TypeInfo.createClass(GET_UNIQUE_NODE.ID, "查询索引节点"),
+            TypeInfo.createClass(SELF_NODE.ID, "当前对象节点"),
+            TypeInfo.createClass(INPUT_NODE.ID, "输入节点"),
+            TypeInfo.createClass(RETURN_NODE.ID, "结束节点"),
+            TypeInfo.createClass(EXCEPTION_NODE.ID, "异常节点"),
+            TypeInfo.createClass(SUB_FLOW_NODE.ID, "子流程节点"),
+            TypeInfo.createClass(LOOP_NODE.ID, "循环节点"),
+            TypeInfo.createClass(BRANCH_NODE.ID, "分支节点"),
+
+            TypeInfo.createClass(ROLE.ID, "角色",
                     List.of(
                             FieldInfo.createTitle(ROLE.FID_NAME, "名称", S0)
                     )
             ),
-            TypeInfo.create(USER.ID, "用户", TypeCategory.CLASS, SQLColumnType.INT64,
+
+            TypeInfo.createClass(USER.ID, "用户",
                     List.of(
                             FieldInfo.createUniqueString(USER.FID_LOGIN_NAME, "账号", S0),
                             FieldInfo.createTitle(USER.FID_NAME, "名称", S1),
@@ -103,24 +130,73 @@ public class StdTypeManager {
                     List.of(
                             UniqueConstraintInfo.create(
                                     USER.CID_UNIQUE_LOGIN_NAME,
-                                    List.of(USER.FID_LOGIN_NAME)
+                                    List.of(
+                                            UniqueConstraintItemInfo.createForField("账号", USER.FID_LOGIN_NAME)
+                                    ),
+                                    "账号重复"
                             )
                     )
             ),
     };
 
     public static long getNullableId(long id) {
-        return 1L << MASK_SHIFT | id;
+        return id - TYPE_BASE + NULLABLE_TYPE_BASE;
     }
 
     public static long getArrayId(long id) {
-        return 2L << MASK_SHIFT | id;
+        return id - TYPE_BASE + ARRAY_TYPE_BASE;
+    }
+
+    public static long getUniqueConstraintId(long fieldId) {
+        return fieldId - FIELD_BASE + UNIQUE_CONSTRAINT_BASE;
     }
 
     public static boolean isStandardTypeId(long id) {
         return getTypeInfo(id) != null;
     }
 
+    @SuppressWarnings("unused")
+    public static FieldPO getFieldPO(long id) {
+        for (TypeInfo typeInfo : TYPE_INFO_LIST) {
+            for (FieldInfo field : typeInfo.fields()) {
+                if(field.id() == id) {
+                    return convertToFieldPO(typeInfo.id(), field);
+                }
+            }
+        }
+        throw new InternalException("Can not found standard field with id: " + id);
+    }
+
+    public static List<FieldPO> getFieldPOs(List<Long> ids) {
+        Set<Long> idSet = new HashSet<>(ids);
+        List<FieldPO> results = new ArrayList<>();
+        for (TypeInfo typeInfo : TYPE_INFO_LIST) {
+            for (FieldInfo field : typeInfo.fields()) {
+                if(idSet.contains(field.id())) {
+                    idSet.remove(field.id());
+                    results.add(convertToFieldPO(typeInfo.id(), field));
+                }
+            }
+        }
+        if(!idSet.isEmpty()) {
+            throw new InternalException("Can not found standard field for ids: " + idSet);
+        }
+        return results;
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean isStandardFieldId(long id) {
+        for (TypeInfo typeInfo : TYPE_INFO_LIST) {
+            for (FieldInfo field : typeInfo.fields()) {
+                if(field.id() == id) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unused")
     public static TypeDTO getTypeDTO(long id) {
         return NncUtils.get(getTypeInfo(id), StdTypeManager::convertToTypeDTO);
     }
@@ -129,10 +205,15 @@ public class StdTypeManager {
         return NncUtils.get(getTypeInfo(id), StdTypeManager::convertToTypePO);
     }
 
-    public static List<FieldPO> getFieldPOs(long typeId) {
+    public static List<FieldPO> getFieldPOsByTypeId(long typeId) {
         return NncUtils.map(getTypeInfo(typeId).fields(), f -> convertToFieldPO(typeId, f));
     }
 
+    public static List<FieldPO> getFieldPOsByTypeIds(List<Long> typeIds) {
+        return NncUtils.flatMap(typeIds, StdTypeManager::getFieldPOsByTypeId);
+    }
+
+    @SuppressWarnings("unused")
     public static List<ConstraintPO> getConstraintPOs(long typeId) {
         return NncUtils.map(getTypeInfo(typeId).uniqueConstraints(), c -> convertToConstraintPO(typeId, c));
     }
@@ -146,14 +227,16 @@ public class StdTypeManager {
     }
 
     private static TypeDTO convertToTypeDTO(TypeInfo info) {
-        return   new TypeDTO(
+        return TypeDTO.create(
                 info.id(),
                 info.name(),
+                OBJECT,
                 info.category().code(),
                 false,
                 false,
                 null,
                 List.of(),
+                null,
                 null,
                 NncUtils.map(info.fields(), f -> convertToFieldDTO(info.id(), f)),
                 NncUtils.map(info.uniqueConstraints(), c -> convertToConstraintDTO(info.id(), c)),
@@ -165,11 +248,13 @@ public class StdTypeManager {
         return new TypePO(
                 info.id(),
                 -1L,
+                OBJECT,
                 info.name(),
                 info.category().code(),
                 null,
                 false,
                 false,
+                null,
                 null,
                 null
         );
@@ -185,7 +270,8 @@ public class StdTypeManager {
                 info.asTitle(),
                 ownerId,
                 info.typeId(),
-                null
+                null,
+                info.isChild()
         );
     }
 
@@ -209,7 +295,8 @@ public class StdTypeManager {
                 info.id(),
                 typeId,
                 ConstraintKind.UNIQUE.code(),
-                NncUtils.toJSONString(new UniqueConstraintParam(info.fieldIds()))
+                info.message(),
+                NncUtils.toJSONString(info.getParam())
         );
     }
 
@@ -218,12 +305,13 @@ public class StdTypeManager {
                 info.id(),
                 ConstraintKind.UNIQUE.code(),
                 typeId,
-                new UniqueConstraintParam(info.fieldIds())
+                info.message(),
+                info.getParam()
         );
     }
 
     private static void checkStdId(long id) {
-        long maxId = (1 << (MASK_SHIFT + 2)) - 1;
+        long maxId = CLASS_REGION_BASE + SYSTEM_RESERVE_PER_REGION;
         if(id > maxId) {
             throw new InternalException("Standard id(" + id + ") exceeds maximum(" + maxId + ")");
         }
@@ -243,21 +331,21 @@ public class StdTypeManager {
                 List<FieldPO> existingFields,
                 List<ConstraintPO> existingConstraints
         ) {
-            this.existingTypes = new ArrayList<>(existingTypes);
-            this.existingFields = new ArrayList<>(existingFields);
-            this.existingConstraints = new ArrayList<>(existingConstraints);
+            this.existingTypes = NncUtils.sortById(existingTypes);
+            this.existingFields = NncUtils.sortById(existingFields);
+            this.existingConstraints = NncUtils.sortById(existingConstraints);
         }
 
         public ChangeList<TypePO> getTypeChangeList() {
-            return ChangeList.build(existingTypes, types, TypePO::getId, EntityUtils::pojoEquals);
+            return ChangeList.build(existingTypes, NncUtils.sortById(types), TypePO::getId, EntityUtils::pojoEquals);
         }
 
         public ChangeList<FieldPO> getFieldChangeList() {
-            return ChangeList.build(existingFields, fields, FieldPO::getId, EntityUtils::pojoEquals);
+            return ChangeList.build(existingFields, NncUtils.sortById(fields), FieldPO::getId, EntityUtils::pojoEquals);
         }
 
         public ChangeList<ConstraintPO> getConstraintChangeList() {
-            return ChangeList.build(existingConstraints, constraints, ConstraintPO::getId, EntityUtils::pojoEquals);
+            return ChangeList.build(existingConstraints, NncUtils.sortById(constraints), ConstraintPO::getId, EntityUtils::pojoEquals);
         }
 
         public void addType(TypePO typePO) {

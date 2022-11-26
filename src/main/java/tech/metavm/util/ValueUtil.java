@@ -1,31 +1,35 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.TypeCategory;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.lang.reflect.ParameterizedType;
+import java.util.*;
 
 public class ValueUtil {
 
-    public static Type getValueType(Object value, EntityContext context) {
+    public static Type getValueType(Object value) {
         if(value instanceof String) {
-            return context.getBoolType();
+            return StandardTypes.STRING;
         }
         if(isFloat(value)) {
-            return context.getDoubleType();
+            return StandardTypes.DOUBLE;
         }
-        if(isInteger(value)) {
-            return context.getLongType();
+        if(value instanceof Integer) {
+            return StandardTypes.INT;
+        }
+        if(value instanceof Long) {
+            return StandardTypes.LONG;
         }
         if(isBoolean(value)) {
-            return context.getBoolType();
+            return StandardTypes.BOOL;
         }
         if(isTime(value)) {
-            return context.getTimeType();
+            return StandardTypes.TIME;
         }
         if(value instanceof Instance instance) {
             return instance.getType();
@@ -37,10 +41,10 @@ public class ValueUtil {
         if(type1.equals(type2)) {
             return type1;
         }
-        if(isConvertible(type1, type2)) {
+        if(isAssignable(type1, type2)) {
             return type2;
         }
-        if(isConvertible(type2, type1)) {
+        if(isAssignable(type2, type1)) {
             return type1;
         }
         throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
@@ -52,8 +56,8 @@ public class ValueUtil {
         Type compatibleType = it.next();
         while (it.hasNext()) {
             Type t = it.next();
-            if (!t.equals(compatibleType) && !isConvertible(t, compatibleType)) {
-                if(isConvertible(compatibleType, t)) {
+            if (!t.equals(compatibleType) && !isAssignable(t, compatibleType)) {
+                if(isAssignable(compatibleType, t)) {
                     compatibleType = t;
                 }
                 else {
@@ -64,29 +68,144 @@ public class ValueUtil {
         return compatibleType;
     }
 
+    private static final Set<Class<?>> PRIMITIVE_TYPES = Set.of(
+        int.class, Integer.class, Long.class, long.class, float.class, Float.class,
+            double.class, Double.class, String.class, boolean.class, Boolean.class
+    );
 
-    public static Type getCompatible(List<Type> types) {
-        NncUtils.requireMinimumSize(types, 1);
-        EntityContext context = types.get(0).getContext();
-        Iterator<Type> it = types.iterator();
-        Type compatibleType = it.next();
-        while (it.hasNext()) {
-            Type t = it.next();
-            if (!t.equals(compatibleType)) {
-                return context.getObjectType();
-            }
-        }
-        return compatibleType;
+    public static boolean isBoolean(Class<?> klass) {
+        return klass == boolean.class || klass == Boolean.class;
     }
 
-    public static boolean isConvertible(Type from, Type to) {
-        EntityContext context = from.getContext();
-        if(from.isPrimitive() && to.isPrimitive()) {
-            if(to.equals(context.getDoubleType())) {
-                return from.equals(context.getIntType()) || from.equals(context.getLongType());
+    public static boolean isInteger(Class<?> klass) {
+        return klass == int.class || klass == Integer.class || klass == short.class || klass == Short.class
+                || klass == byte.class || klass == Byte.class;
+    }
+
+    public static boolean isLong(Class<?> klass) {
+        return klass == long.class || klass == Long.class;
+    }
+
+    public static boolean isString(Class<?> klass) {
+        return klass == String.class;
+    }
+
+    public static boolean isTime(Class<?> klass) {
+        return klass == Date.class;
+    }
+
+    public static boolean isFloat(Class<?> klass) {
+        return klass == Double.class || klass == double.class || klass == Float.class || klass == float.class;
+    }
+
+    public static boolean isPrimitiveType(Class<?> klass) {
+        return PRIMITIVE_TYPES.contains(klass);
+    }
+
+    public static boolean isArrayType(Class<?> klass) {
+        return klass == Table.class;
+    }
+
+    public static boolean isEntityType(Class<?> klass) {
+        return Entity.class.isAssignableFrom(klass);
+    }
+
+    public static boolean isValueType(Class<?> klass) {
+        return klass.isAnnotationPresent(ValueType.class);
+    }
+
+    public static boolean isEnumType(Class<?> klass) {
+        return Enum.class.isAssignableFrom(klass);
+    }
+
+    public static Type getPrimitiveType(Class<?> klass) {
+        if(isBoolean(klass)) {
+            return StandardTypes.BOOL;
+        }
+        if(isString(klass)) {
+            return StandardTypes.STRING;
+        }
+        if(isInteger(klass)) {
+            return StandardTypes.INT;
+        }
+        if (isLong(klass)) {
+            return StandardTypes.LONG;
+        }
+        if(isTime(klass)) {
+            return StandardTypes.TIME;
+        }
+        if(isFloat(klass)) {
+            return StandardTypes.DOUBLE;
+        }
+        throw new InternalException("Type " + klass.getName() + " is not a primitive type");
+    }
+
+    public static TypeCategory getTypeCategory(Class<?> klass) {
+        return getTypeCategory((java.lang.reflect.Type) klass);
+    }
+
+    public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
+        if(type instanceof Class<?> klass) {
+            if (isPrimitiveType(klass)) {
+                return TypeCategory.PRIMITIVE;
             }
-            if(to.equals(context.getLongType())) {
-                return from.equals(context.getIntType());
+            if (isArrayType(klass)) {
+                return TypeCategory.ARRAY;
+            }
+            if (isEnumType(klass)) {
+                return TypeCategory.ENUM;
+            }
+            if(Record.class.equals(klass) || isValueType(klass)) {
+                return TypeCategory.VALUE;
+            }
+            if (Object.class.equals(klass) || isEntityType(klass)) {
+                return TypeCategory.CLASS;
+            }
+        }
+        if(type instanceof ParameterizedType parameterizedType) {
+            if(parameterizedType.getRawType() instanceof Class<?> rawClass) {
+                if(Collection.class.isAssignableFrom(rawClass)) {
+                    return TypeCategory.ARRAY;
+                }
+                else if(Map.class.isAssignableFrom(rawClass)) {
+
+                }
+                else {
+                    return getTypeCategory(rawClass);
+                }
+            }
+        }
+        throw new InternalException("Invalid valid type: " + type);
+    }
+
+    public static Type getCommonSuperType(Collection<Type> types) {
+        NncUtils.requireMinimumSize(types, 1);
+//        EntityContext context = types.get(0).getContext();
+        Iterator<Type> it = types.iterator();
+        Type commonSuperType = it.next();
+        while (it.hasNext()) {
+            Type t = it.next();
+            while (!commonSuperType.isAssignableFrom(t)) {
+                commonSuperType = commonSuperType.getSuperType();
+                if(commonSuperType == null) {
+                    throw new InternalException("Can not find common super type for types: " + types);
+                }
+            }
+        }
+        return commonSuperType;
+    }
+
+    public static boolean isAssignable(Type from, Type to) {
+//        EntityContext context = from.getContext();
+        if(to.isAssignableFrom(from)) {
+            return true;
+        }
+        if(from.isPrimitive() && to.isPrimitive()) {
+            if(to.isDouble()) {
+                return from.isInt() || from.isLong();
+            }
+            if(to.isLong()) {
+                return from.isInt();
             }
         }
         return false;
@@ -122,6 +241,18 @@ public class ValueUtil {
 
     public static boolean isCollection(Object value) {
         return value instanceof Collection;
+    }
+
+    public static boolean isLongList(Object value) {
+        if(value instanceof List<?> list) {
+            for (Object item : list) {
+                if(!(item instanceof Long)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     public static boolean isIntegerColl(Object value) {

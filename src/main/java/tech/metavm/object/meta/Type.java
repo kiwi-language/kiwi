@@ -1,124 +1,97 @@
 package tech.metavm.object.meta;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.LoadingList;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceContext;
-import tech.metavm.object.instance.InstanceField;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.flow.FlowRT;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.SQLColumnType;
-import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.Column;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static tech.metavm.util.ContextUtil.getTenantId;
+
+@EntityType("类型")
 public class Type extends Entity {
+
+    @EntityField("是否临时")
     private final boolean ephemeral;
+    @EntityField("是否匿名")
     private boolean anonymous;
+    @EntityField("名称")
     private String name;
-    private final TypeCategory category;
+    @EntityField("超类")
+    @Nullable
+    private Type superType;
+    @EntityField("类别")
+    private TypeCategory category;
+    @EntityField("模板类型")
     private final @Nullable Type rawType;
-    private final @Nullable List<Type> typeArguments;
+    @EntityField("类型实参")
+    private final @Nullable Table<Type> typeArguments;
+    @EntityField("描述")
     private @Nullable String desc;
-    private transient final List<Field> fields;
-    private transient final List<EnumConstant> enumConstants;
-    private transient final List<ConstraintRT<?>> constraints;
+    @ChildEntity("字段")
+    private final Table<Field> fields = new Table<>();
+    @ChildEntity("枚举值")
+    private final Table<EnumConstantRT> enumConstants = new Table<>();
+    @ChildEntity("约束")
+    private final Table<ConstraintRT<?>> constraints = new Table<>();
+    @EntityField("类型成员")
+    @Nullable
+    private final Table<Type> typeMembers;
+    @EntityField("数组类型")
+    @Nullable
+    private Type arrayType;
+    @EntityField("可空类型")
+    @Nullable
+    private Type nullableType;
+    @ChildEntity("流程")
+    private final Table<FlowRT> flows = new Table<>();
 
-    public Type(TypeDTO typeDTO, EntityContext context) {
-        this(
-                typeDTO.id(),
-                typeDTO.name(),
-                TypeCategory.getByCodeRequired(typeDTO.category()),
-                typeDTO.anonymous(),
-                typeDTO.ephemeral(),
-                NncUtils.get(typeDTO.rawType(), TypeDTO::id, context::getTypeRef),
-                NncUtils.map(typeDTO.typeArguments(), TypeDTO::id, context::getTypeRef),
-                typeDTO.desc(),
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new ArrayList<>(),
-                context
-        );
-    }
-
-    public Type(TypePO po, EntityContext context) {
-        this(
-                po.getId(),
-                po.getName(),
-                TypeCategory.getByCodeRequired(po.getCategory()),
-                po.getAnonymous(),
-                po.getEphemeral(),
-                NncUtils.get(po.getRawTypeId(), context::getTypeRef),
-                NncUtils.map(po.getTypeArgumentIds(), context::getTypeRef),
-                po.getDesc(),
+    public Type(
+            String name,
+            Type superType,
+            TypeCategory category
+    ) {
+        this(name,
+                superType,
+                category,
+                false,
+                false,
                 null,
                 null,
                 null,
-                context
+                null
         );
     }
 
     public Type(
-            String name,
-            TypeCategory type,
-            boolean anonymous,
-            boolean ephemeral,
-            Type rawType,
-            List<Type> typeArguments,
-            String desc,
-            EntityContext context) {
-        this(
-                null,
-                name,
-                type,
-                anonymous,
-                ephemeral,
-                rawType,
-                typeArguments,
-                desc,
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new ArrayList<>(),
-                context
-        );
-    }
-
-    Type(
-                Long id,
                 String name,
+                @Nullable Type superType,
                 TypeCategory type,
                 boolean anonymous,
                 boolean ephemeral,
                 @Nullable Type rawType,
                 @Nullable List<Type> typeArguments,
-                @Nullable String desc,
-                List<Field> fields,
-                List<EnumConstant> enumConstants,
-                List<ConstraintRT<?>> constraints,
-                EntityContext context) {
-        super(id, context);
-        this.id = id;
+                @Nullable Set<Type> typeMembers,
+                @Nullable String desc) {
         this.name = name;
+        this.superType = superType;
         this.category = type;
         this.anonymous = anonymous;
         this.ephemeral = ephemeral;
         this.rawType = rawType;
-        this.typeArguments = typeArguments;
+        this.typeArguments = NncUtils.get(typeArguments, Table::new);
         this.desc = desc;
-        TypeStore typeStore = context.getTypeStore();
-        this.fields = fields != null ? new ArrayList<>(fields) : typeStore.getFieldsLoadingList(this);
-        this.constraints = constraints != null ? new ArrayList<>(constraints) : typeStore.getConstraintsLoadingList(this);
-        this.enumConstants = enumConstants != null ? new ArrayList<>(enumConstants) : typeStore.getEnumConstantsLoadingList(this);
+        this.typeMembers = NncUtils.get(typeMembers, Table::new);
     }
 
     public TypeCategory getCategory() {
@@ -134,6 +107,10 @@ public class Type extends Entity {
         return name;
     }
 
+    public Type getSuperType() {
+        return superType;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -146,75 +123,40 @@ public class Type extends Entity {
         this.desc = desc;
     }
 
+    @Nullable
+    @SuppressWarnings("unused")
     public String getDesc() {
         return desc;
     }
 
+    @SuppressWarnings("unused")
     public boolean isStandard() {
         return StdTypeManager.isStandardTypeId(id);
     }
 
-    void preloadFields(List<Field> fields) {
-        if(this.fields instanceof LoadingList<Field> loadingList) {
-            if(!loadingList.isLoaded()) {
-                loadingList.preload(fields);
-            }
-        }
-        else {
-            throw new InternalException("the list of fields is not a loading list");
-        }
-    }
-
-    void preloadConstraints(List<ConstraintRT<?>> constraints) {
-        if(this.constraints instanceof LoadingList<ConstraintRT<?>> loadingList) {
-            if(!loadingList.isLoaded()) {
-                loadingList.preload(constraints);
-            }
-        }
-        else {
-            throw new InternalException("the list of fields is not a loading list");
-        }
-    }
-
-    void preloadEnumConstants(List<EnumConstant> enumConstants) {
-        if(this.enumConstants instanceof LoadingList<EnumConstant> loadingList) {
-            if(!loadingList.isLoaded()) {
-                loadingList.preload(enumConstants);
-            }
-        }
-        else {
-            throw new InternalException("the list of fields is not a loading list");
-        }
-    }
-
-//
-//    void preloadChoiceOptions(List<ChoiceOption> choiceOptions) {
-//        if(this.choiceOptions instanceof LoadingList<ChoiceOption> loadingList) {
-//            loadingList.preload(choiceOptions);
-//        }
-//        else {
-//            throw new InternalException("the list of fields is not a loading list");
-//        }
-//    }
-
-    public Instance newInstance(List<InstanceFieldDTO> fields) {
-        return context.getInstanceContext().add(InstanceDTO.valueOf(id, fields));
-    }
-
     public List<Field> getFields() {
-        return Collections.unmodifiableList(fields);
+        if(superType != null) {
+            return NncUtils.merge(superType.getFields(), fields);
+        }
+        else {
+            return new ArrayList<>(fields);
+        }
     }
 
+    @JsonIgnore
     public Type getArrayType() {
-        return context.getParameterizedType(context.getRawArrayType(), List.of(this));
+        if(arrayType == null) {
+            arrayType = TypeFactory.createParameterized(StandardTypes.ARRAY, List.of(this));
+        }
+        return arrayType;
     }
 
+    @JsonIgnore
     public Type getNullableType() {
-        return context.getParameterizedType(context.getRawNullableType(), List.of(this));
-    }
-
-    void initField(Field field) {
-        fields.add(field);
+        if(nullableType == null) {
+             nullableType = TypeFactory.createUnion(new LinkedHashSet<>(Set.of(this, StandardTypes.NULL)));
+        }
+        return nullableType;
     }
 
     public void addField(Field field) {
@@ -230,8 +172,8 @@ public class Type extends Entity {
         fields.add(field);
     }
 
-    public void addEnumConstant(EnumConstant enumConstant) {
-        for (EnumConstant e : enumConstants) {
+    public void addEnumConstant(EnumConstantRT enumConstant) {
+        for (EnumConstantRT e : enumConstants) {
             if(enumConstant.getId() != null && enumConstant.getId().equals(e.getId())
                     || enumConstant.getName().equals(e.getName())
                     || enumConstant.getOrdinal() == e.getOrdinal()) {
@@ -239,6 +181,14 @@ public class Type extends Entity {
             }
         }
         enumConstants.add(enumConstant);
+    }
+
+    public void setSuperType(@Nullable Type superType) {
+        this.superType = superType;
+    }
+
+    public void setCategory(TypeCategory category) {
+        this.category = category;
     }
 
     public void addConstraint(ConstraintRT<?> constraint) {
@@ -253,76 +203,102 @@ public class Type extends Entity {
         return NncUtils.find(getUniqueConstraints(), c -> c.getFields().equals(fields));
     }
 
+    @JsonIgnore
     public boolean isEnum() {
         return category.isEnum();
     }
 
+    @JsonIgnore
     public boolean isClass() {
         return category.isClass();
     }
 
-    public boolean isArray() {
-        return rawTypeEquals(context.getRawArrayType());
+    @JsonIgnore
+    public boolean isReference() {
+        return isEnum() || isClass() || isArray();
     }
 
+    @JsonIgnore
+    public boolean isArray() {
+        return category.isParameterized() && rawType == StandardTypes.ARRAY;
+    }
+
+    @JsonIgnore
     public boolean isPrimitive() {
         return isString() || isBool() || isTime() || isDate() || isDouble() || isInt() || isLong() || isPassword();
     }
 
+    @JsonIgnore
     public boolean isString() {
-        return equals(context.getStringType());
+        return this == StandardTypes.STRING;
     }
 
+    @JsonIgnore
     public boolean isBool() {
-        return equals(context.getBoolType());
+        return this == StandardTypes.BOOL;
     }
 
+    @JsonIgnore
     public boolean isTime() {
-        return equals(context.getTimeType());
+        return this == StandardTypes.TIME;
     }
 
+    @JsonIgnore
     public boolean isDate() {
-        return equals(context.getDateType());
+        return category.isDate();
     }
 
+    @JsonIgnore
     public boolean isPassword() {
-        return equals(context.getPasswordType());
+        return this == StandardTypes.PASSWORD;
     }
 
+    @JsonIgnore
     public boolean isDouble() {
-        return equals(context.getDoubleType());
+        return this == StandardTypes.DOUBLE;
     }
 
+    @JsonIgnore
     public boolean isLong() {
-        return equals(context.getLongType());
+        return this == StandardTypes.LONG;
     }
 
+    @JsonIgnore
     public boolean isInt() {
-        return equals(context.getIntType());
+        return this == StandardTypes.INT;
     }
 
+    @JsonIgnore
+    public boolean isNull() {
+        return this == StandardTypes.NULL;
+    }
+
+    @JsonIgnore
     public boolean isNullable() {
-        return rawTypeEquals(context.getRawNullableType());
+        return category.isUnion() && typeMembers.contains(StandardTypes.NULL);
     }
 
     public boolean rawTypeEquals(Type type) {
         return Objects.equals(rawType, type);
     }
 
+    @JsonIgnore
     public boolean isNotNull() {
         return !isNullable();
     }
 
+    @JsonIgnore
     public Type getElementType() {
         NncUtils.requireTrue(isArray(), () -> new InternalException("Type " + id + " is not an array"));
         Objects.requireNonNull(typeArguments);
         return typeArguments.get(0);
     }
 
+    @JsonIgnore
     public Type getUnderlyingType() {
         NncUtils.requireTrue(isNullable(), () -> new InternalException("Type " + id + " is not nullable"));
-        Objects.requireNonNull(typeArguments);
-        return typeArguments.get(0);
+        Objects.requireNonNull(typeMembers);
+        return NncUtils.findRequired(typeMembers, t -> !t.equals(StandardTypes.NULL));
     }
 
     public boolean isEphemeral() {
@@ -334,26 +310,22 @@ public class Type extends Entity {
     }
 
     public Field getField(long fieldId) {
+        if(superType != null) {
+            Field superField = superType.getField(fieldId);
+            if(superField != null) {
+                return superField;
+            }
+        }
         return NncUtils.find(fields, f -> f.getId() == fieldId);
     }
 
-    public Field getFieldNyPath(String fieldPath) {
-        int idx = fieldPath.indexOf('.');
-        if(idx == -1) {
-            return getFieldByName(fieldPath);
-        }
-        else {
-            String fieldName = fieldPath.substring(0, idx);
-            String subPath = fieldPath.substring(idx + 1);
-            Field field = getFieldByName(fieldName);
-            if(field == null) {
-                throw new RuntimeException("Invalid field path '" + fieldPath + "', field '" + fieldName + "' not found");
-            }
-            return field.getType().getFieldNyPath(subPath);
-        }
-    }
-
     public Field getFieldByName(String fieldName) {
+        if(superType != null) {
+            Field superField = superType.getFieldByName(fieldName);
+            if(superField != null) {
+                return superField;
+            }
+        }
         return NncUtils.find(fields, f -> f.getName().equals(fieldName));
     }
 
@@ -363,7 +335,7 @@ public class Type extends Entity {
             return null;
         }
         List<Column> usedColumns = NncUtils.filterAndMap(
-                fields,
+                getFields(),
                 f -> !f.equals(field),
                 Field::getColumn
         );
@@ -373,10 +345,6 @@ public class Type extends Entity {
             throw BusinessException.invalidField(field, "属性数量超出限制");
         }
         return columns.poll();
-    }
-
-    public String getFieldColumnName(long fieldId) {
-        return NncUtils.get(getField(fieldId), Field::getColumn, Column::name);
     }
 
     private SQLColumnType getColumnType() {
@@ -403,7 +371,7 @@ public class Type extends Entity {
         );
     }
 
-    public List<EnumConstant> getEnumConstants() {
+    public List<EnumConstantRT> getEnumConstants() {
         return Collections.unmodifiableList(enumConstants);
     }
 
@@ -411,7 +379,7 @@ public class Type extends Entity {
         return anonymous;
     }
 
-    public EnumConstant getEnumConstant(long id) {
+    public EnumConstantRT getEnumConstant(long id) {
         return NncUtils.filterOneRequired(
                 enumConstants,
                 opt -> opt.getId() == id,
@@ -424,60 +392,71 @@ public class Type extends Entity {
             new ArrayList<>(fields).forEach(Field::remove);
         }
         if(NncUtils.isNotEmpty(enumConstants)) {
-            new ArrayList<>(enumConstants).forEach(context::remove);
+            new ArrayList<>(enumConstants).forEach(EnumConstantRT::remove);
         }
-        context.remove(this);
+//        context.remove(this);
     }
 
     public void removeField(Field field) {
-        ListIterator<Field> it = fields.listIterator();
-        while (it.hasNext()) {
-            if(EntityUtils.entityEquals(it.next(), field)) {
-                it.remove();
-                return;
-            }
+        if(fields.contains(field)) {
+            fields.remove(field);
+            field.remove();
         }
     }
 
     public TypePO toPO() {
-        TypePO po = new TypePO();
-        po.setName(name);
-        po.setTenantId(getTenantId());
-        po.setId(id);
-        po.setAnonymous(anonymous);
-        po.setEphemeral(ephemeral);
-        po.setRawTypeId(NncUtils.get(rawType, Entity::getId));
-        po.setTypeArgumentIds(NncUtils.map(typeArguments, Type::getId));
-        po.setCategory(category.code());
-        po.setDesc(desc);
-        return po;
+        return new TypePO(
+                id,
+                getTenantId(),
+                NncUtils.get(superType, Entity::getId),
+                name,
+                category.code(),
+                desc,
+                ephemeral,
+                anonymous,
+                NncUtils.get(rawType, Entity::getId),
+                NncUtils.map(typeArguments, Entity::getId),
+                NncUtils.mapUnique(typeMembers, Entity::getId)
+        );
     }
 
     protected Type getFirstTypeArgument() {
         return NncUtils.getFirst(typeArguments);
     }
 
-    public boolean isInstance(Instance instance) {
+    @SuppressWarnings("unused")
+    public boolean isInstance(IInstance instance) {
         return instance != null && this.equals(instance.getType());
     }
 
+    public boolean isAssignableFrom(Type that) {
+        if(equals(that)) {
+            return true;
+        }
+        return that.getSuperType() != null && isAssignableFrom(that.getSuperType());
+    }
+
     public TypeDTO toDTO() {
-        return toDTO(true, true, false);
+        return toDTO(true, true, true);
     }
 
     public TypeDTO toDTO(boolean withTitleField, boolean withFields, boolean withFieldTypes) {
-        return new TypeDTO(
+        return TypeDTO.create(
                 id,
                 name,
+                NncUtils.get(superType, Entity::getId),
                 category.code(),
                 anonymous,
                 ephemeral,
-                NncUtils.get(rawType, Type::toDTO),
-                NncUtils.map(typeArguments, Type::toDTO),
+                NncUtils.get(rawType, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
+                NncUtils.map(typeArguments, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
+                NncUtils.map(typeMembers, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
                 desc,
                 getFieldDTOs(withFields, withTitleField, withFieldTypes),
                 NncUtils.map(constraints, ConstraintRT::toDTO),
-                NncUtils.sortByIntAndMap(enumConstants, EnumConstant::getOrdinal, EnumConstant::toDTO)
+                NncUtils.sortByIntAndMap(enumConstants, EnumConstantRT::getOrdinal, EnumConstantRT::toEnumConstantDTO)
+//                getNullableType().id,
+//                getArrayType().id
         );
     }
 
@@ -493,8 +472,9 @@ public class Type extends Entity {
         }
     }
 
+    @JsonIgnore
     public Field getTileField() {
-        return NncUtils.find(fields, Field::isAsTitle);
+        return NncUtils.find(getFields(), Field::isAsTitle);
     }
 
     public <T extends ConstraintRT<?>> List<T> getConstraints(Class<T> constraintType) {
@@ -521,14 +501,23 @@ public class Type extends Entity {
         return getConstraint(UniqueConstraintRT.class, id);
     }
 
+    public Table<FlowRT> getFlows() {
+        return flows;
+    }
+
+    public FlowRT getFlow(long id) {
+        return NncUtils.findById(flows, id);
+    }
+
+    @JsonIgnore
     public Type getConcreteType() {
-        Type t = this;
-        Type b = getFirstTypeArgument();
-        while(b != null) {
-            t = b;
-            b = b.getFirstTypeArgument();
+        if(isArray()) {
+            return getElementType().getConcreteType();
         }
-        return t;
+        if(isNullable()) {
+            return getUnderlyingType();
+        }
+        return this;
     }
 
     @Override

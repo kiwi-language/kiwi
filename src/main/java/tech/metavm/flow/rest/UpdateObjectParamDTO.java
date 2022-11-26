@@ -4,6 +4,6 @@ import java.util.List;
 
 public record UpdateObjectParamDTO(
         ValueDTO objectId,
-        List<FieldParamDTO> fields
+        List<UpdateFieldDTO> fields
 ) {
 }

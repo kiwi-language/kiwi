@@ -8,7 +8,8 @@ public record FieldInfo(
         String name,
         boolean unique,
         boolean asTitle,
-        String columnName
+        String columnName,
+        boolean isChild
 ) {
 
     static FieldInfo createReference(long id, long typeId, String name, String columnName) {
@@ -18,40 +19,44 @@ public record FieldInfo(
                 name,
                 false,
                 false,
-                columnName
+                columnName,
+                false
         );
     }
 
     static FieldInfo createString(long id, String name, String columnName) {
         return new FieldInfo(
                 id,
-                StdTypeConstants.STRING,
+                IdConstants.STRING,
                 name,
                 false,
                 false,
-                columnName
+                columnName,
+                false
         );
     }
 
     static FieldInfo createPassword(long id, String name, String columnName) {
         return new FieldInfo(
                 id,
-                StdTypeConstants.PASSWORD,
+                IdConstants.PASSWORD,
                 name,
                 false,
                 false,
-                columnName
+                columnName,
+                false
         );
     }
 
     static FieldInfo createTitle(long id, String name, String columnName) {
         return new FieldInfo(
                 id,
-                StdTypeConstants.STRING,
+                IdConstants.STRING,
                 name,
                 false,
                 true,
-                columnName
+                columnName,
+                false
         );
     }
 
@@ -59,11 +64,12 @@ public record FieldInfo(
     static FieldInfo createUniqueString(long id, String name, String columnName) {
         return new FieldInfo(
                 id,
-                StdTypeConstants.STRING,
+                IdConstants.STRING,
                 name,
                 true,
                 false,
-                columnName
+                columnName,
+                false
         );
     }
     

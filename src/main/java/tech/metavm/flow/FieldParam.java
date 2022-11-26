@@ -1,7 +1,11 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.FieldParamDTO;
+import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.instance.query.ParsingContext;
@@ -11,14 +15,22 @@ import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
 
+@ValueType("字段值")
 public class FieldParam {
+    @EntityField("字段")
     private final Field field;
+    @EntityField("值")
     private final Value value;
 
-    public FieldParam(FieldParamDTO dto, EntityContext context, ParsingContext parsingContext) {
-        this.field = context.getFieldRef(dto.fieldId());
-        this.value = ValueFactory.getValue(dto.value(), parsingContext);
+    public FieldParam(Field field, ValueDTO valueDTO, ParsingContext parsingContext) {
+        this.field = field;
+        this.value = ValueFactory.getValue(valueDTO, parsingContext);
     }
+
+    //    public FieldParam(FieldParamDTO dto, EntityContext context, ParsingContext parsingContext) {
+//        this.field = context.getField(dto.fieldId());
+//        this.value = ValueFactory.getValue(dto.value(), parsingContext);
+//    }
 
     public Field getField() {
         return field;

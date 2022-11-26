@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Pair;
 
@@ -7,31 +8,89 @@ import java.util.*;
 
 public class ContextDifference {
 
-    private final Map<Class<?>, EntityChange> changeMap  = new HashMap<>();
+    private final Map<Class<? extends Entity>, EntityChange<?>> changeMap  = new HashMap<>();
 
-    public void diff(List<Entity> head, List<Entity> buffer) {
-        List<Pair<Entity>> pairs = NncUtils.buildEntityPairs(head, buffer);
-        pairs.forEach(pair -> diffOne(pair.first(), pair.second()));
+    private final EntityChange<InstancePO> entityChange = new EntityChange<>(InstancePO.class);
+    private final Map<Class<? extends Value>, ValueChange<?>> valueChangeMap = new HashMap<>();
+
+    public void diff(Collection<InstancePO> head, Collection<InstancePO> buffer) {
+        List<Pair<InstancePO>> pairs = NncUtils.buildPairs(head, buffer, InstancePO::getId);
+        pairs.forEach(this::diffOne);
     }
 
-    public void diffOne(Entity entity1, Entity entity2) {
-        if(entity1 == null && entity2 == null) {
+    public void diffValues(Collection<Value> head, Collection<Value> buffer) {
+        List<Pair<Value>> pairs = NncUtils.buildPairs(head, buffer);
+        pairs.forEach(this::diffOneValue);
+    }
+
+    private void diffOneValue(Pair<? extends Value> pair) {
+        Class<? extends Value> valueType = EntityUtils.getValueType(pair.any());
+        diffOneValueHelper(valueType, pair);
+    }
+
+    private <T extends Value> void diffOneValueHelper(Class<T> valueType, Pair<? extends Value> pair) {
+        Pair<? extends T> castPair = pair.cast(valueType);
+        if(castPair.first() != null && castPair.second() != null) {
             return;
         }
-        Class<?> entityType = EntityUtils.getEntityType(NncUtils.firstNonNull(entity1, entity2).getClass());
-        EntityChange change = changeMap.computeIfAbsent(entityType, (k) -> new EntityChange(k));
-        if(entity1 == null) {
-            change.addToInsert(entity2);
+        ValueChange<T> change = getValueChange(valueType);
+        if(castPair.first() != null) {
+            change.addDelete(castPair.first());
         }
-        else if(entity2 == null) {
-            change.addToDelete(entity1);
-        }
-        else if(!EntityUtils.pojoEquals(entity1, entity2)) {
-            change.addToUpdate(entity2);
+        else if(castPair.second() != null) {
+            change.addInsert(castPair.second());
         }
     }
 
-    public Map<Class<?>, EntityChange> getChangeMap() {
+    private void diffOne(Pair<InstancePO> pair) {
+        if(pair.first() == null) {
+            entityChange.addToInsert(pair.second());
+        }
+        else if(pair.second() == null) {
+            entityChange.addToDelete(pair.first());
+        }
+        else if(EntityUtils.isPojoDifferent(pair.first(), pair.second())) {
+            entityChange.addToUpdate(pair.second());
+        }
+    }
+
+//    private <S extends Entity> void diffOneHelper(Class<S> entityType, Pair<? extends Entity> pair) {
+//        Pair<? extends S> castPair = pair.cast(entityType);
+//        EntityChange<S> change = getChange(entityType);
+//        if(castPair.first() == null) {
+//            change.addToInsert(castPair.second());
+//        }
+//        else if(castPair.second() == null) {
+//            change.addToDelete(castPair.first());
+//        }
+//        else if(EntityUtils.isPojoDifferent(castPair.first(), castPair.second())) {
+//            change.addToUpdate(castPair.second());
+//        }
+//    }
+
+//    @SuppressWarnings("unchecked")
+//    private <S extends Entity> EntityChange<S> getChange(Class<S> entityType) {
+//        EntityChange<?> entityChange = changeMap.computeIfAbsent(entityType, k -> new EntityChange<>(entityType));
+//        if(!entityChange.getEntityType().equals(entityType)) {
+//            throw new ClassCastException();
+//        }
+//        return (EntityChange<S>) entityChange;
+//    }
+
+    @SuppressWarnings("unchecked")
+    private <S extends Value> ValueChange<S> getValueChange(Class<S> valueType) {
+        return (ValueChange<S>) valueChangeMap.computeIfAbsent(valueType, k -> new ValueChange<>(valueType));
+    }
+
+    public Map<Class<? extends Entity>, EntityChange<?>> getChangeMap() {
         return changeMap;
+    }
+
+    public EntityChange<InstancePO> getEntityChange() {
+        return entityChange;
+    }
+
+    public Map<Class<? extends Value>, ValueChange<?>> getValueChangeMap() {
+        return valueChangeMap;
     }
 }

@@ -1,5 +1,8 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.IInstanceArray;
+import tech.metavm.object.instance.InstanceArray;
 import tech.metavm.util.*;
 
 import java.text.DateFormat;
@@ -65,7 +68,8 @@ public class ValueFormatter {
             return null;
         }
         if(type.isArray()) {
-            return NncUtils.map((Collection<?>) value, item -> format(item, type.getElementType()));
+            IInstanceArray instanceArray = (IInstanceArray) value;
+            return NncUtils.map(instanceArray.getElements(), item -> format(item, type.getElementType()));
         }
         else {
             return formatOne(value, type);
@@ -82,6 +86,14 @@ public class ValueFormatter {
 //        else {
         if(type.isPassword()) {
             return null;
+        }
+        if(value instanceof IInstance instance) {
+            if(instance.getType().getCategory().isValue()) {
+                return instance.toDTO();
+            }
+            else {
+                return instance.getId();
+            }
         }
         return value;
 //        }

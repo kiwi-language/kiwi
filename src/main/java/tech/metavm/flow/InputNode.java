@@ -1,24 +1,26 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
 
+@EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
 
+    @EntityField("类型")
     private final Type objectType;
 
     public InputNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {
         super(
-                null,
                 nodeDTO.name(),
-                NodeType.INPUT,
+                NodeKind.INPUT,
                 scope.getFlow().getInputType(),
                 prev,
                 scope
@@ -26,14 +28,9 @@ public class InputNode extends NodeRT<InputParamDTO> {
         this.objectType = getOutputType();
     }
 
-    public InputNode(NodeDTO nodeDTO, InputParamDTO param, ScopeRT scope) {
-        super(nodeDTO, scope.getTypeFromContext(param.typeId()), scope);
-        this.objectType = getTypeFromContext(param.typeId());
-    }
-
-    public InputNode(NodePO nodePO, InputParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
-        objectType = getTypeFromContext(param.typeId());
+    public InputNode(NodeDTO nodeDTO, Type type, ScopeRT scope) {
+        super(nodeDTO, scope.getFlow().getInputType(), scope);
+        this.objectType = type;
     }
 
     @Override

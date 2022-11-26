@@ -1,17 +1,17 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.IdConstants;
 
+@EntityType("当前记录节点")
 public class SelfNode extends NodeRT<Void> {
 
     public SelfNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, scope.getFlow().getType(), scope);
-    }
-
-    public SelfNode(NodePO nodePO, ScopeRT scope) {
-        super(nodePO, scope);
     }
 
     @Override

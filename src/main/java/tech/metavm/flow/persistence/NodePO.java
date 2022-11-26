@@ -1,6 +1,17 @@
 package tech.metavm.flow.persistence;
 
-public class NodePO {
+import tech.metavm.entity.EntityPO;
+import tech.metavm.entity.Identifiable;
+import tech.metavm.entity.IndexDef;
+import tech.metavm.flow.NodeRT;
+import tech.metavm.util.TypeReference;
+
+public class NodePO extends EntityPO {
+
+    public static final IndexDef<NodeRT<?>> INDEX_FLOW_ID
+            = new IndexDef<>(new TypeReference<>() {}, "flowId");
+
+
     private Long id;
 
     private Long tenantId;

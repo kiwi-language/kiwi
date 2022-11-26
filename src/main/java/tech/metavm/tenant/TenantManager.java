@@ -5,14 +5,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.InstanceEntity;
-import tech.metavm.entity.InstanceEntityType;
+import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.infra.IdService;
-import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
-import tech.metavm.object.meta.StdTypeConstants;
 import tech.metavm.tenant.persistence.TenantPO;
 import tech.metavm.tenant.persistence.mapper.TenantMapper;
 import tech.metavm.tenant.rest.dto.TenantCreateRequest;
@@ -28,7 +24,8 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-import static tech.metavm.object.meta.StdTypeConstants.*;
+import static tech.metavm.object.meta.IdConstants.ROLE;
+import static tech.metavm.object.meta.IdConstants.USER;
 
 @Component
 public class TenantManager {
@@ -46,7 +43,7 @@ public class TenantManager {
     private RoleManager roleManager;
 
     @Autowired
-    private EntityContextFactory entityContextFactory;
+    private InstanceContextFactory instanceContextFactory;
 
     @Autowired
     private InstanceQueryService instanceQueryService;
@@ -71,15 +68,17 @@ public class TenantManager {
 
     @Transactional
     public long create(TenantCreateRequest request) {
-        List<Long> ids = idService.allocateIds(0L, 1);
-        long tenantId = ids.get(0);
-        setupContextInfo(tenantId);
+        setupContextInfo(-1L);
+        EntityContext globalContext = newContext();
+        long tenantId = idService.allocate(-1L, globalContext.getTenantType());
         TenantPO tenantPO = new TenantPO(tenantId, request.name());
         tenantMapper.insert(tenantPO);
+        globalContext.finish();
 
-        EntityContext entityContext = entityContextFactory.newContext();
-        RoleRT role = roleManager.save(RoleDTO.create(null, "超级管理员"), entityContext);
-        entityContext.initIds();
+        setupContextInfo(tenantId);
+        EntityContext context = newContext();
+        RoleRT role = roleManager.save(RoleDTO.create(null, "超级管理员"), context);
+        context.initIds();
         UserDTO rootUser = UserDTO.create(
                 null,
                 "admin",
@@ -87,8 +86,8 @@ public class TenantManager {
                 request.rootPassword(),
                 role.getId()
         );
-        userManager.save(rootUser, entityContext);
-        entityContext.finish();
+        userManager.save(rootUser, context);
+        context.finish();
         return tenantId;
     }
 
@@ -104,23 +103,28 @@ public class TenantManager {
     public void delete(long tenantId) {
         setupContextInfo(tenantId);
         tenantMapper.delete(tenantId);
-        EntityContext context = entityContextFactory.newContext();
+        EntityContext context = newContext();
         List<Long> userIds = getInstanceIds(tenantId, USER.ID);
         for (Long userId : userIds) {
-            context.get(UserRT.class, userId).remove();
+            context.getEntity(UserRT.class, userId).remove();
         }
         List<Long> roleIds = getInstanceIds(tenantId, ROLE.ID);
         for (Long roleId : roleIds) {
-            context.get(RoleRT.class, roleId).remove();
+            context.getEntity(RoleRT.class, roleId).remove();
         }
         context.finish();
     }
 
     private List<Long> getInstanceIds(long tenantId, long typeId) {
-        Page<Long> idPage = instanceQueryService.query(tenantId, new InstanceQueryDTO(
+        EntityContext context = newContext();
+        Page<Long> idPage = instanceQueryService.query(new InstanceQueryDTO(
                 typeId , null, 1, 100
-        ));
+        ), context.getInstanceContext());
         return idPage.data();
+    }
+
+    private EntityContext newContext() {
+        return instanceContextFactory.newContext().getEntityContext();
     }
 
     private void setupContextInfo(long tenantId) {

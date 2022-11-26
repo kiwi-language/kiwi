@@ -2,18 +2,22 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.EntityColl;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
-import java.util.*;
+import java.util.Collection;
 
+import static tech.metavm.util.ContextUtil.getTenantId;
+
+@EntityType("流程")
 public class FlowRT extends Entity {
 
     private String name;
@@ -22,56 +26,47 @@ public class FlowRT extends Entity {
     private final Type inputType;
     private final Type outputType;
 
-    private final transient EntityColl<ScopeRT> scopes = new EntityColl<>();
-    private final transient EntityColl<NodeRT<?>> nodes = new EntityColl<>();
+    private final transient Table<ScopeRT> scopes;
+    private final transient Table<NodeRT<?>> nodes;
     private transient long version = 1L;
 
     public FlowRT(FlowDTO flowDTO, Type inputType, Type outputType, EntityContext context) {
-        super(context);
+//        super(context);
         this.inputType = inputType;
         this.outputType = outputType;
         setName(flowDTO.name());
-        type = context.getTypeRef(flowDTO.typeId());
+        this.scopes = new Table<>();
+        this.nodes = new Table<>();
+        type = context.getType(flowDTO.typeId());
         rootScope = new ScopeRT(this);
     }
 
-    FlowRT(FlowPO flowPO, List<ScopePO> scopePOs, List<NodePO> nodePOs, EntityContext context) {
-        super(flowPO.getId(), context);
-        this.type = getTypeFromContext(flowPO.getTypeId());
-        this.inputType = getTypeFromContext(flowPO.getInputTypeId());
-        this.outputType = getTypeFromContext(flowPO.getOutputTypeId());
-        setName(flowPO.getName());
-
-        if(NncUtils.isNotEmpty(scopePOs)) {
-            for (ScopePO scopePO : scopePOs) {
-                new ScopeRT(scopePO.getId(), this);
-            }
-        }
-
-        if(NncUtils.isNotEmpty(nodePOs)) {
-            Map<Long, NodePO> map = new HashMap<>(NncUtils.toMap(nodePOs, NodePO::getId));
-            for (NodePO nodePO : nodePOs) {
-                initNode(nodePO, map);
-            }
-        }
-
-        this.rootScope = context.get(ScopeRT.class, flowPO.getRootScopeId());
-    }
+//    FlowRT(FlowPO flowPO, EntityContext context) {
+////        super(flowPO.getId(), context);
+//        super(flowPO.getId());
+//        this.type = context.getType(flowPO.getDeclaringTypeId());
+//        this.inputType = context.getType(flowPO.getInputTypeId());
+//        this.outputType = context.getType(flowPO.getOutputTypeId());
+//        setName(flowPO.getName());
+//        this.scopes = new Table<>(context.selectByKey(ScopePO.INDEX_FLOW_ID, id));
+//        this.nodes = new Table<>(context.selectByKey(NodePO.INDEX_FLOW_ID, id));
+//        this.rootScope = context.getEntity(ScopeRT.class, flowPO.getRootScopeId());
+//    }
 
 
-    private void initNode(NodePO nodePO, Map<Long, NodePO> map) {
-        if(!map.containsKey(nodePO.getId())) {
-            return;
-        }
-        map.remove(nodePO.getId());
-        if(nodePO.getPrevId() != null) {
-            NodePO prevPO = map.get(nodePO.getPrevId());
-            if(prevPO != null) {
-                initNode(prevPO, map);
-            }
-        }
-        NodeFactory.getFlowNode(nodePO, context.get(ScopeRT.class, nodePO.getScopeId()));
-    }
+//    private void initNode(NodePO nodePO, Map<Long, NodePO> map) {
+//        if(!map.containsKey(nodePO.getId())) {
+//            return;
+//        }
+//        map.remove(nodePO.getId());
+//        if(nodePO.getPrevId() != null) {
+//            NodePO prevPO = map.get(nodePO.getPrevId());
+//            if(prevPO != null) {
+//                initNode(prevPO, map);
+//            }
+//        }
+//        NodeFactory.getFlowNode(nodePO, context);
+//    }
 
     public ScopeRT getRootScope() {
         return rootScope;
@@ -86,13 +81,15 @@ public class FlowRT extends Entity {
     }
 
     public ScopeRT getScope(long id) {
-        return scopes.get(id);
+        return scopes.get(Entity::getId, id);
     }
 
-    public EntityColl<ScopeRT> getScopes() {
+    @SuppressWarnings("unused")
+    public Table<ScopeRT> getScopes() {
         return scopes;
     }
 
+    @SuppressWarnings("unused")
     public void addScope(ScopeRT scope) {
         this.scopes.add(scope);
     }
@@ -115,7 +112,8 @@ public class FlowRT extends Entity {
                 name,
                 type.getId(),
                 NncUtils.get(getInputType(), Entity::getId),
-                NncUtils.get(getOutputType(), Entity::getId)
+                NncUtils.get(getOutputType(), Entity::getId),
+                !getInputType().getFields().isEmpty()
         );
     }
 
@@ -139,14 +137,6 @@ public class FlowRT extends Entity {
         return type;
     }
 
-    public NodeRT<?> getNodeFromContext(long nodeId) {
-        return getFromContext(NodeRT.class, nodeId);
-    }
-
-    public FlowRT getFlowFromContext(long flowId) {
-        return getFromContext(FlowRT.class, flowId);
-    }
-
     public Type getInputType() {
         return inputType;
     }
@@ -156,11 +146,12 @@ public class FlowRT extends Entity {
     }
 
     public NodeRT<?> getNode(long id) {
-        return nodes.get(id);
+        return nodes.get(Entity::getId, id);
     }
 
+    @SuppressWarnings("unused")
     public Collection<NodeRT<?>> getNodes() {
-        return nodes.values();
+        return nodes;
     }
 
     void addNode(NodeRT<?> node) {
@@ -173,6 +164,7 @@ public class FlowRT extends Entity {
         version++;
     }
 
+    @Override
     public void remove() {
         scopes.forEach(ScopeRT::remove);
         if(inputType.isAnonymous()) {
@@ -181,18 +173,20 @@ public class FlowRT extends Entity {
         if(outputType.isAnonymous()) {
             outputType.remove();
         }
-        context.remove(this);
+//        context.remove(this);
     }
 
     public NodeRT<?> getRootNode() {
         return rootScope.getFirstNode();
     }
 
+    @SuppressWarnings("unused")
     public NodeRT<?> getNodeByNameRequired(String nodeName) {
         return NncUtils.filterOneRequired(nodes, n -> n.getName().equals(nodeName),
                 "流程节点'" + nodeName + "'不存在");
     }
 
+    @SuppressWarnings("unused")
     public NodeRT<?> getNodeByName(String nodeName) {
         return NncUtils.find(nodes, n -> n.getName().equals(nodeName));
     }
@@ -200,4 +194,5 @@ public class FlowRT extends Entity {
     public long getVersion() {
         return version;
     }
+
 }

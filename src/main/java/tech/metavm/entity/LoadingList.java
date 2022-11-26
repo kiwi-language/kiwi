@@ -1,11 +1,19 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class LoadingList<E> implements List<E> {
+
+    public static <T, R> LoadingList<R> create(List<T> list, Function<T, R> mapping) {
+        return new LoadingList<>(
+                () -> NncUtils.map(list, mapping)
+        );
+    }
 
     private List<E> actualList;
 

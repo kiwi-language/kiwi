@@ -63,6 +63,22 @@ public class IndexItemPO {
         key.setColumn3(column3);
     }
 
+    public String getColumn4() {
+        return key.getColumn4();
+    }
+
+    public void setColumn4(String column4) {
+        key.setColumn4(column4);
+    }
+
+    public String getColumn5() {
+        return key.getColumn5();
+    }
+
+    public void setColumn5(String column5) {
+        key.setColumn5(column5);
+    }
+
     public IndexKeyPO getKey() {
         return key;
     }

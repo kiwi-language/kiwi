@@ -1,51 +1,99 @@
 package tech.metavm.flow;
 
-import tech.metavm.flow.persistence.NodePO;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.SubFlowParam;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.List;
+import java.util.Map;
 
+@EntityType("子流程节点")
 public class SubFlowNode extends NodeRT<SubFlowParam> {
 
+    @EntityField("调用对象")
     private Value selfId;
-    private List<FieldParam> arguments;
-    private FlowRT flow;
+    @EntityField("参数")
+    private Table<FieldParam> arguments;
+    @EntityField("流程")
+    private FlowRT subFlow;
 
-    public SubFlowNode(NodeDTO nodeDTO, SubFlowParam param, ScopeRT scope) {
-        super(nodeDTO, scope.getFromContext(FlowRT.class, param.flowId()).getOutputType(), scope);
-        setParam(param);
+    public SubFlowNode(NodeDTO nodeDTO,
+                       ScopeRT scope,
+                       Value selfId,
+                       List<FieldParam> arguments,
+                       FlowRT subFlow) {
+        super(nodeDTO, subFlow.getOutputType(), scope);
+        this.selfId = selfId;
+        this.arguments = new Table<>(arguments);
+        this.subFlow = subFlow;
     }
 
-    public SubFlowNode(NodePO nodePO, SubFlowParam param, ScopeRT flow) {
-        super(nodePO, flow);
-        setParam(param);
-    }
+
+    //    public SubFlowNode(NodeDTO nodeDTO, SubFlowParam param, ScopeRT scope) {
+//        super(nodeDTO, scope.getFlow().getOutputType(), scope);
+//        setParam(param);
+//    }
+//
+//    public SubFlowNode(NodePO nodePO, SubFlowParam param, EntityContext context) {
+//        super(nodePO, context);
+//        setParam(param);
+//    }
 
     @Override
     protected void setParam(SubFlowParam param) {
-        flow = getFlowFromContext(param.flowId());
         selfId = ValueFactory.getValue(param.self(), getParsingContext());
-        arguments = NncUtils.map(param.fields(), fieldParamDTO -> new FieldParam(fieldParamDTO, context, getParsingContext()));
+        subFlow = selfId.getType().getFlow(param.flowId());
+        Map<Long, FieldParamDTO> fieldParamMap = NncUtils.toMap(param.fields(), FieldParamDTO::fieldId);
+        arguments = new Table<>();
+        for (Field field : selfId.getType().getFields()) {
+            FieldParamDTO fieldParamDTO = fieldParamMap.get(field.getId());
+            if(fieldParamDTO != null) {
+                arguments.add(new FieldParam(field, fieldParamDTO.value(), getParsingContext()));
+            }
+        }
     }
 
     @Override
     protected SubFlowParam getParam(boolean persisting) {
         return new SubFlowParam(
                 selfId.toDTO(persisting),
-                flow.getId(),
+                subFlow.getId(),
                 NncUtils.map(arguments, fp -> fp.toDTO(persisting))
         );
+    }
+
+    public Value getSelfId() {
+        return selfId;
+    }
+
+    public FlowRT getSubFlow() {
+        return subFlow;
+    }
+
+    public void setSelfId(Value selfId) {
+        this.selfId = selfId;
+    }
+
+    public void setSubFlow(FlowRT flow) {
+        this.subFlow = flow;
+    }
+
+    public void setArguments(List<FieldParam> arguments) {
+        this.arguments = new Table<>(arguments);
     }
 
     @Override
     public void execute(FlowFrame frame) {
         FlowStack stack = frame.getStack();
         FlowFrame newFrame = new FlowFrame(
-                flow,
+                subFlow,
                 (Instance) selfId.evaluate(frame),
                 evaluateArguments(frame),
                 stack
@@ -55,7 +103,7 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
 
     private InstanceDTO evaluateArguments(FlowFrame executionContext) {
         return InstanceDTO.valueOf(
-                flow.getInputType().getId(),
+                subFlow.getInputType().getId(),
                 NncUtils.map(
                         arguments,
                         fp -> fp.evaluate(executionContext)

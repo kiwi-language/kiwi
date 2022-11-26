@@ -1,31 +1,41 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.EvaluationContext;
+import tech.metavm.object.meta.Type;
+import tech.metavm.util.ValueUtil;
 
 import java.util.Objects;
 
 public class ConstantValue extends Value {
 
-    public static ConstantValue create(Object value) {
+    public static ConstantValue create(Object value/*, InstanceContext context*/) {
         return new ConstantValue(
                 new ValueDTO(
-                        ValueType.CONSTANT.code(),
-                        value
-                )
+                        ValueKind.CONSTANT.code(),
+                        value,
+                        null
+                )/*,
+                context*/
         );
     }
 
     private final Object value;
 
-    public ConstantValue(ValueDTO valueDTO) {
-        super(valueDTO);
+    public ConstantValue(ValueDTO valueDTO/*, InstanceContext context*/) {
+        super(valueDTO/*, context*/);
         this.value = valueDTO.value();
     }
 
     @Override
     protected Object getDTOValue(boolean persisting) {
         return value;
+    }
+
+    @Override
+    public Type getType() {
+        return ValueUtil.getValueType(value);
     }
 
     @Override
@@ -43,6 +53,6 @@ public class ConstantValue extends Value {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ValueType.CONSTANT, value);
+        return Objects.hash(ValueKind.CONSTANT, value);
     }
 }

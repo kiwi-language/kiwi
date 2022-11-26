@@ -5,8 +5,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.InstanceEntityStore;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.object.instance.InstanceQueryService;
+import tech.metavm.object.instance.rest.InstanceQueryDTO;
+import tech.metavm.object.meta.IdConstants.ROLE;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -15,29 +17,35 @@ import tech.metavm.util.NncUtils;
 public class RoleManager {
 
     @Autowired
-    private EntityContextFactory entityContextFactory;
+    private InstanceContextFactory instanceContextFactory;
 
     @Autowired
-    private InstanceEntityStore instanceEntityStore;
+    private InstanceQueryService instanceQueryService;
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
+        InstanceQueryDTO query = new InstanceQueryDTO(
+                ROLE.ID,
+                searchText,
+                page,
+                pageSize
+        );
         Page<RoleRT> dataPage =
-                instanceEntityStore.query(RoleRT.class, page, pageSize, searchText, entityContextFactory.newContext());
+                instanceQueryService.query(RoleRT.class, query, newContext());
         return new Page<>(
-                NncUtils.map(dataPage.data(), RoleRT::toDTO),
+                NncUtils.map(dataPage.data(), RoleRT::toRoleDTO),
                 dataPage.total()
         );
     }
 
     public RoleDTO get(long id) {
-        RoleRT role = entityContextFactory.newContext().get(RoleRT.class, id);
+        RoleRT role = newContext().getEntity(RoleRT.class, id);
         NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
-        return role.toDTO();
+        return role.toRoleDTO();
     }
 
     @Transactional
     public long save(RoleDTO roleDTO) {
-        EntityContext context = entityContextFactory.newContext();
+        EntityContext context = newContext();
         RoleRT role = save(roleDTO, context);
         context.finish();
         return role.getId();
@@ -46,23 +54,28 @@ public class RoleManager {
     public RoleRT save(RoleDTO roleDTO, EntityContext context) {
         RoleRT role;
         if(roleDTO.id() != null) {
-            role = context.get(RoleRT.class, roleDTO.id());
+            role = context.getEntity(RoleRT.class, roleDTO.id());
             NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(roleDTO.id()));
-            NncUtils.invoke(role, r -> r.update(roleDTO));
+            NncUtils.invokeIfNotNull(role, r -> r.update(roleDTO));
         }
         else {
-            role = new RoleRT(roleDTO, context);
+            role = new RoleRT(roleDTO.name());
+            context.bind(role);
         }
         return role;
     }
 
     @Transactional
     public void delete(long id) {
-        EntityContext context = entityContextFactory.newContext();
-        RoleRT role = context.get(RoleRT.class, id);
+        EntityContext context = newContext();
+        RoleRT role = context.getEntity(RoleRT.class, id);
         NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
         context.remove(role);
         context.finish();
+    }
+
+    private EntityContext newContext() {
+        return instanceContextFactory.newContext().getEntityContext();
     }
 
 }

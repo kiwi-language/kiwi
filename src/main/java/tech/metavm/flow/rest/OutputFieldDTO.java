@@ -16,4 +16,8 @@ public record OutputFieldDTO(
         );
     }
 
+    public FieldParamDTO toFieldParamDTO() {
+        return new FieldParamDTO(id, value);
+    }
+
 }

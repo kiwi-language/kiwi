@@ -1,6 +1,5 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
@@ -11,8 +10,8 @@ public class FunctionExpression extends Expression {
     private final Function function;
     private final List<Expression> arguments;
 
-    public FunctionExpression(Function function, Expression argument, EntityContext context) {
-        super(context);
+    public FunctionExpression(Function function, Expression argument/*, InstanceContext context*/) {
+//        super(context);
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {
             arguments = arrayExpression.getExpressions();
@@ -42,7 +41,7 @@ public class FunctionExpression extends Expression {
 
     @Override
     public Type getType() {
-        return function.getResultType(NncUtils.map(arguments, Expression::getType), context);
+        return function.getResultType(NncUtils.map(arguments, Expression::getType)/*, context*/);
     }
 
     @Override

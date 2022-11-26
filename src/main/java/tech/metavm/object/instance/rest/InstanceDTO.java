@@ -7,11 +7,12 @@ public record InstanceDTO(
         long typeId,
         String typeName,
         String title,
-        List<InstanceFieldDTO> fields
+        List<InstanceFieldDTO> fields,
+        List<Object> elements
 ) {
 
     public static InstanceDTO valueOf(Long id, long typeId, String title, List<InstanceFieldDTO> fields){
-        return new InstanceDTO(id, typeId, null, title, fields);
+        return new InstanceDTO(id, typeId, null, title, fields, null);
     }
 
     public static InstanceDTO valueOf(long typeId, List<InstanceFieldDTO> fields) {
@@ -24,7 +25,19 @@ public record InstanceDTO(
                 typeId,
                 null,
                 null,
-                fields
+                fields,
+                null
+        );
+    }
+
+    public static InstanceDTO createArray(Long id, long typeId, List<Object> elements){
+        return new InstanceDTO(
+                id,
+                typeId,
+                null,
+                null,
+                List.of(),
+                elements
         );
     }
 

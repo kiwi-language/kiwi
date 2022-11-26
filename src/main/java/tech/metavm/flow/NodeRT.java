@@ -1,61 +1,60 @@
 package tech.metavm.flow;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.FlowParsingContext;
 import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
+import static tech.metavm.util.ContextUtil.getTenantId;
 
+@EntityType("节点")
 public abstract class NodeRT<P> extends Entity {
+
+    @EntityField("名称")
     private String name;
-    private final NodeType type;
+    @EntityField("类别")
+    private final NodeKind kind;
+    @EntityField("输出类型")
     private Type outputType;
+    @EntityField("范围")
     private final ScopeRT scope;
+    @EntityField("前驱")
     private NodeRT<?> predecessor;
-    private transient NodeRT<?> successor;
-    private final ParsingContext parsingContext;
+    @EntityField("后继")
+    private NodeRT<?> successor;
+
+    private transient ParsingContext parsingContext;
 
     public NodeRT(NodeDTO nodeDTO, Type outputType, ScopeRT scope) {
         this(
-                nodeDTO.id(),
                 nodeDTO.name(),
-                NodeType.getByCodeRequired(nodeDTO.type()),
+                NodeKind.getByCodeRequired(nodeDTO.type()),
                 outputType,
                 NncUtils.get(nodeDTO.prevId(), scope::getNode),
                 scope
         );
     }
 
-    public NodeRT(NodePO nodePO, ScopeRT scope) {
-        this(
-                nodePO.getId(),
-                nodePO.getName(),
-                NodeType.getByCodeRequired(nodePO.getType()),
-                NncUtils.get(nodePO.getOutputTypeId(), scope::getTypeFromContext),
-                NncUtils.get(nodePO.getPrevId(), scope::getNode),
-                scope
-        );
-    }
-
     protected NodeRT(
-            Long id,
             String name,
-            NodeType type,
+            NodeKind kind,
             Type outputType,
             NodeRT<?> previous,
             ScopeRT scope
     ) {
-        super(id, scope.getContext());
+//        super(scope.getContext());
         setName(name);
         this.scope = scope;
         this.outputType = outputType;
-        this.type = type;
+        this.kind = kind;
         if(previous != null) {
             previous.insertAfter(this);
         }
@@ -63,6 +62,7 @@ public abstract class NodeRT<P> extends Entity {
         parsingContext = FlowParsingContext.create(this);
     }
 
+    @JsonIgnore
     public FlowRT getFlow() {
         return scope.getFlow();
     }
@@ -75,14 +75,16 @@ public abstract class NodeRT<P> extends Entity {
         return name;
     }
 
-    public NodeType getType() {
-        return type;
+    public NodeKind getNodeType() {
+        return kind;
     }
 
+    @JsonIgnore
     public NodeRT<?> getSuccessor() {
         return successor;
     }
 
+    @JsonIgnore
     public NodeRT<?> getGlobalPredecessor() {
         if(predecessor != null) {
             return predecessor;
@@ -90,6 +92,7 @@ public abstract class NodeRT<P> extends Entity {
         return NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor);
     }
 
+    @JsonIgnore
     public NodeRT<?> getGlobalSuccessor() {
         if(successor != null) {
             return successor;
@@ -97,6 +100,7 @@ public abstract class NodeRT<P> extends Entity {
         return NncUtils.get(scope.getOwner(), NodeRT::getGlobalSuccessor);
     }
 
+    @JsonIgnore
     public NodeRT<?> getPredecessor() {
         return predecessor;
     }
@@ -110,6 +114,7 @@ public abstract class NodeRT<P> extends Entity {
         next.predecessor = this;
     }
 
+    @Override
     public void remove() {
         if(this.predecessor != null) {
             this.predecessor.successor = this.successor;
@@ -120,7 +125,7 @@ public abstract class NodeRT<P> extends Entity {
         this.predecessor = null;
         this.successor = null;
         scope.removeNode(this);
-        context.remove(this);
+//        context.remove(this);
     }
 
     public void update(NodeDTO nodeDTO) {
@@ -128,7 +133,11 @@ public abstract class NodeRT<P> extends Entity {
         setParam(nodeDTO.getParam());
     }
 
+    @JsonIgnore
     public final ParsingContext getParsingContext() {
+        if(parsingContext == null) {
+            parsingContext = FlowParsingContext.create(this);
+        }
         return parsingContext;
     }
 
@@ -141,7 +150,7 @@ public abstract class NodeRT<P> extends Entity {
                 id,
                 getFlow().getId(),
                 name,
-                type.code(),
+                kind.code(),
                 NncUtils.get(predecessor, Entity::getId),
                 NncUtils.get(outputType, Entity::getId),
                 getParam(false),
@@ -156,7 +165,7 @@ public abstract class NodeRT<P> extends Entity {
                 getTenantId(),
                 name,
                 getFlow().getId(),
-                type.code(),
+                kind.code(),
                 NncUtils.get(predecessor, Entity::getId),
                 NncUtils.get(getOutputType(), Type::getId),
                 scope.getId(),
@@ -165,6 +174,7 @@ public abstract class NodeRT<P> extends Entity {
         );
     }
 
+    @JsonIgnore
     public ScopeRT getScope() {
         return scope;
     }
@@ -173,14 +183,7 @@ public abstract class NodeRT<P> extends Entity {
 
     protected abstract void setParam(P p);
 
-    public NodeRT<?> getNodeFromContext(long nodeId) {
-        return getFromContext(NodeRT.class, nodeId);
-    }
-
-    public FlowRT getFlowFromContext(long flowId) {
-        return getFromContext(FlowRT.class, flowId);
-    }
-
+    @JsonIgnore
     public Type getOutputType() {
         return outputType;
     }

@@ -63,7 +63,7 @@ public class ExpressionParser {
             }
             else {
                 if(token.isConstant()) {
-                    exprStack.push(new ConstantExpression(token.value(), context.getEntityContext()));
+                    exprStack.push(new ConstantExpression(token.value()/*, context.getInstanceContext()*/));
                 }
                 else {
                     exprStack.push(parseField(token.getName()));
@@ -103,7 +103,7 @@ public class ExpressionParser {
         Op op = opStack.pop();
         if(op.isFunc()) {
             Expression arg = popExprRequired();
-            exprStack.push(new FunctionExpression(op.func(), arg, context.getEntityContext()));
+            exprStack.push(new FunctionExpression(op.func(), arg/*, context.getInstanceContext()*/));
         }
         else if(op.isComma()) {
             Expression second = popExprRequired(), first = popExprRequired();
@@ -121,7 +121,7 @@ public class ExpressionParser {
 
     public Expression popExprRequired() {
         if(exprStack.isEmpty()) {
-            throw new QueryStringException("Expression stack underflow");
+            throw new QueryStringException("Expression stack underflow, expression: " + tokenizer.getExpression());
         }
         return exprStack.pop();
     }

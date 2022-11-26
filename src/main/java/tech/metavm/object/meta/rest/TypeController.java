@@ -1,15 +1,13 @@
 package tech.metavm.object.meta.rest;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
 import tech.metavm.object.meta.TypeManager;
-import tech.metavm.object.meta.StdTypeManager;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -18,16 +16,10 @@ import java.util.List;
 @RequestMapping("/type")
 public class TypeController {
 
-    @Autowired
-    private TypeManager typeManager;
+    private final TypeManager typeManager;
 
-    @Autowired
-    private StdTypeManager primitiveTypeInitializer;
-
-    @PostMapping("/init-primitives")
-    public Result<Void> initPrimitives() {
-        primitiveTypeInitializer.initialize();
-        return Result.success(null);
+    public TypeController(TypeManager typeManager) {
+        this.typeManager = typeManager;
     }
 
     @GetMapping
@@ -45,7 +37,7 @@ public class TypeController {
     public Result<TypeDTO> get(
             @PathVariable("id") long id,
             @RequestParam(value = "includingFields", defaultValue = "true") boolean includingFields,
-            @RequestParam(value = "includingFieldTypes", defaultValue = "false") boolean includingFieldTypes
+            @RequestParam(value = "includingFieldTypes", defaultValue = "true") boolean includingFieldTypes
     ) {
         TypeDTO typeDTO = typeManager.getType(id, includingFields, includingFieldTypes);
         if(typeDTO == null) {
@@ -90,11 +82,6 @@ public class TypeController {
         return Result.success(typeManager.saveField(field));
     }
 
-    @PostMapping("/constraint")
-    public Result<Long> saveConstraint(@RequestBody ConstraintDTO constraint) {
-        return Result.success(typeManager.saveConstraint(constraint));
-    }
-
     @DeleteMapping("/field/{id:[0-9]+}")
     public Result<Void> deleteField(@PathVariable("id") long id) {
         typeManager.removeField(id);
@@ -105,6 +92,32 @@ public class TypeController {
     public Result<Void> setAsTitle(@PathVariable("id") long id) {
         typeManager.setFieldAsTitle(id);
         return Result.success(null);
+    }
+
+
+    @GetMapping("/constraint")
+    public Result<Page<ConstraintDTO>> listConstraint(
+            @RequestParam("typeId") long typeId,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "pagSize", defaultValue = "20") int pageSize
+    ) {
+        return Result.success(typeManager.listConstraints(typeId, page, pageSize));
+    }
+
+    @GetMapping("/constraint/{id:[0-9]+}")
+    public Result<ConstraintDTO> getConstraint(@PathVariable("id") long id) {
+        return Result.success(typeManager.getConstraint(id));
+    }
+
+    @PostMapping("/constraint")
+    public Result<Long> saveConstraint(@RequestBody ConstraintDTO constraint) {
+        return Result.success(typeManager.saveConstraint(constraint));
+    }
+
+    @DeleteMapping("/constraint/{id:[0-9]+}")
+    public Result<Void> removeConstraint(@PathVariable("id") long id) {
+        typeManager.removeConstraint(id);
+        return Result.voidSuccess();
     }
 
 }

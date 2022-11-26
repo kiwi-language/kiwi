@@ -5,45 +5,54 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.*;
 import tech.metavm.flow.FlowManager;
+import tech.metavm.object.meta.persistence.FieldPO;
+import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.persistence.query.TypeQuery;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
 @Component
 public class TypeManager {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TypeManager.class);
 
-    @Autowired
-    private TypeStore typeStore;
-
-    @Autowired
-    private FieldStore fieldStore;
+//    @Autowired
+//    private FieldStore fieldStore;
 
     @Autowired
     private FlowManager flowManager;
 
     @Autowired
-    private EntityContextFactory contextFactory;
+    private InstanceContextFactory contextFactory;
+
+    @Autowired
+    private EntityQueryService entityQueryService;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, int page, int pageSize) {
         EntityContext context = newContext();
         return query(searchText, categoryCodes, page, pageSize, context);
     }
 
-    public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, int page, int pageSize, EntityContext context) {
-
+    public Page<TypeDTO> query(String searchText,
+                               List<Integer> categoryCodes,
+                               int page,
+                               int pageSize,
+                               EntityContext context) {
         List<TypeCategory> categories = categoryCodes != null ?
                 NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired) : List.of(TypeCategory.CLASS);
         TypeQuery query = new TypeQuery(
@@ -54,10 +63,24 @@ public class TypeManager {
                 page,
                 pageSize
         );
-        long total = typeStore.count(query);
-        List<Type> types = typeStore.query(query, context);
-        List<TypeDTO> dtoList = NncUtils.map(types, t -> t.toDTO(true, false, false));
-        return new Page<>(dtoList, total);
+
+        Page<Type> typePage = entityQueryService.query(
+                EntityQuery.create(
+                        Type.class,
+                        searchText,
+                        page,
+                        pageSize,
+                        List.of(
+                                new EntityQueryField("category", categoryCodes)
+                        )
+                ),
+                context
+        );
+
+        return new Page<>(
+                NncUtils.map(typePage.data(), t -> t.toDTO(true, false, false)),
+                typePage.total()
+        );
     }
 
     public TypeDTO getType(long id, boolean includingFields, boolean includingFieldTypes) {
@@ -66,18 +89,36 @@ public class TypeManager {
     }
 
     public TypeDTO getArrayType(long id) {
-        EntityContext context = newContext();
-        return context.getType(id).getArrayType().toDTO();
+        return getOrCreateCompositeType(id, Type::getArrayType);
     }
 
     public TypeDTO getNullableType(long id) {
-        EntityContext context = newContext();
-        return context.getType(id).getNullableType().toDTO();
+        return getOrCreateCompositeType(id, Type::getNullableType);
     }
 
     public TypeDTO getNullableArrayType(long id) {
+        return getOrCreateCompositeType(id, type -> type.getNullableType().getArrayType());
+    }
+
+    private TypeDTO getOrCreateCompositeType(long id, Function<Type, Type> mapper) {
         EntityContext context = newContext();
-        return context.getType(id).getNullableType().getArrayType().toDTO();
+        Type type = context.getType(id);
+        Type compositeType = mapper.apply(type);
+        if(compositeType.getId() != null) {
+            return compositeType.toDTO();
+        }
+        else {
+            return createCompositeType(id, mapper);
+        }
+    }
+
+    private TypeDTO createCompositeType(long id, Function<Type, Type> mapper) {
+        return transactionTemplate.execute(status -> {
+            EntityContext context = newContext();
+            Type compositeType = mapper.apply(context.getType(id));
+            context.finish();
+            return compositeType.toDTO();
+        });
     }
 
     @Transactional
@@ -122,13 +163,13 @@ public class TypeManager {
     public Type createType(TypeDTO typeDTO, EntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "名称");
         ensureTypeNameAvailable(typeDTO, context);
-        return new Type(typeDTO, context);
+        return TypeFactory.createAndBind(typeDTO, context);
     }
 
     public Type updateType(TypeDTO typeDTO, EntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "名称");
         NncUtils.requireNonNull(typeDTO.id(), "ID");
-        Type type = context.getTypeRef(typeDTO.id());
+        Type type = context.getType(typeDTO.id());
         if(!type.getName().equals(typeDTO.name())) {
             ensureTypeNameAvailable(typeDTO, context);
         }
@@ -137,7 +178,7 @@ public class TypeManager {
     }
 
     private void ensureTypeNameAvailable(TypeDTO typeDTO, EntityContext context) {
-        Type typeWithSameName = context.getTypeByName(typeDTO.name());
+        Type typeWithSameName = context.selectByUniqueKey(TypePO.UNIQUE_NAME, typeDTO.name());
         if (typeWithSameName != null && !typeWithSameName.isAnonymous()) {
             throw BusinessException.invalidType(typeDTO, "对象名称已存在");
         }
@@ -146,30 +187,39 @@ public class TypeManager {
     @Transactional
     public void deleteType(long id) {
         EntityContext context = newContext();
-        Type type = context.getTypeRef(id);
+        Type type = context.getType(id);
         if(type == null) {
             return;
         }
-        deleteType0(type, new HashSet<>());
+        deleteType0(type, new HashSet<>(), context);
         context.finish();
     }
 
-    private void deleteType0(Type type, Set<Long> visited) {
+    private void deleteType0(Type type, Set<Long> visited, EntityContext context) {
         if(visited.contains(type.getId())) {
             throw new InternalException("Circular reference. category: " + type + " is already visited");
         }
         visited.add(type.getId());
-        EntityContext context = type.getContext();
-        List<Type> dependentTypes = context.getTypeStore().getDependentTypes(type);
+        List<Type> dependentTypes = getDependentTypes(type, context);
         if(NncUtils.isNotEmpty(dependentTypes)) {
-            dependentTypes.forEach(t -> deleteType0(t, visited));
+            dependentTypes.forEach(t -> deleteType0(t, visited, context));
         }
-        List<String> referringFieldNames = fieldStore.getReferringFieldNames(type);
+        List<Field> referringFields = context.selectByKey(
+                FieldPO.INDEX_TYPE_ID, type.getId()
+        );
+        List<String> referringFieldNames = NncUtils.map(referringFields, Field::getName);
         if(NncUtils.isNotEmpty(referringFieldNames)) {
             throw BusinessException.typeReferredByFields(type, referringFieldNames);
         }
-        flowManager.deleteByOwner(type);
+//        flowManager.deleteByOwner(type);
         type.remove();
+    }
+
+    public List<Type> getDependentTypes(Type type, EntityContext context) {
+        return NncUtils.merge(
+                context.selectByKey(TypePO.INDEX_RAW_TYPE_ID, type.getId()),
+                context.selectByKey(TypePO.INDEX_TYPE_ARG_ID, type.getId())
+        );
     }
 
     @Transactional
@@ -190,27 +240,29 @@ public class TypeManager {
     }
 
     public Field createField(FieldDTO fieldDTO, EntityContext context) {
-        Type owner = context.getType(fieldDTO.declaringTypeId());
-        Type type = context.getType(fieldDTO.typeId());
-        return new Field(fieldDTO, owner, type);
+        return TypeFactory.createField(
+                context.getType(fieldDTO.declaringTypeId()),
+                fieldDTO,
+                context
+        );
     }
 
     public Field updateField(FieldDTO fieldDTO, EntityContext context) {
         NncUtils.requireNonNull(fieldDTO.id(), "列ID必填");
-        Field field = context.get(Field.class, fieldDTO.id());
+        Field field = context.getEntity(Field.class, fieldDTO.id());
         field.update(fieldDTO);
         return field;
     }
 
     public FieldDTO getField(long fieldId) {
-        Field field = newContext().getFieldRef(fieldId);
+        Field field = newContext().getField(fieldId);
         return NncUtils.get(field, Field::toDTO);
     }
 
     @Transactional
     public void removeField(long fieldId) {
         EntityContext context = newContext();
-        removeField(context.getFieldRef(fieldId), context);
+        removeField(context.getField(fieldId), context);
         context.finish();
     }
 
@@ -227,7 +279,7 @@ public class TypeManager {
     @Transactional
     public void setFieldAsTitle(long fieldId) {
         EntityContext context = newContext();
-        Field field = context.getFieldRef(fieldId);
+        Field field = context.getField(fieldId);
         if(field.isAsTitle()) {
             return;
         }
@@ -236,7 +288,34 @@ public class TypeManager {
     }
 
     private EntityContext newContext() {
-        return contextFactory.newContext();
+        return contextFactory.newContext().getEntityContext();
+    }
+
+    public Page<ConstraintDTO> listConstraints(long typeId, int page, int pageSize) {
+        EntityContext context = newContext();
+        Page<ConstraintRT<?>> dataPage =  entityQueryService.query(
+                EntityQuery.create(
+                        new TypeReference<>() {},
+                        null,
+                        page,
+                        pageSize,
+                        List.of(new EntityQueryField("typeId", typeId))
+                ),
+                context
+        );
+        return new Page<>(
+                NncUtils.map(dataPage.data(), ConstraintRT::toDTO),
+                dataPage.total()
+        );
+    }
+
+    public ConstraintDTO getConstraint(long id) {
+        EntityContext context = newContext();
+        ConstraintRT<?> constraint = context.getEntity(ConstraintRT.class, id);
+        if(constraint == null) {
+            throw BusinessException.constraintNotFound(id);
+        }
+        return constraint.toDTO();
     }
 
     @Transactional
@@ -248,11 +327,22 @@ public class TypeManager {
             constraint = ConstraintFactory.createFromDTO(constraintDTO, type);
         }
         else {
-            constraint = context.get(ConstraintRT.class, constraintDTO.id());
+            constraint = context.getEntity(ConstraintRT.class, constraintDTO.id());
             constraint.update(constraintDTO);
         }
         context.finish();
         return constraint.getId();
+    }
+
+    @Transactional
+    public void removeConstraint(long id) {
+        EntityContext context = newContext();
+        ConstraintRT<?> constraint = context.getEntity(ConstraintRT.class, id);
+        if(constraint == null) {
+            throw BusinessException.constraintNotFound(id);
+        }
+        constraint.remove();
+        context.finish();
     }
 
 }

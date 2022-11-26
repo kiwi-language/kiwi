@@ -121,19 +121,19 @@ public class InstanceMapper {
         for (InstancePO record : records) {
             int index = 1;
             if(!forUpdate) {
-                stmt.setLong(index++, record.id());
+                stmt.setLong(index++, record.getId());
             }
-            stmt.setString(index++, record.title());
-            stmt.setLong(index++, record.version());
+            stmt.setString(index++, record.getTitle());
+            stmt.setLong(index++, record.getVersion());
             for (String column : SQLColumnType.sqlColumnNames()) {
                 stmt.setObject(index++, record.get(column));
             }
-            stmt.setLong(index++, record.tenantId());
+            stmt.setLong(index++, record.getTenantId());
             if(forUpdate) {
-                stmt.setLong(index, record.id());
+                stmt.setLong(index, record.getId());
             }
             else {
-                stmt.setLong(index, record.typeId());
+                stmt.setLong(index, record.getTypeId());
             }
             stmt.addBatch();
         }

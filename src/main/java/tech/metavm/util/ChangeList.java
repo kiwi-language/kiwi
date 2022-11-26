@@ -4,13 +4,13 @@ import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
 
     public static <T> ChangeList<T> empty() {
         return new ChangeList<>(List.of(), List.of(), List.of());
     }
-
     public static <T> ChangeList<T> inserts(List<T> inserts) {
         return new ChangeList<>(inserts, List.of(), List.of());
     }
@@ -54,6 +54,23 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         return new ChangeList<>(inserted, updated, deleted);
     }
 
+    public List<T> insertsOrUpdates() {
+        return NncUtils.merge(inserts, updates);
+    }
+
+    public T any() {
+        if (NncUtils.isNotEmpty(inserts)) {
+            return inserts.get(0);
+        }
+        if(NncUtils.isNotEmpty(updates)) {
+            return updates.get(0);
+        }
+        if(NncUtils.isNotEmpty(deletes)) {
+            return deletes.get(0);
+        }
+        throw new InternalException("Empty change list");
+    }
+
     public void apply(
             Consumer<List<T>> insertsConsumer,
             Consumer<List<T>> updatesConsumer,
@@ -68,6 +85,30 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         if(NncUtils.isNotEmpty(deletes)) {
             deletesConsumer.accept(deletes);
         }
+    }
+
+    public <R> ChangeList<R> filterAndMap(Predicate<T> filter, Function<T, R> mapper) {
+        return new ChangeList<>(
+                NncUtils.filterAndMap(inserts, filter, mapper),
+                NncUtils.filterAndMap(updates, filter, mapper),
+                NncUtils.filterAndMap(deletes, filter, mapper)
+        );
+    }
+
+    public ChangeList<T> filter(Predicate<T> filter) {
+        return new ChangeList<>(
+                NncUtils.filter(inserts, filter),
+                NncUtils.filter(updates, filter),
+                NncUtils.filter(deletes, filter)
+        );
+    }
+
+    public ChangeList<T> filterNot(Predicate<T> filter) {
+        return new ChangeList<>(
+                NncUtils.filterNot(inserts, filter),
+                NncUtils.filterNot(updates, filter),
+                NncUtils.filterNot(deletes, filter)
+        );
     }
 
 }

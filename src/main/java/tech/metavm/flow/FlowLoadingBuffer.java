@@ -1,22 +1,23 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.object.instance.query.*;
-import tech.metavm.object.meta.Field;
 import tech.metavm.util.InternalException;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class FlowLoadingBuffer implements EvaluationContext {
 
     private final Map<NodeRT<?>, Path> node2path = new HashMap<>();
     private final Map<NodeRT<?>, Instance> node2instance = new HashMap<>();
     private final Map<NodeRT<?>, Expression> node2expression = new HashMap<>();
-    private final InstanceContext instanceContext;
+    private final InstanceContext context;
 
-    public FlowLoadingBuffer(InstanceContext instanceContext) {
-        this.instanceContext = instanceContext;
+    public FlowLoadingBuffer(InstanceContext context) {
+        this.context = context;
     }
 
     public void addExpression(FieldExpression expression) {

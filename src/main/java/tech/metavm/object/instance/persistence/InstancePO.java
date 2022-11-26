@@ -1,26 +1,28 @@
 package tech.metavm.object.instance.persistence;
 
+import tech.metavm.entity.Identifiable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public final class InstancePO {
-    private final long tenantId;
+public class InstancePO implements Identifiable {
+    private Long tenantId;
     private Long id;
-    private final long typeId;
-    private final String title;
-    private final Map<String, Object> data;
-    private final long version;
-    private final long syncVersion;
+    private Long typeId;
+    private String title;
+    private Map<String, Object> data;
+    private Long version;
+    private Long syncVersion;
 
     public InstancePO(
-            long tenantId,
+            Long tenantId,
             Long id,
-            long typeId,
+            Long typeId,
             String title,
             Map<String, Object> data,
-            long version,
-            long syncVersion
+            Long version,
+            Long syncVersion
     ) {
         this.tenantId = tenantId;
         this.id = id;
@@ -31,58 +33,77 @@ public final class InstancePO {
         this.syncVersion = syncVersion;
     }
 
+    public InstancePO() {
+    }
+
     public static InstancePO newInstance(long tenantId, Long id, long modelId, String title, long version, long syncVersion) {
         return new InstancePO(tenantId, id, modelId, title, new HashMap<>(), version, syncVersion);
+    }
+
+    public Long getSyncVersion() {
+        return syncVersion;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public Long getTypeId() {
+        return typeId;
     }
 
     public Object get(String column) {
         return data.get(column);
     }
 
-    public int getInt(String column) {
-        return (int) data.get(column);
-    }
-
-    public String getString(String column) {
-        return (String) data.get(column);
-    }
-
     public void put(String columnName, Object object) {
         data.put(columnName, object);
     }
 
-    public long tenantId() {
-        return tenantId;
-    }
-
-    public Long id() {
+    public Long getId() {
         return id;
     }
 
-    public long typeId() {
-        return typeId;
-    }
-
-    public String title() {
+    public String getTitle() {
         return title;
     }
 
-    public Map<String, Object> data() {
+    public Map<String, Object> getData() {
         return data;
     }
 
-    public long version() {
-        return version;
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public void setTypeId(Long typeId) {
+        this.typeId = typeId;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setData(Map<String, Object> data) {
+        this.data = data;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+    public void setSyncVersion(Long syncVersion) {
+        this.syncVersion = syncVersion;
     }
 
     public VersionPO nextVersion() {
         return new VersionPO(
                 tenantId, id, version + 1
         );
-    }
-
-    public long syncVersion() {
-        return syncVersion;
     }
 
     public void setId(Long id) {

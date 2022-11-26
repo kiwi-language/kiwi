@@ -10,17 +10,17 @@ import java.util.Map;
 @Component
 public class StoreRegistry {
 
-    private final Map<Class<?>, EntityStore<?>> storeMap = new HashMap<>();
+    private final Map<Class<?>, ModelStore<?>> storeMap = new HashMap<>();
 
-    public <T extends Entity> EntityStore<T> getStore(Class<T> type) {
+    public <T extends Model> ModelStore<T> getStore(Class<T> type) {
         if(type == null) {
             throw new NullPointerException("category required");
         }
         Class<?> t = type;
-        EntityStore<?> store;
+        ModelStore<?> store;
         while(t != Object.class && t != null) {
             if((store = storeMap.get(t)) != null) {
-                return (EntityStore<T>) store;
+                return (ModelStore<T>) store;
             }
             t = t.getSuperclass();
         }
@@ -28,9 +28,9 @@ public class StoreRegistry {
     }
 
     @Autowired
-    public void setStores(List<EntityStore<?>> stores) {
-        for (EntityStore<?> store : stores) {
-            storeMap.put(store.getEntityType(), store);
+    public void setStores(List<ModelStore<?>> stores) {
+        for (ModelStore<?> store : stores) {
+            storeMap.put(store.getType(), store);
         }
     }
 

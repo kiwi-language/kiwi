@@ -31,8 +31,9 @@ public interface FieldMapper {
 
     List<FieldPO> selectByTypeIds(Collection<Long> ids);
 
-    List<FieldPO> selectByDeclaringTypeIds(@Param("tenantId") long tenantId,
-                                           @Param("declaringTypeIds") List<Long> declaringTypeIds);
+    List<FieldPO> selectByDeclaringTypeIds(
+            @Param("declaringTypeIds") Collection<Long> declaringTypeIds
+    );
 
     List<FieldPO> selectTitleFields(@Param("tenantId") long tenantId,
                                     @Param("declaringTypeIds") List<Long> declaringTypeIds);

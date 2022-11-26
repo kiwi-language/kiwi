@@ -1,29 +1,33 @@
 package tech.metavm.flow;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
-import tech.metavm.util.EntityColl;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
+@EntityType("流程范围")
 public class ScopeRT extends Entity  {
 
-    private transient final EntityColl<NodeRT<?>> nodes = new EntityColl<>();
+    private transient final Table<NodeRT<?>> nodes = new Table<>();
 
     private final FlowRT flow;
     private transient NodeRT<?> owner;
 
     public ScopeRT(FlowRT flow) {
-        this(null, flow);
+//        super(flow.getContext());
+        this.flow = flow;
     }
 
-    public ScopeRT(Long id, FlowRT flow) {
-        super(id, flow.getContext());
-        this.flow = flow;
-        flow.addScope(this);
-    }
+//    public ScopeRT(ScopePO scopePO, EntityContext context) {
+//        super(scopePO.getId(), context);
+//        this.flow = context.getFlow(scopePO.getFlowId());
+//    }
 
     public void setOwner(NodeRT<?> owner) {
         this.owner = owner;
@@ -57,11 +61,11 @@ public class ScopeRT extends Entity  {
     }
 
     public NodeRT<?> getNode(long id) {
-        return nodes.get(id);
+        return nodes.get(Entity::getId, id);
     }
 
     public Collection<NodeRT<?>> getNodes() {
-        return nodes.values();
+        return nodes;
     }
 
     public NodeRT<?> getFirstNode() {
@@ -77,14 +81,15 @@ public class ScopeRT extends Entity  {
         flow.removeNode(node);
     }
 
+    @JsonIgnore
     public FlowRT getFlow() {
         return flow;
     }
 
-    public void remove() {
-        new ArrayList<>(nodes.values()).forEach(NodeRT::remove);
-        context.remove(this);
-    }
+//    public void remove() {
+//        new ArrayList<>(nodes.values()).forEach(NodeRT::remove);
+//        context.remove(this);
+//    }
 
     public boolean isEmpty() {
         return nodes.isEmpty();

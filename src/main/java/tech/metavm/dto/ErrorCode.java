@@ -42,6 +42,7 @@ public enum ErrorCode {
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),
     EXPRESSION_INVALID_VALUE(502, "表达式值错误，期望类型为：{}, 实际值微：{}"),
     FUNCTION_ARGUMENTS_INVALID(503, "函数{}参数不正确"),
+    INVALID_CONDITION_EXPR(504, "条件表达式不合法: {}"),
 
 
     // 用户相关
@@ -55,8 +56,8 @@ public enum ErrorCode {
 
     // Constraint
     DUPLICATE_KEY(701, "唯一属性'{}'重复"),
-    CONSTRAINT_CHECK_FAILED(702, "记录'{}'约束条件'{}'校验不通过"),
-
+    CONSTRAINT_CHECK_FAILED(702, "记录'{}'操作失败: {}"),
+    CONSTRAINT_NOT_FOUND(703, "约束规则不存在(id:{})"),
 
     ;
 

@@ -11,5 +11,4 @@ public class FieldNames {
     public static final String NAME = "名称";
 
     public static final String ORDINAL = "序号";
-
 }

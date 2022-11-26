@@ -1,10 +1,18 @@
 package tech.metavm.flow.persistence;
 
-public class ScopePO {
+import tech.metavm.entity.EntityPO;
+import tech.metavm.entity.IndexDef;
+import tech.metavm.flow.ScopeRT;
+
+public class ScopePO extends EntityPO {
+
+    public static final IndexDef<ScopeRT> INDEX_FLOW_ID = new IndexDef<>(
+            ScopeRT.class, "flowId"
+    );
+
+
     private Long id;
-
     private Long flowId;
-
     private Long deletedAt;
 
     public ScopePO(Long id, Long flowId) {

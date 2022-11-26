@@ -1,30 +1,36 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.AddObjectParamDTO;
-import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.IdConstants;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@EntityType("新增记录节点")
 public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
 
-    private final List<FieldParam> fields = new ArrayList<>();
+    @EntityField("字段")
+    private final Table<FieldParam> fields = new Table<>();
 
-    public AddObjectNode(NodeDTO nodeDTO, AddObjectParamDTO param, ScopeRT scope) {
-        super(nodeDTO, scope.getTypeFromContext(param.typeId()), scope);
-        setParam(param);
+    public AddObjectNode(NodeDTO nodeDTO, Type type, ScopeRT scope) {
+        super(nodeDTO, type, scope);
+        setParam(nodeDTO.getParam());
     }
 
-    public AddObjectNode(NodePO nodePO, AddObjectParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
-        setParam(param);
-    }
+//    public AddObjectNode(NodeDTO nodeDTO, AddObjectParamDTO param, ScopeRT scope) {
+//        super(nodeDTO, scope.getContext().getType(param.typeId()), scope);
+//        setParam(param);
+//    }
 
     public List<FieldParam> getFields() {
         return fields;
@@ -40,11 +46,11 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
 
     @Override
     protected void setParam(AddObjectParamDTO param) {
-        setOutputType(getTypeFromContext(param.typeId()));
+//        setOutputType(context.getType(param.typeId()));
         fields.clear();
         fields.addAll(NncUtils.map(
                 param.fieldParams(),
-                fp -> new FieldParam(fp, getContext(), getParsingContext())
+                fp -> new FieldParam(getOutputType().getField(fp.fieldId()), fp.value(), getParsingContext())
         ));
     }
 

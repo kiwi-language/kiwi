@@ -1,8 +1,8 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.AbsInstance;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -41,11 +41,11 @@ public class GraphQueryExecutor {
 
     private void loadTree(List<ObjectTree> trees) {
         List<Long> ids = NncUtils.map(trees, ObjectTree::getInstanceId);
-        List<Instance> instances = context.batchGet(ids);
-        Map<Long, Instance> instanceMap = NncUtils.toMap(instances, AbsInstance::getId);
+        List<IInstance> instances = context.batchGet(ids);
+        Map<Long, IInstance> instanceMap = NncUtils.toMap(instances, IInstance::getId);
 
         for (ObjectTree tree : trees) {
-            Instance instance = instanceMap.get(tree.getInstanceId());
+            IInstance instance = instanceMap.get(tree.getInstanceId());
             if(instance != null) {
                 tree.setInstance(instance);
             }

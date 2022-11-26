@@ -7,7 +7,7 @@
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
     <result column="name" jdbcType="VARCHAR" property="name" />
-    <result column="type_id" jdbcType="BIGINT" property="typeId" />
+    <result column="type_id" jdbcType="BIGINT" property="declaringTypeId" />
     <result column="root_scope_id" jdbcType="BIGINT" property="rootScopeId"/>
     <result column="input_type_id" jdbcType="BIGINT" property="inputTypeId"/>
     <result column="output_type_id" jdbcType="BIGINT" property="outputTypeId"/>
@@ -46,8 +46,8 @@
     insert into flow (id, tenant_id, `name`, type_id, root_scope_id, input_type_id, output_type_id)
     values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.tenantId}, #{item.name},  #{item.typeId}, #{item.rootScopeId}, #{item.inputTypeId}
-      ,#{item.outputTypeId})
+        (#{item.id}, #{item.tenantId}, #{item.name}, #{item.declaringTypeId}, #{item.rootScopeId}, #{item.inputTypeId}
+        ,#{item.outputTypeId})
     </foreach>
 
   </insert>
@@ -63,8 +63,8 @@
         <if test="item.name != null">
           `name` = #{item.name},
         </if>
-        <if test="item.typeId != null">
-          type_id = #{item.typeId},
+        <if test="item.declaringTypeId != null">
+            type_id = #{item.declaringTypeId},
         </if>
         <if test="item.inputTypeId != null">
           input_type_id = #{item.inputTypeId},

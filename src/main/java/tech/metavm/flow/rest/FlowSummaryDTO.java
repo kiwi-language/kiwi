@@ -5,7 +5,8 @@ public record FlowSummaryDTO(
     String name,
     long typeId,
     Long inputTypeId,
-    Long outputTypeId
+    Long outputTypeId,
+    boolean inputRequired
 ) {
 
 }

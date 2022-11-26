@@ -1,44 +1,32 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.meta.IdConstants;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
+@EntityType("分支节点")
 public class BranchNode extends NodeRT<BranchParamDTO> {
 
     private boolean inclusive;
-    private final List<Branch> branches = new ArrayList<>();
+    private final Table<Branch> branches = new Table<>();
 
     public BranchNode(NodeDTO nodeDTO, BranchParamDTO param, ScopeRT scope) {
         super(nodeDTO, null, scope);
         setParam(param);
         branches.add(Branch.create(1L, this));
         branches.add(Branch.createPreselected(this));
-    }
-
-    public BranchNode(NodePO nodePO, BranchParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
-        setParam(param);
-        for (BranchDTO branchDTO : param.branches()) {
-            ScopeRT branchScope = getFromContext(ScopeRT.class, branchDTO.scope().id());
-            branchScope.setOwner(this);
-            branches.add(
-                new Branch(
-                    branchDTO.id(),
-                    branchDTO.condition(),
-                    branchDTO.preselected(),
-                    branchScope,
-                    this
-                )
-            );
-        }
     }
 
     @Override

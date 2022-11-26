@@ -1,7 +1,8 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.object.meta.StdTypeConstants;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.meta.IdConstants;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
@@ -18,7 +19,7 @@ public enum Operator {
     // prefix
 //        TODO: 支持负数运算符
 //    NEGATE("-", 1, PREFIX, null),
-    NOT("!", 1, PREFIX, StdTypeConstants.BOOL),
+    NOT("!", 1, PREFIX, StandardTypes.BOOL),
 
     // Multiply and division
     MULTIPLY("*", 2, BINARY, null),
@@ -30,26 +31,26 @@ public enum Operator {
     SUBTRACT("-", 3, BINARY, null),
 
     // relational
-    GT(">", 4, BINARY, StdTypeConstants.BOOL),
-    GE(">=", 4, BINARY, StdTypeConstants.BOOL),
-    LT("<", 4, BINARY, StdTypeConstants.BOOL),
-    LE("<=", 4, BINARY, StdTypeConstants.BOOL),
+    GT(">", 4, BINARY, StandardTypes.BOOL),
+    GE(">=", 4, BINARY, StandardTypes.BOOL),
+    LT("<", 4, BINARY, StandardTypes.BOOL),
+    LE("<=", 4, BINARY, StandardTypes.BOOL),
 
     // euqality
-    EQ("=", 5, BINARY, StdTypeConstants.BOOL),
-    NE("!=", 5, BINARY, StdTypeConstants.BOOL),
-    STARTS_WITH("STARTS WITH", 5, BINARY, StdTypeConstants.BOOL),
-    LIKE("LIKE", 5, BINARY, StdTypeConstants.BOOL),
-    IN("IN", 5, BINARY, StdTypeConstants.BOOL),
-    IS_NULL("IS NULL",5, POSTFIX, StdTypeConstants.BOOL),
-    IS_NOT_NULL("IS NOT NULL", 5, POSTFIX, StdTypeConstants.BOOL),
-    EXISTS("EXISTS", 5, PREFIX, StdTypeConstants.BOOL),
-    NOT_EXISTS("NOT EXISTS", 5, PREFIX, StdTypeConstants.BOOL),
+    EQ("=", 5, BINARY, StandardTypes.BOOL),
+    NE("!=", 5, BINARY, StandardTypes.BOOL),
+    STARTS_WITH("STARTS WITH", 5, BINARY, StandardTypes.BOOL),
+    LIKE("LIKE", 5, BINARY, StandardTypes.BOOL),
+    IN("IN", 5, BINARY, StandardTypes.BOOL),
+    IS_NULL("IS NULL",5, POSTFIX, StandardTypes.BOOL),
+    IS_NOT_NULL("IS NOT NULL", 5, POSTFIX, StandardTypes.BOOL),
+    EXISTS("EXISTS", 5, PREFIX, StandardTypes.BOOL),
+    NOT_EXISTS("NOT EXISTS", 5, PREFIX, StandardTypes.BOOL),
 
-    AND("AND", 6, BINARY, StdTypeConstants.BOOL),
-    OR("OR", 6, BINARY, StdTypeConstants.BOOL),
+    AND("AND", 6, BINARY, StandardTypes.BOOL),
+    OR("OR", 7, BINARY, StandardTypes.BOOL),
 
-    COMMA(",", 7, BINARY, null)
+    COMMA(",", 8, BINARY, null)
 
 
     ;
@@ -58,13 +59,13 @@ public enum Operator {
     private final String op;
     private final int precedence;
     private final int type;
-    private final Long resultTypeId;
+    private final Type resultType;
 
-    Operator(String op, int precedence, int type, Long resultTypeId) {
+    Operator(String op, int precedence, int type, Type resultType) {
         this.op = op;
         this.precedence = precedence;
         this.type = type;
-        this.resultTypeId = resultTypeId;
+        this.resultType = resultType;
     }
 
     public static Operator getByOpRequired(String op) {
@@ -78,8 +79,8 @@ public enum Operator {
         return Arrays.stream(values()).anyMatch(operator -> operator.op.equalsIgnoreCase(op));
     }
 
-    public Type resultType(EntityContext context) {
-        return NncUtils.get(resultTypeId, context::getType);
+    public Type resultType() {
+        return resultType;
     }
 
     public int precedence() {

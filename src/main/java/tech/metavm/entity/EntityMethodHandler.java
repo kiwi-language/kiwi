@@ -1,40 +1,35 @@
 package tech.metavm.entity;
 
 import javassist.util.proxy.MethodHandler;
+import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
 
 import java.lang.reflect.Method;
+import java.util.function.Function;
 
 public final class EntityMethodHandler implements MethodHandler {
 
-    private final EntityContext context;
-    private final Class entityType;
-    private final long entityId;
+    private final Function<Instance, Object> modelCreator;
+    private Object realEntity;
+    private final IInstance instance;
 
-    EntityMethodHandler(Class<?> entityType, long entityId, EntityContext context) {
-        this.entityType = entityType;
-        this.entityId = entityId;
-        this.context = context;
+    public EntityMethodHandler(IInstance instance, Function<Instance, Object> modelCreator) {
+        this.instance = instance;
+        this.modelCreator = modelCreator;
     }
 
     @Override
     public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Throwable {
-        Entity entity = getEntity();
-        if (entity == null) {
-            throw new RuntimeException("Entity " + entityType.getName() + ":" + entityId + " not found");
-        }
+        Object entity = getEntity();
         thisMethod.setAccessible(true);
         return thisMethod.invoke(entity, args);
     }
 
-    public Entity getEntity() {
-        return context.get(entityType, entityId, LoadingOption.of(LoadingOption.ENUM_CONSTANTS_LAZY_LOADING));
+    public Object getEntity() {
+        if(realEntity == null) {
+            realEntity = modelCreator.apply(EntityContext.getRealInstance(instance));
+        }
+        return realEntity;
     }
 
-    public Class<?> getEntityType() {
-        return entityType;
-    }
-
-    public long getEntityId() {
-        return entityId;
-    }
 }

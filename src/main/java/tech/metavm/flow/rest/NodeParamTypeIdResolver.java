@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
-import tech.metavm.flow.NodeType;
+import tech.metavm.flow.NodeKind;
 
 import java.io.IOException;
 
@@ -19,7 +19,7 @@ public class NodeParamTypeIdResolver implements TypeIdResolver {
 
     @Override
     public String idFromValue(Object value) {
-        return NodeType.getByParamKlassRequired(value.getClass()).code() + "";
+        return NodeKind.getByParamKlassRequired(value.getClass()).code() + "";
     }
 
     @Override
@@ -35,7 +35,7 @@ public class NodeParamTypeIdResolver implements TypeIdResolver {
     @Override
     public JavaType typeFromId(DatabindContext context, String id) throws IOException {
         int code = Integer.parseInt(id);
-        NodeType type = NodeType.getByCodeRequired(code);
+        NodeKind type = NodeKind.getByCodeRequired(code);
         return context.resolveSubType(baseType, type.getParamKlass().getName());
     }
 

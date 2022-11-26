@@ -1,27 +1,31 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
-import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.LoopParam;
+import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.util.NncUtils;
 
+@EntityType("循环节点")
 public class LoopNode extends NodeRT<LoopParam> {
 
     private Value condition;
     private final NodeRT<?> firstChild;
 
-    public LoopNode(NodeDTO nodeDTO, LoopParam param, ScopeRT scope) {
+    public LoopNode(NodeDTO nodeDTO, ValueDTO valueDTO, NodeRT<?> firstChild, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        firstChild = NncUtils.get(param.firstChildId(), this::getNodeFromContext);
-        setParam(param);
+        this.firstChild = firstChild;
+        this.condition = ValueFactory.getValue(valueDTO, getParsingContext());
     }
 
-    public LoopNode(NodePO nodePO, LoopParam param, ScopeRT scope) {
-        super(nodePO, scope);
-        firstChild = NncUtils.get(param.firstChildId(), this::getNodeFromContext);
-        setParam(param);
-    }
+//    public LoopNode(NodePO nodePO, LoopParam param, EntityContext context) {
+//        super(nodePO, context);
+//        firstChild = NncUtils.get(param.firstChildId(), context::getNode);
+//        setParam(param);
+//    }
 
     @Override
     protected void setParam(LoopParam param) {

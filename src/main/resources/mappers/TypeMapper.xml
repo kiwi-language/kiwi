@@ -7,6 +7,7 @@
     <!--@Table type-->
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
+    <result column="super_type_id" jdbcType="BIGINT" property="superTypeId"/>
     <result column="name" jdbcType="VARCHAR" property="name" />
     <result column="category" jdbcType="INTEGER" property="category"/>
     <result column="desc" jdbcType="VARCHAR" property="desc"/>
@@ -19,7 +20,7 @@
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, `name`, category, `desc`, ephemeral, anonymous, raw_type_id, type_argument_ids
+    id, tenant_id, super_type_id, `name`, category, `desc`, ephemeral, anonymous, raw_type_id, type_argument_ids
   </sql>
 
   <select id="selectByName" resultMap="BaseResultMap">
@@ -86,10 +87,11 @@
     <include refid="Base_Column_List"/>
     from type
     where
-        tenant_id = #{tenantId}
+        (tenant_id = #{tenantId} or tenant_id = -1)
         and raw_type_id = #{rawTypeId}
         and type_argument_ids = #{typeArgumentIds, typeHandler=tech.metavm.util.IdStringTypeHandler}
         and deleted_at = 0
+        limit 1
   </select>
 
   <select id="selectByRawTypeId" resultMap="BaseResultMap">

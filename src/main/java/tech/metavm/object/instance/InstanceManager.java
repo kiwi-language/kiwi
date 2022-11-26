@@ -3,12 +3,11 @@ package tech.metavm.object.instance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.InstanceFactory;
 import tech.metavm.object.instance.log.InstanceLog;
-import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
@@ -30,19 +29,13 @@ public class InstanceManager {
     private InstanceStore instanceStore;
 
     @Autowired
-    private EntityContextFactory entityContextFactory;
+    private InstanceContextFactory instanceContextFactory;
 
     @Autowired
     private InstanceSearchService instanceSearchService;
 
-    @Autowired
-    private InstanceLogService instanceLogService;
-
-    @Autowired
-    private TransactionTemplate transactionTemplate;
-
     public InstanceDTO get(long id) {
-        Instance instance = createContext().get(id);
+        IInstance instance = createContext().get(id);
         return instance != null ? instance.toDTO() : null;
     }
 
@@ -71,42 +64,36 @@ public class InstanceManager {
     }
 
     public List<InstanceDTO> batchGet(long tenantId, List<Long> ids) {
-        return NncUtils.map(createContext(tenantId).batchGet(ids), Instance::toDTO);
+        return NncUtils.map(createContext(tenantId).batchGet(ids), IInstance::toDTO);
     }
 
+    @Transactional
     public void update(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
         InstanceContext context = createContext(asyncLogProcessing);
-        transactionTemplate.execute(status -> {
-            if(instanceDTO.id() == null) {
-                throw BusinessException.invalidParams("实例ID为空");
-            }
-
-            context.update(instanceDTO);
-            context.finish();
-            return null;
-        });
-//        context.processLogs();;
+        if(instanceDTO.id() == null) {
+            throw BusinessException.invalidParams("实例ID为空");
+        }
+        IInstance instance = context.get(instanceDTO.id());
+        instance.update(instanceDTO);
+        context.finish();
     }
 
+    @Transactional
     public long create(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
         InstanceContext context = createContext(asyncLogProcessing);
-        Long id = transactionTemplate.execute(status -> {
-                Instance instance = context.add(instanceDTO);
-                context.finish();
-                return instance.getId();
-            }
-        );
-//        context.processLogs();
-        return id;
+        Instance instance = InstanceFactory.create(instanceDTO, context);
+        context.finish();
+        return instance.getId();
     }
 
+    @Transactional
     public void delete(long id, boolean asyncLogProcessing) {
         InstanceContext context = createContext(asyncLogProcessing);
-        transactionTemplate.execute(status -> {
-            context.remove(id);
+        IInstance instance = context.get(id);
+        if(instance != null) {
+            context.remove(instance);
             context.finish();
-            return null;
-        });
+        }
 //        context.processLogs();
     }
 
@@ -131,10 +118,10 @@ public class InstanceManager {
         );
         Page<Long> idPage = instanceSearchService.search(searchQuery);
 
-        List<Instance> instances = context.batchGet(idPage.data());
-        context.loadRelationTitles(instances);
+        List<IInstance> instances = context.batchGet(idPage.data());
+        context.getInstanceStore().loadTitles(NncUtils.map(instances, IInstance::getId), context);
         return new Page<>(
-                NncUtils.map(instances, Instance::toDTO),
+                NncUtils.map(instances, IInstance::toDTO),
                 idPage.total()
         );
     }
@@ -157,8 +144,8 @@ public class InstanceManager {
     }
 
     private InstanceContext createContext(long tenantId, boolean asyncLogProcessing) {
-        EntityContext entityContext = entityContextFactory.newContext(tenantId, asyncLogProcessing);
-        return entityContext.getInstanceContext();
+        return instanceContextFactory.newContext(tenantId, asyncLogProcessing);
+//        return entityContext.getInstanceContext();
     }
 
 }

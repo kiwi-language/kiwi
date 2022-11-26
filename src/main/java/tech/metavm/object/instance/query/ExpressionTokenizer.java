@@ -407,6 +407,10 @@ public class ExpressionTokenizer {
         return !isEof() && current() == '\"';
     }
 
+    public String getExpression() {
+        return expression;
+    }
+
     public static void main(String[] args) {
         String query = "material.creator.name starts with '钢' and (material.virtual = true OR number > 0)";
         ExpressionTokenizer tokenizer = new ExpressionTokenizer(query);

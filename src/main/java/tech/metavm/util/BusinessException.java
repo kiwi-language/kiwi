@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.dto.ErrorCode;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Function;
 import tech.metavm.object.meta.*;
@@ -38,6 +39,10 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.INVALID_FIELD, field.name(), reason);
     }
 
+    public static BusinessException invalidConditionExpr(String expr) {
+        throw new BusinessException(ErrorCode.INVALID_CONDITION_EXPR, expr);
+    }
+
     public static BusinessException fieldValueRequired(Field field) {
         throw new BusinessException(ErrorCode.FIELD_VALUE_REQUIRED, field.getName());
     }
@@ -54,7 +59,7 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION_PROP, "序号", order);
     }
 
-    public static BusinessException duplicateOption(EnumConstant choiceOption) {
+    public static BusinessException duplicateOption(EnumConstantRT choiceOption) {
         throw new BusinessException(ErrorCode.DUPLICATE_CHOICE_OPTION,
                 choiceOption.getId(), choiceOption.getName(), choiceOption.getOrdinal());
     }
@@ -176,12 +181,17 @@ public class BusinessException extends RuntimeException {
         );
     }
 
-    public static BusinessException constraintCheckFailed(Instance instance, CheckConstraintRT constraint) {
+    public static BusinessException constraintCheckFailed(IInstance instance, ConstraintRT<?> constraint) {
+        String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(
                 ErrorCode.CONSTRAINT_CHECK_FAILED,
                 instance.getTitle(),
-                constraint.getDesc()
+                reason
         );
+    }
+
+    public static BusinessException constraintNotFound(long id) {
+        throw new BusinessException(ErrorCode.CONSTRAINT_NOT_FOUND, id);
     }
 
     public static BusinessException invalidToken() {

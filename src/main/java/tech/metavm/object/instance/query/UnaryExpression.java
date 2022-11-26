@@ -9,7 +9,7 @@ public class UnaryExpression extends Expression {
     private final Expression operand;
 
     public UnaryExpression(Operator operator, Expression operand) {
-        super(operand.context);
+//        super(operand.context);
         this.operator = operator;
         this.operand = operand;
     }
@@ -41,8 +41,8 @@ public class UnaryExpression extends Expression {
 
     @Override
     public Type getType() {
-        if(operator.resultType(context) != null) {
-            return operator.resultType(context);
+        if(operator.resultType() != null) {
+            return operator.resultType();
         }
         else {
             return operand.getType();

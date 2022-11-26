@@ -42,4 +42,8 @@ public class FunctionMethods {
         }
         return false;
     }
+
+    public static Object IF(Boolean condition, Object value1, Object value2) {
+        return Boolean.TRUE.equals(condition) ? value1 : value2;
+    }
 }

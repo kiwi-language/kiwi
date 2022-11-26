@@ -1,8 +1,6 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.instance.rest.ValueDTO;
-import tech.metavm.object.meta.EnumConstant;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
@@ -10,14 +8,9 @@ import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
-import java.text.DecimalFormat;
-import java.util.List;
-
 public class InstanceField {
 
-    public static final DecimalFormat DF = new DecimalFormat("0.##");
-
-    private final InstanceContext context;
+//    private final InstanceContext context;
     private final Instance owner;
     private final Field field;
     private Object value;
@@ -25,14 +18,14 @@ public class InstanceField {
     public InstanceField(Instance owner, Field field, InstanceFieldDTO instanceFieldDTO) {
         this.field = field;
         this.owner = owner;
-        this.context = owner.getContext();
+//        this.context = owner.getContext();
         set(instanceFieldDTO);
     }
 
     InstanceField(Instance owner, Field field, Object value) {
         this.field = field;
         this.owner = owner;
-        this.context = owner.getContext();
+//        this.context = owner.getContext();
         setValue(value);
     }
 
@@ -48,6 +41,7 @@ public class InstanceField {
         return field.getName();
     }
 
+    @SuppressWarnings("unused")
     Column getColumn() {
         return field.getColumn();
     }
@@ -60,19 +54,14 @@ public class InstanceField {
         return value;
     }
 
-    public Object getResolvedValue() {
-        if(field.isTable() || field.isEnum()) {
-            if(field.isArray()) {
-                return NncUtils.map(getValueIds(), context::get);
-            }
-            else {
-                return NncUtils.get(getValueId(), context::get);
-            }
-        }
-        else {
-            return value;
-        }
-    }
+//    public Object getResolvedValue() {
+//        if(field.isTable() || field.isEnum()) {
+//            return NncUtils.get(getValueId(), context::get);
+//        }
+//        else {
+//            return value;
+//        }
+//    }
 
     public void set(InstanceFieldDTO instanceFieldDTO) {
         Object rawValue = instanceFieldDTO.value();
@@ -82,10 +71,11 @@ public class InstanceField {
         setValue(field.preprocessValue(rawValue));
     }
 
-    private void setValue(Object value) {
+    void setValue(Object value) {
         this.value = value;
     }
 
+    @SuppressWarnings("unused")
     private Object check(Object value) {
         if(value == null) {
             if(field.isNotNull()) {
@@ -141,96 +131,34 @@ public class InstanceField {
         return (Double) value;
     }
 
-    public List<Long> getValueIds() {
-        return (List<Long>) value;
+//    public Long getValueId() {
+//        return (Long) value;
+//    }
+
+    public IInstance getInstance() {
+        return (IInstance) value;
+//        if(!isGeneralRelation() || isArray()) {
+//            throw new UnsupportedOperationException();
+//        }
+//        if(value == null) {
+//            return null;
+//        }
+//        return context.get((long) value);
     }
 
-    public Long getValueId() {
-        return (Long) value;
-    }
-
-    public Instance getInstance() {
-        if(!isGeneralRelation() || isArray()) {
-            throw new UnsupportedOperationException();
-        }
-        if(value == null) {
-            return null;
-        }
-        return context.get((long) value);
-    }
-
+    @SuppressWarnings("unused")
     public Instance getOwner() {
         return owner;
-    }
-
-    public List<Long> getDestInstanceIds() {
-        if(isGeneralPrimitive()) {
-            throw new UnsupportedOperationException("getDestInstanceIds is only supported for relation fields");
-        }
-        return getIdList();
-    }
-
-    private List<Long> getIdList() {
-        if(!isGeneralRelation()) {
-            throw new UnsupportedOperationException();
-        }
-        if(value == null) {
-            return List.of();
-        }
-        if(isArray()) {
-            return (List) value;
-        }
-        else {
-            return List.of((Long) value);
-        }
     }
 
     public String getDisplayValue() {
         if(field.isArray()) {
             return "";
         }
-        return getDisplayValue(value);
+        return field.getDisplayValue(value);
     }
 
-    public String getDisplayValue(Object value) {
-        if(value == null) {
-            return "";
-        }
-        if(field.getConcreteType().isEnum()) {
-            return NncUtils.filterOneAndMap(
-                    field.getChoiceOptions(),
-                    opt -> opt.getId().equals(value),
-                    EnumConstant::getName);
-        }
-        else if(field.getConcreteType().isClass()) {
-            return context.getTitle((Long) value);
-        }
-        else if(field.getConcreteType().isBool()) {
-            if(Boolean.TRUE.equals(value)) {
-                return "是";
-            }
-            else if(Boolean.FALSE.equals(value)) {
-                return "否";
-            }
-            else {
-                return "";
-            }
-        }
-        else if (field.getConcreteType().isDouble()) {
-            return DF.format(value);
-        }
-        else if(field.getConcreteType().isTime()) {
-            return ValueFormatter.formatTime((Long) value);
-        }
-        else if(field.getConcreteType().isDate()) {
-            return ValueFormatter.formatDate((Long) value);
-        }
-        else if(field.getConcreteType().isPassword()) {
-            return "******";
-        }
-        return NncUtils.toString(value);
-    }
-
+    @SuppressWarnings("unused")
     public boolean isPrimitive() {
         return field.isPrimitive();
     }
@@ -248,16 +176,13 @@ public class InstanceField {
     }
 
     public InstanceFieldDTO toDTO () {
-        List<ValueDTO> values = isArray() ?
-            NncUtils.map(getValueIds(), destId -> new ValueDTO(destId, getDisplayValue(destId))) : null;
         return new InstanceFieldDTO(
                 field.getId(),
                 field.getName(),
                 field.getConcreteTypeCategory().code(),
                 field.isArray(),
                 ValueFormatter.format(value, field.getType()),
-                getDisplayValue(),
-                values
+                getDisplayValue()
         );
     }
 
@@ -265,4 +190,12 @@ public class InstanceField {
         return new InstanceField(ownerCopy, field, value);
     }
 
+    public InstanceArray getInstanceArray() {
+        return (InstanceArray) value;
+    }
+
+    @Override
+    public String toString() {
+        return field.getName();
+    }
 }

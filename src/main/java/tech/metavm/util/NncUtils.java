@@ -5,15 +5,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityPO;
+import tech.metavm.entity.Identifiable;
 
+import javax.annotation.Nullable;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class NncUtils {
@@ -31,10 +33,15 @@ public class NncUtils {
     }
 
     public static byte[] readFromFile(String filePath) throws IOException {
-        InputStream inputStream = new FileInputStream(filePath);
-        byte[] bytes = new byte[inputStream.available()];
-        inputStream.read(bytes);
-        return bytes;
+        try (InputStream inputStream = new FileInputStream(filePath)) {
+            byte[] bytes = new byte[inputStream.available()];
+            int n = inputStream.read(bytes);
+            if(n != bytes.length) {
+                throw new InternalException("read  bytes " + n + " is not equal to available bytes " + bytes.length + "" +
+                        " in file '" + filePath + "'");
+            }
+            return bytes;
+        }
     }
 
     public static String toJSONString(Object object) {
@@ -73,6 +80,7 @@ public class NncUtils {
         return t1 != null ? t1 : t2;
     }
 
+    @SuppressWarnings("unused")
     public static <T> T firstNonNull(T t1, T t2) {
         if(t1 == null && t2 == null) {
             throw new IllegalArgumentException("Arguments can't both be null");
@@ -80,20 +88,14 @@ public class NncUtils {
         return t1 != null ? t1 : t2;
     }
 
+    @SuppressWarnings("unused")
     public static <T> Set<T> newSet(Collection<T> coll) {
-        return coll != null ? new HashSet<>(coll) : Set.of();
+        return coll != null ? new HashSet<>(coll) : new HashSet<>();
     }
 
-    public static boolean isTrue(byte mark) {
-        return mark == 1;
-    }
-
+    @SuppressWarnings("unused")
     public static boolean isTrue(Boolean bool) {
         return Boolean.TRUE.equals(bool);
-    }
-
-    public static byte getMark(boolean bool) {
-        return bool ? (byte) 1 : (byte) 0;
     }
 
     public static boolean isBlank(String str) {
@@ -105,6 +107,15 @@ public class NncUtils {
             return isEmpty(str);
         }
         return value == null;
+    }
+
+    public static long maxId(List<? extends Identifiable> list) {
+        return maxLong(list, Identifiable::getId, 0);
+    }
+
+    public static <T> long maxLong(List<T> list, Function<T, Long> mapping, long defaultMax) {
+        return list.stream().map(mapping).mapToLong(Long::longValue)
+                .max().orElse(defaultMax);
     }
 
     public static boolean isEmpty(Collection<?> coll) {
@@ -144,11 +155,21 @@ public class NncUtils {
         return results;
     }
 
-    public static <T, R> R getFirst(List<T> list, Function<T, R> mapping) {
+    public static <T, R> @Nullable R getFirst(List<T> list, Function<T, R> mapping) {
         return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
     }
 
-    public static <T> T getFirst(List<T> list) {
+    public static <T, R> @Nullable R getFirst(LinkedList<T> list, Function<T, R> mapping) {
+        return isNotEmpty(list) ? mapping.apply(list.getFirst()) : null;
+    }
+
+
+    public static <T> @Nullable T getFirst(List<T> list) {
+        return getFirst(list, Function.identity());
+    }
+
+
+    public static <T> @Nullable T getFirst(LinkedList<T> list) {
         return getFirst(list, Function.identity());
     }
 
@@ -171,12 +192,23 @@ public class NncUtils {
         return source.stream().filter(filter).collect(Collectors.toList());
     }
 
+    public static List<Long> range(long start, long end) {
+        return LongStream.range(start, end).boxed().collect(Collectors.toList());
+    }
+
     public static <T> List<T> merge(Collection<T> coll1, Collection<T> coll2) {
+        if(coll1 == null) {
+            coll1 = List.of();
+        }
+        if(coll2 == null) {
+            coll2 = List.of();
+        }
         List<T> merged = new ArrayList<>(coll1);
         merged.addAll(coll2);
         return merged;
     }
 
+    @SuppressWarnings("unused")
     public static <T> Set<T> mergeUnique(Collection<T> coll1, Collection<T> coll2) {
         Set<T> merged = new HashSet<>(coll1);
         merged.addAll(coll2);
@@ -198,10 +230,24 @@ public class NncUtils {
         return source.stream().map(mapping).collect(Collectors.toList());
     }
 
+    public static <T extends Identifiable> Set<Long> mapToIds(Collection<T> collection) {
+        return NncUtils.mapUnique(collection, Identifiable::getId);
+    }
+
+    public static  <T, R> Map<R, Integer> mapAndCount(List<T> list, Function<T, R> keyMapper) {
+        Map<R, Integer> countMap = new HashMap<>();
+        for (T item : list) {
+            R key = keyMapper.apply(item);
+            countMap.compute(key, (k, old) -> old != null ? old + 1 : 1);
+        }
+        return countMap;
+    }
+
     public static <T, M, R> List<R> map(Collection<T> source, Function<T, M> mapping1, Function<M, R> mapping2) {
         return map(map(source, mapping1), mapping2);
     }
 
+    @SuppressWarnings("unused")
     public static <T, K, V> Map<K, List<V>> groupBy(List<T> list, Function<T, K> keyMapping, Function<T, V> valueMapping) {
         Map<K, List<V>> result = new HashMap<>();
         for (T t : list) {
@@ -225,9 +271,9 @@ public class NncUtils {
         return Arrays.stream(source).map(mapping).collect(Collectors.toList());
     }
 
-    public static int sum(int[] nums) {
+    public static int sum(int[] values) {
         int sum = 0;
-        for (int num : nums) {
+        for (int num : values) {
             sum += num;
         }
         return sum;
@@ -235,6 +281,10 @@ public class NncUtils {
 
     public static <T> List<T> sort(Collection<T> list, Comparator<T> comparator) {
         return sortAndMap(list, comparator, Function.identity());
+    }
+
+    public static <T extends Identifiable> List<T> sortById(List<T> list) {
+        return sort(list, Comparator.comparingLong(Identifiable::getId));
     }
 
     public static <T> List<T> sortByInt(Collection<T> list, ToIntFunction<T> intMapper) {
@@ -255,7 +305,7 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <T, R> R mapFirst(List<T> list, Function<T, R> mapping) {
+    public static <T, R> @Nullable R mapFirst(List<T> list, Function<T, R> mapping) {
         return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
     }
 
@@ -281,6 +331,7 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unused")
     public static <T, R> Set<R> filterAndMapUnique(Collection<T> source, Predicate<T> filter, Function<T, R> mapping) {
         if(source == null) {
             return Set.of();
@@ -291,6 +342,7 @@ public class NncUtils {
                 .collect(Collectors.toSet());
     }
 
+    @SuppressWarnings("unused")
     public static <T, R> List<R> mapNonNull(Collection<T> source, Function<T, R> mapper) {
         return mapAndFilter(
                 source,
@@ -307,15 +359,15 @@ public class NncUtils {
         );
     }
 
-    public static <T> T find(Collection<T> list, Predicate<T> filter) {
+    public static <T> @Nullable T find(Collection<T> list, Predicate<T> filter) {
         return list.stream().filter(filter).findAny().orElse(null);
     }
 
-    public static <T> T find(T[] array, Predicate<T> filter) {
+    public static <T> @Nullable T find(T[] array, Predicate<T> filter) {
         return Arrays.stream(array).filter(filter).findAny().orElse(null);
     }
 
-
+    @SuppressWarnings("unused")
     public static <R> List<R> splitAndMap(String str, Function<String, R> mapping) {
         return splitAndMap(str, ",", mapping);
     }
@@ -326,11 +378,32 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
+    public static <T> void splitAndForEach(Collection<T> collection, Predicate<T> test, Consumer<List<T>> action1, Consumer<List<T>> action2) {
+        List<T> list1 = filter(collection, test);
+        List<T> list2 = filterNot(collection, test);
+        if(isNotEmpty(list1)) {
+            action1.accept(list1);
+        }
+        if(isNotEmpty(list2)) {
+            action2.accept(list2);
+        }
+    }
+
     public static <T> T findRequired(T[] array, Predicate<T> filter) {
         return Arrays.stream(array).filter(filter).findAny()
                 .orElseThrow(InternalException::new);
     }
 
+    public static <T> T findRequired(Collection<T> collection, Predicate<T> filter) {
+        return collection.stream().filter(filter).findAny()
+                .orElseThrow(InternalException::new);
+    }
+
+    public static <T extends Identifiable> T findById(Collection<T> collection, long id) {
+        return findRequired(collection, item -> Objects.equals(item.getId(), id));
+    }
+
+    @SuppressWarnings("unused")
     public static <T> void invokeIfNotEmpty(Collection<T> collection, Consumer<Collection<T>> action) {
         if(isNotEmpty(collection)) {
             action.accept(collection);
@@ -345,13 +418,18 @@ public class NncUtils {
         return list.stream().filter(filter).map(mapping).findAny().orElse(null);
     }
 
+    @SuppressWarnings("unused")
     public static <T> String filterAndJoin(Collection<T> list, Predicate<T> filter, Function<T, String> mapping) {
         return join(list, filter, mapping, ",");
     }
 
-
     public static <T> String join(Collection<T> list, Function<T, String> mapping) {
         return join(list, mapping, ",");
+    }
+
+
+    public static <T> String join(T[] array, Function<T, String> mapping) {
+        return join(Arrays.asList(array), mapping);
     }
 
     public static <T> String join(Collection<T> list, Function<T, String> mapping, String delimiter) {
@@ -385,7 +463,8 @@ public class NncUtils {
         return toMap(coll, Entity::getId);
     }
 
-    public static <K, V> List<Pair<V>> buildPairsForMap(Map<K, V> map1, Map<K, V> map2) {
+    public static <K, V> List<Pair<V>> buildPairsForMap(Map<? extends K, ? extends V> map1,
+                                                        Map<? extends K, ? extends V> map2) {
         List<Pair<V>> pairs = new ArrayList<>();
         map1.forEach((k1,v1) ->
             pairs.add(new Pair<>(v1, map2.get(k1)))
@@ -457,13 +536,13 @@ public class NncUtils {
                 .collect(Collectors.toSet());
     }
 
-    public static <T, K> List<Pair<Entity>> buildEntityPairs(Collection<Entity> list1, Collection<Entity> list2) {
-        return buildPairs(list1, list2, Entity::key);
+    public static List<Pair<EntityPO>> buildEntityPairs(Collection<EntityPO> list1, Collection<EntityPO> list2) {
+        return buildPairs(list1, list2, EntityPO::getId);
     }
 
-    public static <T> List<Pair<T>> buildPairs(Collection<T> coll1, Collection<T> coll2) {
+    public static <T> List<Pair<T>> buildPairs(Collection<? extends T> coll1, Collection<? extends T> coll2) {
         List<Pair<T>> pairs = new ArrayList<>();
-        Iterator<T> it1 = coll1.iterator(), it2 = coll2.iterator();
+        Iterator<? extends T> it1 = coll1.iterator(), it2 = coll2.iterator();
         while (it1.hasNext() && it2.hasNext()) {
             pairs.add(new Pair<>(it1.next(), it2.next()));
         }
@@ -501,11 +580,8 @@ public class NncUtils {
 
         return result;
     }
-//
-//    public static <T,K> ChangeList<T> buildChangeList(List<T> beforeList, List<T> afterList, Function<T, K> keyMapping) {
-//        return buildChangeList(beforeList, afterList, keyMapping, )
-//    }
 
+    @SuppressWarnings("unused")
     public static <T> List<T> deduplicate(Collection<T> list) {
         return new ArrayList<>(new HashSet<>(list));
     }
@@ -527,6 +603,7 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unused")
     public static <T,R> List<R> flatMap(T[] array, Function<T, List<R>> mapping) {
         List<R> result = new ArrayList<>();
         for (T item : array) {
@@ -547,41 +624,52 @@ public class NncUtils {
 
     }
 
-    public static <T, R> R get(T t, Function<T, R> mapping) {
+    public static <T, R> R get(@Nullable T t, Function<T, R> mapping) {
         return t != null ? mapping.apply(t) : null;
+    }
+
+    public static <T> T orElse(T t, Supplier<T> elseSupplier) {
+        return orElse(t, Function.identity(), elseSupplier);
     }
 
     public static <T, R> R orElse(T t, Function<T, R> mapping, Supplier<R> elseSupplier) {
         return t != null ? mapping.apply(t) : elseSupplier.get();
     }
 
-
     public static <T, M, R> R get(T t, Function<T, M> mapping1, Function<M, R> mapping2) {
         return get(get(t, mapping1), mapping2);
     }
 
-    public static <T> void invoke(T t, Consumer<T> action) {
+    public static <T> void invokeIfNotNull(T t, Consumer<T> action) {
         if(t != null) {
             action.accept(t);
         }
     }
 
     public static <T, R> void getAndInvoke(T t, Function<T, R> mapper, Consumer<R> action) {
-        invoke(get(t, mapper), action);
-    }
-
-    public static <T> void updateIfNotNull(T value, Consumer<T> update) {
-        updateIfNotNull(value, Function.identity(), update);
-    }
-
-    public static <T, R> void updateIfNotNull(T value, Function<T, R> mapper, Consumer<R> update) {
-        if(value != null) {
-            update.accept(mapper.apply(value));
-        }
+        invokeIfNotNull(get(t, mapper), action);
     }
 
     public static <T> T requireNonNull(T value) {
         return requireNonNull(value, "参数不能为空");
+    }
+
+    public static <T> T requireNull(T value) {
+        return requireNonNull(value, "字段必须为空");
+    }
+
+    @SuppressWarnings("unused")
+    public static void requirePositive(int value) {
+        requireTrue(value > 0, () -> new InternalException("参数必须大于0"));
+    }
+
+    @SuppressWarnings("unused")
+    public static void requireLessThan(int value, int max) {
+        requireTrue(value < max, () -> new InternalException("参数必须小于" + max));
+    }
+
+    public static void requireRangeInclusively(int value, int min, int max) {
+        requireTrue(value >= min && value <= max, () -> new InternalException("参数必须在区间[" + min + "," + max+"]中"));
     }
 
     public static <T> T requireNonNull(T value, String message) {
@@ -595,8 +683,22 @@ public class NncUtils {
         return value;
     }
 
+    public static void requireTrue(boolean value, String message) {
+        requireTrue(value, () -> new InternalException(message));
+    }
+
     public static void requireTrue(boolean value, Supplier<RuntimeException> exceptionSupplier) {
         if(!value) {
+            throw exceptionSupplier.get();
+        }
+    }
+
+    public static void requireEquals(Object first, Object second, String message) {
+        requireEquals(first, second, () -> new InternalException(message));
+    }
+
+    public static void requireEquals(Object first, Object second, Supplier<RuntimeException> exceptionSupplier) {
+        if(!Objects.equals(first, second)) {
             throw exceptionSupplier.get();
         }
     }
@@ -607,6 +709,7 @@ public class NncUtils {
         }
     }
 
+    @SuppressWarnings("unused")
     public static <E> void addIfNotNull(List<E> list, E item) {
         if(item != null) {
             list.add(item);
@@ -630,5 +733,12 @@ public class NncUtils {
             return false;
         }
         return collection.stream().anyMatch(predicate);
+    }
+
+    public static <T> boolean allMatch(Collection<T> collection, Predicate<T> predicate) {
+        if (isEmpty(collection)) {
+            return true;
+        }
+        return collection.stream().allMatch(predicate);
     }
 }

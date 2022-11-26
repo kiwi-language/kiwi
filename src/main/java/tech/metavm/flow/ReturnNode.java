@@ -1,29 +1,35 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.InstanceFactory;
 import tech.metavm.flow.persistence.NodePO;
-import tech.metavm.flow.rest.*;
+import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.flow.rest.OutputFieldDTO;
+import tech.metavm.flow.rest.ReturnParamDTO;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@EntityType("结束节点")
 public class ReturnNode extends NodeRT<ReturnParamDTO> {
 
-
-    private final Map<Long, Value> fieldValueMap = new HashMap<>();
+    @EntityField("字段值")
+    private final Table<FieldParam> fieldParams = new Table<>();
 
     public ReturnNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {
         super(
-                null,
                 nodeDTO.name(),
-                NodeType.RETURN,
+                NodeKind.RETURN,
                 scope.getFlow().getOutputType(),
                 prev,
                 scope
@@ -35,16 +41,15 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
         setParam(param);
     }
 
-    public ReturnNode(NodePO nodePO, ReturnParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
-        setParam(param);
-    }
-
     @Override
     protected void setParam(ReturnParamDTO param) {
-        fieldValueMap.clear();
-        for (OutputFieldDTO field : param.fields()) {
-            fieldValueMap.put(field.id(), ValueFactory.getValue(field.value(), getParsingContext()));
+        fieldParams.clear();
+        Map<Long, OutputFieldDTO> outFieldMap = NncUtils.toMap(param.fields(), OutputFieldDTO::id);
+        for (Field field : getOutputType().getFields()) {
+            OutputFieldDTO outputFieldDTO = outFieldMap.get(field.getId());
+            if(outputFieldDTO != null) {
+                fieldParams.add(new FieldParam(field, outputFieldDTO.value(), getParsingContext()));
+            }
         }
     }
 
@@ -53,7 +58,7 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
         Type outputType = getOutputType();
         List<OutputFieldDTO> outputFields = new ArrayList<>();
         for (Field field : outputType.getFields()) {
-            Value value = fieldValue(field.getId());
+            Value value = fieldValue(field);
             outputFields.add(new OutputFieldDTO(
                     field.getId(),
                     field.getName(),
@@ -64,8 +69,8 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
         return new ReturnParamDTO(outputFields);
     }
 
-    private Value fieldValue(long fieldId) {
-        return fieldValueMap.get(fieldId);
+    private Value fieldValue(Field field) {
+        return fieldParams.get(FieldParam::getField, field).getValue();
     }
 
     @Override
@@ -76,20 +81,21 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     @Override
     public void execute(FlowFrame frame) {
         InstanceDTO instanceDTO = new InstanceDTO(
-            null,
+                null,
                 getOutputType().getId(),
                 getOutputType().getName(),
             "临时对象",
-                getFieldValues(frame)
+                getFieldValues(frame),
+                null
         );
-        Instance instance = new Instance(instanceDTO, frame.getStack().getInstanceContext());
+        Instance instance = InstanceFactory.create(instanceDTO, frame.getStack().getContext());
         frame.ret(instance);
     }
 
     private List<InstanceFieldDTO> getFieldValues(FlowFrame frame) {
         List<InstanceFieldDTO> instanceFields = new ArrayList<>();
         for (Field field : getOutputType().getFields()) {
-            Value value = fieldValue(field.getId());
+            Value value = fieldValue(field);
             instanceFields.add(
                     InstanceFieldDTO.valueOf(
                             field.getId(),

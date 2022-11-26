@@ -10,26 +10,33 @@ public class ObjectTableGenerator {
     public static final int NUM_BIGINT = 10;
     public static final int NUM_BOOL = 10;
 
-    public static void main(String[] args) {
-        TableSQLBuilder builder = new TableSQLBuilder("instance");
+    public static final int NUM_ARRAY_ELEMENTS = 256;
 
+    public static void main(String[] args) {
+        createReferenceArrayTable();
+    }
+
+    private static void createReferenceArrayTable() {
+        TableSQLBuilder builder = new TableSQLBuilder("reference_array");
+        addCommonColumns(builder);
+        builder.addColumn("length", SQLColumnType.INT32, true, 0, null);
+        for (int i = 0; i < NUM_ARRAY_ELEMENTS; i++) {
+            builder.addColumn("r" + i, SQLColumnType.INT64);
+        }
+        System.out.println(builder.finish());
+    }
+
+    private static void addCommonColumns(TableSQLBuilder builder) {
         builder.addColumn(ColumnNames.ID, SQLColumnType.INT64, true, null, "ID", true, true);
         builder.addColumn(ColumnNames.TENANT_ID, SQLColumnType.INT64, true, null, "租户ID");
         builder.addColumn(ColumnNames.TYPE_ID, SQLColumnType.INT64, true, null, "类ID");
         builder.addColumn(ColumnNames.DELETED_AT, SQLColumnType.INT64, true, 0, "删除时间戳");
-//
-//        for(int i = 0; i < NUM_INTEGER; i++) {
-//            builder.addColumn("i" + i, ColumnType.INT);
-//        }
-//        for(int i = 0; i < NUM_BIGINT; i++) {
-//            builder.addColumn("l" + i, ColumnType.BIGINT);
-//        }
-//        for(int i = 0; i < NUM_VARCHAR_64; i++) {
-//            builder.addColumn("s" + i, ColumnType.VARCHAR64);
-//        }
-//        for(int i = 0; i < NUM_BOOL; i++) {
-//            builder.addColumn("b" + i, ColumnType.BOOL);
-//        }
+
+    }
+
+    public static void createInstanceTable() {
+        TableSQLBuilder builder = new TableSQLBuilder("instance");
+        addCommonColumns(builder);
 
         for (Column column : SQLColumnType.columns()) {
             builder.addColumn(column.name(), column.type());

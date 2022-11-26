@@ -1,27 +1,27 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.List;
 
+@EntityType("更新对象节点")
 public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
+    @EntityField("对象")
     private Value objectId;
-    private List<FieldParam> fieldParams;
+    @EntityField("更新字段")
+    private Table<UpdateField> fieldParams;
 
     public UpdateObjectNode(NodeDTO nodeDTO, UpdateObjectParamDTO param, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
-    }
-
-
-    public UpdateObjectNode(NodePO nodePO, UpdateObjectParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
         setParam(param);
     }
 
@@ -29,16 +29,18 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         return objectId;
     }
 
-    public List<FieldParam> getFieldParams() {
+    public List<UpdateField> getUpdateFields() {
         return fieldParams;
     }
 
     @Override
     protected void setParam(UpdateObjectParamDTO param) {
         objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
-        fieldParams = NncUtils.map(
-                param.fields(),
-                fieldParamDTO -> new FieldParam(fieldParamDTO, getFlow().getContext(), getParsingContext())
+        fieldParams = new Table<>(
+                NncUtils.map(
+                    param.fields(),
+                    fieldParamDTO -> new UpdateField(objectId.getType(), fieldParamDTO, getParsingContext())
+                )
         );
     }
 
@@ -54,9 +56,8 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     public void execute(FlowFrame frame) {
         Instance instance = (Instance) objectId.evaluate(frame);
         if(instance != null) {
-            for (FieldParam fieldParam : fieldParams) {
-                InstanceFieldDTO instanceFieldDTO = fieldParam.evaluate(frame);
-                instance.setRawFieldValue(instanceFieldDTO);
+            for (UpdateField updateField : fieldParams) {
+                updateField.execute(instance, frame);
             }
         }
     }

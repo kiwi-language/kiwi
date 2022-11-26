@@ -37,7 +37,7 @@ public class FunctionDesc {
             throw BusinessException.invalidFuncArguments(function);
         }
         for(int i = 0; i < arguments.length; i++) {
-            if(!paramTypes[i].isInstance(arguments[i])) {
+            if(arguments[i] != null && !paramTypes[i].isInstance(arguments[i])) {
                 throw BusinessException.invalidFuncArguments(function);
             }
         }

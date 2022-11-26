@@ -1,13 +1,22 @@
 package tech.metavm.flow.persistence;
 
-public class FlowPO {
+import tech.metavm.entity.EntityPO;
+import tech.metavm.entity.IndexDef;
+import tech.metavm.flow.FlowRT;
+
+public class FlowPO extends EntityPO {
+
+    public static final IndexDef<FlowRT> INDEX_DECLARING_TYPE_ID = new IndexDef<>(
+            FlowRT.class, "declaringTypeId"
+    );
+
     private Long id;
 
     private Long tenantId;
 
     private String name;
 
-    private Long typeId;
+    private Long declaringTypeId;
 
     private Long rootScopeId;
 
@@ -18,11 +27,11 @@ public class FlowPO {
     public FlowPO() {
     }
 
-    public FlowPO(Long id, Long tenantId, String name, Long typeId, Long rootScopeId, Long inputTypeId, Long outputTypeId) {
+    public FlowPO(Long id, Long tenantId, String name, Long declaringTypeId, Long rootScopeId, Long inputTypeId, Long outputTypeId) {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
-        this.typeId = typeId;
+        this.declaringTypeId = declaringTypeId;
         this.rootScopeId = rootScopeId;
         this.inputTypeId = inputTypeId;
         this.outputTypeId = outputTypeId;
@@ -52,12 +61,12 @@ public class FlowPO {
         this.name = name;
     }
 
-    public Long getTypeId() {
-        return typeId;
+    public Long getDeclaringTypeId() {
+        return declaringTypeId;
     }
 
-    public void setTypeId(Long typeId) {
-        this.typeId = typeId;
+    public void setDeclaringTypeId(Long declaringTypeId) {
+        this.declaringTypeId = declaringTypeId;
     }
 
     public Long getRootScopeId() {

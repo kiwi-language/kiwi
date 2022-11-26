@@ -3,7 +3,6 @@ package tech.metavm.object.instance.query;
 import tech.metavm.entity.Entity;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -20,7 +19,7 @@ public class FieldExpression extends Expression {
     }
 
     public FieldExpression(Expression instance, Type type, List<Long> fieldPath) {
-        super(type.getContext());
+//        super(type.getContext().getInstanceContext());
         this.instance = instance;
         Type tmp = type;
         List<Field> fields = new ArrayList<>();
@@ -33,7 +32,7 @@ public class FieldExpression extends Expression {
     }
 
     public FieldExpression(Expression instance, List<Field> fieldPath) {
-        super(instance.context);
+//        super(instance.context);
         this.instance = instance;
         this.fieldPath = fieldPath;
     }
@@ -61,11 +60,17 @@ public class FieldExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        String instanceExpr = instance.build(symbolType, instance.precedence() > precedence());
-        return switch (symbolType) {
-            case ID -> instanceExpr + "." + NncUtils.join(fieldPath, f -> idVarName(f.getId()), ".");
-            case NAME -> instanceExpr + "." + NncUtils.join(fieldPath, Field::getName, ".");
+        String fieldsExpr = switch (symbolType) {
+            case ID -> NncUtils.join(fieldPath, f -> idVarName(f.getId()), ".");
+            case NAME -> NncUtils.join(fieldPath, Field::getName, ".");
         };
+        if(instance instanceof ThisExpression) {
+            return fieldsExpr;
+        }
+        else {
+            String instanceExpr = instance.build(symbolType, instance.precedence() > precedence());
+            return instanceExpr + "." + fieldsExpr;
+        }
     }
 
     @Override

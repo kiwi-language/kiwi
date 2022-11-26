@@ -7,9 +7,30 @@ public record FieldDTO(
         Object defaultValue,
         boolean unique,
         boolean asTitle,
-        long declaringTypeId,
+        Long declaringTypeId,
         Long typeId,
-        TypeDTO type
+        TypeDTO type,
+        boolean isChild
 ) {
+
+    public static FieldDTO createSimple(long id,
+                                        String name,
+                                        int access,
+                                        Object defaultValue,
+                                        long declaringTypeId,
+                                        long typeId) {
+        return new FieldDTO(
+                id,
+                name,
+                access,
+                defaultValue,
+                false,
+                false,
+                declaringTypeId,
+                typeId,
+                null,
+                false
+        );
+    }
 
 }

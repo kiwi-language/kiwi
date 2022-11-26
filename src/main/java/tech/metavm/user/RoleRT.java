@@ -1,30 +1,38 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.InstanceEntity;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
+import tech.metavm.object.meta.IdConstants;
+import tech.metavm.user.persistence.RolePO;
 import tech.metavm.user.rest.dto.RoleDTO;
 
 import java.util.List;
 
-import static tech.metavm.object.meta.StdTypeConstants.ROLE;
+import static tech.metavm.object.meta.IdConstants.ROLE;
+import static tech.metavm.util.ContextUtil.getTenantId;
 
-public class RoleRT extends InstanceEntity {
+@EntityType("角色")
+public class RoleRT extends Entity {
 
     private String name;
 
-    public RoleRT(Instance instance) {
-        super(instance);
-        setName(instance.getString(ROLE.FID_NAME));
+//    public RoleRT(RolePO rolePO, EntityContext context) {
+//        super(rolePO.getId(), context);
+//    }
+
+//    public RoleRT(RoleDTO roleDTO, EntityContext context) {
+//        super(context);
+//        setName(roleDTO.name());
+//    }
+
+    public RoleRT() {
     }
 
-    public RoleRT(RoleDTO roleDTO, EntityContext context) {
-        super(context.getRoleType(), List.of(
-                InstanceFieldDTO.valueOf(ROLE.FID_NAME, roleDTO.name())
-        ));
-        setName(roleDTO.name());
+    public RoleRT(String name) {
+        this.name = name;
     }
 
     public void update(RoleDTO roleDTO) {
@@ -35,23 +43,24 @@ public class RoleRT extends InstanceEntity {
         this.name = name;
     }
 
-    public RoleDTO toDTO() {
+    public String getName() {
+        return name;
+    }
+
+    public RoleDTO toRoleDTO() {
         return new RoleDTO(
                 id,
+                getName()
+        );
+    }
+
+    public RolePO toPO() {
+        return new RolePO(
+                getId(),
+                getTenantId(),
                 name
         );
     }
 
-    @Override
-    protected InstanceDTO toInstanceDTO() {
-        return InstanceDTO.valueOf(
-                id,
-                type.getId(),
-                name,
-                List.of(
-                        InstanceFieldDTO.valueOf(ROLE.FID_NAME, name)
-                )
-        );
-    }
 
 }

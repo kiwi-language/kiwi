@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.object.meta.StdTypeConstants;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
@@ -9,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum Function {
-    IS_BLANK(StdTypeConstants.BOOL),
+    IS_BLANK(StandardTypes.BOOL),
     MAX,
     MIN,
     SUM,
@@ -19,7 +18,7 @@ public enum Function {
 
     private final FunctionDesc desc;
 
-    private final Long resultTypeId;
+    private final Type resultType;
 
     private final java.util.function.Function<List<Type>, Type> resultTypeFunc;
 
@@ -27,23 +26,23 @@ public enum Function {
         this(null, null);
     }
 
-    Function(Long resultTypeId) {
-        this(resultTypeId, null);
+    Function(Type resultType) {
+        this(resultType, null);
     }
 
     Function(java.util.function.Function<List<Type>, Type> resultTypeFunc) {
         this(null, resultTypeFunc);
     }
 
-    Function(Long resultTypeId, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
+    Function(Type resultType, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
         desc = new FunctionDesc(this);
-        this.resultTypeId = resultTypeId;
+        this.resultType = resultType;
         this.resultTypeFunc = resultTypeFunc;
     }
 
-    public Type getResultType(List<Type> argumentTypes, EntityContext context) {
-        if(resultTypeId != null) {
-            return context.getType(resultTypeId);
+    public Type getResultType(List<Type> argumentTypes/*, InstanceContext context*/) {
+        if(resultType != null) {
+            return resultType;
         }
         if(resultTypeFunc != null) {
             return resultTypeFunc.apply(argumentTypes);

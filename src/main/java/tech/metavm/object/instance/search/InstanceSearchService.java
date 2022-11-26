@@ -12,8 +12,8 @@ import org.elasticsearch.search.SearchHit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
@@ -40,10 +40,11 @@ public class InstanceSearchService {
     private RestHighLevelClient restHighLevelClient;
 
     @Autowired
-    private EntityContextFactory contextFactory;
+    private InstanceContextFactory contextFactory;
 
     public Page<Long> search(SearchQuery query) {
         SearchRequest searchRequest = new SearchRequest(INDEX);
+        searchRequest.routing(query.tenantId() + "");
         searchRequest.source(SearchBuilder.build(query));
         try {
             SearchResponse response = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -81,8 +82,8 @@ public class InstanceSearchService {
     }
 
     private Map<String, Object> buildSource(long tenantId, InstanceDTO instance) {
-        EntityContext entityContext = contextFactory.newContext(tenantId);
-        Type type = entityContext.getTypeRef(instance.typeId());
+        InstanceContext instanceContext = contextFactory.newContext(tenantId);
+        Type type = instanceContext.getType(instance.typeId());
         Map<String, Object> source = new HashMap<>();
         source.put(TENANT_ID, tenantId);
         source.put(TYPE_ID, instance.typeId());

@@ -25,3 +25,8 @@ metavm:
     sign:
       certificate: /etc/metavm/sign_key.pub
       key: /etc/metavm/sign_key
+  id.file:
+    Type: classpath*:/id/Type.properties
+    Field: classpath*:/id/Field.properties
+    UniqueConstraintRT: classpath*:/id/Constraint.properties
+    TypeCategory: classpath*:/id/TypeCategory.properties

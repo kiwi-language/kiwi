@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.EnumConstant;
+import tech.metavm.object.meta.EnumConstantRT;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
@@ -92,14 +92,17 @@ public class ExpressionEvaluator {
         Object firstValue = evaluate(binaryExpression.getFirst()),
                 secondValue = evaluate(binaryExpression.getSecond());
         if(op == Operator.EQ) {
-            if(firstValue instanceof Instance instance && secondValue instanceof String title) {
-                if(instance.getType().isEnum()) {
-                    EnumConstant opt = NncUtils.find(
-                            instance.getType().getEnumConstants(),
-                            option -> Objects.equals(option.getId(), instance.getId())
-                    );
-                    String optionName = NncUtils.get(opt, EnumConstant::getName);
+            if(firstValue instanceof Instance instance && instance.getType().isEnum()) {
+                EnumConstantRT opt = NncUtils.find(
+                        instance.getType().getEnumConstants(),
+                        option -> Objects.equals(option.getId(), instance.getId())
+                );
+                if(secondValue instanceof String title) {
+                    String optionName = NncUtils.get(opt, EnumConstantRT::getName);
                     return Objects.equals(optionName, title);
+                }
+                else if(secondValue instanceof Long id) {
+                    return Objects.equals(opt.getId(), id);
                 }
             }
             return Objects.equals(firstValue, secondValue);

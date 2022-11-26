@@ -1,6 +1,5 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
@@ -43,8 +42,4 @@ public class TypeParsingContext implements ParsingContext {
         };
     }
 
-    @Override
-    public EntityContext getEntityContext() {
-        return type.getContext();
-    }
 }

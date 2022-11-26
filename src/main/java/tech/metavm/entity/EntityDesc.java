@@ -13,7 +13,7 @@ public class EntityDesc {
 
     public EntityDesc(Class<?> klass) {
         this.klass = klass;
-        List<Field> fields = ReflectUtils.getAllFields(klass);
+        List<Field> fields = ReflectUtils.getInstanceFields(klass);
         for (Field field : fields) {
             props.add(new EntityProp(field));
         }

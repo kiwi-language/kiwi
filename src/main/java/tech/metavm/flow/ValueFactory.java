@@ -9,16 +9,16 @@ public class ValueFactory {
         if(valueDTO == null) {
             return null;
         }
-        if(valueDTO.type() == ValueType.CONSTANT.code()) {
-            return new ConstantValue(valueDTO);
+        if(valueDTO.kind() == ValueKind.CONSTANT.code()) {
+            return new ConstantValue(valueDTO/*, parsingContext.getInstanceContext()*/);
         }
-        else if(valueDTO.type() == ValueType.REFERENCE.code()) {
+        else if(valueDTO.kind() == ValueKind.REFERENCE.code()) {
             return new ReferenceValue(valueDTO, parsingContext);
         }
-        else if(valueDTO.type() == ValueType.EXPRESSION.code()) {
+        else if(valueDTO.kind() == ValueKind.EXPRESSION.code()) {
             return new ExpressionValue(valueDTO, parsingContext);
         }
-        throw new IllegalArgumentException("Unsupported value category: " + valueDTO.type());
+        throw new IllegalArgumentException("Unsupported value category: " + valueDTO.kind());
     }
 
 }

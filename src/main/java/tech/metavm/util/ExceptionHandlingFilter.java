@@ -13,6 +13,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @Order(1)
@@ -32,8 +33,9 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
                 if(bizExp.getErrorCode() == ErrorCode.VERIFICATION_FAILED) {
                     response.setStatus(401);
                 }
+                response.setHeader("content-type","application/json;charset=UTF-8");
                 response.setCharacterEncoding("UTF-8");
-                response.getWriter().write(NncUtils.toJSONString(failureResult));
+                response.getOutputStream().write(NncUtils.toJSONString(failureResult).getBytes(StandardCharsets.UTF_8));
                 LOGGER.info("business exception", bizExp);
             }
             else {

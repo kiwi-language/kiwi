@@ -5,34 +5,40 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.InstanceEntityStore;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.object.instance.InstanceQueryService;
+import tech.metavm.object.instance.rest.InstanceQueryDTO;
+import tech.metavm.object.meta.IdConstants;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.NncUtils;
-
-import java.util.List;
 
 @Component
 public class UserManager {
 
     @Autowired
-    private InstanceEntityStore instanceEntityStore;
+    private InstanceQueryService instanceQueryService;
 
     @Autowired
-    private EntityContextFactory entityContextFactory;
+    private InstanceContextFactory instanceContextFactory;
 
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
-        EntityContext context = entityContextFactory.newContext();
-        Page<UserRT> dataPage = instanceEntityStore.query(UserRT.class, page, pageSize, searchText, context);
+        EntityContext context = newContext();
+        InstanceQueryDTO query = new InstanceQueryDTO(
+                IdConstants.USER.ID,
+                searchText,
+                page,
+                pageSize
+        );
+        Page<UserRT> dataPage = instanceQueryService.query(UserRT.class, query, context);
         return new Page<>(
-                NncUtils.map(dataPage.data(), UserRT::toDTO),
+                NncUtils.map(dataPage.data(), UserRT::toUserDTO),
                 dataPage.total()
         );
     }
 
     @Transactional
     public long save(UserDTO userDTO) {
-        EntityContext context = entityContextFactory.newContext();
+        EntityContext context = newContext();
         UserRT user = save(userDTO, context);
         context.finish();
         return user.getId();
@@ -41,30 +47,46 @@ public class UserManager {
     public UserRT save(UserDTO userDTO, EntityContext context) {
         UserRT user;
         if(userDTO.id() == null) {
-            user = new UserRT(userDTO, context);
-            instanceEntityStore.batchInsert(List.of(user));
+            user = new UserRT(
+                        userDTO.loginName(),
+                        userDTO.password(),
+                        userDTO.name(),
+                        NncUtils.map(userDTO.roleIds(), context::getRole)
+                    );
+            context.bind(user);
         }
         else {
-            user = context.get(UserRT.class, userDTO.id());
-            user.update(userDTO);
+            user = context.getEntity(UserRT.class, userDTO.id());
+            if(userDTO.name() != null) {
+                user.setName(userDTO.name());
+            }
+            if(userDTO.password() != null) {
+                user.setPassword(userDTO.password());
+            }
+            if(userDTO.roleIds() != null) {
+                user.setRoles(NncUtils.map(userDTO.roleIds(), context::getRole));
+            }
         }
         return user;
     }
 
     @Transactional
     public void delete(long userId) {
-        EntityContext context = entityContextFactory.newContext();
-        UserRT user = context.get(UserRT.class, userId);
+        EntityContext context = newContext();
+        UserRT user = context.getEntity(UserRT.class, userId);
         if(user != null) {
-            instanceEntityStore.batchDelete(List.of(user));
+            user.remove();
         }
         context.finish();
     }
 
     public UserDTO get(long id) {
-        EntityContext context = entityContextFactory.newContext();
-        return NncUtils.get(context.get(UserRT.class, id), UserRT::toDTO);
+        EntityContext context = newContext();
+        return NncUtils.get(context.getEntity(UserRT.class, id), UserRT::toUserDTO);
     }
 
+    private EntityContext newContext() {
+        return instanceContextFactory.newContext().getEntityContext();
+    }
 
 }

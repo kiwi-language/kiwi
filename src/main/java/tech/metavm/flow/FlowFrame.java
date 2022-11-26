@@ -1,8 +1,13 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.InstanceFactory;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceContext;
-import tech.metavm.object.instance.query.*;
+import tech.metavm.object.instance.query.EvaluationContext;
+import tech.metavm.object.instance.query.Expression;
+import tech.metavm.object.instance.query.ExpressionEvaluator;
+import tech.metavm.object.instance.query.NodeExpression;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.Field;
@@ -18,14 +23,14 @@ import java.util.Set;
 
 public class FlowFrame implements EvaluationContext {
 
-    private final Instance self;
-    private final Instance argument;
+    private final IInstance self;
+    private final IInstance argument;
     private final Type owner;
     private final FlowRT flow;
-    private final Map<Long, Instance> results = new HashMap<>();
+    private final Map<Long, IInstance> results = new HashMap<>();
     private NodeRT<?> pc;
     private boolean jumped;
-    private final InstanceContext instanceContext;
+    private final InstanceContext context;
     private final FlowStack stack;
 
     private State state = State.NORMAL;
@@ -37,17 +42,17 @@ public class FlowFrame implements EvaluationContext {
         EXCEPTION
     }
 
-    public FlowFrame(FlowRT flow, Instance self, InstanceDTO argument, FlowStack stack) {
+    public FlowFrame(FlowRT flow, IInstance self, InstanceDTO argument, FlowStack stack) {
         this.flow = flow;
         this.stack = stack;
-        this.instanceContext = stack.getInstanceContext();
+        this.context = stack.getContext();
         this.self = self;
-        this.argument = instanceContext.add(argument);
+        this.argument = InstanceFactory.create(argument, context);
         owner = flow.getType();
         pc = flow.getRootNode();
     }
 
-    public void setResult(Instance result) {
+    public void setResult(IInstance result) {
         checkResult(result, pc);
         results.put(pc.getId(), result);
     }
@@ -56,7 +61,7 @@ public class FlowFrame implements EvaluationContext {
         return NncUtils.get(results.get(nodeId), inst -> inst.getRaw(fieldId));
     }
 
-    public Instance getResult(long nodeId) {
+    public IInstance getResult(long nodeId) {
         return results.get(nodeId);
     }
 
@@ -64,12 +69,12 @@ public class FlowFrame implements EvaluationContext {
         return getResult(node.getId(), fieldId);
     }
 
-    public Instance addInstance(InstanceDTO instance) {
-        return instanceContext.add(instance);
+    public Instance addInstance(InstanceDTO instanceDTO) {
+        return InstanceFactory.create(instanceDTO, context);
     }
 
-    public Instance getInstance(long id) {
-        return instanceContext.get(id);
+    public IInstance getInstance(long id) {
+        return context.get(id);
     }
 
     public void ret(Instance returnValue) {
@@ -83,7 +88,7 @@ public class FlowFrame implements EvaluationContext {
     }
 
     public void deleteInstance(long id) {
-        instanceContext.remove(id);
+        context.get(id).remove();
     }
 
     public Object getInstanceField(Instance instance, Field field) {
@@ -132,7 +137,7 @@ public class FlowFrame implements EvaluationContext {
         }
     }
 
-    private void checkResult(Instance result, NodeRT<?> node) {
+    private void checkResult(IInstance result, NodeRT<?> node) {
         Type outputType = node.getOutputType();
         if(outputType == null) {
             if(result != null) {
@@ -140,9 +145,6 @@ public class FlowFrame implements EvaluationContext {
             }
         }
         else {
-            if(result == null) {
-                return;
-            }
             if(!outputType.isInstance(result)) {
                 throw new InternalException("Node " + node + " returned a result '" + result
                         + "' that does not match the output category: " + outputType);
@@ -166,21 +168,21 @@ public class FlowFrame implements EvaluationContext {
     }
 
 
-    public void resume(Instance result) {
+    public void resume(IInstance result) {
         setResult(result);
         pc = pc.getSuccessor();
     }
 
-    public Instance getSelf() {
+    public IInstance getSelf() {
         return self;
     }
 
-    public Instance getArgument() {
+    public IInstance getArgument() {
         return argument;
     }
 
     public void finish() {
-        instanceContext.finish();
+        context.finish();
     }
 
     public boolean isStackEmpty() {
@@ -204,7 +206,7 @@ public class FlowFrame implements EvaluationContext {
         return state;
     }
 
-    public Instance getRet() {
+    public IInstance getRet() {
         return pc != null ? results.get(pc.getId()) : null;
     }
 }

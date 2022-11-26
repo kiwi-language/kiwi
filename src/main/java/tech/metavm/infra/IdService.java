@@ -1,53 +1,133 @@
 package tech.metavm.infra;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.infra.persistence.IdBulk;
-import tech.metavm.infra.persistence.IdBulkMapper;
+import tech.metavm.entity.Entity;
+import tech.metavm.infra.persistence.BlockMapper;
+import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static tech.metavm.object.meta.IdConstants.DEFAULT_BLOCK_SIZE;
 
 @Component
 public class IdService {
 
-    public static final int NUM_BULKS = 1;
+    public static final int MAX_ALLOCATION_RECURSION_DEPTH = 3;
 
-    @Autowired
-    private IdBulkMapper idGeneratorMapper;
+    public static final int CACHE_CAPACITY = 100000;
+
+    private final BlockMapper blockMapper;
+
+    private final RegionManager regionManager;
+
+    private final IdBlockCache cache;
+
+    public IdService(BlockMapper blockMapper, RegionManager regionManager) {
+        this.blockMapper = blockMapper;
+        this.regionManager = regionManager;
+        cache = new IdBlockCache(
+                CACHE_CAPACITY,
+                id -> new BlockRT(blockMapper.selectByPoint(id))
+        );
+    }
+
+    public BlockRT getBydId(long id) {
+        return cache.getById(id);
+    }
+
+    private Map<Long, BlockRT> getActiveBlockMap(long tenantId, Collection<Type> types) {
+        List<BlockRT> blocks = NncUtils.map(
+                blockMapper.selectActive(NncUtils.map(types, Entity::getId)),
+                BlockRT::new
+        );
+        Map<Long, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
+        List<Type> residualTypes = NncUtils.filterNot(types, t -> result.containsKey(t.getId()));
+        if(!residualTypes.isEmpty()) {
+            createBlocks(tenantId, residualTypes).forEach(block -> result.put(block.getTypeId(), block));
+        }
+        return result;
+    }
+
+    private List<BlockRT> createBlocks(long tenantId, List<Type> types) {
+        Map<TypeCategory, List<Long>> category2types = NncUtils.toMultiMap(types, Type::getCategory, Entity::getId);
+        List<BlockRT> blocks = new ArrayList<>();
+        category2types.forEach(((typeCategory, typeIds) ->
+            blocks.addAll(createBlocks(tenantId, typeCategory, typeIds))
+        ));
+        return blocks;
+    }
+
+    private List<BlockRT> createBlocks(long tenantId, TypeCategory typeCategory, Collection<Long> typeIds) {
+        RegionRT region = regionManager.getRegion(typeCategory);
+        if(region == null) {
+            throw new InternalException("No id region defined for type category: " + typeCategory);
+        }
+        long id = region.getNext();
+        List<BlockRT> blocks = new ArrayList<>();
+        for (Long typeId : typeIds) {
+            BlockRT block = newBlock(id++, tenantId, typeId, id++);
+            id += block.getSize();
+            blocks.add(block);
+        }
+        regionManager.inc(typeCategory, id - region.getNext());
+        blockMapper.batchInsert(NncUtils.map(blocks, BlockRT::toPO));
+        return blocks;
+    }
+
+    private BlockRT newBlock(long id, long tenantId, long typeId, long start) {
+        return new BlockRT(
+                id,
+                tenantId,
+                typeId,
+                start,
+                start + DEFAULT_BLOCK_SIZE
+        );
+    }
+
+    private void updateBlocks(Collection<BlockRT> blocks) {
+        blockMapper.batchUpdate(NncUtils.map(blocks, BlockRT::toPO));
+    }
+
+    public Long allocate(long tenantId, Type type) {
+        Map<Type, List<Long>> result =
+                allocate(tenantId, Map.of(type, 1));
+        return result.values().iterator().next().get(0);
+    }
 
     @Transactional
-    public void initBulks(long initId) {
-        List<IdBulk> bulks = new ArrayList<>();
-        long bulkCap = Long.MAX_VALUE / NUM_BULKS;
-        long nextId = initId;
-        for (int i = 0; i < NUM_BULKS; i++) {
-            bulks.add(new IdBulk(i, nextId));
-            nextId += bulkCap;
+    public Map<Type, List<Long>> allocate(long tenantId, Map<Type, Integer> typeId2count) {
+        return allocate0(tenantId, typeId2count, 0);
+    }
+
+    private Map<Type, List<Long>> allocate0(long tenantId, Map<Type, Integer> typeId2count, int depth) {
+        if(depth > MAX_ALLOCATION_RECURSION_DEPTH) {
+            throw new InternalException("Allocation recursion depth exceeds maximum: "
+                    + MAX_ALLOCATION_RECURSION_DEPTH);
         }
-        idGeneratorMapper.batchInsert(bulks);
-    }
+        Map<Long, BlockRT> activeBlockMap = getActiveBlockMap(tenantId, typeId2count.keySet());
+        Map<Type, List<Long>> result = new HashMap<>();
+        Map<Type, Integer> residual = new HashMap<>();
 
-    @Transactional
-    public List<Long> allocateIds(long tenantId, int num) {
-        int bulkNum = bulkNum(tenantId);
-        IdBulk idBulk = idGeneratorMapper.selectForUpdate(bulkNum);
-        idGeneratorMapper.increaseNextId(bulkNum, num);
-        List<Long> results = new ArrayList<>();
-        long id = idBulk.getNextId();
-        for (int i = 0; i < num; i++) {
-            results.add(id++);
+        typeId2count.forEach((type, count) -> {
+            BlockRT block = activeBlockMap.get(type.getId());
+            NncUtils.requireNonNull(block, "Active block not found for type: " + type);
+            Integer allocateCount = Math.min(count, block.available());
+            result.put(type, block.allocate(count));
+            if(allocateCount < count) {
+                residual.put(type, count - allocateCount);
+            }
+        });
+        updateBlocks(activeBlockMap.values());
+        if(!residual.isEmpty()) {
+            allocate0(tenantId, residual, depth + 1).forEach((typeId, ids) ->
+                result.compute(typeId, (k, old) -> NncUtils.merge(old, ids))
+            );
         }
-        return results;
-    }
-
-    public Long allocateId(long tenantId) {
-        return allocateIds(tenantId, 1).get(0);
-    }
-
-    private int bulkNum(long tenantId) {
-        return (int) (tenantId % NUM_BULKS);
+        return result;
     }
 
 }

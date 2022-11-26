@@ -1,29 +1,29 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceContext;
 import tech.metavm.object.instance.query.Expression;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
-import tech.metavm.util.NncUtils;
 
 import java.util.LinkedList;
 
 public class FlowStack {
 
-    private final InstanceContext instanceContext;
+    private final InstanceContext context;
     private final Path root = new Path("root");
     private final LinkedList<NodeRT<?>> actionBuffer = new LinkedList<>();
     private final LinkedList<FlowFrame> stack = new LinkedList<>();
-    private Instance ret;
+    private IInstance ret;
 
-    public FlowStack(FlowRT flow, Instance self, InstanceDTO argument, InstanceContext instanceContext) {
-        this.instanceContext = instanceContext;
+    public FlowStack(FlowRT flow, IInstance self, InstanceDTO argument, InstanceContext context) {
+        this.context = context;
         stack.push(new FlowFrame(flow, self, argument, this));
     }
 
-    public Instance execute() {
+    public IInstance execute() {
         while (!stack.isEmpty()) {
             FlowFrame frame = stack.peek();
             frame.execute();
@@ -55,8 +55,8 @@ public class FlowStack {
         stack.push(context);
     }
 
-    InstanceContext getInstanceContext() {
-        return instanceContext;
+    InstanceContext getContext() {
+        return context;
     }
 
     FlowFrame peek() {

@@ -1,84 +1,68 @@
 package tech.metavm.object.meta;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EntityUtils;
+import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Objects;
 
+import static tech.metavm.util.ContextUtil.getTenantId;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
+@EntityType("字段")
 public class Field extends Entity {
+
+    public static final DecimalFormat DF = new DecimalFormat("0.##");
+
+    @EntityField("名称")
     private String name;
+    @EntityField("声明类型")
     private final Type declaringType;
+    @EntityField("可见范围")
     private Access access;
+    @EntityField("默认值")
+    @Nullable
     private Object defaultValue;
+    @EntityField("是否作为标题")
     private boolean asTitle;
+    @EntityField("列")
+    @Nullable
     private final Column column;
+    @EntityField("类型")
     private Type type;
+    @EntityField("是否从对象字段")
+    private boolean isChildField;
 
-    public Field(FieldPO po, Type declaringType, Type type) {
-        this(
-                po.getId(),
-                po.getName(),
-                declaringType,
-                Access.getByCodeRequired(po.getAccess()),
-                null,
-                po.getAsTitle(),
-                DefaultValueUtil.convertFromStr(po.getDefaultValue(), type),
-                Column.valueOf(po.getColumnName()),
-                type,
-                declaringType.getContext(),
-                false
-        );
-    }
-
-    public Field(FieldDTO fieldDTO, Type owner, Type type) {
-        this(
-                null,
-                fieldDTO.name(),
-                owner,
-                Access.getByCodeRequired(fieldDTO.access()),
-                fieldDTO.unique(),
-                fieldDTO.asTitle(),
-                fieldDTO.defaultValue(),
-                null,
-                type,
-                owner.getContext(),
-                true
-        );
-    }
-
-    Field(
-             Long id,
+    public Field(
              String name,
-             Type owner,
+             Type declaringType,
              Access access,
              Boolean unique,
              boolean asTitle,
              Object defaultValue,
-             Column column,
              Type type,
-             EntityContext context,
-             boolean addToType
+            boolean isChildField
     ) {
-        super(id, context);
-        this.declaringType = requireNonNull(owner, "属性所属类型");
+        this.declaringType = requireNonNull(declaringType, "属性所属类型");
         this.access = requireNonNull(access, "属性访问控制");
         this.type = type;
         this.asTitle = asTitle;
-        this.column = column != null ? column : owner.allocateColumn(this);
+        this.column = declaringType.allocateColumn(this);
         setName(name);
+        setDefaultValue(defaultValue);
+        declaringType.addField(this);
+        this.isChildField = isChildField;
         if(unique != null) {
             setUnique(unique);
-        }
-        setDefaultValue(defaultValue);
-        if(addToType) {
-            owner.addField(this);
         }
     }
 
@@ -90,6 +74,7 @@ public class Field extends Entity {
         this.name = NameUtils.checkName(name);
     }
 
+    @JsonIgnore
     public Type getDeclaringType() {
         return declaringType;
     }
@@ -100,6 +85,10 @@ public class Field extends Entity {
 
     public Type getType() {
         return type;
+    }
+
+    public boolean isChildField() {
+        return isChildField;
     }
 
     public TypeCategory getConcreteTypeCategory() {
@@ -133,6 +122,10 @@ public class Field extends Entity {
         this.type = type;
     }
 
+    public void setChildField(boolean childField) {
+        isChildField = childField;
+    }
+
     public void setAccess(Access access) {
         this.access = access;
     }
@@ -156,7 +149,7 @@ public class Field extends Entity {
 
     public void remove() {
         declaringType.removeField(this);
-        context.remove(this);
+//        context.remove(this);
     }
 
     public boolean isCustomTyped() {
@@ -173,6 +166,10 @@ public class Field extends Entity {
 
     public boolean isArray() {
         return type.isArray();
+    }
+
+    public boolean isReference() {
+        return type.isReference();
     }
 
     public boolean isNullable() {
@@ -233,7 +230,7 @@ public class Field extends Entity {
         this.asTitle = asTitle;
     }
 
-    public List<EnumConstant> getChoiceOptions() {
+    public List<EnumConstantRT> getEnumConstants() {
         return getConcreteType().isEnum() ? getConcreteType().getEnumConstants() : List.of();
     }
 
@@ -249,6 +246,46 @@ public class Field extends Entity {
         return ValueFormatter.parse(rawValue, type);
     }
 
+    public String getDisplayValue(Object value) {
+//        InstanceStore instanceStore = context.getInstanceContext().getInstanceStore();
+        if(value == null) {
+            return "";
+        }
+        if(getConcreteType().isEnum()) {
+            return NncUtils.filterOneAndMap(
+                    getEnumConstants(),
+                    opt -> opt.getId().equals(value),
+                    EnumConstantRT::getName);
+        }
+        else if(getConcreteType().isClass()) {
+            return ((IInstance) value).getTitle();
+        }
+        else if(getConcreteType().isBool()) {
+            if(Boolean.TRUE.equals(value)) {
+                return "是";
+            }
+            else if(Boolean.FALSE.equals(value)) {
+                return "否";
+            }
+            else {
+                return "";
+            }
+        }
+        else if (getConcreteType().isDouble()) {
+            return DF.format(value);
+        }
+        else if(getConcreteType().isTime()) {
+            return ValueFormatter.formatTime((Long) value);
+        }
+        else if(getConcreteType().isDate()) {
+            return ValueFormatter.formatDate((Long) value);
+        }
+        else if(getConcreteType().isPassword()) {
+            return "******";
+        }
+        return NncUtils.toString(value);
+    }
+
     public String getStrRawDefaultValue() {
         return DefaultValueUtil.convertToStr(defaultValue, getType().getCategory().code(), isArray());
     }
@@ -258,18 +295,19 @@ public class Field extends Entity {
     }
 
     public FieldPO toPO() {
-        FieldPO po = new FieldPO();
-        po.setId(id);
-        po.setTenantId(ContextUtil.getTenantId());
-        po.setName(name);
-        po.setDeclaringTypeId(declaringType.getId());
-        po.setUnique(isUnique());
-        po.setDefaultValue(getStrRawDefaultValue());
-        po.setAccess(access.code());
-        po.setColumnName(NncUtils.get(column, Column::name));
-        po.setAsTitle(asTitle);
-        po.setTypeId(type.getId());
-        return po;
+
+        return new FieldPO(
+                id,
+                getTenantId(),
+                name,
+                declaringType.getId(),
+                access.code(),
+                isUnique(),
+                getStrRawDefaultValue(),
+                NncUtils.get(column, Column::name),
+                asTitle,
+                type.getId()
+        );
     }
 
     public FieldDTO toDTO() {
@@ -286,7 +324,8 @@ public class Field extends Entity {
                 asTitle,
                 declaringType.getId(),
                 type.getId(),
-                withType ? type.toDTO(false, false, false) : null
+                withType ? type.toDTO(false, false, false) : null,
+                isChildField
         );
     }
 

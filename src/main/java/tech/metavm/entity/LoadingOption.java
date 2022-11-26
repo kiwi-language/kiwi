@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -17,6 +18,10 @@ public enum LoadingOption {
 
     public static Set<LoadingOption> of(LoadingOption option1, LoadingOption... rest) {
         return EnumSet.of(option1, rest);
+    }
+
+    public static Set<LoadingOption> of(LoadingOption[] options) {
+        return new HashSet<>(Arrays.asList(options));
     }
 
     public static Set<LoadingOption> createSet() {

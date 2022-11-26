@@ -1,21 +1,23 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.DeleteObjectParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.meta.IdConstants;
 
+@EntityType("删除对象节点")
 public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
 
+    @EntityField("对象")
     private Value objectId;
 
     public DeleteObjectNode(NodeDTO nodeDTO, DeleteObjectParamDTO param, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
-    }
-
-    public DeleteObjectNode(NodePO nodePO, DeleteObjectParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
         setParam(param);
     }
 

@@ -1,18 +1,29 @@
 package tech.metavm.object.meta.persistence;
 
-public class ConstraintPO {
+import tech.metavm.entity.EntityPO;
+import tech.metavm.entity.IndexDef;
+import tech.metavm.object.meta.ConstraintRT;
+import tech.metavm.util.TypeReference;
+
+public class ConstraintPO extends EntityPO {
+
+    public static final IndexDef<ConstraintRT<?>> INDEX_DECLARING_TYPE_ID =
+            new IndexDef<>(new TypeReference<>() {}, "typeId");
+
     private Long id;
     private Integer kind;
-    private Long typeId;
+    private Long declaringTypeId;
+    private String message;
     private String param;
 
     public ConstraintPO() {
     }
 
-    public ConstraintPO(Long id, Long typeId, Integer kind, String param) {
+    public ConstraintPO(Long id, Long declaringTypeId, Integer kind, String message, String param) {
         this.id = id;
-        this.typeId = typeId;
+        this.declaringTypeId = declaringTypeId;
         this.kind = kind;
+        this.message = message;
         this.param = param;
     }
 
@@ -24,12 +35,12 @@ public class ConstraintPO {
         this.id = id;
     }
 
-    public Long getTypeId() {
-        return typeId;
+    public Long getDeclaringTypeId() {
+        return declaringTypeId;
     }
 
-    public void setTypeId(Long typeId) {
-        this.typeId = typeId;
+    public void setDeclaringTypeId(Long declaringTypeId) {
+        this.declaringTypeId = declaringTypeId;
     }
 
     public Integer getKind() {
@@ -38,6 +49,14 @@ public class ConstraintPO {
 
     public void setKind(Integer kind) {
         this.kind = kind;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getParam() {

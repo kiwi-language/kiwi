@@ -5,7 +5,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
@@ -23,27 +24,27 @@ public class TableManager {
     private TypeManager typeManager;
 
     @Autowired
-    private EntityContextFactory entityContextFactory;
+    private InstanceContextFactory instanceContextFactory;
 
     public TableDTO get(long id) {
-        EntityContext context = entityContextFactory.newContext();
+        EntityContext context = newContext();
         Type type = context.getType(id);
         return NncUtils.get(type, Type::toDTO, t -> convertToTable(t, context));
     }
 
     @Transactional
     public TableDTO save(TableDTO table) {
-        EntityContext context = entityContextFactory.newContext();
-        TypeDTO typeDTO = new TypeDTO(
+        EntityContext context = newContext();
+        TypeDTO typeDTO = TypeDTO.createClass(
                 table.id(),
                 table.name(),
-                TypeCategory.CLASS.code(),
+                IdConstants.OBJECT,
                 table.ephemeral(),
                 table.anonymous(),
                 null,
                 null,
+                null,
                 table.desc(),
-                List.of(),
                 List.of(),
                 List.of()
         );
@@ -67,16 +68,13 @@ public class TableManager {
                         context
                 );
                 new Field(
-                        null,
                         titleFieldDTO.name(),
                         type,
                         Access.GLOBAL,
                         titleFieldDTO.unique(),
                         true,
                         null,
-                        null,
                         titleFieldType,
-                        context,
                         false
                 );
             } else {
@@ -89,14 +87,14 @@ public class TableManager {
 
     @Transactional
     public long saveColumn(ColumnDTO column) {
-        EntityContext context = entityContextFactory.newContext();
+        EntityContext context = newContext();
         Field field = saveField(column, context);
         context.finish();
         return field.getId();
     }
 
     public ColumnDTO getColumn(long id) {
-        EntityContext context = entityContextFactory.newContext();
+        InstanceContext context = instanceContextFactory.newContext();
         FieldDTO fieldDTO = context.getField(id).toDTO();
         if(fieldDTO == null || !isVisible(fieldDTO)) {
             return null;
@@ -104,13 +102,13 @@ public class TableManager {
         return convertToColumnDTO(fieldDTO, context.getType(fieldDTO.typeId()));
     }
 
-    private EnumEditContext saveEnum(ColumnDTO fieldEdit, EntityContext entityContext) {
+    private EnumEditContext saveEnum(ColumnDTO fieldEdit, EntityContext context) {
         EnumEditContext enumEditContext = new EnumEditContext(
                 fieldEdit.targetId(),
                 fieldEdit.name(),
                 true,
                 fieldEdit.choiceOptions(),
-                entityContext
+                context
         );
         enumEditContext.execute();
         return enumEditContext;
@@ -123,8 +121,8 @@ public class TableManager {
             EnumEditContext enumEditContext = saveEnum(column, context);
             type = getType(column, enumEditContext.getType(), context);
             defaultValue = column.multiValued() ?
-                    NncUtils.map(enumEditContext.getDefaultOptions(), EnumConstant::getId)
-                    : NncUtils.getFirst(enumEditContext.getDefaultOptions(), EnumConstant::getId);
+                    NncUtils.map(enumEditContext.getDefaultOptions(), EnumConstantRT::getId)
+                    : NncUtils.getFirst(enumEditContext.getDefaultOptions(), EnumConstantRT::getId);
         }
         else {
             type = getType(column, NncUtils.get(column.targetId(), context::getType), context);
@@ -140,7 +138,8 @@ public class TableManager {
                         column.asTitle(),
                         column.ownerId(),
                         type.getId(),
-                        null
+                        null,
+                        false
                 ),
                 context
         );
@@ -174,7 +173,7 @@ public class TableManager {
                 type.isArray() ? type.getElementType().isNotNull() : type.isNotNull(),
                 type.isArray(),
                 getChoiceOptions(
-                        NncUtils.sortByInt(concreteType.getEnumConstants(), EnumConstant::getOrdinal),
+                        NncUtils.sortByInt(concreteType.getEnumConstants(), EnumConstantRT::getOrdinal),
                         fieldDefaultValue
                 )
         );
@@ -208,10 +207,10 @@ public class TableManager {
         throw new InternalException("Can not get column type for type: " + concreteType.getId());
     }
 
-    private List<ChoiceOptionDTO> getChoiceOptions(List<EnumConstant> enumConstants, Object fieldDefaultValue) {
+    private List<ChoiceOptionDTO> getChoiceOptions(List<EnumConstantRT> enumConstants, Object fieldDefaultValue) {
         return NncUtils.sortAndMap(
                 enumConstants,
-                Comparator.comparingInt(EnumConstant::getOrdinal),
+                Comparator.comparingInt(EnumConstantRT::getOrdinal),
                 ec -> new ChoiceOptionDTO(
                         ec.getId(),
                         ec.getName(),
@@ -221,7 +220,7 @@ public class TableManager {
         );
     }
 
-    private boolean isPreselected(EnumConstant enumConstant, Object fieldDefaultValue) {
+    private boolean isPreselected(EnumConstantRT enumConstant, Object fieldDefaultValue) {
         if(fieldDefaultValue instanceof Long l) {
             return l.equals(enumConstant.getId());
         }
@@ -238,6 +237,9 @@ public class TableManager {
     private Type getType(String name, int columnTypeCode, boolean required, boolean multiValued,
                          Type concreteType, EntityContext context) {
         ColumnType columnType = ColumnType.getByCode(columnTypeCode);
+        if(concreteType == null && columnType.getTypeId() != null) {
+            concreteType = context.getType(columnType.getTypeId());
+        }
         Type type;
         if(concreteType != null) {
             type = concreteType;
@@ -247,9 +249,6 @@ public class TableManager {
             if (multiValued) {
                 type = type.getArrayType();
             }
-        }
-        else if(columnType.getTypeId() != null) {
-            type = context.getType(columnType.getTypeId());
         }
         else {
             throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
@@ -261,7 +260,7 @@ public class TableManager {
     }
 
     public Page<TableDTO> list(String searchText, int page, int pageSize) {
-        EntityContext context = entityContextFactory.newContext();
+        EntityContext context = newContext();
         Page<TypeDTO> typePage = typeManager.query(
                 searchText,
                 List.of(TypeCategory.CLASS.code()),
@@ -293,7 +292,7 @@ public class TableManager {
     }
 
     private static final Set<Long> FIELD_TYPE_BLACKLIST = Set.of(
-            StdTypeConstants.PASSWORD
+            IdConstants.PASSWORD
     ) ;
 
     private boolean isVisible(FieldDTO fieldDTO) {
@@ -308,6 +307,10 @@ public class TableManager {
                 fieldDTO.defaultValue()
         );
     }
+    
+    private EntityContext newContext() {
+        return instanceContextFactory.newContext().getEntityContext();
+    }
 
     private record TypeInfo (
             ColumnType columnType,
@@ -321,14 +324,14 @@ public class TableManager {
     }
 
     private enum ColumnType {
-        STRING(1, StdTypeConstants.STRING),
-        DOUBLE(2, StdTypeConstants.DOUBLE),
-        LONG(3, StdTypeConstants.LONG),
-        BOOL(6, StdTypeConstants.BOOL),
+        STRING(1, IdConstants.STRING),
+        DOUBLE(2, IdConstants.DOUBLE),
+        LONG(3, IdConstants.LONG),
+        BOOL(6, IdConstants.BOOL),
         ENUM(7, null),
-        TIME(9, StdTypeConstants.TIME),
+        TIME(9, IdConstants.TIME),
         TABLE(10, null),
-        DATE(13, StdTypeConstants.DATE),
+        DATE(13, IdConstants.DATE),
         ;
 
         private final int code;

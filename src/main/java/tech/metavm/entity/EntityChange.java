@@ -1,63 +1,80 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class EntityChange implements Comparable<EntityChange> {
+public class EntityChange<T extends InstancePO> implements Comparable<EntityChange<?>> {
 
-    private final Class<?> entityType;
+    private final Class<T> entityType;
 
-    private final List<Entity> toInserts = new ArrayList<>();
-    private final List<Entity> toUpdate = new ArrayList<>();
-    private final List<Entity> toDelete = new ArrayList<>();
+    private final List<T> toInserts = new ArrayList<>();
+    private final List<T> toUpdate = new ArrayList<>();
+    private final List<T> toDelete = new ArrayList<>();
 
-    public EntityChange(Class<?> entityType) {
+    private final Map<DifferenceAttributeKey<?>, Object> attributes = new HashMap<>();
+
+    public EntityChange(Class<T> entityType) {
         this.entityType = entityType;
     }
 
-    public void addToInsert(Entity entity) {
+    public void addToInsert(T entity) {
         toInserts.add(entity);
     }
 
-    public void addToUpdate(Entity entity) {
+    public void addToUpdate(T entity) {
         toUpdate.add(entity);
     }
 
-    public void addToDelete(Entity entity) {
+    public void addToDelete(T entity) {
         toDelete.add(entity);
     }
 
-    public void apply(EntityStore<?> store) {
-        if(NncUtils.isNotEmpty(toInserts)) {
-            store.batchInsert((List) toInserts);
-        }
-        if(NncUtils.isNotEmpty(toUpdate)) {
-            store.batchUpdate((List) toUpdate);
-        }
-        if(NncUtils.isNotEmpty(toDelete)) {
-            store.batchDelete((List) toDelete);
-        }
-    }
+//    public void apply(EntityStore<T> store) {
+//        if(NncUtils.isNotEmpty(toInserts)) {
+//            store.batchInsert(toInserts);
+//        }
+//        if(NncUtils.isNotEmpty(toUpdate)) {
+//            store.batchUpdate(toUpdate);
+//        }
+//        if(NncUtils.isNotEmpty(toDelete)) {
+//            store.batchDelete(toDelete);
+//        }
+//    }
 
-    public List<Entity> getToInserts() {
+    public List<T> inserts() {
         return toInserts;
     }
 
-    public List<Entity> getToUpdate() {
+    public List<T> updates() {
         return toUpdate;
     }
 
-    public List<Entity> getToDelete() {
+    public List<T> deletes() {
         return toDelete;
+    }
+
+    public List<T> insertsAndUpdates() {
+        return NncUtils.merge(inserts(), updates());
     }
 
     public boolean isEmpty() {
         return toDelete.isEmpty() && toUpdate.isEmpty() && toInserts.isEmpty();
+    }
+
+    public ChangeList<T> toChangeList() {
+        return new ChangeList<>(
+                toInserts,
+                toUpdate,
+                toDelete
+        );
     }
 
     private static Integer getEntityPriority(Class<?> entityType) {
@@ -71,11 +88,20 @@ public class EntityChange implements Comparable<EntityChange> {
     }
 
     @Override
-    public int compareTo(EntityChange that) {
+    public int compareTo(EntityChange<?> that) {
         return getEntityPriority(entityType).compareTo(getEntityPriority(that.entityType));
     }
 
-    public Class<?> getEntityType() {
+    public Class<T> getEntityType() {
         return entityType;
     }
+
+    public <K> void setAttribute(DifferenceAttributeKey<K> key, K value) {
+        attributes.put(key, value);
+    }
+
+    public <K> K getAttribute(DifferenceAttributeKey<K> key) {
+        return key.getType().cast(attributes.get(key));
+    }
+
 }

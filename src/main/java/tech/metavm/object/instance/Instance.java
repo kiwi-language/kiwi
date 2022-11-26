@@ -1,80 +1,82 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.persistence.IndexItemPO;
+import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.RelationPO;
-import tech.metavm.object.instance.persistence.VersionPO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.UniqueConstraintRT;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
-import java.util.*;
-import java.util.function.LongConsumer;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class Instance extends AbsInstance {
+import static tech.metavm.util.ContextUtil.getTenantId;
 
-    private final long tenantId;
-    private long version;
-    private long syncVersion;
-    private final InstanceContext context;
-    private final Map<Long, InstanceField> id2field = new LinkedHashMap<>();
-    private final Map<String, InstanceField> name2field = new LinkedHashMap<>();
-    private final transient List<LongConsumer> idInitCallbacks = new ArrayList<>();
+public class Instance implements IInstance {
 
-    private Instance(long tenantId, Type type, Long id, List<InstanceField> fields, InstanceContext context, long version, long syncVersion) {
-        super(id, type);
-        this.tenantId = tenantId;
-        this.context = context;
+    private Long id;
+    protected final Type type;
+    private transient long version;
+    private transient long syncVersion;
+    private final Class<?> entityType;
+    private final Table<InstanceField> fields = new Table<>(1);
+
+    private Instance(Type type, Long id, List<InstanceField> fields, long version, long syncVersion, Class<?> entityType) {
+        initId(id);
+        this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
+        this.entityType = entityType;
         initFields(fields);
     }
 
-    public Instance(InstancePO record,
-                    List<RelationPO> relations,
-                    InstanceContext context) {
-        super(record.id(), context.getType(record.typeId()));
-        this.context = context;
-        tenantId = record.tenantId();
-        version = record.version();
-        syncVersion = record.syncVersion();
+    public Instance(Map<Field, Object> data, Type type, Class<?> entityType) {
+        this(null, data, type, 0L, 0L, entityType);
+    }
 
-        Map<Long, List<RelationPO>> relationMap = NncUtils.toMultiMap(relations, RelationPO::getFieldId);
+    public Instance(Long id, Map<Field, Object> data, Type type, long version, long syncVersion, Class<?> entityType) {
+        this.id = id;
+        this.type = type;
+        this.version = version;
+        this.syncVersion = syncVersion;
+        this.entityType = entityType;
 
-        for (Field field : getType().getFields()) {
-            Object fieldValue;
-            if(field.isGeneralPrimitive()) {
-                fieldValue = record.get(field.getColumn().name());
-            }
-            else if(field.isSingleValued()) {
-                fieldValue = NncUtils.mapFirst(relationMap.get(field.getId()), RelationPO::getDestInstanceId);
-            }
-            else {
-                fieldValue = NncUtils.map(relationMap.get(field.getId()), RelationPO::getDestInstanceId);
-            }
+        for (Field field : type.getFields()) {
+            Object fieldValue = data.get(field);
             addField(new InstanceField(this, field, fieldValue));
         }
     }
 
-    public Instance(InstanceDTO instanceDTO,
-                    InstanceContext context) {
-        super(instanceDTO.id(), context.getType(instanceDTO.typeId()));
-        this.context = context;
-        this.tenantId = context.getTenantId();
-        this.version = 1;
-
-        Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
-        for (Field field : type.getFields()) {
-            InstanceFieldDTO fieldDTO = fieldDTOMap.computeIfAbsent(
-                    field.getId(), fieldId -> InstanceFieldDTO.valueOf(fieldId, null)
-            );
-            addField(new InstanceField(this, field, fieldDTO));
+    public void initId(long id) {
+        if(this.id != null) {
+            throw new InternalException("id already initialized");
         }
+        this.id = id;
     }
+
+//    public Instance(InstanceDTO instanceDTO,
+//                    InstanceContext context) {
+////        super(context);
+//        type = context.getEntityContext().getType(instanceDTO.typeId());
+//        this.version = 1;
+//
+//        Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
+//        for (Field field : type.getFields()) {
+//            InstanceFieldDTO fieldDTO = fieldDTOMap.computeIfAbsent(
+//                    field.getId(), fieldId -> InstanceFieldDTO.valueOf(fieldId, null)
+//            );
+//            addField(new InstanceField(this, field, fieldDTO));
+//        }
+//        context.bind(this);
+//    }
 
     public List<IndexItemPO> getUniqueKeys() {
         List<UniqueConstraintRT> uniqueConstraints = type.getConstraints(UniqueConstraintRT.class);
@@ -91,9 +93,13 @@ public class Instance extends AbsInstance {
     }
 
     private void addField(InstanceField field) {
-        name2field.put(field.getName(), field);
-        id2field.put(field.getId(), field);
+//        name2field.put(field.getName(), field);
+        fields.add(field);
     }
+
+//    public long getTenantId() {
+//        return context.getTenantId();
+//    }
 
     public String getTitle() {
         Field titleField = type.getTileField();
@@ -108,14 +114,16 @@ public class Instance extends AbsInstance {
             return NncUtils.get(field.getInstance(), inst -> inst.getResolved(subFieldPath));
         }
         else {
-            return field.getResolvedValue();
+            return field.getValue();
         }
     }
 
+    @SuppressWarnings("unused")
     public boolean isPersistent() {
         return type.isPersistent();
     }
 
+    @SuppressWarnings("unused")
     public Object getRaw(List<Long> fieldPath) {
         long fieldId = fieldPath.get(0);
         InstanceField field = field(fieldId);
@@ -128,9 +136,20 @@ public class Instance extends AbsInstance {
         }
     }
 
+    public Type getType() {
+        return type;
+    }
+
     @Override
-    protected void onIdInitialized(long id) {
-        idInitCallbacks.forEach(callback -> callback.accept(id));
+    public IInstance getInstance(Field field) {
+        if(field.getType().isReference()) {
+            return field(field).getInstance();
+        }
+        throw new ClassCastException();
+    }
+
+    public Type getInstanceType() {
+        return getType();
     }
 
     public Object getRaw(String fieldPath) {
@@ -141,16 +160,16 @@ public class Instance extends AbsInstance {
         else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);
-            Instance fieldInstance = getInstance(fieldName);
+            IInstance fieldInstance = getInstance(fieldName);
             return NncUtils.get(fieldInstance, inst -> inst.getRaw(subPath));
         }
     }
 
-    public Instance getInstance(long fieldId) {
+    public IInstance getInstance(long fieldId) {
         return field(fieldId).getInstance();
     }
 
-    public Instance getInstance(String fieldName) {
+    public IInstance getInstance(String fieldName) {
         return field(fieldName).getInstance();
     }
 
@@ -158,10 +177,20 @@ public class Instance extends AbsInstance {
         field(fieldValue.fieldId()).set(fieldValue);
     }
 
+    @Override
+    public void set(Field field, Object value) {
+        field(field).setValue(value);
+    }
+
     public String getString(long fieldId) {
         return (String) getRaw(field(fieldId).getField());
     }
 
+    public String getString(Field field) {
+        return (String) getRaw(field(field).getField());
+    }
+
+    @SuppressWarnings("unused")
     public String getString(String fieldName) {
         return (String) getRaw(field(fieldName).getField());
     }
@@ -170,61 +199,60 @@ public class Instance extends AbsInstance {
         return (Integer) getRaw(fieldId);
     }
 
+    @SuppressWarnings("unused")
     public Integer getInt(String fieldName) {
         return (Integer) getRaw(fieldName);
     }
 
+    public Long getLong(long fieldId) {
+        return (Long) getRaw(fieldId);
+    }
+
+    @SuppressWarnings("unused")
     public Long getLong(String fieldName) {
         return (Long) getRaw(fieldName);
     }
 
-    public List<Long> getLongList(long fieldId) {
-        return (List<Long>) getRaw(fieldId);
-    }
-
-    public List<Long> getLongList(String fieldName) {
-        return (List<Long>) getRaw(fieldName);
+    public Double getDouble(long fieldId) {
+        return (Double) getRaw(fieldId);
     }
 
     public Object getRaw(Field field) {
-        return id2field.get(field.getId()).getValue();
+        return field(field).getValue();
     }
 
     public String getIndexValue(Field field) {
-        Object rawValue = getRaw(field);
-        return NncUtils.orElse(
-                rawValue,
-                r -> r.toString().replace("\0", "\0\0"),
-                () -> "\0"
-        );
+        return IndexKeyPO.getIndexColumn(getRaw(field));
     }
 
     public Object getRaw(long fieldId) {
-        return id2field.get(fieldId).getValue();
+        return getRaw(type.getField(fieldId));
     }
 
-    private InstanceField field(Field field) {
-        return id2field.get(field.getId());
+    protected InstanceField field(Field field) {
+        return fields.get(InstanceField::getField, field);
     }
 
     private InstanceField field(String name) {
-        return name2field.get(name);
+        return fields.get(field -> field.getField().getName(), name);
     }
 
     public long getVersion() {
         return version;
     }
 
-    public VersionPO nextVersion() {
-        return new VersionPO(getTenantId(), getId(), version + 1);
-    }
+//    public VersionPO nextVersion() {
+//        return new VersionPO(getTenantId(), getId(), version + 1);
+//    }
 
+    @SuppressWarnings("unused")
     public long getSyncVersion() {
         return syncVersion;
     }
 
-    public long getTenantId() {
-        return tenantId;
+    @Override
+    public Long getId() {
+        return null;
     }
 
     public void update(InstanceDTO update) {
@@ -237,24 +265,26 @@ public class Instance extends AbsInstance {
         }
     }
 
-    private InstanceField field(long fieldId) {
-        return id2field.get(fieldId);
+    protected InstanceField field(long fieldId) {
+        return field(type.getField(fieldId));
     }
 
     public InstanceDTO toDTO() {
-        context.loadRelationTitles(List.of(this));
+//        InstanceStore instanceStore = context.getInstanceStore();
+//        instanceStore.loadTitles(List.of(id), context);
         return new InstanceDTO(
                 getId(),
                 getType().getId(),
                 getType().getName(),
                 getTitle(),
-                NncUtils.map(name2field.values(), InstanceField::toDTO)
+                NncUtils.map(fields, InstanceField::toDTO),
+                null
         );
     }
 
     public InstancePO toPO() {
         return new InstancePO(
-                tenantId,
+                getTenantId(),
                 getId(),
                 getType().getId(),
                 getTitle(),
@@ -264,22 +294,9 @@ public class Instance extends AbsInstance {
         );
     }
 
+    @SuppressWarnings("unused")
     public void incVersion() {
         version++;
-    }
-
-    public List<InstanceRelation> getRelations() {
-        List<InstanceRelation> relations = new ArrayList<>();
-        for (InstanceField field : fields()) {
-            if(field.isGeneralRelation()) {
-                for (Long destInstanceId : field.getDestInstanceIds()) {
-                    relations.add(
-                            new InstanceRelation(this, field, destInstanceId)
-                    );
-                }
-            }
-        }
-        return relations;
     }
 
     private Map<String, Object> getTableData() {
@@ -293,33 +310,43 @@ public class Instance extends AbsInstance {
     }
 
     public Collection<InstanceField> fields() {
-        return name2field.values();
+        return fields;
     }
 
     @Override
-    public Instance copy() {
-        Instance copy = new Instance(
-                tenantId,
-                getType(),
-                getId(),
-                List.of(),
-                context,
-                version,
-                syncVersion
-        );
-        copy.initFields(
-                NncUtils.map(fields(), f -> f.copy(copy))
-        );
-        return copy;
+    public Class<?> getEntityType() {
+        return entityType;
     }
 
-    public InstanceContext getContext() {
-        return context;
+    @Override
+    public InstanceArray getInstanceArray(Field field) {
+        return field(field).getInstanceArray();
     }
 
-    public void addIdInitCallback(LongConsumer idInitCallback) {
-        idInitCallbacks.add(idInitCallback);
-    }
+    //    @Override
+//    public InstanceContext getContext() {
+//        return context;
+//    }
+
+//    public Instance copy() {
+//        Instance copy = new Instance(
+//                getType(),
+//                getId(),
+//                List.of(),
+////                context,
+//                version,
+//                syncVersion,
+//                entityType
+//        );
+//        copy.initFields(
+//                NncUtils.map(fields(), f -> f.copy(copy))
+//        );
+//        return copy;
+//    }
+
+//    public void remove() {
+//        context.remove(this);
+//    }
 
     @Override
     public String toString() {

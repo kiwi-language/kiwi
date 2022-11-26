@@ -1,21 +1,20 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.ExceptionParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.util.NncUtils;
 
+@EntityType("异常节点")
 public class ExceptionNode extends NodeRT<ExceptionParamDTO> {
 
+    @EntityField("提示信息")
     private Value message;
 
     public ExceptionNode(NodeDTO nodeDTO, ExceptionParamDTO param, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
-    }
-
-    public ExceptionNode(NodePO nodePO, ExceptionParamDTO param, ScopeRT scope) {
-        super(nodePO, scope);
         setParam(param);
     }
 

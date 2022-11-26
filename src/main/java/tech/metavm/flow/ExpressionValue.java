@@ -2,13 +2,14 @@ package tech.metavm.flow;
 
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.*;
+import tech.metavm.object.meta.Type;
 
 public class ExpressionValue extends Value {
 
     private final Expression expression;
 
     public ExpressionValue(ValueDTO valueDTO, ParsingContext parsingContext) {
-        super(valueDTO);
+        super(valueDTO/*, parsingContext.getInstanceContext()*/);
         String str = (String) valueDTO.value();
         expression = ExpressionParser.parse(str, parsingContext);
     }
@@ -19,7 +20,16 @@ public class ExpressionValue extends Value {
     }
 
     @Override
+    public Type getType() {
+        return expression.getType();
+    }
+
+    @Override
     public Object evaluate(EvaluationContext evaluationContext) {
         return ExpressionEvaluator.evaluate(expression, evaluationContext);
+    }
+
+    public Expression getExpression() {
+        return expression;
     }
 }

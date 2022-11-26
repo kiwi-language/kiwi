@@ -6,14 +6,15 @@
     <!--@mbg.generated-->
     <!--@Table `constraint`-->
     <id column="id" jdbcType="BIGINT" property="id" />
-    <result column="type_id" jdbcType="BIGINT" property="typeId"/>
+    <result column="type_id" jdbcType="BIGINT" property="declaringTypeId"/>
     <result column="kind" jdbcType="INTEGER" property="kind"/>
+    <result column="message" jdbcType="VARCHAR" property="message"/>
     <result column="param" jdbcType="VARCHAR" property="param"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, type_id, kind, param, created_at, updated_at, deleted_at
+    id, type_id, kind, message, param, created_at, updated_at, deleted_at
   </sql>
 
   <select id="selectByIds" resultMap="BaseResultMap">
@@ -30,10 +31,10 @@
 
   <insert id="batchInsert">
     <!--@mbg.generated-->
-    insert into `constraint` (id, kind, type_id, param)
+    insert into `constraint` (id, kind, type_id, message, param)
     values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.kind}, #{item.typeId}, #{item.param})
+        (#{item.id}, #{item.kind}, #{item.declaringTypeId}, #{item.message}, #{item.param})
     </foreach>
 
   </insert>
@@ -46,8 +47,11 @@
         <if test="item.kind != null">
           `kind` = #{item.kind},
         </if>
-        <if test="item.typeId != null">
-          type_id = #{item.typeId},
+        <if test="item.declaringTypeId != null">
+            type_id = #{item.declaringTypeId},
+        </if>
+        <if test="item.message != null">
+          message = #{item.message},
         </if>
         <if test="item.param != null">
           `param` = #{item.param},
@@ -58,7 +62,7 @@
   </update>
 
   <update id="batchDelete">
-    update type
+    update `constraint`
     set deleted_at = unix_timestamp() * 1000
     where
     deleted_at = 0 and
@@ -87,5 +91,24 @@
     `constraint`
     where id &lt;= 1000 and deleted_at = 0
     </select>
+
+  <select id="countByTypeId" resultType="java.lang.Long">
+    select
+        count(1)
+    from
+        `constraint`
+    where deleted_at = 0 and type_id = #{typeId}
+  </select>
+
+
+  <select id="selectByTypeId" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from
+    `constraint`
+    where deleted_at = 0 and type_id = #{typeId}
+    limit #{start}, #{limit}
+  </select>
+
 
 </mapper>

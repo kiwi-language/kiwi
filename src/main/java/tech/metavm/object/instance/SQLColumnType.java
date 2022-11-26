@@ -7,7 +7,7 @@ import java.util.*;
 
 public enum SQLColumnType {
 
-    INT64("bigint", "long","l", 10),
+    INT64("bigint", "long","l", 20),
     INT32("int", "integer", "i", 10),
     VARCHAR64("varchar(64)", "keyword","s", 10),
     BOOL("bool", "boolean",  "b",10),
