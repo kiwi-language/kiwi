@@ -1,18 +1,20 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+@ValueType("字段表达式")
 public class FieldExpression extends Expression {
 
     private final Expression instance;
-    private final List<Field> fieldPath;
+    private final Table<Field> fieldPath;
 
     public FieldExpression(Expression instance, Field field) {
         this(instance, List.of(field));
@@ -28,13 +30,13 @@ public class FieldExpression extends Expression {
             fields.add(field);
             tmp = field.getType();
         }
-        this.fieldPath = Collections.unmodifiableList(fields);
+        this.fieldPath = new Table<>(fields);
     }
 
     public FieldExpression(Expression instance, List<Field> fieldPath) {
 //        super(instance.context);
         this.instance = instance;
-        this.fieldPath = fieldPath;
+        this.fieldPath = new Table<>(fieldPath);
     }
 
     public Field getLastField() {

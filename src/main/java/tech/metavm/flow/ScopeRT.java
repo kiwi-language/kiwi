@@ -20,14 +20,8 @@ public class ScopeRT extends Entity  {
     private transient NodeRT<?> owner;
 
     public ScopeRT(FlowRT flow) {
-//        super(flow.getContext());
         this.flow = flow;
     }
-
-//    public ScopeRT(ScopePO scopePO, EntityContext context) {
-//        super(scopePO.getId(), context);
-//        this.flow = context.getFlow(scopePO.getFlowId());
-//    }
 
     public void setOwner(NodeRT<?> owner) {
         this.owner = owner;
@@ -85,11 +79,6 @@ public class ScopeRT extends Entity  {
     public FlowRT getFlow() {
         return flow;
     }
-
-//    public void remove() {
-//        new ArrayList<>(nodes.values()).forEach(NodeRT::remove);
-//        context.remove(this);
-//    }
 
     public boolean isEmpty() {
         return nodes.isEmpty();

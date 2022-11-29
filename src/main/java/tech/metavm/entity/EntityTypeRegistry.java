@@ -1,37 +1,24 @@
 package tech.metavm.entity;
 
-import org.reflections.Reflections;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceMap;
 import tech.metavm.object.instance.ModelMap;
-import tech.metavm.object.meta.StdAllocators;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.util.NncUtils;
 
-import java.util.Map;
-import java.util.Set;
-
-@Component
-public class EntityTypeRegistry implements InitializingBean {
-
-//    private static final Map<Long, Class<?>> CLASS_MAP = new HashMap<>();
-//    private static final Map<Class<?>, Long> CLASS_TO_TYPE_ID = new HashMap<>();
-//    private static final Map<Long, TypePO> TYPE_MAP = new HashMap<>();
-//    private static final Map<Long, EntityDef<?>> DEF_MAP = new HashMap<>();
-//    private static final Map<Long, EnumDef> ENUM_DEF_MAP = new HashMap<>();
-//    private static final Map<IndexDef<?>, ConstraintPO> uniqueConstraintDef2id = new IdentityHashMap<>();
-
-    @Value("${metavm.id.file}")
-    private Map<String, String> idFileMap;
+public class EntityTypeRegistry {
 
     private final InstanceContextFactory instanceContextFactory;
 
     private static DefContext DEF_CONTEXT;
+
+    static void setDefContext(DefContext defContext) {
+        NncUtils.requireNull(DEF_CONTEXT, () -> new IllegalStateException("DefContext already set"));
+        DEF_CONTEXT = defContext;
+    }
 
     public EntityTypeRegistry(InstanceContextFactory instanceContextFactory) {
         this.instanceContextFactory = instanceContextFactory;
@@ -39,24 +26,6 @@ public class EntityTypeRegistry implements InitializingBean {
 
     public static DefContext getDefContext() {
         return DEF_CONTEXT;
-    }
-
-    @Override
-    public void afterPropertiesSet() {
-        Reflections reflections = new Reflections("tech.metavm");
-        StdAllocators stdAllocators = new StdAllocators(idFileMap);
-        InstanceContext instanceContext = newContext();
-        DEF_CONTEXT = new DefContext(
-                jc -> NncUtils.get(stdAllocators.getId(jc), instanceContext::get),
-                instanceContext.getEntityContext()
-        );
-        Set<Class<? extends Entity>> entityTypes = reflections.getSubTypesOf(Entity.class);
-        for (Class<? extends Entity> entityType : entityTypes) {
-            /*EntityDef<?> entityDef = */
-            DEF_CONTEXT.getEntityDef(entityType);
-//            DEF_MAP.put(entityDef.getTypeId(), entityDef);
-//            CLASS_MAP.put(entityDef.getTypeId(), entityType);
-        }
     }
 
     public static Entity createEntity(Instance instance, ModelMap modelMap) {
@@ -98,12 +67,20 @@ public class EntityTypeRegistry implements InitializingBean {
         return DEF_CONTEXT.getDef(entityClass).getType();
     }
 
+    public static Field getField(java.lang.reflect.Field javaField) {
+        return DEF_CONTEXT.getPojoDef(javaField.getDeclaringClass()).getFieldDef(javaField).getField();
+    }
+
     public static ConstraintPO getUniqueConstraint(IndexDef<?> def) {
         return null; // TODO to implement
     }
 
     public static Class<? extends Entity> getEntityType(long typeId) {
         return DEF_CONTEXT.getEntityDef(typeId).getEntityType();
+    }
+
+    public static Class<?> getJavaType(Type type) {
+        return DEF_CONTEXT.getDef(type).getEntityType();
     }
 
     public static Class<? extends Enum<?>> getEnumType(long typeId) {

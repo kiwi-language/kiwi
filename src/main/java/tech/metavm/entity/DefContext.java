@@ -1,18 +1,19 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelMap;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 public class DefContext implements DefMap {
-    private final Function<Object, IInstance> getInstance;
+    private final Function<Object, Instance> getInstance;
     private final Map<Type, ModelDef<?,?>> defMap = new HashMap<>();
     private final Map<Long, ModelDef<?, ?>> typeId2Def = new HashMap<>();
     private final Map<tech.metavm.object.meta.Type, ModelDef<?, ?>> type2Def = new HashMap<>();
@@ -20,10 +21,10 @@ public class DefContext implements DefMap {
     private final ValueDef<Enum<?>> enumDef;
     private final ModelMap modelMap;
 
-    public DefContext(Function<Object, IInstance> getInstance, ModelMap modelMap) {
+    public DefContext(Function<Object, Instance> getInstance, ModelMap modelMap) {
         this.getInstance = getInstance;
         StandardDefBuilder stdBuilder = new StandardDefBuilder();
-        stdBuilder.initRootTypes(getInstance, defMap::put, modelMap);
+        stdBuilder.initRootTypes(this);
         objectDef = stdBuilder.getObjectDef();
         enumDef = stdBuilder.getEnumDef();
         this.modelMap = modelMap;
@@ -57,21 +58,29 @@ public class DefContext implements DefMap {
     }
 
     public ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type) {
-        return type2Def.get(type);
+        return NncUtils.requireNonNull(type2Def.get(type), "Can not find ModelDef for java type: " + type.getName());
     }
 
     private ModelDef<?,?> parseType(Type entityType) {
         TypeCategory typeCategory = ValueUtil.getTypeCategory(entityType);
         if(typeCategory.isArray()) {
-            ParameterizedType pType = (ParameterizedType) entityType;
-            return new ArrayDef<>(
-                    getDef(pType.getActualTypeArguments()[0]),
-                    objectDef,
-                    getType(pType)
-            );
+            if (entityType instanceof ParameterizedType pType) {
+                return new ArrayDef<>(
+                        getDef(pType.getActualTypeArguments()[0]),
+                        pType,
+                        getType(pType)
+                );
+            }
+            else {
+                return new ArrayDef<>(
+                        objectDef,
+                        entityType,
+                        getType(entityType)
+                );
+            }
         }
         else {
-            Class<?> rawClass = ReflectUtils.getRawTypeRecursively(entityType);
+            Class<?> rawClass = ReflectUtils.getRawClass(entityType);
             if (typeCategory.isEnum()) {
                 Class<? extends Enum<?>> enumType = rawClass.asSubclass(new TypeReference<Enum<?>>() {
                 }.getType());
@@ -79,7 +88,8 @@ public class DefContext implements DefMap {
                         enumType,
                         enumDef,
                         getInstance,
-                        modelMap
+                        modelMap,
+                        this
                 );
             }
             if (typeCategory.isEntity()) {
@@ -110,7 +120,7 @@ public class DefContext implements DefMap {
     }
 
     private tech.metavm.object.meta.Type getType(Object javaConstruct) {
-        IInstance instance = getInstance.apply(javaConstruct);
+        Instance instance = getInstance.apply(javaConstruct);
         return NncUtils.get(instance, modelMap::getType);
     }
 
@@ -121,7 +131,15 @@ public class DefContext implements DefMap {
 
     @Override
     public void putDef(Type type, ModelDef<?,?> def) {
-        defMap.put(type, def);
+        addDef(def);
+    }
+
+    public Collection<ModelDef<?, ?>> getAllDefs() {
+        return defMap.values();
+    }
+
+    public Object createEntity(Instance instance, ModelMap modelMap) {
+        return getDef(instance.getType()).newModelHelper(instance, modelMap);
     }
 
 }

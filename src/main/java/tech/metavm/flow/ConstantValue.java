@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.meta.Type;
@@ -8,6 +8,7 @@ import tech.metavm.util.ValueUtil;
 
 import java.util.Objects;
 
+@ValueType("常量值")
 public class ConstantValue extends Value {
 
     public static ConstantValue create(Object value/*, InstanceContext context*/) {

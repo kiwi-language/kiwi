@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
-public class InstanceStore {
+public class InstanceStore implements IInstanceStore {
 
     private static final long BY_TYPE_LIMIT = 50;
 
@@ -29,6 +29,7 @@ public class InstanceStore {
         this.indexItemMapper = indexItemMapper;
     }
 
+    @Override
     public void save(ChangeList<InstancePO> diff) {
         if(NncUtils.isNotEmpty(diff.inserts())) {
             instanceMapperGateway.batchInsert(diff.inserts());
@@ -45,7 +46,8 @@ public class InstanceStore {
         return NncUtils.getFirst(selectByKey(key, context));
     }
 
-    public List<IInstance> selectByKey(IndexKeyPO key, InstanceContext context) {
+    @Override
+    public List<Instance> selectByKey(IndexKeyPO key, InstanceContext context) {
         List<IndexItemPO> indexItems = indexItemMapper.selectByKeys(context.getTenantId(), List.of(key));
         return context.batchGet(NncUtils.map(indexItems, IndexItemPO::getInstanceId));
     }
@@ -54,11 +56,7 @@ public class InstanceStore {
         return instanceMapperGateway.updateSyncVersion(versions) == versions.size();
     }
 
-    @SuppressWarnings("unused")
-    public List<InstancePO> loadByTypeIds(List<Long> typeIds, long start, long limit, InstanceContext context) {
-        return instanceMapperGateway.selectByInstanceTypeIds(context.getTenantId(), typeIds, start, limit);
-    }
-
+    @Override
     public List<InstancePO> load(StoreLoadRequest request, InstanceContext context) {
         if(NncUtils.isEmpty(request.ids())) {
             return List.of();
@@ -80,22 +78,11 @@ public class InstanceStore {
         );
     }
 
+    @Override
     public List<InstancePO> getByTypeIds(Collection<Long> typeIds, InstanceContext context)
     {
         return instanceMapperGateway.selectByInstanceTypeIds(context.getTenantId(), typeIds, 0,
                 typeIds.size() * BY_TYPE_LIMIT);
-    }
-
-    public void batchInsert(List<Instance> entities) {
-        instanceMapperGateway.batchInsert(NncUtils.map(entities, Instance::toPO));
-    }
-
-    public void batchUpdate(List<Instance> entities) {
-        instanceMapperGateway.batchUpdate(NncUtils.map(entities, Instance::toPO));
-    }
-
-    public void batchDelete(List<Instance> entities) {
-        instanceMapperGateway.batchDelete(NncUtils.map(entities, Instance::toPO));
     }
 
     public String getTitle(Long id, InstanceContext context) {

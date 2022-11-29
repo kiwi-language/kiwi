@@ -6,16 +6,15 @@ import tech.metavm.object.instance.Instance;
 
 import java.lang.reflect.Method;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public final class EntityMethodHandler implements MethodHandler {
 
-    private final Function<Instance, Object> modelCreator;
+    private final Supplier<?> modelCreator;
     private Object realEntity;
-    private final IInstance instance;
 
-    public EntityMethodHandler(IInstance instance, Function<Instance, Object> modelCreator) {
-        this.instance = instance;
-        this.modelCreator = modelCreator;
+    public EntityMethodHandler(Supplier<?> modelSupplier) {
+        this.modelCreator = modelSupplier;
     }
 
     @Override
@@ -27,7 +26,7 @@ public final class EntityMethodHandler implements MethodHandler {
 
     public Object getEntity() {
         if(realEntity == null) {
-            realEntity = modelCreator.apply(EntityContext.getRealInstance(instance));
+            realEntity = modelCreator.get();
         }
         return realEntity;
     }

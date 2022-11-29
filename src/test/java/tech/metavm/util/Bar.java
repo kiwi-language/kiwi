@@ -1,20 +1,12 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ValueType;
 
-@EntityType("Bar")
-public class Bar extends Entity {
-
-    @EntityField("编号")
-    private final String code;
+@ValueType("巴")
+public record Bar(@EntityField(value = "编号", asTitle = true) String code) {
 
     public Bar(String code) {
         this.code = code;
-    }
-
-    public String getCode() {
-        return code;
     }
 }

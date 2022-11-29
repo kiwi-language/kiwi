@@ -4,7 +4,7 @@ import java.util.List;
 
 public record InstanceDTO(
         Long id,
-        long typeId,
+        Long typeId,
         String typeName,
         String title,
         List<InstanceFieldDTO> fields,

@@ -7,8 +7,14 @@ import java.util.Objects;
 public abstract class TypeReference<T> {
 
     public static <T> TypeReference<T> of(Class<T> klass) {
-        TypeReference<T>  typeRef = new TypeReference<T>() {};
+        TypeReference<T>  typeRef = new TypeReference<>() {};
         typeRef.type = klass;
+        return typeRef;
+    }
+
+    public static TypeReference<?> of(Type type) {
+        TypeReference<?>  typeRef = new TypeReference<>() {};
+        typeRef.type = type;
         return typeRef;
     }
 
@@ -51,7 +57,7 @@ public abstract class TypeReference<T> {
 
     @SuppressWarnings("unchecked")
     public Class<T> getType() {
-        return (Class<T>) ReflectUtils.getRawTypeRecursively(type);
+        return (Class<T>) ReflectUtils.getRawClass(type);
     }
 
     public T cast(Object object) {

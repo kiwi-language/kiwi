@@ -80,6 +80,7 @@ public class NncUtils {
         return t1 != null ? t1 : t2;
     }
 
+
     @SuppressWarnings("unused")
     public static <T> T firstNonNull(T t1, T t2) {
         if(t1 == null && t2 == null) {
@@ -87,6 +88,22 @@ public class NncUtils {
         }
         return t1 != null ? t1 : t2;
     }
+
+    public static <T> T firstNonNull(T t1, T t2, T t3) {
+        if(t1 == null && t2 == null && t3 == null) {
+            throw new IllegalArgumentException("Arguments can't all be null");
+        }
+        return t1 != null ? t1 : (t2 != null ? t2 : t3);
+    }
+
+
+    public static <T> T firstNonNull(T t1, T t2, T t3, T t4) {
+        if(t1 == null && t2 == null && t3 == null && t4 == null) {
+            throw new IllegalArgumentException("Arguments can't all be null");
+        }
+        return t1 != null ? t1 : (t2 != null ? t2 : (t3 != null ? t3 : t4 ));
+    }
+
 
     @SuppressWarnings("unused")
     public static <T> Set<T> newSet(Collection<T> coll) {
@@ -205,6 +222,22 @@ public class NncUtils {
         }
         List<T> merged = new ArrayList<>(coll1);
         merged.addAll(coll2);
+        return merged;
+    }
+
+    public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2, Set<? extends T> coll3) {
+        if(coll1 == null) {
+            coll1 = Set.of();
+        }
+        if(coll2 == null) {
+            coll2 = Set.of();
+        }
+        if(coll3 == null) {
+            coll3 = Set.of();
+        }
+        Set<T> merged = new HashSet<>(coll1);
+        merged.addAll(coll2);
+        merged.addAll(coll3);
         return merged;
     }
 
@@ -540,6 +573,17 @@ public class NncUtils {
         return buildPairs(list1, list2, EntityPO::getId);
     }
 
+    public static <T,R> Map<T,R> buildMap(List<T> list1, Collection<R> list2) {
+        requireTrue(list1.size() == list2.size(), "both list must have same size");
+        Map<T, R> map = new LinkedHashMap<>();
+        Iterator<T> it1 = list1.iterator();
+        Iterator<R> it2 = list2.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            map.put(it1.next(), it2.next());
+        }
+        return map;
+    }
+
     public static <T> List<Pair<T>> buildPairs(Collection<? extends T> coll1, Collection<? extends T> coll2) {
         List<Pair<T>> pairs = new ArrayList<>();
         Iterator<? extends T> it1 = coll1.iterator(), it2 = coll2.iterator();
@@ -628,6 +672,19 @@ public class NncUtils {
         return t != null ? mapping.apply(t) : null;
     }
 
+    public static <T> boolean listEquals(List<T> list1, List<T> list2) {
+        if(list1.size() != list2.size()) {
+            return false;
+        }
+        Iterator<T> it1 = list1.iterator(), it2 = list2.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            if(!Objects.equals(it1.next(), it2.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static <T> T orElse(T t, Supplier<T> elseSupplier) {
         return orElse(t, Function.identity(), elseSupplier);
     }
@@ -655,7 +712,18 @@ public class NncUtils {
     }
 
     public static <T> T requireNull(T value) {
-        return requireNonNull(value, "字段必须为空");
+        return requireNull(value, "Value必须为空");
+    }
+
+    public static <T> T requireNull(T value, String message) {
+        return requireNull(value, () -> new InternalException(message));
+    }
+
+    public static <T> T requireNull(T value, Supplier<RuntimeException> exceptionSupplier) {
+        if(value != null) {
+            throw exceptionSupplier.get();
+        }
+        return null;
     }
 
     @SuppressWarnings("unused")

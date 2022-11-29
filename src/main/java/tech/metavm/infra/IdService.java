@@ -3,6 +3,7 @@ package tech.metavm.infra;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.infra.persistence.BlockMapper;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
@@ -14,7 +15,7 @@ import java.util.*;
 import static tech.metavm.object.meta.IdConstants.DEFAULT_BLOCK_SIZE;
 
 @Component
-public class IdService {
+public class IdService implements EntityIdProvider {
 
     public static final int MAX_ALLOCATION_RECURSION_DEPTH = 3;
 
@@ -96,6 +97,11 @@ public class IdService {
         Map<Type, List<Long>> result =
                 allocate(tenantId, Map.of(type, 1));
         return result.values().iterator().next().get(0);
+    }
+
+    @Override
+    public long getTypeId(long id) {
+        return getBydId(id).getTypeId();
     }
 
     @Transactional

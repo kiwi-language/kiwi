@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceMap;
 import tech.metavm.object.instance.ModelMap;
@@ -35,6 +34,7 @@ public class FieldDef {
                     ModelDef<?, ?> targetDef) {
         this.reflectField = reflectField;
         typeCategory = ValueUtil.getTypeCategory(reflectField.getGenericType());
+        this.targetDef = targetDef;
         if(typeCategory.isReference() && targetDef == null) {
             throw new InternalException("Can not find definition for type: " + reflectField.getGenericType());
         }
@@ -43,7 +43,6 @@ public class FieldDef {
         unique = annotation != null && annotation.unique();
         asTitle = annotation != null && annotation.asTitle();
         isChild = reflectField.isAnnotationPresent(ChildEntity.class);
-        this.targetDef = targetDef;
         this.name = name != null ? name :extractFieldName(reflectField);
         this.declaringTypeDef = declaringTypeDef;
         this.field = createField(field);
@@ -62,13 +61,13 @@ public class FieldDef {
         return field.getName();
     }
 
-    public void setField(Object entity, IInstance instance, ModelMap modelMap) {
-        Object fieldValue = getFieldValue(instance, modelMap);
+    public void setModelField(Object entity, Instance instance, ModelMap modelMap) {
+        Object fieldValue = getModelFieldValue(instance, modelMap);
         ReflectUtils.set(entity, reflectField, fieldValue);
     }
 
-    public Object getFieldValue(IInstance instance, ModelMap modelMap) {
-        return convertValue(instance.getRaw(field), modelMap);
+    public Object getModelFieldValue(Instance instance, ModelMap modelMap) {
+        return convertValue(instance.getRaw(field), instance.getEntityType(), modelMap);
     }
 
     private tech.metavm.object.meta.Field createField(tech.metavm.object.meta.Field field) {
@@ -104,18 +103,10 @@ public class FieldDef {
             }
             throw new InternalException("Field " + fieldName() + " can not be null");
         }
-        IInstance existing;
-        if(targetDef == null) {
+        if(typeCategory.isPrimitive()) {
             return fieldValue;
         }
-        if((existing = instanceMap.getByModel(fieldValue)) != null) {
-            return existing;
-        }
-        return getTargetRef(targetDef, fieldValue, instanceMap);
-    }
-
-    private <T> Object getTargetRef(ModelDef<T, ?> modelDef, Object model, InstanceMap instanceMap) {
-        return modelDef.newInstance(modelDef.getEntityType().cast(model), instanceMap);
+        return instanceMap.getInstanceByModel(fieldValue);
     }
 
     private Type getFieldType() {
@@ -140,7 +131,7 @@ public class FieldDef {
         return declaringTypeDef;
     }
 
-    private Object convertValue(Object value, ModelMap modelMap) {
+    private Object convertValue(Object value, java.lang.reflect.Type valueType, ModelMap modelMap) {
         if(value == null) {
             if(nullable) {
                 return null;
@@ -151,12 +142,12 @@ public class FieldDef {
             return value;
         }
         if(typeCategory.isReference()) {
-            return modelMap.get(targetDef.getEntityType(), (IInstance) value);
+            return modelMap.get(Object.class, (Instance) value);
         }
         throw new InternalException("Invalid type category " + typeCategory);
     }
 
-    private <I extends Instance> Object newTargetModel(ModelDef<?, I> targetModelDef, IInstance instance, ModelMap modelMap) {
+    private <I extends Instance> Object newTargetModel(ModelDef<?, I> targetModelDef, Instance instance, ModelMap modelMap) {
         return targetModelDef.newModelHelper(instance, modelMap);
     }
 

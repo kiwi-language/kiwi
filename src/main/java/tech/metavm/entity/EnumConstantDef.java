@@ -11,9 +11,11 @@ public class EnumConstantDef<T extends Enum<?>> {
     private final T value;
     private final EnumConstantRT enumConstant;
     private final Instance instance;
+    private final EnumDef<T> enumDef;
 
     public EnumConstantDef(T value, EnumDef<T> enumDef, EnumConstantRT enumConstant, Instance instance) {
         java.lang.reflect.Field enumField = ReflectUtils.getField(value.getClass(), value.name());
+        this.enumDef = enumDef;
         this.instance = instance != null ? instance : enumDef.createInstance(value);
         EnumConstant annotation = enumField.getAnnotation(EnumConstant.class);
         this.name = annotation != null ? annotation.value() : value.name();
@@ -25,7 +27,7 @@ public class EnumConstantDef<T extends Enum<?>> {
 
     public EnumConstantRT createEnumConstant(Type enumType, EnumConstantRT enumConstant) {
         if(enumConstant == null) {
-            enumConstant = new EnumConstantRT(enumType, name, ordinal);
+            enumConstant = new EnumConstantRT(enumType, name, ordinal, enumDef.getEnumType());
         }
         else {
             enumConstant.setName(name);

@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Objects;
 
 public abstract class Entity implements Model, Identifiable {
@@ -23,6 +25,7 @@ public abstract class Entity implements Model, Identifiable {
         return EntityKey.create(this.getEntityType(), id);
     }
 
+    @JsonIgnore
     public final boolean isIdNull() {
         return id == null;
     }
@@ -34,19 +37,17 @@ public abstract class Entity implements Model, Identifiable {
         this.id = id;
     }
 
-    @Override
-    public Entity copy() {
-        return EntityUtils.copyEntity(this);
-    }
-
+    @JsonIgnore
     public long getVersion() {
         return version;
     }
 
+    @JsonIgnore
     public long getSyncVersion() {
         return syncVersion;
     }
 
+    @JsonIgnore
     public Class<? extends Entity> getEntityType() {
         return EntityUtils.getEntityType(this);
     }

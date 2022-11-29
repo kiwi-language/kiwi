@@ -1,10 +1,7 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.InstanceContext;
-import tech.metavm.object.meta.IdConstants;
 import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
 

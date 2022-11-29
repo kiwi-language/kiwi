@@ -1,6 +1,5 @@
 package tech.metavm.object.instance;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
@@ -25,14 +24,17 @@ import java.util.List;
 @Component
 public class InstanceManager {
 
-    @Autowired
-    private InstanceStore instanceStore;
+    private final InstanceStore instanceStore;
 
-    @Autowired
-    private InstanceContextFactory instanceContextFactory;
+    private final InstanceContextFactory instanceContextFactory;
 
-    @Autowired
-    private InstanceSearchService instanceSearchService;
+    private final InstanceSearchService instanceSearchService;
+
+    public InstanceManager(InstanceStore instanceStore, InstanceContextFactory instanceContextFactory, InstanceSearchService instanceSearchService) {
+        this.instanceStore = instanceStore;
+        this.instanceContextFactory = instanceContextFactory;
+        this.instanceSearchService = instanceSearchService;
+    }
 
     public InstanceDTO get(long id) {
         IInstance instance = createContext().get(id);
@@ -89,12 +91,11 @@ public class InstanceManager {
     @Transactional
     public void delete(long id, boolean asyncLogProcessing) {
         InstanceContext context = createContext(asyncLogProcessing);
-        IInstance instance = context.get(id);
+        Instance instance = context.get(id);
         if(instance != null) {
             context.remove(instance);
             context.finish();
         }
-//        context.processLogs();
     }
 
     public Page<InstanceDTO> query(InstanceQueryDTO query) {
@@ -118,8 +119,8 @@ public class InstanceManager {
         );
         Page<Long> idPage = instanceSearchService.search(searchQuery);
 
-        List<IInstance> instances = context.batchGet(idPage.data());
-        context.getInstanceStore().loadTitles(NncUtils.map(instances, IInstance::getId), context);
+        List<Instance> instances = context.batchGet(idPage.data());
+        instanceStore.loadTitles(NncUtils.map(instances, IInstance::getId), context);
         return new Page<>(
                 NncUtils.map(instances, IInstance::toDTO),
                 idPage.total()
@@ -145,7 +146,6 @@ public class InstanceManager {
 
     private InstanceContext createContext(long tenantId, boolean asyncLogProcessing) {
         return instanceContextFactory.newContext(tenantId, asyncLogProcessing);
-//        return entityContext.getInstanceContext();
     }
 
 }

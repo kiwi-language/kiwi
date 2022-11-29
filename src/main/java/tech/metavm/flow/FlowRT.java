@@ -12,6 +12,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
+import tech.metavm.util.TypeReference;
 
 import java.util.Collection;
 

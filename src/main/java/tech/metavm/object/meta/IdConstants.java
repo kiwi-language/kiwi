@@ -38,6 +38,10 @@ public class IdConstants {
 
         public static final long ID = TYPE_BASE + 2L;
 
+        public static final long NAME_ID = FIELD_BASE + 100L;
+
+        public static final long ORDINAL_ID = FIELD_BASE + 101L;
+
     }
 
     public static final long ENTITY = TYPE_BASE + 3L;
@@ -61,6 +65,8 @@ public class IdConstants {
     public static final long ARRAY = TYPE_BASE + 18L;
 
     public static final long NULL = TYPE_BASE + 19L;
+
+    public static final long RECORD = TYPE_BASE + 100L;
 
 //    public static final long NULLABLE = TYPE_BASE + 20L;
 

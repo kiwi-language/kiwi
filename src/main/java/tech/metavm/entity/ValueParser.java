@@ -1,17 +1,17 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelMap;
 
 import java.util.function.Function;
 
 public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
 
-    public static <T>ValueDef<T> parse(Class<T> entityType, Function<Object, IInstance> getInstance, DefMap defMap, ModelMap modelMap) {
+    public static <T>ValueDef<T> parse(Class<T> entityType, Function<Object, Instance> getInstance, DefMap defMap, ModelMap modelMap) {
         return new ValueParser<T>(entityType, getInstance, defMap, modelMap).parse();
     }
 
-    public ValueParser(Class<T> entityType, Function<Object, IInstance> getInstance, DefMap defMap, ModelMap modelMap) {
+    public ValueParser(Class<T> entityType, Function<Object, Instance> getInstance, DefMap defMap, ModelMap modelMap) {
         super(entityType, getInstance, defMap, modelMap);
     }
 
@@ -21,7 +21,8 @@ public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
                 null,
                 entityType,
                 defMap.getPojoDef(entityType.getSuperclass()),
-                type
+                type,
+                defMap
         );
     }
 }

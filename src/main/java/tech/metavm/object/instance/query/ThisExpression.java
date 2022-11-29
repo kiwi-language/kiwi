@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 
+@ValueType("当前对象表达式")
 public class ThisExpression extends Expression {
 
     private final Type type;

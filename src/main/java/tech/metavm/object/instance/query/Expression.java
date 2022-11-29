@@ -1,11 +1,12 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@ValueType("表达式")
 public abstract class Expression {
 
 //    protected final InstanceContext context;

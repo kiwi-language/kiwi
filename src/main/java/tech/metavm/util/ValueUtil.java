@@ -158,6 +158,15 @@ public class ValueUtil {
             if(Record.class.equals(klass) || isValueType(klass)) {
                 return TypeCategory.VALUE;
             }
+            if(Date.class.equals(klass)) {
+                return TypeCategory.TIME;
+            }
+            if(Password.class.equals(klass)) {
+                return TypeCategory.PASSWORD;
+            }
+            if(Null.class.equals(klass)) {
+                return TypeCategory.NULL;
+            }
             if (Object.class.equals(klass) || isEntityType(klass)) {
                 return TypeCategory.CLASS;
             }

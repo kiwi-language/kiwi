@@ -1,9 +1,11 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 
 import java.util.List;
 
+@ValueType("一元表达式")
 public class UnaryExpression extends Expression {
     private final Operator operator;
     private final Expression operand;

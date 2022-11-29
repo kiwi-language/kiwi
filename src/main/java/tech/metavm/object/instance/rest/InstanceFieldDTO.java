@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.rest;
 
 public record InstanceFieldDTO(
-        long fieldId,
+        Long fieldId,
         String fieldName,
         Integer type,
         Boolean multiValued,
@@ -9,7 +9,7 @@ public record InstanceFieldDTO(
         String displayValue
 ) {
 
-    public static InstanceFieldDTO valueOf(long fieldId, Object value) {
+    public static InstanceFieldDTO valueOf(Long fieldId, Object value) {
         return new InstanceFieldDTO(
                 fieldId,
                 null,

@@ -5,13 +5,13 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-@EntityType("傻瓜")
+@EntityType("傻")
 public class Foo extends Entity {
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
 
-    @ChildEntity("吧")
+    @ChildEntity("巴")
     private Bar bar;
 
     public Foo(String name, Bar bar) {

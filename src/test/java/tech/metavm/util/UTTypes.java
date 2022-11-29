@@ -25,8 +25,10 @@ public class UTTypes {
                 TypeCategory.ARRAY,
                 false,
                 false,
+                null,
                 StandardTypes.ARRAY,
                 List.of(BAR),
+                null,
                 null,
                 null
         );

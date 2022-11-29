@@ -6,15 +6,20 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
 
+import java.util.Map;
+
 public class ArrayDef<E> extends ModelDef<Table<E>, InstanceArray> {
 
+    private final java.lang.reflect.Type reflectType;
     private final ModelDef<E, ?> elementDef;
     private final Type type;
 
-    public ArrayDef(ModelDef<E, ?> elementDef, ValueDef<Object> objectDef, Type type) {
+    public ArrayDef(ModelDef<E, ?> elementDef,
+                    java.lang.reflect.Type reflectType, Type type) {
         super(new TypeReference<>() {}, InstanceArray.class);
         this.elementDef = elementDef;
-        this.type = type != null ? type : objectDef.getType().getArrayType();
+        this.reflectType = reflectType;
+        this.type = type != null ? type : elementDef.getType().getArrayType();
     }
 
     @Override
@@ -57,7 +62,12 @@ public class ArrayDef<E> extends ModelDef<Table<E>, InstanceArray> {
         }
     }
 
-    private IInstance newElementInstance(Object elementModel, InstanceMap instanceMap) {
+    @Override
+    public Map<Object, Entity> getEntityMapping() {
+        return Map.of(reflectType, type);
+    }
+
+    private Instance newElementInstance(Object elementModel, InstanceMap instanceMap) {
         return elementDef.newInstance(elementDef.getEntityType().cast(elementModel), instanceMap);
     }
 

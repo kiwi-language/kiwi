@@ -2,8 +2,10 @@ package tech.metavm.entity;
 
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import tech.metavm.infra.IdService;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.ContextPlugin;
+import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.InstanceArray;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.Field;
@@ -16,32 +18,34 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
-public class InstanceContext {
+public class InstanceContext implements IInstanceContext {
 
     private boolean finished;
     private final long tenantId;
     private final SubContext headContext = new SubContext();
     private final SubContext bufferContext = new SubContext();
-    private final IdService idService;
+    private final EntityIdProvider idService;
     private final IdentitySet<Instance> loadedInstances = new IdentitySet<>();
-//    private final Map<EntityKey, Entity> refMap = new HashMap<>();
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final boolean asyncPostProcessing;
     private final Map<Long, Instance> instanceMap = new HashMap<>();
     private final Set<Instance> instances = new LinkedHashSet<>();
-    private final InstanceStore instanceStore;
+    private final IInstanceStore instanceStore;
 
     private final LoadingBuffer loadingBuffer;
     private final List<ContextPlugin> plugins;
     private final Executor executor;
     private final EntityContext entityContext;
+    private final IInstanceContext parent;
 
     public InstanceContext(long tenantId,
-                           InstanceStore instanceStore,
-                           IdService idService,
+                           IInstanceStore instanceStore,
+                           EntityIdProvider idService,
                            Executor executor,
                            boolean asyncPostProcessing,
-                           List<ContextPlugin> plugins
+                           List<ContextPlugin> plugins,
+                           IInstanceContext parent,
+                           DefContext defContext
     ) {
         this.tenantId = tenantId;
         this.instanceStore = instanceStore;
@@ -49,15 +53,20 @@ public class InstanceContext {
         this.idService = idService;
         this.plugins = plugins;
         this.executor = executor;
-        entityContext = new EntityContext(this);
+        entityContext = new EntityContext(
+                this,
+                NncUtils.get(parent, IInstanceContext::getEntityContext),
+                defContext
+        );
         loadingBuffer = new LoadingBuffer(this);
+        this.parent = parent;
     }
 //
 //    public List<Instance> batchGetInstances(Collection<Long> ids) {
 //        return batchGet(Instance.class, ids, LoadingOption.none());
 //    }
 
-    public List<IInstance> batchGet(Collection<Long> ids) {
+    public List<Instance> batchGet(Collection<Long> ids) {
         return batchGet(ids, LoadingOption.none());
     }
 
@@ -109,22 +118,41 @@ public class InstanceContext {
         loadingBuffer.load(new LoadRequest(id, options));
     }
 
-    public List<IInstance> getByType(Type type) {
+    public List<Instance> getByType(Type type) {
         return createLoadingList(loadingBuffer.getByType(type));
     }
 
-    private LoadingList<IInstance> createLoadingList(List<InstancePO> instancePOs) {
+    private LoadingList<Instance> createLoadingList(List<InstancePO> instancePOs) {
         return LoadingList.create(instancePOs, instancePO -> InstanceFactory.create(instancePO, this));
     }
 
-    public List<IInstance> batchGet(Collection<Long> ids,
-                                               LoadingOption firstOption, LoadingOption...restOptions) {
+    @Override
+    public List<Instance> batchGet(Collection<Long> ids,
+                                   LoadingOption firstOption, LoadingOption... restOptions) {
         return batchGet(ids, LoadingOption.of(firstOption, restOptions));
     }
 
-    public List<IInstance> batchGet(Collection<Long> ids, Set<LoadingOption> options) {
+    @Override
+    public List<Instance> batchGet(Collection<Long> ids, Set<LoadingOption> options) {
+        if(parent == null) {
+            return batchGetSelf(ids, options);
+        }
+        else {
+            Collection<Long> parentIds = NncUtils.filter(ids, parent::containsId);
+            Collection<Long> selfIds = NncUtils.filterNot(ids, parent::containsId);
+            return NncUtils.merge(
+                    parent.batchGet(parentIds, options),
+                    batchGetSelf(selfIds, options)
+            );
+        }
+    }
+
+    private List<Instance> batchGetSelf(Collection<Long> ids, Set<LoadingOption> options) {
         load(ids, options);
-        return NncUtils.map(ids, id -> new InstanceRef(id, getEntityType(id), () -> getReal(id)));
+        return NncUtils.map(
+                ids,
+                id -> EntityProxyFactory.getProxyInstance(Instance.class, id, () -> getReal(id))
+        );
     }
 
     public Instance getReal(long id) {
@@ -159,19 +187,19 @@ public class InstanceContext {
         }
     }
 
-    public IInstance get(long id) {
+    public Instance get(long id) {
         return get(id, LoadingOption.none());
     }
 
-    public IInstance selectByUniqueKey(IndexKeyPO key) {
+    public Instance selectByUniqueKey(IndexKeyPO key) {
         return NncUtils.getFirst(selectByKey(key));
     }
 
-    public List<IInstance> selectByKey(IndexKeyPO key) {
+    public List<Instance> selectByKey(IndexKeyPO key) {
         return instanceStore.selectByKey(key, this);
     }
 
-    public IInstance get(long id, Set<LoadingOption> options) {
+    public Instance get(long id, Set<LoadingOption> options) {
         return NncUtils.getFirst(batchGet(List.of(id), options));
     }
 
@@ -182,12 +210,12 @@ public class InstanceContext {
         instances.add(instance);
     }
 
-    public void remove(IInstance instance) {
+    public void remove(Instance instance) {
         boolean removed = instances.remove(getReal(instance.getId()));
         if(removed) {
             for (Field field : instance.getType().getFields()) {
                 if (field.isChildField()) {
-                    IInstance ref = instance.getInstance(field);
+                    Instance ref = instance.getInstance(field);
                     if (ref != null) {
                         remove(ref);
                     }
@@ -206,7 +234,7 @@ public class InstanceContext {
     }
 
     private long getTypeIdById(long id) {
-        return idService.getBydId(id).getTypeId();
+        return idService.getTypeId(id);
     }
 
     public void initIds() {
@@ -219,12 +247,14 @@ public class InstanceContext {
             List<Long> ids = idMap.get(type);
             NncUtils.biForEach(instances, ids, Instance::initId);
         });
-
     }
 
     public void finish() {
         if(finished) {
             throw new IllegalStateException("Already finished");
+        }
+        if(parent != null) {
+            parent.finish();
         }
         finished = true;
         initIds();
@@ -254,11 +284,16 @@ public class InstanceContext {
 //            entity.setPersisted(true);
             headContext.add(EntityUtils.copyPojo(entity));
         }
-        registerTransactionSynchronization();
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            registerTransactionSynchronization();
+        }
+        else {
+            postProcess();
+        }
     }
 
     public Class<?> getEntityType(long id) {
-        return EntityTypeRegistry.getEntityType(idService.getBydId(id).getTypeId());
+        return EntityTypeRegistry.getEntityType(idService.getTypeId(id));
     }
 
     private List<InstancePO> getBufferedEntityPOs() {
@@ -309,7 +344,7 @@ public class InstanceContext {
     public void bind(Instance instance) {
         loadedInstances.add(instance);
         instances.add(instance);
-//        bufferContext.add(entity);
+//        bufferContext.add(instance.toPO());
 //        if(entity.isPersisted()) {
 //            headContext.add(EntityUtils.copyEntity(entity));
 //        }
@@ -347,12 +382,17 @@ public class InstanceContext {
         }
     }
 
-    public InstanceStore getInstanceStore() {
+    public IInstanceStore getInstanceStore() {
         return instanceStore;
     }
 
     public EntityContext getEntityContext() {
         return entityContext;
+    }
+
+    @Override
+    public boolean containsId(long id) {
+        return parent != null && parent.containsId(id) || bufferContext.get(id) != null;
     }
 
     public Type getType(Long id) {
@@ -363,7 +403,7 @@ public class InstanceContext {
         return entityContext.getField(id);
     }
 
-    public IdService getIdService() {
+    public EntityIdProvider getIdService() {
         return idService;
     }
 }

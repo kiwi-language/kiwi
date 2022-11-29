@@ -41,9 +41,6 @@ public class TableManager {
                 IdConstants.OBJECT,
                 table.ephemeral(),
                 table.anonymous(),
-                null,
-                null,
-                null,
                 table.desc(),
                 List.of(),
                 List.of()

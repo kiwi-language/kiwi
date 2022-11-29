@@ -1,11 +1,12 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceMap;
 import tech.metavm.object.instance.ModelMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.TypeReference;
+
+import java.util.Map;
 
 public abstract class ModelDef<T, I extends Instance> {
 
@@ -31,19 +32,17 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public abstract T newModel(I instance, ModelMap modelMap);
 
-    public T newModelHelper(IInstance instance, ModelMap modelMap) {
-        Instance realInstance = EntityContext.getRealInstance(instance);
-        return newModel(instanceType.cast(realInstance), modelMap);
+    public T newModelHelper(Instance instance, ModelMap modelMap) {
+        return newModel(instanceType.cast(instance), modelMap);
     }
 
     public abstract void updateModel(T model, I instance, ModelMap modelMap);
 
-    public final I newInstanceHelper(Object object, InstanceMap instanceMap) {
-        return newInstance(entityType.cast(object), instanceMap);
-    }
-
     public abstract I newInstance(T model, InstanceMap instanceMap);
 
+    public final I newInstanceHelper(Object model, InstanceMap instanceMap) {
+        return newInstance(entityType.cast(model), instanceMap);
+    }
 
     public final void updateInstanceHelper(Object object, I instance, InstanceMap instanceMap) {
         updateInstance(entityType.cast(object), instance, instanceMap);
@@ -62,4 +61,11 @@ public abstract class ModelDef<T, I extends Instance> {
     public java.lang.reflect.Type getGenericType() {
         return genericType;
     }
+
+    public abstract Map<Object, Entity> getEntityMapping();
+
+    public Map<Object, Instance> getInstanceMapping() {
+        return Map.of();
+    }
+
 }

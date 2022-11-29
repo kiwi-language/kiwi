@@ -6,20 +6,20 @@ import tech.metavm.util.TypeReference;
 
 public class ValueDef<T> extends PojoDef<T> {
 
-    public ValueDef(/*long id,*/
-                    String name,
+    public ValueDef(String name,
                     TypeReference<T> typeReference,
                     @Nullable PojoDef<? super T> parentDef,
-                    Type type) {
-        this(/*id, */name, typeReference.getType(), parentDef, type);
+                    Type type,
+                    DefMap defMap) {
+        this(name, typeReference.getType(), parentDef, type, defMap);
     }
 
-    public ValueDef(/*long id,*/
-                    String name,
+    public ValueDef(String name,
                     Class<T> entityType,
                     @Nullable PojoDef<? super T> parentDef,
-                    Type type) {
-        super(/*id,*/ name, entityType, parentDef, type);
+                    Type type,
+                    DefMap defMap) {
+        super(name, entityType, parentDef, type, defMap);
     }
 
 }

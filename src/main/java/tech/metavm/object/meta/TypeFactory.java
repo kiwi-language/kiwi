@@ -19,9 +19,11 @@ public class TypeFactory {
                 TypeCategory.getByCodeRequired(typeDTO.category()),
                 typeDTO.anonymous(),
                 typeDTO.ephemeral(),
+                NncUtils.map(typeDTO.typeParameterIds(), context::getType),
                 NncUtils.get(typeDTO.rawTypeId(), context::getType),
                 NncUtils.map(typeDTO.typeArgumentIds(), context::getType),
                 NncUtils.mapUnique(typeDTO.typeMemberIds(), context::getType),
+                NncUtils.mapUnique(typeDTO.upperBoundIds(), context::getType),
                 typeDTO.desc()
         );
         for (FieldDTO field : typeDTO.fields()) {
@@ -75,6 +77,8 @@ public class TypeFactory {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
     }
@@ -88,7 +92,9 @@ public class TypeFactory {
                 false,
                 null,
                 null,
+                null,
                 types,
+                null,
                 null
         );
     }
@@ -100,8 +106,10 @@ public class TypeFactory {
                 TypeCategory.PARAMETERIZED,
                 false,
                 false,
+                null,
                 rawType,
                 typeArguments,
+                null,
                 null,
                 null
         );

@@ -1,20 +1,22 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 import tech.metavm.util.ValueUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@ValueType("数组表达式")
 public class ArrayExpression extends Expression {
 
-    private final List<Expression> expressions;
+    private final Table<Expression> expressions;
 
-    public ArrayExpression(List<Expression> expressions/*, InstanceContext context*/) {
-//        super(context);
-        this.expressions = Collections.unmodifiableList(expressions);
+    public ArrayExpression(List<Expression> expressions) {
+        this.expressions = new Table<>(expressions);
     }
 
     public static ArrayExpression merge(Expression first, Expression second) {
@@ -30,7 +32,7 @@ public class ArrayExpression extends Expression {
         }
     }
 
-    public List<Expression> getExpressions() {
+    public Table<Expression> getExpressions() {
         return expressions;
     }
 

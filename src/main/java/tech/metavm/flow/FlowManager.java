@@ -256,9 +256,6 @@ public class FlowManager {
                 IdConstants.OBJECT,
                 true,
                 true,
-                null,
-                null,
-                null,
                 "流程输入",
                 fieldDTOs,
                 List.of()
@@ -273,9 +270,6 @@ public class FlowManager {
                 IdConstants.OBJECT,
                 true,
                 true,
-                null,
-                null,
-                null,
                 "流程输出",
                 fieldDTOs,
                 List.of()

@@ -24,7 +24,7 @@ public interface IInstance {
 
     Type getType();
 
-    IInstance getInstance(Field field);
+    Instance getInstance(Field field);
 
     Object getRaw(String fieldName);
 
@@ -46,7 +46,8 @@ public interface IInstance {
 
     List<IndexItemPO> getUniqueKeys();
 
-    @Nullable Class<?> getEntityType();
+    @Nullable
+    java.lang.reflect.Type getEntityType();
 
     InstanceArray getInstanceArray(Field field);
 

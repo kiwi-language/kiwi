@@ -1,9 +1,11 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.object.meta.Type;
 
+@ValueType("引用值")
 public class ReferenceValue extends Value {
 
 //    private final String nodeId;

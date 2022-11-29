@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.InstanceStore;
+import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
@@ -17,7 +17,7 @@ public class LoadingBuffer {
     private final Map<Type, List<InstancePO>> byTypeResultMap = new HashMap<>();
     private final Set<Long> loaded = new HashSet<>();
     private final InstanceContext context;
-    private final InstanceStore instanceStore;
+    private final IInstanceStore instanceStore;
 
     public LoadingBuffer(InstanceContext context) {
         this.context = context;

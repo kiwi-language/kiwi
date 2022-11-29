@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.Model;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.SQLColumnType;
 
@@ -11,22 +12,6 @@ public record Column(
         @EntityField("列名") String name,
         @EntityField("列类型") SQLColumnType type
 ) {
-
-    public Column(
-            String name
-    ) {
-        this(name, SQLColumnType.INT64);
-    }
-
-
-    public Column(
-            String name,
-            SQLColumnType type
-    ) {
-        this.name = name;
-        this.type = type;
-    }
-
 
     public static Column valueOf(String columnName) {
         if (columnName == null) {

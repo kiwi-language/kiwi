@@ -1,14 +1,15 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.ValueType;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.meta.Type;
 
+@ValueType("节点表达式")
 public class NodeExpression extends Expression {
 
     private final NodeRT<?> node;
 
     public NodeExpression(NodeRT<?> node) {
-//        super(node.getInstanceContext());
         this.node = node;
     }
 

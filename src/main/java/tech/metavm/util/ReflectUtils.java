@@ -5,10 +5,7 @@ import sun.misc.Unsafe;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class ReflectUtils {
@@ -23,6 +20,14 @@ public class ReflectUtils {
 
     public static Unsafe getUnsafe() {
         return UNSAFE;
+    }
+
+    public static Class<?> classForName(String name) {
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException e) {
+            throw new InternalException("Can not find class: " + name);
+        }
     }
 
     public static Method getMethodByName(@NotNull Class<?> klass, String methodName) {
@@ -63,12 +68,20 @@ public class ReflectUtils {
         }
     }
 
+    public static String getQualifiedFieldName(Field field) {
+        return field.getDeclaringClass().getName() + "." + field.getName();
+    }
+
     public static <T> T allocateInstance(Class<T> klass) {
         try {
             return klass.cast(UNSAFE.allocateInstance(klass));
         } catch (InstantiationException e) {
             throw new InternalException("Fail to allocate instance of class " + klass.getName());
         }
+    }
+
+    public static boolean isAllWildCardType(WildcardType wildcardType) {
+        return Arrays.equals(new Type[]{Object.class}, wildcardType.getUpperBounds());
     }
 
     public static boolean checkTypeArguments(ParameterizedType parameterizedType, Class<?>...args) {
@@ -178,12 +191,12 @@ public class ReflectUtils {
         return allFields;
     }
 
-    public static Class<?> getRawTypeRecursively(Type type) {
+    public static Class<?> getRawClass(Type type) {
         if(type instanceof Class<?> klass) {
             return klass;
         }
         if(type instanceof ParameterizedType parameterizedType) {
-            return getRawTypeRecursively(parameterizedType.getRawType());
+            return getRawClass(parameterizedType.getRawType());
         }
         throw new InternalException("Can not get raw type for: " + type);
     }

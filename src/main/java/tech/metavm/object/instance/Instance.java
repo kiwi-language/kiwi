@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.entity.IdInitializing;
 import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -20,13 +21,13 @@ import java.util.Map;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 
-public class Instance implements IInstance {
+public class Instance implements IInstance, IdInitializing {
 
     private Long id;
     protected final Type type;
     private transient long version;
     private transient long syncVersion;
-    private final Class<?> entityType;
+    private final java.lang.reflect.Type entityType;
     private final Table<InstanceField> fields = new Table<>(1);
 
     private Instance(Type type, Long id, List<InstanceField> fields, long version, long syncVersion, Class<?> entityType) {
@@ -141,7 +142,7 @@ public class Instance implements IInstance {
     }
 
     @Override
-    public IInstance getInstance(Field field) {
+    public Instance getInstance(Field field) {
         if(field.getType().isReference()) {
             return field(field).getInstance();
         }
@@ -160,16 +161,16 @@ public class Instance implements IInstance {
         else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);
-            IInstance fieldInstance = getInstance(fieldName);
+            Instance fieldInstance = getInstance(fieldName);
             return NncUtils.get(fieldInstance, inst -> inst.getRaw(subPath));
         }
     }
 
-    public IInstance getInstance(long fieldId) {
+    public Instance getInstance(long fieldId) {
         return field(fieldId).getInstance();
     }
 
-    public IInstance getInstance(String fieldName) {
+    public Instance getInstance(String fieldName) {
         return field(fieldName).getInstance();
     }
 
@@ -193,6 +194,10 @@ public class Instance implements IInstance {
     @SuppressWarnings("unused")
     public String getString(String fieldName) {
         return (String) getRaw(field(fieldName).getField());
+    }
+
+    public Integer getInt(Field field) {
+        return (Integer) field(field).getValue();
     }
 
     public Integer getInt(long fieldId) {
@@ -252,7 +257,7 @@ public class Instance implements IInstance {
 
     @Override
     public Long getId() {
-        return null;
+        return id;
     }
 
     public void update(InstanceDTO update) {
@@ -270,8 +275,6 @@ public class Instance implements IInstance {
     }
 
     public InstanceDTO toDTO() {
-//        InstanceStore instanceStore = context.getInstanceStore();
-//        instanceStore.loadTitles(List.of(id), context);
         return new InstanceDTO(
                 getId(),
                 getType().getId(),
@@ -314,7 +317,7 @@ public class Instance implements IInstance {
     }
 
     @Override
-    public Class<?> getEntityType() {
+    public java.lang.reflect.Type getEntityType() {
         return entityType;
     }
 

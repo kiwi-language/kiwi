@@ -13,6 +13,7 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
@@ -85,6 +86,13 @@ public class Field extends Entity {
 
     public Type getType() {
         return type;
+    }
+
+    public Type getEffectiveType(Type parameterizedType) {
+        List<Type> typeParams = NncUtils.requireNonNull(getDeclaringType().getTypeParameters());
+        List<Type> typeArgs = NncUtils.requireNonNull(parameterizedType.getTypeArguments());
+        Map<Type, Type> mapping = NncUtils.buildMap(typeParams, typeArgs);
+        return type.getEffectiveType(mapping);
     }
 
     public boolean isChildField() {
@@ -234,12 +242,14 @@ public class Field extends Entity {
         return getConcreteType().isEnum() ? getConcreteType().getEnumConstants() : List.of();
     }
 
+    @Nullable
     public Column getColumn() {
         return column;
     }
 
+
     public String getColumnName() {
-        return column.name();
+        return NncUtils.get(column, Column::name);
     }
 
     public Object preprocessValue(Object rawValue) {
@@ -251,13 +261,13 @@ public class Field extends Entity {
         if(value == null) {
             return "";
         }
-        if(getConcreteType().isEnum()) {
-            return NncUtils.filterOneAndMap(
-                    getEnumConstants(),
-                    opt -> opt.getId().equals(value),
-                    EnumConstantRT::getName);
-        }
-        else if(getConcreteType().isClass()) {
+//        if(getConcreteType().isEnum()) {
+//            return NncUtils.filterOneAndMap(
+//                    getEnumConstants(),
+//                    opt -> opt.getId().equals(value),
+//                    EnumConstantRT::getName);
+//        }
+        else if(getConcreteType().isReference()) {
             return ((IInstance) value).getTitle();
         }
         else if(getConcreteType().isBool()) {

@@ -131,19 +131,8 @@ public class InstanceField {
         return (Double) value;
     }
 
-//    public Long getValueId() {
-//        return (Long) value;
-//    }
-
-    public IInstance getInstance() {
-        return (IInstance) value;
-//        if(!isGeneralRelation() || isArray()) {
-//            throw new UnsupportedOperationException();
-//        }
-//        if(value == null) {
-//            return null;
-//        }
-//        return context.get((long) value);
+    public Instance getInstance() {
+        return (Instance) value;
     }
 
     @SuppressWarnings("unused")

@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
+import static tech.metavm.util.NncUtils.requireNonNull;
 
 @EntityType("类型")
 public class Type extends Entity {
@@ -46,7 +47,12 @@ public class Type extends Entity {
     private final Table<ConstraintRT<?>> constraints = new Table<>();
     @EntityField("类型成员")
     @Nullable
+    private final Table<Type> typeParameters;
+    @Nullable
     private final Table<Type> typeMembers;
+    @EntityField("类型上限")
+    @Nullable
+    private final Table<Type> upperBounds;
     @EntityField("数组类型")
     @Nullable
     private Type arrayType;
@@ -69,6 +75,8 @@ public class Type extends Entity {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
     }
@@ -79,9 +87,11 @@ public class Type extends Entity {
                 TypeCategory type,
                 boolean anonymous,
                 boolean ephemeral,
+                @Nullable List<Type> typeParameters,
                 @Nullable Type rawType,
                 @Nullable List<Type> typeArguments,
                 @Nullable Set<Type> typeMembers,
+                @Nullable Set<Type> upperBounds,
                 @Nullable String desc) {
         this.name = name;
         this.superType = superType;
@@ -89,9 +99,11 @@ public class Type extends Entity {
         this.anonymous = anonymous;
         this.ephemeral = ephemeral;
         this.rawType = rawType;
+        this.typeParameters = NncUtils.get(typeParameters, Table::new);
         this.typeArguments = NncUtils.get(typeArguments, Table::new);
         this.desc = desc;
         this.typeMembers = NncUtils.get(typeMembers, Table::new);
+        this.upperBounds = NncUtils.get(upperBounds, Table::new);
     }
 
     public TypeCategory getCategory() {
@@ -129,6 +141,7 @@ public class Type extends Entity {
         return desc;
     }
 
+    @JsonIgnore
     @SuppressWarnings("unused")
     public boolean isStandard() {
         return StdTypeManager.isStandardTypeId(id);
@@ -209,8 +222,18 @@ public class Type extends Entity {
     }
 
     @JsonIgnore
+    public boolean isPojo() {
+        return isClass() || isValue();
+    }
+
+    @JsonIgnore
     public boolean isClass() {
         return category.isClass();
+    }
+
+    @JsonIgnore
+    public boolean isValue() {
+        return category.isValue();
     }
 
     @JsonIgnore
@@ -278,6 +301,11 @@ public class Type extends Entity {
         return category.isUnion() && typeMembers.contains(StandardTypes.NULL);
     }
 
+    @JsonIgnore
+    public boolean isTypeVariable() {
+        return category.isVariable();
+    }
+
     public boolean rawTypeEquals(Type type) {
         return Objects.equals(rawType, type);
     }
@@ -285,6 +313,11 @@ public class Type extends Entity {
     @JsonIgnore
     public boolean isNotNull() {
         return !isNullable();
+    }
+
+    @Nullable
+    public Table<Type> getUpperBounds() {
+        return upperBounds;
     }
 
     @JsonIgnore
@@ -404,6 +437,77 @@ public class Type extends Entity {
         }
     }
 
+    @Nullable
+    public Table<Type> getTypeParameters() {
+        return typeParameters;
+    }
+
+    @Nullable
+    public Table<Type> getTypeArguments() {
+        return typeArguments;
+    }
+
+    public Type getEffectiveType(Map<Type, Type> argumentMapping) {
+        if(isTypeVariable()) {
+            Type typeArgument = argumentMapping.get(this);
+            return requireNonNull(typeArgument, "Can not resolve type variable: " + this.getName());
+        }
+        if(category.isUnion()) {
+            Table<Type> effectiveMembers = new Table<>();
+            for (Type typeMember : requireNonNull(typeMembers)) {
+                effectiveMembers.add(
+                        typeMember.getEffectiveType(argumentMapping)
+                );
+            }
+            if(typeMembers.equals(effectiveMembers)) {
+                return this;
+            }
+            else {
+                return new Type(
+                        NncUtils.join(effectiveMembers, Type::getName, "|"),
+                        superType,
+                        TypeCategory.UNION,
+                        anonymous,
+                        ephemeral,
+                        null,
+                        null,
+                        null,
+                        new LinkedHashSet<>(effectiveMembers),
+                        null,
+                        null
+                );
+            }
+        }
+        if(category.isParameterized()) {
+            Type effectiveRawType = requireNonNull(rawType).getEffectiveType(argumentMapping);
+            List<Type> effectiveTypeArgs = NncUtils.map(
+                    requireNonNull(typeArguments),
+                    typeArg -> typeArg.getEffectiveType(argumentMapping)
+            );
+            if(rawType.equals(effectiveRawType) && NncUtils.listEquals(typeArguments, effectiveTypeArgs)) {
+                return this;
+            }
+            else {
+                return new Type(
+                        rawType.getName() + "<" + NncUtils.join(typeArguments, Type::getName, ",") + ">",
+                        superType,
+                        TypeCategory.UNION,
+                        anonymous,
+                        ephemeral,
+                        null,
+                        effectiveRawType,
+                        effectiveTypeArgs,
+                        null,
+                        null,
+                        null
+                );
+            }
+        }
+        else {
+            return this;
+        }
+    }
+
     public TypePO toPO() {
         return new TypePO(
                 id,
@@ -448,9 +552,11 @@ public class Type extends Entity {
                 category.code(),
                 anonymous,
                 ephemeral,
+                NncUtils.map(typeParameters, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
                 NncUtils.get(rawType, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
                 NncUtils.map(typeArguments, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
                 NncUtils.map(typeMembers, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
+                NncUtils.map(upperBounds, t -> t.toDTO(withTitleField, withFields, withFieldTypes)),
                 desc,
                 getFieldDTOs(withFields, withTitleField, withFieldTypes),
                 NncUtils.map(constraints, ConstraintRT::toDTO),

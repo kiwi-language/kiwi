@@ -1,7 +1,9 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityType;
 import tech.metavm.util.NncUtils;
 
+@EntityType("更新操作")
 public enum UpdateOp {
 
     SET(1),

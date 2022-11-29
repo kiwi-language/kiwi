@@ -1,23 +1,25 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.List;
 
+@ValueType("函数表达式")
 public class FunctionExpression extends Expression {
 
     private final Function function;
-    private final List<Expression> arguments;
+    private final Table<Expression> arguments;
 
-    public FunctionExpression(Function function, Expression argument/*, InstanceContext context*/) {
-//        super(context);
+    public FunctionExpression(Function function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {
             arguments = arrayExpression.getExpressions();
         }
         else {
-            arguments = List.of(argument);
+            arguments = new Table<>(List.of(argument));
         }
     }
 

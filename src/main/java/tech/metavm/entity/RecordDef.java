@@ -15,8 +15,8 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
 
     private final Constructor<T> constructor;
 
-    public RecordDef(String name, Class<T> entityType, @Nullable PojoDef<? super T> parentDef, Type type) {
-        super(name, entityType, parentDef, type);
+    public RecordDef(String name, Class<T> entityType, @Nullable PojoDef<? super T> parentDef, Type type, DefMap defMap) {
+        super(name, entityType, parentDef, type, defMap);
         Class<?>[] componentTypes =
                 Arrays.stream(entityType.getRecordComponents()).map(RecordComponent::getType).toArray(Class<?>[]::new);
         constructor = ReflectUtils.getDeclaredConstructor(entityType, componentTypes);
@@ -24,7 +24,7 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
 
     @Override
     public T newModel(Instance instance, ModelMap modelMap) {
-        Object[] fieldValues = NncUtils.map(getFieldDefs(), fieldDef -> fieldDef.getFieldValue(instance, modelMap))
+        Object[] fieldValues = NncUtils.map(getFieldDefs(), fieldDef -> fieldDef.getModelFieldValue(instance, modelMap))
                 .toArray(Object[]::new);
         return ReflectUtils.invokeConstructor(constructor, fieldValues);
     }

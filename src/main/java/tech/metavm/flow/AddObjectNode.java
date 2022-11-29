@@ -1,9 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.InstanceContext;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.AddObjectParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -12,6 +9,7 @@ import tech.metavm.object.meta.IdConstants;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
+import tech.metavm.util.TypeReference;
 
 import java.util.ArrayList;
 import java.util.List;

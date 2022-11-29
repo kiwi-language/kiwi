@@ -1,60 +1,54 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.object.meta.persistence.EnumConstantPO;
+import tech.metavm.entity.EntityTypeRegistry;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
+import tech.metavm.util.TypeReference;
 
-@EntityType("枚举值")
-public class EnumConstantRT extends Entity {
+import java.util.Map;
+
+import static tech.metavm.object.meta.StandardTypes.*;
+
+public class EnumConstantRT {
 
     public static final long MIN_ID = Long.MAX_VALUE - Integer.MAX_VALUE;
     public static final long MAX_ID = Long.MAX_VALUE;
 
-//    private transient final Field nameField;
-//    private transient final Field ordinalField;
+    private final Instance instance;
 
-    @EntityField("类型")
-    private final Type type;
-    @EntityField("名称")
-    private String name;
-    @EntityField("序号")
-    private int ordinal;
+    public EnumConstantRT(Instance instance) {
+        this.instance = instance;
+    }
 
-//    public EnumConstantRT(EnumConstantPO enumConstantPO, EntityContext context) {
-//        super(enumConstantPO.getId(), context);
-//        this.name = enumConstantPO.getName();
-//        this.ordinal = enumConstantPO.getOrdinal();
-//    }
-
-    public EnumConstantRT(EnumConstantDTO dto, Type type) {
-//        super(type.getContext());
-        this.type = type;
-        type.addEnumConstant(this);
-        setName(dto.name());
-        ordinal = dto.ordinal();
+    public EnumConstantRT(EnumConstantDTO enumConstantDTO, Type type) {
+        this(type, enumConstantDTO.name(), enumConstantDTO.ordinal());
     }
 
     public EnumConstantRT(Type type, String name, int ordinal) {
-        this.type = type;
-        this.name = name;
-        this.ordinal = ordinal;
-        type.addEnumConstant(this);
+        this(type, name, ordinal,
+                EntityTypeRegistry.getJavaType(type).asSubclass(new TypeReference<Enum<?>>() {}.getType())
+        );
+    }
+
+    public EnumConstantRT(Type type, String name, int ordinal, Class<? extends Enum<?>> javaType) {
+        instance = new Instance(
+                Map.of(ENUM_NAME, name, ENUM_ORDINAL, ordinal),
+                type,
+                javaType
+        );
     }
 
     public Type getType() {
-        return type;
+        return instance.getType();
     }
 
     public String getName() {
-        return name;
+        return instance.getString(ENUM_NAME);
     }
 
     public int getOrdinal() {
-        return ordinal;
+        return instance.getInt(ENUM_ORDINAL);
     }
 
     public void update(EnumConstantDTO update) {
@@ -63,17 +57,17 @@ public class EnumConstantRT extends Entity {
     }
 
     public void setName(String name) {
-        this.name = name;
+        instance.set(ENUM_NAME, name);
     }
 
     public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
+        instance.set(ENUM_ORDINAL, ordinal);
     }
 
     public EnumConstantDTO toEnumConstantDTO() {
         return new EnumConstantDTO(
-                id,
-                type.getId(),
+                instance.getId(),
+                instance.getType().getId(),
                 getOrdinal(),
                 getName()
         );
@@ -81,11 +75,19 @@ public class EnumConstantRT extends Entity {
 
     public ChoiceOptionDTO toChoiceOptionDTO(boolean defaultSelected) {
         return new ChoiceOptionDTO(
-                id,
+                instance.getId(),
                 getName(),
                 getOrdinal(),
                 defaultSelected
         );
+    }
+
+    public Long getId() {
+        return instance.getId();
+    }
+
+    public void remove() {
+        instance.remove();
     }
 
 }

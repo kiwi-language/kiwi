@@ -5,6 +5,7 @@ import tech.metavm.infra.IdService;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.util.ContextUtil;
+import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -14,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class InstanceContextFactory {
+
+    private static IInstanceContext STD_CONTEXT;
 
     private final IdService idService;
 
@@ -32,22 +35,36 @@ public class InstanceContextFactory {
     }
 
     public InstanceContext newContext(long tenantId) {
-        return newContext(tenantId, true);
+        return newContext(tenantId, true, idService, EntityTypeRegistry.getDefContext());
     }
 
     public InstanceContext newContext(long tenantId, boolean asyncProcessLogs) {
+        return newContext(tenantId, asyncProcessLogs, idService, EntityTypeRegistry.getDefContext());
+    }
+
+    public InstanceContext newContext(long tenantId,
+                                      boolean asyncProcessLogs,
+                                      EntityIdProvider idProvider,
+                                      DefContext defContext) {
         return new InstanceContext(
                 tenantId,
                 instanceStore,
-                idService,
+                idProvider,
                 executor,
                 asyncProcessLogs,
-                plugins
+                plugins,
+                STD_CONTEXT,
+                defContext
         );
     }
 
     public InstanceContext newContext() {
         return newContext(ContextUtil.getTenantId());
+    }
+
+    public static void initStdContext(IInstanceContext context) {
+        NncUtils.requireNull(STD_CONTEXT, "standard context already initialized");
+        STD_CONTEXT = context;
     }
 
 }

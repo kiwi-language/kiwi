@@ -11,12 +11,12 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 
 public class InstanceArray extends Instance implements IInstanceArray {
 
-    private final List<IInstance> elements;
+    private final List<Instance> elements;
     private final boolean elementAsChild;
 
     public InstanceArray(Type type,
                          Class<?> entityType,
-                         List<IInstance> elements,
+                         List<Instance> elements,
                          boolean elementAsChild
                          ) {
         super(Map.of(), type, entityType);
@@ -29,7 +29,7 @@ public class InstanceArray extends Instance implements IInstanceArray {
                          long version,
                          long syncVersion,
                          Class<?> entityType,
-                         List<IInstance> elements,
+                         List<Instance> elements,
                          boolean elementAsChild
     ) {
         super(id, Map.of(), type, version, syncVersion, entityType);
@@ -38,17 +38,17 @@ public class InstanceArray extends Instance implements IInstanceArray {
     }
 
     @Override
-    public IInstance get(int i) {
+    public Instance get(int i) {
         return elements.get(i);
     }
 
     @Override
-    public void add(IInstance element) {
+    public void add(Instance element) {
         elements.add(element);
     }
 
     @Override
-    public void remove(IInstance element) {
+    public void remove(Instance element) {
         elements.remove(element);
     }
 
@@ -58,7 +58,7 @@ public class InstanceArray extends Instance implements IInstanceArray {
     }
 
     @Override
-    public List<IInstance> getElements() {
+    public List<Instance> getElements() {
         return elements;
     }
 
@@ -74,7 +74,7 @@ public class InstanceArray extends Instance implements IInstanceArray {
                 getType().getId(),
                 getTenantId(),
                 elements.size(),
-                NncUtils.map(elements, IInstance::getId),
+                NncUtils.map(elements, Instance::getId),
                 elementAsChild,
                 getVersion(),
                 getSyncVersion()

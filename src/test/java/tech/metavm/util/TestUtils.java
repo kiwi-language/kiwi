@@ -4,8 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Field;
 
 public class TestUtils {
@@ -28,6 +31,14 @@ public class TestUtils {
         }
     }
 
+    public static <T> T readJSON(Class<T> klass, Reader reader) {
+        try {
+            return OBJECT_MAPPER.readValue(reader, klass);
+        } catch (IOException e) {
+            throw new InternalException("Fail to read JSON", e);
+        }
+    }
+
     public static void printJSON(Object object) {
         try {
             OBJECT_MAPPER.writeValue(System.out, object);
@@ -36,5 +47,21 @@ public class TestUtils {
         }
     }
 
+    public static void clearDir(String dirPath) {
+        File dir = new File(dirPath);
+        for (File file : NncUtils.requireNonNull(dir.listFiles())) {
+            if(!file.delete()) {
+                throw new InternalException("Fail to delete file " + file.getPath());
+            }
+        }
+    }
+
+    public static void logJSON(Logger logger, Object object) {
+        logJSON(logger, "JSON", object);
+    }
+
+    public static void logJSON(Logger logger, String title, Object object) {
+        logger.info(title + "\n" + toJSONString(object));
+    }
 
 }

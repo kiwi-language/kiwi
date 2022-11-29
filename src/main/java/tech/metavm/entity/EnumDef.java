@@ -7,9 +7,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
@@ -54,9 +52,10 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
     @Override
     public T newModel(Instance instance, ModelMap modelMap) {
+        Instance realInstance = EntityProxyFactory.extractReal(instance);
         return NncUtils.findRequired(
                 enumConstantDefs,
-                ecDef -> Objects.equals(ecDef.getInstance(), instance)
+                ecDef -> Objects.equals(ecDef.getInstance(), realInstance)
         ).getValue();
     }
 
@@ -74,7 +73,17 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
     @Override
     public void updateInstance(T model, Instance instance, InstanceMap instanceMap) {
-//        enumDef.updateInstance(model, instance, instanceMap);
+
+    }
+
+    @Override
+    public Map<Object, Entity> getEntityMapping() {
+        Map<Object, Entity> mapping = new HashMap<>();
+        mapping.put(enumType, type);
+//        for (EnumConstantDef<T> enumConstantDef : enumConstantDefs) {
+//            mapping.put(enumConstantDef.getValue(), enumConstantDef.getEnumConstant());
+//        }
+        return mapping;
     }
 
     @SuppressWarnings("unused")
@@ -99,4 +108,16 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
         return name;
     }
 
+    public List<EnumConstantDef<T>> getEnumConstantDefs() {
+        return enumConstantDefs;
+    }
+
+    @Override
+    public Map<Object, Instance> getInstanceMapping() {
+        return NncUtils.toMap(
+                enumConstantDefs,
+                EnumConstantDef::getValue,
+                EnumConstantDef::getInstance
+        );
+    }
 }

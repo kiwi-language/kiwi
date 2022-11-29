@@ -6,15 +6,15 @@ import java.util.List;
 
 public interface IInstanceArray extends IInstance {
 
-    IInstance get(int i);
+    Instance get(int i);
 
-    void add(IInstance element);
+    void add(Instance element);
 
-    void remove(IInstance element);
+    void remove(Instance element);
 
     int length();
 
-    List<IInstance> getElements();
+    List<Instance> getElements();
 
     boolean isElementAsChild();
 

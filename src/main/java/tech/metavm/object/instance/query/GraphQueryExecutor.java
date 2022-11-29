@@ -41,11 +41,11 @@ public class GraphQueryExecutor {
 
     private void loadTree(List<ObjectTree> trees) {
         List<Long> ids = NncUtils.map(trees, ObjectTree::getInstanceId);
-        List<IInstance> instances = context.batchGet(ids);
-        Map<Long, IInstance> instanceMap = NncUtils.toMap(instances, IInstance::getId);
+        List<Instance> instances = context.batchGet(ids);
+        Map<Long, Instance> instanceMap = NncUtils.toMap(instances, Instance::getId);
 
         for (ObjectTree tree : trees) {
-            IInstance instance = instanceMap.get(tree.getInstanceId());
+            Instance instance = instanceMap.get(tree.getInstanceId());
             if(instance != null) {
                 tree.setInstance(instance);
             }

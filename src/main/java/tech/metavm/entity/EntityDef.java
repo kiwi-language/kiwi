@@ -1,33 +1,29 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.IInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceMap;
-import tech.metavm.object.instance.InstanceRef;
-import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.TypeReference;
-import tech.metavm.util.ValuePlaceholder;
 
 import javax.annotation.Nullable;
-import java.util.function.Function;
 
 public class EntityDef<T extends Entity> extends PojoDef<T> {
 
     public EntityDef(String name,
                      TypeReference<T> typeReference,
                      @Nullable PojoDef<? super T> parentDef,
-                     Type type
+                     Type type,
+                     DefMap defMap
     ) {
-        this(name, typeReference.getType(), parentDef, type);
+        this(name, typeReference.getType(), parentDef, type, defMap);
     }
 
     public EntityDef(String name,
                      Class<T> entityType,
                      @Nullable PojoDef<? super T> parentDef,
-                     Type type
+                     Type type,
+                     DefMap defMap
     ) {
-        super(name, entityType, parentDef, type);
+        super(name, entityType, parentDef, type, defMap);
     }
 
     @Override

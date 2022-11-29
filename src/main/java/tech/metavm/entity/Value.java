@@ -2,15 +2,10 @@ package tech.metavm.entity;
 
 public class Value implements Model {
 
-//    private final InstanceContext context;
     private boolean persisted;
 
-    public Value(boolean persisted/*, InstanceContext context*/) {
-//        this.context = context;
+    public Value(boolean persisted) {
         this.persisted = persisted;
-//        if(!persisted) {
-//            context.bindValue(this);
-//        }
     }
 
     public boolean isPersisted() {
@@ -21,17 +16,5 @@ public class Value implements Model {
         this.persisted = persisted;
     }
 
-//    public InstanceContext getContext() {
-//        return context;
-//    }
-
-//    public void remove() {
-//        context.remove(this);
-//    }
-
-    @Override
-    public Model copy() {
-        return EntityUtils.copyValue(this);
-    }
 
 }

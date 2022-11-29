@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelMap;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
@@ -12,13 +12,13 @@ import java.util.function.Function;
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
 
     public static <T extends Record> RecordDef<T> parse(Class<T> entityType,
-                                                        Function<Object, IInstance> getInstance,
+                                                        Function<Object, Instance> getInstance,
                                                         DefMap defMap,
                                                         ModelMap modelMap) {
         return new RecordParser<>(entityType, getInstance, defMap, modelMap).parse();
     }
 
-    public RecordParser(Class<T> entityType, Function<Object, IInstance> getInstance, DefMap defMap, ModelMap modelMap) {
+    public RecordParser(Class<T> entityType, Function<Object, Instance> getInstance, DefMap defMap, ModelMap modelMap) {
         super(entityType, getInstance, defMap, modelMap);
     }
 
@@ -33,7 +33,8 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 null,
                 entityType,
                 defMap.getPojoDef(entityType.getSuperclass()),
-                type
+                type,
+                defMap
         );
     }
 }

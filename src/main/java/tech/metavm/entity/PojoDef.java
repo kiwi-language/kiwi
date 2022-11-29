@@ -1,6 +1,9 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.InstanceMap;
+import tech.metavm.object.instance.ModelMap;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
@@ -15,27 +18,34 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class PojoDef<T> extends ModelDef<T, Instance> {
-    /*private final long typeId;*/
     private final String name;
     protected final Class<T> entityType;
     private final PojoDef<? super T> parentDef;
     private final List<FieldDef> fieldDefs = new ArrayList<>();
-    private final Map<Class<?>, PojoDef<? extends T>> subTypeDefs = new HashMap<>();
+    private final Map<Class<? extends T>, PojoDef<? extends T>> subTypeDefs = new HashMap<>();
+    private final Map<java.lang.reflect.Type, ParameterizedPojoDef<? extends T>> parameterizedPojoDefs = new HashMap<>();
     protected final Type type;
+    private final DefMap defMap;
 
-    public PojoDef(/*long typeId,*/
-                   String name,
+    public PojoDef(String name,
                    Class<T> entityType,
                    @Nullable PojoDef<? super T> parentDef,
-                   Type type
+                   Type type,
+                   DefMap defMap
     ) {
         super(entityType, Instance.class);
-        EntityType annotation = entityType.getAnnotation(EntityType.class);
-        /*this.typeId = typeId;*/
-        this.name = name != null ? name : (annotation != null ? annotation.value() : entityType.getSimpleName());
+        EntityType entityAnnotation = entityType.getAnnotation(EntityType.class);
+        ValueType valueAnnotation = entityType.getAnnotation(ValueType.class);
+        this.name = NncUtils.firstNonNull(
+                name,
+                NncUtils.get(entityAnnotation, EntityType::value),
+                NncUtils.get(valueAnnotation, ValueType::value),
+                entityType.getName()
+        );
         this.entityType = entityType;
         this.parentDef = parentDef;
         this.type = initType(type);
+        this.defMap = defMap;
         if(parentDef != null) {
             parentDef.addSubTypeDef(entityType, this);
         }
@@ -48,7 +58,6 @@ public abstract class PojoDef<T> extends ModelDef<T, Instance> {
                     NncUtils.get(parentDef, PojoDef::getType),
                     ValueUtil.getTypeCategory(entityType)
             );
-//            type.initId(typeId);
             return type;
         }
         else {
@@ -72,7 +81,7 @@ public abstract class PojoDef<T> extends ModelDef<T, Instance> {
             return model;
         }
         else {
-            PojoDef<? extends T> subTypeDef = getSubTypeDef(entityType);
+            PojoDef<? extends T> subTypeDef = getSubTypeDef(ReflectUtils.getRawClass(instance.getEntityType()));
             return subTypeDef.newModel(instance, modelMap);
         }
     }
@@ -111,26 +120,32 @@ public abstract class PojoDef<T> extends ModelDef<T, Instance> {
 
     @Override
     public void updateInstance(T model, Instance instance, InstanceMap instanceMap) {
-        Class<?> entityType = instance.getEntityType();
+        java.lang.reflect.Type entityType = instance.getEntityType();
         if (entityType == null || this.entityType.equals(entityType)) {
             getInstanceFields(model, instanceMap).forEach(instance::set);
         }
         else {
-            PojoDef<? extends T> subTypeDef = getSubTypeDef(entityType);
+            PojoDef<? extends T> subTypeDef = getSubTypeDef(ReflectUtils.getRawClass(entityType));
             subTypeDef.updateInstanceHelper(model, instance, instanceMap);
         }
     }
 
     private PojoDef<? extends T> getSubTypeDef(Class<?> subType) {
+        if(subType == entityType ||
+                !entityType.isAssignableFrom(subType)) {
+            throw new InternalException("type: " + subType + " is not a sub type of current type: " + entityType);
+        }
         Class<?> t = subType;
-        while(t != null) {
-            PojoDef<? extends T> subTypeDef = subTypeDefs.get(t);
-            if(subTypeDef != null) {
-                return subTypeDef;
-            }
+        while(t.getSuperclass() != entityType) {
             t = t.getSuperclass();
         }
-        throw new InternalException("Can not find defition for type: " + subType);
+        Class<? extends T> directSubType = t.asSubclass(entityType);
+        PojoDef<? extends T> subDef = subTypeDefs.get(directSubType);
+        if(subDef == null) {
+            subDef = defMap.getPojoDef(directSubType);
+            defMap.putDef(directSubType, subDef);
+        }
+        return subDef;
     }
 
     protected Map<Field, Object> getInstanceFields(Object object, InstanceMap instanceMap) {
@@ -148,6 +163,24 @@ public abstract class PojoDef<T> extends ModelDef<T, Instance> {
         subTypeDefs.put(subType.asSubclass(entityType), def);
     }
 
+    public void addParameterizedPojoDef(ParameterizedPojoDef<? extends T> parameterizedPojoType) {
+        parameterizedPojoDefs.put(parameterizedPojoType.getGenericType(), parameterizedPojoType);
+    }
+
+    public FieldDef getFieldDef(java.lang.reflect.Field javaField) {
+        return NncUtils.findRequired(fieldDefs, fieldDef -> fieldDef.getReflectField().equals(javaField));
+    }
+
+    @Override
+    public Map<Object, Entity> getEntityMapping() {
+        Map<Object, Entity> mapping = new HashMap<>();
+        mapping.put(entityType, type);
+        for (FieldDef fieldDef : fieldDefs) {
+            mapping.put(fieldDef.getReflectField(), fieldDef.getField());
+        }
+        return mapping;
+    }
+
     @SuppressWarnings("unused")
     public List<FieldDef> getFieldDefs() {
         return fieldDefs;
@@ -155,9 +188,9 @@ public abstract class PojoDef<T> extends ModelDef<T, Instance> {
 
     protected void afterPojoCreated(T pojo, IInstance instance) {}
 
-    private void setFieldValues(Object entity, IInstance instance, ModelMap modelMap) {
+    private void setFieldValues(Object entity, Instance instance, ModelMap modelMap) {
         for (FieldDef fieldDef : fieldDefs) {
-            fieldDef.setField(entity, instance, modelMap);
+            fieldDef.setModelField(entity, instance, modelMap);
         }
     }
 

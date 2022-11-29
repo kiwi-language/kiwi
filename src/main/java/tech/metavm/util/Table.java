@@ -1,8 +1,11 @@
 package tech.metavm.util;
 
+import tech.metavm.entity.Model;
+
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -16,7 +19,6 @@ public class Table<T> extends LinkedList<T> {
     private long version;
     private long syncVersion;
     private boolean loaded;
-    private final Supplier<Collection<T>> loader;
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
@@ -36,15 +38,6 @@ public class Table<T> extends LinkedList<T> {
     public Table(Collection<T> data, int buildIndexThreshold) {
         this.buildIndexThreshold = buildIndexThreshold;
         addAll(data);
-        loader = null;
-    }
-
-    public Table(Supplier<Collection<T>> loader) {
-        this(loader, DEFAULT_INDEX_BUILD_THRESHOLD);
-    }
-    public Table(Supplier<Collection<T>> loader, int buildIndexThreshold) {
-        this.buildIndexThreshold = buildIndexThreshold;
-        this.loader = loader;
     }
 
     public <K> T get(IndexMapper<T, K> keyMapper, K key) {
@@ -179,16 +172,16 @@ public class Table<T> extends LinkedList<T> {
         return merged;
     }
 
-    @Override
-    protected void beforeAccess() {
-        if(loader != null && !loaded) {
-            Collection<T> data = loader.get();
-            for (T datum : data) {
-                addLast0(datum);
-            }
-            loaded = true;
-        }
-    }
+//    @Override
+//    protected void beforeAccess() {
+//        if(loader != null && !loaded) {
+//            Collection<T> data = loader.get();
+//            for (T datum : data) {
+//                addLast0(datum);
+//            }
+//            loaded = true;
+//        }
+//    }
 
     public <R> Table<R> map(Function<T, R> mapper) {
         return mapAndFilter(mapper, t -> true);

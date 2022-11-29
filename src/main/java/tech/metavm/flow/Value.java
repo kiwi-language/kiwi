@@ -1,10 +1,11 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.meta.Type;
 
+@ValueType("流程值")
 public abstract class Value {
 //    protected final InstanceContext context;
     private final ValueKind kind;

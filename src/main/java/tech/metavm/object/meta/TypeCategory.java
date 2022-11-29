@@ -1,10 +1,9 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
-import tech.metavm.infra.RegionManager;
 import tech.metavm.infra.RegionInfo;
+import tech.metavm.infra.RegionManager;
 import tech.metavm.object.instance.SQLColumnType;
 import tech.metavm.util.NncUtils;
 
@@ -16,7 +15,7 @@ public enum TypeCategory {
     @EnumConstant("类")
     CLASS(0, SQLColumnType.INT64),
     @EnumConstant("枚举")
-    ENUM(1, SQLColumnType.INT64, EnumConstantRT.class),
+    ENUM(1, SQLColumnType.INT64/*, EnumConstantRT.class*/),
     @EnumConstant("接口")
     INTERFACE(2),
     @EnumConstant("值")
@@ -33,8 +32,6 @@ public enum TypeCategory {
     ARRAY(5),
     @EnumConstant("可空")
     NULLABLE(7),
-    @EnumConstant("参数化")
-    PARAMETERIZED(8),
     @EnumConstant("并集")
     UNION(9),
     @EnumConstant("空")
@@ -57,25 +54,29 @@ public enum TypeCategory {
     PASSWORD(22, SQLColumnType.TEXT),
     @EnumConstant("对象")
     OBJECT(21),
+    @EnumConstant("参数化类型")
+    PARAMETERIZED(22),
+    @EnumConstant("类型变量")
+    VARIABLE(23),
     ;
 
     private final int code;
     private final @Nullable SQLColumnType columnType;
-    private final @Nullable Class<? extends Entity> entityType;
+//    private final @Nullable Class<? extends Entity> entityType;
 
 
     TypeCategory(int code) {
         this(code, null);
     }
 
-    TypeCategory(int code, SQLColumnType columnType) {
-        this(code, columnType, null);
-    }
+//    TypeCategory(int code, SQLColumnType columnType) {
+//        this(code, columnType, null);
+//    }
 
-    TypeCategory(int code, @Nullable SQLColumnType columnType, @Nullable Class<? extends Entity> entityType) {
+    TypeCategory(int code, @Nullable SQLColumnType columnType/*, @Nullable Class<? extends Entity> entityType*/) {
         this.code = code;
         this.columnType = columnType;
-        this.entityType = entityType;
+//        this.entityType = entityType;
     }
 
     public static TypeCategory getByCodeRequired(int code) {
@@ -84,14 +85,14 @@ public enum TypeCategory {
                 .orElseThrow(() -> new RuntimeException("模型类型不存在： " + code));
     }
 
-    public static @Nullable Class<? extends Entity> getEntityType(long id) {
-        TypeCategory match = NncUtils.find(values(), value -> value.idRangeContains(id));
-        return NncUtils.get(match, m -> m.entityType);
-    }
+//    public static @Nullable Class<? extends Entity> getEntityType(long id) {
+//        TypeCategory match = NncUtils.find(values(), value -> value.idRangeContains(id));
+//        return NncUtils.get(match, m -> m.entityType);
+//    }
 
-    public @Nullable Class<? extends Entity> getEntityType() {
-        return entityType;
-    }
+//    public @Nullable Class<? extends Entity> getEntityType() {
+//        return entityType;
+//    }
 
     public int code() {
         return code;
@@ -207,5 +208,9 @@ public enum TypeCategory {
     @SuppressWarnings("unused")
     public @Nullable SQLColumnType getColumnType() {
         return columnType;
+    }
+
+    public boolean isVariable() {
+        return this == VARIABLE;
     }
 }

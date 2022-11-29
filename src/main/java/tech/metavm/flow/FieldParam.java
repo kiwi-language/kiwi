@@ -1,8 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
@@ -26,11 +24,6 @@ public class FieldParam {
         this.field = field;
         this.value = ValueFactory.getValue(valueDTO, parsingContext);
     }
-
-    //    public FieldParam(FieldParamDTO dto, EntityContext context, ParsingContext parsingContext) {
-//        this.field = context.getField(dto.fieldId());
-//        this.value = ValueFactory.getValue(dto.value(), parsingContext);
-//    }
 
     public Field getField() {
         return field;

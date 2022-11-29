@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.InstanceMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +9,7 @@ import java.util.function.Function;
 
 class MockInstanceMap implements InstanceMap {
 
-    private final Map<Object, IInstance> map = new HashMap<>();
+    private final Map<Object, Instance> map = new HashMap<>();
 
     private final Function<Class<?>, ModelDef<?,?>> getModeDef;
 
@@ -17,36 +18,20 @@ class MockInstanceMap implements InstanceMap {
     }
 
     @Override
-    public IInstance getByModel(Object model) {
-        return map.computeIfAbsent(model, this::createRef);
+    public Instance getInstanceByModel(Object model) {
+        return map.computeIfAbsent(model, this::getInstance);
     }
 
-    private IInstance createRef(Object model) {
+    private Instance getInstance(Object model) {
         ModelDef<?,?> modelDef = getModeDef.apply(model.getClass());
-        Class<?> instanceType = modelDef.getInstanceType();
-        if(IInstanceArray.class.isAssignableFrom(instanceType)) {
-            return new InstanceArrayRef(
-                    getId(model),
-                    () -> (InstanceArray) modelDef.newInstanceHelper(model, this)
-            );
-        }
-        else {
-            return new InstanceRef(
-                    getId(model),
-                    modelDef.getEntityType(),
-                    () -> (Instance) modelDef.newInstanceHelper(model, this)
-            );
-        }
+        return getInstanceRef(model, modelDef);
     }
 
-    private Long getId(Object model) {
-        if(model instanceof Identifiable identifiable) {
-            return identifiable.getId();
-        }
-        else {
-            return null;
-        }
+    private <I extends Instance> I getInstanceRef(Object model, ModelDef<?, I> modelDef) {
+        return EntityProxyFactory.getProxyInstance(
+                modelDef.getInstanceType(),
+                () -> modelDef.getInstanceType().cast(modelDef.newInstanceHelper(model, this))
+        );
     }
-
 
 }

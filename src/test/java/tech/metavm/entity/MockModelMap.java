@@ -1,12 +1,13 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ModelMap;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -29,7 +30,7 @@ public class MockModelMap implements ModelMap {
     }
 
     @Override
-    public <T> T get(Class<T> klass, IInstance instance) {
+    public <T> T get(Class<T> klass, Instance instance) {
         Object existing;
         if((existing = map.get(instance)) != null) {
             return klass.cast(existing);
@@ -41,29 +42,22 @@ public class MockModelMap implements ModelMap {
         }
     }
 
-    private Object createRef(IInstance instance) {
-        Class<?> entityType = instance.getEntityType();
+    private Object createRef(Instance instance) {
+        Class<?> entityType = ReflectUtils.getRawClass(instance.getEntityType());
         NncUtils.requireNonNull(entityType);
-        if(entityType == Table.class) {
-            return new Table<>(() -> loadArrayElements(instance));
-        }
-        else if(Modifier.isFinal(entityType.getModifiers())) {
-            return loader.apply(EntityContext.getRealInstance(instance));
+        if(Modifier.isFinal(entityType.getModifiers())) {
+            return loader.apply(instance);
         }
         else {
-            return EntityProxyFactory.getProxyInstance(
-                    entityType,
-                    instance,
-                    loader
-            );
+            return createRefHelper(instance, entityType);
         }
     }
 
-    private List<Object> loadArrayElements(IInstance instance) {
-        InstanceArray instanceArray = (InstanceArray) EntityContext.getRealInstance(instance);
-        return NncUtils.map(
-                instanceArray.getElements(),
-                this::createRef
+    private <T> T createRefHelper(Instance instance, Class<T> entityType) {
+        return EntityProxyFactory.getProxyInstance(
+                entityType,
+                instance.getId(),
+                () -> entityType.cast(loader.apply(instance))
         );
     }
 

@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
@@ -15,15 +15,15 @@ import java.util.function.Function;
 public abstract class PojoParser<T, D extends PojoDef<T>> {
 
     protected final Class<T> entityType;
-    protected final IInstance instance;
+    protected final Instance instance;
     protected final Type type;
     private D def;
-    protected final Function<Object, IInstance> getInstance;
+    protected final Function<Object, Instance> getInstance;
     protected final DefMap defMap;
     protected final ModelMap modelMap;
 
     public PojoParser(Class<T> entityType,
-                      Function<Object, IInstance> getInstance,
+                      Function<Object, Instance> getInstance,
                       DefMap defMap,
                       ModelMap modelMap
     ) {
@@ -49,7 +49,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
     protected abstract D createDef();
 
     private void parseField(Field reflectField) {
-        IInstance fieldInst = getInstance.apply(reflectField);
+        Instance fieldInst = getInstance.apply(reflectField);
         new FieldDef(
                 null,
                 NncUtils.get(fieldInst, modelMap::getField),
@@ -65,7 +65,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
             return null;
         }
         else {
-            return defMap.getDef(reflectField.getGenericType());
+            return defMap.getDef(reflectField.getType());
         }
     }
 

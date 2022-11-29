@@ -1,11 +1,12 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
 import java.util.Objects;
 
+@ValueType("常量表达式")
 public class ConstantExpression extends Expression {
 
     private final Object value;

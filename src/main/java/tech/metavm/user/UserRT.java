@@ -7,6 +7,7 @@ import tech.metavm.user.persistence.UserPO;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class UserRT extends Entity {
 
     private String name;
 
-    private List<RoleRT> roles;
+    private Table<RoleRT> roles;
 
     public UserRT(String loginName, String password, String name, List<RoleRT> roles) {
         this.loginName = loginName;
@@ -72,7 +73,7 @@ public class UserRT extends Entity {
     }
 
     public void setRoles(List<RoleRT> roles) {
-        this.roles = roles;
+        this.roles = new Table<>(roles);
     }
 
     public UserDTO toUserDTO() {
