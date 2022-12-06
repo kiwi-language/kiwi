@@ -1,70 +1,61 @@
 package tech.metavm.entity;
 
 import org.reflections.Reflections;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.meta.BootIdProvider;
 import tech.metavm.object.meta.StdAllocators;
+import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
 
-public class Bootstrap {
+import static tech.metavm.util.Constants.ROOT_TENANT_ID;
 
-    private final InstanceContext instanceContext;
+@Component
+public class Bootstrap implements InitializingBean {
+
+    private final InstanceContextFactory instanceContextFactory;
     private final StdAllocators stdAllocators;
-    private DefContext defContext;
 
-    public Bootstrap(IInstanceStore instanceStore, String idSaveDir) {
-        this.stdAllocators = new StdAllocators(idSaveDir);
-        this.instanceContext = new InstanceContext(
-                -1L,
-                instanceStore,
-                stdAllocators,
-                Executors.newSingleThreadExecutor(),
-                true,
-                List.of(),
-                RootInstanceContext.getInstance(),
-                RootRegistry.getDefContext()
-        );
-        InstanceContextFactory.initStdContext(instanceContext);
+    public Bootstrap(InstanceContextFactory instanceContextFactory, StdAllocators stdAllocators) {
+        this.instanceContextFactory = instanceContextFactory;
+        this.stdAllocators = stdAllocators;
     }
 
     @Transactional
     public void boot() {
-        ContextUtil.setContextInfo(-1L, -1L);
-        Reflections reflections = new Reflections("tech.metavm");
-        defContext = new DefContext(
-                jc -> NncUtils.get(stdAllocators.getId(jc), instanceContext::get),
-                instanceContext.getEntityContext()
+        ContextUtil.setContextInfo(ROOT_TENANT_ID, -1L);
+        InstanceContext standardInstanceContext = instanceContextFactory.newContext(
+                ROOT_TENANT_ID, false, new BootIdProvider(stdAllocators), null, null
         );
-        EntityTypeRegistry.setDefContext(defContext);
 
-        Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
-        Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
-        Set<Class<?>> valueTypes = reflections.getTypesAnnotatedWith(ValueType.class);
-        Set<Class<?>> types = NncUtils.mergeSets(entitySubTypes, entityTypes, valueTypes);
-        types.forEach(defContext::getDef);
+        /* = new InstanceContext(
+                -1L,
+                instanceStore,
+                new BootIdProvider(stdAllocators),
+                Executors.newSingleThreadExecutor(),
+                true,
+                List.of(),
+                null
+        );*/
+        InstanceContextFactory.setStdContext(standardInstanceContext);
 
-        for (ModelDef<?, ?> def : defContext.getAllDefs()) {
-            def.getEntityMapping().forEach((javaConstruct, entity) -> {
-                if(entity.getId() == null) {
-                    instanceContext.getEntityContext().bind(entity);
-                }
-            });
-            def.getInstanceMapping().forEach((javaConstruct, instance) -> {
-                if(instance.getId() == null) {
-                    instanceContext.bind(instance);
-                }
-            });
-        }
+        DefContext defContext = new DefContext(
+                stdAllocators::getId,
+                standardInstanceContext);
+        standardInstanceContext.setEntityContext(defContext);
+        ModelDefRegistry.setDefContext(defContext);
 
-        instanceContext.getEntityContext().finish();
+        ReflectUtils.getModelClasses().forEach(defContext::getDef);
 
-        for (ModelDef<?, ?> def : defContext.getAllDefs()) {
+        defContext.finish();
+        ModelDefRegistry.setDefContext(defContext);
+
+        for (ModelDef<?, ?> def : defContext.getAllDefList()) {
             def.getEntityMapping().forEach((javaConstruct, entity) ->
                     stdAllocators.putId(javaConstruct, entity.getId())
             );
@@ -72,10 +63,13 @@ public class Bootstrap {
                     stdAllocators.putId(javaConstruct, instance.getId())
             );
         }
+
         stdAllocators.save();
     }
 
-    public DefContext getDefContext() {
-        return defContext;
+    @Transactional
+    @Override
+    public void afterPropertiesSet() {
+//        boot();
     }
 }

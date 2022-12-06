@@ -1,8 +1,10 @@
 package tech.metavm.user;
 
+import org.apache.catalina.User;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 import tech.metavm.user.persistence.UserPO;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.EncodingUtils;
@@ -15,6 +17,8 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("用户")
 public class UserRT extends Entity {
+
+    public static final IndexDef<UserRT> IDX_LOGIN_NAME = new IndexDef<UserRT>(UserRT.class, "loginName");
 
     private final String loginName;
 

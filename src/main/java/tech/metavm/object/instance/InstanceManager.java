@@ -6,15 +6,16 @@ import tech.metavm.dto.Page;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.InstanceFactory;
-import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.instance.rest.SelectRequestDTO;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
@@ -75,8 +76,7 @@ public class InstanceManager {
         if(instanceDTO.id() == null) {
             throw BusinessException.invalidParams("实例ID为空");
         }
-        IInstance instance = context.get(instanceDTO.id());
-        instance.update(instanceDTO);
+        ValueFormatter.parseInstance(instanceDTO, context);
         context.finish();
     }
 
@@ -125,11 +125,6 @@ public class InstanceManager {
                 NncUtils.map(instances, IInstance::toDTO),
                 idPage.total()
         );
-    }
-
-    @Transactional
-    public void onSyncSuccess(List<InstanceLog> logs) {
-        instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));
     }
 
     private InstanceContext createContext() {

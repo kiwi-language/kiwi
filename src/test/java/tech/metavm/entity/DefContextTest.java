@@ -4,34 +4,27 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceMap;
-import tech.metavm.object.instance.ModelMap;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.TestUtils;
+import tech.metavm.util.*;
 
 public class DefContextTest extends TestCase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefContextTest.class);
 
-    private final ModelMap modelMap = new MockModelMap(this::createModel);
-    private final DefContext context = new DefContext(o -> null, modelMap);
-    private final InstanceMap instanceMap = new MockInstanceMap(context::getDef);
+    private DefContext defContext;
+    private MockModelInstanceMap modelInstanceMap;
 
     @Override
     protected void setUp() {
-        new StandardDefBuilder().initRootTypes(context);
-    }
-
-    private Object createModel(Instance instance) {
-        return context.getDef(instance.getType()).newModelHelper(instance, modelMap);
+        defContext = new DefContext(o -> null);
+        modelInstanceMap = new MockModelInstanceMap(defContext);
     }
 
     private EntityDef<Type> getTypeDef() {
-        return context.getEntityDef(Type.class);
+        return defContext.getEntityDef(Type.class);
     }
 
     public void testType() {
@@ -39,21 +32,59 @@ public class DefContextTest extends TestCase {
     }
 
     public void testConvertToInstance() {
-        EntityDef<Type> typeDef = context.getEntityDef(Type.class);
+        EntityDef<Type> typeDef = defContext.getEntityDef(Type.class);
         Type type = typeDef.getType();
-        IInstance instance = typeDef.newInstance(type, instanceMap);
+        Instance instance = typeDef.createInstance(type, modelInstanceMap);
         InstanceDTO instanceDTO = instance.toDTO();
         TestUtils.logJSON(LOGGER, "instance", instanceDTO);
     }
 
-    public void testConvertToEntity() {
-        EntityDef<Type> typeDef = context.getEntityDef(Type.class);
-        Type type = typeDef.getType();
-        Instance instance = typeDef.newInstance(type, instanceMap);
-        Type recoveredType = typeDef.newModel(instance, modelMap);
-        TypeDTO typeDTO = type.toDTO();
-        TestUtils.logJSON(LOGGER, "typeDTO", typeDTO);
-        Assert.assertFalse(EntityUtils.isPojoDifferent(type, recoveredType));
+    public void testConvertFoo() {
+        EntityDef<Foo> fooDef = defContext.getEntityDef(Foo.class);
+        Foo foo = new Foo("傻不拉几", new Bar("呆头呆脑"));
+        Instance instance = fooDef.createInstance(foo, modelInstanceMap);
+        Foo recoveredFoo = fooDef.createModel(instance, modelInstanceMap);
+        Assert.assertFalse(EntityUtils.isPojoDifferent(foo, recoveredFoo));
     }
+
+    public void testConvertTypeToEntity() {
+        EntityDef<Type> typeDef = defContext.getEntityDef(Type.class);
+        Type type = typeDef.getType();
+        Instance instance = typeDef.createInstance(type, modelInstanceMap);
+        Type recoveredType = typeDef.createModel(instance, modelInstanceMap);
+        TypeDTO typeDTO = type.toDTO();
+        LOGGER.info(recoveredType.getFields().size() + "");
+        TestUtils.logJSON(LOGGER, "typeDTO", typeDTO);
+    }
+
+    public void testConvertType() {
+        EntityDef<Type> typeDef = defContext.getEntityDef(Type.class);
+        Type testType = new Type(
+                "Test Type", StandardTypes.OBJECT, TypeCategory.VALUE
+        );
+
+        new Field(
+                "title", testType, Access.GLOBAL, false, true, null,
+                StandardTypes.STRING, false
+        );
+
+        Instance instance = typeDef.createInstance(testType, defContext);
+        TestUtils.logJSON(LOGGER, instance.toDTO());
+    }
+
+    public void testGenerateInstances() {
+        defContext = new DefContext(o -> null, new MemInstanceContext());
+        ModelDef<Type, ?> typeDef = defContext.getDef(Type.class);
+        Assert.assertNotNull(typeDef);
+
+        defContext.finish();
+
+        Assert.assertNotNull(typeDef.getType().getId());
+
+        Table<ConstraintRT<?>> constraints = typeDef.getType().getDeclaredConstraints();
+        Assert.assertNotNull(constraints.getId());
+    }
+
+
 
 }

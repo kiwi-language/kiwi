@@ -19,14 +19,6 @@
     id, tenant_id, type_id, `start`, `end`, `next`, `active`
   </sql>
 
-  <select id="selectForUpdate" resultMap="BaseResultMap">
-    <!--@mbg.generated-->
-    select 
-    <include refid="Base_Column_List" />
-    from id_block
-    where end = #{bulkNum} for update
-  </select>
-
   <insert id="batchInsert">
     <!--@mbg.generated-->
     insert into id_block (id, tenant_id, type_id, `start`, `end`, `next`, `active`) values

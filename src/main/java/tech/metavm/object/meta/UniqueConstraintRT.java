@@ -22,11 +22,6 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
     @EntityField("唯一约束项")
     private Table<UniqueConstraintItem> items;
 
-//    public UniqueConstraintRT(ConstraintPO po, UniqueConstraintParam param, EntityContext context) {
-//        super(po, context);
-//        setParam(param);
-//    }
-//
     public UniqueConstraintRT(ConstraintDTO constraintDTO, UniqueConstraintParam param, Type type) {
         super(ConstraintKind.UNIQUE, type, constraintDTO.message());
         setParam(param);
@@ -52,10 +47,10 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
         return NncUtils.map(items, UniqueConstraintItem::getField);
     }
 
-    public IndexItemPO getKey(Instance instance) {
+    public IndexItemPO getKey(long tenantId, Instance instance) {
         EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
         return new IndexItemPO(
-                getTenantId(),
+                tenantId,
                 getId(),
                 NncUtils.map(items, item -> IndexKeyPO.getIndexColumn(item.getValue().evaluate(evaluationContext))),
                 instance.getId()

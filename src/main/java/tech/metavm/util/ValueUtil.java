@@ -155,7 +155,7 @@ public class ValueUtil {
             if (isEnumType(klass)) {
                 return TypeCategory.ENUM;
             }
-            if(Record.class.equals(klass) || isValueType(klass)) {
+            if(Object.class.equals(klass) || Record.class.equals(klass) || isValueType(klass)) {
                 return TypeCategory.VALUE;
             }
             if(Date.class.equals(klass)) {
@@ -167,7 +167,7 @@ public class ValueUtil {
             if(Null.class.equals(klass)) {
                 return TypeCategory.NULL;
             }
-            if (Object.class.equals(klass) || isEntityType(klass)) {
+            if (isEntityType(klass)) {
                 return TypeCategory.CLASS;
             }
         }

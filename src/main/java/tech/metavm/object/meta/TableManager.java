@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.meta.rest.dto.*;
@@ -27,14 +27,14 @@ public class TableManager {
     private InstanceContextFactory instanceContextFactory;
 
     public TableDTO get(long id) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         Type type = context.getType(id);
         return NncUtils.get(type, Type::toDTO, t -> convertToTable(t, context));
     }
 
     @Transactional
     public TableDTO save(TableDTO table) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         TypeDTO typeDTO = TypeDTO.createClass(
                 table.id(),
                 table.name(),
@@ -52,7 +52,7 @@ public class TableManager {
         return convertToTable(type.toDTO(), context);
     }
 
-    private void saveTitleField(TitleFieldDTO titleFieldDTO, Type type, EntityContext context) {
+    private void saveTitleField(TitleFieldDTO titleFieldDTO, Type type, IEntityContext context) {
         if(titleFieldDTO != null) {
             Field titleField = type.getTileField();
             if (titleField == null) {
@@ -84,7 +84,7 @@ public class TableManager {
 
     @Transactional
     public long saveColumn(ColumnDTO column) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         Field field = saveField(column, context);
         context.finish();
         return field.getId();
@@ -92,14 +92,14 @@ public class TableManager {
 
     public ColumnDTO getColumn(long id) {
         InstanceContext context = instanceContextFactory.newContext();
-        FieldDTO fieldDTO = context.getField(id).toDTO();
+        FieldDTO fieldDTO = context.getEntityContext().getField(id).toDTO();
         if(fieldDTO == null || !isVisible(fieldDTO)) {
             return null;
         }
         return convertToColumnDTO(fieldDTO, context.getType(fieldDTO.typeId()));
     }
 
-    private EnumEditContext saveEnum(ColumnDTO fieldEdit, EntityContext context) {
+    private EnumEditContext saveEnum(ColumnDTO fieldEdit, IEntityContext context) {
         EnumEditContext enumEditContext = new EnumEditContext(
                 fieldEdit.targetId(),
                 fieldEdit.name(),
@@ -111,7 +111,7 @@ public class TableManager {
         return enumEditContext;
     }
 
-    private Field saveField(ColumnDTO column, EntityContext context) {
+    private Field saveField(ColumnDTO column, IEntityContext context) {
         Type type;
         Object defaultValue;
         if(column.type() == ColumnType.ENUM.code) {
@@ -227,12 +227,12 @@ public class TableManager {
         return false;
     }
 
-    private Type getType(ColumnDTO column, Type concreteType, EntityContext context) {
+    private Type getType(ColumnDTO column, Type concreteType, IEntityContext context) {
         return getType(column.name(), column.type(), column.required(), column.multiValued(), concreteType, context);
     }
 
     private Type getType(String name, int columnTypeCode, boolean required, boolean multiValued,
-                         Type concreteType, EntityContext context) {
+                         Type concreteType, IEntityContext context) {
         ColumnType columnType = ColumnType.getByCode(columnTypeCode);
         if(concreteType == null && columnType.getTypeId() != null) {
             concreteType = context.getType(columnType.getTypeId());
@@ -257,7 +257,7 @@ public class TableManager {
     }
 
     public Page<TableDTO> list(String searchText, int page, int pageSize) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         Page<TypeDTO> typePage = typeManager.query(
                 searchText,
                 List.of(TypeCategory.CLASS.code()),
@@ -271,7 +271,7 @@ public class TableManager {
         );
     }
 
-    private TableDTO convertToTable(TypeDTO typeDTO, EntityContext context) {
+    private TableDTO convertToTable(TypeDTO typeDTO, IEntityContext context) {
         FieldDTO titleField = NncUtils.find(typeDTO.fields(), FieldDTO::asTitle);
         return new TableDTO(
                 typeDTO.id(),
@@ -296,7 +296,7 @@ public class TableManager {
         return !FIELD_TYPE_BLACKLIST.contains(fieldDTO.typeId());
     }
 
-    private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, EntityContext context) {
+    private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, IEntityContext context) {
         return new TitleFieldDTO(
                 fieldDTO.name(),
                 getColumnType(context.getType(fieldDTO.typeId()).getConcreteType()).code,
@@ -305,7 +305,7 @@ public class TableManager {
         );
     }
     
-    private EntityContext newContext() {
+    private IEntityContext newContext() {
         return instanceContextFactory.newContext().getEntityContext();
     }
 

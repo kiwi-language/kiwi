@@ -1,52 +1,41 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityIdProvider;
-import tech.metavm.entity.EntityTypeRegistry;
+import org.springframework.stereotype.Component;
+import tech.metavm.entity.ArrayIdentifier;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.Table;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static tech.metavm.util.ReflectUtils.getQualifiedFieldName;
 
-public class StdAllocators implements EntityIdProvider {
+@Component
+public class StdAllocators {
 
-    private static final String ID_FILE_DIR = "/id";
-    private static final Pattern ID_FILE_NAME_PTN = Pattern.compile("([^.\\s]+)\\.properties");
     private static final long NUM_IDS_PER_ALLOCATOR = 1000L;
 
     private final Map<Class<?>, StdAllocator> allocatorMap = new HashMap<>();
-    private long nextBaseId = 1000L;
-    private final String saveDir;
+    private long nextBaseId = 10000L;
+    private long nextArrayBaseId = IdConstants.ARRAY_REGION_BASE + 10000L;
+    private final AllocatorStore store;
 
-    public StdAllocators(String saveDir) {
-        this.saveDir = saveDir;
-        try(InputStream input = StdAllocators.class.getResourceAsStream(ID_FILE_DIR)) {
-            if(input != null) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    Matcher matcher = ID_FILE_NAME_PTN.matcher(line);
-                    if (matcher.matches()) {
-                        StdAllocator allocator = new StdAllocator(saveDir, ID_FILE_DIR + "/" + line);
-                        allocatorMap.put(allocator.getJavaType(), allocator);
-                        nextBaseId = Math.max(nextBaseId, allocator.getBase() + NUM_IDS_PER_ALLOCATOR);
-                    }
-                }
+    public StdAllocators(AllocatorStore store) {
+        this.store = store;
+        for (String fileName : store.getFileNames()) {
+            StdAllocator allocator = new StdAllocator(store, fileName);
+            allocatorMap.put(allocator.getJavaType(), allocator);
+            if(allocator.isArray()) {
+                nextArrayBaseId = Math.max(nextArrayBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
             }
-        } catch (IOException e) {
-            throw new InternalException("Fail to read id files", e);
+            else {
+                nextBaseId = Math.max(nextBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
+            }
         }
     }
 
@@ -60,6 +49,9 @@ public class StdAllocators implements EntityIdProvider {
         if(object instanceof Enum<?> enumConstant) {
             return getId0(enumConstant.getClass(), enumConstant.name());
         }
+        if(object instanceof ArrayIdentifier arrayIdentifier) {
+            return getId0(Table.class, arrayIdentifier.name());
+        }
         throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
     }
 
@@ -72,6 +64,9 @@ public class StdAllocators implements EntityIdProvider {
         }
         else if(object instanceof Enum<?> enumConstant) {
             putId0(enumConstant.getClass(), enumConstant.name(), id);
+        }
+        else if(object instanceof ArrayIdentifier arrayIdentifier) {
+            putId0(Table.class, arrayIdentifier.name(), id);
         }
         else {
             throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
@@ -87,7 +82,6 @@ public class StdAllocators implements EntityIdProvider {
         allocatorMap.get(entityType).putId(entityCode, id);
     }
 
-    @Override
     public long getTypeId(long id) {
         StdAllocator typeAllocator = getTypeAllocator();
         for (StdAllocator allocator : allocatorMap.values()) {
@@ -98,12 +92,12 @@ public class StdAllocators implements EntityIdProvider {
         throw new InternalException("Can not found typeId for id: " + id);
     }
 
-    @Override
-    public Map<Type, List<Long>> allocate(long tenantId, Map<Type, Integer> typeId2count) {
-        Map<Type, List<Long>> result = new HashMap<>();
-        typeId2count.forEach((type, count) -> {
-            Class<?> javaType = EntityTypeRegistry.getJavaType(type);
-            result.put(type, getAllocator(javaType).allocate(count));
+    public Map<Class<?>, List<Long>> allocate(Map<Class<?>, Integer> typeId2count) {
+        Map<Class<?>, List<Long>> result = new HashMap<>();
+        typeId2count.forEach((javaType, count) -> {
+//            Class<?> javaType = ModelDefRegistry.getJavaType(type);
+            List<Long> ids = getAllocator(javaType).allocate(count);
+            result.put(javaType, ids);
         });
         return result;
     }
@@ -113,18 +107,25 @@ public class StdAllocators implements EntityIdProvider {
     }
 
     private StdAllocator createAllocator(Class<?> javaType) {
-        StdAllocator allocator =  new StdAllocator(
-                saveDir,
-                getIdFileName(javaType.getSimpleName()),
+        return new StdAllocator(
+                store,
+                store.createFile(javaType.getSimpleName()),
                 javaType,
-                nextBaseId
+                allocateNextBaseId(javaType)
         );
-        nextBaseId += NUM_IDS_PER_ALLOCATOR;
-        return allocator;
     }
 
-    private static String getIdFileName(String code) {
-        return ID_FILE_DIR + "/" + code + ".properties";
+    private long allocateNextBaseId(Class<?> javaType) {
+        if(javaType == Table.class) {
+            long basedId = nextArrayBaseId;
+            nextArrayBaseId += NUM_IDS_PER_ALLOCATOR;
+            return basedId;
+        }
+        else {
+            long basedId = nextBaseId;
+            nextBaseId += NUM_IDS_PER_ALLOCATOR;
+            return basedId;
+        }
     }
 
     private StdAllocator getTypeAllocator() {
@@ -148,9 +149,7 @@ public class StdAllocators implements EntityIdProvider {
     }
 
     public void save() {
-        for (StdAllocator allocator : allocatorMap.values()) {
-            allocator.save();
-        }
+        allocatorMap.values().forEach(StdAllocator::save);
     }
 
 }

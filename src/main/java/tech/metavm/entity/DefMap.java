@@ -6,9 +6,11 @@ import java.lang.reflect.Type;
 
 public interface DefMap {
 
-    ModelDef<?, ?> getDef(Type type);
+    ModelDef<?, ?> getDef(Type javaType);
 
-    void putDef(Type type, ModelDef<?, ?> def);
+    ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type);
+
+    void addDef(ModelDef<?, ?> def);
 
     default <T> PojoDef<T> getPojoDef(TypeReference<T> typeRef) {
         return new TypeReference<PojoDef<T>>() {}.cast(
@@ -32,10 +34,6 @@ public interface DefMap {
         return new TypeReference<ValueDef<T>>() {}.cast(
                 getDef(klass)
         );
-    }
-
-    default <T> void putDef(Class<T> klass, ModelDef<T, ?> def) {
-        putDef((Type) klass, def);
     }
 
 }

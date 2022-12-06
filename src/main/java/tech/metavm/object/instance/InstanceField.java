@@ -2,30 +2,21 @@ package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.Column;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.*;
+
+import static tech.metavm.util.PersistenceUtil.writeValue;
 
 public class InstanceField {
 
-//    private final InstanceContext context;
     private final Instance owner;
     private final Field field;
     private Object value;
 
-    public InstanceField(Instance owner, Field field, InstanceFieldDTO instanceFieldDTO) {
-        this.field = field;
-        this.owner = owner;
-//        this.context = owner.getContext();
-        set(instanceFieldDTO);
-    }
-
     InstanceField(Instance owner, Field field, Object value) {
         this.field = field;
         this.owner = owner;
-//        this.context = owner.getContext();
         setValue(value);
     }
 
@@ -47,6 +38,9 @@ public class InstanceField {
     }
 
     String getColumnName() {
+        if(field.getColumn() == null) {
+            throw new InternalException("Field " + field + " doesn't have a column");
+        }
         return field.getColumn().name();
     }
 
@@ -54,24 +48,18 @@ public class InstanceField {
         return value;
     }
 
-//    public Object getResolvedValue() {
-//        if(field.isTable() || field.isEnum()) {
-//            return NncUtils.get(getValueId(), context::get);
+//    public void set(InstanceFieldDTO instanceFieldDTO) {
+//        Object rawValue = instanceFieldDTO.value();
+//        if(NncUtils.isEmptyValue(rawValue) && field.isNotNull()) {
+//            throw BusinessException.fieldValueRequired(field);
 //        }
-//        else {
-//            return value;
-//        }
+//        setValue(field.preprocessValue(rawValue));
 //    }
 
-    public void set(InstanceFieldDTO instanceFieldDTO) {
-        Object rawValue = instanceFieldDTO.value();
-        if(NncUtils.isEmptyValue(rawValue) && field.isNotNull()) {
-            throw BusinessException.fieldValueRequired(field);
-        }
-        setValue(field.preprocessValue(rawValue));
-    }
-
     void setValue(Object value) {
+        if(field.isNotNull() && value == null) {
+            throw new InternalException("Field " + field + " can not be null");
+        }
         this.value = value;
     }
 
@@ -106,11 +94,13 @@ public class InstanceField {
         throw BusinessException.invalidFieldValue(field, value);
     }
 
-    public Object getColumnValue() {
-        if(isGeneralRelation()) {
-            throw new UnsupportedOperationException(
-                    "getColumnValue is not supported for general relation fields"
-            );
+    public Object getColumnValue(long tenantId, IdentitySet<Instance> visited) {
+        Type fieldType = field.getType();
+        if(fieldType.isReference()) {
+            return NncUtils.get((Instance) value, Instance::toReferencePO);
+        }
+        if(fieldType.isValue() || fieldType.isNullable() && fieldType.getUnderlyingType().isValue()) {
+            return NncUtils.get((Instance) value, instance -> instance.toPO(tenantId, visited));
         }
         return value;
     }
@@ -157,7 +147,7 @@ public class InstanceField {
     }
 
     public boolean isGeneralRelation() {
-        return !field.getConcreteType().isPrimitive();
+        return !field.getType().isPrimitive();
     }
 
     public boolean isArray() {

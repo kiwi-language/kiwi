@@ -1,7 +1,9 @@
 package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.reflections.Reflections;
 import sun.misc.Unsafe;
+import tech.metavm.entity.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -22,12 +24,41 @@ public class ReflectUtils {
         return UNSAFE;
     }
 
+    public static Set<Class<?>> getModelClasses() {
+        Reflections reflections = new Reflections("tech.metavm");
+        Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
+        Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
+        Set<Class<?>> valueTypes = reflections.getTypesAnnotatedWith(ValueType.class);
+        return NncUtils.mergeSets(entitySubTypes, entityTypes, valueTypes);
+    }
+
     public static Class<?> classForName(String name) {
         try {
             return Class.forName(name);
         } catch (ClassNotFoundException e) {
             throw new InternalException("Can not find class: " + name);
         }
+    }
+
+    public static Method getMethod(@NotNull Class<?> klass, String methodName, Class<?>...paramTypes) {
+        try {
+            return klass.getMethod(methodName, paramTypes);
+        } catch (NoSuchMethodException e) {
+            throw new InternalException(
+                    "Can not find method " + klass.getName() + "." + methodName + "("
+                    + NncUtils.join(paramTypes, Class::getSimpleName) + ")"
+            );
+        }
+    }
+
+    public static String getMetaFieldName(Field javaField) {
+        EntityField entityField = javaField.getAnnotation(EntityField.class);
+        ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
+        return NncUtils.firstNonNull(
+                NncUtils.get(entityField, EntityField::value),
+                NncUtils.get(childEntity, ChildEntity::value),
+                javaField.getName()
+        );
     }
 
     public static Method getMethodByName(@NotNull Class<?> klass, String methodName) {
@@ -70,6 +101,10 @@ public class ReflectUtils {
 
     public static String getQualifiedFieldName(Field field) {
         return field.getDeclaringClass().getName() + "." + field.getName();
+    }
+
+    public static boolean isIndexDefField(Field field) {
+        return Modifier.isStatic(field.getModifiers()) && field.getType() == IndexDef.class;
     }
 
     public static <T> T allocateInstance(Class<T> klass) {
@@ -139,6 +174,23 @@ public class ReflectUtils {
             throw new InternalException("Fail to get constructor for type: " + klass.getName() +
                     " with parameter types: " + Arrays.toString(paramTypes));
         }
+    }
+
+    public static List<Field> getIndexDefFields(Class<?> klass) {
+        return getDeclaredStaticFields(
+                klass,
+                f -> f.getType() == IndexDef.class
+        );
+    }
+
+    public static List<Field> getDeclaredStaticFields(Class<?> klass, Predicate<Field> filter) {
+        List<Field> results = new ArrayList<>();
+        for (Field declaredField : klass.getDeclaredFields()) {
+            if(Modifier.isStatic(declaredField.getModifiers()) && filter.test(declaredField)) {
+                results.add(declaredField);
+            }
+        }
+        return results;
     }
 
     public static Field getField(Class<?> klass, String name) {
@@ -245,9 +297,9 @@ public class ReflectUtils {
         }
     }
 
-    public static Object invoke(Object object, Method method) {
+    public static Object invoke(Object object, Method method, Object...argiments) {
         try {
-            return method.invoke(object);
+            return method.invoke(object, argiments);
         } catch (Exception e) {
             throw new RuntimeException("Fail to invoke method", e);
         }

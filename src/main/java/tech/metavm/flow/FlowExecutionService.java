@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.flow.rest.FieldValueDTO;
@@ -24,7 +25,7 @@ public class FlowExecutionService {
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
         InstanceContext context = newContext();
-        EntityContext entityContext = context.getEntityContext();
+        IEntityContext entityContext = context.getEntityContext();
         FlowRT flow = entityContext.getEntity(FlowRT.class, request.flowId());
         IInstance self = context.get(request.instanceId());
         InstanceDTO argument = createArgument(flow.getInputType().getId(), request.fields());

@@ -4,23 +4,31 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.dto.Result;
-import tech.metavm.infra.BootstrapService;
-import tech.metavm.infra.StdIdBockManager;
-import tech.metavm.object.meta.StdTypeManager;
+import tech.metavm.entity.Bootstrap;
+import tech.metavm.infra.RegionManager;
 
 @RestController
 @RequestMapping("/bootstrap")
 public class BootstrapController {
 
-    private final BootstrapService bootstrapService;
+    private final Bootstrap bootstrap;
 
-    public BootstrapController(BootstrapService bootstrapService) {
-        this.bootstrapService = bootstrapService;
+    private final RegionManager regionManager;
+
+    public BootstrapController(Bootstrap bootstrap, RegionManager regionManager) {
+        this.bootstrap = bootstrap;
+        this.regionManager = regionManager;
     }
 
     @PostMapping
     public Result<Void> boot() {
-        bootstrapService.boot();
+        bootstrap.boot();
+        return Result.success(null);
+    }
+
+    @PostMapping("/region")
+    public Result<Void> initRegions() {
+        regionManager.initialize();
         return Result.success(null);
     }
 

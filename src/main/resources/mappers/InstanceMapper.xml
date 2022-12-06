@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.object.instance.persistence.mappers.InstanceMapper">
+  <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.InstancePO">
+    <!--@mbg.generated-->
+    <!--@Table instance-->
+    <id property="id" jdbcType="BIGINT" column="id"/>
+    <result property="tenantId" jdbcType="BIGINT" column="tenant_id"/>
+    <result property="typeId" jdbcType="BIGINT" column="type_id"/>
+    <result property="title" jdbcType="INTEGER" column="title"/>
+    <result property="data" jdbcType="VARCHAR" column="data"
+            typeHandler="tech.metavm.util.JsonObjectTypeHandler"/>
+    <result property="version" jdbcType="BIGINT" column="version"/>
+    <result property="syncVersion" jdbcType="BIGINT" column="sync_version"/>
+  </resultMap>
+
+  <resultMap id="TitleMap" type="tech.metavm.object.instance.persistence.InstanceTitlePO">
+    <!--@mbg.generated-->
+    <!--@Table instance-->
+    <id property="id" jdbcType="BIGINT" column="id"/>
+    <result property="title" jdbcType="VARCHAR" column="title"/>
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, tenant_id, type_id, title, `data`, version, sync_version
+  </sql>
+
+  <update id="batchDelete">
+    <!--@mbg.generated-->
+    <foreach collection="versions" item="item" separator=";">
+      update instance
+      set deleted_at = #{timestamp},
+      version = #{item.version}
+      where
+      tenant_id = #{tenantId} and
+      deleted_at = 0 and
+      id = #{item.id}
+    </foreach>
+  </update>
+
+  <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+    <!--@mbg.generated-->
+    insert into instance (id, tenant_id, type_id, title, `data`)
+    values
+    <foreach collection="collection" item="item" separator=",">
+      (#{item.id}, #{item.tenantId}, #{item.typeId}, #{item.title},
+      #{item.data, typeHandler=tech.metavm.util.JsonObjectTypeHandler})
+    </foreach>
+  </insert>
+
+  <update id="batchUpdate">
+    <!--@mbg.generated-->
+    <foreach collection="collection" item="item" separator=";">
+      update instance
+      <set>
+        <if test="item.typeId != null">
+          type_id = #{item.typeId},
+        </if>
+        <if test="item.title != null">
+          title = #{item.title},
+        </if>
+        <if test="item.data != null">
+          `data` = #{item.data, typeHandler=tech.metavm.util.JsonObjectTypeHandler},
+        </if>
+        <if test="item.version != null">
+          version = #{item.version},
+        </if>
+        <if test="item.syncVersion != null">
+          sync_version = #{item.syncVersion},
+        </if>
+      </set>
+      where id = #{item.id} and tenant_id = #{item.tenantId} and deleted_at = 0
+    </foreach>
+  </update>
+
+  <select id="selectByIds" resultMap="BaseResultMap">
+    select
+      <include refid="Base_Column_List"/>
+    from
+        instance
+    where
+        tenant_id = #{tenantId} and
+        deleted_at = 0 and
+        id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+  </select>
+
+  <select id="selectByTypeIds" resultMap="BaseResultMap">
+    select
+      <include refid="Base_Column_List"/>
+    from
+        instance
+    where
+    tenant_id = #{tenantId} and
+    deleted_at = 0 and
+    type_id in
+    <foreach collection="typeIds" item="typeId" open="(" close=")" separator=",">
+      #{typeId}
+    </foreach>
+    limit #{start},#{limit}
+  </select>
+
+  <update id="updateSyncVersion">
+    <foreach collection="collection" item="item" separator=";">
+      UPDATE instance set
+      sync_version = #{item.version}
+      where id = #{item.id}
+      and sync_version &lt; #{item.version}
+      and deleted_at = 0
+      and tenant_id = #{item.tenantId}
+    </foreach>
+  </update>
+
+  <select id="selectTitleByIds" resultMap="TitleMap">
+    select id, title
+    from instance
+    where
+    deleted_at = 0 and
+    tenant_id = #{tenantId} and
+    id in
+    <foreach collection="ids" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+  </select>
+
+</mapper>

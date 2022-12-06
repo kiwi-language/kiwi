@@ -3,22 +3,23 @@ package tech.metavm.object.instance;
 import tech.metavm.object.meta.EnumConstantRT;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.TypeReference;
 
-public interface ModelMap {
+public interface ModelInstanceMap {
 
-    <T> T get(Class<T> klass, Instance instance);
+    Instance getInstance(Object model);
+
+    <T> T getModel(Class<T> klass, Instance instance);
 
     default Type getType(Instance instance) {
-        return get(Type.class, instance);
+        return getModel(Type.class, instance);
     }
 
     default Field getField(Instance instance) {
-        return get(Field.class, instance);
+        return getModel(Field.class, instance);
     }
 
     default EnumConstantRT getEnumConstant(Instance instance) {
-        return get(EnumConstantRT.class, instance);
+        return getModel(EnumConstantRT.class, instance);
     }
 
 }

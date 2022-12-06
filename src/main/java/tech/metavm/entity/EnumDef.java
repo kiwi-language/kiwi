@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.EmptyModelInstanceMap;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceMap;
-import tech.metavm.object.instance.ModelMap;
+import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.NncUtils;
@@ -14,76 +14,96 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final String name;
     private final ValueDef<Enum<?>> parentDef;
     private final Class<T> enumType;
-    private final List<EnumConstantDef<T>> enumConstantDefs = new ArrayList<>();
+    private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
     private final Type type;
+    private Long id;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, Type type) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, Long id) {
         super(enumType, Instance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
-        this.type = createType(type);
+        this.id = id;
+        this.type = createType();
     }
 
     void addEnumConstantDef(EnumConstantDef<T> enumConstantDef) {
-        this.enumConstantDefs.add(enumConstantDef);
+        this.enumConstantDefList.add(enumConstantDef);
     }
 
     public EnumConstantDef<T> getEnumConstantDef(long id) {
-        return NncUtils.find(enumConstantDefs, ecd -> Objects.equals(id, ecd.getId()));
+        return NncUtils.find(enumConstantDefList, ecd -> Objects.equals(id, ecd.getId()));
     }
 
-    private Type createType(Type type) {
-        if(type == null) {
-            type = new Type(
+    private Type createType() {
+//        if(type == null) {
+            Type type = new Type(
                     name,
                     parentDef.getType(),
                     TypeCategory.ENUM
             );
-        }
-        else {
-            type.setName(name);
-            type.setSuperType(parentDef.getType());
-            type.setCategory(TypeCategory.ENUM);
-        }
-        return type;
+            if(id != null) {
+                type.initId(id);
+            }
+            return type;
+//        }
+//        else {
+//            type.setName(name);
+//            type.setSuperType(parentDef.getType());
+//            type.setCategory(TypeCategory.ENUM);
+//        }
+//        return type;
     }
 
     @Override
-    public T newModel(Instance instance, ModelMap modelMap) {
-        Instance realInstance = EntityProxyFactory.extractReal(instance);
+    public T createModel(Instance instance, ModelInstanceMap modelInstanceMap) {
         return NncUtils.findRequired(
-                enumConstantDefs,
-                ecDef -> Objects.equals(ecDef.getInstance(), realInstance)
+                enumConstantDefList,
+                def -> def.getInstance() == instance
         ).getValue();
     }
 
     @Override
-    public void updateModel(T model, Instance instance, ModelMap modelMap) {
+    public void initModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
 
     }
 
     @Override
-    public Instance newInstance(T enumConstant, InstanceMap instanceMap) {
+    public Instance createInstance(T model, ModelInstanceMap instanceMap) {
         return NncUtils.findRequired(
-                enumConstantDefs, ecd -> ecd.getValue() == enumConstant
+                enumConstantDefList,
+                def -> def.getValue() == model
         ).getInstance();
     }
 
     @Override
-    public void updateInstance(T model, Instance instance, InstanceMap instanceMap) {
+    public void initInstance(Instance instance, T enumConstant, ModelInstanceMap instanceMap) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateInstance(T model, Instance instance, ModelInstanceMap instanceMap) {
 
     }
 
     @Override
-    public Map<Object, Entity> getEntityMapping() {
-        Map<Object, Entity> mapping = new HashMap<>();
-        mapping.put(enumType, type);
-//        for (EnumConstantDef<T> enumConstantDef : enumConstantDefs) {
-//            mapping.put(enumConstantDef.getValue(), enumConstantDef.getEnumConstant());
-//        }
-        return mapping;
+    public Map<Object, Identifiable> getEntityMapping() {
+        return Map.of(enumType, type);
+    }
+
+    @Override
+    public Map<Object, Instance> getInstanceMapping() {
+        return NncUtils.toMap(
+                enumConstantDefList,
+                EnumConstantDef::getValue,
+                EnumConstantDef::getInstance
+        );
     }
 
     @SuppressWarnings("unused")
@@ -93,9 +113,8 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
     Instance createInstance(Enum<?> value) {
         return new Instance(
-                parentDef.getInstanceFields(value, o -> null),
-                type,
-                enumType
+                parentDef.getInstanceFields(value, new EmptyModelInstanceMap()),
+                type
         );
     }
 
@@ -109,15 +128,11 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     public List<EnumConstantDef<T>> getEnumConstantDefs() {
-        return enumConstantDefs;
+        return enumConstantDefList;
     }
 
     @Override
-    public Map<Object, Instance> getInstanceMapping() {
-        return NncUtils.toMap(
-                enumConstantDefs,
-                EnumConstantDef::getValue,
-                EnumConstantDef::getInstance
-        );
+    public boolean isProxySupported() {
+        return false;
     }
 }

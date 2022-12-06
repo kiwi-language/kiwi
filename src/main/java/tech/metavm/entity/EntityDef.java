@@ -28,7 +28,7 @@ public class EntityDef<T extends Entity> extends PojoDef<T> {
 
     @Override
     protected void afterPojoCreated(T pojo, IInstance instance) {
-        if(instance.getId() != null) {
+        if(instance.getId() != null && pojo.getId() == null) {
             pojo.initId(instance.getId());
         }
     }

@@ -1,9 +1,7 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.Instance;
@@ -57,7 +55,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         Instance instance = (Instance) objectId.evaluate(frame);
         if(instance != null) {
             for (UpdateField updateField : fieldParams) {
-                updateField.execute(instance, frame);
+                updateField.execute(instance, frame, frame.getStack().getContext());
             }
         }
     }

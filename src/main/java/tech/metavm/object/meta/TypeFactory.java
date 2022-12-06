@@ -1,6 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class TypeFactory {
 
-    public static Type createAndBind(TypeDTO typeDTO, EntityContext context) {
+    public static Type createAndBind(TypeDTO typeDTO, IEntityContext context) {
         Type type = new Type(
                 typeDTO.name(),
                 context.getType(typeDTO.superTypeId()),
@@ -42,7 +42,7 @@ public class TypeFactory {
         return new EnumConstantRT(type, ec.name(), ec.ordinal());
     }
 
-    public static Field createField(Type type, FieldDTO fieldDTO, EntityContext context) {
+    public static Field createField(Type type, FieldDTO fieldDTO, IEntityContext context) {
         return new Field(
                 fieldDTO.name(),
                 type,
@@ -103,7 +103,7 @@ public class TypeFactory {
         return new Type(
                 rawType.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + ">",
                 StandardTypes.OBJECT,
-                TypeCategory.PARAMETERIZED,
+                rawType.getCategory(),
                 false,
                 false,
                 null,

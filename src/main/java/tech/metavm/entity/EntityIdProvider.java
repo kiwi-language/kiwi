@@ -10,14 +10,10 @@ public interface EntityIdProvider {
 
     long getTypeId(long id);
 
-//    Long getEnumConstantId(Enum<?> enumConstant);
-//
-//    Long getUniqueConstraintId(Field field);
-//
-//    Long getFieldId(Field field);
-//
-//    Long getTypeId(Class<?> klass);
-
     Map<Type, List<Long>> allocate(long tenantId, Map<Type, Integer> typeId2count);
+
+    default Long allocateOne(long tenantId, Type type) {
+        return allocate(tenantId, Map.of(type, 1)).values().iterator().next().get(0);
+    }
 
 }

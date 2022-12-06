@@ -2,6 +2,7 @@ package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
+import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.CheckConstraintRT;
@@ -14,7 +15,7 @@ import java.util.List;
 public class CheckConstraintPlugin implements ContextPlugin {
 
     @Override
-    public void beforeSaving(EntityChange<InstancePO> difference, InstanceContext context) {
+    public void beforeSaving(EntityChange<InstancePO> difference, IInstanceContext context) {
         List<InstancePO> instancePOs = difference.insertsAndUpdates();
         List<IInstance> instances = NncUtils.map(instancePOs, instancePO -> context.get(instancePO.getId()));
         instances.forEach(this::checkConstraints);
@@ -30,7 +31,7 @@ public class CheckConstraintPlugin implements ContextPlugin {
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> difference, InstanceContext context) {
+    public void afterSaving(EntityChange<InstancePO> difference, IInstanceContext context) {
 
     }
 

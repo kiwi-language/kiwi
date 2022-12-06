@@ -1,8 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.InstanceArray;
+import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
 
@@ -12,63 +15,83 @@ public class ArrayDef<E> extends ModelDef<Table<E>, InstanceArray> {
 
     private final java.lang.reflect.Type reflectType;
     private final ModelDef<E, ?> elementDef;
+    private Long id;
     private final Type type;
 
     public ArrayDef(ModelDef<E, ?> elementDef,
-                    java.lang.reflect.Type reflectType, Type type) {
+                    java.lang.reflect.Type reflectType,
+                    Long id) {
         super(new TypeReference<>() {}, InstanceArray.class);
         this.elementDef = elementDef;
         this.reflectType = reflectType;
-        this.type = type != null ? type : elementDef.getType().getArrayType();
+        this.id = id;
+        this.type = elementDef.getType().getArrayType();
+        if(id != null && type.getId() == null) {
+            type.initId(id);
+        }
     }
 
     @Override
-    public Table<E> newModel(InstanceArray instanceArray, ModelMap modelMap) {
-        return new Table<>(
+    public void initModel(Table<E> table, InstanceArray instanceArray, ModelInstanceMap modelInstanceMap) {
+        table.initialize(
                 NncUtils.map(
                         instanceArray.getElements(),
-                        element -> newElementModel(elementDef, element, modelMap)
+                        element -> {
+                            if(element instanceof Instance instance) {
+                                return modelInstanceMap.getModel(elementDef.getModelType(), instance);
+                            }
+                            else {
+                                return elementDef.getModelType().cast(element);
+                            }
+                        }
                 )
         );
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     @Override
-    public void updateModel(Table<E> model, InstanceArray instance, ModelMap modelMap) {
+    public Table<E> createModelProxy(Class<? extends Table<E>> proxyClass) {
+        return ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(proxyClass));
+    }
+
+    @Override
+    public void updateModel(Table<E> model, InstanceArray instance, ModelInstanceMap modelInstanceMap) {
         model.clear();
-        for (IInstance element : instance.getElements()) {
-            model.add(newElementModel(elementDef, element, modelMap));
+        for (Object element : instance.getElements()) {
+            E modelElement;
+            if(element instanceof Instance elementInst) {
+                modelElement = modelInstanceMap.getModel(elementDef.getModelType(), elementInst);
+            }
+            else {
+                modelElement = elementDef.getModelType().cast(element);
+            }
+            model.add(modelElement);
         }
     }
 
-    private <I extends Instance> E newElementModel(ModelDef<E, I> elementDef, IInstance element, ModelMap modelMap) {
-        return elementDef.newModel(elementDef.getInstanceType().cast(element), modelMap);
+    @Override
+    public void initInstance(InstanceArray instanceArray, Table<E> table, ModelInstanceMap instanceMap) {
+        instanceArray.initialize(NncUtils.map(table, instanceMap::getInstance));
     }
 
     @Override
-    public InstanceArray newInstance(Table<E> table, InstanceMap instanceMap) {
-        return new InstanceArray(
-                type,
-                Table.class,
-                NncUtils.map(table, elementModel -> newElementInstance(elementModel, instanceMap)),
-                false
-        );
-    }
-
-    @Override
-    public void updateInstance(Table<E> model, InstanceArray instance, InstanceMap instanceMap) {
+    public void updateInstance(Table<E> model, InstanceArray instance, ModelInstanceMap instanceMap) {
         instance.clear();
         for (E elementModel : model) {
-            instance.add(newElementInstance(elementModel, instanceMap));
+            instance.add(instanceMap.getInstance(elementModel));
         }
     }
 
     @Override
-    public Map<Object, Entity> getEntityMapping() {
+    public Map<Object, Identifiable> getEntityMapping() {
         return Map.of(reflectType, type);
-    }
-
-    private Instance newElementInstance(Object elementModel, InstanceMap instanceMap) {
-        return elementDef.newInstance(elementDef.getEntityType().cast(elementModel), instanceMap);
     }
 
     @Override

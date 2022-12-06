@@ -1,20 +1,17 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 
-@ValueType("量子X")
-public class Qux {
+@EntityType("量子X")
+public class Qux extends Entity {
 
-    private final double price;
+    @EntityField("数量")
     private final long amount;
 
-    public Qux(double price, long amount) {
-        this.price = price;
+    public Qux(long amount) {
         this.amount = amount;
-    }
-
-    public double getPrice() {
-        return price;
     }
 
     public long getAmount() {

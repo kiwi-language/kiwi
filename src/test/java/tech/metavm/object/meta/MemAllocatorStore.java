@@ -1,0 +1,38 @@
+package tech.metavm.object.meta;
+
+import tech.metavm.util.NncUtils;
+
+import java.util.*;
+
+public class MemAllocatorStore implements AllocatorStore {
+
+    private final Map<String, Properties> propertiesMap = new HashMap<>();
+
+    @Override
+    public String createFile(String code) {
+        return "/id/" + code + ".properties";
+    }
+
+    @Override
+    public List<String> getFileNames() {
+        return new ArrayList<>(propertiesMap.keySet());
+    }
+
+    @Override
+    public Properties load(String fileName) {
+        return NncUtils.get(propertiesMap.get(fileName), this::copyProperties);
+    }
+
+    @Override
+    public void save(String fileName, Properties properties) {
+        propertiesMap.put(fileName, copyProperties(properties));
+    }
+
+    private Properties copyProperties(Properties properties) {
+        return (Properties) properties.clone();
+    }
+
+    public void clear() {
+        propertiesMap.clear();
+    }
+}

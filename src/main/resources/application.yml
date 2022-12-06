@@ -18,6 +18,7 @@ mybatis:
   type-aliases-package: tech.nonocode.object.meta.persistence
 
 metavm:
+  resource-cp-root: /Users/leen/workspace/object/src/main/resources
   token:
     encrypt:
       certificate: /etc/metavm/encrypt_key.pub
@@ -26,7 +27,6 @@ metavm:
       certificate: /etc/metavm/sign_key.pub
       key: /etc/metavm/sign_key
   id:
-    saveDir: /Users/leen/workspace/object/src/main/resources
     file:
       Type: /id/Type.properties
       Field: /id/Field.properties

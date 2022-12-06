@@ -42,14 +42,10 @@ public class InstanceStore implements IInstanceStore {
         }
     }
 
-    public IInstance selectByUniqueKey(IndexKeyPO key, InstanceContext context) {
-        return NncUtils.getFirst(selectByKey(key, context));
-    }
-
     @Override
-    public List<Instance> selectByKey(IndexKeyPO key, InstanceContext context) {
+    public List<Long> selectByKey(IndexKeyPO key, InstanceContext context) {
         List<IndexItemPO> indexItems = indexItemMapper.selectByKeys(context.getTenantId(), List.of(key));
-        return context.batchGet(NncUtils.map(indexItems, IndexItemPO::getInstanceId));
+        return NncUtils.map(indexItems, IndexItemPO::getInstanceId);
     }
 
     public boolean updateSyncVersion(List<VersionPO> versions) {
@@ -63,7 +59,7 @@ public class InstanceStore implements IInstanceStore {
         }
         List<InstancePO> records = instanceMapperGateway.selectByIds(context.getTenantId(), request.ids());
         Set<Long> typeIds = NncUtils.mapUnique(records, InstancePO::getTypeId);
-        context.batchGet(typeIds, LoadingOption.ENUM_CONSTANTS_LAZY_LOADING);
+        context.preload(typeIds, LoadingOption.ENUM_CONSTANTS_LAZY_LOADING);
         return records;
     }
 

@@ -7,6 +7,10 @@ import java.util.function.Function;
 
 public record Page<T>(List<T> data, long total) {
 
+    public static <T> Page<T> empty() {
+        return new Page<>(List.of(), 0L);
+    }
+
     public boolean isEmpty() {
         return data.isEmpty();
     }

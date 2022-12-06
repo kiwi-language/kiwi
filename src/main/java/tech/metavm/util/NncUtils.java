@@ -428,8 +428,17 @@ public class NncUtils {
     }
 
     public static <T> T findRequired(Collection<T> collection, Predicate<T> filter) {
+        return findRequired(collection, filter, NullPointerException::new);
+    }
+
+    public static <T> T findRequired(Collection<T> collection, Predicate<T> filter, String message) {
+        return findRequired(collection, filter, () -> new InternalException(message));
+    }
+
+    public static <T> T findRequired(Collection<T> collection, Predicate<T> filter,
+                                     Supplier<RuntimeException> exceptionSupplier) {
         return collection.stream().filter(filter).findAny()
-                .orElseThrow(InternalException::new);
+                .orElseThrow(exceptionSupplier);
     }
 
     public static <T extends Identifiable> T findById(Collection<T> collection, long id) {
@@ -715,7 +724,7 @@ public class NncUtils {
         return requireNull(value, "Value必须为空");
     }
 
-    public static <T> T requireNull(T value, String message) {
+    public static <T> T requireNull(@Nullable T value, String message) {
         return requireNull(value, () -> new InternalException(message));
     }
 
@@ -749,6 +758,10 @@ public class NncUtils {
             throw exceptionSupplier.get();
         }
         return value;
+    }
+
+    public static void requireFalse(boolean value, String message) {
+        requireTrue(!value, message);
     }
 
     public static void requireTrue(boolean value, String message) {

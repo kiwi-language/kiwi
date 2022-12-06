@@ -11,7 +11,7 @@ public class UTTypes {
     );
 
     public static final Type BAR = new Type(
-            "吧", StandardTypes.ENTITY, TypeCategory.CLASS
+            "吧", StandardTypes.OBJECT, TypeCategory.VALUE
     );
 
     public static final Type BAZ = new Type(
@@ -73,7 +73,7 @@ public class UTTypes {
                 "巴巴巴巴",
                 BAZ,
                 Access.GLOBAL,
-                true,
+                false,
                 true,
                 null,
                 ArrayTypes.BAR_ARRAY,

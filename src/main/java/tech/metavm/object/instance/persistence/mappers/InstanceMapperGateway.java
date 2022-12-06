@@ -13,6 +13,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static tech.metavm.util.PersistenceUtil.convertForLoading;
+import static tech.metavm.util.PersistenceUtil.convertForPersisting;
+
 @Component
 public class InstanceMapperGateway {
 
@@ -25,28 +28,30 @@ public class InstanceMapperGateway {
     }
 
     public List<InstancePO> selectByIds(long tenantId, Collection<Long> ids) {
-        return NncUtils.splitAndMerge(
-                ids,
-                this::isArrayId,
-                arrayIds -> new ArrayList<>(instanceArrayMapper.selectByIds(tenantId, arrayIds)),
-                instanceIds -> instanceMapper.selectByIds(tenantId, ids)
+        return convertForLoading(
+                NncUtils.splitAndMerge(
+                    ids,
+                    this::isArrayId,
+                    arrayIds -> new ArrayList<>(instanceArrayMapper.selectByIds(tenantId, arrayIds)),
+                    instanceIds -> instanceMapper.selectByIds(tenantId, ids)
+                )
         );
     }
 
     public List<InstancePO> selectByInstanceTypeIds(long tenantId, Collection<Long> typeIds, long start, long limit) {
-        return instanceMapper.selectByTypeIds(tenantId, typeIds, start, limit);
+        return convertForLoading(instanceMapper.selectByTypeIds(tenantId, typeIds, start, limit));
     }
 
-    public void batchInsert(List<InstancePO> deletes) {
+    public void batchInsert(List<InstancePO> inserts) {
         splitAndExecute(
-                deletes,
+                convertForPersisting(inserts),
                 instanceMapper::batchInsert,
                 instanceArrayMapper::batchInsert
         );
     }
-    public void batchUpdate(List<InstancePO> deletes) {
+    public void batchUpdate(List<InstancePO> updates) {
         splitAndExecute(
-                deletes,
+                convertForPersisting(updates),
                 instanceMapper::batchUpdate,
                 instanceArrayMapper::batchUpdate
         );
@@ -57,9 +62,10 @@ public class InstanceMapperGateway {
             return;
         }
         long tenantId = deletes.get(0).getTenantId();
+        long timestamp = System.currentTimeMillis();
         splitAndExecute(
                 deletes,
-                instances -> instanceMapper.batchDelete(tenantId, NncUtils.map(instances, InstancePO::nextVersion)),
+                instances -> instanceMapper.batchDelete(tenantId, timestamp, NncUtils.map(instances, InstancePO::nextVersion)),
                 arrays -> instanceArrayMapper.batchDelete(NncUtils.mapToIds(arrays))
         );
     }
@@ -87,7 +93,6 @@ public class InstanceMapperGateway {
     private boolean isArrayId(long id) {
         return TypeCategory.ARRAY.idRangeContains(id);
     }
-
 
     public int updateSyncVersion(List<VersionPO> versions) {
         return instanceMapper.updateSyncVersion(versions);

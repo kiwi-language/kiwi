@@ -25,7 +25,6 @@
     <foreach collection="collection" item="typeCategory" separator="," open="(" close=")">
       #{typeCategory}
     </foreach>
-    limit 1
     for update
   </select>
 

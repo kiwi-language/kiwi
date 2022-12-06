@@ -2,7 +2,7 @@ package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -29,14 +29,17 @@ public class UniqueConstraintPlugin implements ContextPlugin {
     }
 
     @Override
-    public void beforeSaving(EntityChange<InstancePO> diff, InstanceContext context) {
+    public void beforeSaving(EntityChange<InstancePO> diff, IInstanceContext context) {
         List<IInstance> currentInstances = NncUtils.map(
                         diff.insertsAndUpdates(),
                         instancePO -> context.get(instancePO.getId())
                 );
 
         Map<Long, IInstance> instanceMap = NncUtils.toMap(currentInstances, IInstance::getId);
-        List<IndexItemPO> currentItems = NncUtils.flatMap(currentInstances, IInstance::getUniqueKeys);
+        List<IndexItemPO> currentItems = NncUtils.flatMap(
+                currentInstances,
+                instance -> instance.getUniqueKeys(context.getTenantId())
+        );
         List<InstancePO> oldInstances = NncUtils.merge(diff.updates(), diff.deletes());
         List<IndexItemPO> oldItems = NncUtils.isEmpty(oldInstances) && NncUtils.isEmpty(currentItems) ? List.of() :
                 indexItemMapper.selectByInstanceIdsOrKeys(
@@ -59,12 +62,12 @@ public class UniqueConstraintPlugin implements ContextPlugin {
                 );
             }
         }
-        diff.setAttribute(OLD_INDEX_ITEMS, currentItems);
-        diff.setAttribute(NEW_INDEX_ITEMS, oldItems);
+        diff.setAttribute(OLD_INDEX_ITEMS, oldItems);
+        diff.setAttribute(NEW_INDEX_ITEMS, currentItems);
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> difference, InstanceContext context) {
+    public void afterSaving(EntityChange<InstancePO> difference, IInstanceContext context) {
         List<IndexItemPO> oldItems = difference.getAttribute(OLD_INDEX_ITEMS);
         List<IndexItemPO> currentItems = difference.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexItemPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());

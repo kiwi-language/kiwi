@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
-import tech.metavm.object.meta.IdConstants.ROLE;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -24,7 +24,7 @@ public class RoleManager {
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
         InstanceQueryDTO query = new InstanceQueryDTO(
-                ROLE.ID,
+                ModelDefRegistry.getTypeId(RoleRT.class),
                 searchText,
                 page,
                 pageSize
@@ -45,13 +45,13 @@ public class RoleManager {
 
     @Transactional
     public long save(RoleDTO roleDTO) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         RoleRT role = save(roleDTO, context);
         context.finish();
         return role.getId();
     }
 
-    public RoleRT save(RoleDTO roleDTO, EntityContext context) {
+    public RoleRT save(RoleDTO roleDTO, IEntityContext context) {
         RoleRT role;
         if(roleDTO.id() != null) {
             role = context.getEntity(RoleRT.class, roleDTO.id());
@@ -67,14 +67,14 @@ public class RoleManager {
 
     @Transactional
     public void delete(long id) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         RoleRT role = context.getEntity(RoleRT.class, id);
         NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
         context.remove(role);
         context.finish();
     }
 
-    private EntityContext newContext() {
+    private IEntityContext newContext() {
         return instanceContextFactory.newContext().getEntityContext();
     }
 

@@ -4,8 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.meta.IdConstants;
@@ -22,9 +23,9 @@ public class UserManager {
     private InstanceContextFactory instanceContextFactory;
 
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         InstanceQueryDTO query = new InstanceQueryDTO(
-                IdConstants.USER.ID,
+                ModelDefRegistry.getType(UserRT.class).getId(),
                 searchText,
                 page,
                 pageSize
@@ -38,13 +39,13 @@ public class UserManager {
 
     @Transactional
     public long save(UserDTO userDTO) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         UserRT user = save(userDTO, context);
         context.finish();
         return user.getId();
     }
 
-    public UserRT save(UserDTO userDTO, EntityContext context) {
+    public UserRT save(UserDTO userDTO, IEntityContext context) {
         UserRT user;
         if(userDTO.id() == null) {
             user = new UserRT(
@@ -72,7 +73,7 @@ public class UserManager {
 
     @Transactional
     public void delete(long userId) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         UserRT user = context.getEntity(UserRT.class, userId);
         if(user != null) {
             user.remove();
@@ -81,11 +82,11 @@ public class UserManager {
     }
 
     public UserDTO get(long id) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         return NncUtils.get(context.getEntity(UserRT.class, id), UserRT::toUserDTO);
     }
 
-    private EntityContext newContext() {
+    private IEntityContext newContext() {
         return instanceContextFactory.newContext().getEntityContext();
     }
 

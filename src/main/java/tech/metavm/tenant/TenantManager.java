@@ -1,11 +1,11 @@
 package tech.metavm.tenant;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.infra.IdService;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
@@ -24,29 +24,31 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-import static tech.metavm.object.meta.IdConstants.ROLE;
-import static tech.metavm.object.meta.IdConstants.USER;
+import static tech.metavm.entity.ModelDefRegistry.getTypeId;
 
 @Component
 public class TenantManager {
 
-    @Autowired
-    private TenantMapper tenantMapper;
+    private final TenantMapper tenantMapper;
 
-    @Autowired
-    private UserManager userManager;
+    private final UserManager userManager;
 
-    @Autowired
-    private IdService idService;
+    private final IdService idService;
 
-    @Autowired
-    private RoleManager roleManager;
+    private final RoleManager roleManager;
 
-    @Autowired
-    private InstanceContextFactory instanceContextFactory;
+    private final InstanceContextFactory instanceContextFactory;
 
-    @Autowired
-    private InstanceQueryService instanceQueryService;
+    private final InstanceQueryService instanceQueryService;
+
+    public TenantManager(TenantMapper tenantMapper, UserManager userManager, IdService idService, RoleManager roleManager, InstanceContextFactory instanceContextFactory, InstanceQueryService instanceQueryService) {
+        this.tenantMapper = tenantMapper;
+        this.userManager = userManager;
+        this.idService = idService;
+        this.roleManager = roleManager;
+        this.instanceContextFactory = instanceContextFactory;
+        this.instanceQueryService = instanceQueryService;
+    }
 
     public Page<TenantDTO> list(int page, int pageSize, String searchText) {
         int start = (page-1) * pageSize, limit = pageSize;
@@ -69,14 +71,14 @@ public class TenantManager {
     @Transactional
     public long create(TenantCreateRequest request) {
         setupContextInfo(-1L);
-        EntityContext globalContext = newContext();
-        long tenantId = idService.allocate(-1L, globalContext.getTenantType());
+        IEntityContext globalContext = newContext();
+        long tenantId = idService.allocate(-1L, ModelDefRegistry.getType(TenantRT.class));
         TenantPO tenantPO = new TenantPO(tenantId, request.name());
         tenantMapper.insert(tenantPO);
         globalContext.finish();
 
         setupContextInfo(tenantId);
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         RoleRT role = roleManager.save(RoleDTO.create(null, "超级管理员"), context);
         context.initIds();
         UserDTO rootUser = UserDTO.create(
@@ -103,12 +105,12 @@ public class TenantManager {
     public void delete(long tenantId) {
         setupContextInfo(tenantId);
         tenantMapper.delete(tenantId);
-        EntityContext context = newContext();
-        List<Long> userIds = getInstanceIds(tenantId, USER.ID);
+        IEntityContext context = newContext();
+        List<Long> userIds = getInstanceIds(tenantId, getTypeId(UserRT.class));
         for (Long userId : userIds) {
             context.getEntity(UserRT.class, userId).remove();
         }
-        List<Long> roleIds = getInstanceIds(tenantId, ROLE.ID);
+        List<Long> roleIds = getInstanceIds(tenantId, getTypeId(RoleRT.class));
         for (Long roleId : roleIds) {
             context.getEntity(RoleRT.class, roleId).remove();
         }
@@ -116,14 +118,14 @@ public class TenantManager {
     }
 
     private List<Long> getInstanceIds(long tenantId, long typeId) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         Page<Long> idPage = instanceQueryService.query(new InstanceQueryDTO(
                 typeId , null, 1, 100
         ), context.getInstanceContext());
         return idPage.data();
     }
 
-    private EntityContext newContext() {
+    private IEntityContext newContext() {
         return instanceContextFactory.newContext().getEntityContext();
     }
 

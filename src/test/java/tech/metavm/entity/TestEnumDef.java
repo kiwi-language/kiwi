@@ -4,10 +4,12 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.object.instance.EmptyModelInstanceMap;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelMap;
+import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TestUtils;
 import tech.metavm.util.TypeReference;
 
@@ -21,25 +23,27 @@ public class TestEnumDef extends TestCase {
 
     private final DefMap defMap = new DefMap() {
 
-        private final Map<Type, ModelDef<?,?>> map = new HashMap<>();
+        private final Map<Type, ModelDef<?,?>> javaType2Def = new HashMap<>();
+        private final Map<tech.metavm.object.meta.Type, ModelDef<?,?>> type2Def = new HashMap<>();
 
         @Override
         public ModelDef<?, ?> getDef(Type type) {
-            return map.get(type);
+            return javaType2Def.get(type);
         }
 
         @Override
-        public void putDef(Type type, ModelDef<?, ?> def) {
-            map.put(type, def);
+        public ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type) {
+            return type2Def.get(type);
+        }
+
+        @Override
+        public void addDef(ModelDef<?, ?> def) {
+            javaType2Def.put(def.getModelType(), def);
+            type2Def.put(def.getType(), def);
         }
     };
 
-    private final ModelMap modelMap = new ModelMap() {
-        @Override
-        public <T> T get(Class<T> klass, Instance instance) {
-            return null;
-        }
-    };
+    private final ModelInstanceMap modelInstanceMap = new EmptyModelInstanceMap();
 
     public void test() {
         ValueDef<Object> objectDef = new ValueDef<>(
@@ -50,17 +54,31 @@ public class TestEnumDef extends TestCase {
                 "枚举", new TypeReference<>(){}, objectDef, StandardTypes.ENUM, defMap
         );
 
+        new FieldDef(
+                StandardTypes.ENUM_NAME,
+                ReflectUtils.getField(Enum.class, "name"),
+                enumDef,
+                null
+        );
+
+        new FieldDef(
+                StandardTypes.ENUM_ORDINAL,
+                ReflectUtils.getField(Enum.class, "ordinal"),
+                enumDef,
+                null
+        );
+
         EnumDef<TypeCategory> typeCategoryDef =  EnumParser.parse(
                 TypeCategory.class,
                 enumDef,
                 e -> null,
-                modelMap,
+                modelInstanceMap,
                 defMap
         );
 
-        Map<Object, Entity> mapping =  typeCategoryDef.getEntityMapping();
-        int expectedMappingSize = 1 + TypeCategory.values().length;
-        Assert.assertEquals(expectedMappingSize, mapping.size());
+        Map<Object, Identifiable> mapping =  typeCategoryDef.getEntityMapping();
+        Assert.assertEquals(1, mapping.size());
+        Assert.assertEquals(typeCategoryDef.getInstanceMapping().size(), TypeCategory.values().length);
 
         Instance enumInstance = typeCategoryDef.getEnumConstantDefs().get(0).getInstance();
 

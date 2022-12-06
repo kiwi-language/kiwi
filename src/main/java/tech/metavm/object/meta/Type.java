@@ -42,7 +42,7 @@ public class Type extends Entity {
     @ChildEntity("字段")
     private final Table<Field> fields = new Table<>();
     @ChildEntity("枚举值")
-    private final Table<EnumConstantRT> enumConstants = new Table<>();
+    private final transient Table<EnumConstantRT> enumConstants = new Table<>();
     @ChildEntity("约束")
     private final Table<ConstraintRT<?>> constraints = new Table<>();
     @EntityField("类型成员")
@@ -141,12 +141,6 @@ public class Type extends Entity {
         return desc;
     }
 
-    @JsonIgnore
-    @SuppressWarnings("unused")
-    public boolean isStandard() {
-        return StdTypeManager.isStandardTypeId(id);
-    }
-
     public List<Field> getFields() {
         if(superType != null) {
             return NncUtils.merge(superType.getFields(), fields);
@@ -154,6 +148,14 @@ public class Type extends Entity {
         else {
             return new ArrayList<>(fields);
         }
+    }
+
+    public Table<Field> getDeclaredFields() {
+        return fields;
+    }
+
+    public Table<ConstraintRT<?>> getDeclaredConstraints() {
+        return constraints;
     }
 
     @JsonIgnore
@@ -238,12 +240,12 @@ public class Type extends Entity {
 
     @JsonIgnore
     public boolean isReference() {
-        return isEnum() || isClass() || isArray();
+        return isEnum() || isClass() || isArray() || isNullable() && getUnderlyingType().isReference();
     }
 
     @JsonIgnore
     public boolean isArray() {
-        return category.isParameterized() && rawType == StandardTypes.ARRAY;
+        return this == StandardTypes.ARRAY ||  rawType == StandardTypes.ARRAY;
     }
 
     @JsonIgnore
@@ -274,6 +276,11 @@ public class Type extends Entity {
     @JsonIgnore
     public boolean isPassword() {
         return this == StandardTypes.PASSWORD;
+    }
+
+    @JsonIgnore
+    public boolean isObject() {
+        return this == StandardTypes.OBJECT;
     }
 
     @JsonIgnore
@@ -323,8 +330,13 @@ public class Type extends Entity {
     @JsonIgnore
     public Type getElementType() {
         NncUtils.requireTrue(isArray(), () -> new InternalException("Type " + id + " is not an array"));
-        Objects.requireNonNull(typeArguments);
-        return typeArguments.get(0);
+        if(this == StandardTypes.ARRAY) {
+            return StandardTypes.OBJECT;
+        }
+        else {
+            Objects.requireNonNull(typeArguments);
+            return typeArguments.get(0);
+        }
     }
 
     @JsonIgnore
@@ -362,6 +374,12 @@ public class Type extends Entity {
         return NncUtils.find(fields, f -> f.getName().equals(fieldName));
     }
 
+    public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
+        String fieldName = ReflectUtils.getMetaFieldName(javaField);
+        return NncUtils.requireNonNull(getFieldByName(fieldName),
+                "Can not find field for java field " + javaField);
+    }
+
     Column allocateColumn(Field field) {
         Type fieldType = field.getType();
         if(fieldType.getColumnType() == null) {
@@ -381,17 +399,32 @@ public class Type extends Entity {
     }
 
     private SQLColumnType getColumnType() {
-        if(isArray()) {
-            return getElementType().getColumnType();
-        }
         if(isNullable()) {
             return getUnderlyingType().getColumnType();
         }
-        if(isPrimitive()) {
-            return StdTypeManager.getSQLColumnType(this.id);
+        if(isInt()) {
+            return SQLColumnType.INT32;
         }
-        if(isClass() || isEnum()) {
+        if(isLong() || isTime()) {
             return SQLColumnType.INT64;
+        }
+        if(isClass() || isEnum() || isArray()) {
+            return SQLColumnType.REFERENCE;
+        }
+        if(isBool()) {
+            return SQLColumnType.BOOL;
+        }
+        if(isDouble()) {
+            return SQLColumnType.FLOAT;
+        }
+        if(isString()) {
+            return SQLColumnType.VARCHAR64;
+        }
+        if(isPassword()) {
+            return SQLColumnType.TEXT;
+        }
+        if(isValue()) {
+            return SQLColumnType.OBJECT;
         }
         return null;
     }

@@ -3,11 +3,8 @@ package tech.metavm.object.meta;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.Table;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,32 +16,25 @@ public class StdAllocator {
     public static final String ID_BASE_PROP_KEY = "$base";
     public static final String TYPE_CODE_PROP_KEY = "$typeCode";
 
-    private final String saveDir;
+    private final AllocatorStore store;
     private final String fileName;
-    private final long base;
+//    private final long base;
     private long nextId;
     private final Map<String, Long> code2id = new LinkedHashMap<>();
     private final Map<Long, String> id2code = new LinkedHashMap<>();
-//    private final String typeCode;
     private final Class<?> javaType;
 
-    public StdAllocator(String saveDir, String fileName, Class<?> javaType, long base) {
-        this.saveDir = saveDir;
+    public StdAllocator(AllocatorStore store, String fileName, Class<?> javaType, long base) {
+        this.store = store;
         this.fileName = fileName;
         this.javaType = javaType;
-        this.base = base;
+        nextId = base;
     }
 
-    public StdAllocator(String saveDir, String fileName) {
-        this.saveDir = saveDir;
-        Properties properties = new Properties();
-        try(InputStream input = StdAllocator.class.getResourceAsStream(fileName)) {
-            properties.load(input);
-        }
-        catch (IOException e) {
-            throw new InternalException("fail to load id properties file: " + fileName);
-        }
-        base = nextId= Long.parseLong(properties.getProperty(ID_BASE_PROP_KEY));
+    public StdAllocator(AllocatorStore store, String fileName) {
+        this.store = store;
+        Properties properties = store.load(fileName);
+        nextId = Long.parseLong(properties.getProperty(ID_BASE_PROP_KEY));
         javaType = ReflectUtils.classForName(properties.getProperty(TYPE_CODE_PROP_KEY));
         this.fileName = fileName;
         for (String propertyName : properties.stringPropertyNames()) {
@@ -85,26 +75,24 @@ public class StdAllocator {
         return id2code.containsKey(id);
     }
 
-    public long getBase() {
-        return base;
+    public long getNextId() {
+        return nextId;
     }
 
     public Class<?> getJavaType() {
         return javaType;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
     public void save() {
         Properties properties = new Properties();
-        properties.put(ID_BASE_PROP_KEY, Long.toString(base));
+        properties.put(ID_BASE_PROP_KEY, Long.toString(nextId));
         properties.put(TYPE_CODE_PROP_KEY, javaType.getName());
         code2id.forEach((code, id) -> properties.put(code, id.toString()));
-        String file = saveDir + fileName;
-        try (OutputStream output = new FileOutputStream(file)){
-            properties.store(output, null);
-        }
-        catch (IOException e) {
-            throw new InternalException("Fail to save id properties to file: "+ fileName, e);
-        }
+        store.save(fileName, properties);
     }
 
     public List<Long> allocate(Integer count) {
@@ -117,4 +105,9 @@ public class StdAllocator {
         code2id.put(code, id);
         id2code.put(id, code);
     }
+
+    public boolean isArray() {
+        return javaType == Table.class;
+    }
+
 }

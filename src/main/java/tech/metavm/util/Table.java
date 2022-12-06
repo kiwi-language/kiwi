@@ -1,17 +1,18 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.Model;
+import tech.metavm.entity.ArrayIdentifier;
+import tech.metavm.entity.IdInitializing;
+import tech.metavm.entity.Identifiable;
+import tech.metavm.entity.NoProxy;
 
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
-public class Table<T> extends LinkedList<T> {
+public class Table<T> extends LinkedList<T> implements IdInitializing {
 
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
@@ -22,6 +23,7 @@ public class Table<T> extends LinkedList<T> {
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
+    private ArrayIdentifier identifier;
 
     public Table(Collection<T> data) {
         this(data, DEFAULT_INDEX_BUILD_THRESHOLD);
@@ -38,6 +40,18 @@ public class Table<T> extends LinkedList<T> {
     public Table(Collection<T> data, int buildIndexThreshold) {
         this.buildIndexThreshold = buildIndexThreshold;
         addAll(data);
+    }
+
+    @NoProxy
+    public void initialize(Collection<T> data) {
+        for (T datum : data) {
+            addLast0(datum);
+        }
+    }
+
+    public void initId(long id) {
+        NncUtils.requireNull(this.id, "id already initialized");
+        this.id = id;
     }
 
     public <K> T get(IndexMapper<T, K> keyMapper, K key) {
@@ -129,6 +143,7 @@ public class Table<T> extends LinkedList<T> {
         return index;
     }
 
+    @NoProxy
     protected void onAdd(Node<T> node) {
         indexes.forEach((indexDesc, index) ->
             index.computeIfAbsent(indexDesc.map(node.getValue()), k->new LinkedList<>()).add(node)
@@ -266,6 +281,18 @@ public class Table<T> extends LinkedList<T> {
             return Objects.hash(implClass, implMethodName, capturedArgs);
         }
 
+    }
+
+    public ArrayIdentifier getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(ArrayIdentifier identifier) {
+        this.identifier = identifier;
+    }
+
+    public String getIdentifierName() {
+        return NncUtils.get(identifier, ArrayIdentifier::name);
     }
 
     public interface IndexMapper<T, K> extends Function<T, K>, Serializable {

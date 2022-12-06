@@ -1,80 +1,38 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityTypeRegistry;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.util.IdentitySet;
+import tech.metavm.util.Table;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class StandardTypes {
 
-//    public static Type objectType() {
-//        return EntityTypeRegistry.getType(Object.class);
-//    }
-//
-//    public static Type intType() {
-//        return EntityTypeRegistry.getType(Integer.class);
-//    }
-//
-//    public static Type longType() {
-//        return EntityTypeRegistry.getType(Long.class);
-//    }
-//
-//    public static Type doubleType() {
-//        return EntityTypeRegistry.getType(Double.class);
-//    }
-//
-//    public static Type boolType() {
-//        return EntityTypeRegistry.getType(Boolean.class);
-//    }
-//
-//    public static Type stringType() {
-//        return EntityTypeRegistry.getType(String.class);
-//    }
-//
-//    public static Type timeType() {
-//        return EntityTypeRegistry.getType(Date.class);
-//    }
-//
-//    public static Type passwordType() {
-//        return EntityTypeRegistry.getType(Password.class);
-//    }
-//
-//    public static Type arrayType() {
-//        return EntityTypeRegistry.getType(Table.class);
-//    }
-//
-//    public static Type nullType() {
-//        return EntityTypeRegistry.getType(Null.class);
-//    }
-//
-//    public static Type entityType() {
-//        return EntityTypeRegistry.getType(Entity.class);
-//    }
-//
-//    public static Type enumType() {
-//        return EntityTypeRegistry.getType(Enum.class);
-//    }
+    private final static List<Type> TYPES = new ArrayList<>();
+
     private final static List<Entity> ENTITIES = new ArrayList<>();
 
     public static final Type OBJECT = createType(
             IdConstants.OBJECT,
             "对象",
             null,
-            TypeCategory.CLASS
+            TypeCategory.VALUE
     );
 
     public static final Type ENTITY = createType(
             IdConstants.ENTITY,
-            "实体", OBJECT, TypeCategory.CLASS
+            "实体", OBJECT,
+            TypeCategory.CLASS
     );
 
     public static final Type RECORD = createType(
             IdConstants.RECORD,
             "对象",
             null,
-            TypeCategory.CLASS
+            TypeCategory.VALUE
     );
 
 
@@ -82,7 +40,7 @@ public class StandardTypes {
             IdConstants.ENUM.ID,
             "枚举",
             OBJECT,
-            TypeCategory.CLASS
+            TypeCategory.VALUE
     );
 
     public static final Type INT = createType(
@@ -169,6 +127,7 @@ public class StandardTypes {
     private static Type createType(long id, String name, Type superType, TypeCategory category) {
         Type type = new Type(name, superType, category);
         type.initId(id);
+        TYPES.add(type);
         ENTITIES.add(type);
         return type;
     }
@@ -191,6 +150,20 @@ public class StandardTypes {
 
     public static List<Entity> entities() {
         return ENTITIES;
+    }
+
+    public static final Set<Object> BLACK_MODELS = new IdentitySet<>();
+
+    public static final Set<Instance> BLACK_INSTANCES = new IdentitySet<>();
+
+    static {
+        long nextArrayId = IdConstants.ARRAY_REGION_BASE;
+        for (Type type : TYPES) {
+            type.getDeclaredFields().initId(nextArrayId++);
+            type.getDeclaredConstraints().initId(nextArrayId++);
+            BLACK_MODELS.add(type.getDeclaredFields());
+            BLACK_MODELS.add(type.getDeclaredConstraints());
+        }
     }
 
 }

@@ -7,8 +7,8 @@ import java.util.Map;
 
 public class ValueInstance extends Instance {
 
-    public ValueInstance(Map<Field, Object> data, Type type, Class<?> entityType) {
-        super(data, type, entityType);
+    public ValueInstance(Map<Field, Object> data, Type type) {
+        super(data, type);
     }
 
     @Override

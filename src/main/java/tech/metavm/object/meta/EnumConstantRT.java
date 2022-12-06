@@ -1,6 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityTypeRegistry;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
@@ -27,15 +27,14 @@ public class EnumConstantRT {
 
     public EnumConstantRT(Type type, String name, int ordinal) {
         this(type, name, ordinal,
-                EntityTypeRegistry.getJavaType(type).asSubclass(new TypeReference<Enum<?>>() {}.getType())
+                ModelDefRegistry.getJavaType(type).asSubclass(new TypeReference<Enum<?>>() {}.getType())
         );
     }
 
     public EnumConstantRT(Type type, String name, int ordinal, Class<? extends Enum<?>> javaType) {
         instance = new Instance(
                 Map.of(ENUM_NAME, name, ENUM_ORDINAL, ordinal),
-                type,
-                javaType
+                type
         );
     }
 

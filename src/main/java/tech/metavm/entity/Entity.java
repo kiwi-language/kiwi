@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Objects;
 
-public abstract class Entity implements Model, Identifiable {
+public abstract class Entity implements Model, Identifiable, IdInitializing {
 
     private boolean persisted;
     protected Long id;
@@ -30,6 +30,7 @@ public abstract class Entity implements Model, Identifiable {
         return id == null;
     }
 
+    @Override
     public final void initId(long id) {
         if(!isIdNull()) {
             throw new IllegalStateException("objectId is already initialized");

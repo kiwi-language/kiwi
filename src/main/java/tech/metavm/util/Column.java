@@ -1,7 +1,6 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.Model;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.SQLColumnType;
 

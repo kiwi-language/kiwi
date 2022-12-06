@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelMap;
+import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
@@ -23,15 +23,24 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
     }
 
     @Override
-    public T newModel(Instance instance, ModelMap modelMap) {
-        Object[] fieldValues = NncUtils.map(getFieldDefs(), fieldDef -> fieldDef.getModelFieldValue(instance, modelMap))
+    public void initModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public T createModel(Instance instance, ModelInstanceMap modelInstanceMap) {
+        Object[] fieldValues = NncUtils.map(getFieldDefList(), fieldDef -> fieldDef.getModelFieldValue(instance, modelInstanceMap))
                 .toArray(Object[]::new);
         return ReflectUtils.invokeConstructor(constructor, fieldValues);
     }
 
     @Override
-    public void updateModel(T pojo, Instance instance, ModelMap modelMap) {
+    public void updateModel(T pojo, Instance instance, ModelInstanceMap modelInstanceMap) {
 
     }
 
+    @Override
+    public boolean isProxySupported() {
+        return false;
+    }
 }

@@ -3,7 +3,7 @@ package tech.metavm.expression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.expression.dto.*;
 import tech.metavm.flow.NodeRT;
@@ -64,7 +64,7 @@ public class ExpressionService extends EntityContextBean {
     }
 
     private ParsingContext getParsingContext(ParsingContextDTO contextDTO) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         if(contextDTO instanceof FlowParsingContextDTO flowContext) {
             NodeRT<?> prev = NncUtils.get(flowContext.getPrevNodeId(), context::getNode);
             if(prev == null) {

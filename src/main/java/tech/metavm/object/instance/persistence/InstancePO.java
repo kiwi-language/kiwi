@@ -1,11 +1,21 @@
 package tech.metavm.object.instance.persistence;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.metavm.entity.Identifiable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
+@JsonSubTypes(
+        {
+                @JsonSubTypes.Type(name = "1", value = InstancePO.class),
+                @JsonSubTypes.Type(name = "2", value = InstanceArrayPO.class)
+        }
+)
 public class InstancePO implements Identifiable {
     private Long tenantId;
     private Long id;
@@ -15,15 +25,13 @@ public class InstancePO implements Identifiable {
     private Long version;
     private Long syncVersion;
 
-    public InstancePO(
-            Long tenantId,
-            Long id,
-            Long typeId,
-            String title,
-            Map<String, Object> data,
-            Long version,
-            Long syncVersion
-    ) {
+    public InstancePO(Long tenantId,
+                      Long id,
+                      Long typeId,
+                      String title,
+                      Map<String, Object> data,
+                      Long version,
+                      Long syncVersion) {
         this.tenantId = tenantId;
         this.id = id;
         this.typeId = typeId;
@@ -34,10 +42,6 @@ public class InstancePO implements Identifiable {
     }
 
     public InstancePO() {
-    }
-
-    public static InstancePO newInstance(long tenantId, Long id, long modelId, String title, long version, long syncVersion) {
-        return new InstancePO(tenantId, id, modelId, title, new HashMap<>(), version, syncVersion);
     }
 
     public Long getSyncVersion() {
@@ -111,17 +115,11 @@ public class InstancePO implements Identifiable {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (InstancePO) obj;
-        return this.tenantId == that.tenantId &&
-                Objects.equals(this.id, that.id) &&
-                this.typeId == that.typeId &&
-                Objects.equals(this.title, that.title) &&
-                Objects.equals(this.data, that.data) &&
-                this.version == that.version &&
-                this.syncVersion == that.syncVersion;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        InstancePO that = (InstancePO) o;
+        return Objects.equals(tenantId, that.tenantId) && Objects.equals(id, that.id) && Objects.equals(typeId, that.typeId) && Objects.equals(title, that.title) && Objects.equals(data, that.data) && Objects.equals(version, that.version) && Objects.equals(syncVersion, that.syncVersion);
     }
 
     @Override
@@ -131,14 +129,14 @@ public class InstancePO implements Identifiable {
 
     @Override
     public String toString() {
-        return "InstancePO[" +
-                "tenantId=" + tenantId + ", " +
-                "objectId=" + id + ", " +
-                "modelId=" + typeId + ", " +
-                "title=" + title + ", " +
-                "data=" + data + ", " +
-                "version=" + version + ", " +
-                "syncVersion=" + syncVersion + ']';
+        return "InstancePO{" +
+                "tenantId=" + tenantId +
+                ", id=" + id +
+                ", typeId=" + typeId +
+                ", title='" + title + '\'' +
+                ", data=" + data +
+                ", version=" + version +
+                ", syncVersion=" + syncVersion +
+                '}';
     }
-
 }

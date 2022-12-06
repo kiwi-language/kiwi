@@ -11,18 +11,16 @@ public interface BlockMapper {
 
     List<BlockPO> selectByIds(Collection<Long> ids);
 
-    int batchInsert(List<BlockPO> record);
-
-    BlockPO selectForUpdate(Integer bulkNum);
+    int batchInsert(List<BlockPO> records);
 
     List<BlockPO> selectActive(Collection<Long> typeIds);
 
-    void batchUpdate(Collection<BlockPO> ranges);
+    void batchUpdate(Collection<BlockPO> records);
 
     BlockPO selectByPoint(@Param("point") long point);
 
     void increaseNextId(
-            @Param("id") int id,
+            @Param("id") long id,
             @Param("inc") long inc
     );
 

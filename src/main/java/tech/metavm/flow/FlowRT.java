@@ -31,43 +31,15 @@ public class FlowRT extends Entity {
     private final transient Table<NodeRT<?>> nodes;
     private transient long version = 1L;
 
-    public FlowRT(FlowDTO flowDTO, Type inputType, Type outputType, EntityContext context) {
-//        super(context);
+    public FlowRT(FlowDTO flowDTO, Type inputType, Type outputType, Type declaringType) {
         this.inputType = inputType;
         this.outputType = outputType;
         setName(flowDTO.name());
         this.scopes = new Table<>();
         this.nodes = new Table<>();
-        type = context.getType(flowDTO.typeId());
+        type = declaringType;
         rootScope = new ScopeRT(this);
     }
-
-//    FlowRT(FlowPO flowPO, EntityContext context) {
-////        super(flowPO.getId(), context);
-//        super(flowPO.getId());
-//        this.type = context.getType(flowPO.getDeclaringTypeId());
-//        this.inputType = context.getType(flowPO.getInputTypeId());
-//        this.outputType = context.getType(flowPO.getOutputTypeId());
-//        setName(flowPO.getName());
-//        this.scopes = new Table<>(context.selectByKey(ScopePO.INDEX_FLOW_ID, id));
-//        this.nodes = new Table<>(context.selectByKey(NodePO.INDEX_FLOW_ID, id));
-//        this.rootScope = context.getEntity(ScopeRT.class, flowPO.getRootScopeId());
-//    }
-
-
-//    private void initNode(NodePO nodePO, Map<Long, NodePO> map) {
-//        if(!map.containsKey(nodePO.getId())) {
-//            return;
-//        }
-//        map.remove(nodePO.getId());
-//        if(nodePO.getPrevId() != null) {
-//            NodePO prevPO = map.get(nodePO.getPrevId());
-//            if(prevPO != null) {
-//                initNode(prevPO, map);
-//            }
-//        }
-//        NodeFactory.getFlowNode(nodePO, context);
-//    }
 
     public ScopeRT getRootScope() {
         return rootScope;

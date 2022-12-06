@@ -1,19 +1,24 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.*;
 
+import java.util.Collection;
 import java.util.List;
 
-@ValueType("巴子")
-public class Baz {
+@EntityType("巴子")
+public class Baz extends Entity {
 
     @ChildEntity("巴巴巴巴")
-    private Table<Bar> bars;
+    private Table<Bar> bars = new Table<>();
 
-    public List<Bar> getBars() {
+    public Baz() {
+    }
+
+    public Baz(List<Bar> bars) {
+        setBars(bars);
+    }
+
+    public Table<Bar> getBars() {
         return bars;
     }
 

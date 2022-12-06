@@ -1,25 +1,21 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.IdInitializing;
+import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.UniqueConstraintRT;
-import tech.metavm.util.BusinessException;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static tech.metavm.util.ContextUtil.getTenantId;
+import java.util.*;
 
 public class Instance implements IInstance, IdInitializing {
 
@@ -27,28 +23,33 @@ public class Instance implements IInstance, IdInitializing {
     protected final Type type;
     private transient long version;
     private transient long syncVersion;
-    private final java.lang.reflect.Type entityType;
     private final Table<InstanceField> fields = new Table<>(1);
 
-    private Instance(Type type, Long id, List<InstanceField> fields, long version, long syncVersion, Class<?> entityType) {
+    public static Instance allocate(Type type) {
+        return new Instance(type);
+    }
+
+    protected Instance(Type type) {
+        this.type = type;
+    }
+
+    private Instance(Type type, Long id, List<InstanceField> fields, long version, long syncVersion) {
         initId(id);
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
-        this.entityType = entityType;
         initFields(fields);
     }
 
-    public Instance(Map<Field, Object> data, Type type, Class<?> entityType) {
-        this(null, data, type, 0L, 0L, entityType);
+    public Instance(Map<Field, Object> data, Type type) {
+        this(null, data, type, 0L, 0L);
     }
 
-    public Instance(Long id, Map<Field, Object> data, Type type, long version, long syncVersion, Class<?> entityType) {
+    public Instance(Long id, Map<Field, Object> data, Type type, long version, long syncVersion) {
         this.id = id;
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
-        this.entityType = entityType;
 
         for (Field field : type.getFields()) {
             Object fieldValue = data.get(field);
@@ -56,6 +57,15 @@ public class Instance implements IInstance, IdInitializing {
         }
     }
 
+    @NoProxy
+    public void initialize(Map<Field, Object> fieldMap) {
+        for (Field field : type.getFields()) {
+            Object fieldValue = fieldMap.get(field);
+            addField(new InstanceField(this, field, fieldValue));
+        }
+    }
+
+    @NoProxy
     public void initId(long id) {
         if(this.id != null) {
             throw new InternalException("id already initialized");
@@ -63,28 +73,22 @@ public class Instance implements IInstance, IdInitializing {
         this.id = id;
     }
 
-//    public Instance(InstanceDTO instanceDTO,
-//                    InstanceContext context) {
-////        super(context);
-//        type = context.getEntityContext().getType(instanceDTO.typeId());
-//        this.version = 1;
-//
-//        Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
-//        for (Field field : type.getFields()) {
-//            InstanceFieldDTO fieldDTO = fieldDTOMap.computeIfAbsent(
-//                    field.getId(), fieldId -> InstanceFieldDTO.valueOf(fieldId, null)
-//            );
-//            addField(new InstanceField(this, field, fieldDTO));
-//        }
-//        context.bind(this);
-//    }
-
-    public List<IndexItemPO> getUniqueKeys() {
+    public List<IndexItemPO> getUniqueKeys(long tenantId) {
         List<UniqueConstraintRT> uniqueConstraints = type.getConstraints(UniqueConstraintRT.class);
         return NncUtils.map(
                 uniqueConstraints,
-                c -> c.getKey(this)
+                c -> c.getKey(tenantId,this)
         );
+    }
+
+    public Set<Instance> getRefInstances() {
+        Set<Instance> result = new IdentitySet<>();
+        for (InstanceField field : fields) {
+            if(field.getField().isReference()) {
+                NncUtils.invokeIfNotNull(field.getInstance(), result::add);
+            }
+        }
+        return result;
     }
 
     private void initFields(List<InstanceField> fields) {
@@ -94,13 +98,8 @@ public class Instance implements IInstance, IdInitializing {
     }
 
     private void addField(InstanceField field) {
-//        name2field.put(field.getName(), field);
         fields.add(field);
     }
-
-//    public long getTenantId() {
-//        return context.getTenantId();
-//    }
 
     public String getTitle() {
         Field titleField = type.getTileField();
@@ -125,25 +124,30 @@ public class Instance implements IInstance, IdInitializing {
     }
 
     @SuppressWarnings("unused")
-    public Object getRaw(List<Long> fieldPath) {
+    public Object get(List<Long> fieldPath) {
         long fieldId = fieldPath.get(0);
         InstanceField field = field(fieldId);
         if(fieldPath.size() > 1) {
             List<Long> subFieldPath = fieldPath.subList(1, fieldPath.size());
-            return NncUtils.get(field.getInstance(), inst -> inst.getRaw(subFieldPath));
+            return NncUtils.get(field.getInstance(), inst -> inst.get(subFieldPath));
         }
         else {
             return field.getValue();
         }
     }
 
+    @NoProxy
     public Type getType() {
         return type;
     }
 
+    public boolean isValue() {
+        return type.isValue();
+    }
+
     @Override
     public Instance getInstance(Field field) {
-        if(field.getType().isReference()) {
+        if(field.getType().isReference() || field.getType().isValue()) {
             return field(field).getInstance();
         }
         throw new ClassCastException();
@@ -153,16 +157,16 @@ public class Instance implements IInstance, IdInitializing {
         return getType();
     }
 
-    public Object getRaw(String fieldPath) {
+    public Object get(String fieldPath) {
         int idx = fieldPath.indexOf('.');
         if(idx == -1) {
-            return getRaw(getType().getFieldNyNameRequired(fieldPath));
+            return get(getType().getFieldNyNameRequired(fieldPath));
         }
         else {
             String fieldName = fieldPath.substring(0, idx);
             String subPath = fieldPath.substring(idx + 1);
             Instance fieldInstance = getInstance(fieldName);
-            return NncUtils.get(fieldInstance, inst -> inst.getRaw(subPath));
+            return NncUtils.get(fieldInstance, inst -> inst.get(subPath));
         }
     }
 
@@ -174,9 +178,9 @@ public class Instance implements IInstance, IdInitializing {
         return field(fieldName).getInstance();
     }
 
-    public void setRawFieldValue(InstanceFieldDTO fieldValue) {
-        field(fieldValue.fieldId()).set(fieldValue);
-    }
+//    public void setRawFieldValue(InstanceFieldDTO fieldValue) {
+//        field(fieldValue.fieldId()).set(fieldValue);
+//    }
 
     @Override
     public void set(Field field, Object value) {
@@ -184,16 +188,16 @@ public class Instance implements IInstance, IdInitializing {
     }
 
     public String getString(long fieldId) {
-        return (String) getRaw(field(fieldId).getField());
+        return (String) get(field(fieldId).getField());
     }
 
     public String getString(Field field) {
-        return (String) getRaw(field(field).getField());
+        return (String) get(field(field).getField());
     }
 
     @SuppressWarnings("unused")
     public String getString(String fieldName) {
-        return (String) getRaw(field(fieldName).getField());
+        return (String) get(field(fieldName).getField());
     }
 
     public Integer getInt(Field field) {
@@ -201,37 +205,41 @@ public class Instance implements IInstance, IdInitializing {
     }
 
     public Integer getInt(long fieldId) {
-        return (Integer) getRaw(fieldId);
+        return (Integer) get(fieldId);
     }
 
     @SuppressWarnings("unused")
     public Integer getInt(String fieldName) {
-        return (Integer) getRaw(fieldName);
+        return (Integer) get(fieldName);
+    }
+
+    public Long getLong(Field field) {
+        return (Long) get(field);
     }
 
     public Long getLong(long fieldId) {
-        return (Long) getRaw(fieldId);
+        return (Long) get(fieldId);
     }
 
     @SuppressWarnings("unused")
     public Long getLong(String fieldName) {
-        return (Long) getRaw(fieldName);
+        return (Long) get(fieldName);
     }
 
     public Double getDouble(long fieldId) {
-        return (Double) getRaw(fieldId);
+        return (Double) get(fieldId);
     }
 
-    public Object getRaw(Field field) {
+    public Object get(Field field) {
         return field(field).getValue();
     }
 
     public String getIndexValue(Field field) {
-        return IndexKeyPO.getIndexColumn(getRaw(field));
+        return IndexKeyPO.getIndexColumn(get(field));
     }
 
-    public Object getRaw(long fieldId) {
-        return getRaw(type.getField(fieldId));
+    public Object get(long fieldId) {
+        return get(type.getField(fieldId));
     }
 
     protected InstanceField field(Field field) {
@@ -246,29 +254,31 @@ public class Instance implements IInstance, IdInitializing {
         return version;
     }
 
-//    public VersionPO nextVersion() {
-//        return new VersionPO(getTenantId(), getId(), version + 1);
-//    }
-
     @SuppressWarnings("unused")
     public long getSyncVersion() {
         return syncVersion;
     }
 
     @Override
+    @NoProxy
     public Long getId() {
         return id;
     }
 
-    public void update(InstanceDTO update) {
-        for (InstanceFieldDTO fieldUpdate : update.fields()) {
-            InstanceField field = field(fieldUpdate.fieldId());
-            if(field == null) {
-                throw BusinessException.fieldNotFound(fieldUpdate.fieldId());
-            }
-            field.set(fieldUpdate);
-        }
+    public ReferencePO toReferencePO() {
+        NncUtils.requireNonNull(id);
+        return new ReferencePO(id);
     }
+
+//    public void update(InstanceDTO update) {
+//        for (InstanceFieldDTO fieldUpdate : update.fields()) {
+//            InstanceField field = field(fieldUpdate.fieldId());
+//            if(field == null) {
+//                throw BusinessException.fieldNotFound(fieldUpdate.fieldId());
+//            }
+//            field.set(fieldUpdate);
+//        }
+//    }
 
     protected InstanceField field(long fieldId) {
         return field(type.getField(fieldId));
@@ -285,13 +295,21 @@ public class Instance implements IInstance, IdInitializing {
         );
     }
 
-    public InstancePO toPO() {
+    public InstancePO toPO(long tenantId) {
+        return toPO(tenantId, new IdentitySet<>());
+    }
+
+    InstancePO toPO(long tenantId, IdentitySet<Instance> visited) {
+        if(visited.contains(this)) {
+            throw new InternalException("Circular reference");
+        }
+        visited.add(this);
         return new InstancePO(
-                getTenantId(),
+                tenantId,
                 getId(),
                 getType().getId(),
                 getTitle(),
-                getTableData(),
+                getTableData(tenantId, visited),
                 version,
                 syncVersion
         );
@@ -302,12 +320,10 @@ public class Instance implements IInstance, IdInitializing {
         version++;
     }
 
-    private Map<String, Object> getTableData() {
+    private Map<String, Object> getTableData(long tenantId, IdentitySet<Instance> visited) {
         Map<String, Object> rawData = new HashMap<>();
         for (InstanceField field : fields()) {
-            if(field.isGeneralPrimitive()) {
-                rawData.put(field.getColumnName(), field.getColumnValue());
-            }
+            rawData.put(field.getColumnName(), field.getColumnValue(tenantId, visited));
         }
         return rawData;
     }
@@ -317,42 +333,20 @@ public class Instance implements IInstance, IdInitializing {
     }
 
     @Override
-    public java.lang.reflect.Type getEntityType() {
-        return entityType;
-    }
-
-    @Override
     public InstanceArray getInstanceArray(Field field) {
         return field(field).getInstanceArray();
     }
 
-    //    @Override
-//    public InstanceContext getContext() {
-//        return context;
-//    }
-
-//    public Instance copy() {
-//        Instance copy = new Instance(
-//                getType(),
-//                getId(),
-//                List.of(),
-////                context,
-//                version,
-//                syncVersion,
-//                entityType
-//        );
-//        copy.initFields(
-//                NncUtils.map(fields(), f -> f.copy(copy))
-//        );
-//        return copy;
-//    }
-
-//    public void remove() {
-//        context.remove(this);
-//    }
+    public InstanceArray getInstanceArray(String fieldName) {
+        return field(fieldName).getInstanceArray();
+    }
 
     @Override
     public String toString() {
-        return "Instance {category: " + getType().getName() + ", id: " + getId() + ", title: " + getTitle() + "}";
+        return "Instance{" +
+                "id=" + id +
+                ", type=" + type +
+                ", title=" + getTitle() +
+                '}';
     }
 }

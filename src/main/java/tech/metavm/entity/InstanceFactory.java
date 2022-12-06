@@ -2,9 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceArray;
 import tech.metavm.object.instance.InstanceRelation;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.instance.rest.InstanceDTO;
@@ -12,37 +10,42 @@ import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class InstanceFactory {
 
-    public static Instance create(InstancePO instancePO, InstanceContext context) {
-        if(instancePO instanceof InstanceArrayPO instanceArrayPO) {
-            return createArray(instanceArrayPO, context);
-        }
-        else {
-            return createInstance(instancePO, context);
-        }
+    public static final Map<Class<? extends Instance>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
+    public static final String ALLOCATE_METHOD_NAME = "allocate";
+
+    public static <T extends Instance> T allocate(Class<T> instanceType, Type type) {
+        return allocate(instanceType, type, null);
     }
 
-    private static InstanceArray createArray(InstanceArrayPO instanceArrayPO, InstanceContext context) {
-        return new InstanceArray(
-                instanceArrayPO.getId(),
-                context.getType(instanceArrayPO.getTypeId()),
-                instanceArrayPO.getVersion(),
-                instanceArrayPO.getSyncVersion(),
-                context.getEntityType(instanceArrayPO.getTypeId()),
-                NncUtils.map(instanceArrayPO.getElementIds(), context::get),
-                instanceArrayPO.isElementAsChild()
-            );
+    public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Long id) {
+        Method allocateMethod = getAllocateMethod(instanceType);
+        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
+        if(id != null) {
+            instance.initId(id);
+        }
+        return instance;
     }
 
-    public static Instance create(InstanceDTO instanceDTO, InstanceContext context) {
-        return create(instanceDTO, context::getType, context::get, context::bind);
+    private static Method getAllocateMethod(Class<? extends Instance> instanceType) {
+        return ALLOCATE_METHOD_MAP.computeIfAbsent(
+                instanceType,
+                t -> ReflectUtils.getMethod(instanceType, ALLOCATE_METHOD_NAME, Type.class)
+        );
+    }
+
+    public static Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
+        return create(instanceDTO, context.getEntityContext()::getType, context::get, context::bind);
     }
 
     public static Instance create(
@@ -52,7 +55,6 @@ public class InstanceFactory {
             Consumer<Instance> bindInstance
     ) {
         Type type = getType.apply(instanceDTO.typeId());
-        Class<?> entityType = EntityTypeRegistry.getEntityType(type.getId());
 
         Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
         Map<Field, Object> data = new HashMap<>();
@@ -71,8 +73,7 @@ public class InstanceFactory {
 
         Instance instance =  new Instance(
                 data,
-                type,
-                entityType
+                type
         );
         bindInstance.accept(instance);
         return instance;
@@ -99,8 +100,7 @@ public class InstanceFactory {
                 resolvedData,
                 type,
                 instancePO.getVersion(),
-                instancePO.getSyncVersion(),
-                context.getEntityType(instancePO.getId())
+                instancePO.getSyncVersion()
         );
     }
 
@@ -119,7 +119,7 @@ public class InstanceFactory {
     public static InstanceRelation createRelation(RelationPO relationPO, InstanceContext context) {
         return new InstanceRelation(
                 context.get(relationPO.getSrcInstanceId()),
-                context.getField(relationPO.getFieldId()),
+                context.getEntityContext().getField(relationPO.getFieldId()),
                 context.get(relationPO.getDestInstanceId())
         );
     }

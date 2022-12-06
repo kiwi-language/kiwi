@@ -1,34 +1,33 @@
 package tech.metavm.entity;
 
 import javassist.util.proxy.MethodHandler;
-import tech.metavm.object.instance.IInstance;
-import tech.metavm.object.instance.Instance;
 
 import java.lang.reflect.Method;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
-public final class EntityMethodHandler implements MethodHandler {
+public final class EntityMethodHandler<T> implements MethodHandler {
 
-    private final Supplier<?> modelCreator;
-    private Object realEntity;
+    private final Class<T> type;
+    private final Consumer<T> initializer;
+    private boolean initialized;
 
-    public EntityMethodHandler(Supplier<?> modelSupplier) {
-        this.modelCreator = modelSupplier;
+    public EntityMethodHandler(Class<T> type, Consumer<T> initializer) {
+        this.type = type;
+        this.initializer = initializer;
     }
 
     @Override
     public Object invoke(Object self, Method thisMethod, Method proceed, Object[] args) throws Throwable {
-        Object entity = getEntity();
-        thisMethod.setAccessible(true);
-        return thisMethod.invoke(entity, args);
+        ensureInitialized(self);
+        return proceed.invoke(self, args);
     }
 
-    public Object getEntity() {
-        if(realEntity == null) {
-            realEntity = modelCreator.get();
+    public void ensureInitialized(Object self) {
+        if(initialized) {
+           return;
         }
-        return realEntity;
+        initializer.accept(type.cast(self));
+        initialized = true;
     }
 
 }

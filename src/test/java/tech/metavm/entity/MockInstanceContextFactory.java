@@ -1,0 +1,22 @@
+package tech.metavm.entity;
+
+import java.util.function.Function;
+
+public class MockInstanceContextFactory implements IInstanceContextFactory{
+
+    private final Function<Long, IInstanceContext> contextSupplier;
+
+    public MockInstanceContextFactory(Function<Long, IInstanceContext> contextSupplier) {
+        this.contextSupplier = contextSupplier;
+    }
+
+    @Override
+    public IInstanceContext newContext(long tenantId) {
+        return newContext(tenantId, true);
+    }
+
+    @Override
+    public IInstanceContext newContext(long tenantId, boolean asyncProcessLogs) {
+        return contextSupplier.apply(tenantId);
+    }
+}

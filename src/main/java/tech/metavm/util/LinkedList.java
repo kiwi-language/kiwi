@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.NoProxy;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -75,6 +76,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         addLast0(t);
     }
 
+    @NoProxy
     void addLast0(T t) {
         addNode(tail.prev, t);
     }
@@ -223,6 +225,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
     protected void beforeAccess() {}
 
+    @NoProxy
     protected void onAdd(@SuppressWarnings("unused") Node<T> node) {}
 
     protected void onRemove(@SuppressWarnings("unused") Node<T> node) {}

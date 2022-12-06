@@ -11,12 +11,16 @@ public record SearchQuery (
         int pageSize
 ) {
 
-    int from() {
+    public int from() {
         return (page - 1) * pageSize;
     }
 
-    int size() {
+    public int size() {
         return pageSize;
+    }
+
+    public int end() {
+        return page * pageSize;
     }
 
 }

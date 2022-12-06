@@ -1,31 +1,31 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelMap;
+import tech.metavm.object.instance.ModelInstanceMap;
 
 import java.util.function.Function;
 
 public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> {
 
     public static <T extends Entity> EntityDef<T> parse(Class<T> entityType,
-                                                        Function<Object, Instance> getInstance,
+                                                        Function<Object, Long> getId,
                                                         DefMap defMap,
-                                                        ModelMap modelMap) {
-        return new EntityParser<>(entityType, getInstance, defMap, modelMap).parse();
+                                                        ModelInstanceMap modelInstanceMap) {
+        return new EntityParser<>(entityType, getId, defMap, modelInstanceMap).parse();
     }
 
-    public EntityParser(Class<T> entityType, Function<Object, Instance> getInstance, DefMap defMap, ModelMap modelMap) {
-        super(entityType, getInstance, defMap, modelMap);
+    public EntityParser(Class<T> entityType, Function<Object, Long> getId, DefMap defMap, ModelInstanceMap modelInstanceMap) {
+        super(entityType, getId, defMap, modelInstanceMap);
     }
 
     @Override
     protected EntityDef<T> createDef() {
         return new EntityDef<>(
                 null,
-                entityType,
-                defMap.getPojoDef(entityType.getSuperclass()),
-                type,
+                javaType,
+                defMap.getPojoDef(javaType.getSuperclass()),
+                createType(),
                 defMap
         );
     }
+
 }

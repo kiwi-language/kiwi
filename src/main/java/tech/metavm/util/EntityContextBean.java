@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 
 public class EntityContextBean {
@@ -11,7 +12,7 @@ public class EntityContextBean {
         this.instanceContextFactory = instanceContextFactory;
     }
 
-    public EntityContext newContext() {
+    public IEntityContext newContext() {
         return instanceContextFactory.newContext().getEntityContext();
     }
     

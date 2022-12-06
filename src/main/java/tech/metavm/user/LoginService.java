@@ -2,9 +2,8 @@ package tech.metavm.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.user.rest.dto.LoginResponse;
 import tech.metavm.util.BusinessException;
@@ -16,8 +15,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
-
-import static tech.metavm.object.meta.IdConstants.USER;
 
 @Component
 public class LoginService {
@@ -34,10 +31,10 @@ public class LoginService {
 
     public LoginResponse login(LoginRequest request) {
         ContextUtil.setContextInfo(request.tenantId(), 0L);
-        EntityContext context =  instanceContextFactory.newContext().getEntityContext();
+        IEntityContext context =  instanceContextFactory.newContext().getEntityContext();
         List<UserRT> users = context.selectByKey(
-                UserRT.class,
-                new IndexKeyPO(USER.CID_UNIQUE_LOGIN_NAME, List.of(request.loginName()))
+                UserRT.IDX_LOGIN_NAME,
+                request.loginName()
         );
         if(NncUtils.isEmpty(users)) {
             throw BusinessException.loginNameNotFound(request.loginName());

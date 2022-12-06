@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.EntityQuery;
 import tech.metavm.entity.EntityQueryService;
@@ -34,7 +34,7 @@ public class FlowManager {
     }
 
     public FlowDTO get(long flowId) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, flowId);
         if(flow == null) {
             return null;
@@ -44,10 +44,10 @@ public class FlowManager {
 
     @Transactional
     public long create(FlowDTO flowDTO) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         Type inputType = saveInputType(null, List.of(), flowDTO.name(), context);
         Type outputType = saveOutputType(null, List.of(), flowDTO.name(), context);
-        FlowRT flow = new FlowRT(flowDTO, inputType, outputType, context);
+        FlowRT flow = new FlowRT(flowDTO, inputType, outputType, context.getType(flowDTO.typeId()));
         NodeRT<?> selfNode = createSelfNode(flow);
         NodeRT<?> inputNode = createInputNode(flow, selfNode);
         createReturnNode(flow, inputNode);
@@ -88,7 +88,7 @@ public class FlowManager {
     @Transactional
     public void update(FlowDTO flowDTO) {
         flowDTO.requiredId();
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, flowDTO.id());
         if(flow == null) {
             throw BusinessException.flowNotFound(flowDTO.id());
@@ -100,7 +100,7 @@ public class FlowManager {
 
     @Transactional
     public void delete(long id) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, id);
         flow.remove();
         context.finish();
@@ -113,7 +113,7 @@ public class FlowManager {
 
     @Transactional
     public NodeDTO createNode(NodeDTO nodeDTO) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, nodeDTO.flowId());
         if(flow == null) {
             throw BusinessException.flowNotFound(nodeDTO.flowId());
@@ -126,7 +126,7 @@ public class FlowManager {
     }
 
     public NodeDTO getNode(long id) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         NodeRT<?> node = context.getEntity(NodeRT.class, id);
         return NncUtils.get(node, NodeRT::toDTO);
     }
@@ -134,7 +134,7 @@ public class FlowManager {
     @Transactional
     public NodeDTO updateNode(NodeDTO nodeDTO) {
         nodeDTO.ensureIdSet();
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         NodeRT<?> node = context.getEntity(NodeRT.class, nodeDTO.id());
         if(node == null) {
             throw BusinessException.nodeNotFound(nodeDTO.id());
@@ -145,7 +145,7 @@ public class FlowManager {
         return node.toDTO();
     }
 
-    private NodeDTO beforeNodeChange(NodeDTO nodeDTO, FlowRT flow, EntityContext context) {
+    private NodeDTO beforeNodeChange(NodeDTO nodeDTO, FlowRT flow, IEntityContext context) {
         if(nodeDTO.type() == NodeKind.INPUT.code()) {
             return updateInputType(nodeDTO, flow, context);
         }
@@ -155,7 +155,7 @@ public class FlowManager {
         return nodeDTO;
     }
 
-    private NodeDTO updateInputType(NodeDTO nodeDTO, FlowRT flow, EntityContext context) {
+    private NodeDTO updateInputType(NodeDTO nodeDTO, FlowRT flow, IEntityContext context) {
         InputParamDTO inputParam = nodeDTO.getParam();
         long typeId = flow.getInputType().getId();
         List<FieldDTO> fieldDTOs = NncUtils.map(
@@ -176,7 +176,7 @@ public class FlowManager {
         return nodeDTO.copyWithNewParam(newParam);
     }
 
-    private NodeDTO updateOutputType(NodeDTO nodeDTO, FlowRT flow, EntityContext context) {
+    private NodeDTO updateOutputType(NodeDTO nodeDTO, FlowRT flow, IEntityContext context) {
         ReturnParamDTO param = nodeDTO.getParam();
         List<FieldDTO> existingFields = NncUtils.filterAndMap(
                 param.fields(),
@@ -237,7 +237,7 @@ public class FlowManager {
 
     @Transactional
     public void deleteNode(long nodeId) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         NodeRT<?> node = context.getEntity(NodeRT.class, nodeId);
         if(node == null) {
             return;
@@ -249,7 +249,7 @@ public class FlowManager {
         context.finish();
     }
 
-    private Type saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, EntityContext context) {
+    private Type saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(
                 id,
                 getInputTypeName(flowName),
@@ -263,7 +263,7 @@ public class FlowManager {
         return typeManager.saveTypeWithContent(typeDTO, context);
     }
 
-    private Type saveOutputType(Long id, List<FieldDTO> fieldDTOs, String flowName, EntityContext context) {
+    private Type saveOutputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(
                 id,
                 getOutputTypeName(flowName),
@@ -293,7 +293,7 @@ public class FlowManager {
                 page,
                 pageSize
         );
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         Page<FlowRT> flowPage = entityQueryService.query(query, context);
         return new Page<>(
                 NncUtils.map(flowPage.data(), FlowRT::toSummaryDTO),
@@ -303,7 +303,7 @@ public class FlowManager {
 
     @Transactional
     public BranchDTO createBranch(BranchDTO branchDTO) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         NodeRT<?> nodeRT = context.getEntity(NodeRT.class, branchDTO.ownerId());
         if(nodeRT instanceof BranchNode branchNode) {
             Branch branch = branchNode.addBranch(branchDTO);
@@ -318,7 +318,7 @@ public class FlowManager {
     @Transactional
     public BranchDTO updateBranch(BranchDTO branchDTO) {
         NncUtils.requireNonNull(branchDTO.id(), "分支ID必填");
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         NodeRT<?> owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
         if(owner == null) {
             throw BusinessException.nodeNotFound(branchDTO.ownerId());
@@ -339,7 +339,7 @@ public class FlowManager {
 
     @Transactional
     public void deleteBranch(long ownerId, long branchId) {
-        EntityContext context = newContext();
+        IEntityContext context = newContext();
         NodeRT<?> owner = context.getEntity(NodeRT.class, ownerId);
         if(owner instanceof BranchNode branchNode) {
             Branch branch = branchNode.getBranch(branchId);
@@ -354,7 +354,7 @@ public class FlowManager {
         }
     }
 
-    private EntityContext newContext() {
+    private IEntityContext newContext() {
         return contextFactory.newContext().getEntityContext();
     }
 

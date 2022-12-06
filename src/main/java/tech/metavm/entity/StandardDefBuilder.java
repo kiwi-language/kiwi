@@ -1,11 +1,11 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.meta.IdConstants;
 import tech.metavm.object.meta.StandardTypes;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.Table;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
+import java.util.Date;
 
 public class StandardDefBuilder {
 
@@ -16,7 +16,48 @@ public class StandardDefBuilder {
     private ValueDef<Enum<?>> enumDef;
 
     public void initRootTypes(DefMap defMap) {
-//        Instance objectTypeInst = getInstance.apply(Object.class);
+
+        defMap.addDef(new PrimitiveDef<>(
+                Integer.class,
+                StandardTypes.INT
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Long.class,
+                StandardTypes.LONG
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Double.class,
+                StandardTypes.DOUBLE
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Boolean.class,
+                StandardTypes.BOOL
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                String.class,
+                StandardTypes.STRING
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Date.class,
+                StandardTypes.TIME
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Password.class,
+                StandardTypes.PASSWORD
+        ));
+
+
+        defMap.addDef(new PrimitiveDef<>(
+                Null.class,
+                StandardTypes.NULL
+        ));
+
         objectDef = new ValueDef<>(
                 "对象",
                 Object.class,
@@ -25,9 +66,8 @@ public class StandardDefBuilder {
                 defMap
         );
 
-        defMap.putDef(Object.class, objectDef);
+        defMap.addDef(objectDef);
 
-//        Instance recordTypeInst = getInstance.apply(Record.class);
         ValueDef<Record> recordDef = new ValueDef<>(
                 "记录",
                 Record.class,
@@ -35,9 +75,8 @@ public class StandardDefBuilder {
                 StandardTypes.RECORD,
                 defMap
         );
-        defMap.putDef(Record.class, recordDef);
+        defMap.addDef(recordDef);
 
-//        Instance entityTypeInst = getInstance.apply(Entity.class);
         EntityDef<Entity> entityDef = new EntityDef<>(
                 "实体",
                 Entity.class,
@@ -46,18 +85,16 @@ public class StandardDefBuilder {
                 defMap
         );
 
-        defMap.putDef(Entity.class, entityDef);
+        defMap.addDef(entityDef);
 
-//        Instance tableTypeInst = getInstance.apply(Table.class);
         arrayDef = new ArrayDef<>(
                 objectDef,
                 Table.class,
-                StandardTypes.ARRAY
+                IdConstants.ARRAY
         );
 
-        defMap.putDef(Table.class, arrayDef);
+        defMap.addDef(arrayDef);
 
-//        Instance enumTypeInst = getInstance.apply(Enum.class);
         enumDef = new ValueDef<>(
                 "枚举",
                 new TypeReference<>() {},
@@ -66,51 +103,20 @@ public class StandardDefBuilder {
                 defMap
         );
 
-//        defMap.putDef(Enum.class, enumDef);
-//
-//        putPrimitiveType(Integer.class, StandardTypes.INT, defMap);
-//
-//        putPrimitiveType(Long.class, StandardTypes.LONG, defMap);
-//
-//        putPrimitiveType(Double.class, StandardTypes.DOUBLE, defMap);
-//
-//        putPrimitiveType(Boolean.class, StandardTypes.BOOL, defMap);
-//
-//        putPrimitiveType(String.class, StandardTypes.STRING, defMap);
-//
-//        putPrimitiveType(Date.class, StandardTypes.TIME, defMap);
-//
-//        putPrimitiveType(Password.class, StandardTypes.PASSWORD, defMap);
-//
-//        putPrimitiveType(Null.class, StandardTypes.NULL, defMap);
-
         createFieldDef(
                 ReflectUtils.getField(Enum.class, "name"),
                 StandardTypes.ENUM_NAME,
-                "名称",
                 enumDef
         );
 
         createFieldDef(
                 ReflectUtils.getField(Enum.class, "ordinal"),
                 StandardTypes.ENUM_ORDINAL,
-                "序号",
                 enumDef
         );
-    }
 
-//    public void putPrimitiveType(Class<?> entityType, tech.metavm.object.meta.Type primitiveType, DefMap defMap) {
-//        defMap.putDef(
-//                entityType,
-//                new ValueDef<>(
-//                        primitiveType.getName(),
-//                        entityType,
-//                        objectDef,
-//                        primitiveType,
-//                        defMap
-//                )
-//        );
-//    }
+        defMap.addDef(enumDef);
+    }
 
     public ValueDef<Object> getObjectDef() {
         return objectDef;
@@ -126,11 +132,9 @@ public class StandardDefBuilder {
 
     private void createFieldDef(Field reflectField,
                                 tech.metavm.object.meta.Field field,
-                                String name,
                                 PojoDef<?> declaringTypeDef
                                 ) {
         new FieldDef(
-                name,
                 field,
                 reflectField,
                 declaringTypeDef,

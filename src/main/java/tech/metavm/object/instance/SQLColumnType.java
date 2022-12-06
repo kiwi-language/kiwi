@@ -13,7 +13,9 @@ public enum SQLColumnType {
     BOOL("bool", "boolean",  "b",10),
     FLOAT("double", "double", "d", 10),
     TEXT("varchar(1024)", "text","t", 2),
-    RELATION(null, "keyword", "r", 10);
+    RELATION(null, "keyword", "r", 10),
+    OBJECT("json", null, "o", 10),
+    REFERENCE("json", "long","r", 20),
 
     ;
 

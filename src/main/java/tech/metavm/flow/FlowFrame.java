@@ -58,7 +58,7 @@ public class FlowFrame implements EvaluationContext {
     }
 
     public Object getResult(long nodeId, long fieldId) {
-        return NncUtils.get(results.get(nodeId), inst -> inst.getRaw(fieldId));
+        return NncUtils.get(results.get(nodeId), inst -> inst.get(fieldId));
     }
 
     public IInstance getResult(long nodeId) {
@@ -93,7 +93,7 @@ public class FlowFrame implements EvaluationContext {
 
     public Object getInstanceField(Instance instance, Field field) {
         checkAccess(field);
-        return instance.getRaw(field);
+        return instance.get(field);
     }
 
     private void checkAccess(Field field) {

@@ -27,7 +27,8 @@ public class VerificationFilter extends OncePerRequestFilter {
     public static final Set<String> PASSING_PREFIXES = Set.of(
             "/tenant",
             "/login",
-            "/bootstrap"
+            "/bootstrap",
+            "/lab"
     );
 
     @Override

@@ -1,10 +1,9 @@
 package tech.metavm.object.instance;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
+import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.InstanceContext;
-import tech.metavm.entity.EntityPO;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -18,11 +17,14 @@ import static tech.metavm.entity.ContextAttributeKey.CHANGE_LOGS;
 @Component
 public class ChangeLogPlugin implements ContextPlugin {
 
-    @Autowired
-    private InstanceLogService instanceLogService;
+    private final InstanceLogService instanceLogService;
+
+    public ChangeLogPlugin(InstanceLogService instanceLogService) {
+        this.instanceLogService = instanceLogService;
+    }
 
     @Override
-    public void beforeSaving(EntityChange<InstancePO> changes, InstanceContext context) {
+    public void beforeSaving(EntityChange<InstancePO> changes, IInstanceContext context) {
         List<InstanceLog> logs = new ArrayList<>();
         for (InstancePO instance : changes.inserts()) {
             logs.add(InstanceLog.insert(instance));
@@ -37,12 +39,12 @@ public class ChangeLogPlugin implements ContextPlugin {
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> changes, InstanceContext context) {
+    public void afterSaving(EntityChange<InstancePO> changes, IInstanceContext context) {
         // TODO save change logs
     }
 
     @Override
-    public void postProcess(InstanceContext context) {
+    public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if(NncUtils.isNotEmpty(logs)) {
             instanceLogService.process(logs);

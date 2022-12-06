@@ -47,13 +47,10 @@ public class EntityUtils {
         if(entity1.getId() != null && entity2.getId() != null) {
             return entity1.getId().equals(entity2.getId());
         }
-        if(entity1.getId() == null && entity2.getId() == null) {
-            return extractTrueEntity(entity1) == extractTrueEntity(entity2);
-        }
         return false;
     }
 
-    private static boolean isDifferent(Object value1, Object value2, IdentitySet<Object> visited) {
+    private static boolean isDifferent(Object value1, Object value2, IdentityHashMap<Object, Object> visited) {
         if(value1 == null && value2 == null) {
             return false;
         }
@@ -97,20 +94,32 @@ public class EntityUtils {
     }
 
     public static boolean isPojoDifferent(Object pojo1, Object pojo2) {
-        return isPojoDifferent(pojo1, pojo2, new IdentitySet<>());
+        return isPojoDifferent(pojo1, pojo2, new IdentityHashMap<>());
     }
 
-    private static boolean isPojoDifferent(Object pojo1, Object pojo2, IdentitySet<Object> visited) {
-        if(visited.contains(pojo1) || visited.contains(pojo2)) {
+    private static boolean isPojoDifferent(Object pojo1, Object pojo2, IdentityHashMap<Object, Object> visited) {
+        if(visited.containsKey(pojo1) || visited.containsKey(pojo2)) {
+            if(visited.get(pojo1) == pojo2) {
+                return false;
+            }
             throw new RuntimeException("Back reference of POJO is currently not supported");
         }
-        if(!pojo1.getClass().equals(pojo2.getClass())) {
+        if(pojo1 == null && pojo2 == null) {
             return true;
         }
-        visited.add(pojo1);
-        visited.add(pojo2);
-        Class<?> klass = pojo1.getClass();
-        EntityDesc desc = DescStore.get(klass);
+        if(pojo1 == null || pojo2 == null) {
+            return false;
+        }
+        Class<?> realClass = getRealClass(pojo1.getClass(), pojo2.getClass());
+        if(realClass == null) {
+            return true;
+        }
+        visited.put(pojo1, pojo2);
+        visited.put(pojo2, pojo1);
+        ensureProxyInitialized(pojo1);
+        ensureProxyInitialized(pojo2);
+//        Class<?> klass = pojo1.getClass();
+        EntityDesc desc = DescStore.get(realClass);
         for (EntityProp prop : desc.getProps()) {
             if(prop.isTransient()) {
                 continue;
@@ -123,11 +132,40 @@ public class EntityUtils {
         return false;
     }
 
-    private static boolean isEntityDifferent(Entity entity1, Entity entity2) {
-        return !Objects.equals(entity1.key(), entity2.key());
+    private static void ensureProxyInitialized(Object object) {
+        if(object instanceof ProxyObject proxyObject) {
+            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            handler.ensureInitialized(object);
+        }
     }
 
-    private static boolean isMapDifferent(Map<?,?> map1, Map<?,?> map2, IdentitySet<Object> visited) {
+    private static Class<?> getRealClass(Class<?> klass1, Class<?> klass2) {
+        if(klass1 == klass2) {
+            return klass1;
+        }
+        if(klass1 == klass2.getSuperclass()) {
+            if(ProxyObject.class.isAssignableFrom(klass2)) {
+                return klass1;
+            }
+        }
+        if(klass2 == klass1.getSuperclass()) {
+            if(ProxyObject.class.isAssignableFrom(klass1)) {
+                return klass2;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isEntityDifferent(Entity entity1, Entity entity2) {
+        if(entity1.getId() != null && entity2.getId() != null) {
+            return !Objects.equals(entity1.key(), entity2.key());
+        }
+        else {
+            return entity1 == entity2;
+        }
+    }
+
+    private static boolean isMapDifferent(Map<?,?> map1, Map<?,?> map2, IdentityHashMap<Object,Object> visited) {
         if(map1.size() != map2.size()) {
             return true;
         }
@@ -140,7 +178,8 @@ public class EntityUtils {
         return false;
     }
 
-    private static boolean isCollectionDifferent(Collection<?> coll1, Collection<?> coll2, IdentitySet<Object> visited) {
+    private static boolean isCollectionDifferent(Collection<?> coll1, Collection<?> coll2,
+                                                 IdentityHashMap<Object,Object> visited) {
         if(coll1.size() != coll2.size()) {
             return true;
         }
@@ -159,16 +198,6 @@ public class EntityUtils {
                 && !isShallow(klass);
     }
 
-    public static Entity extractTrueEntity(Entity entity) {
-        if(entity instanceof ProxyObject proxyObject) {
-            EntityMethodHandler handler = (EntityMethodHandler) proxyObject.getHandler();
-            return (Entity) handler.getEntity();
-        }
-        else {
-            return entity;
-        }
-    }
-
     public static boolean isPrimitive(Class<?> klass) {
         return PRIM_CLASSES.contains(klass);
     }
@@ -177,6 +206,14 @@ public class EntityUtils {
         return (Entity) copyPojo(entity, new IdentityHashMap<>(), true);
     }
 
+    public static Long tryGetId(Object object) {
+        if(object instanceof Identifiable identifiable) {
+            return identifiable.getId();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T> T copyPojo(T pojo) {
         return (T) copyPojo(pojo, new IdentityHashMap<>(), true);
     }
@@ -342,20 +379,24 @@ public class EntityUtils {
     }
 
     private static Object copyPojo(Object object, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
-        Object copy = ReflectUtils.newInstance(object.getClass());
+        Object copy = ReflectUtils.allocateInstance(object.getClass());
         copyMap.put(object, copy);
-        List<Field> fields = ReflectUtils.getInstanceFields(object.getClass());
+        copyPojo(object, copy, copyMap, ignoreTransient);
+        return copy;
+    }
+
+    public static void copyPojo(Object src, Object target, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
+        List<Field> fields = ReflectUtils.getInstanceFields(src.getClass());
         for (Field field : fields) {
             if(ignoreTransient && Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
             ReflectUtils.set(
-                    copy,
+                    target,
                     field,
-                    copy(ReflectUtils.get(object, field), copyMap)
+                    copy(ReflectUtils.get(src, field), copyMap)
             );
         }
-        return copy;
     }
 
     private static Set<Object> copySet(Set<?> set, IdentityHashMap<Object, Object> copyMap) {

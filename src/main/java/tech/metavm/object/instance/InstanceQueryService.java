@@ -19,7 +19,7 @@ public class InstanceQueryService {
     @Autowired
     private InstanceSearchService instanceSearchService;
 
-    public Page<Long> query(InstanceQuery query, InstanceContext context) {
+    public Page<Long> query(InstanceQuery query, IInstanceContext context) {
         return query(
                 query.typeId(),
                 buildCondition(query, context),
@@ -29,7 +29,7 @@ public class InstanceQueryService {
         );
     }
 
-    public <T extends Entity> Page<T> query(Class<T> entityType, InstanceQueryDTO query, EntityContext context) {
+    public <T extends Entity> Page<T> query(Class<T> entityType, InstanceQueryDTO query, IEntityContext context) {
         Page<Long> idPage = query(query, context.getInstanceContext());
         return new Page<>(
                 NncUtils.map(idPage.data(), id -> context.getEntity(entityType, id)),
@@ -37,7 +37,7 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<Long> query(InstanceQueryDTO query, InstanceContext context) {
+    public Page<Long> query(InstanceQueryDTO query, IInstanceContext context) {
         return query(
                 query.typeId(),
                 buildCondition(query.typeId(), query.searchText(), context),
@@ -47,7 +47,7 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<Long> query(long typeId, Expression expression, int page, int pageSize, InstanceContext context) {
+    public Page<Long> query(long typeId, Expression expression, int page, int pageSize, IInstanceContext context) {
         SearchQuery searchQuery = new SearchQuery(
                 context.getTenantId(),
                 typeId,
@@ -58,7 +58,7 @@ public class InstanceQueryService {
         return instanceSearchService.search(searchQuery);
     }
 
-    private Expression buildCondition(InstanceQuery query, InstanceContext context) {
+    private Expression buildCondition(InstanceQuery query, IInstanceContext context) {
         Expression condition = buildCondition(query.typeId(), query.searchText(), context);
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition = ExpressionUtil.fieldEq(
@@ -73,7 +73,7 @@ public class InstanceQueryService {
         return condition;
     }
 
-    private Expression buildCondition(long typeId, String searchText, InstanceContext context) {
+    private Expression buildCondition(long typeId, String searchText, IInstanceContext context) {
         if(NncUtils.isEmpty(searchText)) {
             return null;
         }

@@ -17,7 +17,7 @@ public interface InstanceArrayMapper {
                                           @Param("start") long start,
                                           @Param("limit") long limit);
 
-    List<InstanceArrayPO> selectByIds(long tenantId, Collection<Long> ids);
+    List<InstanceArrayPO> selectByIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids);
 
     void batchUpdate(Collection<InstanceArrayPO> records);
 

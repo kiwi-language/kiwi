@@ -5,25 +5,25 @@ import java.util.Map;
 
 public final class InstanceArrayPO extends InstancePO {
     private Integer length;
-    private List<Long> elementIds;
+    private List<Object> elements;
     private boolean elementAsChild;
 
     public InstanceArrayPO() {
     }
 
     public InstanceArrayPO(
-            long id,
+            Long id,
             long typeId,
             long tenantId,
             int length,
-            List<Long> elementIds,
+            List<Object> elements,
             boolean elementAsChild,
             long version,
             long syncVersion
     ) {
         super(tenantId, id, typeId, null, Map.of(), version, syncVersion);
         this.length = length;
-        this.elementIds = elementIds;
+        this.elements = elements;
         this.elementAsChild = elementAsChild;
     }
 
@@ -43,12 +43,21 @@ public final class InstanceArrayPO extends InstancePO {
         this.length = length;
     }
 
-    public List<Long> getElementIds() {
-        return elementIds;
+    public List<Object> getElements() {
+        return elements;
     }
 
-    public void setElementIds(List<Long> elementIds) {
-        this.elementIds = elementIds;
+    public void setElements(List<Object> elements) {
+        this.elements = elements;
     }
 
+    @Override
+    public String toString() {
+        return "InstanceArrayPO{" +
+                "id=" + getId() +
+                ", length=" + length +
+                ", elementIds=" + elements +
+                ", elementAsChild=" + elementAsChild +
+                '}';
+    }
 }

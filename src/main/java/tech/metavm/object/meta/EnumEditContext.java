@@ -1,6 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.BusinessException;
@@ -15,14 +15,14 @@ public class EnumEditContext {
     private final boolean anonymous;
     private final List<ChoiceOptionDTO> optionDTOs;
     private final List<EnumConstantRT> defaultOptions = new ArrayList<>();
-    private final EntityContext entityContext;
+    private final IEntityContext entityContext;
     private Type type;
 
     public EnumEditContext(Long id,
                            String name,
                            boolean anonymous,
                            List<ChoiceOptionDTO> optionDTOs,
-                           EntityContext entityContext) {
+                           IEntityContext entityContext) {
         this.id = id;
         this.name = name;
         this.anonymous = anonymous;

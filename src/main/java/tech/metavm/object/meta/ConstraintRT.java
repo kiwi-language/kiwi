@@ -8,6 +8,8 @@ import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
+
 @EntityType("约束")
 public abstract class ConstraintRT<T> extends Entity {
 
@@ -16,36 +18,23 @@ public abstract class ConstraintRT<T> extends Entity {
     @EntityField("类别")
     private final ConstraintKind kind;
     @EntityField("错误提示")
+    @Nullable
     private String message;
 
-    public ConstraintRT(ConstraintKind kind, Type declaringType, String message) {
+    public ConstraintRT(ConstraintKind kind, Type declaringType, @Nullable String message) {
         this.declaringType = declaringType;
         this.kind = kind;
         this.message = message;
+        declaringType.addConstraint(this);
     }
 
-    //    public ConstraintRT(ConstraintPO po/*, EntityContext context*/) {
-//        super(po.getId());
-//        kind = ConstraintKind.getByCode(po.getKind());
-//        this.declaringType = context.getType(po.getDeclaringTypeId());
-//        this.message = po.getMessage();
-//    }
-//
-//    public ConstraintRT(ConstraintKind kind, Type declaringType, String message) {
-//        super(declaringType.getContext());
-//        this.kind = kind;
-//        this.declaringType = declaringType;
-//        setMessage(message);
-//        declaringType.addConstraint(this);
-//    }
-
-    public String getMessage() {
+    public @Nullable String getMessage() {
         return message;
     }
 
     public abstract String getDefaultMessage();
 
-    public void setMessage(String message) {
+    public void setMessage(@Nullable String message) {
         this.message = message;
     }
 

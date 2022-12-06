@@ -4,7 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.util.Constants;
+
+import java.util.List;
 
 public class StdAllocatorTest extends TestCase {
 
@@ -15,23 +16,31 @@ public class StdAllocatorTest extends TestCase {
     @Override
     protected void setUp() {
         allocator = new StdAllocator(
-                Constants.ID_FILE_CP_ROOT,
-                "/id/Type.properties"
+                new MemAllocatorStore(),
+                "/id/Type.properties",
+                Type.class,
+                1000L
         );
     }
 
     public void testSmoking() {
+        List<Long> ids = allocator.allocate(3);
+        allocator.putId(Type.class.getName(), ids.get(0));
+        allocator.putId(Field.class.getName(), ids.get(1));
+        allocator.putId(UniqueConstraintRT.class.getName(), ids.get(2));
         long typeId = allocator.getId(Type.class.getName());
-        LOGGER.info("typeId: " + typeId);
         long fieldId = allocator.getId(Field.class.getName());
-        LOGGER.info("fieldId: " + fieldId);
         long uniqueConstraintId = allocator.getId(UniqueConstraintRT.class.getName());
-        LOGGER.info("uniqueConstraintId: " + uniqueConstraintId);
-        allocator.save();
+        Assert.assertEquals((long) ids.get(0), typeId);
+        Assert.assertEquals((long) ids.get(1), fieldId);
+        Assert.assertEquals((long) ids.get(2), uniqueConstraintId);
     }
 
     public void testIdContains() {
+        long allocatedId = allocator.allocate(1).get(0);
+        allocator.putId(Field.class.getName(), allocatedId);
         long fieldId = allocator.getId(Field.class.getName());
+        Assert.assertEquals(allocatedId, fieldId);
         Assert.assertTrue(allocator.contains(fieldId));
     }
 

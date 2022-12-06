@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.object.instance.Instance;
@@ -9,6 +10,7 @@ import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.InternalException;
 
 @ValueType("更新字段")
@@ -34,7 +36,7 @@ public class UpdateField {
         this.value = value;
     }
 
-    public void execute(Instance instance, EvaluationContext context) {
+    public void execute(Instance instance, EvaluationContext context, InstanceContext instanceContext) {
         Object evaluatedValue = value.evaluate(context);
         Object updateValue;
         if(op == UpdateOp.SET) {
@@ -71,7 +73,11 @@ public class UpdateField {
         else {
             throw new InternalException("Unsupported update operation: " + op);
         }
-        instance.setRawFieldValue(InstanceFieldDTO.valueOf(field.getId(), updateValue));
+
+        instance.set(
+                field,
+                ValueFormatter.parse(updateValue, field.getType(), instanceContext)
+        );
     }
 
     public UpdateFieldDTO toDTO(boolean persisting) {

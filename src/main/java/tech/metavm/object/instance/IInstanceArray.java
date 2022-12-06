@@ -6,17 +6,17 @@ import java.util.List;
 
 public interface IInstanceArray extends IInstance {
 
-    Instance get(int i);
+    Object get(int i);
 
-    void add(Instance element);
+    void add(Object element);
 
-    void remove(Instance element);
+    void remove(Object element);
 
     int length();
 
-    List<Instance> getElements();
+    List<Object> getElements();
 
     boolean isElementAsChild();
 
-    InstanceArrayPO toPO();
+    InstanceArrayPO toPO(long tenantId);
 }

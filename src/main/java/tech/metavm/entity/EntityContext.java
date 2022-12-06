@@ -5,11 +5,8 @@ import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.InstanceArray;
-import tech.metavm.object.instance.InstanceMap;
-import tech.metavm.object.instance.ModelMap;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
@@ -17,35 +14,59 @@ import tech.metavm.util.*;
 
 import java.util.*;
 
-import static tech.metavm.object.meta.IdConstants.TENANT;
+import static tech.metavm.entity.EntityUtils.tryGetId;
 
-public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityContext {
+public class EntityContext implements CompositeTypeFactory, IEntityContext {
 
     private final Map<EntityKey, Entity> entityMap = new HashMap<>();
     private final Set<Entity> entities = new LinkedHashSet<>();
     private final Set<Object> values = new HashSet<>();
-    private final EntityIdProvider idService;
-    private final InstanceContext instanceContext;
+    private final IInstanceContext instanceContext;
     private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
     private final IEntityContext parent;
     private final DefContext defContext;
 
-    public EntityContext(InstanceContext instanceContext, IEntityContext parent, DefContext defContext) {
+    public EntityContext(IInstanceContext instanceContext, IEntityContext parent) {
+        this(instanceContext, parent, ModelDefRegistry.getDefContext());
+    }
+
+    public EntityContext(IInstanceContext instanceContext, IEntityContext parent, DefContext defContext) {
         this.instanceContext = instanceContext;
-        idService = instanceContext.getIdService();
         this.parent = parent;
         this.defContext = defContext;
+        instanceContext.addListener(instance -> {
+            Object model = instance2model.get(instance);
+            if((model instanceof Entity entity) && entity.getId() == null) {
+                entity.initId(instance.getId());
+            }
+        });
+    }
+
+    public void preloadEntity(Entity entity) {
+        if(containsModel(entity)) {
+            return;
+        }
+        if(entity.getId() == null) {
+            bind(entity);
+        }
+        else {
+            Instance instance = instanceContext.get(entity.getId());
+            model2instance.put(entity, instance);
+            instance2model.put(instance, entity);
+            entityMap.put(entity.key(), entity);
+        }
+        entities.add(entity);
     }
 
     @Override
-    public <T> T get(Class<T> klass, Instance instance) {
+    public <T> T getModel(Class<T> klass, Instance instance) {
         if(parent != null && parent.containsInstance(instance)) {
-            return parent.get(klass, instance);
+            return parent.getModel(klass, instance);
         }
         Class<? extends T> javaType =
-                EntityTypeRegistry.getJavaType(instance.getType()).asSubclass(klass);
-        return getWithActualType(javaType, instance);
+                defContext.getJavaType(instance.getType()).asSubclass(klass);
+        return createModel(javaType, instance);
     }
 
     @Override
@@ -54,24 +75,30 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
     }
 
     @Override
+    public boolean containsModel(Object model) {
+        return model2instance.containsKey(model);
+    }
+
     public boolean containsKey(EntityKey entityKey) {
         return entityMap.containsKey(entityKey);
     }
 
-    private <T> T getWithActualType(Class<T> actualType, Instance instance) {
-        return EntityProxyFactory.getProxyInstance(
-                actualType,
-                instance.getId(),
-                () -> actualType.cast(defContext.createEntity(instance, this))
-        );
-    }
-
-    Object getReal(Instance instance) {
-        return instance2model.computeIfAbsent(instance, this::createModel);
-    }
-
-    private Object createModel(Instance instance) {
-        return EntityTypeRegistry.createEntity(instance, this);
+    private <T> T createModel(Class<T> actualType, Instance instance) {
+        ModelDef<T, ?> def = defContext.getDef(actualType);
+        T model;
+        if(def.isProxySupported()) {
+            model = EntityProxyFactory.getProxy(
+                    actualType,
+                    instance.getId(),
+                    m -> def.initModelHelper(m, instance, this),
+                    k -> def.createModelProxy(k)
+            );
+        }
+        else {
+            model = actualType.cast(def.createModelHelper(instance, this));
+        }
+        addMapping(model, instance);
+        return model;
     }
 
     public void bind(Object model) {
@@ -82,10 +109,7 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
         else {
             values.add(model);
         }
-    }
-
-    public Type getTenantType() {
-        return getType(TENANT.ID);
+        createInstanceFromModel(model);
     }
 
     @SuppressWarnings("unused")
@@ -93,7 +117,14 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
         return new Table<>(
                 NncUtils.map(
                         ((InstanceArray) instanceContext.get(id)).getElements(),
-                        instance -> createEntity(elementType, instance)
+                        element -> {
+                            if(element instanceof Instance instance) {
+                                return getModel(elementType, instance);
+                            }
+                            else {
+                                return elementType.cast(element);
+                            }
+                        }
                 )
         );
     }
@@ -141,26 +172,20 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
         return getEntity(CheckConstraintRT.class, id);
     }
 
-    @Override
     public <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
         return getEntity(typeReference.getType(), id);
     }
 
-    @Override
     public <T extends Entity> T getEntity(Class<T> entityType, long id) {
-        EntityKey entityKey = new EntityKey(entityType, id);
-        if(parent != null && parent.containsKey(entityKey)) {
-            return parent.getEntity(entityType, id);
+        Instance instance = instanceContext.get(id);
+        if(parent != null && parent.containsInstance(instance)) {
+            return parent.getModel(entityType, instance);
         }
-        if(entityMap.containsKey(entityKey)) {
-            return entityType.cast(entityMap.get(entityKey));
-        }
-        instanceContext.load(id, LoadingOption.none());
-        return getRef(entityType, id);
+        return getModel(entityType, instance);
     }
 
     public <T extends Enum<?>> T getEnum(Class<T> klass, long id) {
-        return EntityTypeRegistry.getEnumConstant(klass, id);
+        return defContext.getEnumConstant(klass, id);
     }
 
     @SuppressWarnings("unchecked")
@@ -176,36 +201,19 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
         }
     }
 
-    public <T extends Entity> T getRef(Class<T> entityType, long id) {
-        return EntityProxyFactory.getProxyInstance(entityType, id, () -> getRealEntity(entityType, id));
-    }
-
     public void finish() {
-        if(parent != null) {
-            parent.finish();
-        }
         entities.forEach(this::writeEntity);
         instanceContext.finish();
-        instance2model.forEach((instance, model) -> {
-            if(model instanceof Entity entity) {
-                if(entity.getId() == null) {
-                    entity.initId(instance.getId());
-                }
-            }
-        });
     }
 
     private void writeEntity(Entity entity) {
-        if(entity.getId() == null) {
-            Instance instance = EntityTypeRegistry.createInstance(entity, this);
-            instance2model.put(instance, entity);
-            model2instance.put(entity, instance);
-            instanceContext.bind(instance);
+        Instance instance = model2instance.get(entity);
+        if(instance == null) {
+            createInstanceFromModel(entity);
         }
         else {
-            EntityTypeRegistry.updateInstance(
-                entity, instanceContext.get(entity.getId()), this
-            );
+            ModelDef<?,?> def = defContext.getDef(instance.getType());
+            def.updateInstanceHelper(entity, instance, this);
         }
     }
 
@@ -217,53 +225,48 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
                                                      Object...values) {
         IndexKeyPO indexKey = createIndexKey(indexDef, values);
         List<Instance> instances = instanceContext.selectByKey(indexKey);
-        return EntityProxyFactory.getProxyInstance(
-                new TypeReference<>() {},
-                () -> new Table<>(
+        return EntityProxyFactory.getProxy(
+                new TypeReference<Table<T>>() {},
+                null,
+                table -> table.initialize(
                         NncUtils.map(
                                 instances,
-                                inst -> createEntity(indexDef.getEntityType(), inst)
+                                inst -> getModel(indexDef.getEntityType(), inst)
                         )
-                )
+                ),
+                this::createTable
         );
     }
 
-    public <T extends Entity> Table<T> selectByKey(Class<T> entityClass, IndexKeyPO indexKeyPO) {
-        List<Instance> instances = instanceContext.selectByKey(indexKeyPO);
-        return EntityProxyFactory.getProxyInstance(
-                new TypeReference<>() {},
-                () -> new Table<>(
-                        NncUtils.map(
-                                instances,
-                                inst -> entityClass.cast(EntityTypeRegistry.createEntity(inst, this))
-                        )
-                )
-        );
+    private <T> Table<T> createTable(Class<? extends Table<T>> klass) {
+        return ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(klass));
     }
 
-
-    private <T extends Entity> T createEntity(Class<T> entityType, Instance instance) {
-        return entityType.cast(EntityTypeRegistry.createEntity(instance, this));
-    }
-
-    @SuppressWarnings("unused")
-    private Object createEntity(Instance instance) {
-        return EntityTypeRegistry.createEntity(instance, this);
+    void onIdInitialized(Instance instance) {
+        Object model = instance2model.get(instance);
+        if((model instanceof Entity entity) && entity.getId() == null) {
+            entity.initId(instance.getId());
+        }
     }
 
     public long getTenantId() {
         return instanceContext.getTenantId();
     }
 
-    public void remove(Entity entity) {
-        if(entity.getId() != null) {
-            entityMap.remove(entity.key());
-            instanceContext.remove(instanceContext.get(entity.getId()));
+    public void remove(Object model) {
+        if(model instanceof Entity entity) {
+            if (entity.getId() != null) {
+                entityMap.remove(entity.key());
+                instanceContext.remove(instanceContext.get(entity.getId()));
+            }
+            entities.remove(entity);
         }
-        entities.remove(entity);
+        else {
+            values.remove(model);
+        }
     }
 
-    public InstanceContext getInstanceContext() {
+    public IInstanceContext getInstanceContext() {
         return instanceContext;
     }
 
@@ -274,7 +277,7 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
     }
 
     private IndexKeyPO createIndexKey(IndexDef<?> uniqueConstraintDef, Object...values) {
-        ConstraintPO constraint = EntityTypeRegistry.getUniqueConstraint(uniqueConstraintDef);
+        UniqueConstraintRT constraint = defContext.getUniqueConstraint(uniqueConstraintDef);
         NncUtils.requireNonNull(constraint);
         return IndexKeyPO.create(constraint.getId(), Arrays.asList(values));
     }
@@ -328,58 +331,41 @@ public class EntityContext implements CompositeTypeFactory, ModelMap, IEntityCon
 
     public void initIds() {
         instanceContext.initIds();
-        List<Entity> entitiesToInitId = NncUtils.filter(entities, entity -> entity.getId() == null);
-        Map<Type, Integer> countMap = NncUtils.mapAndCount(
-                entitiesToInitId,
-                EntityTypeRegistry::getType
-        );
-        Map<Type, List<Entity>> type2entities = NncUtils.toMultiMap(
-                entitiesToInitId,
-                EntityTypeRegistry::getType
-        );
-
-        Map<Type, List<Long>> idMap = idService.allocate(getTenantId(), countMap);
-        idMap.forEach((type, ids) -> NncUtils.biForEach(
-                type2entities.get(type),
-                ids,
-                Entity::initId
-        ));
-    }
-
-    public <T extends Entity> T getRealEntity(Class<T> entityType, long id) {
-        EntityKey key = new EntityKey(entityType, id);
-        if(!entityMap.containsKey(key)) {
-            Instance instance = instanceContext.get(key.id());
-            Entity entity = EntityTypeRegistry.createEntity(instance, this);
-            entityMap.put(key, entity);
-        }
-        return entityType.cast(entityMap.get(key));
     }
 
     @Override
-    public Instance getInstanceByModel(Object model) {
-        Long id;
-        if(model instanceof Identifiable identifiable) {
-            id = identifiable.getId();
+    public Instance getInstance(Object model) {
+        if(parent != null && parent.containsModel(model)) {
+            return parent.getInstance(model);
         }
-        else {
-            id = null;
+        Instance instance = model2instance.get(model);
+        if(instance == null) {
+            instance = createInstanceFromModel(model);
         }
-        return EntityProxyFactory.getProxyInstance(
-                model instanceof Collection<?> ? InstanceArray.class : Instance.class,
-                id,
-                () -> getRealInstanceByModel(model)
-        );
-    }
-
-    private Instance getRealInstanceByModel(Object model) {
-        return model2instance.computeIfAbsent(model, this::createInstanceFromModel);
+        return instance;
     }
 
     private Instance createInstanceFromModel(Object model) {
-        Instance instance = EntityTypeRegistry.createInstance(model, this);
-        instanceContext.bind(instance);
-        return instance;
+        ModelDef<?,?> def = defContext.getDef(model.getClass());
+        if(def.isProxySupported()) {
+            Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), tryGetId(model));
+            addMapping(model, instance);
+            def.initInstanceHelper(instance, model, this);
+            return instance;
+        }
+        else {
+            Instance instance = def.createInstanceHelper(model, this);
+            addMapping(model, instance);
+            return instance;
+        }
+    }
+
+    private void addMapping(Object model, Instance instance) {
+        instance2model.put(instance, model);
+        model2instance.put(model, instance);
+        if(!instance.getType().isValue() && !instanceContext.containsInstance(instance)) {
+            instanceContext.bind(instance);
+        }
     }
 
 }

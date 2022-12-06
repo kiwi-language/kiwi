@@ -9,7 +9,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class EntityProxyFactory {
 
@@ -19,19 +20,41 @@ public class EntityProxyFactory {
     private static final Field FIELD_PERSISTED = ReflectUtils.getField(Entity.class, "persisted");
     private static final Field FIELD_ID = ReflectUtils.getField(Entity.class, "id");
 
-    public static <T> T getProxyInstance(TypeReference<T> typeRef, Supplier<T> modelSupplier) {
-        return getProxyInstance(typeRef.getType(), null, modelSupplier);
+    public static <T> T getProxy(TypeReference<T> typeRef, Consumer<T> modelSupplier) {
+        return getProxy(typeRef.getType(), null, modelSupplier);
     }
 
-    public static <T> T getProxyInstance(Class<? extends T> type, Supplier<T> modelSupplier) {
-        return getProxyInstance(type, null, modelSupplier);
+    public static <T> T getProxy(Class<T> type, Consumer<T> modelSupplier) {
+        return getProxy(type, null, modelSupplier);
     }
 
-    public static <T> T getProxyInstance(Class<? extends T> type, Long id, Supplier<T> modelSupplier) {
-        Class<?> proxyClass = getProxyClass(type);
+    public static <T> T getProxy(Class<T> type,
+                                 Long id,
+                                 Consumer<T> modelSupplier) {
+        return getProxy(type, id, modelSupplier, null);
+    }
+
+    public static <T> T getProxy(TypeReference<T> type,
+                                 Long id,
+                                 Consumer<T> initializer,
+                                 Function<Class<? extends T>, T> constructor) {
+        return getProxy(type.getType(), id, initializer, constructor);
+    }
+
+    public static <T> T getProxy(Class<T> type,
+                                 Long id,
+                                 Consumer<T> initializer,
+                                 Function<Class<? extends T>, T> constructor) {
+        Class<? extends T> proxyClass = getProxyClass(type).asSubclass(type);
         try {
-            ProxyObject proxyInstance = (ProxyObject) ReflectUtils.getUnsafe().allocateInstance(proxyClass);
-            proxyInstance.setHandler(new EntityMethodHandler(modelSupplier));
+            ProxyObject proxyInstance = null;
+            if(constructor != null) {
+                proxyInstance = (ProxyObject) constructor.apply(proxyClass);
+            }
+            if(proxyInstance == null) {
+                proxyInstance = (ProxyObject) ReflectUtils.getUnsafe().allocateInstance(proxyClass);
+            }
+            proxyInstance.setHandler(new EntityMethodHandler<>(type, initializer));
             if(id != null && (proxyInstance instanceof IdInitializing idInitializing)) {
                 idInitializing.initId(id);
             }
@@ -39,17 +62,6 @@ public class EntityProxyFactory {
         }
         catch (Exception e) {
             throw new RuntimeException("fail to create proxy instance", e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T extractReal(T object) {
-        if(object instanceof ProxyObject proxyObject) {
-            EntityMethodHandler handler = (EntityMethodHandler) proxyObject.getHandler();
-            return (T) handler.getEntity();
-        }
-        else {
-            return object;
         }
     }
 
@@ -76,7 +88,7 @@ public class EntityProxyFactory {
     }
 
     private static boolean shouldIntercept(Method method) {
-        return !isGetIdMethod(method) && !isInitId(method);
+        return !isGetIdMethod(method) && !isInitId(method) && !method.isAnnotationPresent(NoProxy.class);
     }
 
     private static boolean isGetIdMethod(Method method) {

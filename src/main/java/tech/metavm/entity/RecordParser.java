@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelMap;
+import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -12,28 +11,28 @@ import java.util.function.Function;
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
 
     public static <T extends Record> RecordDef<T> parse(Class<T> entityType,
-                                                        Function<Object, Instance> getInstance,
+                                                        Function<Object, Long> getId,
                                                         DefMap defMap,
-                                                        ModelMap modelMap) {
-        return new RecordParser<>(entityType, getInstance, defMap, modelMap).parse();
+                                                        ModelInstanceMap modelInstanceMap) {
+        return new RecordParser<>(entityType, getId, defMap, modelInstanceMap).parse();
     }
 
-    public RecordParser(Class<T> entityType, Function<Object, Instance> getInstance, DefMap defMap, ModelMap modelMap) {
-        super(entityType, getInstance, defMap, modelMap);
+    public RecordParser(Class<T> entityType, Function<Object, Long> getId, DefMap defMap, ModelInstanceMap modelInstanceMap) {
+        super(entityType, getId, defMap, modelInstanceMap);
     }
 
     @Override
-    protected List<Field> getFields(Class<T> entityType) {
-        return NncUtils.map(entityType.getRecordComponents(), ReflectUtils::getField);
+    protected List<Field> getPropertyFields() {
+        return NncUtils.map(javaType.getRecordComponents(), ReflectUtils::getField);
     }
 
     @Override
     protected RecordDef<T> createDef() {
         return new RecordDef<>(
                 null,
-                entityType,
-                defMap.getPojoDef(entityType.getSuperclass()),
-                type,
+                javaType,
+                defMap.getPojoDef(javaType.getSuperclass()),
+                createType(),
                 defMap
         );
     }

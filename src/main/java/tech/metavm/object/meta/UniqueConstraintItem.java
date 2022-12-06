@@ -6,16 +6,12 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.Expression;
+import tech.metavm.object.instance.query.FieldExpression;
+import tech.metavm.object.instance.query.ThisExpression;
 import tech.metavm.object.instance.query.TypeParsingContext;
-import tech.metavm.object.instance.query.VarType;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @EntityType("唯一约束项")
 public class UniqueConstraintItem extends Entity {
-
-    public static final Pattern ID_EXPR_PTN = Pattern.compile("\\$([^.]+)");
 
     public static UniqueConstraintItem createFieldItem(UniqueConstraintRT constraint, Field field) {
         return new UniqueConstraintItem(
@@ -68,12 +64,16 @@ public class UniqueConstraintItem extends Entity {
             expression = expressionValue.getExpression();
         }
         if(expression != null) {
-            String expr = expression.buildSelf(VarType.NAME);
-            Matcher matcher = ID_EXPR_PTN.matcher(expr);
-            if(matcher.matches()) {
-//                long id = Long.parseLong(matcher.group(1));
-                String fieldName = matcher.group(1);
-                return constraint.getDeclaringType().getFieldByName(fieldName);
+            return extractField(expression);
+        }
+        return null;
+    }
+
+    private Field extractField(Expression expression) {
+        if(expression instanceof FieldExpression fieldExpression) {
+            if((fieldExpression.getInstance() instanceof ThisExpression) &&
+                    fieldExpression.getFieldPath().size() == 1) {
+                return fieldExpression.getFieldPath().get(0);
             }
         }
         return null;

@@ -138,8 +138,8 @@ public class Field extends Entity {
         this.access = access;
     }
 
-    public void setDefaultValue(Object defaultValue) {
-        this.defaultValue = preprocessValue(defaultValue);
+    public void setDefaultValue(@Nullable Object defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public void setUnique(boolean unique) {
@@ -252,9 +252,9 @@ public class Field extends Entity {
         return NncUtils.get(column, Column::name);
     }
 
-    public Object preprocessValue(Object rawValue) {
-        return ValueFormatter.parse(rawValue, type);
-    }
+//    public Object preprocessValue(Object rawValue) {
+//        return ValueFormatter.parse(rawValue, type);
+//    }
 
     public String getDisplayValue(Object value) {
 //        InstanceStore instanceStore = context.getInstanceContext().getInstanceStore();
@@ -300,7 +300,7 @@ public class Field extends Entity {
         return DefaultValueUtil.convertToStr(defaultValue, getType().getCategory().code(), isArray());
     }
 
-    public String getFullyQualifiedName() {
+    public String getQualifiedName() {
         return declaringType.getName() + "." + name;
     }
 
@@ -343,4 +343,8 @@ public class Field extends Entity {
         return getType().isTime();
     }
 
+    @Override
+    public String toString() {
+        return getQualifiedName();
+    }
 }
