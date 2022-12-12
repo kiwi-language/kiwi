@@ -7,6 +7,7 @@ import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
+import tech.metavm.util.TypeReference;
 
 import java.util.Collection;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
 @EntityType("流程范围")
 public class ScopeRT extends Entity  {
 
-    private transient final Table<NodeRT<?>> nodes = new Table<>();
+    private transient final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {});
 
     private final FlowRT flow;
     private transient NodeRT<?> owner;

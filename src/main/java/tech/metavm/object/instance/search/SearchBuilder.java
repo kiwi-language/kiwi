@@ -2,10 +2,13 @@ package tech.metavm.object.instance.search;
 
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.util.Column;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -44,6 +47,11 @@ public class SearchBuilder {
     }
 
     private static String parseConstant(ConstantExpression expression) {
+        Object value = expression.getValue();
+        if(value instanceof Instance instance) {
+            NncUtils.requireNonNull(instance.getId());
+            return instance.getId() + "";
+        }
         return toString(expression.getValue());
     }
 
@@ -64,15 +72,23 @@ public class SearchBuilder {
         }
         if(operator == Operator.IN) {
             FieldExpression fieldExpr = (FieldExpression) expression.getFirst();
-            ConstantExpression constExpr = (ConstantExpression) expression.getSecond();
-            List<Object> values = (List<Object>) constExpr.getValue();
+            ArrayExpression arrayExpr = (ArrayExpression) expression.getSecond();
+            List<Object> values = new ArrayList<>();
+            for (Expression expr : arrayExpr.getExpressions()) {
+                if(expr instanceof ConstantExpression constExpr) {
+                    values.add(parseConstant(constExpr));
+                }
+                else {
+                    throw new InternalException("Expression '" + expr + "' is not supported for IN operator. " +
+                            "Only constant values are supported. ");
+                }
+            }
             return parenthesize(
                     NncUtils.join(
                         values, v -> fieldExpr.getLastField().getColumnName() + ":" + toString(v), " OR "
                     )
                 );
         }
-
         String first = parse(expression.getFirst()),
                 second = parse(expression.getSecond());
         if(operator == Operator.AND) {

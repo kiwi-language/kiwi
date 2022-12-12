@@ -4,10 +4,12 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.mocks.Bar;
+import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ChangeLogPlugin;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
@@ -51,7 +53,7 @@ public class BootstrapTest extends TestCase {
 
     public void testSmoking() {
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
-        bootstrap.boot();
+        bootstrap.bootAndSave();
 
         InstanceContext context = new InstanceContext(
                 ROOT_TENANT_ID,
@@ -64,7 +66,7 @@ public class BootstrapTest extends TestCase {
                 (txt, typeId) -> txt.getEntityContext().getType(typeId)
         );
 
-        Type typeType = ModelDefRegistry.getType(Type.class);
+        ClassType typeType = ModelDefRegistry.getClassType(ClassType.class);
         Assert.assertNotNull(typeType.getId());
         Assert.assertTrue(instanceSearchService.contains(typeType.getId()));
 
@@ -72,13 +74,11 @@ public class BootstrapTest extends TestCase {
         Foo foo = new Foo("大傻", new Bar("巴巴巴巴"));
         entityContext.bind(foo);
 
-        Type testType = new Type(
-                "Test Type", StandardTypes.OBJECT, TypeCategory.VALUE
-        );
+        ClassType testType = TypeUtil.createValue("Test Type", null);
 
         Field titleField = new Field(
                 "title", testType, Access.GLOBAL, false, true, null,
-                StandardTypes.STRING, false
+                StandardTypes.getStringType(), false
         );
 
         entityContext.bind(testType);
@@ -87,23 +87,29 @@ public class BootstrapTest extends TestCase {
         entityContext.finish();
     }
 
-    public void testReboot() {
+    public void testRepeatBoot() {
         AllocatorStore allocatorStore = this.allocatorStore;
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
-        bootstrap.boot();
-        bootstrap.boot();
-        new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore)).boot();
+        bootstrap.bootAndSave();
+        bootstrap.bootAndSave();
+        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        bootstrap2.bootAndSave();
     }
 
-
-    public void testPrimitiveTypesPersisted() {
+    public void testReboot() {
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
-        bootstrap.boot();
+        bootstrap.bootAndSave();
 
-        for (Entity entity : StandardTypes.entities()) {
-            InstancePO instance = instanceStore.get(entity.getId());
-            Assert.assertNotNull("entity " + entity + " not persisted", instance);
-        }
+        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        bootstrap2.boot();
+
+        Type typeType = ModelDefRegistry.getType(Type.class);
+        Assert.assertNotNull(typeType.getId());
+
+        Type tableType = ModelDefRegistry.getType(Table.class);
+        Assert.assertNotNull(tableType.getId());
+        Assert.assertTrue(tableType instanceof ArrayType);
+        Assert.assertEquals(tableType, StandardTypes.getArrayType());
     }
 
 }

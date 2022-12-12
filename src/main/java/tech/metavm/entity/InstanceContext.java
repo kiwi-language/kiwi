@@ -1,22 +1,16 @@
 package tech.metavm.entity;
 
+import javassist.util.proxy.ProxyObject;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.dto.ErrorCode;
-import tech.metavm.object.instance.ContextPlugin;
-import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceArray;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.object.meta.*;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -25,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+
+import static tech.metavm.object.meta.TypeUtil.*;
 
 public class InstanceContext extends BaseInstanceContext {
 
@@ -102,7 +98,7 @@ public class InstanceContext extends BaseInstanceContext {
     private <I extends Instance> I constructInstance(Class<I> klass, long id) {
         long typeId = idService.getTypeId(id);
         Type type = getType(typeId);
-        Constructor<I> constructor = ReflectUtils.getConstructor(klass, Type.class);
+        Constructor<I> constructor = ReflectUtils.getConstructor(klass, type.getClass());
         return ReflectUtils.invokeConstructor(constructor, type);
     }
 
@@ -119,12 +115,16 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private Class<? extends Instance> getInstanceJavaType(Type type) {
-        if(type.isArray()) {
-            return InstanceArray.class;
+        if(type instanceof ArrayType) {
+            return ArrayInstance.class;
         }
-        else {
-            return Instance.class;
+        if(type instanceof PrimitiveType) {
+            return PrimitiveInstance.class;
         }
+        if(type instanceof ClassType){
+            return ClassInstance.class;
+        }
+        throw new InternalException("Can not resolve instance type for type " + type.getName());
     }
 
     private void initializeInstance(Instance instance) {
@@ -137,52 +137,47 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void initializeInstance(Instance instance, InstancePO instancePO) {
-        if(instance instanceof InstanceArray instanceArray) {
+        if(instance instanceof ArrayInstance arrayInstance) {
             InstanceArrayPO arrayPO = (InstanceArrayPO) instancePO;
-            List<Object> elements = NncUtils.map(
+            List<Instance> elements = NncUtils.map(
                     arrayPO.getElements(),
-                    e -> resolveColumnValue(instanceArray.getType().getElementType(), e)
+                    e -> resolveColumnValue(TypeUtil.getElementType(arrayInstance.getType()), e)
             );
-            instanceArray.initialize(elements);
+            arrayInstance.initialize(elements);
         }
-        else {
-            instance.initialize(getInstanceFields(instancePO, instance.getType()));
+        else if (instance instanceof ClassInstance classInstance){
+            classInstance.initialize(getInstanceFields(instancePO, classInstance.getType()));
         }
     }
 
-    private Map<Field, Object> getInstanceFields(InstancePO instancePO, Type type) {
-        Map<Field, Object> data = new HashMap<>();
+    private Map<Field, Instance> getInstanceFields(InstancePO instancePO, ClassType type) {
+        Map<Field, Instance> data = new HashMap<>();
         for (Field field : type.getFields()) {
             data.put(field, resolveColumnValue(field.getType(), instancePO.get(field.getColumnName())));
         }
         return data;
     }
 
-    private Object resolveColumnValue(Type fieldType, Object columnValue) {
-        if(columnValue instanceof ReferencePO referencePO) {
+    private Instance resolveColumnValue(Type fieldType, Object columnValue) {
+        if(columnValue == null) {
+            return InstanceUtils.nullInstance();
+        }
+        else if(columnValue instanceof ReferencePO referencePO) {
             return get(referencePO.id());
+        }
+        else if(fieldType.isReference()) {
+            return get((long) columnValue);
         }
         else if(columnValue instanceof InstancePO instancePO) {
             Class<? extends Instance> instanceType =
-                    instancePO instanceof InstanceArrayPO ? InstanceArray.class : Instance.class;
+                    instancePO instanceof InstanceArrayPO ? ArrayInstance.class : ClassInstance.class;
             Type type = getType(instancePO.getTypeId());
             Instance instance = InstanceFactory.allocate(instanceType, type);
             initializeInstance(instance, instancePO);
             return instance;
         }
-        else if(ValueUtil.isInteger(columnValue)) {
-            if(fieldType.isInt()) {
-                return ((Number) columnValue).intValue();
-            }
-            else {
-                return ((Number) columnValue).longValue();
-            }
-        }
-        else if(ValueUtil.isFloat(columnValue)) {
-            return ((Number) columnValue).doubleValue();
-        }
         else {
-            return columnValue;
+            return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue);
         }
     }
 
@@ -217,8 +212,17 @@ public class InstanceContext extends BaseInstanceContext {
         }
     }
 
+    @Override
+    public boolean isFinished() {
+        return finished;
+    }
+
     private List<InstancePO> getBufferedEntityPOs() {
-        return NncUtils.map(instances, instance -> instance.toPO(tenantId));
+        return NncUtils.filterAndMap(
+                instances,
+                InstanceUtils::isInitialized,
+                instance -> instance.toPO(tenantId)
+        );
     }
 
     private void registerTransactionSynchronization() {

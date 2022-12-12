@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum Function {
-    IS_BLANK(StandardTypes.BOOL),
+    IS_BLANK(Boolean.class),
     MAX,
     MIN,
     SUM,
@@ -18,7 +18,9 @@ public enum Function {
 
     private final FunctionDesc desc;
 
-    private final Type resultType;
+//    private final Type resultType;
+
+    private final Class<?> resultJavaType;
 
     private final java.util.function.Function<List<Type>, Type> resultTypeFunc;
 
@@ -26,23 +28,24 @@ public enum Function {
         this(null, null);
     }
 
-    Function(Type resultType) {
-        this(resultType, null);
+    Function(Class<?> resultJavaType) {
+        this(resultJavaType, null);
     }
 
     Function(java.util.function.Function<List<Type>, Type> resultTypeFunc) {
         this(null, resultTypeFunc);
     }
 
-    Function(Type resultType, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
+    Function(Class<?> resultJavaType, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
         desc = new FunctionDesc(this);
-        this.resultType = resultType;
+//        this.resultType = resultType;
+        this.resultJavaType = resultJavaType;
         this.resultTypeFunc = resultTypeFunc;
     }
 
     public Type getResultType(List<Type> argumentTypes/*, InstanceContext context*/) {
-        if(resultType != null) {
-            return resultType;
+        if(resultJavaType != null) {
+            return ModelDefRegistry.getType(resultJavaType);
         }
         if(resultTypeFunc != null) {
             return resultTypeFunc.apply(argumentTypes);

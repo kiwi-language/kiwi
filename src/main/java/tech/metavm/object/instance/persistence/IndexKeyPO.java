@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.persistence;
 
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -22,13 +23,16 @@ public class IndexKeyPO {
     }
 
     public static String getIndexColumn(Object value) {
-        if(value instanceof Instance instance) {
+        if(value instanceof PrimitiveInstance primitiveInstance) {
+            value = primitiveInstance.getValue();
+        }
+        else if(value instanceof Instance instance) {
             value = instance.getId();
         }
-        if(value instanceof InstanceDTO instanceDTO) {
+        else if(value instanceof InstanceDTO instanceDTO) {
             value = instanceDTO.id();
         }
-        return NncUtils.orElse(
+        return NncUtils.mapOrElse(
                 value,
                 r -> r.toString().replace("\0", "\0\0"),
                 () -> "\0"

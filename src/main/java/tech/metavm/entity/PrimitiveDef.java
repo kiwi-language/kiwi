@@ -1,17 +1,17 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.Type;
 
 import java.util.Map;
 
-public class PrimitiveDef<T> extends ModelDef<T, Instance> {
+public class PrimitiveDef<T> extends ModelDef<T, PrimitiveInstance> {
 
     private final Type type;
 
     public PrimitiveDef(Class<T> modelType, Type type) {
-        super(modelType, Instance.class);
+        super(modelType, PrimitiveInstance.class);
         this.type = type;
     }
 
@@ -21,27 +21,23 @@ public class PrimitiveDef<T> extends ModelDef<T, Instance> {
     }
 
     @Override
-    public void initModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
-        throw new UnsupportedOperationException();
+    public void initModel(T model, PrimitiveInstance instance, ModelInstanceMap modelInstanceMap) {
     }
 
     @Override
-    public void updateModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
-        throw new UnsupportedOperationException();
+    public void updateModel(T model, PrimitiveInstance instance, ModelInstanceMap modelInstanceMap) {
     }
 
     @Override
-    public void initInstance(Instance instance, T model, ModelInstanceMap instanceMap) {
-        throw new UnsupportedOperationException();
+    public void initInstance(PrimitiveInstance instance, T model, ModelInstanceMap instanceMap) {
     }
 
     @Override
-    public void updateInstance(T model, Instance instance, ModelInstanceMap instanceMap) {
-        throw new UnsupportedOperationException();
+    public void updateInstance(PrimitiveInstance instance, T model, ModelInstanceMap instanceMap) {
     }
 
     @Override
     public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of(getModelType(), type);
+        return Map.of(getJavaClass(), type);
     }
 }

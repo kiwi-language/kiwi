@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class InstanceContextFactory implements IInstanceContextFactory {
 
-    private static IInstanceContext STD_CONTEXT;
+    private static volatile IInstanceContext STD_CONTEXT;
 
     private EntityIdProvider idService;
 

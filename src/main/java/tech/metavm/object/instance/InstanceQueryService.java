@@ -1,6 +1,5 @@
 package tech.metavm.object.instance;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
@@ -9,15 +8,24 @@ import tech.metavm.object.instance.query.ExpressionUtil;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
+
+import java.util.Collection;
+import java.util.List;
+
+import static tech.metavm.util.InstanceUtils.resolveValue;
 
 @Component
 public class InstanceQueryService {
 
-    @Autowired
-    private InstanceSearchService instanceSearchService;
+    private final InstanceSearchService instanceSearchService;
+
+    public InstanceQueryService(InstanceSearchService instanceSearchService) {
+        this.instanceSearchService = instanceSearchService;
+    }
 
     public Page<Long> query(InstanceQuery query, IInstanceContext context) {
         return query(
@@ -40,7 +48,7 @@ public class InstanceQueryService {
     public Page<Long> query(InstanceQueryDTO query, IInstanceContext context) {
         return query(
                 query.typeId(),
-                buildCondition(query.typeId(), query.searchText(), context),
+                buildConditionForSearchText(query.typeId(), query.searchText(), context),
                 query.page(),
                 query.pageSize(),
                 context
@@ -59,37 +67,44 @@ public class InstanceQueryService {
     }
 
     private Expression buildCondition(InstanceQuery query, IInstanceContext context) {
-        Expression condition = buildCondition(query.typeId(), query.searchText(), context);
+        Expression condition = buildConditionForSearchText(query.typeId(), query.searchText(), context);
         for (InstanceQueryField queryField : query.fields()) {
-            Expression fieldCondition = ExpressionUtil.fieldEq(
-                    queryField.field(),
-                    ExpressionUtil.constant(queryField.value()/*, context*/)
-            );
-            condition = condition != null ? ExpressionUtil.and(
-                    condition,
-                    fieldCondition
-            ) : fieldCondition;
+            Expression fieldCondition;
+            if(queryField.value() instanceof Collection<?> values) {
+                List<Instance> instanceValues = NncUtils.map(
+                    values, v -> resolveValue(queryField.field().getType(), v)
+                );
+                fieldCondition = ExpressionUtil.fieldIn(queryField.field(), instanceValues);
+            }
+            else {
+                Instance fieldValue =
+                        resolveValue(queryField.field().getType(), queryField.value());
+                fieldCondition = ExpressionUtil.fieldEq(queryField.field(), fieldValue);
+            }
+            condition = condition != null ?
+                    ExpressionUtil.and(condition, fieldCondition) : fieldCondition;
         }
         return condition;
     }
 
-    private Expression buildCondition(long typeId, String searchText, IInstanceContext context) {
+    private Expression buildConditionForSearchText(long typeId, String searchText, IInstanceContext context) {
         if(NncUtils.isEmpty(searchText)) {
             return null;
         }
-        Type type = context.getEntityContext().getType(typeId);
+        ClassType type = context.getEntityContext().getClassType(typeId);
         Field titleField = type.getTileField();
+        PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(searchText);
         if(titleField == null) {
             return null;
         }
         if(titleField.isString()) {
             return ExpressionUtil.or(
-                    ExpressionUtil.fieldLike(titleField, searchText),
-                    ExpressionUtil.fieldStartsWith(titleField, searchText)
+                    ExpressionUtil.fieldLike(titleField, searchTextInst),
+                    ExpressionUtil.fieldStartsWith(titleField, searchTextInst)
             );
         }
         else {
-            return ExpressionUtil.fieldEq(titleField, searchText);
+            return ExpressionUtil.fieldEq(titleField, searchTextInst);
         }
     }
 

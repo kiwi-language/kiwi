@@ -2,7 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.query.EvaluationContext;
@@ -11,10 +11,7 @@ import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("唯一约束")
 public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
@@ -22,20 +19,22 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
     @EntityField("唯一约束项")
     private Table<UniqueConstraintItem> items;
 
-    public UniqueConstraintRT(ConstraintDTO constraintDTO, UniqueConstraintParam param, Type type) {
+    public UniqueConstraintRT(ConstraintDTO constraintDTO, UniqueConstraintParam param, ClassType type) {
         super(ConstraintKind.UNIQUE, type, constraintDTO.message());
         setParam(param);
     }
 
-    public UniqueConstraintRT(Type type, List<Field> fields, String message) {
+    public UniqueConstraintRT(ClassType type, List<Field> fields, String message) {
         super(ConstraintKind.UNIQUE, type, message);
         this.items = new Table<>(
+                UniqueConstraintItem.class,
                 NncUtils.map(fields, field -> UniqueConstraintItem.createFieldItem(this, field))
         );
     }
 
     public void setParam(UniqueConstraintParam param) {
         items = new Table<>(
+                UniqueConstraintItem.class,
                 NncUtils.map(
                         param.items(),
                         item -> new UniqueConstraintItem(this, item.name(), item.value())
@@ -47,7 +46,7 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
         return NncUtils.map(items, UniqueConstraintItem::getField);
     }
 
-    public IndexItemPO getKey(long tenantId, Instance instance) {
+    public IndexItemPO getKey(long tenantId, ClassInstance instance) {
         EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
         return new IndexItemPO(
                 tenantId,
@@ -61,7 +60,7 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
         return key.containsNull(items.size());
     }
 
-    private String getKeyItem(Field field, Instance instance) {
+    private String getKeyItem(Field field, ClassInstance instance) {
         return instance.getIndexValue(field);
     }
 
@@ -81,4 +80,5 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
     public String getDesc() {
         return "唯一属性(" + NncUtils.join(items, UniqueConstraintItem::getName) + ")";
     }
+
 }

@@ -1,7 +1,8 @@
 package tech.metavm.util;
 
 import tech.metavm.dto.ErrorCode;
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Function;
 import tech.metavm.object.meta.*;
@@ -13,14 +14,12 @@ import java.util.List;
 public class BusinessException extends RuntimeException {
 
     private final ErrorCode errorCode;
-    private final String detail;
-    private Object[] params;
+    private final Object[] params;
 
     public BusinessException(ErrorCode errorCode, Object... params) {
         super(ResultUtil.formatMessage(errorCode, params));
         this.errorCode = errorCode;
         this.params = params;
-        this.detail = "";
     }
 
     public static BusinessException invalidParams(String detail) {
@@ -31,7 +30,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_TYPE, typeDTO.name(), reason);
     }
 
-    public static BusinessException deleteNClassError(Type nClass, String reason) {
+    public static BusinessException deleteNClassError(ClassType nClass, String reason) {
         return new BusinessException(ErrorCode.DELETE_N_CLASS_ERROR, nClass.getName(), reason);
     }
 
@@ -104,7 +103,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_TYPE_VALUE, type.getName(), value);
     }
 
-    public static BusinessException typeReferredByFields(Type type, List<String> fieldNames) {
+    public static BusinessException typeReferredByFields(ClassType type, List<String> fieldNames) {
         List<String> quotedFieldNames = NncUtils.map(fieldNames, s -> "\"" + s + "\"");
         return new BusinessException(
                 ErrorCode.ERROR_DELETING_TYPE,
@@ -173,7 +172,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_INVALID, function.name());
     }
 
-    public static BusinessException duplicateKey(Instance instance, long constraintId) {
+    public static BusinessException duplicateKey(ClassInstance instance, long constraintId) {
         UniqueConstraintRT constraint = instance.getType().getUniqueConstraint(constraintId);
         return new BusinessException(
                 ErrorCode.DUPLICATE_KEY,
@@ -181,7 +180,7 @@ public class BusinessException extends RuntimeException {
         );
     }
 
-    public static BusinessException constraintCheckFailed(IInstance instance, ConstraintRT<?> constraint) {
+    public static BusinessException constraintCheckFailed(Instance instance, ConstraintRT<?> constraint) {
         String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(
                 ErrorCode.CONSTRAINT_CHECK_FAILED,

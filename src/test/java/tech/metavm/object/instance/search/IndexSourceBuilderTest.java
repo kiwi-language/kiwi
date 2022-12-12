@@ -3,6 +3,7 @@ package tech.metavm.object.instance.search;
 import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.MockIdProvider;
@@ -23,7 +24,7 @@ public class IndexSourceBuilderTest extends TestCase {
     }
 
     public void test() {
-        Instance instance = MockRegistry.getFooInstance();
+        ClassInstance instance = MockRegistry.getFooInstance();
         Map<String, Object> source = IndexSourceBuilder.buildSource(TENANT_ID, instance);
         TestUtils.logJSON(LOGGER, source);
     }

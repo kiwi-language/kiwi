@@ -1,11 +1,14 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceArray;
+import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -113,20 +116,37 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     @Override
     public abstract void finish();
 
+    @Override
+    public abstract boolean isFinished();
+
     public void initIds() {
         Function<Map<Type, Integer>, Map<Type, List<Long>>> idGenerator = getIdGenerator();
-        List<Instance> instancesToInit = NncUtils.filter(instances, inst -> inst.getId() == null);
-        if(instancesToInit.isEmpty()) {
+        List<Instance> instancesToInitId = NncUtils.filter(instances, inst -> inst.getId() == null);
+        if(instancesToInitId.isEmpty()) {
             return;
         }
-        Map<Type, Integer> countMap = NncUtils.mapAndCount(instancesToInit, Instance::getType);
+        Map<Type, Integer> countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
         Map<Type,List<Long>> idMap = idGenerator.apply(countMap);
-        Map<Type, List<Instance>> type2instances = NncUtils.toMultiMap(instancesToInit, Instance::getType);
+        Map<Type, List<Instance>> type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
+        Map<Long, Instance> allocatedMap = new HashMap<>();
         type2instances.forEach((type, instances) -> {
             List<Long> ids = idMap.get(type);
+            for (Long id : ids) {
+                boolean contains1 = allocatedMap.containsKey(id);
+                if(contains1) {
+                    throw new InternalException();
+                }
+                boolean contains = instanceMap.containsKey(id);
+                if(contains) {
+                    throw new InternalException();
+                }
+            }
+            for (Instance instance : instances) {
+                allocatedMap.put(instance.getId(), instance);
+            }
             NncUtils.biForEach(instances, ids, Instance::initId);
         });
-        for (Instance instance : instances) {
+        for (Instance instance : instancesToInitId) {
             instanceMap.put(instance.getId(), instance);
             listeners.forEach(l -> l.onIdInitialized(instance));
         }
@@ -149,27 +169,33 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     @Override
     public abstract Type getType(long id);
 
-    public void remove(Instance instance) {
-        boolean removed = instances.remove(instance);
-        if(removed) {
-            for (Field field : instance.getType().getFields()) {
+    public boolean remove(Instance instance) {
+        if(!instances.remove(instance)) {
+            return false;
+        }
+        if(instance.getId() != null) {
+            instanceMap.remove(instance.getId());
+        }
+        if(instance instanceof ClassInstance classInstance) {
+            for (Field field : classInstance.getType().getFields()) {
                 if (field.isChildField()) {
-                    Instance ref = instance.getInstance(field);
+                    Instance ref = classInstance.getInstance(field);
                     if (ref != null) {
                         remove(ref);
                     }
                 }
             }
-            if(instance instanceof InstanceArray instanceArray) {
-                if(instanceArray.isElementAsChild()) {
-                    for (Object element : instanceArray.getElements()) {
-                        if(element instanceof Instance elementInst) {
-                            remove(elementInst);
-                        }
+        }
+        else if(instance instanceof ArrayInstance arrayInstance) {
+            if(arrayInstance.isElementAsChild()) {
+                for (Object element : arrayInstance.getElements()) {
+                    if(element instanceof Instance elementInst) {
+                        remove(elementInst);
                     }
                 }
             }
         }
+        return true;
     }
     @Override
     public List<Instance> selectByKey(IndexKeyPO indexKeyPO) {

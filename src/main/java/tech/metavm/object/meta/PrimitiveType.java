@@ -1,15 +1,53 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.SQLColumnType;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.entity.EntityType;
 
-public record PrimitiveType(
-    TypeDTO typeDTO,
-    SQLColumnType columnType
-) {
+import java.util.Objects;
 
-    public long id() {
-        return typeDTO.id();
+@EntityType("基础类型")
+public class PrimitiveType extends Type {
+
+    private final PrimitiveKind kind;
+
+    public PrimitiveType(PrimitiveKind kind) {
+        super(kind.getName(), false, true, kind.getTypeCategory());
+        this.kind = kind;
     }
 
+    @Override
+    public Type getConcreteType() {
+        return this;
+    }
+
+    @Override
+    public boolean isAssignableFrom(Type that) {
+        return equals(that);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PrimitiveType that = (PrimitiveType) o;
+        return kind == that.kind;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(kind);
+    }
+
+    @Override
+    protected Object getParam() {
+        return null;
+    }
+
+    public PrimitiveKind getKind() {
+        return kind;
+    }
+
+    @Override
+    public String toString() {
+        return "PrimitiveType " + kind.getName();
+    }
 }

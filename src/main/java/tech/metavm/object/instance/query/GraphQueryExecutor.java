@@ -1,13 +1,11 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.InstanceContext;
-import tech.metavm.object.instance.IInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static tech.metavm.object.instance.query.PathResolver.resolvePath;
 
@@ -23,7 +21,7 @@ public class GraphQueryExecutor {
         Path path = resolvePath(expressions);
         List<ObjectTree> roots = new ArrayList<>();
         for (Long instanceId : instanceIds) {
-            roots.add(new ObjectTree(path, instanceId));
+            roots.add(new ObjectTree(path, (ClassInstance) context.get(instanceId)));
         }
         loadTree(roots);
         Expression[] exprArray = new Expression[expressions.size()];
@@ -39,19 +37,10 @@ public class GraphQueryExecutor {
         return results;
     }
 
-    private void loadTree(List<ObjectTree> trees) {
-        List<Long> ids = NncUtils.map(trees, ObjectTree::getInstanceId);
-        List<Instance> instances = context.batchGet(ids);
-        Map<Long, Instance> instanceMap = NncUtils.toMap(instances, Instance::getId);
+    private void loadTree(List<? extends NTree> trees) {
+        NncUtils.forEach(trees, NTree::load);
 
-        for (ObjectTree tree : trees) {
-            Instance instance = instanceMap.get(tree.getInstanceId());
-            if(instance != null) {
-                tree.setInstance(instance);
-            }
-        }
-
-        List<ObjectTree> nextLevel = NncUtils.flatMap(trees, ObjectTree::getChildObjectTrees);
+        List<NTree> nextLevel = NncUtils.flatMap(trees, NTree::getChildren);
         if(NncUtils.isNotEmpty(nextLevel)) {
             loadTree(nextLevel);
         }

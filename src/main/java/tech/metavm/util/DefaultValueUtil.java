@@ -5,10 +5,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.meta.TypeUtil;
 
 import java.util.List;
 import java.util.regex.Pattern;
+
+import static tech.metavm.object.meta.TypeUtil.*;
 
 public class DefaultValueUtil {
 
@@ -22,11 +24,11 @@ public class DefaultValueUtil {
         if(isNull(str)) {
             return null;
         }
-        if(type.isArray()) {
+        if(isArray(type)) {
             List<Object> values = NncUtils.readJSONString(str, new TypeReference<>() {});
-            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), type.getElementType()));
+            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), TypeUtil.getElementType(type)));
         }
-        else if(type.isNullable()) {
+        else if(isNullable(type)) {
             return convertFromStr(str, type.getUnderlyingType());
         }
         else {
@@ -35,17 +37,17 @@ public class DefaultValueUtil {
     }
 
     private static Object convertFromStrOne(String str, Type type) {
-        if(type.isInt() || type.isLong() || type.isDate()
-                || type.isTime() || type.isClass() || type.isEnum()) {
+        if(isInt(type) || isLong(type)
+                || isTime(type) || type.isClass() || type.isEnum()) {
             return parseLong(str);
         }
-        if(type.isDouble()) {
+        if(isDouble(type)) {
             return parseDouble(str);
         }
-        if(type.isBool()) {
+        if(isBool(type)) {
             return parseBool(str);
         }
-        if(type.isString()) {
+        if(isString(type)) {
             return str;
         }
         throw new InternalException("Unexpected type: " + type.getName());

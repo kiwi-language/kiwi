@@ -1,14 +1,14 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.ValueType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 
 @ValueType("当前对象表达式")
 public class ThisExpression extends Expression {
 
-    private final Type type;
+    private final ClassType type;
 
-    public ThisExpression(Type type) {
+    public ThisExpression(ClassType type) {
 //        super(type.getInstanceContext());
         this.type = type;
     }
@@ -24,7 +24,7 @@ public class ThisExpression extends Expression {
     }
 
     @Override
-    public Type getType() {
+    public ClassType getType() {
         return type;
     }
 }

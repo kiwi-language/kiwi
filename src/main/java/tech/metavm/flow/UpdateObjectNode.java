@@ -4,7 +4,8 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -35,9 +36,10 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     protected void setParam(UpdateObjectParamDTO param) {
         objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
         fieldParams = new Table<>(
+                UpdateField.class,
                 NncUtils.map(
                     param.fields(),
-                    fieldParamDTO -> new UpdateField(objectId.getType(), fieldParamDTO, getParsingContext())
+                    fieldParamDTO -> new UpdateField((ClassType) objectId.getType(), fieldParamDTO, getParsingContext())
                 )
         );
     }
@@ -52,7 +54,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
     @Override
     public void execute(FlowFrame frame) {
-        Instance instance = (Instance) objectId.evaluate(frame);
+        ClassInstance instance = (ClassInstance) objectId.evaluate(frame);
         if(instance != null) {
             for (UpdateField updateField : fieldParams) {
                 updateField.execute(instance, frame, frame.getStack().getContext());

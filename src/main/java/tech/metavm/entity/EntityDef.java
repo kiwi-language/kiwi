@@ -1,36 +1,28 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Type;
 
 public class EntityDef<T extends Entity> extends PojoDef<T> {
 
-    public EntityDef(String name,
-                     TypeReference<T> typeReference,
+    public EntityDef(TypeReference<T> typeReference,
                      @Nullable PojoDef<? super T> parentDef,
-                     Type type,
+                     ClassType type,
                      DefMap defMap
     ) {
-        this(name, typeReference.getType(), parentDef, type, defMap);
+        this(typeReference.getType(), typeReference.getGenericType() , parentDef, type, defMap);
     }
 
-    public EntityDef(String name,
-                     Class<T> entityType,
+    public EntityDef(Class<T> entityType,
+                     Type genericType,
                      @Nullable PojoDef<? super T> parentDef,
-                     Type type,
+                     ClassType type,
                      DefMap defMap
     ) {
-        super(name, entityType, parentDef, type, defMap);
-    }
-
-    @Override
-    protected void afterPojoCreated(T pojo, IInstance instance) {
-        if(instance.getId() != null && pojo.getId() == null) {
-            pojo.initId(instance.getId());
-        }
+        super(entityType, genericType, parentDef, type, defMap);
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.IInstanceContextFactory;
 import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.search.InstanceSearchService;
@@ -68,7 +69,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                 InstanceLog::getId
         );
         IInstanceContext context = instanceContextFactory.newContext(tenantId);
-        List<Instance> toIndex = context.batchGet(idsToLoad);
+        List<ClassInstance> toIndex = NncUtils.filterByType(context.batchGet(idsToLoad), ClassInstance.class);
         List<Long> toDelete = NncUtils.filterAndMap(
                 logs,
                 InstanceLog::isDelete,

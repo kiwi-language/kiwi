@@ -4,17 +4,19 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.mocks.Bar;
+import tech.metavm.mocks.Baz;
+import tech.metavm.mocks.Foo;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.TestUtils;
-import tech.metavm.util.UTTypes;
-import tech.metavm.util.UTTypes.ArrayTypes;
-import tech.metavm.util.UTTypes.Fields;
+import tech.metavm.util.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static tech.metavm.object.meta.TypeUtil.getArrayType;
+import static tech.metavm.util.InstanceUtils.*;
+import static tech.metavm.util.MockRegistry.*;
 import static tech.metavm.util.TestConstants.TENANT_ID;
 
 public class InstanceTest extends TestCase {
@@ -26,27 +28,28 @@ public class InstanceTest extends TestCase {
 
     @Override
     protected void setUp() {
-        ContextUtil.setContextInfo(-1L, -1L);
+        ContextUtil.setContextInfo(TENANT_ID, -1L);
+        MockRegistry.setUp(new MockIdProvider());
     }
 
     public void testBar() {
-        Instance instance = getBarInstance();
-        Assert.assertEquals(CONST_BAR_CODE, instance.getString(Fields.BAR_CODE));
+        ClassInstance instance = getBarInstance();
+        Assert.assertEquals(CONST_BAR_CODE, instance.getString(getField(Bar.class, "code")).getValue());
     }
 
-    private Instance getBarInstance() {
-        Map<Field, Object> barData = new HashMap<>();
-        barData.put(Fields.BAR_CODE, CONST_BAR_CODE);
-        Instance bar = new Instance(barData, UTTypes.BAR);
+    private ClassInstance getBarInstance() {
+        Map<Field, Instance> barData = new HashMap<>();
+        barData.put(getField(Bar.class, "code"), stringInstance(CONST_BAR_CODE));
+        ClassInstance bar = new ClassInstance(barData, getClassType(Bar.class));
         bar.initId(2L);
         return bar;
     }
 
-    private Instance getFooInstance() {
-        Map<Field, Object> fooData = new HashMap<>();
-        fooData.put(Fields.FOO_NAME, CONST_FOO_NAME);
-        fooData.put(Fields.FOO_BAR, getBarInstance());
-        Instance foo =  new Instance(fooData, UTTypes.FOO);
+    private ClassInstance getFooInstance() {
+        Map<Field, Instance> fooData = new HashMap<>();
+        fooData.put(getField(Foo.class, "name"), stringInstance(CONST_FOO_NAME));
+        fooData.put(getField(Foo.class, "bar"), getBarInstance());
+        ClassInstance foo =  new ClassInstance(fooData, getClassType(Foo.class));
         foo.initId(1L);
         return foo;
     }
@@ -57,27 +60,28 @@ public class InstanceTest extends TestCase {
     }
 
     public void testFoo() {
-        Instance foo = getFooInstance();
-        Instance bar = foo.getInstance(Fields.FOO_BAR);
+        ClassInstance foo = getFooInstance();
+        ClassInstance bar = foo.getClassInstance(getField(Foo.class, "bar"));
 
-        Assert.assertEquals(CONST_FOO_NAME, foo.getString(Fields.FOO_NAME));
+        Assert.assertEquals(CONST_FOO_NAME, foo.getString(getField(Foo.class, "name")).getValue());
         Assert.assertNotNull(bar);
-        Assert.assertEquals(CONST_BAR_CODE, bar.getString(Fields.BAR_CODE));
+        Assert.assertEquals(CONST_BAR_CODE, bar.getString(getField(Bar.class, "code")).getValue());
     }
 
     public void testChildren() {
-        Map<Field, Object> data = Map.of(
-                Fields.BAZ_BARS,
-                new InstanceArray(
-                        ArrayTypes.BAR_ARRAY,
+        Map<Field, Instance> data = Map.of(
+                getField(Baz.class, "bars"),
+                new ArrayInstance(
+                        getArrayType(getClassType(Bar.class)),
                         List.of(getBarInstance()),
                         true
                 )
         );
-        Instance baz = new Instance(data, UTTypes.BAZ);
-        InstanceArray bars = baz.getInstanceArray(Fields.BAZ_BARS);
+        ClassInstance baz = new ClassInstance(data, getClassType(Baz.class));
+        ArrayInstance bars = baz.getInstanceArray(getField(Baz.class, "bars"));
+        ClassInstance bar = (ClassInstance) bars.getInstance(0);
         Assert.assertEquals(1, bars.length());
-        Assert.assertEquals(CONST_BAR_CODE, bars.getInstance(0).getString(Fields.BAR_CODE));
+        Assert.assertEquals(CONST_BAR_CODE, bar.getString(getField(Bar.class, "code")).getValue());
     }
 
 

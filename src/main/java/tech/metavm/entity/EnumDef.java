@@ -1,13 +1,16 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.EmptyModelInstanceMap;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
@@ -15,17 +18,15 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final ValueDef<Enum<?>> parentDef;
     private final Class<T> enumType;
     private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
-    private final Type type;
-    private Long id;
+    private final ClassType type;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, Long id) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type) {
         super(enumType, Instance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
-        this.id = id;
-        this.type = createType();
+        this.type = type;
     }
 
     void addEnumConstantDef(EnumConstantDef<T> enumConstantDef) {
@@ -34,26 +35,6 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
     public EnumConstantDef<T> getEnumConstantDef(long id) {
         return NncUtils.find(enumConstantDefList, ecd -> Objects.equals(id, ecd.getId()));
-    }
-
-    private Type createType() {
-//        if(type == null) {
-            Type type = new Type(
-                    name,
-                    parentDef.getType(),
-                    TypeCategory.ENUM
-            );
-            if(id != null) {
-                type.initId(id);
-            }
-            return type;
-//        }
-//        else {
-//            type.setName(name);
-//            type.setSuperType(parentDef.getType());
-//            type.setCategory(TypeCategory.ENUM);
-//        }
-//        return type;
     }
 
     @Override
@@ -88,7 +69,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     @Override
-    public void updateInstance(T model, Instance instance, ModelInstanceMap instanceMap) {
+    public void updateInstance(Instance instance, T model, ModelInstanceMap instanceMap) {
 
     }
 
@@ -111,15 +92,15 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
         return enumType;
     }
 
-    Instance createInstance(Enum<?> value) {
-        return new Instance(
+    ClassInstance createInstance(Enum<?> value) {
+        return new ClassInstance(
                 parentDef.getInstanceFields(value, new EmptyModelInstanceMap()),
                 type
         );
     }
 
     @Override
-    public Type getType() {
+    public ClassType getType() {
         return type;
     }
 
@@ -131,8 +112,4 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
         return enumConstantDefList;
     }
 
-    @Override
-    public boolean isProxySupported() {
-        return false;
-    }
 }

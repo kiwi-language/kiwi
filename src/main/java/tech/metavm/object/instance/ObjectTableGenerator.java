@@ -19,18 +19,18 @@ public class ObjectTableGenerator {
     private static void createReferenceArrayTable() {
         TableSQLBuilder builder = new TableSQLBuilder("reference_array");
         addCommonColumns(builder);
-        builder.addColumn("length", SQLColumnType.INT32, true, 0, null);
+        builder.addColumn("length", SQLType.INT32, true, 0, null);
         for (int i = 0; i < NUM_ARRAY_ELEMENTS; i++) {
-            builder.addColumn("r" + i, SQLColumnType.INT64);
+            builder.addColumn("r" + i, SQLType.INT64);
         }
         System.out.println(builder.finish());
     }
 
     private static void addCommonColumns(TableSQLBuilder builder) {
-        builder.addColumn(ColumnNames.ID, SQLColumnType.INT64, true, null, "ID", true, true);
-        builder.addColumn(ColumnNames.TENANT_ID, SQLColumnType.INT64, true, null, "租户ID");
-        builder.addColumn(ColumnNames.TYPE_ID, SQLColumnType.INT64, true, null, "类ID");
-        builder.addColumn(ColumnNames.DELETED_AT, SQLColumnType.INT64, true, 0, "删除时间戳");
+        builder.addColumn(ColumnNames.ID, SQLType.INT64, true, null, "ID", true, true);
+        builder.addColumn(ColumnNames.TENANT_ID, SQLType.INT64, true, null, "租户ID");
+        builder.addColumn(ColumnNames.TYPE_ID, SQLType.INT64, true, null, "类ID");
+        builder.addColumn(ColumnNames.DELETED_AT, SQLType.INT64, true, 0, "删除时间戳");
 
     }
 
@@ -38,7 +38,7 @@ public class ObjectTableGenerator {
         TableSQLBuilder builder = new TableSQLBuilder("instance");
         addCommonColumns(builder);
 
-        for (Column column : SQLColumnType.columns()) {
+        for (Column column : SQLType.columns()) {
             builder.addColumn(column.name(), column.type());
         }
 

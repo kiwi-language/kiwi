@@ -12,4 +12,8 @@ public record ArrayIdentifier(
         return new ArrayIdentifier(javaType.getName() + ".constraints");
     }
 
+    public static ArrayIdentifier typeFlows(Class<?> javaType) {
+        return new ArrayIdentifier(javaType.getName() + ".flows");
+    }
+
 }

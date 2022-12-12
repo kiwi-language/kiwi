@@ -8,16 +8,17 @@ import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.InstanceFactory;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.instance.rest.SelectRequestDTO;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -38,13 +39,13 @@ public class InstanceManager {
     }
 
     public InstanceDTO get(long id) {
-        IInstance instance = createContext().get(id);
+        Instance instance = createContext().get(id);
         return instance != null ? instance.toDTO() : null;
     }
 
     public Page<Object[]> select(SelectRequestDTO request) {
         InstanceContext context = createContext();
-        Type type = context.getType(request.typeId());
+        ClassType type = context.getClassType(request.typeId());
         SearchQuery searchQuery = new SearchQuery(
                 ContextUtil.getTenantId(),
                 request.typeId(),
@@ -67,7 +68,7 @@ public class InstanceManager {
     }
 
     public List<InstanceDTO> batchGet(long tenantId, List<Long> ids) {
-        return NncUtils.map(createContext(tenantId).batchGet(ids), IInstance::toDTO);
+        return NncUtils.map(createContext(tenantId).batchGet(ids), Instance::toDTO);
     }
 
     @Transactional
@@ -101,13 +102,14 @@ public class InstanceManager {
     public Page<InstanceDTO> query(InstanceQueryDTO query) {
         long tenantId = ContextUtil.getTenantId();
         InstanceContext context = createContext(tenantId);
-        Type type = context.getType(query.typeId());
+        ClassType type = context.getClassType(query.typeId());
         Expression expression = ExpressionParser.parse(type, query.searchText());
         if(expression instanceof ConstantExpression) {
             Field titleField = type.getTileField();
+            PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(query.searchText());
             expression = ExpressionUtil.or(
-                    ExpressionUtil.fieldStartsWith(titleField, query.searchText()),
-                    ExpressionUtil.fieldLike(titleField, query.searchText())
+                    ExpressionUtil.fieldStartsWith(titleField, searchTextInst),
+                    ExpressionUtil.fieldLike(titleField, searchTextInst)
             );
         }
         SearchQuery searchQuery = new SearchQuery(
@@ -120,9 +122,9 @@ public class InstanceManager {
         Page<Long> idPage = instanceSearchService.search(searchQuery);
 
         List<Instance> instances = context.batchGet(idPage.data());
-        instanceStore.loadTitles(NncUtils.map(instances, IInstance::getId), context);
+        instanceStore.loadTitles(NncUtils.map(instances, Instance::getId), context);
         return new Page<>(
-                NncUtils.map(instances, IInstance::toDTO),
+                NncUtils.map(instances, Instance::toDTO),
                 idPage.total()
         );
     }

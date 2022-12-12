@@ -78,7 +78,7 @@ public class ExpressionService extends EntityContextBean {
         }
         else if(contextDTO instanceof TypeParsingContextDTO typeContext) {
             return new TypeParsingContext(
-                    context.getType(typeContext.getTypeId())
+                    context.getClassType(typeContext.getTypeId())
             );
         }
         throw BusinessException.invalidParams("请求参数错误，未识别的解析上下文类型: " + contextDTO.getClass().getName());

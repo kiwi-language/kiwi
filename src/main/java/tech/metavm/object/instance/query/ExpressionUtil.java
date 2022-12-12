@@ -1,16 +1,18 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
 import java.util.Collection;
 
 public class ExpressionUtil {
 
-    public static Expression thisObject(Type type) {
+    public static Expression thisObject(ClassType type) {
         return new ThisExpression(type);
     }
 
@@ -55,31 +57,41 @@ public class ExpressionUtil {
         return new BinaryExpression(Operator.ADD, first, second);
     }
 
-    public static Expression constant(Object value/*, InstanceContext context*/) {
-        return new ConstantExpression(value/*, context*/);
+    public static Expression constant(Instance value) {
+        return new ConstantExpression(value);
     }
 
-    public static Expression fieldStartsWith(Field field, String value) {
+    public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value/*, field.getContext().getInstanceContext()*/)
+                new ConstantExpression(strInstance)
         );
     }
 
-    public static Expression fieldLike(Field field, String value) {
+    public static Expression fieldLike(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.LIKE,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value/*, field.getContext().getInstanceContext()*/)
+                new ConstantExpression(strInstance)
         );
     }
 
-    public static Expression fieldEq(Field field, Object value) {
+    public static Expression fieldEq(Field field, Instance value) {
         return new BinaryExpression(
                 Operator.EQ,
                 new FieldExpression(thisObject(field.getDeclaringType()), field),
-                new ConstantExpression(value/*, field.getContext().getInstanceContext()*/)
+                new ConstantExpression(value)
+        );
+    }
+
+    public static Expression fieldIn(Field field, Collection<? extends Instance> values) {
+        return new BinaryExpression(
+                Operator.IN,
+                new FieldExpression(thisObject(field.getDeclaringType()), field),
+                new ArrayExpression(
+                        NncUtils.map(values, ConstantExpression::new)
+                )
         );
     }
 
@@ -176,6 +188,7 @@ public class ExpressionUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static Collection<Object> castCollection(Object value) {
         if(ValueUtil.isCollection(value)) {
             return (Collection<Object>) value;

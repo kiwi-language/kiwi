@@ -2,6 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 
@@ -68,7 +69,7 @@ public class FlowParsingContext implements ParsingContext {
         }
         else {
             List<Var> fieldPath = varPath.subList(1, varPath.size());
-            List<Field> fields = TypeParsingContext.getFields(node.getOutputType(), fieldPath);
+            List<Field> fields = TypeParsingContext.getFields((ClassType) node.getType(), fieldPath);
             return new FieldExpression(new NodeExpression(node), fields);
         }
     }

@@ -1,10 +1,8 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.Type;
 
 import java.util.*;
-import java.util.function.Function;
 
 public final class SubContext {
     private final Set<Value> values = new LinkedHashSet<>();

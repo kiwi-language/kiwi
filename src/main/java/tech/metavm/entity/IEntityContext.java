@@ -5,8 +5,8 @@ import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
@@ -25,10 +25,16 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(typeReference.getType(), id);
     }
 
+    boolean containsEntity(Class<? extends Entity> entityType, long id);
+
     <T extends Entity> T getEntity(Class<T> entityType, long id);
 
     default Type getType(long id) {
         return getEntity(Type.class, id);
+    }
+
+    default ClassType getClassType(long id) {
+        return getEntity(ClassType.class, id);
     }
 
     default Field getField(long id) {
@@ -55,13 +61,15 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(FlowRT.class, id);
     }
 
+    boolean isFinished();
+
     void finish();
 
     IInstanceContext getInstanceContext();
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object...refValues);
 
-    void remove(Object model);
+    boolean remove(Entity entity);
 
     default <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...refValues) {
         return NncUtils.getFirst(selectByKey(indexDef, refValues));
@@ -69,6 +77,6 @@ public interface IEntityContext extends ModelInstanceMap {
 
     void initIds();
 
-    void bind(Object model);
+    void bind(Object entity);
 
 }

@@ -9,10 +9,19 @@ import java.util.*;
 public class EntityProp {
 
     private final Field field;
+    private final boolean accessible;
 
     public EntityProp(Field field) {
         this.field = field;
-        field.setAccessible(true);
+        accessible = field.trySetAccessible();
+    }
+
+    public String getName() {
+        return field.getName();
+    }
+
+    public boolean isAccessible() {
+        return accessible;
     }
 
     public boolean isNull(Object entity) {

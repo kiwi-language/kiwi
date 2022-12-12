@@ -6,6 +6,7 @@ import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.InstanceTitlePO;
 import tech.metavm.object.instance.persistence.VersionPO;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -43,11 +44,16 @@ public class InstanceMapperGateway {
     }
 
     public void batchInsert(List<InstancePO> inserts) {
-        splitAndExecute(
-                convertForPersisting(inserts),
-                instanceMapper::batchInsert,
-                instanceArrayMapper::batchInsert
-        );
+        try {
+            splitAndExecute(
+                    convertForPersisting(inserts),
+                    instanceMapper::batchInsert,
+                    instanceArrayMapper::batchInsert
+            );
+        }
+        catch (Throwable e) {
+            throw new InternalException(e);
+        }
     }
     public void batchUpdate(List<InstancePO> updates) {
         splitAndExecute(

@@ -6,12 +6,14 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import tech.metavm.object.instance.CheckConstraintPlugin;
-import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.InstanceStore;
-import tech.metavm.object.instance.UniqueConstraintPlugin;
+import tech.metavm.mocks.Bar;
+import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.log.InstanceLogService;
+import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.persistence.mappers.*;
-import tech.metavm.object.meta.AllocatorStore;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.MemAllocatorStore;
 import tech.metavm.object.meta.StdAllocators;
 import tech.metavm.util.*;
@@ -20,6 +22,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 import static tech.metavm.util.TestConstants.TENANT_ID;
 
@@ -51,8 +54,6 @@ public class IntegrationTest extends TestCase {
         );
         session = sqlSessionFactory.openSession();
 
-
-
         InstanceMapper instanceMapper = session.getMapper(InstanceMapper.class);
         InstanceArrayMapper instanceArrayMapper = session.getMapper(InstanceArrayMapper.class);
         IndexItemMapper indexItemMapper = session.getMapper(IndexItemMapper.class);
@@ -66,9 +67,8 @@ public class IntegrationTest extends TestCase {
                 .setPlugins(List.of(checkConstraintPlugin, uniqueConstraintPlugin))
                 .setIdService(idProvider);
 
-        AllocatorStore allocatorStore = new MemAllocatorStore();
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
-        bootstrap.boot();
+        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()));
+        bootstrap.bootAndSave();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class IntegrationTest extends TestCase {
 
     public void test() {
         IEntityContext context1 = newEntityContext();
-        Foo foo = MockRegistry.getComplexFoo();
+        Foo foo = MockRegistry.getFoo();
         context1.bind(foo);
         context1.finish();
 
@@ -95,6 +95,54 @@ public class IntegrationTest extends TestCase {
         IEntityContext context2 = newEntityContext();
         Foo loadedFoo = context2.getEntity(Foo.class, foo.getId());
         MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
+    }
+
+    public void testChangeLog() {
+        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore)
+                .setIdService(idProvider);
+
+        MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
+        InstanceLogService instanceLogService = new InstanceLogServiceImpl(
+                instanceSearchService, instanceContextFactory, instanceStore
+        );
+        ChangeLogPlugin changeLogPlugin = new ChangeLogPlugin(instanceLogService);
+        instanceContextFactory.setPlugins(List.of(changeLogPlugin));
+
+        InstanceContext context = instanceContextFactory.newContext(TENANT_ID, false);
+
+        ClassType fooType = ModelDefRegistry.getClassType(Foo.class);
+        ClassType barType = ModelDefRegistry.getClassType(Bar.class);
+        Field fooNameField = fooType.getFieldByJavaField(
+                ReflectUtils.getField(Foo.class, "name")
+        );
+        Field fooBarField = fooType.getFieldByJavaField(
+                ReflectUtils.getField(Foo.class, "bar")
+        );
+        Field barCodeField = barType.getFieldByJavaField(
+                ReflectUtils.getField(Bar.class, "code")
+        );
+
+        final String fooName = "Big Foo";
+        final String barCode = "Bar001";
+
+        ClassInstance fooInstance = new ClassInstance(
+                Map.of(
+                        fooNameField, InstanceUtils.stringInstance(fooName),
+                        fooBarField,
+                        new ClassInstance(
+                                Map.of(
+                                        barCodeField, InstanceUtils.stringInstance(barCode)
+                                ),
+                                barType
+                        )
+                ),
+                fooType
+        );
+
+        context.bind(fooInstance);
+        context.finish();
+
+        Assert.assertTrue(instanceSearchService.contains(fooInstance.getId()));
     }
 
 }

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.EnumConstantRT;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
 
@@ -18,9 +18,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class EntityUtils {
+
+    public static final long MAXIMUM_DIFF_DEPTH = 1000;
 
     public static final Set<Class<?>> PRIM_CLASSES = Set.of(
             Boolean.class, Character.class, Byte.class, Short.class, Integer.class, Long.class,
@@ -29,13 +32,46 @@ public class EntityUtils {
     );
 
     public static final Set<Class<?>> ENTITY_CLASSES = Set.of(
-        Type.class, tech.metavm.object.meta.Field.class, Instance.class,
+        ClassType.class, tech.metavm.object.meta.Field.class, Instance.class,
             EnumConstantRT.class
     );
 
     public static final Set<Class<?>> CONTEXT_CLASSES = Set.of(
             InstanceContext.class
     );
+
+    public static void clearIdRecursively(Object model) {
+        traverseModelGraph(model, (path, o) -> {
+            if(o instanceof IdInitializing idInitializing) {
+                idInitializing.clearId();
+            }
+        });
+    }
+
+    public static void traverseModelGraph(Object model, BiConsumer<List<String>, Object> action) {
+        traverseModelGraph0(model, action, new LinkedList<>(), new IdentitySet<>());
+    }
+
+    private static void traverseModelGraph0(Object model,
+                                            BiConsumer<List<String>, Object> action,
+                                            LinkedList<String> path,
+                                            IdentitySet<Object> visited) {
+        if(model == null || visited.contains(model)
+                || isPrimitive(model.getClass())) {
+            return;
+        }
+        visited.add(model);
+        action.accept(path, model);
+        Class<?> realClass = getRealType(model.getClass());
+        EntityDesc desc = DescStore.get(realClass);
+        for (EntityProp prop : desc.getProps()) {
+            if(prop.isAccessible() && !prop.isTransient()) {
+                path.addLast(prop.getName());
+                traverseModelGraph0(prop.get(model), action, path, visited);
+                path.removeLast();
+            }
+        }
+    }
 
     public static <T extends Entity> boolean entityEquals(T entity1, T entity2) {
         if(entity1 == entity2) {
@@ -50,7 +86,7 @@ public class EntityUtils {
         return false;
     }
 
-    private static boolean isDifferent(Object value1, Object value2, IdentityHashMap<Object, Object> visited) {
+    private static boolean isDifferent(Object value1, Object value2, Map<Object, Object> visited) {
         if(value1 == null && value2 == null) {
             return false;
         }
@@ -59,7 +95,7 @@ public class EntityUtils {
         }
         else if(value1 instanceof Entity entity1) {
             if(value2 instanceof Entity entity2) {
-                return isEntityDifferent(entity1, entity2);
+                return isEntityDifferent(entity1, entity2, visited);
             }
             else {
                 return true;
@@ -94,15 +130,21 @@ public class EntityUtils {
     }
 
     public static boolean isPojoDifferent(Object pojo1, Object pojo2) {
-        return isPojoDifferent(pojo1, pojo2, new IdentityHashMap<>());
+        return isPojoDifferent(pojo1, pojo2, new HashMap<>());
     }
 
-    private static boolean isPojoDifferent(Object pojo1, Object pojo2, IdentityHashMap<Object, Object> visited) {
-        if(visited.containsKey(pojo1) || visited.containsKey(pojo2)) {
-            if(visited.get(pojo1) == pojo2) {
-                return false;
-            }
-            throw new RuntimeException("Back reference of POJO is currently not supported");
+    private static boolean isPojoDifferent(Object pojo1, Object pojo2, Map<Object, Object> visited) {
+        if(visited.size() > MAXIMUM_DIFF_DEPTH) {
+            throw new InternalException("Diff depth exceeds maximum depth " + MAXIMUM_DIFF_DEPTH);
+        }
+        DiffPair diffPair = new DiffPair(pojo1, pojo2);
+        if(visited.containsKey(diffPair)) {
+            return false;
+//            DiffState state = (DiffState) visited.get(diffPair);
+//            if(state == DiffState.DONE) {
+//                return false;
+//            }
+//            throw new RuntimeException("Back reference of POJO is currently not supported");
         }
         if(pojo1 == null && pojo2 == null) {
             return true;
@@ -114,8 +156,9 @@ public class EntityUtils {
         if(realClass == null) {
             return true;
         }
-        visited.put(pojo1, pojo2);
-        visited.put(pojo2, pojo1);
+
+        visited.put(diffPair, DiffState.DOING);
+//        visited.put(pojo2, pojo1);
         ensureProxyInitialized(pojo1);
         ensureProxyInitialized(pojo2);
 //        Class<?> klass = pojo1.getClass();
@@ -129,6 +172,7 @@ public class EntityUtils {
                 return true;
             }
         }
+        visited.put(diffPair, DiffState.DONE);
         return false;
     }
 
@@ -156,16 +200,19 @@ public class EntityUtils {
         return null;
     }
 
-    private static boolean isEntityDifferent(Entity entity1, Entity entity2) {
+    private static boolean isEntityDifferent(Entity entity1, Entity entity2, Map<Object, Object> visited) {
         if(entity1.getId() != null && entity2.getId() != null) {
             return !Objects.equals(entity1.key(), entity2.key());
         }
+        if(entity1.getId() != null || entity2.getId() != null) {
+            return false;
+        }
         else {
-            return entity1 == entity2;
+            return isPojoDifferent(entity1, entity2, visited);
         }
     }
 
-    private static boolean isMapDifferent(Map<?,?> map1, Map<?,?> map2, IdentityHashMap<Object,Object> visited) {
+    private static boolean isMapDifferent(Map<?,?> map1, Map<?,?> map2, Map<Object,Object> visited) {
         if(map1.size() != map2.size()) {
             return true;
         }
@@ -179,7 +226,7 @@ public class EntityUtils {
     }
 
     private static boolean isCollectionDifferent(Collection<?> coll1, Collection<?> coll2,
-                                                 IdentityHashMap<Object,Object> visited) {
+                                                 Map<Object,Object> visited) {
         if(coll1.size() != coll2.size()) {
             return true;
         }
@@ -200,6 +247,10 @@ public class EntityUtils {
 
     public static boolean isPrimitive(Class<?> klass) {
         return PRIM_CLASSES.contains(klass);
+    }
+
+    private static boolean isEnum(Class<?> klass) {
+        return Enum.class.isAssignableFrom(klass);
     }
 
     public static Entity copyEntity(Entity entity) {
@@ -281,7 +332,7 @@ public class EntityUtils {
             return object;
         }
         if(object instanceof Entity entity) {
-            return (T) makeDummyRef(getRealType(entity), entity.id);
+            return (T) makeDummyRef(getRealEntityType(entity), entity.id);
         }
         return (T) copyPojo(object, copyMap, false);
     }
@@ -310,11 +361,15 @@ public class EntityUtils {
         return getEntityType(entity.getClass());
     }
 
-    public static Class<? extends Entity> getRealType(Entity entity) {
-        return getRealType(entity.getClass());
+    public static Class<? extends Entity> getRealEntityType(Entity entity) {
+        return getRealType(entity.getClass()).asSubclass(Entity.class);
     }
 
-    public static Class<? extends Entity> getRealType(Class<? extends Entity> type) {
+    public static Class<?> getRealType(Object model) {
+        return getRealType(model.getClass());
+    }
+
+    public static Class<?> getRealType(Class<?> type) {
         if(ProxyObject.class.isAssignableFrom(type)) {
             return type.getSuperclass().asSubclass(Entity.class);
         }
@@ -456,6 +511,23 @@ public class EntityUtils {
         else {
             return new HashSet<>();
         }
+    }
+
+    private enum DiffState {
+        DOING,
+        DONE
+    }
+
+    private record DiffPair(Object first, Object second) {
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DiffPair diffPair = (DiffPair) o;
+            return first == diffPair.first && second == diffPair.second;
+        }
+
     }
 
 }

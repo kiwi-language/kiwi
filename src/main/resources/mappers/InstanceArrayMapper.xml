@@ -94,4 +94,12 @@
     </foreach>
     limit #{start},#{limit}
   </select>
+
+  <select id="head" resultMap="BaseResultMap">
+    select
+      <include refid="Base_Column_List"/>
+    from
+    instance_array
+    limit 100
+  </select>
 </mapper>

@@ -1,61 +1,42 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.object.meta.UniqueConstraintRT;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.ValueUtil;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.function.Function;
 
 public abstract class PojoParser<T, D extends PojoDef<T>> {
 
     protected final Class<T> javaType;
-    protected final Long id;
+    private final java.lang.reflect.Type genericType;
     private D def;
-    protected final Function<Object, Long> getId;
     protected final DefMap defMap;
-    protected final ModelInstanceMap modelInstanceMap;
+    protected final TypeFactory typeFactory;
 
-    public PojoParser(Class<T> javaType,
-                      Function<Object, Long> getId,
-                      DefMap defMap,
-                      ModelInstanceMap modelInstanceMap
-    ) {
+    public PojoParser(Class<T> javaType, java.lang.reflect.Type genericType, DefMap defMap) {
         this.javaType = javaType;
-        this.getId = getId;
-        this.id = getId.apply(javaType);
+        this.genericType = genericType;
         this.defMap = defMap;
-        this.modelInstanceMap = modelInstanceMap;
+        typeFactory = new TypeFactory(defMap::getType);
     }
 
     protected D parse() {
-        def = createDef();
+        def = createDef(getSuperDef());
         defMap.addDef(def);
-
-        ArrayIdentifier fieldsIdentifier = ArrayIdentifier.typeFields(javaType);
-        Long fieldArrayId = getId.apply(fieldsIdentifier);
-        if(fieldArrayId != null) {
-            def.getType().getDeclaredFields().initId(fieldArrayId);
-        }
-        def.getType().getDeclaredFields().setIdentifier(fieldsIdentifier);
-
-        ArrayIdentifier constraintsIdentifier = ArrayIdentifier.typeConstraints(javaType);
-        Long constraintArrayId = getId.apply(constraintsIdentifier);
-        if(constraintArrayId != null) {
-            def.getType().getDeclaredConstraints().initId(constraintArrayId);
-        }
-        def.getType().getDeclaredConstraints().setIdentifier(constraintsIdentifier);
-
         getPropertyFields().forEach(f -> parseField(f, def));
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         return def;
+    }
+
+    private PojoDef<? super T> getSuperDef() {
+        Class<? super T> superClass = javaType.getSuperclass();
+        if(superClass != null && superClass != Object.class) {
+            return defMap.getPojoDef(superClass);
+        }
+        return null;
     }
 
     private List<Field> getIndexDefFields() {
@@ -66,14 +47,14 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         return ReflectUtils.getDeclaredPersistentFields(javaType);
     }
 
-    protected abstract D createDef();
+    protected abstract D createDef(PojoDef<? super T> parentDef);
 
     private void parseField(Field reflectField, PojoDef<?> declaringTypeDef) {
-        Long fieldId = getId.apply(reflectField);
-        ModelDef<?,?> targetDef = getFieldTargetDef(reflectField);
-        getFieldTargetDef(reflectField);
+        ModelDef<?,?> targetDef = defMap.getDef(reflectField.getGenericType());
+        tech.metavm.object.meta.Field field = createField(reflectField, declaringTypeDef, targetDef);
         new FieldDef(
-                createField(fieldId, reflectField, declaringTypeDef, targetDef),
+                field,
+                typeFactory.isNullable(field.getType()),
                 reflectField,
                 declaringTypeDef,
                 targetDef
@@ -81,16 +62,12 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
     }
 
     private void parseUniqueConstraint(Field indexDefField, PojoDef<T> declaringTypeDef) {
-        Long uniqueConstraintId = getId.apply(indexDefField);
         IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
         UniqueConstraintRT uniqueConstraint = new UniqueConstraintRT(
                 declaringTypeDef.getType(),
                 NncUtils.map(indexDef.getFieldNames(), this::getFiled),
                 null
         );
-        if(uniqueConstraintId != null) {
-            uniqueConstraint.initId(uniqueConstraintId);
-        }
         new UniqueConstraintDef(
             uniqueConstraint,
             indexDefField,
@@ -103,8 +80,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         return def.getFieldDef(field).getField();
     }
 
-    protected tech.metavm.object.meta.Field createField(Long fieldId,
-                                                        Field reflectField,
+    protected tech.metavm.object.meta.Field createField(Field reflectField,
                                                         PojoDef<?> declaringTypeDef,
                                                         ModelDef<?,?> targetDef) {
         EntityField annotation = reflectField.getAnnotation(EntityField.class);
@@ -112,7 +88,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         boolean asTitle = annotation != null && annotation.asTitle();
         boolean isChild = reflectField.isAnnotationPresent(ChildEntity.class);
 
-        tech.metavm.object.meta.Field field = new tech.metavm.object.meta.Field(
+        return new tech.metavm.object.meta.Field(
                 ReflectUtils.getMetaFieldName(reflectField),
                 declaringTypeDef.getType(),
                 Access.GLOBAL,
@@ -122,58 +98,31 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
                 getFieldType(reflectField, targetDef),
                 isChild
         );
-        if (fieldId != null) {
-            field.initId(fieldId);
-        }
-        return field;
     }
 
     private Type getFieldType(Field reflectField, ModelDef<?,?> targetDef) {
-        TypeCategory typeCategory = ValueUtil.getTypeCategory(reflectField.getGenericType());
-        Type refType;
-        if(typeCategory.isPrimitive()) {
-            refType = ValueUtil.getPrimitiveType(reflectField.getType());
-        }
-        else {
-            refType = targetDef.getType();
-        }
+        Type refType = targetDef.getType();
         if(reflectField.isAnnotationPresent(Nullable.class)) {
-            return refType.getNullableType();
+            return typeFactory.getNullableType(refType);
         }
         else {
             return refType;
         }
     }
 
-    protected Type createType() {
-        EntityType entityAnnotation = javaType.getAnnotation(EntityType.class);
-        ValueType valueAnnotation = javaType.getAnnotation(ValueType.class);
-        String name = NncUtils.firstNonNull(
-                NncUtils.get(entityAnnotation, EntityType::value),
-                NncUtils.get(valueAnnotation, ValueType::value),
-                javaType.getSimpleName()
+    protected ClassType createType() {
+        PojoDef<? super T> superDef = getSuperDef();
+        return createType(
+                typeFactory,
+                ReflectUtils.getMetaTypeName(javaType),
+                NncUtils.get(superDef, PojoDef::getType)
         );
-
-        PojoDef<? super T> superDef = NncUtils.get(javaType.getSuperclass(), defMap::getPojoDef);
-        Type type = new Type(
-                name,
-                NncUtils.get(superDef, PojoDef::getType),
-                ValueUtil.getTypeCategory(javaType)
-        );
-        if (id != null) {
-            type.initId(id);
-        }
-        return type;
     }
 
-    private ModelDef<?, ?> getFieldTargetDef(Field reflectField) {
-        TypeCategory typeCategory = ValueUtil.getTypeCategory(reflectField.getGenericType());
-        if(typeCategory.isPrimitive()) {
-            return null;
-        }
-        else {
-            return defMap.getDef(reflectField.getType());
-        }
+    protected final java.lang.reflect.Type getGenericType() {
+        return genericType;
     }
+
+    protected abstract ClassType createType(TypeFactory typeFactory, String name, ClassType superType);
 
 }

@@ -1,14 +1,12 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.GetRelatedParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 
 @EntityType("查询关联对象节点")
@@ -19,7 +17,7 @@ public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
     @EntityField("字段")
     private Field field;
 
-    public GetRelatedNode(NodeDTO nodeDTO, Type type, ScopeRT scope) {
+    public GetRelatedNode(NodeDTO nodeDTO, ClassType type, ScopeRT scope) {
         super(nodeDTO, type, scope);
         setParam(nodeDTO.getParam());
     }
@@ -32,15 +30,19 @@ public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
     @Override
     protected void setParam(GetRelatedParamDTO param) {
         objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
-//        field = context.getField(param.fieldId());
-        field = getOutputType().getField(param.fieldId());
+        field = getType().getField(param.fieldId());
     }
 
     @Override
     public void execute(FlowFrame frame) {
-        Instance instance = (Instance) objectId.evaluate(frame);
+        ClassInstance instance = (ClassInstance) objectId.evaluate(frame);
         frame.setResult(
                 NncUtils.get(instance, inst -> inst.getInstance(field.getId()))
         );
+    }
+
+    @Override
+    public ClassType getType() {
+        return (ClassType) super.getType();
     }
 }

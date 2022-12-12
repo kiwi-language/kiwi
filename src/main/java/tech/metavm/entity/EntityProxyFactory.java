@@ -31,7 +31,7 @@ public class EntityProxyFactory {
     public static <T> T getProxy(Class<T> type,
                                  Long id,
                                  Consumer<T> modelSupplier) {
-        return getProxy(type, id, modelSupplier, null);
+        return getProxy(type, id, modelSupplier, ReflectUtils::allocateInstance);
     }
 
     public static <T> T getProxy(TypeReference<T> type,
@@ -47,13 +47,7 @@ public class EntityProxyFactory {
                                  Function<Class<? extends T>, T> constructor) {
         Class<? extends T> proxyClass = getProxyClass(type).asSubclass(type);
         try {
-            ProxyObject proxyInstance = null;
-            if(constructor != null) {
-                proxyInstance = (ProxyObject) constructor.apply(proxyClass);
-            }
-            if(proxyInstance == null) {
-                proxyInstance = (ProxyObject) ReflectUtils.getUnsafe().allocateInstance(proxyClass);
-            }
+            ProxyObject proxyInstance =  (ProxyObject) constructor.apply(proxyClass);
             proxyInstance.setHandler(new EntityMethodHandler<>(type, initializer));
             if(id != null && (proxyInstance instanceof IdInitializing idInitializing)) {
                 idInitializing.initId(id);

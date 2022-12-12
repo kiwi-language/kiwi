@@ -3,10 +3,21 @@ package tech.metavm.util;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
 public class ParameterizedTypeImpl implements ParameterizedType {
+
+    public static ParameterizedType create(Class<?> rawType, Type...actualTypeArguments) {
+        return new ParameterizedTypeImpl(null, rawType, actualTypeArguments);
+    }
+
+    public static ParameterizedType create(Class<?> rawType, List<Type> actualTypeArguments) {
+        Type[] typeArgs = new Type[actualTypeArguments.size()];
+        actualTypeArguments.toArray(typeArgs);
+        return create(rawType, typeArgs);
+    }
 
     private final Type ownerType;
     private final Class<?> rawType;

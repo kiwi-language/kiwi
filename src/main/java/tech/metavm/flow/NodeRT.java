@@ -2,13 +2,13 @@ package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.query.FlowParsingContext;
 import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
@@ -141,7 +141,7 @@ public abstract class NodeRT<P> extends Entity {
         return parsingContext;
     }
 
-    protected void setOutputType(Type outputType) {
+    protected void setOutputType(ClassType outputType) {
         this.outputType = outputType;
     }
 
@@ -154,7 +154,7 @@ public abstract class NodeRT<P> extends Entity {
                 NncUtils.get(predecessor, Entity::getId),
                 NncUtils.get(outputType, Entity::getId),
                 getParam(false),
-                NncUtils.get(getOutputType(), t -> t.toDTO(true, true, true)),
+                NncUtils.get(getType(), Type::toDTO),
                 scope.getId()
         );
     }
@@ -167,7 +167,7 @@ public abstract class NodeRT<P> extends Entity {
                 getFlow().getId(),
                 kind.code(),
                 NncUtils.get(predecessor, Entity::getId),
-                NncUtils.get(getOutputType(), Type::getId),
+                NncUtils.get(getType(), Type::getId),
                 scope.getId(),
                 NncUtils.toJSONString(getParam(true)),
                 0L
@@ -184,7 +184,7 @@ public abstract class NodeRT<P> extends Entity {
     protected abstract void setParam(P p);
 
     @JsonIgnore
-    public Type getOutputType() {
+    public Type getType() {
         return outputType;
     }
 

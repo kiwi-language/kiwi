@@ -4,7 +4,8 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.ValueFactory;
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.InstanceEvaluationContext;
 import tech.metavm.object.instance.query.TypeParsingContext;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
@@ -15,7 +16,7 @@ public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
     @EntityField("条件")
     private Value condition;
 
-    public CheckConstraintRT(ConstraintDTO constraintDTO, CheckConstraintParam param, Type type) {
+    public CheckConstraintRT(ConstraintDTO constraintDTO, CheckConstraintParam param, ClassType type) {
         super(ConstraintKind.CHECK, type, constraintDTO.message());
         setParam(param);
     }
@@ -41,7 +42,7 @@ public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
         condition = ValueFactory.getValue(param.value(), new TypeParsingContext(getDeclaringType()));
     }
 
-    public boolean check(IInstance instance) {
+    public boolean check(ClassInstance instance) {
         return Boolean.TRUE.equals(condition.evaluate(new InstanceEvaluationContext(instance)));
     }
 

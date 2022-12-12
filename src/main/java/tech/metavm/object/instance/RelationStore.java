@@ -20,15 +20,6 @@ public class RelationStore implements ValueStore<InstanceRelation> {
         this.relationMapper = relationMapper;
     }
 
-    public Map<Long, List<InstanceRelation>> getBySourceIds(List<Long> sourceIds, InstanceContext context) {
-        List<RelationPO> relationPOs = relationMapper.selectBySourceIds(context.getTenantId(), sourceIds);
-        return NncUtils.toMultiMap(
-                relationPOs,
-                RelationPO::getSrcInstanceId,
-                relationPO -> InstanceFactory.createRelation(relationPO, context)
-        );
-    }
-
     @Override
     public void batchInsert(List<InstanceRelation> inserts) {
         relationMapper.batchInsert(NncUtils.map(inserts, InstanceRelation::toPO));

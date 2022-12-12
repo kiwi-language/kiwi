@@ -6,6 +6,11 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.dto.ErrorCode;
+import tech.metavm.dto.InternalErrorCode;
+import tech.metavm.mocks.Bar;
+import tech.metavm.mocks.Baz;
+import tech.metavm.mocks.Foo;
+import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -15,12 +20,13 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.UniqueConstraintRT;
 import tech.metavm.util.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
+import static tech.metavm.util.InstanceUtils.getAllInstances;
+import static tech.metavm.util.InstanceUtils.stringInstance;
 import static tech.metavm.util.MockRegistry.getField;
 import static tech.metavm.util.MockRegistry.getNewFooInstance;
 import static tech.metavm.util.TestConstants.TENANT_ID;
@@ -61,7 +67,7 @@ public class InstanceContextTest extends TestCase {
         return newContext(parent, typeResolver, List.of());
     }
 
-    private InstanceContext newContext(InstanceContext parent, TypeResolver typeResolver, List<ContextPlugin> plugins) {
+    private InstanceContext newContext(IInstanceContext parent, TypeResolver typeResolver, List<ContextPlugin> plugins) {
         return new InstanceContext(
                 TENANT_ID,
                 instanceStore,
@@ -118,6 +124,18 @@ public class InstanceContextTest extends TestCase {
         assertPersisted(replacement);
     }
 
+    public void testGet() {
+        Instance foo = getNewFooInstance();
+        context.bind(foo);
+        context.finish();
+
+        InstanceContext context1 = newContext();
+        Instance loadedFoo = context1.get(foo.getId());
+        // should be lazily initialized
+        Assert.assertFalse(InstanceUtils.isInitialized(loadedFoo));
+        MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
+    }
+
     public void testHierarchy() {
         Instance instance = getNewFooInstance();
         context.bind(instance);
@@ -139,17 +157,7 @@ public class InstanceContextTest extends TestCase {
         Assert.assertTrue(context.containsInstance(replacement));
     }
 
-    public void testLoad() {
-        Instance fooInstance = getNewFooInstance();
-        context.bind(fooInstance);
-        context.finish();
-
-        InstanceContext context1 = newContext();
-        Instance loadedFooInstance = context1.get(fooInstance.getId());
-        Assert.assertFalse(EntityUtils.isPojoDifferent(fooInstance.toPO(TENANT_ID), loadedFooInstance.toPO(TENANT_ID)));
-    }
-
-    public void testSelfTypeResolve() {
+    public void testTypeResolution() {
         ModelDef<Foo, ?> fooDef = defContext.getDef(Foo.class);
         defContext.finish();
 
@@ -169,7 +177,7 @@ public class InstanceContextTest extends TestCase {
         Assert.assertFalse(EntityUtils.isPojoDifferent(foo, loadedFoo));
     }
 
-    public void testInsert() {
+    public void testBind() {
         Instance foo = MockRegistry.getNewFooInstance();
         context.bind(foo);
         context.finish();
@@ -185,7 +193,7 @@ public class InstanceContextTest extends TestCase {
         context.finish();
 
         InstanceContext context2 = newContext();
-        Instance loadedFoo = context2.get(foo.getId());
+        ClassInstance loadedFoo = (ClassInstance) context2.get(foo.getId());
 
         Field fooNameField = MockRegistry.getField(Foo.class, "name");
         Field fooQuxField = MockRegistry.getField(Foo.class, "qux");
@@ -194,13 +202,13 @@ public class InstanceContextTest extends TestCase {
         Field bazBarsField = MockRegistry.getField(Baz.class, "bars");
         Field barCodeField = MockRegistry.getField(Bar.class, "code");
 
-        loadedFoo.set(fooNameField, "Not a foo");
-        Instance loadedQux = loadedFoo.getInstance(fooQuxField);
-        loadedQux.set(quxAmountField, loadedQux.getLong(quxAmountField) + 1);
-        InstanceArray loadedBazList = loadedFoo.getInstanceArray(fooBazListField);
-        Instance loadedBaz = loadedBazList.getInstance(0);
-        Instance loadedBar = loadedBaz.getInstanceArray(bazBarsField).getInstance(0);
-        loadedBar.set(barCodeField, "Bar1001");
+        loadedFoo.set(fooNameField, stringInstance("Not a foo"));
+        ClassInstance loadedQux = loadedFoo.getClassInstance(fooQuxField);
+        loadedQux.set(quxAmountField, loadedQux.getLong(quxAmountField).inc(1L));
+        ArrayInstance loadedBazList = loadedFoo.getInstanceArray(fooBazListField);
+        ClassInstance loadedBaz = (ClassInstance) loadedBazList.getInstance(0);
+        ClassInstance loadedBar = (ClassInstance) loadedBaz.getInstanceArray(bazBarsField).getInstance(0);
+        loadedBar.set(barCodeField, stringInstance("Bar1001"));
         context2.finish();
 
         InstanceContext context3 = newContext();
@@ -208,7 +216,7 @@ public class InstanceContextTest extends TestCase {
         MatcherAssert.assertThat(reloadedFoo, InstanceMatcher.of(loadedFoo));
     }
 
-    public void testDelete() {
+    public void testRemove() {
         Instance foo = MockRegistry.getNewFooInstance();
         context.bind(foo);
         context.finish();
@@ -228,11 +236,12 @@ public class InstanceContextTest extends TestCase {
 
     public void testIndex() {
         UniqueConstraintRT uniqueConstraint = MockRegistry.getUniqueConstraint(Foo.IDX_NAME);
-        MockEntityContext entityContext = new MockEntityContext();
-        entityContext.put(uniqueConstraint);
+        MockEntityContext entityContext = new MockEntityContext(
+                MockRegistry.getDefContext(), idProvider, MockRegistry.getDefContext()
+        );
 
         InstanceContext context = newContext(
-                null,
+                MockRegistry.getInstanceContext(),
                 manualTypeResolver,
                 List.of(
                         new UniqueConstraintPlugin(instanceStore.getIndexItemMapper())
@@ -241,15 +250,16 @@ public class InstanceContextTest extends TestCase {
 
         context.setEntityContext(entityContext);
 
-        Instance fooInstance = getNewFooInstance("Foo1", "Bar001");
+        ClassInstance fooInstance = getNewFooInstance("Foo1", "Bar001");
         context.bind(fooInstance);
 
         context.finish();
 
+        String fooName = fooInstance.getString(getField(Foo.class, "name")).getValue();
         List<Instance> selectedInstances = context.selectByKey(
                 new IndexKeyPO(
                         uniqueConstraint.getId(),
-                        List.of(fooInstance.getString(getField(Foo.class, "name")))
+                        List.of(fooName)
                 )
         );
 
@@ -257,7 +267,18 @@ public class InstanceContextTest extends TestCase {
         MatcherAssert.assertThat(fooInstance.toPO(TENANT_ID), PojoMatcher.of(selectedInstances.get(0).toPO(TENANT_ID)));
     }
 
-    public void testLog() {
+    public void test_finish_with_uninitialized_proxy() {
+        Instance foo = MockRegistry.getNewFooInstance();
+        context.bind(foo);
+        context.finish();
+
+        InstanceContext context2 = newContext();
+        Instance loadedFoo = context2.get(foo.getId());
+        Assert.assertFalse(InstanceUtils.isInitialized(loadedFoo));
+        context2.finish();
+    }
+
+    public void testInstanceLog() {
         MockInstanceLogService mockInstanceLogService = new MockInstanceLogService();
         InstanceContext context = newContext(
                 null, manualTypeResolver, List.of(new ChangeLogPlugin(mockInstanceLogService))
@@ -267,7 +288,7 @@ public class InstanceContextTest extends TestCase {
         context.bind(fooInst);
         context.finish();
 
-        Set<Instance> allInstances = InstanceUtils.getAllInstances(List.of(fooInst), i -> !i.isValue());
+        Set<Instance> allInstances = getAllInstances(List.of(fooInst), i -> !i.isValue());
 
         List<InstanceLog> logs = mockInstanceLogService.getLogs();
         Assert.assertEquals(allInstances.size(), logs.size());
@@ -283,7 +304,7 @@ public class InstanceContextTest extends TestCase {
     public void testArray() {
         Field bazBarsField = MockRegistry.getField(Baz.class, "bars");
 
-        Instance bazInst = MockRegistry.getNewBazInstance();
+        ClassInstance bazInst = MockRegistry.getNewBazInstance();
 
         context.bind(bazInst);
         context.finish();
@@ -298,11 +319,23 @@ public class InstanceContextTest extends TestCase {
         InstanceContext context2 = newContext();
 
         Instance loadedBazInst = context2.get(bazInst.getId());
-        InstanceArray barsArray = (InstanceArray) context2.get(barsArrayId);
+        ArrayInstance barsArray = (ArrayInstance) context2.get(barsArrayId);
 
         MatcherAssert.assertThat(bazInst.toPO(TENANT_ID), PojoMatcher.of(loadedBazInst.toPO(TENANT_ID)));
         MatcherAssert.assertThat(bazInst.getInstance(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArray.toPO(TENANT_ID)));
     }
+
+
+    public void test_get_with_nonexistent_id() {
+        try {
+            context.get(100000000000000L);
+            Assert.fail();
+        }
+        catch (InternalException e) {
+            Assert.assertEquals(InternalErrorCode.INVALID_ID, e.getErrorCode());
+        }
+    }
+
 
     private void assertPersisted(Instance instance) {
         List<InstancePO> loaded = instanceStore.load(
@@ -312,70 +345,6 @@ public class InstanceContextTest extends TestCase {
         Assert.assertFalse(loaded.isEmpty());
         InstancePO po = loaded.get(0);
         Assert.assertFalse(EntityUtils.isPojoDifferent(instance.toPO(TENANT_ID), po));
-    }
-
-    private static class MockEntityContext implements IEntityContext {
-
-        private final Map<Long, Object> map = new HashMap<>();
-
-        @Override
-        public boolean containsInstance(Instance instance) {
-            return false;
-        }
-
-        @Override
-        public boolean containsModel(Object model) {
-            return map.containsValue(model);
-        }
-
-        @Override
-        public <T extends Entity> T getEntity(Class<T> entityType, long id) {
-            return entityType.cast(NncUtils.requireNonNull(map.get(id)));
-        }
-
-        @Override
-        public void finish() {
-
-        }
-
-        @Override
-        public IInstanceContext getInstanceContext() {
-            return null;
-        }
-
-        @Override
-        public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... refValues) {
-            return null;
-        }
-
-        @Override
-        public void remove(Object model) {
-
-        }
-
-        @Override
-        public void initIds() {
-
-        }
-
-        @Override
-        public void bind(Object model) {
-
-        }
-
-        public void put(Entity entity) {
-            map.put(entity.getId(), entity);
-        }
-
-        @Override
-        public Instance getInstance(Object model) {
-            return null;
-        }
-
-        @Override
-        public <T> T getModel(Class<T> klass, Instance instance) {
-            return null;
-        }
     }
 
 }

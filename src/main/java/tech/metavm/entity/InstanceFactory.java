@@ -1,14 +1,18 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceRelation;
-import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.RelationPO;
+import tech.metavm.object.instance.rest.ArrayParamDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
+import tech.metavm.object.instance.rest.ObjectParamDTO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -29,7 +33,7 @@ public class InstanceFactory {
     }
 
     public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Long id) {
-        Method allocateMethod = getAllocateMethod(instanceType);
+        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
         T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
         if(id != null) {
             instance.initId(id);
@@ -37,91 +41,75 @@ public class InstanceFactory {
         return instance;
     }
 
-    private static Method getAllocateMethod(Class<? extends Instance> instanceType) {
+    private static Method getAllocateMethod(Class<? extends Instance> instanceType,
+                                            Class<? extends Type> typeType) {
         return ALLOCATE_METHOD_MAP.computeIfAbsent(
                 instanceType,
-                t -> ReflectUtils.getMethod(instanceType, ALLOCATE_METHOD_NAME, Type.class)
+                t -> ReflectUtils.getMethod(instanceType, ALLOCATE_METHOD_NAME, typeType)
         );
     }
 
-    public static Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
+    public static Instance create(InstanceDTO instanceDTO, InstanceContext context) {
         return create(instanceDTO, context.getEntityContext()::getType, context::get, context::bind);
     }
 
     public static Instance create(
             InstanceDTO instanceDTO,
             Function<Long, Type> getType,
-            Function<Long, IInstance> getInstance,
+            Function<Long, Instance> getInstance,
             Consumer<Instance> bindInstance
     ) {
         Type type = getType.apply(instanceDTO.typeId());
 
-        Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(instanceDTO.fields(), InstanceFieldDTO::fieldId);
-        Map<Field, Object> data = new HashMap<>();
-        for (Field field : type.getFields()) {
-            if(fieldMap.containsKey(field.getId())) {
-                data.put(
-                        field,
-                        resolveFieldValue(
-                                fieldMap.get(field.getId()).value(),
-                                field,
-                                getInstance
-                        )
-                );
+        if(type instanceof ClassType classType) {
+            ObjectParamDTO param = (ObjectParamDTO) instanceDTO.param();
+            Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(param.fields(), InstanceFieldDTO::fieldId);
+            Map<Field, Instance> data = new HashMap<>();
+            for (Field field : classType.getFields()) {
+                if (fieldMap.containsKey(field.getId())) {
+                    data.put(
+                            field,
+                            resolveValue(
+                                    fieldMap.get(field.getId()).value(),
+                                    field.getType(),
+                                    getInstance
+                            )
+                    );
+                }
             }
-        }
 
-        Instance instance =  new Instance(
-                data,
-                type
-        );
-        bindInstance.accept(instance);
-        return instance;
+            Instance instance = new ClassInstance(
+                    data,
+                    classType
+            );
+            bindInstance.accept(instance);
+            return instance;
+        }
+        else if(type instanceof ArrayType arrayType){
+            ArrayParamDTO param = (ArrayParamDTO) instanceDTO.param();
+            return new ArrayInstance(
+                    arrayType,
+                    NncUtils.map(
+                            param.elements(),
+                            v -> resolveValue(v, arrayType.getElementType(), getInstance)
+                    )
+            );
+        }
+        else {
+            throw new InternalException("Can not create instance for type '" + type + "'");
+        }
     }
 
-    private static Instance createInstance(InstancePO instancePO, InstanceContext context) {
-        Type type = context.getType(instancePO.getTypeId());
-        Map<String, Object> data = instancePO.getData();
-        Map<Field, Object> resolvedData = new HashMap<>();
-        for (Field field : type.getFields()) {
-            if(data.containsKey(field.getColumnName())) {
-                resolvedData.put(
-                        field,
-                        resolveFieldValue(
-                                data.get(field.getColumnName()),
-                                field,
-                                context::get
-                        )
-                );
-            }
-        }
-        return new Instance(
-                instancePO.getId(),
-                resolvedData,
-                type,
-                instancePO.getVersion(),
-                instancePO.getSyncVersion()
-        );
-    }
-
-    private static Object resolveFieldValue(Object rawValue, Field field, Function<Long, IInstance> getInstance) {
+    private static Instance resolveValue(Object rawValue, Type type, Function<Long, Instance> getInstance) {
         if(rawValue == null) {
             return null;
         }
-        if(field.isPrimitive()) {
-            return rawValue;
+        if(type.isPrimitive()) {
+            return InstanceUtils.resolvePrimitiveValue(type, rawValue);
         }
         else {
             return getInstance.apply((long) rawValue);
         }
-    }
-
-    public static InstanceRelation createRelation(RelationPO relationPO, InstanceContext context) {
-        return new InstanceRelation(
-                context.get(relationPO.getSrcInstanceId()),
-                context.getEntityContext().getField(relationPO.getFieldId()),
-                context.get(relationPO.getDestInstanceId())
-        );
     }
 
 }

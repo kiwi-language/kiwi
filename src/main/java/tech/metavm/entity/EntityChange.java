@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
@@ -78,7 +78,7 @@ public class EntityChange<T extends InstancePO> implements Comparable<EntityChan
     }
 
     private static Integer getEntityPriority(Class<?> entityType) {
-        if(entityType.equals(Type.class)) {
+        if(entityType.equals(ClassType.class)) {
             return 1;
         }
         if(entityType.equals(Field.class)) {

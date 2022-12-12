@@ -30,12 +30,13 @@ public class UniqueConstraintPlugin implements ContextPlugin {
 
     @Override
     public void beforeSaving(EntityChange<InstancePO> diff, IInstanceContext context) {
-        List<IInstance> currentInstances = NncUtils.map(
+        List<ClassInstance> currentInstances = NncUtils.mapAndFilterByType(
                         diff.insertsAndUpdates(),
-                        instancePO -> context.get(instancePO.getId())
+                        instancePO -> context.get(instancePO.getId()),
+                        ClassInstance.class
                 );
 
-        Map<Long, IInstance> instanceMap = NncUtils.toMap(currentInstances, IInstance::getId);
+        Map<Long, ClassInstance> instanceMap = NncUtils.toMap(currentInstances, Instance::getId);
         List<IndexItemPO> currentItems = NncUtils.flatMap(
                 currentInstances,
                 instance -> instance.getUniqueKeys(context.getTenantId())

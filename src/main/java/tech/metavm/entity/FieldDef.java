@@ -1,57 +1,57 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 
 public class FieldDef {
 
     private final Field reflectField;
+    private final boolean nullable;
     private final PojoDef<?> declaringTypeDef;
     private final tech.metavm.object.meta.Field field;
     private final ModelDef<?, ?> targetDef;
     private final TypeCategory typeCategory;
 
     public FieldDef(tech.metavm.object.meta.Field field,
+                    boolean nullable,
                     Field reflectField,
                     PojoDef<?> declaringTypeDef,
                     ModelDef<?, ?> targetDef) {
         this.reflectField = reflectField;
+        this.nullable = nullable;
         typeCategory = ValueUtil.getTypeCategory(reflectField.getGenericType());
         this.targetDef = targetDef;
-        if(typeCategory.isReference() && targetDef == null) {
-            throw new InternalException("Can not find definition for type: " + reflectField.getGenericType());
-        }
         this.declaringTypeDef = declaringTypeDef;
         this.field = field;
         declaringTypeDef.addFieldDef(this);
     }
 
-    public void setModelField(Object entity, Instance instance, ModelInstanceMap modelInstanceMap) {
+    public void setModelField(Object entity, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
         Object fieldValue = getModelFieldValue(instance, modelInstanceMap);
         ReflectUtils.set(entity, reflectField, fieldValue);
     }
 
-    public Object getModelFieldValue(Instance instance, ModelInstanceMap modelInstanceMap) {
-        return convertValue(instance.get(field), declaringTypeDef.getModelType(), modelInstanceMap);
+    public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+        return convertValue(instance.get(field), modelInstanceMap);
     }
 
-    public Object getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
+    public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
         Object fieldValue = ReflectUtils.get(model, reflectField);
         if(fieldValue == null) {
-            if(field.isNullable()) {
-                return null;
+            if(nullable) {
+                return InstanceUtils.nullInstance();
             }
             throw new InternalException("Field " + fieldName() + " can not be null");
         }
-        if(typeCategory.isPrimitive()) {
-            return fieldValue;
+        if(ValueUtil.isPrimitiveType(fieldValue.getClass())) {
+            return InstanceUtils.resolvePrimitiveValue(field.getType(), fieldValue);
         }
         return instanceMap.getInstance(fieldValue);
     }
@@ -62,20 +62,19 @@ public class FieldDef {
         return declaringTypeDef;
     }
 
-    private Object convertValue(Object value, java.lang.reflect.Type valueType, ModelInstanceMap modelInstanceMap) {
-        if(value == null) {
-            if(field.isNullable()) {
+    private Object convertValue(Instance value, ModelInstanceMap modelInstanceMap) {
+        if(value instanceof PrimitiveInstance primitiveInstance) {
+            if(primitiveInstance.isNull()) {
                 return null;
             }
-            throw new InternalException("Field " + fieldName() + " can not be null");
+            if(primitiveInstance.isPassword()) {
+                return ((Password) primitiveInstance.getValue()).getPassword();
+            }
+            return primitiveInstance.getValue();
         }
-        if(typeCategory.isPrimitive()) {
-            return value;
+        else {
+            return modelInstanceMap.getModel(Object.class, value);
         }
-        if(typeCategory.isReference()) {
-            return modelInstanceMap.getModel(Object.class, (Instance) value);
-        }
-        throw new InternalException("Invalid type category " + typeCategory);
     }
 
     private String fieldName() {

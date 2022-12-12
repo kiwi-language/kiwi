@@ -4,6 +4,7 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.InternalException;
@@ -19,8 +20,9 @@ import static tech.metavm.util.TestConstants.TENANT_ID;
 
 public class MemInstanceContext extends BaseInstanceContext {
 
+    private boolean finished;
     private final Map<IndexKeyPO, List<Long>> index = new HashMap<>();
-    private EntityContext entityContext;
+    private IEntityContext entityContext;
     private final IInstanceStore instanceStore;
     private @Nullable Function<Long, Type> typeProvider;
 
@@ -62,11 +64,17 @@ public class MemInstanceContext extends BaseInstanceContext {
 
     @Override
     public void finish() {
+        NncUtils.requireFalse(finished, "already finished");
         initIds();
         ChangeList<InstancePO> changeList = ChangeList.inserts(
                 NncUtils.map(instances, instance -> instance.toPO(ROOT_TENANT_ID))
         );
         instanceStore.save(changeList);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return finished;
     }
 
     @Override
@@ -81,7 +89,7 @@ public class MemInstanceContext extends BaseInstanceContext {
         return NncUtils.map(instanceIds, this::get);
     }
 
-    public void setEntityContext(EntityContext entityContext) {
+    public void setEntityContext(IEntityContext entityContext) {
         this.entityContext = entityContext;
     }
 }

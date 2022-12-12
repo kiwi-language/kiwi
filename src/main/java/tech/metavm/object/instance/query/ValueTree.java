@@ -17,7 +17,17 @@ public class ValueTree extends NTree {
     }
 
     @Override
-    public List<ObjectTree> getChildObjectTrees() {
+    protected Object getFieldValue(String fieldPath) {
+        return value;
+    }
+
+    @Override
+    public void load() {
+
+    }
+
+    @Override
+    public List<NTree> getChildren() {
         return List.of();
     }
 

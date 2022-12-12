@@ -1,12 +1,12 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.UniqueConstraintRT;
-import tech.metavm.object.meta.persistence.ConstraintPO;
+import tech.metavm.util.ReflectUtils;
 
 public class ModelDefRegistry {
 
@@ -14,7 +14,7 @@ public class ModelDefRegistry {
 
     private static DefContext DEF_CONTEXT;
 
-    static void setDefContext(DefContext defContext) {
+    public static void setDefContext(DefContext defContext) {
 //        NncUtils.requireNull(DEF_CONTEXT, () -> new IllegalStateException("DefContext already set"));
         DEF_CONTEXT = defContext;
     }
@@ -27,17 +27,21 @@ public class ModelDefRegistry {
         return DEF_CONTEXT;
     }
 
+    public static boolean containsTypeDef(Type type) {
+        return DEF_CONTEXT.containsTypeDef(type);
+    }
+
     public static void setModelFields(Object model, Instance instance, ModelInstanceMap modelInstanceMap) {
         EntityDef<?> entityDef = (EntityDef<?>) DEF_CONTEXT.getDef(instance.getType());
         entityDef.initModelHelper(model, instance, modelInstanceMap);
     }
 
     public static Instance createInstance(Object entity, ModelInstanceMap instanceMap) {
-        ModelDef<?, ?> entityDef = DEF_CONTEXT.getDef(entity.getClass());
+        ModelDef<?, ?> entityDef = DEF_CONTEXT.getDefByModel(entity);
         return entityDef.createInstanceHelper(entity, instanceMap);
     }
 
-    public static void updateInstance(Object model, IInstance instance, ModelInstanceMap instanceMap) {
+    public static void updateInstance(Object model, Instance instance, ModelInstanceMap instanceMap) {
         ModelDef<?, ?> entityDef = DEF_CONTEXT.getDef(instance.getType());
         updateInstanceHelper(entityDef, model, instance, instanceMap);
     }
@@ -45,11 +49,10 @@ public class ModelDefRegistry {
     private static <T, I extends Instance> void updateInstanceHelper(
             ModelDef<T, I> modelDef,
             Object entity,
-            IInstance instance,
+            Instance instance,
             ModelInstanceMap instanceMap) {
         modelDef.updateInstance(
-                modelDef.getModelType().cast(entity),
-                modelDef.getInstanceType().cast(instance),
+                modelDef.getInstanceType().cast(instance), modelDef.getJavaClass().cast(entity),
                 instanceMap
         );
     }
@@ -62,6 +65,14 @@ public class ModelDefRegistry {
         return DEF_CONTEXT.getDef(entityClass).getType();
     }
 
+    public static Type getType(java.lang.reflect.Type javaType) {
+        return DEF_CONTEXT.getDef(javaType).getType();
+    }
+
+    public static ClassType getClassType(Class<?> javaType) {
+        return (ClassType) getType(javaType);
+    }
+
     public static long getTypeId(Class<?> entityClass) {
         return getType(entityClass).getId();
     }
@@ -70,16 +81,24 @@ public class ModelDefRegistry {
         return DEF_CONTEXT.getPojoDef(javaField.getDeclaringClass()).getFieldDef(javaField).getField();
     }
 
+    public static Field getField(Class<?> klass, String fieldName) {
+        return getField(ReflectUtils.getField(klass, fieldName));
+    }
+
     public static UniqueConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
         return DEF_CONTEXT.getUniqueConstraint(indexDef);
     }
 
-    public static Class<? extends Entity> getEntityType(Type type) {
-        return DEF_CONTEXT.getEntityDef(type).getModelType();
+    public static Class<? extends Entity> getEntityType(ClassType type) {
+        return DEF_CONTEXT.getEntityDef(type).getJavaClass();
     }
 
-    public static Class<?> getJavaType(Type type) {
-        return DEF_CONTEXT.getDef(type).getModelType();
+    public static java.lang.reflect.Type getJavaType(Type type) {
+        return DEF_CONTEXT.getJavaType(type);
+    }
+
+    public static Class<?> getJavaClass(Type type) {
+        return DEF_CONTEXT.getJavaClass(type);
     }
 
     public static <T extends Enum<?>> T getEnumConstant(Class<T> enumType, long id) {
@@ -94,7 +113,7 @@ public class ModelDefRegistry {
         return DEF_CONTEXT.getDef(aClass);
     }
 
-    public static ModelDef<?,?> getDef(Type type) {
+    public static ModelDef<?,?> getDef(ClassType type) {
         return DEF_CONTEXT.getDef(type);
     }
 

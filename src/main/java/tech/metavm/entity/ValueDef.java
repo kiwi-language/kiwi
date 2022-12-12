@@ -1,25 +1,26 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.TypeReference;
+
+import java.lang.reflect.Type;
 
 public class ValueDef<T> extends PojoDef<T> {
 
-    public ValueDef(String name,
-                    TypeReference<T> typeReference,
+    public ValueDef(TypeReference<T> typeReference,
                     @Nullable PojoDef<? super T> parentDef,
-                    Type type,
+                    ClassType type,
                     DefMap defMap) {
-        this(name, typeReference.getType(), parentDef, type, defMap);
+        this(typeReference.getType(), typeReference.getGenericType(), parentDef, type, defMap);
     }
 
-    public ValueDef(String name,
-                    Class<T> entityType,
+    public ValueDef(Class<T> entityType,
+                    Type genericType,
                     @Nullable PojoDef<? super T> parentDef,
-                    Type type,
+                    ClassType type,
                     DefMap defMap) {
-        super(name, entityType, parentDef, type, defMap);
+        super(entityType, genericType, parentDef, type, defMap);
     }
 
 }

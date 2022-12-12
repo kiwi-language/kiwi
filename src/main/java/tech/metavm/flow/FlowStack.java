@@ -1,7 +1,6 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.InstanceContext;
-import tech.metavm.object.instance.IInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Expression;
 import tech.metavm.object.instance.query.Path;
@@ -16,14 +15,14 @@ public class FlowStack {
     private final Path root = new Path("root");
     private final LinkedList<NodeRT<?>> actionBuffer = new LinkedList<>();
     private final LinkedList<FlowFrame> stack = new LinkedList<>();
-    private IInstance ret;
+    private Instance ret;
 
-    public FlowStack(FlowRT flow, IInstance self, InstanceDTO argument, InstanceContext context) {
+    public FlowStack(FlowRT flow, Instance self, InstanceDTO argument, InstanceContext context) {
         this.context = context;
         stack.push(new FlowFrame(flow, self, argument, this));
     }
 
-    public IInstance execute() {
+    public Instance execute() {
         while (!stack.isEmpty()) {
             FlowFrame frame = stack.peek();
             frame.execute();

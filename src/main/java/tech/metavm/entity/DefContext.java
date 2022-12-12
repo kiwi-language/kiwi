@@ -1,66 +1,67 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.StandardTypes;
-import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.object.meta.UniqueConstraintRT;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-public class DefContext implements DefMap, IEntityContext {
+public class DefContext extends BaseEntityContext implements DefMap, IEntityContext {
     private final Function<Object, Long> getId;
-    private final Map<Type, ModelDef<?,?>> defMap = new HashMap<>();
+    private final Map<Type, ModelDef<?,?>> javaType2Def = new HashMap<>();
     private final Map<tech.metavm.object.meta.Type, ModelDef<?, ?>> type2Def = new IdentityHashMap<>();
-    private final ValueDef<Object> objectDef;
+    private final AnyTypeDef<Object> objectDef;
     private final ValueDef<Enum<?>> enumDef;
-    private final InstanceSink instanceSink;
-
-    private final Map<Object, Instance> model2instance = new IdentityHashMap<>();
-    private final Map<Instance, Object> instance2model = new IdentityHashMap<>();
-    private final Set<Instance> instances = new IdentitySet<>();
     private final Set<Object> pendingModels = new IdentitySet<>();
 
     public DefContext(Function<Object, Long> getId) {
         this(getId, null);
     }
 
-    public DefContext(Function<Object, Long> getId, InstanceSink instanceSink) {
+    public DefContext(Function<Object, Long> getId, IInstanceContext instanceContext) {
+        super(instanceContext, null);
         this.getId = getId;
-        this.instanceSink = instanceSink;
         StandardDefBuilder stdBuilder = new StandardDefBuilder();
         stdBuilder.initRootTypes(this);
         objectDef = stdBuilder.getObjectDef();
         enumDef = stdBuilder.getEnumDef();
-        if(instanceSink != null) {
-            instanceSink.addListener(instance -> {
-                Object model = instance2model.get(instance);
-                if ((model instanceof IdInitializing entity) && entity.getId() == null) {
-                    entity.initId(instance.getId());
-                }
-            });
-        }
     }
 
     @Override
-    public ModelDef<?,?> getDef(Type entityType) {
-        ModelDef<?,?> existing = defMap.get(entityType);
+    public ModelDef<?,?> getDef(Type javaType) {
+        checkJavaType(javaType);
+        javaType = ReflectUtils.getBoxedType(javaType);
+        TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
+        if(!typeCategory.isArray()) {
+            javaType = ReflectUtils.getRawClass(javaType);
+        }
+        ModelDef<?,?> existing = javaType2Def.get(javaType);
         if(existing != null) {
             return existing;
         }
-        ModelDef<?,?> def = parseType(entityType);
+        ModelDef<?,?> def = parseType(javaType);
         addDef(def);
         return def;
     }
 
+    private void checkJavaType(Type javaType) {
+        if(javaType instanceof WildcardType && javaType instanceof TypeVariable<?>) {
+            throw new InternalException("Can not get def for java type '" + javaType.getTypeName() + "', " +
+                    "Because it's either a wildcard type or a type variable");
+        }
+    }
+
     public tech.metavm.object.meta.Type getType(Class<?> javaType) {
         return getDef(javaType).getType();
+    }
+
+    public ClassType getClassType(Class<?> javaType) {
+        return (ClassType) getType(javaType);
     }
 
     public Field getField(Class<?> javaType, String javaFieldName) {
@@ -68,7 +69,7 @@ public class DefContext implements DefMap, IEntityContext {
     }
 
     public Field getField(java.lang.reflect.Field javaField) {
-        return getType(javaField.getDeclaringClass()).getFieldByJavaField(javaField);
+        return getClassType(javaField.getDeclaringClass()).getFieldByJavaField(javaField);
     }
 
     @SuppressWarnings("unchecked")
@@ -89,86 +90,124 @@ public class DefContext implements DefMap, IEntityContext {
         return NncUtils.requireNonNull(type2Def.get(type), () -> new InternalException("Can not find def for type " + type.getId()));
     }
 
-    private ModelDef<?,?> parseType(Type entityType) {
-        TypeCategory typeCategory = ValueUtil.getTypeCategory(entityType);
-        if(typeCategory.isArray()) {
-            if (entityType instanceof ParameterizedType pType) {
-                return new ArrayDef<>(
-                        getDef(pType.getActualTypeArguments()[0]),
-                        pType,
-                        getId.apply(pType)
+    private ModelDef<?,?> parseType(Type genericType) {
+        genericType = ReflectUtils.eraseType(genericType);
+        Class<?> rawClass = ReflectUtils.getRawClass(genericType);
+        TypeCategory typeCategory = ValueUtil.getTypeCategory(genericType);
+//        if(rawClass == Table.class) {
+//            if (genericType instanceof ParameterizedType pType) {
+//                ModelDef<?,?> elementDef = getDef(pType.getActualTypeArguments()[0]);
+//                return new TableDef<>(
+//                        elementDef,
+//                        pType,
+//                        TypeUtil.getArrayType(elementDef.getType())
+//                );
+//            }
+//            else {
+//                throw new InternalException("Raw TableDef should have been defined by StandardDefBuilder");
+//            }
+//        }
+        if(Collection.class.isAssignableFrom(rawClass)) {
+            Class<? extends Collection<?>> collectionClass = rawClass.asSubclass(
+                    new TypeReference<Collection<?>>(){}.getType()
+            );
+            if (genericType instanceof ParameterizedType pType) {
+                ModelDef<?,?> elementDef = getDef(pType.getActualTypeArguments()[0]);
+                return CollectionDef.createHelper(
+                        collectionClass,
+                        genericType,
+                        elementDef,
+                        TypeUtil.getArrayType(elementDef.getType())
                 );
             }
             else {
-                return new ArrayDef<>(
+                return CollectionDef.createHelper(
+                        collectionClass,
+                        collectionClass,
                         objectDef,
-                        entityType,
-                        getId.apply(entityType)
+                        TypeUtil.getArrayType(objectDef.getType())
                 );
             }
         }
         else {
-            Class<?> rawClass = ReflectUtils.getRawClass(entityType);
             if (typeCategory.isEnum()) {
                 Class<? extends Enum<?>> enumType = rawClass.asSubclass(new TypeReference<Enum<?>>() {
                 }.getType());
                 return EnumParser.parse(
                         enumType,
                         enumDef,
-                        getId,
-                        this,
                         this
                 );
             }
             if (typeCategory.isEntity()) {
                 return EntityParser.parse(
                         rawClass.asSubclass(Entity.class),
-                        getId,
-                        this,
+                        genericType,
                         this
                 );
             }
             if (typeCategory.isValue()) {
                 if(Record.class.isAssignableFrom(rawClass)) {
                     return RecordParser.parse(
-                            rawClass.asSubclass(Record.class), getId, this, this
+                            rawClass.asSubclass(Record.class), genericType, this
                     );
                 }
                 else {
                     return ValueParser.parse(
                             rawClass,
-                            getId,
-                            this,
+                            genericType,
                             this
                     );
                 }
             }
         }
-        throw new InternalException("Can not parse definition for type: " + entityType);
+        throw new InternalException("Can not parse definition for type: " + genericType);
     }
 
     @Override
     public void addDef(ModelDef<?, ?> def) {
-        defMap.put(def.getGenericType(), def);
+        javaType2Def.put(def.getJavaType(), def);
         type2Def.put(def.getType(), def);
-        pendingModels.addAll(def.getEntityMapping().values());
-        def.getInstanceMapping().forEach(this::addMapping);
+        def.getEntityMapping().forEach((javaConstruct, model) -> {
+            if((model instanceof IdInitializing idInitializing) && idInitializing.getId() == null) {
+                Long id = getId.apply(javaConstruct);
+                if(id != null) {
+                    idInitializing.initId(id);
+                }
+            }
+            pendingModels.add(model);
+        });
+
+        def.getInstanceMapping().forEach((javaConstruct, instance) -> {
+            if(!instance.isValue() && instance.getId() == null) {
+                Long id = getId.apply(javaConstruct);
+                if(id != null) {
+                    instance.initId(id);
+                }
+            }
+            addMapping(javaConstruct, instance);
+        });
     }
 
     public Collection<ModelDef<?, ?>> getAllDefList() {
-        return defMap.values();
+        return javaType2Def.values();
     }
 
-    public void setModelFields(Object model, Instance instance, ModelInstanceMap modelInstanceMap) {
-        getDef(instance.getType()).initModelHelper(model, instance, modelInstanceMap);
+    public Class<?> getJavaClass(tech.metavm.object.meta.Type type) {
+        return getDef(type).getJavaClass();
     }
 
-    public Class<?> getJavaType(tech.metavm.object.meta.Type type) {
-        return getDef(type).getModelType();
+    public Type getJavaType(tech.metavm.object.meta.Type type) {
+        return getDef(type).getJavaType();
     }
 
     public <T extends Enum<?>> T getEnumConstant(Class<T> klass, long id) {
         return getEnumDef(klass).getEnumConstantDef(id).getValue();
+    }
+
+    public UniqueConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
+        EntityDef<?> entityDef = (EntityDef<?>) getDef(indexDef.getType());
+        return entityDef.getUniqueConstraintDef(indexDef).getUniqueConstraint();
     }
 
     @Override
@@ -176,15 +215,7 @@ public class DefContext implements DefMap, IEntityContext {
         if(pendingModels.contains(model)) {
             generateInstance(model);
         }
-        Instance existing = model2instance.get(model);
-        if(existing != null) {
-            return existing;
-        }
-        ModelDef<?,?> def = getDef(model.getClass());
-        Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType());
-        addMapping(model, instance);
-        def.initInstanceHelper(instance, model, this);
-        return instance;
+        return super.getInstance(model);
     }
 
     public void generateInstances() {
@@ -195,10 +226,10 @@ public class DefContext implements DefMap, IEntityContext {
 
     private void generateInstance(Object model) {
         pendingModels.remove(model);
-        if(model2instance.containsKey(model)) {
+        if(containsModel(model)) {
             return;
         }
-        ModelDef<?,?> def = getDef(model.getClass());
+        ModelDef<?,?> def = getDefByModel(model);
         Long id = EntityUtils.tryGetId(model);
         if(def.isProxySupported()) {
             Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType());
@@ -217,84 +248,56 @@ public class DefContext implements DefMap, IEntityContext {
         }
     }
 
-    private void addMapping(Object model, Instance instance) {
-        if(StandardTypes.BLACK_MODELS.contains(model)) {
-            StandardTypes.BLACK_INSTANCES.add(instance);
-        }
-        model2instance.put(model, instance);
-        instance2model.put(instance, model);
-        instances.add(instance);
-    }
-
-    public <T> T getModel(Class<T> klass, Instance instance) {
-        generateInstances();
-        return klass.cast(instance2model.get(instance));
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T createRefHelper(Instance instance, Class<T> entityType) {
-        ModelDef<T, ?> def = (ModelDef<T, ?>) getDef(instance.getType());
-        return EntityProxyFactory.getProxy(
-                entityType,
-                instance.getId(),
-                model -> initModel(model, instance),
-                k -> def.createModelProxy(k)
-        );
-    }
-
-    private void initModel(Object model, Instance instance) {
-        getDef(instance.getType()).initModelHelper(model, instance, this);
+    @Override
+    protected boolean lateBinding() {
+        return true;
     }
 
     @Override
-    public boolean containsInstance(Instance instance) {
-        return instances.contains(instance);
+    protected DefContext getDefContext() {
+        return this;
+    }
+
+    @Override
+    protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
+        generateInstances();
     }
 
     @Override
     public boolean containsModel(Object model) {
-        return model2instance.containsKey(model) || pendingModels.contains(model);
+        return super.containsModel(model) || pendingModels.contains(model);
+    }
+
+    public boolean containsTypeDef(tech.metavm.object.meta.Type type) {
+        return type2Def.containsKey(type);
     }
 
     @Override
-    public <T extends Entity> T getEntity(Class<T> entityType, long id) {
-        return NncUtils.get(
-                findModel(model -> Objects.equals(EntityUtils.tryGetId(model), id)),
-                entityType::cast
-        );
-    }
-
-    private Object findModel(Predicate<Object> filter) {
-        Object result = NncUtils.find(pendingModels, filter);
-        if(result != null) {
-            return result;
-        }
-        return NncUtils.find(model2instance.keySet(), filter);
-    }
-
-    @Override
-    public void initIds() {
+    protected void flush(IInstanceContext instanceContext) {
         generateInstances();
-        if(instanceSink != null) {
-            instanceSink.replace(NncUtils.filterNot(instances, Instance::isValue));
-            instanceSink.initIds();
-        }
+        instanceContext.replace(NncUtils.filterNot(instances(), Instance::isValue));
     }
 
-    public void finish() {
-        generateInstances();
-        if(instanceSink != null) {
-            instanceSink.replace(NncUtils.filterNot(instances, Instance::isValue));
-            instanceSink.finish();
-        }
-    }
-
+    @SuppressWarnings("unused")
+    // DEBUG用，勿删！
     public tech.metavm.object.meta.Type getTypeByTable(Table<?> table) {
-        for (Object model : model2instance.keySet()) {
-            if(model instanceof tech.metavm.object.meta.Type type) {
+        for (Object model : models()) {
+            if(model instanceof ClassType type) {
                 if(type.getDeclaredConstraints() == table
-                        || type.getDeclaredFields() == table) {
+                        || type.getDeclaredFields() == table
+                        || type.getDeclaredFlows() == table
+                ) {
                     return type;
+                }
+            }
+            if(model instanceof UnionType unionType) {
+                if(unionType.getDeclaredTypeMembers() == table) {
+                    return unionType;
+                }
+            }
+            if(model instanceof EnumType enumType) {
+                if(enumType.getDeclaredEnumConstants() == table) {
+                    return enumType;
                 }
             }
         }
@@ -302,17 +305,7 @@ public class DefContext implements DefMap, IEntityContext {
     }
 
     @Override
-    public IInstanceContext getInstanceContext() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object...refValues) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void remove(Object model) {
+    public boolean remove(Entity entity) {
         throw new UnsupportedOperationException();
     }
 
@@ -321,8 +314,4 @@ public class DefContext implements DefMap, IEntityContext {
         throw new UnsupportedOperationException();
     }
 
-    public UniqueConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
-        EntityDef<?> entityDef = (EntityDef<?>) getDef(indexDef.getEntityType());
-        return entityDef.getUniqueConstraintDef(indexDef).getUniqueConstraint();
-    }
 }

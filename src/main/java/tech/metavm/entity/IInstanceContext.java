@@ -1,10 +1,9 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -33,13 +32,19 @@ public interface IInstanceContext extends InstanceSink {
 
     void finish();
 
+    boolean isFinished();
+
     void initIds();
 
     long getTenantId();
 
     Type getType(long id);
 
-    void remove(Instance instance);
+    default ClassType getClassType(long id) {
+        return (ClassType) getType(id);
+    }
+
+    boolean remove(Instance instance);
 
     List<Instance> selectByKey(IndexKeyPO indexKeyPO);
 

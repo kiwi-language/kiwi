@@ -25,4 +25,6 @@ public interface InstanceArrayMapper {
 
     void batchDelete(Collection<Long> ids);
 
+    List<InstanceArrayPO> head();
+
 }

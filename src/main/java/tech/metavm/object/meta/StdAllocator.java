@@ -1,10 +1,8 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.*;
 
+import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +20,9 @@ public class StdAllocator {
     private long nextId;
     private final Map<String, Long> code2id = new LinkedHashMap<>();
     private final Map<Long, String> id2code = new LinkedHashMap<>();
-    private final Class<?> javaType;
+    private final Type javaType;
 
-    public StdAllocator(AllocatorStore store, String fileName, Class<?> javaType, long base) {
+    public StdAllocator(AllocatorStore store, String fileName, Type javaType, long base) {
         this.store = store;
         this.fileName = fileName;
         this.javaType = javaType;
@@ -35,7 +33,7 @@ public class StdAllocator {
         this.store = store;
         Properties properties = store.load(fileName);
         nextId = Long.parseLong(properties.getProperty(ID_BASE_PROP_KEY));
-        javaType = ReflectUtils.classForName(properties.getProperty(TYPE_CODE_PROP_KEY));
+        javaType = TypeParser.parse(properties.getProperty(TYPE_CODE_PROP_KEY));
         this.fileName = fileName;
         for (String propertyName : properties.stringPropertyNames()) {
             if(!propertyName.startsWith(SYSTEM_PROP_PREFIX)) {
@@ -79,7 +77,7 @@ public class StdAllocator {
         return nextId;
     }
 
-    public Class<?> getJavaType() {
+    public Type getJavaType() {
         return javaType;
     }
 
@@ -90,7 +88,7 @@ public class StdAllocator {
     public void save() {
         Properties properties = new Properties();
         properties.put(ID_BASE_PROP_KEY, Long.toString(nextId));
-        properties.put(TYPE_CODE_PROP_KEY, javaType.getName());
+        properties.put(TYPE_CODE_PROP_KEY, javaType.getTypeName());
         code2id.forEach((code, id) -> properties.put(code, id.toString()));
         store.save(fileName, properties);
     }

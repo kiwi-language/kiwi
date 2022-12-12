@@ -11,6 +11,7 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.meta.IdConstants;
 import tech.metavm.user.rest.dto.UserDTO;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 @Component
@@ -75,9 +76,10 @@ public class UserManager {
     public void delete(long userId) {
         IEntityContext context = newContext();
         UserRT user = context.getEntity(UserRT.class, userId);
-        if(user != null) {
-            user.remove();
+        if(user == null) {
+            throw BusinessException.userNotFound(userId);
         }
+        context.remove(user);
         context.finish();
     }
 

@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -11,10 +11,10 @@ import static tech.metavm.entity.LoadingOption.ENUM_CONSTANTS_LAZY_LOADING;
 
 public class LoadingBuffer {
 
-    private final List<Type> byTypeRequests = new ArrayList<>();
+    private final List<ClassType> byTypeRequests = new ArrayList<>();
     private final List<LoadRequest> identityRequests = new ArrayList<>();
     private final Map<Long, InstancePO> identityResultMap = new HashMap<>();
-    private final Map<Type, List<InstancePO>> byTypeResultMap = new HashMap<>();
+    private final Map<ClassType, List<InstancePO>> byTypeResultMap = new HashMap<>();
     private final Set<Long> loaded = new HashSet<>();
     private final InstanceContext context;
     private final IInstanceStore instanceStore;
@@ -45,7 +45,7 @@ public class LoadingBuffer {
         supplierMap.forEach(this::preload);
     }
 
-    public List<InstancePO> getByType(Type type) {
+    public List<InstancePO> getByType(ClassType type) {
         if(!byTypeResultMap.containsKey(type)) {
             byTypeRequests.add(type);
             flush();
@@ -87,7 +87,7 @@ public class LoadingBuffer {
         List<InstancePO> instancePOs =
                 instanceStore.getByTypeIds(NncUtils.map(byTypeRequests, Entity::getId), context);
         Map<Long, List<InstancePO>> typeId2InstancePOs = NncUtils.toMultiMap(instancePOs, InstancePO::getTypeId);
-        for (Type byTypeRequest : byTypeRequests) {
+        for (ClassType byTypeRequest : byTypeRequests) {
             byTypeResultMap.put(
                     byTypeRequest,
                     typeId2InstancePOs.computeIfAbsent(byTypeRequest.getId(), k-> new ArrayList<>())

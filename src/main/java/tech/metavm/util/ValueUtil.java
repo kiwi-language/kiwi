@@ -3,33 +3,33 @@ package tech.metavm.util;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.StandardTypes;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.meta.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+
+import static tech.metavm.object.meta.TypeUtil.isInt;
 
 public class ValueUtil {
 
     public static Type getValueType(Object value) {
         if(value instanceof String) {
-            return StandardTypes.STRING;
+            return StandardTypes.getStringType();
         }
         if(isFloat(value)) {
-            return StandardTypes.DOUBLE;
+            return StandardTypes.getDoubleType();
         }
         if(value instanceof Integer) {
-            return StandardTypes.INT;
+            return StandardTypes.getIntType();
         }
         if(value instanceof Long) {
-            return StandardTypes.LONG;
+            return StandardTypes.getLongType();
         }
         if(isBoolean(value)) {
-            return StandardTypes.BOOL;
+            return StandardTypes.getBoolType();
         }
         if(isTime(value)) {
-            return StandardTypes.TIME;
+            return StandardTypes.getTimeType();
         }
         if(value instanceof Instance instance) {
             return instance.getType();
@@ -70,7 +70,8 @@ public class ValueUtil {
 
     private static final Set<Class<?>> PRIMITIVE_TYPES = Set.of(
         int.class, Integer.class, Long.class, long.class, float.class, Float.class,
-            double.class, Double.class, String.class, boolean.class, Boolean.class
+            double.class, Double.class, String.class, boolean.class, Boolean.class,
+            Password.class, Date.class
     );
 
     public static boolean isBoolean(Class<?> klass) {
@@ -86,8 +87,16 @@ public class ValueUtil {
         return klass == long.class || klass == Long.class;
     }
 
+    public static boolean isDouble(Class<?> klass) {
+        return klass == double.class || klass == Double.class || klass == float.class || klass == Float.class;
+    }
+
     public static boolean isString(Class<?> klass) {
         return klass == String.class;
+    }
+
+    public static boolean isPassword(Class<?> klass) {
+        return klass == Password.class;
     }
 
     public static boolean isTime(Class<?> klass) {
@@ -103,7 +112,7 @@ public class ValueUtil {
     }
 
     public static boolean isArrayType(Class<?> klass) {
-        return klass == Table.class;
+        return Collection.class.isAssignableFrom(klass);
     }
 
     public static boolean isEntityType(Class<?> klass) {
@@ -120,22 +129,22 @@ public class ValueUtil {
 
     public static Type getPrimitiveType(Class<?> klass) {
         if(isBoolean(klass)) {
-            return StandardTypes.BOOL;
+            return StandardTypes.getBoolType();
         }
         if(isString(klass)) {
-            return StandardTypes.STRING;
+            return StandardTypes.getStringType();
         }
         if(isInteger(klass)) {
-            return StandardTypes.INT;
+            return StandardTypes.getIntType();
         }
         if (isLong(klass)) {
-            return StandardTypes.LONG;
+            return StandardTypes.getLongType();
         }
         if(isTime(klass)) {
-            return StandardTypes.TIME;
+            return StandardTypes.getTimeType();
         }
         if(isFloat(klass)) {
-            return StandardTypes.DOUBLE;
+            return StandardTypes.getDoubleType();
         }
         throw new InternalException("Type " + klass.getName() + " is not a primitive type");
     }
@@ -146,8 +155,26 @@ public class ValueUtil {
 
     public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
         if(type instanceof Class<?> klass) {
-            if (isPrimitiveType(klass)) {
-                return TypeCategory.PRIMITIVE;
+            if(isInteger(klass)) {
+                return TypeCategory.INT;
+            }
+            if(isLong(klass)) {
+                return TypeCategory.LONG;
+            }
+            if(isDouble(klass)) {
+                return TypeCategory.DOUBLE;
+            }
+            if(isTime(klass)) {
+                return TypeCategory.TIME;
+            }
+            if(isBoolean(klass)) {
+                return TypeCategory.BOOLEAN;
+            }
+            if(isString(klass)) {
+                return TypeCategory.STRING;
+            }
+            if(isPassword(klass)) {
+                return TypeCategory.PASSWORD;
             }
             if (isArrayType(klass)) {
                 return TypeCategory.ARRAY;
@@ -184,18 +211,19 @@ public class ValueUtil {
                 }
             }
         }
-        throw new InternalException("Invalid valid type: " + type);
+        throw new InternalException("Can not get TypeCategory for java type: " + type);
     }
 
     public static Type getCommonSuperType(Collection<Type> types) {
         NncUtils.requireMinimumSize(types, 1);
-//        EntityContext context = types.get(0).getContext();
         Iterator<Type> it = types.iterator();
         Type commonSuperType = it.next();
         while (it.hasNext()) {
             Type t = it.next();
             while (!commonSuperType.isAssignableFrom(t)) {
-                commonSuperType = commonSuperType.getSuperType();
+                if(commonSuperType instanceof ClassType type) {
+                    commonSuperType = type.getSuperType();
+                }
                 if(commonSuperType == null) {
                     throw new InternalException("Can not find common super type for types: " + types);
                 }
@@ -205,16 +233,15 @@ public class ValueUtil {
     }
 
     public static boolean isAssignable(Type from, Type to) {
-//        EntityContext context = from.getContext();
         if(to.isAssignableFrom(from)) {
             return true;
         }
         if(from.isPrimitive() && to.isPrimitive()) {
-            if(to.isDouble()) {
-                return from.isInt() || from.isLong();
+            if(TypeUtil.isDouble(to)) {
+                return isInt(from) || TypeUtil.isLong(from);
             }
-            if(to.isLong()) {
-                return from.isInt();
+            if(TypeUtil.isLong(to)) {
+                return isInt(from);
             }
         }
         return false;

@@ -1,14 +1,11 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.FlowPO;
-import tech.metavm.flow.persistence.NodePO;
-import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -22,21 +19,21 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 public class FlowRT extends Entity {
 
     private String name;
-    private final Type type;
+    private final ClassType type;
     private final ScopeRT rootScope;
-    private final Type inputType;
-    private final Type outputType;
+    private final ClassType inputType;
+    private final ClassType outputType;
 
     private final transient Table<ScopeRT> scopes;
     private final transient Table<NodeRT<?>> nodes;
     private transient long version = 1L;
 
-    public FlowRT(FlowDTO flowDTO, Type inputType, Type outputType, Type declaringType) {
+    public FlowRT(FlowDTO flowDTO, ClassType inputType, ClassType outputType, ClassType declaringType) {
         this.inputType = inputType;
         this.outputType = outputType;
         setName(flowDTO.name());
-        this.scopes = new Table<>();
-        this.nodes = new Table<>();
+        this.scopes = new Table<>(ScopeRT.class);
+        this.nodes = new Table<>(new TypeReference<>() {});
         type = declaringType;
         rootScope = new ScopeRT(this);
     }
@@ -106,15 +103,15 @@ public class FlowRT extends Entity {
         setName(flowDTO.name());
     }
 
-    public Type getType() {
+    public ClassType getType() {
         return type;
     }
 
-    public Type getInputType() {
+    public ClassType getInputType() {
         return inputType;
     }
 
-    public Type getOutputType() {
+    public ClassType getOutputType() {
         return outputType;
     }
 

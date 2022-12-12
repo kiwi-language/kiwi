@@ -23,13 +23,13 @@ public class FlowManager {
 
     private final InstanceContextFactory contextFactory;
 
-    private final TypeManager typeManager;
+    private final ClassTypeManager classTypeManager;
 
     private final EntityQueryService entityQueryService;
 
-    public FlowManager(InstanceContextFactory contextFactory, TypeManager typeManager, EntityQueryService entityQueryService) {
+    public FlowManager(InstanceContextFactory contextFactory, ClassTypeManager classTypeManager, EntityQueryService entityQueryService) {
         this.contextFactory = contextFactory;
-        this.typeManager = typeManager;
+        this.classTypeManager = classTypeManager;
         this.entityQueryService = entityQueryService;
     }
 
@@ -45,9 +45,9 @@ public class FlowManager {
     @Transactional
     public long create(FlowDTO flowDTO) {
         IEntityContext context = newContext();
-        Type inputType = saveInputType(null, List.of(), flowDTO.name(), context);
-        Type outputType = saveOutputType(null, List.of(), flowDTO.name(), context);
-        FlowRT flow = new FlowRT(flowDTO, inputType, outputType, context.getType(flowDTO.typeId()));
+        ClassType inputType = saveInputType(null, List.of(), flowDTO.name(), context);
+        ClassType outputType = saveOutputType(null, List.of(), flowDTO.name(), context);
+        FlowRT flow = new FlowRT(flowDTO, inputType, outputType, context.getClassType(flowDTO.typeId()));
         NodeRT<?> selfNode = createSelfNode(flow);
         NodeRT<?> inputNode = createInputNode(flow, selfNode);
         createReturnNode(flow, inputNode);
@@ -162,7 +162,7 @@ public class FlowManager {
                 inputParam.fields(),
                 inputField -> convertToFieldDTO(inputField, flow)
         );
-        Type inputType = saveInputType(typeId, fieldDTOs, flow.getName(), context);
+        ClassType inputType = saveInputType(typeId, fieldDTOs, flow.getName(), context);
         context.initIds();
         InputParamDTO newParam = new InputParamDTO(
                 inputType.getId(),
@@ -189,7 +189,7 @@ public class FlowManager {
             if(field.id() == null) {
                 newFieldMap.put(
                         field,
-                        typeManager.saveField(convertToFieldDTO(field, flow), context)
+                        classTypeManager.saveField(convertToFieldDTO(field, flow), context)
                 );
             }
         }
@@ -249,32 +249,32 @@ public class FlowManager {
         context.finish();
     }
 
-    private Type saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
+    private ClassType saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(
                 id,
                 getInputTypeName(flowName),
-                IdConstants.OBJECT,
+                null,
                 true,
                 true,
-                "流程输入",
                 fieldDTOs,
-                List.of()
-        );
-        return typeManager.saveTypeWithContent(typeDTO, context);
+                List.of(),
+                "流程输入"
+                );
+        return classTypeManager.saveTypeWithContent(typeDTO, context);
     }
 
-    private Type saveOutputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
+    private ClassType saveOutputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(
                 id,
                 getOutputTypeName(flowName),
-                IdConstants.OBJECT,
+                null,
                 true,
                 true,
-                "流程输出",
                 fieldDTOs,
-                List.of()
+                List.of(),
+                "流程输出"
         );
-        return typeManager.saveTypeWithContent(typeDTO, context);
+        return classTypeManager.saveTypeWithContent(typeDTO, context);
     }
 
     private String getInputTypeName(String flowName) {

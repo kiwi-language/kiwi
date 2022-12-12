@@ -8,19 +8,20 @@ import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.Table;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static tech.metavm.util.ReflectUtils.getQualifiedFieldName;
+import static tech.metavm.util.ReflectUtils.getFieldQualifiedName;
 
 @Component
 public class StdAllocators {
 
     private static final long NUM_IDS_PER_ALLOCATOR = 1000L;
 
-    private final Map<Class<?>, StdAllocator> allocatorMap = new HashMap<>();
+    private final Map<java.lang.reflect.Type, StdAllocator> allocatorMap = new HashMap<>();
     private long nextBaseId = 10000L;
     private long nextArrayBaseId = IdConstants.ARRAY_REGION_BASE + 10000L;
     private final AllocatorStore store;
@@ -41,10 +42,10 @@ public class StdAllocators {
 
     public Long getId(Object object) {
         if(object instanceof java.lang.reflect.Field field) {
-            return getId0(Field.class, getQualifiedFieldName(field));
+            return getId0(Field.class, getFieldQualifiedName(field));
         }
         if(object instanceof java.lang.reflect.Type type) {
-            return getId0(Type.class, getTypeCode(type));
+            return getId0(ClassType.class, getTypeCode(type));
         }
         if(object instanceof Enum<?> enumConstant) {
             return getId0(enumConstant.getClass(), enumConstant.name());
@@ -57,10 +58,10 @@ public class StdAllocators {
 
     public void putId(Object object, long id) {
         if(object instanceof java.lang.reflect.Field field) {
-            putId0(Field.class, getQualifiedFieldName(field), id);
+            putId0(Field.class, getFieldQualifiedName(field), id);
         }
         else if(object instanceof java.lang.reflect.Type type) {
-            putId0(Type.class, getTypeCode(type), id);
+            putId0(ClassType.class, getTypeCode(type), id);
         }
         else if(object instanceof Enum<?> enumConstant) {
             putId0(enumConstant.getClass(), enumConstant.name(), id);
@@ -86,14 +87,14 @@ public class StdAllocators {
         StdAllocator typeAllocator = getTypeAllocator();
         for (StdAllocator allocator : allocatorMap.values()) {
             if(allocator.contains(id)) {
-                return typeAllocator.getId(allocator.getJavaType().getName());
+                return typeAllocator.getId(allocator.getJavaType().getTypeName());
             }
         }
         throw new InternalException("Can not found typeId for id: " + id);
     }
 
-    public Map<Class<?>, List<Long>> allocate(Map<Class<?>, Integer> typeId2count) {
-        Map<Class<?>, List<Long>> result = new HashMap<>();
+    public Map<Type, List<Long>> allocate(Map<? extends Type, Integer> typeId2count) {
+        Map<java.lang.reflect.Type, List<Long>> result = new HashMap<>();
         typeId2count.forEach((javaType, count) -> {
 //            Class<?> javaType = ModelDefRegistry.getJavaType(type);
             List<Long> ids = getAllocator(javaType).allocate(count);
@@ -102,34 +103,43 @@ public class StdAllocators {
         return result;
     }
 
-    private StdAllocator getAllocator(Class<?> javaType) {
+    private StdAllocator getAllocator(java.lang.reflect.Type javaType) {
         return allocatorMap.computeIfAbsent(javaType, this::createAllocator);
     }
 
-    private StdAllocator createAllocator(Class<?> javaType) {
+    private StdAllocator createAllocator(Type javaType) {
         return new StdAllocator(
                 store,
-                store.createFile(javaType.getSimpleName()),
+                store.createFile(javaType.getTypeName()),
                 javaType,
                 allocateNextBaseId(javaType)
         );
     }
 
-    private long allocateNextBaseId(Class<?> javaType) {
-        if(javaType == Table.class) {
-            long basedId = nextArrayBaseId;
+    private long allocateNextBaseId(Type javaType) {
+        long basedId;
+        if(isArrayType(javaType)) {
+            basedId = nextArrayBaseId;
             nextArrayBaseId += NUM_IDS_PER_ALLOCATOR;
-            return basedId;
         }
         else {
-            long basedId = nextBaseId;
+            basedId = nextBaseId;
             nextBaseId += NUM_IDS_PER_ALLOCATOR;
-            return basedId;
+        }
+        return basedId;
+    }
+
+    private boolean isArrayType(Type javaType) {
+        if(javaType instanceof ParameterizedType parameterizedType) {
+            return parameterizedType.getRawType() == Table.class;
+        }
+        else {
+            return javaType == Table.class;
         }
     }
 
     private StdAllocator getTypeAllocator() {
-        return allocatorMap.get(Type.class);
+        return allocatorMap.get(ClassType.class);
     }
 
     private String getTypeCode(java.lang.reflect.Type type) {

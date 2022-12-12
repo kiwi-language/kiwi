@@ -11,15 +11,15 @@ public class TableSQLBuilder {
                 .append("` (");
     }
 
-    public void addColumn(String name, SQLColumnType type) {
+    public void addColumn(String name, SQLType type) {
         addColumn(name, type, false, null, null);
     }
 
-    public void addColumn(String name, SQLColumnType type, boolean notNull, Object defaultValue, String comment) {
+    public void addColumn(String name, SQLType type, boolean notNull, Object defaultValue, String comment) {
         addColumn(name, type, notNull, defaultValue, comment, false, false);
     }
 
-    public void addColumn(String name, SQLColumnType type, boolean notNull, Object defaultValue,
+    public void addColumn(String name, SQLType type, boolean notNull, Object defaultValue,
                           String comment, boolean primaryKey, boolean autoIncrement) {
         if(numColumns > 0) {
             buf.append(", ");

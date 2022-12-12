@@ -1,30 +1,27 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.instance.IInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.InstanceArray;
-import tech.metavm.object.instance.rest.InstanceArrayDTO;
-import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.instance.rest.ReferenceDTO;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.EncodingUtils;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.rest.*;
+import tech.metavm.util.*;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static tech.metavm.object.meta.TypeUtil.isPassword;
+
 public class ValueFormatter {
+
+    public static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
 
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     public static final DateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public static Object parse(Object rawValue, Type type, IInstanceContext context) {
+    public static Instance parse(Object rawValue, Type type, IInstanceContext context) {
         if(isNull(rawValue)) {
             if(type.isNullable()) {
                 return null;
@@ -44,18 +41,18 @@ public class ValueFormatter {
         }
     }
 
-    public static InstanceArray parseArray(InstanceArrayDTO arrayDTO, IInstanceContext context) {
-        List<Object> elements = new ArrayList<>();
+    public static ArrayInstance parseArray(InstanceArrayDTO arrayDTO, IInstanceContext context) {
+        List<Instance> elements = new ArrayList<>();
         for (Object value : arrayDTO.elements()) {
-            elements.add(parseOne(value, StandardTypes.OBJECT, context));
+            elements.add(parseOne(value, StandardTypes.getObjectType(), context));
         }
-        InstanceArray array;
+        ArrayInstance array;
         if(arrayDTO.id() !=  null) {
-            array = (InstanceArray) context.get(arrayDTO.id());
+            array = (ArrayInstance) context.get(arrayDTO.id());
             array.setElements(elements);
         }
         else {
-            array = new InstanceArray(StandardTypes.ARRAY, elements);
+            array = new ArrayInstance(StandardTypes.getArrayType(), elements);
             context.bind(array);
         }
         return array;
@@ -63,97 +60,131 @@ public class ValueFormatter {
 
     public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType = context.getType(instanceDTO.typeId());
-        Map<Field, Object> fieldValueMap = new HashMap<>();
-        for (InstanceFieldDTO instanceFieldDTO : instanceDTO.fields()) {
-            Field field = actualType.getField(instanceFieldDTO.fieldId());
-            fieldValueMap.put(
-                    field,
-                    parseOne(instanceFieldDTO.value(), field.getType(), context)
+        if(actualType instanceof ClassType classType) {
+            Map<Field, Instance> fieldValueMap = new HashMap<>();
+            ObjectParamDTO param = (ObjectParamDTO) instanceDTO.param();
+            Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(
+                    param.fields(),
+                    InstanceFieldDTO::fieldId
             );
+            for (Field field : classType.getFields()) {
+                Object rawValue = NncUtils.get(fieldDTOMap.get(field.getId()), InstanceFieldDTO::value);
+                Instance fieldValue = rawValue != null ?
+                        parseOne(rawValue, field.getType(), context) : InstanceUtils.nullInstance();
+                fieldValueMap.put(field, fieldValue);
+            }
+            ClassInstance instance;
+            if (instanceDTO.id() != null) {
+                instance = (ClassInstance) context.get(instanceDTO.id());
+                fieldValueMap.forEach(instance::set);
+            } else {
+                instance = new ClassInstance(fieldValueMap, classType);
+                context.bind(instance);
+            }
+            return instance;
         }
-        Instance instance;
-        if(instanceDTO.id() != null) {
-            instance = context.get(instanceDTO.id());
-            fieldValueMap.forEach(instance::set);
+        else if(actualType instanceof ArrayType arrayType){
+            ArrayParamDTO param = (ArrayParamDTO) instanceDTO.param();
+            List<Instance> elements = new ArrayList<>();
+            for (Object element : param.elements()) {
+                elements.add(
+                        parseOne(element, arrayType.getElementType(), context)
+                );
+            }
+            ArrayInstance array;
+            if(instanceDTO.id() != null) {
+                array = (ArrayInstance) context.get(instanceDTO.id());
+                array.setElements(elements);
+            }
+            else {
+                array = new ArrayInstance(arrayType, elements);
+            }
+            return array;
         }
         else {
-            instance = new Instance(fieldValueMap, actualType);
-            context.bind(instance);
+            throw new InternalException("Can not parse instance of type '" + actualType + "'");
         }
-        return instance;
     }
 
     public static Instance parseReference(ReferenceDTO referenceDTO, IInstanceContext context) {
         return context.get(referenceDTO.id());
     }
 
-    private static Object parseOne(Object rawValue, Type type, IInstanceContext context) {
+    private static Instance parseOne(Object rawValue, Type type, IInstanceContext context) {
         type = type.getConcreteType();
-        if(type.isInt()) {
-            if(ValueUtil.isNumber(rawValue)) {
-                return ((Number) rawValue).intValue();
-            }
-        }
         if(rawValue instanceof ReferenceDTO ref) {
             return parseReference(ref, context);
         }
         if(rawValue instanceof InstanceDTO instanceDTO) {
             return parseInstance(instanceDTO, context);
         }
-        if(type.isLong() || type.isDate() || type.isTime()) {
-            if(ValueUtil.isNumber(rawValue)) {
-                return ((Number) rawValue).longValue();
-            }
+        if(isPassword(type)) {
+            return new PasswordInstance(
+                    EncodingUtils.md5((String) rawValue),
+                    StandardTypes.getPasswordType()
+            );
         }
-        if(type.isDouble()) {
-            if(ValueUtil.isNumber(rawValue) || ValueUtil.isFloat(rawValue)) {
-                return ((Number) rawValue).doubleValue();
-            }
-        }
-        if(type.isBool()) {
-            if(ValueUtil.isBoolean(rawValue)) {
-                return rawValue;
-            }
-        }
-        if(type.isPassword()) {
-            return EncodingUtils.md5((String) rawValue);
-        }
-        if(type.isString()) {
-            if(ValueUtil.isString(rawValue)) {
-                return rawValue;
-            }
-        }
-        if(type.isObject()) {
-            if(ValueUtil.isInteger(rawValue)) {
-                return ((Number) rawValue).longValue();
-            }
-            if(ValueUtil.isFloat(rawValue)) {
-                return ((Number) rawValue).doubleValue();
-            }
-            return rawValue;
-        }
-        throw invalidValue(rawValue, type);
+        return InstanceUtils.resolvePrimitiveValue(type, rawValue);
+//        if(type.isInt()) {
+//            if(ValueUtil.isNumber(rawValue)) {
+//                return ((Number) rawValue).intValue();
+//            }
+//        }
+//        if(isLong(type) || isTime(type)) {
+//            if(ValueUtil.isNumber(rawValue)) {
+//                return ((Number) rawValue).longValue();
+//            }
+//        }
+//        if(isDouble(type)) {
+//            if(ValueUtil.isNumber(rawValue) || ValueUtil.isFloat(rawValue)) {
+//                return ((Number) rawValue).doubleValue();
+//            }
+//        }
+//        if(isBool(type)) {
+//            if(ValueUtil.isBoolean(rawValue)) {
+//                return rawValue;
+//            }
+//        }
+//        if(isString(type)) {
+//            if(ValueUtil.isString(rawValue)) {
+//                return rawValue;
+//            }
+//        }
+//        if(isObject(type)) {
+//            if(ValueUtil.isInteger(rawValue)) {
+//                return ((Number) rawValue).longValue();
+//            }
+//            if(ValueUtil.isFloat(rawValue)) {
+//                return ((Number) rawValue).doubleValue();
+//            }
+//            return rawValue;
+//        }
+//        throw invalidValue(rawValue, type);
     }
 
-    public static Object format(Object value, Type type) {
+    public static Object format(Instance value) {
         if(value == null) {
             return null;
         }
-        if(type.isNullable()) {
-            type = type.getUnderlyingType();
-        }
-        if(type.isPassword()) {
-            return null;
-        }
-        if(value instanceof IInstance instance) {
-            if(instance.getId() == null) {
-                return instance.toDTO();
+        if(value instanceof PrimitiveInstance primitiveInstance) {
+            if(primitiveInstance.getType().isPassword()) {
+                return null;
             }
             else {
-                return new ReferenceDTO(instance.getId());
+                return primitiveInstance.getValue();
             }
         }
-        return value;
+        else {
+            if(value.getType().isValue()) {
+                return value.toDTO();
+            }
+            else if(value.getId() != null){
+                return new ReferenceDTO(value.getId());
+            }
+            else {
+                return null;
+            }
+        }
     }
 
     public static String formatDate(Long time) {
@@ -168,6 +199,10 @@ public class ValueFormatter {
             return null;
         }
         return DATE_TIME_FORMAT.format(new Date(time));
+    }
+
+    public static String formatDouble(double value) {
+        return DECIMAL_FORMAT.format(value);
     }
 
     public static Long parseDate(String source) {

@@ -1,8 +1,17 @@
 package tech.metavm.util;
 
+import tech.metavm.dto.InternalErrorCode;
+
 public class InternalException extends RuntimeException {
 
+    private InternalErrorCode errorCode;
+
     public InternalException() {
+    }
+
+    public InternalException(InternalErrorCode errorCode, Object...params) {
+        super(ResultUtil.formatMessage(errorCode, params));
+        this.errorCode = errorCode;
     }
 
     public InternalException(String message) {
@@ -20,4 +29,9 @@ public class InternalException extends RuntimeException {
     public InternalException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
+
+    public InternalErrorCode getErrorCode() {
+        return errorCode;
+    }
+
 }

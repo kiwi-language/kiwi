@@ -14,14 +14,14 @@ import javax.annotation.Nullable;
 public abstract class ConstraintRT<T> extends Entity {
 
     @EntityField("所属类型")
-    private final Type declaringType;
+    private final ClassType declaringType;
     @EntityField("类别")
     private final ConstraintKind kind;
     @EntityField("错误提示")
     @Nullable
     private String message;
 
-    public ConstraintRT(ConstraintKind kind, Type declaringType, @Nullable String message) {
+    public ConstraintRT(ConstraintKind kind, ClassType declaringType, @Nullable String message) {
         this.declaringType = declaringType;
         this.kind = kind;
         this.message = message;
@@ -55,7 +55,7 @@ public abstract class ConstraintRT<T> extends Entity {
     public abstract String getDesc();
 
     @JsonIgnore
-    public Type getDeclaringType() {
+    public ClassType getDeclaringType() {
         return declaringType;
     }
 

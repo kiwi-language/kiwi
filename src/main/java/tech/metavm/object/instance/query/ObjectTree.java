@@ -1,41 +1,44 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.PrimitiveInstance;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 
 import java.util.*;
 
 public class ObjectTree extends NTree {
 
-    private final long instanceId;
+    private final ClassInstance instance;
     private final Map<String, NTree> fields = new LinkedHashMap<>();
 
-    public ObjectTree(Path path, long instanceId) {
+    public ObjectTree(Path path, ClassInstance instance) {
         super(path);
-        this.instanceId = instanceId;
+        this.instance = instance;
     }
 
-    public long getInstanceId() {
-        return instanceId;
+    public ClassInstance getInstance() {
+        return instance;
     }
 
-    public void setInstance(IInstance instance) {
-        Type type = instance.getType();
+    public void load() {
+        ClassType type = instance.getType();
         for (Path childPath : path.getChildren()) {
             Field field = type.getFieldByName(childPath.getName());
-            Object fieldValue = instance.get(field);
+            Instance fieldValue = instance.get(field);
             if(fieldValue == null) {
                 continue;
             }
-            if(field.isGeneralPrimitive()) {
-                addField(new ValueTree(childPath, fieldValue));
+            if(fieldValue instanceof ClassInstance inst) {
+                addField(new ObjectTree(childPath, inst));
             }
-            else if(field.isSingleValued()) {
-                addField(new ObjectTree(childPath, (Long) fieldValue));
+            else if(fieldValue instanceof PrimitiveInstance primInst){
+                addField(new ValueTree(childPath, primInst.getValue()));
             }
-            else {
-                addField(new ListTree(childPath, (List<Long>) fieldValue));
+            else if(fieldValue instanceof ArrayInstance array){
+                addField(new ListTree(childPath, array.getElements()));
             }
         }
     }
@@ -45,14 +48,14 @@ public class ObjectTree extends NTree {
     }
 
     @Override
-    public List<ObjectTree> getChildObjectTrees() {
-        List<ObjectTree> result = new ArrayList<>();
+    public List<NTree> getChildren() {
+        List<NTree> result = new ArrayList<>();
         for (NTree child : fields.values()) {
             if(child instanceof ObjectTree objectTree) {
                 result.add(objectTree);
             }
             else if(child instanceof ListTree listTree) {
-                result.addAll(listTree.getChildObjectTrees());
+                result.addAll(listTree.getChildren());
             }
         }
         return result;

@@ -1,5 +1,8 @@
 package tech.metavm.infra;
 
+import tech.metavm.dto.ErrorCode;
+import tech.metavm.dto.InternalErrorCode;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.LinkedHashMap;
@@ -44,7 +47,10 @@ public class IdBlockCache {
         if(block == null || !block.contains(id)) {
             block = this.getById.apply(id);
             NncUtils.requireTrue(block != null && block.contains(id),
-                    "Can not find a block that contains id: " + id);
+                    () -> new InternalException(
+                            InternalErrorCode.INVALID_ID, id, "Can not find a block containing this id"
+                    )
+            );
             addToCache(block);
         }
         return block;

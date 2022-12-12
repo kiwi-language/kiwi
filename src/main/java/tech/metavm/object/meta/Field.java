@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
@@ -13,7 +12,6 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
@@ -22,12 +20,10 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 @EntityType("字段")
 public class Field extends Entity {
 
-    public static final DecimalFormat DF = new DecimalFormat("0.##");
-
     @EntityField("名称")
     private String name;
     @EntityField("声明类型")
-    private final Type declaringType;
+    private final ClassType declaringType;
     @EntityField("可见范围")
     private Access access;
     @EntityField("默认值")
@@ -36,7 +32,6 @@ public class Field extends Entity {
     @EntityField("是否作为标题")
     private boolean asTitle;
     @EntityField("列")
-    @Nullable
     private final Column column;
     @EntityField("类型")
     private Type type;
@@ -45,20 +40,21 @@ public class Field extends Entity {
 
     public Field(
              String name,
-             Type declaringType,
+             ClassType declaringType,
              Access access,
              Boolean unique,
              boolean asTitle,
              Object defaultValue,
              Type type,
-            boolean isChildField
+             boolean isChildField
     ) {
         this.declaringType = requireNonNull(declaringType, "属性所属类型");
         this.access = requireNonNull(access, "属性访问控制");
         this.type = type;
         this.asTitle = asTitle;
-        this.column = declaringType.allocateColumn(this);
         setName(name);
+        this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
+                "Fail to allocate a column for field " + this);
         setDefaultValue(defaultValue);
         declaringType.addField(this);
         this.isChildField = isChildField;
@@ -76,7 +72,7 @@ public class Field extends Entity {
     }
 
     @JsonIgnore
-    public Type getDeclaringType() {
+    public ClassType getDeclaringType() {
         return declaringType;
     }
 
@@ -86,13 +82,6 @@ public class Field extends Entity {
 
     public Type getType() {
         return type;
-    }
-
-    public Type getEffectiveType(Type parameterizedType) {
-        List<Type> typeParams = NncUtils.requireNonNull(getDeclaringType().getTypeParameters());
-        List<Type> typeArgs = NncUtils.requireNonNull(parameterizedType.getTypeArguments());
-        Map<Type, Type> mapping = NncUtils.buildMap(typeParams, typeArgs);
-        return type.getEffectiveType(mapping);
     }
 
     public boolean isChildField() {
@@ -119,14 +108,14 @@ public class Field extends Entity {
         setUnique(update.unique());
     }
 
-    public void setType(Type type) {
-        Type concreteType = type.getConcreteType();
-        if(!EntityUtils.entityEquals(getConcreteType(), concreteType)) {
-            throw BusinessException.invalidField(this, "列类型不允许修改");
-        }
-        if(isArray() != type.isArray()) {
-            throw BusinessException.invalidField(this, "是否多选不支持修改");
-        }
+    void setType(Type type) {
+//        ClassType concreteType = type.getConcreteType();
+//        if(!EntityUtils.entityEquals(getConcreteType(), concreteType)) {
+//            throw BusinessException.invalidField(this, "列类型不允许修改");
+//        }
+//        if(isArray() != type.isArray()) {
+//            throw BusinessException.invalidField(this, "是否多选不支持修改");
+//        }
         this.type = type;
     }
 
@@ -160,14 +149,6 @@ public class Field extends Entity {
 //        context.remove(this);
     }
 
-    public boolean isCustomTyped() {
-        return !isGeneralPrimitive();
-    }
-
-    public boolean isTable() {
-        return type.isClass();
-    }
-
     public boolean isEnum() {
         return type.isEnum();
     }
@@ -197,7 +178,7 @@ public class Field extends Entity {
     }
 
     public boolean isBool() {
-        return getConcreteType().isBool();
+        return getConcreteType().isBoolean();
     }
 
     public boolean isString() {
@@ -210,10 +191,6 @@ public class Field extends Entity {
 
     public boolean isPrimitive() {
         return type.isPrimitive();
-    }
-
-    public boolean isGeneralPrimitive() {
-        return type.isNotNull() ? type.isPrimitive() : type.getUnderlyingType().isPrimitive();
     }
 
     public boolean isUnique() {
@@ -238,15 +215,9 @@ public class Field extends Entity {
         this.asTitle = asTitle;
     }
 
-    public List<EnumConstantRT> getEnumConstants() {
-        return getConcreteType().isEnum() ? getConcreteType().getEnumConstants() : List.of();
-    }
-
-    @Nullable
     public Column getColumn() {
         return column;
     }
-
 
     public String getColumnName() {
         return NncUtils.get(column, Column::name);
@@ -256,44 +227,11 @@ public class Field extends Entity {
 //        return ValueFormatter.parse(rawValue, type);
 //    }
 
-    public String getDisplayValue(Object value) {
-//        InstanceStore instanceStore = context.getInstanceContext().getInstanceStore();
+    public String getDisplayValue(Instance value) {
         if(value == null) {
             return "";
         }
-//        if(getConcreteType().isEnum()) {
-//            return NncUtils.filterOneAndMap(
-//                    getEnumConstants(),
-//                    opt -> opt.getId().equals(value),
-//                    EnumConstantRT::getName);
-//        }
-        else if(getConcreteType().isReference()) {
-            return ((IInstance) value).getTitle();
-        }
-        else if(getConcreteType().isBool()) {
-            if(Boolean.TRUE.equals(value)) {
-                return "是";
-            }
-            else if(Boolean.FALSE.equals(value)) {
-                return "否";
-            }
-            else {
-                return "";
-            }
-        }
-        else if (getConcreteType().isDouble()) {
-            return DF.format(value);
-        }
-        else if(getConcreteType().isTime()) {
-            return ValueFormatter.formatTime((Long) value);
-        }
-        else if(getConcreteType().isDate()) {
-            return ValueFormatter.formatDate((Long) value);
-        }
-        else if(getConcreteType().isPassword()) {
-            return "******";
-        }
-        return NncUtils.toString(value);
+        return value.getTitle();
     }
 
     public String getStrRawDefaultValue() {
@@ -334,7 +272,7 @@ public class Field extends Entity {
                 asTitle,
                 declaringType.getId(),
                 type.getId(),
-                withType ? type.toDTO(false, false, false) : null,
+                withType ? type.toDTO() : null,
                 isChildField
         );
     }
@@ -345,6 +283,7 @@ public class Field extends Entity {
 
     @Override
     public String toString() {
-        return getQualifiedName();
+        return "Field " + getQualifiedName() + ":" + type.getName();
     }
+
 }

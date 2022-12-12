@@ -1,6 +1,5 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.Value;
 import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.meta.Field;
@@ -10,23 +9,16 @@ import java.util.Objects;
 import static tech.metavm.util.ContextUtil.getTenantId;
 
 public class InstanceRelation extends Value {
-    private final IInstance source;
+    private final Instance source;
     private final Field field;
-    private final IInstance destination;
+    private final Instance destination;
 
-    public InstanceRelation(IInstance source, Field field, IInstance destination) {
-        super(true/*, context*/);
+    public InstanceRelation(Instance source, Field field, Instance destination) {
+        super(true);
         this.source = source;
         this.field = field;
         this.destination = destination;
     }
-
-//    public InstanceRelation(IInstance source, Field field, IInstance destination) {
-//        super(false/*, source.getContext()*/);
-//        this.source = source;
-//        this.field = field;
-//        this.destination = destination;
-//    }
 
     public Field getField() {
         return field;
@@ -34,14 +26,6 @@ public class InstanceRelation extends Value {
 
     public long getFieldId() {
         return field.getId();
-    }
-
-    public String getDestKey() {
-        return field.getId() + "-" + destination.getId();
-    }
-
-    public IInstance getSource() {
-        return source;
     }
 
     public RelationPO toPO() {

@@ -8,6 +8,7 @@ import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.object.meta.UniqueConstraintRT;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -21,7 +22,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     private Table<Value> values;
 
     public GetUniqueNode(NodeDTO nodeDTO, UniqueConstraintRT constraint, ScopeRT scope) {
-        super(nodeDTO, constraint.getDeclaringType().getNullableType(), scope);
+        super(nodeDTO, TypeUtil.getNullableType(constraint.getDeclaringType()), scope);
         setParam(nodeDTO.getParam());
     }
 
@@ -29,7 +30,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     protected GetUniqueParamDTO getParam(boolean persisting) {
         return new GetUniqueParamDTO(
                 constraint.getId(),
-                new Table<>(NncUtils.map(values, value -> value.toDTO(persisting)))
+                NncUtils.map(values, value -> value.toDTO(persisting))
         );
     }
 
@@ -44,6 +45,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
     public void setValues(List<ValueDTO> values) {
         this.values = new Table<>(
+                Value.class,
                 NncUtils.map(
                     values,
                     valueDTO -> ValueFactory.getValue(valueDTO, getParsingContext())

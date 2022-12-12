@@ -2,7 +2,6 @@ package tech.metavm.entity;
 
 import tech.metavm.object.meta.Type;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 

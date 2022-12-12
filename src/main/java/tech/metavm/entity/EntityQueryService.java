@@ -3,9 +3,11 @@ package tech.metavm.entity;
 import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
+
+import java.util.Collection;
 
 @Component
 public class EntityQueryService {
@@ -17,27 +19,46 @@ public class EntityQueryService {
     }
 
     public <T extends Entity> Page<T> query(EntityQuery<T> query, IEntityContext context) {
-        InstanceQuery instanceQuery = convertToInstanceQuery(query);
+        InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
         Page<Long> instancePage =  instanceQueryService.query(instanceQuery, context.getInstanceContext());
         return instancePage.map(id -> context.getEntity(query.entityType(), id));
     }
 
-    private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery) {
+    private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
         Type type = ModelDefRegistry.getType(entityQuery.entityType());
         return new InstanceQuery(
                 type.getId(),
                 entityQuery.searchText(),
                 entityQuery.page(),
                 entityQuery.pageSize(),
-                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(type ,f))
+                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(type ,f, context))
         );
     }
 
-    private InstanceQueryField convertToInstanceQueryField(Type type, EntityQueryField entityQueryField) {
+    private InstanceQueryField convertToInstanceQueryField(Type type, EntityQueryField entityQueryField, IEntityContext context) {
         EntityDef<?> entityDef = ModelDefRegistry.getEntityDef(type);
         Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
-        return new InstanceQueryField(field, entityQueryField.value());
+        Object instanceValue = convertValue(entityQueryField.value(), context);
+        return new InstanceQueryField(field, instanceValue);
     }
 
+    private Object convertValue(Object value, IEntityContext context) {
+        if(context.containsModel(value)) {
+            return context.getInstance(value);
+        }
+        else if(value instanceof Collection<?> collection) {
+            return NncUtils.map(
+                    collection,
+                    item -> convertSingleValue(item, context)
+            );
+        }
+        else {
+            return convertSingleValue(value, context);
+        }
+    }
+
+    private Object convertSingleValue(Object value, IEntityContext context) {
+        return context.containsModel(value) ? context.getInstance(value) : value;
+    }
 
 }

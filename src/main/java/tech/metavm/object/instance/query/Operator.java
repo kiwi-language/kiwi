@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.Type;
 
 import java.util.Arrays;
@@ -16,7 +16,7 @@ public enum Operator {
     // prefix
 //        TODO: 支持负数运算符
 //    NEGATE("-", 1, PREFIX, null),
-    NOT("!", 1, PREFIX, StandardTypes.BOOL),
+    NOT("!", 1, PREFIX, Boolean.class),
 
     // Multiply and division
     MULTIPLY("*", 2, BINARY, null),
@@ -28,24 +28,24 @@ public enum Operator {
     SUBTRACT("-", 3, BINARY, null),
 
     // relational
-    GT(">", 4, BINARY, StandardTypes.BOOL),
-    GE(">=", 4, BINARY, StandardTypes.BOOL),
-    LT("<", 4, BINARY, StandardTypes.BOOL),
-    LE("<=", 4, BINARY, StandardTypes.BOOL),
+    GT(">", 4, BINARY, Boolean.class),
+    GE(">=", 4, BINARY, Boolean.class),
+    LT("<", 4, BINARY, Boolean.class),
+    LE("<=", 4, BINARY, Boolean.class),
 
     // euqality
-    EQ("=", 5, BINARY, StandardTypes.BOOL),
-    NE("!=", 5, BINARY, StandardTypes.BOOL),
-    STARTS_WITH("STARTS WITH", 5, BINARY, StandardTypes.BOOL),
-    LIKE("LIKE", 5, BINARY, StandardTypes.BOOL),
-    IN("IN", 5, BINARY, StandardTypes.BOOL),
-    IS_NULL("IS NULL",5, POSTFIX, StandardTypes.BOOL),
-    IS_NOT_NULL("IS NOT NULL", 5, POSTFIX, StandardTypes.BOOL),
-    EXISTS("EXISTS", 5, PREFIX, StandardTypes.BOOL),
-    NOT_EXISTS("NOT EXISTS", 5, PREFIX, StandardTypes.BOOL),
+    EQ("=", 5, BINARY, Boolean.class),
+    NE("!=", 5, BINARY, Boolean.class),
+    STARTS_WITH("STARTS WITH", 5, BINARY, Boolean.class),
+    LIKE("LIKE", 5, BINARY, Boolean.class),
+    IN("IN", 5, BINARY, Boolean.class),
+    IS_NULL("IS NULL",5, POSTFIX, Boolean.class),
+    IS_NOT_NULL("IS NOT NULL", 5, POSTFIX, Boolean.class),
+    EXISTS("EXISTS", 5, PREFIX, Boolean.class),
+    NOT_EXISTS("NOT EXISTS", 5, PREFIX, Boolean.class),
 
-    AND("AND", 6, BINARY, StandardTypes.BOOL),
-    OR("OR", 7, BINARY, StandardTypes.BOOL),
+    AND("AND", 6, BINARY, Boolean.class),
+    OR("OR", 7, BINARY, Boolean.class),
 
     COMMA(",", 8, BINARY, null)
 
@@ -56,13 +56,13 @@ public enum Operator {
     private final String op;
     private final int precedence;
     private final int type;
-    private final Type resultType;
+    private final Class<?> javaType;
 
-    Operator(String op, int precedence, int type, Type resultType) {
+    Operator(String op, int precedence, int type, Class<?> javaType) {
         this.op = op;
         this.precedence = precedence;
         this.type = type;
-        this.resultType = resultType;
+        this.javaType = javaType;
     }
 
     public static Operator getByOpRequired(String op) {
@@ -77,7 +77,7 @@ public enum Operator {
     }
 
     public Type resultType() {
-        return resultType;
+        return ModelDefRegistry.getType(javaType);
     }
 
     public int precedence() {

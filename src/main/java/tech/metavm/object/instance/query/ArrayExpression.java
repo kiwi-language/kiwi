@@ -2,12 +2,13 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.ValueUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 
 @ValueType("数组表达式")
@@ -15,8 +16,8 @@ public class ArrayExpression extends Expression {
 
     private final Table<Expression> expressions;
 
-    public ArrayExpression(List<Expression> expressions) {
-        this.expressions = new Table<>(expressions);
+    public ArrayExpression(Collection<Expression> expressions) {
+        this.expressions = new Table<>(Expression.class, expressions);
     }
 
     public static ArrayExpression merge(Expression first, Expression second) {
@@ -48,7 +49,9 @@ public class ArrayExpression extends Expression {
 
     @Override
     public Type getType() {
-        return ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType)).getArrayType();
+        return TypeUtil.getArrayType(
+                ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType))
+        );
     }
 
     @Override

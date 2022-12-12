@@ -1,5 +1,7 @@
 package tech.metavm.object.meta.rest.dto;
 
+import tech.metavm.object.meta.Access;
+
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -8,7 +10,7 @@ public record ColumnDTO(
         String name,
         int type,
         int access,
-        long ownerId,
+        Long ownerId,
         @Nullable Long targetId,
         String targetName,
         boolean required,
@@ -18,4 +20,17 @@ public record ColumnDTO(
         Object defaultValue,
         List<ChoiceOptionDTO> choiceOptions
 ) {
+
+    public static ColumnDTO createPrimitive(String name,
+                                            int type,
+                                            boolean required,
+                                            boolean unique,
+                                            boolean asTitle) {
+        return new ColumnDTO(
+                null, name, type, Access.GLOBAL.code(), null, null,
+                null, required, false, unique, asTitle,
+                null, null
+        );
+    }
+
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.Identifiable;
@@ -256,6 +257,13 @@ public class NncUtils {
         return merged;
     }
 
+    public static <T, M, R> List<R> mapAndFilterByType(Collection<T> source, Function<T, M> mapper, Class<R> resultType) {
+        return NncUtils.filterByType(
+                NncUtils.map(source, mapper),
+                resultType
+        );
+    }
+
     public static <T, R> List<R> map(Collection<T> source, Function<T, R> mapping) {
         if(source == null) {
             return List.of();
@@ -364,6 +372,10 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
+    public static <T,R> List<R> filterByType(Collection<T> source, Class<R> type) {
+        return filterAndMap(source, type::isInstance, type::cast);
+    }
+
     @SuppressWarnings("unused")
     public static <T, R> Set<R> filterAndMapUnique(Collection<T> source, Predicate<T> filter, Function<T, R> mapping) {
         if(source == null) {
@@ -437,6 +449,9 @@ public class NncUtils {
 
     public static <T> T findRequired(Collection<T> collection, Predicate<T> filter,
                                      Supplier<RuntimeException> exceptionSupplier) {
+        if(collection == null) {
+            throw exceptionSupplier.get();
+        }
         return collection.stream().filter(filter).findAny()
                 .orElseThrow(exceptionSupplier);
     }
@@ -567,7 +582,6 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-
     public static <T, R> Set<R> mapAndFilterUnique(Collection<T> source, Function<T, R> mapping, Predicate<R> filter) {
         if(source == null) {
             return Set.of();
@@ -695,10 +709,10 @@ public class NncUtils {
     }
 
     public static <T> T orElse(T t, Supplier<T> elseSupplier) {
-        return orElse(t, Function.identity(), elseSupplier);
+        return mapOrElse(t, Function.identity(), elseSupplier);
     }
 
-    public static <T, R> R orElse(T t, Function<T, R> mapping, Supplier<R> elseSupplier) {
+    public static <T, R> R mapOrElse(T t, Function<T, R> mapping, Supplier<R> elseSupplier) {
         return t != null ? mapping.apply(t) : elseSupplier.get();
     }
 
@@ -750,7 +764,7 @@ public class NncUtils {
     }
 
     public static <T> T requireNonNull(T value, String message) {
-        return requireNonNull(value, () -> BusinessException.invalidParams(message));
+        return requireNonNull(value, () -> new InternalException(message));
     }
 
     public static <T> T requireNonNull(T value, Supplier<RuntimeException> exceptionSupplier) {
@@ -764,11 +778,15 @@ public class NncUtils {
         requireTrue(!value, message);
     }
 
+    public static void requireTrue(boolean value) {
+        requireTrue(value, "Value must be true");
+    }
+
     public static void requireTrue(boolean value, String message) {
         requireTrue(value, () -> new InternalException(message));
     }
 
-    public static void requireTrue(boolean value, Supplier<RuntimeException> exceptionSupplier) {
+    public static void requireTrue(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
         if(!value) {
             throw exceptionSupplier.get();
         }
@@ -778,16 +796,22 @@ public class NncUtils {
         requireEquals(first, second, () -> new InternalException(message));
     }
 
-    public static void requireEquals(Object first, Object second, Supplier<RuntimeException> exceptionSupplier) {
+    public static void requireEquals(Object first, Object second, Supplier<? extends RuntimeException> exceptionSupplier) {
         if(!Objects.equals(first, second)) {
             throw exceptionSupplier.get();
         }
     }
 
-    public static void requireNotEmpty(Collection<?> collection, String message) {
+    @NotNull
+    public static <T> List<T> requireNotEmpty(List<T> collection) {
+        return requireNotEmpty(collection, "集合不能为空");
+    }
+
+    public static <T> List<T> requireNotEmpty(List<T> collection, String message) {
         if(isEmpty(collection)) {
             throw BusinessException.invalidParams(message);
         }
+        return collection;
     }
 
     @SuppressWarnings("unused")

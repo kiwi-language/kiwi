@@ -1,6 +1,5 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -21,7 +20,7 @@ public class ConstraintFactory {
 //        throw new InternalException("Invalid constraint kind: " + constraintPO.getKind());
 //    }
 
-    public static ConstraintRT<?> createFromDTO(ConstraintDTO constraintDTO, Type type) {
+    public static ConstraintRT<?> createFromDTO(ConstraintDTO constraintDTO, ClassType type) {
         if(constraintDTO.kind() == ConstraintKind.UNIQUE.code()) {
             UniqueConstraintParam param = constraintDTO.getParam();
             return new UniqueConstraintRT(constraintDTO, param, type);
@@ -35,7 +34,7 @@ public class ConstraintFactory {
 
     public static UniqueConstraintRT newUniqueConstraint(List<Field> fields) {
         NncUtils.requireNotEmpty(fields, "字段列表不能未空");
-        Type type = fields.get(0).getDeclaringType();
+        ClassType type = fields.get(0).getDeclaringType();
         String message = "属性值'" + NncUtils.join(fields, Field::getName) + "'重复";
         return new UniqueConstraintRT(type, fields, message);
     }

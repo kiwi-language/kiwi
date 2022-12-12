@@ -1,8 +1,6 @@
 package tech.metavm.user;
 
-import org.apache.catalina.User;
 import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
 import tech.metavm.user.persistence.UserPO;
@@ -77,7 +75,7 @@ public class UserRT extends Entity {
     }
 
     public void setRoles(List<RoleRT> roles) {
-        this.roles = new Table<>(roles);
+        this.roles = new Table<>(RoleRT.class, roles);
     }
 
     public UserDTO toUserDTO() {

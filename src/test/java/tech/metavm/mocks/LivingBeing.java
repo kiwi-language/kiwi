@@ -1,0 +1,71 @@
+package tech.metavm.mocks;
+
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.util.Table;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@EntityType("生物")
+public class LivingBeing extends Entity {
+
+    @EntityField("年龄")
+    private long age;
+
+    private Object extraInfo;
+
+    private final Table<LivingBeing> offsprings = new Table<>(LivingBeing.class);
+
+    private final List<LivingBeing> ancestors = new ArrayList<>();
+
+    public LivingBeing(long age) {
+        this.age = age;
+    }
+
+    public long getAge() {
+        return age;
+    }
+
+    public void setAge(long age) {
+        this.age = age;
+    }
+
+    public Object getExtraInfo() {
+        return extraInfo;
+    }
+
+    public void setExtraInfo(Object extraInfo) {
+        this.extraInfo = extraInfo;
+    }
+
+    public void addOffspring(LivingBeing offspring) {
+        offsprings.add(offspring);
+    }
+
+    public void removeOffspring(LivingBeing offspring) {
+        offsprings.remove(offspring);
+    }
+
+    public List<LivingBeing> getOffsprings() {
+        return offsprings;
+    }
+
+    public void clearOffsprings() {
+        offsprings.clear();
+    }
+
+    public List<LivingBeing> getAncestors() {
+        return ancestors;
+    }
+
+    public void addAncestor(LivingBeing ancestor) {
+        ancestors.add(ancestor);
+    }
+
+    public void removeAncestor(LivingBeing ancestor) {
+        ancestors.remove(ancestor);
+    }
+
+}

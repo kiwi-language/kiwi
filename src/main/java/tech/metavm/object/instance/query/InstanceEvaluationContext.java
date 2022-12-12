@@ -1,15 +1,15 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.IInstance;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 
 import java.util.Set;
 
 public class InstanceEvaluationContext implements EvaluationContext {
 
-    private final IInstance instance;
+    private final ClassInstance instance;
 
-    public InstanceEvaluationContext(IInstance instance) {
+    public InstanceEvaluationContext(ClassInstance instance) {
         this.instance = instance;
     }
 

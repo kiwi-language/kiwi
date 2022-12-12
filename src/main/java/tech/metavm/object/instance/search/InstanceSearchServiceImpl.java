@@ -11,23 +11,13 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.SQLColumnType;
-import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static tech.metavm.constant.FieldNames.TENANT_ID;
-import static tech.metavm.constant.FieldNames.TYPE_ID;
 
 @Component
 public class InstanceSearchServiceImpl implements InstanceSearchService {
@@ -36,12 +26,6 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private final RestHighLevelClient restHighLevelClient;
 
-//    private final InstanceContextFactory contextFactory;
-
-    public InstanceSearchServiceImpl(RestHighLevelClient restHighLevelClient/*, InstanceContextFactory contextFactory*/) {
-        this.restHighLevelClient = restHighLevelClient;
-//        this.contextFactory = contextFactory;
-    }
 
     @Override
     public Page<Long> search(SearchQuery query) {
@@ -61,8 +45,12 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         }
     }
 
+    public InstanceSearchServiceImpl(RestHighLevelClient restHighLevelClient) {
+        this.restHighLevelClient = restHighLevelClient;
+    }
+
     @Override
-    public void bulk(long tenantId, List<Instance> toIndex, List<Long> toDelete) {
+    public void bulk(long tenantId, List<ClassInstance> toIndex, List<Long> toDelete) {
         BulkRequest bulkRequest = new BulkRequest();
         List<IndexRequest> indexRequests = NncUtils.map(toIndex, instance -> buildIndexRequest(tenantId, instance));
         List<DeleteRequest> deleteRequests = NncUtils.map(toDelete, id -> buildDeleteRequest(tenantId, id));
@@ -76,7 +64,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         }
     }
 
-    private IndexRequest buildIndexRequest(long tenantId, Instance instance) {
+    private IndexRequest buildIndexRequest(long tenantId, ClassInstance instance) {
         IndexRequest indexRequest = new IndexRequest(INDEX);
         indexRequest.id(instance.getId() + "");
         indexRequest.routing(tenantId + "");

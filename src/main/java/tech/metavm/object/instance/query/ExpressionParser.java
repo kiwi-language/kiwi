@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ public class ExpressionParser {
 
     public static final int FUNC_PRECEDENCE = 0;
 
-    public static Expression parse(Type type, String expression) {
+    public static Expression parse(ClassType type, String expression) {
         return parse(expression, new TypeParsingContext(type));
     }
 

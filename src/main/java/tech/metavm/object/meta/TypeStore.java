@@ -53,24 +53,24 @@
 //        );
 //    }
 //
-//    public Type getParameterizedType(Type rawType, List<Type> typeArguments, InstanceContext context) {
+//    public Type getParameterizedType(Type rawType, List<Type> typeParameters, InstanceContext context) {
 //        Objects.requireNonNull(rawType, "rawType is required");
-//        NncUtils.requireNotEmpty(typeArguments, "typeArguments can not be empty");
+//        NncUtils.requireNotEmpty(typeParameters, "typeParameters can not be empty");
 //        TypePO typePO = typeMapper.selectParameterized(
-//                context.getTenantId(), rawType.getId(), NncUtils.map(typeArguments, Entity::getId)
+//                context.getTenantId(), rawType.getId(), NncUtils.map(typeParameters, Entity::getId)
 //        );
 //        if(typePO != null) {
 //            return createFromPO(typePO, context, LoadingOption.none());
 //        }
 //        else {
 //            Type pType = new Type(
-//                    rawType.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + ">",
+//                    rawType.getName() + "<" + NncUtils.join(typeParameters, Type::getName) + ">",
 //                    rawType.getSuperType(),
 //                    TypeCategory.PARAMETERIZED,
 //                    false,
 //                    rawType.isEphemeral(),
 //                    rawType,
-//                    typeArguments,
+//                    typeParameters,
 //                    null,
 //                    context
 //            );

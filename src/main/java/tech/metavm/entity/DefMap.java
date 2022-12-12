@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.util.RuntimeGeneric;
 import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
@@ -7,6 +8,15 @@ import java.lang.reflect.Type;
 public interface DefMap {
 
     ModelDef<?, ?> getDef(Type javaType);
+
+    default ModelDef<?,?> getDefByModel(Object model) {
+        if(model instanceof RuntimeGeneric runtimeGeneric) {
+            return getDef(runtimeGeneric.getGenericType());
+        }
+        else {
+            return getDef(model.getClass());
+        }
+    }
 
     ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type);
 
@@ -24,6 +34,10 @@ public interface DefMap {
         );
     }
 
+    default <T extends Entity> EntityDef<T> getEntityDef(TypeReference<T> typeReference) {
+        return getEntityDef(typeReference.getType());
+    }
+
     default <T extends Entity> EntityDef<T> getEntityDef(Class<T> klass) {
         return new TypeReference<EntityDef<T>>() {}.cast(
                 getDef(klass)
@@ -34,6 +48,10 @@ public interface DefMap {
         return new TypeReference<ValueDef<T>>() {}.cast(
                 getDef(klass)
         );
+    }
+
+    default tech.metavm.object.meta.Type getType(Class<?> javaType) {
+        return getDef(javaType).getType();
     }
 
 }

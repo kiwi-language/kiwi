@@ -5,7 +5,7 @@ import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.util.NncUtils;
 
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -13,8 +13,8 @@ public class MockModelInstanceMap implements ModelInstanceMap {
 
     private final MockModelInstanceMap parent;
 
-    private final Map<Instance, Object> instance2model = new HashMap<>();
-    private final Map<Object, Instance> model2instance = new HashMap<>();
+    private final Map<Instance, Object> instance2model = new IdentityHashMap<>();
+    private final Map<Object, Instance> model2instance = new IdentityHashMap<>();
 
     private final DefMap defMap;
 
@@ -58,7 +58,7 @@ public class MockModelInstanceMap implements ModelInstanceMap {
     }
 
     private Object createRef(Instance instance) {
-        Class<?> entityType = defMap.getDef(instance.getType()).getModelType();
+        Class<?> entityType = defMap.getDef(instance.getType()).getJavaClass();
         NncUtils.requireNonNull(entityType);
         if(Modifier.isFinal(entityType.getModifiers())) {
             return defMap.getDef(instance.getType()).createModelHelper(instance, this);
@@ -96,7 +96,7 @@ public class MockModelInstanceMap implements ModelInstanceMap {
     }
 
     private Instance createInstance(Object model) {
-        ModelDef<?,?> def = defMap.getDef(model.getClass());
+        ModelDef<?,?> def = defMap.getDefByModel(model);
         if(def.isProxySupported()) {
             Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType());
             if((model instanceof Identifiable identifiable) && identifiable.getId() != null) {

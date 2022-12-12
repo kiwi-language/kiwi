@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
-import tech.metavm.object.meta.TypeManager;
+import tech.metavm.object.meta.ClassTypeManager;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -16,10 +16,10 @@ import java.util.List;
 @RequestMapping("/type")
 public class TypeController {
 
-    private final TypeManager typeManager;
+    private final ClassTypeManager classTypeManager;
 
-    public TypeController(TypeManager typeManager) {
-        this.typeManager = typeManager;
+    public TypeController(ClassTypeManager classTypeManager) {
+        this.classTypeManager = classTypeManager;
     }
 
     @GetMapping
@@ -30,7 +30,7 @@ public class TypeController {
             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize
     ) {
         List<Integer> categoryCodeList = NncUtils.isNotEmpty(categoryCodes) ? NncUtils.splitIntegers(categoryCodes) : null;
-        return Result.success(typeManager.query(searchText, categoryCodeList, page, pageSize));
+        return Result.success(classTypeManager.query(searchText, categoryCodeList, page, pageSize));
     }
 
     @GetMapping("/{id:[0-9]+}")
@@ -39,7 +39,7 @@ public class TypeController {
             @RequestParam(value = "includingFields", defaultValue = "true") boolean includingFields,
             @RequestParam(value = "includingFieldTypes", defaultValue = "true") boolean includingFieldTypes
     ) {
-        TypeDTO typeDTO = typeManager.getType(id, includingFields, includingFieldTypes);
+        TypeDTO typeDTO = classTypeManager.getType(id, includingFields, includingFieldTypes);
         if(typeDTO == null) {
             return Result.failure(ErrorCode.RECORD_NOT_FOUND);
         }
@@ -48,49 +48,49 @@ public class TypeController {
 
     @PostMapping
     public Result<Long> save(@RequestBody TypeDTO typeDTO) {
-        return Result.success(typeManager.saveType(typeDTO));
+        return Result.success(classTypeManager.saveType(typeDTO).id());
     }
 
     @GetMapping("/{id:[0-9]+}/array")
     public Result<TypeDTO> getArrayType(@PathVariable("id") long id) {
-        return Result.success(typeManager.getArrayType(id));
+        return Result.success(classTypeManager.getArrayType(id));
     }
 
     @GetMapping("/{id:[0-9]+}/nullable")
     public Result<TypeDTO> getNullableType(@PathVariable("id") long id) {
-        return Result.success(typeManager.getNullableType(id));
+        return Result.success(classTypeManager.getNullableType(id));
     }
 
     @GetMapping("/{id:[0-9]+}/nullable-array")
     public Result<TypeDTO> getNullableArrayType(@PathVariable("id") long id) {
-        return Result.success(typeManager.getNullableArrayType(id));
+        return Result.success(classTypeManager.getNullableArrayType(id));
     }
 
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
-        typeManager.deleteType(id);
+        classTypeManager.deleteType(id);
         return Result.success(null);
     }
 
     @GetMapping("/field/{id:[0-9]+}")
     public Result<FieldDTO> getField(@PathVariable("id") long fieldId) {
-        return Result.success(typeManager.getField(fieldId));
+        return Result.success(classTypeManager.getField(fieldId));
     }
 
     @PostMapping("/field")
     public Result<Long> saveField(@RequestBody FieldDTO field) {
-        return Result.success(typeManager.saveField(field));
+        return Result.success(classTypeManager.saveField(field));
     }
 
     @DeleteMapping("/field/{id:[0-9]+}")
     public Result<Void> deleteField(@PathVariable("id") long id) {
-        typeManager.removeField(id);
+        classTypeManager.removeField(id);
         return Result.success(null);
     }
 
     @PostMapping("/field/{id:[0-9]+}/set-as-title")
     public Result<Void> setAsTitle(@PathVariable("id") long id) {
-        typeManager.setFieldAsTitle(id);
+        classTypeManager.setFieldAsTitle(id);
         return Result.success(null);
     }
 
@@ -101,22 +101,22 @@ public class TypeController {
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "pagSize", defaultValue = "20") int pageSize
     ) {
-        return Result.success(typeManager.listConstraints(typeId, page, pageSize));
+        return Result.success(classTypeManager.listConstraints(typeId, page, pageSize));
     }
 
     @GetMapping("/constraint/{id:[0-9]+}")
     public Result<ConstraintDTO> getConstraint(@PathVariable("id") long id) {
-        return Result.success(typeManager.getConstraint(id));
+        return Result.success(classTypeManager.getConstraint(id));
     }
 
     @PostMapping("/constraint")
     public Result<Long> saveConstraint(@RequestBody ConstraintDTO constraint) {
-        return Result.success(typeManager.saveConstraint(constraint));
+        return Result.success(classTypeManager.saveConstraint(constraint));
     }
 
     @DeleteMapping("/constraint/{id:[0-9]+}")
     public Result<Void> removeConstraint(@PathVariable("id") long id) {
-        typeManager.removeConstraint(id);
+        classTypeManager.removeConstraint(id);
         return Result.voidSuccess();
     }
 

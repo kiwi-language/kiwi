@@ -20,7 +20,7 @@ import java.util.ListIterator;
 public class BranchNode extends NodeRT<BranchParamDTO> {
 
     private boolean inclusive;
-    private final Table<Branch> branches = new Table<>();
+    private final Table<Branch> branches = new Table<>(Branch.class);
 
     public BranchNode(NodeDTO nodeDTO, BranchParamDTO param, ScopeRT scope) {
         super(nodeDTO, null, scope);

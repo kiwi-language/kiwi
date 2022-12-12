@@ -1,39 +1,43 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.InstanceUtils;
 
 import java.util.Map;
 
-import static tech.metavm.object.meta.StandardTypes.*;
+import static tech.metavm.object.meta.StandardTypes.getEnumNameField;
+import static tech.metavm.object.meta.StandardTypes.getEnumOrdinalField;
 
 public class EnumConstantRT {
 
     public static final long MIN_ID = Long.MAX_VALUE - Integer.MAX_VALUE;
     public static final long MAX_ID = Long.MAX_VALUE;
 
-    private final Instance instance;
+    private final ClassInstance instance;
 
-    public EnumConstantRT(Instance instance) {
+    public EnumConstantRT(ClassInstance instance) {
         this.instance = instance;
     }
 
-    public EnumConstantRT(EnumConstantDTO enumConstantDTO, Type type) {
+    public EnumConstantRT(EnumConstantDTO enumConstantDTO, ClassType type) {
         this(type, enumConstantDTO.name(), enumConstantDTO.ordinal());
     }
+//
+//    public EnumConstantRT(ClassType type, String name, int ordinal) {
+//        this(type, name, ordinal,
+//                ModelDefRegistry.getJavaType(type).asSubclass(new TypeReference<Enum<?>>() {}.getType())
+//        );
+//    }
 
-    public EnumConstantRT(Type type, String name, int ordinal) {
-        this(type, name, ordinal,
-                ModelDefRegistry.getJavaType(type).asSubclass(new TypeReference<Enum<?>>() {}.getType())
-        );
-    }
-
-    public EnumConstantRT(Type type, String name, int ordinal, Class<? extends Enum<?>> javaType) {
-        instance = new Instance(
-                Map.of(ENUM_NAME, name, ENUM_ORDINAL, ordinal),
+    public EnumConstantRT(ClassType type, String name, int ordinal) {
+        instance = new ClassInstance(
+                Map.of(getEnumNameField(),
+                        InstanceUtils.stringInstance(name),
+                        getEnumOrdinalField(),
+                        InstanceUtils.intInstance(ordinal)
+                ),
                 type
         );
     }
@@ -43,11 +47,11 @@ public class EnumConstantRT {
     }
 
     public String getName() {
-        return instance.getString(ENUM_NAME);
+        return instance.getString(getEnumNameField()).getValue();
     }
 
     public int getOrdinal() {
-        return instance.getInt(ENUM_ORDINAL);
+        return instance.getInt(getEnumOrdinalField()).getValue();
     }
 
     public void update(EnumConstantDTO update) {
@@ -56,11 +60,11 @@ public class EnumConstantRT {
     }
 
     public void setName(String name) {
-        instance.set(ENUM_NAME, name);
+        instance.set(getEnumNameField(), InstanceUtils.stringInstance(name));
     }
 
     public void setOrdinal(int ordinal) {
-        instance.set(ENUM_ORDINAL, ordinal);
+        instance.set(getEnumOrdinalField(), InstanceUtils.intInstance(ordinal));
     }
 
     public EnumConstantDTO toEnumConstantDTO() {
@@ -83,10 +87,6 @@ public class EnumConstantRT {
 
     public Long getId() {
         return instance.getId();
-    }
-
-    public void remove() {
-        instance.remove();
     }
 
 }

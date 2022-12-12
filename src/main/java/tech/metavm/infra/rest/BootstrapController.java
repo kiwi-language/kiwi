@@ -20,9 +20,9 @@ public class BootstrapController {
         this.regionManager = regionManager;
     }
 
-    @PostMapping
-    public Result<Void> boot() {
-        bootstrap.boot();
+    @PostMapping("/save")
+    public Result<Void> save() {
+        bootstrap.save();
         return Result.success(null);
     }
 

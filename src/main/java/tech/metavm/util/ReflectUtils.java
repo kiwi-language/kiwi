@@ -20,6 +20,17 @@ public class ReflectUtils {
         UNSAFE = (Unsafe) get(null, unsafeField);
     }
 
+    public static final Map<Class<?>, Class<?>> PRIMITIVE_CLASSES = Map.of(
+            byte.class,  Byte.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class,
+            boolean.class, Boolean.class,
+            char.class, Character.class
+    );
+
     public static Unsafe getUnsafe() {
         return UNSAFE;
     }
@@ -30,6 +41,20 @@ public class ReflectUtils {
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
         Set<Class<?>> valueTypes = reflections.getTypesAnnotatedWith(ValueType.class);
         return NncUtils.mergeSets(entitySubTypes, entityTypes, valueTypes);
+    }
+
+    public static Type getBoxedType(Type type) {
+        if(type instanceof Class<?> klass) {
+            return getBoxedClass(klass);
+        }
+        return type;
+    }
+
+    private static Class<?> getBoxedClass(Class<?> klass) {
+        if(PRIMITIVE_CLASSES.containsKey(klass)) {
+            return PRIMITIVE_CLASSES.get(klass);
+        }
+        return klass;
     }
 
     public static Class<?> classForName(String name) {
@@ -51,6 +76,10 @@ public class ReflectUtils {
         }
     }
 
+    public static String getMethodQualifiedName(Method method) {
+        return method.getDeclaringClass().getName() + "." + method.getName();
+    }
+
     public static String getMetaFieldName(Field javaField) {
         EntityField entityField = javaField.getAnnotation(EntityField.class);
         ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
@@ -58,6 +87,16 @@ public class ReflectUtils {
                 NncUtils.get(entityField, EntityField::value),
                 NncUtils.get(childEntity, ChildEntity::value),
                 javaField.getName()
+        );
+    }
+
+    public static String getMetaTypeName(Class<?> javaType) {
+        EntityType entityType = javaType.getAnnotation(EntityType.class);
+        ValueType valueType = javaType.getAnnotation(ValueType.class);
+        return NncUtils.firstNonNull(
+                NncUtils.get(entityType, EntityType::value),
+                NncUtils.get(valueType, ValueType::value),
+                javaType.getSimpleName()
         );
     }
 
@@ -99,7 +138,7 @@ public class ReflectUtils {
         }
     }
 
-    public static String getQualifiedFieldName(Field field) {
+    public static String getFieldQualifiedName(Field field) {
         return field.getDeclaringClass().getName() + "." + field.getName();
     }
 
@@ -243,6 +282,38 @@ public class ReflectUtils {
         return allFields;
     }
 
+    public static Type eraseType(Type type) {
+        return eraseType0(type, new IdentitySet<>());
+    }
+
+    private static Type eraseType0(Type type, IdentitySet<Type> visited) {
+        if(visited.contains(type)) {
+            throw new InternalException("Circular reference");
+        }
+        visited.add(type);
+        if(type instanceof Class<?>) {
+            return type;
+        }
+        if(type instanceof ParameterizedType parameterizedType) {
+            Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
+            if(RuntimeGeneric.class.isAssignableFrom(rawClass)) {
+                return ParameterizedTypeImpl.create(
+                        rawClass,
+                        NncUtils.map(
+                                parameterizedType.getActualTypeArguments(),
+                                t -> eraseType0(t, visited)
+                        )
+                );
+            }
+            else {
+                return rawClass;
+            }
+        }
+        else {
+            throw new InternalException("Can not erase type " + type);
+        }
+    }
+
     public static Class<?> getRawClass(Type type) {
         if(type instanceof Class<?> klass) {
             return klass;
@@ -259,7 +330,7 @@ public class ReflectUtils {
             for (Field declaredField : klass.getDeclaredFields()) {
                 if(!Modifier.isStatic(declaredField.getModifiers())
                         && (annotationClass == null || declaredField.isAnnotationPresent(annotationClass))) {
-                    declaredField.setAccessible(true);
+                    declaredField.trySetAccessible();
                     allFields.add(declaredField);
                 }
             }
@@ -283,6 +354,7 @@ public class ReflectUtils {
     @SuppressWarnings("unused")
     public static <T> T invokeConstructor(Constructor<T> constructor, Object...args) {
         try {
+            constructor.setAccessible(true);
             return constructor.newInstance(args);
         } catch (Exception e) {
             throw new InternalException("Fail to create instance by constructor: " + constructor);

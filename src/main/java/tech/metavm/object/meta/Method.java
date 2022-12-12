@@ -7,8 +7,8 @@ public class Method {
     private final long id;
     private final String name;
     private final long flowId;
-    private List<Type> argumentTypes;
-    private List<Type> resultTypes;
+    private List<ClassType> argumentTypes;
+    private List<ClassType> resultTypes;
 
 
     public Method(long id, String name, long flowId) {

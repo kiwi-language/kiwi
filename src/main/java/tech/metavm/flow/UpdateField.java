@@ -4,14 +4,15 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.UpdateFieldDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.instance.query.ParsingContext;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.InternalException;
+
+import static tech.metavm.object.meta.TypeUtil.*;
 
 @ValueType("更新字段")
 public class UpdateField {
@@ -22,7 +23,7 @@ public class UpdateField {
     @EntityField("值")
     private final Value value;
 
-    public UpdateField(Type declaringType, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext) {
+    public UpdateField(ClassType declaringType, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext) {
         this(
                 declaringType.getField(updateFieldDTO.fieldId()),
                 UpdateOp.getByCode(updateFieldDTO.opCode()),
@@ -36,35 +37,35 @@ public class UpdateField {
         this.value = value;
     }
 
-    public void execute(Instance instance, EvaluationContext context, InstanceContext instanceContext) {
+    public void execute(ClassInstance instance, EvaluationContext context, InstanceContext instanceContext) {
         Object evaluatedValue = value.evaluate(context);
         Object updateValue;
         if(op == UpdateOp.SET) {
             updateValue = evaluatedValue;
         }
         else if(op == UpdateOp.INCREASE) {
-            if(field.getType().isDouble()) {
-                updateValue = instance.getDouble(field.getId()) + (double) evaluatedValue;
+            if(isDouble(field.getType())) {
+                updateValue = instance.getDouble(field.getId()).add((DoubleInstance) evaluatedValue);
             }
-            else if(field.getType().isInt()) {
-                updateValue = instance.getInt(field.getId()) + (int) evaluatedValue;
+            else if(isInt(field.getType())) {
+                updateValue = instance.getInt(field.getId()).add((IntInstance) evaluatedValue);
             }
-            else if(field.getType().isLong()) {
-                updateValue = instance.getLong(field.getId()) + (long) evaluatedValue;
+            else if(isLong(field.getType())) {
+                updateValue = instance.getLong(field.getId()).add((LongInstance) evaluatedValue);
             }
             else {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
             }
         }
         else if(op == UpdateOp.DECREASE) {
-            if(field.getType().isDouble()) {
-                updateValue = instance.getDouble(field.getId()) - (double) evaluatedValue;
+            if(isDouble(field.getType())) {
+                updateValue = instance.getDouble(field.getId()).subtract((DoubleInstance) evaluatedValue);
             }
-            else if(field.getType().isInt()) {
-                updateValue = instance.getInt(field.getId()) - (int) evaluatedValue;
+            else if(isInt(field.getType())) {
+                updateValue = instance.getInt(field.getId()).subtract((IntInstance) evaluatedValue);
             }
-            else if(field.getType().isLong()) {
-                updateValue = instance.getLong(field.getId()) - (long) evaluatedValue;
+            else if(isLong(field.getType())) {
+                updateValue = instance.getLong(field.getId()).subtract((LongInstance) evaluatedValue);
             }
             else {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());

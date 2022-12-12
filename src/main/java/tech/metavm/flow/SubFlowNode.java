@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.SubFlowParam;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -31,28 +32,18 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
                        FlowRT subFlow) {
         super(nodeDTO, subFlow.getOutputType(), scope);
         this.selfId = selfId;
-        this.arguments = new Table<>(arguments);
+        this.arguments = new Table<>(FieldParam.class, arguments);
         this.subFlow = subFlow;
     }
-
-
-    //    public SubFlowNode(NodeDTO nodeDTO, SubFlowParam param, ScopeRT scope) {
-//        super(nodeDTO, scope.getFlow().getOutputType(), scope);
-//        setParam(param);
-//    }
-//
-//    public SubFlowNode(NodePO nodePO, SubFlowParam param, EntityContext context) {
-//        super(nodePO, context);
-//        setParam(param);
-//    }
 
     @Override
     protected void setParam(SubFlowParam param) {
         selfId = ValueFactory.getValue(param.self(), getParsingContext());
-        subFlow = selfId.getType().getFlow(param.flowId());
+        ClassType selfType = (ClassType) selfId.getType();
+        subFlow = selfType.getFlow(param.flowId());
         Map<Long, FieldParamDTO> fieldParamMap = NncUtils.toMap(param.fields(), FieldParamDTO::fieldId);
-        arguments = new Table<>();
-        for (Field field : selfId.getType().getFields()) {
+        arguments = new Table<>(FieldParam.class);
+        for (Field field : selfType.getFields()) {
             FieldParamDTO fieldParamDTO = fieldParamMap.get(field.getId());
             if(fieldParamDTO != null) {
                 arguments.add(new FieldParam(field, fieldParamDTO.value(), getParsingContext()));
@@ -86,7 +77,7 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
     }
 
     public void setArguments(List<FieldParam> arguments) {
-        this.arguments = new Table<>(arguments);
+        this.arguments = new Table<>(FieldParam.class, arguments);
     }
 
     @Override

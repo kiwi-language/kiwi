@@ -18,17 +18,17 @@ public class StdAllocatorTest extends TestCase {
         allocator = new StdAllocator(
                 new MemAllocatorStore(),
                 "/id/Type.properties",
-                Type.class,
+                ClassType.class,
                 1000L
         );
     }
 
     public void testSmoking() {
         List<Long> ids = allocator.allocate(3);
-        allocator.putId(Type.class.getName(), ids.get(0));
+        allocator.putId(ClassType.class.getName(), ids.get(0));
         allocator.putId(Field.class.getName(), ids.get(1));
         allocator.putId(UniqueConstraintRT.class.getName(), ids.get(2));
-        long typeId = allocator.getId(Type.class.getName());
+        long typeId = allocator.getId(ClassType.class.getName());
         long fieldId = allocator.getId(Field.class.getName());
         long uniqueConstraintId = allocator.getId(UniqueConstraintRT.class.getName());
         Assert.assertEquals((long) ids.get(0), typeId);
@@ -45,7 +45,7 @@ public class StdAllocatorTest extends TestCase {
     }
 
     public void testTypeCode() {
-        Assert.assertEquals(Type.class, allocator.getJavaType());
+        Assert.assertEquals(ClassType.class, allocator.getJavaType());
     }
 
 }

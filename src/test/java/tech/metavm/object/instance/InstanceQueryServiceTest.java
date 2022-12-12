@@ -1,0 +1,96 @@
+package tech.metavm.object.instance;
+
+import junit.framework.TestCase;
+import org.junit.Assert;
+import tech.metavm.dto.Page;
+import tech.metavm.entity.*;
+import tech.metavm.mocks.Foo;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.MockRegistry;
+
+import java.util.List;
+
+import static tech.metavm.util.MockRegistry.getField;
+import static tech.metavm.util.TestContext.getTenantId;
+
+public class InstanceQueryServiceTest extends TestCase {
+
+    private MemInstanceContext context;
+    private MemInstanceSearchService instanceSearchService;
+    private InstanceQueryService instanceQueryService;
+
+    @Override
+    protected void setUp() throws Exception {
+        EntityIdProvider idProvider = new MockIdProvider();
+        MockRegistry.setUp(idProvider);
+        context = new MemInstanceContext();
+        instanceSearchService = new MemInstanceSearchService();
+        instanceQueryService = new InstanceQueryService(instanceSearchService);
+    }
+
+    public void testEqCondition() {
+        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        Field fooNameField = getField(Foo.class, "name");
+        Field fooQuxField = getField(Foo.class, "qux");
+        Field fooBazListField = getField(Foo.class, "bazList");
+
+        ClassInstance foo = addInstance(MockRegistry.getNewFooInstance());
+        Instance qux = foo.getInstance(fooQuxField);
+        Instance baz = foo.getInstanceArray(fooBazListField).getInstance(0);
+
+        InstanceQuery query = new InstanceQuery(
+                fooType.getId(),
+                null,
+                1,
+                20,
+                List.of(
+                        new InstanceQueryField(
+                                fooNameField,
+                                foo.getString(fooNameField)
+                        ),
+                        new InstanceQueryField(fooQuxField, qux),
+                        new InstanceQueryField(fooBazListField, baz)
+                )
+        );
+
+        Page<Long> page = instanceQueryService.query(query, context);
+        Assert.assertEquals(1, page.total());
+        Assert.assertEquals(foo.getId(), page.data().get(0));
+    }
+
+    private ClassInstance addInstance(ClassInstance instance) {
+        context.bind(instance);
+        context.initIds();
+        instanceSearchService.add(getTenantId(), instance);
+        return instance;
+    }
+
+    public void testInCondition() {
+        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        Field fooNameField = getField(Foo.class, "name");
+
+        ClassInstance foo = addInstance(MockRegistry.getNewFooInstance());
+
+        InstanceQuery query2 = new InstanceQuery(
+                fooType.getId(),
+                null,
+                1,
+                20,
+                List.of(
+                        new InstanceQueryField(
+                                fooNameField,
+                                List.of(
+                                        foo.getString(fooNameField)
+                                )
+                        )
+                )
+        );
+
+        Page<Long> page2 = instanceQueryService.query(query2, context);
+        Assert.assertEquals(1, page2.total());
+        Assert.assertEquals(foo.getId(), page2.data().get(0));
+    }
+
+}

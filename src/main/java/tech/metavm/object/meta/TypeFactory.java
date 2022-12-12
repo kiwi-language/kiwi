@@ -1,49 +1,57 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.meta.rest.dto.ConstraintDTO;
-import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Null;
 
-import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 public class TypeFactory {
 
-    public static Type createAndBind(TypeDTO typeDTO, IEntityContext context) {
-        Type type = new Type(
+    private final Function<Class<?>, Type> getTypeFunc;
+
+    public TypeFactory(Function<Class<?>, Type> getTypeFunc) {
+        this.getTypeFunc = getTypeFunc;
+    }
+
+    public PrimitiveType createPrimitive(PrimitiveKind kind) {
+        return new PrimitiveType(kind);
+    }
+
+    public ClassType createAndBind(TypeDTO typeDTO, IEntityContext context) {
+        ClassParamDTO param = (ClassParamDTO) typeDTO.param();
+        ClassType type = new ClassType(
                 typeDTO.name(),
-                context.getType(typeDTO.superTypeId()),
+                NncUtils.get(param.superTypeId(), context::getClassType),
                 TypeCategory.getByCodeRequired(typeDTO.category()),
                 typeDTO.anonymous(),
                 typeDTO.ephemeral(),
-                NncUtils.map(typeDTO.typeParameterIds(), context::getType),
-                NncUtils.get(typeDTO.rawTypeId(), context::getType),
-                NncUtils.map(typeDTO.typeArgumentIds(), context::getType),
-                NncUtils.mapUnique(typeDTO.typeMemberIds(), context::getType),
-                NncUtils.mapUnique(typeDTO.upperBoundIds(), context::getType),
-                typeDTO.desc()
+                param.desc()
         );
-        for (FieldDTO field : typeDTO.fields()) {
+        context.bind(type);
+        for (FieldDTO field : param.fields()) {
             createField(type, field, context);
         }
-        for (EnumConstantDTO enumConstantDTO : typeDTO.enumConstants()) {
-            createEnumConstant(type, enumConstantDTO);
-        }
-        for (ConstraintDTO constraint : typeDTO.constraints()) {
+        for (ConstraintDTO constraint : param.constraints()) {
             ConstraintFactory.createFromDTO(constraint, type);
         }
         return type;
     }
 
-    private static EnumConstantRT createEnumConstant(Type type, EnumConstantDTO ec) {
+    public boolean isNullable(Type type) {
+        return type.isNullable();
+    }
+
+    private EnumConstantRT createEnumConstant(ClassType type, EnumConstantDTO ec) {
         return new EnumConstantRT(type, ec.name(), ec.ordinal());
     }
 
-    public static Field createField(Type type, FieldDTO fieldDTO, IEntityContext context) {
-        return new Field(
+    public Field createField(ClassType type, FieldDTO fieldDTO, IEntityContext context) {
+        Field field =  new Field(
                 fieldDTO.name(),
                 type,
                 Access.getByCodeRequired(fieldDTO.access()),
@@ -53,68 +61,96 @@ public class TypeFactory {
                 context.getType(fieldDTO.typeId()),
                 fieldDTO.isChild()
         );
+        context.bind(field);
+        return field;
     }
 
-    public static Type createClass(String name) {
-        return createClass(name, StandardTypes.OBJECT);
+    @SuppressWarnings("unused")
+    public ClassType createClass(String name) {
+        return createRefClass(name, null);
     }
 
-    public static Type createClass(String name, Type superType) {
-        return new Type(
+    public ClassType createRefClass(String name, ClassType superType) {
+        return createClass(name, superType, TypeCategory.CLASS);
+    }
+
+    public ClassType createValueClass(String name) {
+        return createValueClass(name, null);
+    }
+
+    public ClassType createValueClass(String name, ClassType superType) {
+        return createClass(name, superType, TypeCategory.VALUE);
+    }
+
+    public ClassType createClass(String name, ClassType superType) {
+        return createClass(name, superType, TypeCategory.CLASS);
+    }
+
+    public ClassType createClass(String name, ClassType superType, TypeCategory category) {
+        return new ClassType(
                 name,
                 superType,
-                TypeCategory.CLASS
-        );
-    }
-
-    public static Type createEnum(String name, boolean anonymous) {
-        return new Type(
-                name,
-                StandardTypes.ENUM,
-                TypeCategory.ENUM,
-                anonymous,
+                category,
                 false,
-                null,
-                null,
-                null,
-                null,
-                null,
+                false,
                 null
         );
     }
 
-    public static Type createUnion(Set<Type> types) {
-        return new Type(
-                NncUtils.join(types, Type::getName, "|"),
-                StandardTypes.OBJECT,
-                TypeCategory.UNION,
-                false,
-                false,
-                null,
-                null,
-                null,
-                types,
-                null,
-                null
-        );
+    public ArrayType createArrayType(Type elementType) {
+        return new ArrayType(elementType, false);
     }
 
-    public static Type createParameterized(Type rawType, List<Type> typeArguments) {
-        return new Type(
-                rawType.getName() + "<" + NncUtils.join(typeArguments, Type::getName) + ">",
-                StandardTypes.OBJECT,
-                rawType.getCategory(),
-                false,
-                false,
-                null,
-                rawType,
-                typeArguments,
-                null,
-                null,
-                null
-        );
+    public boolean isNullType(ClassType type) {
+        return type == getNullType();
     }
 
-    private TypeFactory() {}
+    public Type getNullType() {
+        return getTypeFunc.apply(Null.class);
+    }
+
+    public EnumType createEnum(String name) {
+        return createEnum(name, false);
+    }
+
+    public EnumType createEnum(String name, boolean anonymous) {
+        return createEnum(name, anonymous, getEnumType());
+    }
+
+    public EnumType getEnumType() {
+        return (EnumType) getTypeFunc.apply(Enum.class);
+    }
+
+    public AnyType getObjectType() {
+        return (AnyType) getTypeFunc.apply(Object.class);
+    }
+
+
+    public ClassType getEntityType() {
+        return (ClassType) getTypeFunc.apply(Entity.class);
+    }
+
+    public EnumType createEnum(String name, boolean anonymous, ClassType superType) {
+        return new EnumType(name, superType, anonymous);
+    }
+
+    public UnionType getNullableType(Type type) {
+        UnionType nullableType = type.getNullableType();
+        if(nullableType == null) {
+            nullableType = createUnion(Set.of(type, getTypeFunc.apply(Null.class)));
+            type.setNullableType(nullableType);
+        }
+        return nullableType;
+    }
+
+
+    public UnionType createUnion(Set<Type> types) {
+        return new UnionType(types);
+    }
+
+//    public ParameterizedType createParameterized(ClassType rawType, List<Type> typeArguments) {
+//        return new ParameterizedType(rawType, typeArguments);
+//    }
+
 
 }

@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.EnumConstantRT;
+import tech.metavm.object.meta.EnumType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static tech.metavm.object.instance.query.ExpressionUtil.*;
+import static tech.metavm.util.ValueUtil.isCollection;
 
 public class ExpressionEvaluator {
 
@@ -16,7 +19,7 @@ public class ExpressionEvaluator {
         return new ExpressionEvaluator(expression, new TreeEvaluationContext(objectTree)).evaluate();
     }
 
-    public static Object evaluate(Expression expression, Instance instance) {
+    public static Object evaluate(Expression expression, ClassInstance instance) {
         return new ExpressionEvaluator(expression, new InstanceEvaluationContext(instance)).evaluate();
     }
 
@@ -26,10 +29,16 @@ public class ExpressionEvaluator {
 
     private final EvaluationContext context;
     private final Expression expression;
+    private final boolean containAsEqual;
 
     private ExpressionEvaluator(Expression expression, EvaluationContext context) {
+        this(expression, context, false);
+    }
+
+    public ExpressionEvaluator(Expression expression, EvaluationContext context, boolean containAsEqual) {
         this.context = context;
         this.expression = expression;
+        this.containAsEqual = containAsEqual;
     }
 
     public Object evaluate() {
@@ -63,7 +72,7 @@ public class ExpressionEvaluator {
     }
 
     private Object evaluateField(FieldExpression fieldExpression) {
-        Instance instance = (Instance) evaluate(fieldExpression.getInstance());
+        ClassInstance instance = (ClassInstance) evaluate(fieldExpression.getInstance());
         return NncUtils.get(instance, inst -> inst.getResolved(fieldExpression.getFieldIds()));
     }
 
@@ -92,9 +101,9 @@ public class ExpressionEvaluator {
         Object firstValue = evaluate(binaryExpression.getFirst()),
                 secondValue = evaluate(binaryExpression.getSecond());
         if(op == Operator.EQ) {
-            if(firstValue instanceof Instance instance && instance.getType().isEnum()) {
+            if(firstValue instanceof Instance instance && (instance.getType() instanceof EnumType enumType)) {
                 EnumConstantRT opt = NncUtils.find(
-                        instance.getType().getEnumConstants(),
+                        enumType.getEnumConstants(),
                         option -> Objects.equals(option.getId(), instance.getId())
                 );
                 if(secondValue instanceof String title) {
@@ -105,7 +114,8 @@ public class ExpressionEvaluator {
                     return Objects.equals(opt.getId(), id);
                 }
             }
-            return Objects.equals(firstValue, secondValue);
+            return Objects.equals(firstValue, secondValue) ||
+                    containAsEqual && isCollection(firstValue) && castCollection(firstValue).contains(secondValue);
         }
         if(op == Operator.NE) {
             return !Objects.equals(firstValue, secondValue);
@@ -171,7 +181,7 @@ public class ExpressionEvaluator {
             return castString(firstValue).contains(castString(secondValue));
         }
         if(op == Operator.IN) {
-            return castCollection(firstValue).contains(secondValue);
+            return castCollection(secondValue).contains(firstValue);
         }
         if(op == Operator.AND) {
             return castBoolean(firstValue) && castBoolean(secondValue);

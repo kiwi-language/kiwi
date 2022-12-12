@@ -1,21 +1,15 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
-import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
 
 @EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
-
-    @EntityField("类型")
-    private final Type objectType;
 
     public InputNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {
         super(
@@ -25,12 +19,10 @@ public class InputNode extends NodeRT<InputParamDTO> {
                 prev,
                 scope
         );
-        this.objectType = getOutputType();
     }
 
-    public InputNode(NodeDTO nodeDTO, Type type, ScopeRT scope) {
+    public InputNode(NodeDTO nodeDTO, ClassType type, ScopeRT scope) {
         super(nodeDTO, scope.getFlow().getInputType(), scope);
-        this.objectType = type;
     }
 
     @Override
@@ -41,12 +33,17 @@ public class InputNode extends NodeRT<InputParamDTO> {
     @Override
     protected InputParamDTO getParam(boolean persisting) {
         return new InputParamDTO(
-                objectType.getId(),
+                getType().getId(),
                 NncUtils.map(
-                        objectType.getFields(),
+                        getType().getFields(),
                         field -> toInputFieldDTO(field.toDTO())
                 )
         );
+    }
+
+    @Override
+    public ClassType getType() {
+        return (ClassType) super.getType();
     }
 
     private InputFieldDTO toInputFieldDTO(FieldDTO fieldDTO) {

@@ -2,8 +2,9 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ValueType;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -20,23 +21,23 @@ public class FieldExpression extends Expression {
         this(instance, List.of(field));
     }
 
-    public FieldExpression(Expression instance, Type type, List<Long> fieldPath) {
+    public FieldExpression(Expression instance, ClassType type, List<Long> fieldPath) {
 //        super(type.getContext().getInstanceContext());
         this.instance = instance;
-        Type tmp = type;
+        ClassType tmp = type;
         List<Field> fields = new ArrayList<>();
         for (Long fieldId : fieldPath) {
             Field field = tmp.getField(fieldId);
             fields.add(field);
-            tmp = field.getType();
+            tmp = (ClassType) field.getType();
         }
-        this.fieldPath = new Table<>(fields);
+        this.fieldPath = new Table<>(Field.class, fields);
     }
 
     public FieldExpression(Expression instance, List<Field> fieldPath) {
 //        super(instance.context);
         this.instance = instance;
-        this.fieldPath = new Table<>(fieldPath);
+        this.fieldPath = new Table<>(Field.class, fieldPath);
     }
 
     public Field getLastField() {

@@ -1,5 +1,6 @@
 package tech.metavm.util;
 
+import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
@@ -19,7 +20,10 @@ public class MockIdProvider implements EntityIdProvider {
 
     @Override
     public long getTypeId(long id) {
-        return id2type.get(id).getId();
+        return NncUtils.requireNonNull(
+                id2type.get(id),
+                () -> new InternalException(InternalErrorCode.INVALID_ID, id, "Can not find a type for this id.")
+        ).getId();
     }
 
     public Type getType(long id) {

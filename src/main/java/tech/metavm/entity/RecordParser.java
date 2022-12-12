@@ -1,24 +1,24 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.TypeFactory;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.List;
-import java.util.function.Function;
 
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
 
     public static <T extends Record> RecordDef<T> parse(Class<T> entityType,
-                                                        Function<Object, Long> getId,
-                                                        DefMap defMap,
-                                                        ModelInstanceMap modelInstanceMap) {
-        return new RecordParser<>(entityType, getId, defMap, modelInstanceMap).parse();
+                                                        Type genericType,
+                                                        DefMap defMap) {
+        return new RecordParser<>(entityType, genericType, defMap).parse();
     }
 
-    public RecordParser(Class<T> entityType, Function<Object, Long> getId, DefMap defMap, ModelInstanceMap modelInstanceMap) {
-        super(entityType, getId, defMap, modelInstanceMap);
+    public RecordParser(Class<T> entityType, Type genericType, DefMap defMap) {
+        super(entityType, genericType, defMap);
     }
 
     @Override
@@ -27,13 +27,19 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
     }
 
     @Override
-    protected RecordDef<T> createDef() {
+    protected RecordDef<T> createDef(PojoDef<? super T> parentDef) {
         return new RecordDef<>(
-                null,
                 javaType,
-                defMap.getPojoDef(javaType.getSuperclass()),
+                getGenericType(),
+                parentDef,
                 createType(),
                 defMap
         );
     }
+
+    @Override
+    protected ClassType createType(TypeFactory typeFactory, String name, ClassType superType) {
+        return typeFactory.createValueClass(name, superType);
+    }
+
 }

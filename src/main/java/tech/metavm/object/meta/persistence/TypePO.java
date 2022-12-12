@@ -2,33 +2,24 @@ package tech.metavm.object.meta.persistence;
 
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.IndexDef;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.ClassType;
 
 import java.util.List;
 import java.util.Set;
 
 public class TypePO extends EntityPO {
 
-    public static final IndexDef<Type> UNIQUE_NAME = new IndexDef<>(
-            Type.class,
-            "name"
-    );
-
-    public static final IndexDef<Type> UNIQUE_RAW_TYPE_AND_TYPE_ARGS = new IndexDef<>(
-            Type.class,
+    public static final IndexDef<ClassType> UNIQUE_RAW_TYPE_AND_TYPE_ARGS = new IndexDef<>(
+            ClassType.class,
             "rawTypeId", "typeArgumentIds"
     );
 
-    public static final IndexDef<Type> UNIQUE_TYPE_ELEMENTS = new IndexDef<>(
-            Type.class, "typeElements"
+    public static final IndexDef<ClassType> INDEX_RAW_TYPE_ID = new IndexDef<>(
+            ClassType.class, "rawTypeId"
     );
 
-    public static final IndexDef<Type> INDEX_RAW_TYPE_ID = new IndexDef<>(
-            Type.class, "rawTypeId"
-    );
-
-    public static final IndexDef<Type> INDEX_TYPE_ARG_ID = new IndexDef<>(
-            Type.class,"typeArgumentIds"
+    public static final IndexDef<ClassType> INDEX_TYPE_ARG_ID = new IndexDef<>(
+            ClassType.class,"typeArgumentIds"
     );
 
     private Long superTypeId;

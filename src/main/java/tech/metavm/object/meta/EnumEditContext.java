@@ -16,7 +16,7 @@ public class EnumEditContext {
     private final List<ChoiceOptionDTO> optionDTOs;
     private final List<EnumConstantRT> defaultOptions = new ArrayList<>();
     private final IEntityContext entityContext;
-    private Type type;
+    private EnumType type;
 
     public EnumEditContext(Long id,
                            String name,
@@ -42,7 +42,7 @@ public class EnumEditContext {
             type = createType();
         }
         else {
-            type = entityContext.getType(id);
+            type = entityContext.getEntity(EnumType.class, id);
         }
     }
 
@@ -81,8 +81,8 @@ public class EnumEditContext {
         );
     }
 
-    private Type createType() {
-        type = TypeFactory.createEnum(name, anonymous);
+    private EnumType createType() {
+        type = TypeUtil.createEnum(name, anonymous);
 //                entityContext.getEnumType(),
 //                TypeCategory.ENUM,
 //                anonymous,
@@ -125,7 +125,7 @@ public class EnumEditContext {
 //        );
 //    }
 
-    public Type getType() {
+    public ClassType getType() {
         return type;
     }
 

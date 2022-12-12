@@ -7,7 +7,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
-import tech.metavm.object.instance.SQLColumnType;
+import tech.metavm.object.instance.SQLType;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class EsIndexCreator {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put(TENANT_ID, Map.of("type", "long"));
         properties.put(TYPE_ID, Map.of("type", "long"));
-        for (SQLColumnType columnType : SQLColumnType.values()) {
+        for (SQLType columnType : SQLType.values()) {
             for(int i = 0; i < columnType.count(); i++) {
                 String fieldName = columnType.prefix() + i;
                 properties.put(fieldName, Map.of(

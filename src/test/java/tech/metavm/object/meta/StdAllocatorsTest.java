@@ -25,11 +25,11 @@ public class StdAllocatorsTest extends TestCase {
     public void testSmoking() {
         java.lang.reflect.Field typeNameField = ReflectUtils.getField(Type.class, "name");
 
-        Map<Class<?>, List<Long>> class2ids = allocators.allocate(
-                Map.of(Type.class, 1, Field.class, 1)
+        Map<java.lang.reflect.Type, List<Long>> class2ids = allocators.allocate(
+                Map.of(ClassType.class, 1, Field.class, 1)
         );
 
-        allocators.putId(Field.class, class2ids.get(Type.class).get(0));
+        allocators.putId(Field.class, class2ids.get(ClassType.class).get(0));
         allocators.putId(typeNameField, class2ids.get(Field.class).get(0));
 
         long fieldClassId = allocators.getId(Field.class);
@@ -42,16 +42,16 @@ public class StdAllocatorsTest extends TestCase {
     public void testGetTypeId() {
         java.lang.reflect.Field typeNameReflectField = ReflectUtils.getField(Type.class, "name");
 
-        Map<Class<?>, List<Long>> class2ids = allocators.allocate(
-                Map.of(Type.class, 3, Field.class, 1, TypeCategory.class, 1)
+        Map<java.lang.reflect.Type, List<Long>> class2ids = allocators.allocate(
+                Map.of(ClassType.class, 3, Field.class, 1, TypeCategory.class, 1)
         );
-        allocators.putId(Type.class, class2ids.get(Type.class).get(0));
-        allocators.putId(Field.class, class2ids.get(Type.class).get(1));
-        allocators.putId(TypeCategory.class, class2ids.get(Type.class).get(2));
+        allocators.putId(ClassType.class, class2ids.get(ClassType.class).get(0));
+        allocators.putId(Field.class, class2ids.get(ClassType.class).get(1));
+        allocators.putId(TypeCategory.class, class2ids.get(ClassType.class).get(2));
         allocators.putId(typeNameReflectField, class2ids.get(Field.class).get(0));
         allocators.putId(TypeCategory.CLASS, class2ids.get(TypeCategory.class).get(0));
 
-        long typeClassId = allocators.getId(Type.class);
+        long typeClassId = allocators.getId(ClassType.class);
         long fieldClassId = allocators.getId(Field.class);
         Assert.assertEquals(typeClassId, allocators.getTypeId(fieldClassId));
 

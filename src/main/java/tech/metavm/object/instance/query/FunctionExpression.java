@@ -19,7 +19,7 @@ public class FunctionExpression extends Expression {
             arguments = arrayExpression.getExpressions();
         }
         else {
-            arguments = new Table<>(List.of(argument));
+            arguments = new Table<>(Expression.class, List.of(argument));
         }
     }
 

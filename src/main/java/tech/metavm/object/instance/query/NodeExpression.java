@@ -32,7 +32,7 @@ public class NodeExpression extends Expression {
 
     @Override
     public Type getType() {
-        return node.getOutputType();
+        return node.getType();
     }
 
 }

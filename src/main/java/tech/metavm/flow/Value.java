@@ -7,11 +7,9 @@ import tech.metavm.object.meta.Type;
 
 @ValueType("流程值")
 public abstract class Value {
-//    protected final InstanceContext context;
     private final ValueKind kind;
 
-    public Value(ValueDTO valueDTO/*, InstanceContext context*/) {
-//        this.context = context;
+    public Value(ValueDTO valueDTO) {
         kind = ValueKind.getByCodeRequired(valueDTO.kind());
     }
 

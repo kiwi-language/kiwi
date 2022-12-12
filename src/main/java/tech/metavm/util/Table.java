@@ -2,42 +2,73 @@ package tech.metavm.util;
 
 import tech.metavm.entity.ArrayIdentifier;
 import tech.metavm.entity.IdInitializing;
-import tech.metavm.entity.Identifiable;
 import tech.metavm.entity.NoProxy;
 
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class Table<T> extends LinkedList<T> implements IdInitializing {
+public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGeneric {
 
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
+    public static  <T> Table<T> createProxy(Class<? extends Table<T>> proxyClass, Type elementType) {
+        return ReflectUtils.invokeConstructor(
+                ReflectUtils.getConstructor(proxyClass, Type.class),
+                elementType
+        );
+    }
+
     private Long id;
-    private long version;
-    private long syncVersion;
-    private boolean loaded;
+    private final Type genericType;
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
     private ArrayIdentifier identifier;
 
-    public Table(Collection<T> data) {
-        this(data, DEFAULT_INDEX_BUILD_THRESHOLD);
+    public Table(Class<T> klass, Collection<T> data) {
+        this(TypeReference.of(klass), data, DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
-    public Table(int buildIndexThreshold) {
-        this(List.of(), buildIndexThreshold);
+    public Table(TypeReference<T> typeRef, Collection<T> data) {
+        this(typeRef, data, DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
-    public Table() {
-        this(List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
+
+    public Table(Class<T> klass, int buildIndexThreshold) {
+        this(TypeReference.of(klass), List.of(), buildIndexThreshold);
     }
 
-    public Table(Collection<T> data, int buildIndexThreshold) {
+    public Table(TypeReference<T> typeRef, int buildIndexThreshold) {
+        this(typeRef, List.of(), buildIndexThreshold);
+    }
+
+    public Table(Class<T> klass) {
+        this(TypeReference.of(klass), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
+    }
+
+    public Table(TypeReference<T> typeRef) {
+        this(typeRef, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
+    }
+
+    public Table(TypeReference<T> typeRef, Collection<T> data, int buildIndexThreshold) {
+        this(typeRef.getGenericType(), data, buildIndexThreshold);
+    }
+
+    public Table(Type elementType) {
+        this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
+    }
+
+    private Table(Type elementType, Collection<T> data, int buildIndexThreshold) {
+        this.genericType = new ParameterizedTypeImpl(
+                null,
+                Table.class,
+                new Type[]{ReflectUtils.eraseType(elementType)}
+        );
         this.buildIndexThreshold = buildIndexThreshold;
         addAll(data);
     }
@@ -106,13 +137,14 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
         return null;
     }
 
+    @SuppressWarnings("unused")
     public <K> void buildIndex(IndexMapper<T, K> keyMapper) {
         beforeAccess();
         IndexDesc<T> indexDesc = IndexDesc.create(keyMapper);
         buildIndex(indexDesc);
     }
 
-    public <K> void buildIndex(IndexDesc<T> indexDesc) {
+    public void buildIndex(IndexDesc<T> indexDesc) {
         if(!indexes.containsKey(indexDesc)) {
             buildIndex0(indexDesc);
         }
@@ -131,15 +163,15 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
         }
     }
 
-    private <K> Map<Object, LinkedList<Node<T>>>  buildIndex0(IndexDesc<T> indesDesc) {
+    private Map<Object, LinkedList<Node<T>>>  buildIndex0(IndexDesc<T> indexDesc) {
         Map<Object, LinkedList<Node<T>>> index = new HashMap<>();
         forEachNode(
                 node -> index.computeIfAbsent(
-                        indesDesc.map(node.getValue()),
+                        indexDesc.map(node.getValue()),
                         k->new LinkedList<>()
                 ).add(node)
         );
-        indexes.put(indesDesc, index);
+        indexes.put(indexDesc, index);
         return index;
     }
 
@@ -180,23 +212,12 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
     }
 
     public Table<T> merge(Table<T> that) {
-        Table<T> merged = new Table<>(buildIndexThreshold);
+        Table<T> merged = new Table<>(genericType, List.of(), buildIndexThreshold);
         indexes.keySet().forEach(merged::buildIndex);
         merged.addAll(this);
         merged.addAll(that);
         return merged;
     }
-
-//    @Override
-//    protected void beforeAccess() {
-//        if(loader != null && !loaded) {
-//            Collection<T> data = loader.get();
-//            for (T datum : data) {
-//                addLast0(datum);
-//            }
-//            loaded = true;
-//        }
-//    }
 
     public <R> Table<R> map(Function<T, R> mapper) {
         return mapAndFilter(mapper, t -> true);
@@ -204,7 +225,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
 
     public <R> Table<R> mapAndFilter(Function<T, R> mapper, Predicate<R> filter) {
         beforeAccess();
-        Table<R> that = new Table<>();
+        Table<R> that = new Table<>(genericType, List.of(), buildIndexThreshold);
         for (T t : this) {
             R r = mapper.apply(t);
             if(filter.test(r)) {
@@ -214,53 +235,36 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
         return that;
     }
 
-    public long getVersion() {
-        return version;
-    }
-
-    public long getSyncVersion() {
-        return syncVersion;
-    }
-
+    @SuppressWarnings("unused")
     private Table<T> createSame() {
-        Table<T> that = new Table<>(buildIndexThreshold);
+        Table<T> that = new Table<>(genericType, List.of(), buildIndexThreshold);
         for (IndexDesc<T> indexDesc : indexes.keySet()) {
             that.buildIndex(indexDesc);
         }
         return that;
     }
 
-    private static final class IndexDesc<T> {
-        private final String implClass;
-        private final String implMethodName;
-        private final List<Object> capturedArgs;
-        private final IndexMapper<T, ?> indexMapper;
-
-        private IndexDesc(
-                String implClass,
-                String implMethodName,
-                List<Object> capturedArgs,
-                IndexMapper<T, ?> indexMapper) {
-            this.implClass = implClass;
-            this.implMethodName = implMethodName;
-            this.capturedArgs = capturedArgs;
-            this.indexMapper = indexMapper;
-        }
+    private record IndexDesc<T>(
+            String implClass,
+            String implMethodName,
+            List<Object> capturedArgs,
+            IndexMapper<T, ?> indexMapper
+    ) {
 
         public static <T> IndexDesc<T> create(IndexMapper<T, ?> mapper) {
-                Method writeReplaceMethod = ReflectUtils.getMethodByName(mapper.getClass(), "writeReplace");
-                SerializedLambda serializedLambda = (SerializedLambda) ReflectUtils.invoke(mapper, writeReplaceMethod);
-                List<Object> capturedArgs = new ArrayList<>();
-                for (int i = 0; i < serializedLambda.getCapturedArgCount(); i++) {
-                    capturedArgs.add(serializedLambda.getCapturedArg(i));
-                }
-                return new IndexDesc<>(
-                        serializedLambda.getImplClass(),
-                        serializedLambda.getImplMethodName(),
-                        capturedArgs,
-                        mapper
-                );
+            Method writeReplaceMethod = ReflectUtils.getMethodByName(mapper.getClass(), "writeReplace");
+            SerializedLambda serializedLambda = (SerializedLambda) ReflectUtils.invoke(mapper, writeReplaceMethod);
+            List<Object> capturedArgs = new ArrayList<>();
+            for (int i = 0; i < serializedLambda.getCapturedArgCount(); i++) {
+                capturedArgs.add(serializedLambda.getCapturedArg(i));
             }
+            return new IndexDesc<>(
+                    serializedLambda.getImplClass(),
+                    serializedLambda.getImplMethodName(),
+                    capturedArgs,
+                    mapper
+            );
+        }
 
         public Object map(T t) {
             return indexMapper.apply(t);
@@ -283,14 +287,17 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
 
     }
 
+    @SuppressWarnings("unused")
     public ArrayIdentifier getIdentifier() {
         return identifier;
     }
 
+    @SuppressWarnings("unused")
     public void setIdentifier(ArrayIdentifier identifier) {
         this.identifier = identifier;
     }
 
+    @SuppressWarnings("unused")
     public String getIdentifierName() {
         return NncUtils.get(identifier, ArrayIdentifier::name);
     }
@@ -299,4 +306,13 @@ public class Table<T> extends LinkedList<T> implements IdInitializing {
 
     }
 
+    @Override
+    public Type getGenericType() {
+        return genericType;
+    }
+
+    @Override
+    public void clearId() {
+        this.id = null;
+    }
 }

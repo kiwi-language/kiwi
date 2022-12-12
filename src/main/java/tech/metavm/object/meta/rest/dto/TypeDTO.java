@@ -1,186 +1,52 @@
 package tech.metavm.object.meta.rest.dto;
 
 import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
 public record TypeDTO(
         Long id,
         String name,
-        Long superTypeId,
         int category,
         boolean ephemeral,
         boolean anonymous,
-        List<TypeDTO> typeParameters,
-        List<Long> typeParameterIds,
-        TypeDTO rawType,
-        Long rawTypeId,
-        List<TypeDTO> typeArguments,
-        List<Long> typeArgumentIds,
-        List<TypeDTO> typeMembers,
-        List<Long> typeMemberIds,
-        List<TypeDTO> upperBounds,
-        List<Long> upperBoundIds,
-        String desc,
-        List<FieldDTO> fields,
-        List<ConstraintDTO> constraints,
-        List<EnumConstantDTO> enumConstants,
         Long nullableTypeId,
-        Long arrayTypeId
+        Long arrayTypeId,
+        Object param
 ) {
-    public static TypeDTO create(
-            Long id,
-            String name,
-            Long superTypeId,
-            int category,
-            boolean ephemeral,
-            boolean anonymous,
-            List<TypeDTO> typeParameters,
-            TypeDTO rawType,
-            List<TypeDTO> typeArguments,
-            List<TypeDTO> typeMembers,
-            List<TypeDTO> upperBounds,
-            String desc,
-            List<FieldDTO> fields,
-            List<ConstraintDTO> constraints,
-            List<EnumConstantDTO> enumConstants
-    ) {
+
+    public static TypeDTO createClass(String name, List<FieldDTO> fieldDTOs) {
+        return createClass(null, name, fieldDTOs);
+    }
+
+    public static TypeDTO createClass(Long id, String name, List<FieldDTO> fieldDTOs) {
         return new TypeDTO(
-                id,
-                name,
-                superTypeId,
-                category,
-                ephemeral,
-                anonymous,
-                typeParameters,
-                NncUtils.map(typeParameters, TypeDTO::id),
-                rawType,
-                NncUtils.get(rawType, TypeDTO::id),
-                typeArguments,
-                NncUtils.map(typeArguments, TypeDTO::id),
-                typeMembers,
-                NncUtils.map(typeMembers, TypeDTO::id),
-                upperBounds,
-                NncUtils.map(upperBounds, TypeDTO::id),
-                desc,
-                fields,
-                constraints,
-                enumConstants,
-                null,
-                null
+                id, name, TypeCategory.CLASS.code(), false, false,
+                null, null,
+                new ClassParamDTO(
+                        null, null, fieldDTOs, List.of(), null
+                )
         );
     }
 
-    public static TypeDTO createClass(
-            Long id,
-            String name,
-            long superTypeId,
-            boolean ephemeral,
-            boolean anonymous,
-//            List<TypeDTO> typeParameters,
-//            TypeDTO rawType,
-//            List<TypeDTO> typeArguments,
-//            List<TypeDTO> typeMembers,
-            String desc,
-            List<FieldDTO> fields,
-            List<ConstraintDTO> constraints
-    ) {
+    public static TypeDTO createClass(Long id,
+                                      String name,
+                                      Long superTypeId,
+                                      boolean anonymous,
+                                      boolean ephemeral,
+                                      List<FieldDTO> fieldDTOs,
+                                      List<ConstraintDTO> constraintDTOs,
+                                      String desc) {
         return new TypeDTO(
-                id,
-                name,
-                superTypeId,
-                TypeCategory.CLASS.code(),
-                ephemeral,
-                anonymous,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                desc,
-                fields,
-                constraints,
-                List.of(),
-                null,
-                null
+                id, name, TypeCategory.CLASS.code(),
+                ephemeral, anonymous, null, null,
+                new ClassParamDTO(
+                        superTypeId,
+                        null,
+                        fieldDTOs,
+                        constraintDTOs,
+                        desc
+                )
         );
     }
-
-    public static TypeDTO createPrimitive(
-            Long id,
-            String name,
-            long superTypeId,
-            boolean ephemeral,
-            boolean anonymous,
-            String desc
-    ) {
-        return new TypeDTO(
-                id,
-                name,
-                superTypeId,
-                TypeCategory.PRIMITIVE.code(),
-                ephemeral,
-                anonymous,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                desc,
-                List.of(),
-                List.of(),
-                List.of(),
-                null,
-                null
-        );
-    }
-
-    public static TypeDTO createEnum(
-            Long id,
-            String name,
-            long superTypeId,
-            boolean ephemeral,
-            boolean anonymous,
-            String desc,
-            List<FieldDTO> fields,
-            List<ConstraintDTO> constraints,
-            List<EnumConstantDTO> enumConstants
-    ) {
-        return new TypeDTO(
-                id,
-                name,
-                superTypeId,
-                TypeCategory.ENUM.code(),
-                ephemeral,
-                anonymous,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                desc,
-                fields,
-                constraints,
-                enumConstants,
-                null,
-                null
-        );
-    }
-
 }

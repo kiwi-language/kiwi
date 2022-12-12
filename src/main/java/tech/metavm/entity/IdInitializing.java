@@ -4,4 +4,6 @@ public interface IdInitializing extends Identifiable {
 
     void initId(long id);
 
+    void clearId();
+
 }
