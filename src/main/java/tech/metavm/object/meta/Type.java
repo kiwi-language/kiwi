@@ -11,6 +11,7 @@ import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.function.Function;
 
 @EntityType("类型")
 public abstract class Type extends Entity {
@@ -21,6 +22,9 @@ public abstract class Type extends Entity {
 
     @EntityField(value = "名称", asTitle = true)
     protected String name;
+    @EntityField(value = "编号")
+    @Nullable
+    private String code;
     @EntityField("是否匿名")
     protected boolean anonymous;
     @EntityField("是否临时")
@@ -47,6 +51,15 @@ public abstract class Type extends Entity {
 
     public final void setName(String name) {
         this.name = name;
+    }
+
+    @Nullable
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = code;
     }
 
     public final TypeCategory getCategory() {
@@ -182,6 +195,7 @@ public abstract class Type extends Entity {
         return new TypeDTO(
                 id,
                 name,
+                code,
                 category.code(),
                 ephemeral,
                 anonymous,
@@ -197,10 +211,11 @@ public abstract class Type extends Entity {
 
     protected abstract Object getParam();
 
-
     @Override
     public String toString() {
         return "Type " + name + " (id: " + getId() + ")";
     }
+
+    public abstract String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType);
 
 }

@@ -1,10 +1,10 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.PrimitiveInstance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
@@ -152,46 +152,48 @@ public class ExpressionUtil {
         }
     }
 
-    public static Long castInteger(Object value) {
-        if(ValueUtil.isInteger(value)) {
-            return ((Number) value).longValue();
+    public static LongInstance castInteger(Instance value) {
+        if(value instanceof LongInstance longInstance) {
+            return longInstance;
+        }
+        else if(value instanceof IntInstance intInstance) {
+            return InstanceUtils.convertToLong(intInstance);
         }
         else {
             throw BusinessException.invalidExpressionValue("整数", value);
         }
     }
 
-    public static Double castFloat(Object value) {
-        if(ValueUtil.isNumber(value)) {
-            return ((Number) value).doubleValue();
+    public static DoubleInstance castFloat(Instance value) {
+        if(value instanceof DoubleInstance doubleInstance) {
+            return doubleInstance;
         }
         else {
             throw BusinessException.invalidExpressionValue("数值", value);
         }
     }
 
-    public static Boolean castBoolean(Object value) {
-        if(ValueUtil.isBoolean(value)) {
-            return (Boolean) value;
+    public static BooleanInstance castBoolean(Instance value) {
+        if(value instanceof BooleanInstance booleanInstance) {
+            return booleanInstance;
         }
         else {
             throw BusinessException.invalidExpressionValue("布尔", value);
         }
     }
 
-    public static String castString(Object value) {
-        if(ValueUtil.isString(value)) {
-            return (String) value;
+    public static StringInstance castString(Instance value) {
+        if(value instanceof StringInstance stringInstance) {
+            return stringInstance;
         }
         else {
             throw BusinessException.invalidExpressionValue("文本", value);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static Collection<Object> castCollection(Object value) {
-        if(ValueUtil.isCollection(value)) {
-            return (Collection<Object>) value;
+    public static ArrayInstance castCollection(Instance value) {
+        if(value instanceof ArrayInstance arrayInstance) {
+            return arrayInstance;
         }
         else {
             throw BusinessException.invalidExpressionValue("集合", value);

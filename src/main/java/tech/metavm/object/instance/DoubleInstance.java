@@ -1,10 +1,11 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.util.InstanceUtils;
 
 import java.text.DecimalFormat;
 
-public class DoubleInstance extends PrimitiveInstance {
+public class DoubleInstance extends NumberInstance {
 
     private static final DecimalFormat DF = new DecimalFormat("0.##");
 
@@ -44,6 +45,26 @@ public class DoubleInstance extends PrimitiveInstance {
         return new DoubleInstance(value / that.value, getType());
     }
 
+    public BooleanInstance isGreaterThan(DoubleInstance that) {
+        return InstanceUtils.createBoolean(value > that.value);
+    }
+
+    public BooleanInstance isGreaterThanOrEqualTo(DoubleInstance that) {
+        return InstanceUtils.createBoolean(value >= that.value);
+    }
+
+    public BooleanInstance isLessThan(DoubleInstance that) {
+        return InstanceUtils.createBoolean(value < that.value);
+    }
+
+    public BooleanInstance isLessThanOrEqualTo(DoubleInstance that) {
+        return InstanceUtils.createBoolean(value <= that.value);
+    }
+
+    public DoubleInstance mod(DoubleInstance that) {
+        return new DoubleInstance(value % that.value, getType());
+    }
+    
     @Override
     public String getTitle() {
         return DF.format(value);

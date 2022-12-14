@@ -10,6 +10,7 @@ import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.lang.model.type.NullType;
 import java.util.Set;
 
 public abstract class Instance implements IdInitializing {
@@ -74,6 +75,10 @@ public abstract class Instance implements IdInitializing {
 
     public String toStringValue() {
         throw new UnsupportedOperationException();
+    }
+
+    public Object toSearchConditionValue() {
+        return NncUtils.requireNonNull(id);
     }
 
     @Override

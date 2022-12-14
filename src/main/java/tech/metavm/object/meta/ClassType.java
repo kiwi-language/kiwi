@@ -9,7 +9,6 @@ import tech.metavm.flow.FlowRT;
 import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
@@ -34,12 +33,12 @@ public class ClassType extends AbsClassType {
     private final Table<Field> fields = new Table<>(Field.class);
     @ChildEntity("约束列表")
     private final Table<ConstraintRT<?>> constraints = new Table<>(new TypeReference<>() {});
-//    @EntityField("类型参数列表")
-//    private final Table<TypeVariable> typeParameters = new Table<>();
-//    @EntityField("模板实现列表")
-//    private final Table<ParameterizedType> templateImplementations = new Table<>();
     @EntityField("流程列表")
     private final Table<FlowRT> flows = new Table<>(FlowRT.class);
+
+    public ClassType(String name) {
+        this(name, null, TypeCategory.CLASS, false, false, null);
+    }
 
     public ClassType(
                 String name,
@@ -79,14 +78,6 @@ public class ClassType extends AbsClassType {
         }
     }
 
-//    public List<TypeVariable> getTypeParameters() {
-//        return typeParameters;
-//    }
-
-//    public Table<ParameterizedType> getTemplateImplementations() {
-//        return templateImplementations;
-//    }
-
     public Table<Field> getDeclaredFields() {
         return fields;
     }
@@ -98,10 +89,6 @@ public class ClassType extends AbsClassType {
     public Table<FlowRT> getDeclaredFlows() {
         return flows;
     }
-
-//    public Table<TypeVariable> getDeclaredTypeParameters() {
-//        return typeParameters;
-//    }
 
     public void addField(Field field) {
         if(field.getId() != null && getField(field.getId()) != null) {
@@ -250,6 +237,13 @@ public class ClassType extends AbsClassType {
         return getParam(false, false);
     }
 
+    @Override
+    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+        java.lang.reflect.Type javaType = NncUtils.requireNonNull(
+                getJavaType.apply(this), "Can not get java type for type '" + this + "'");
+        return javaType.getTypeName();
+    }
+
     public TypeDTO toDTO(boolean withFields, boolean withFieldTypes) {
         return super.toDTO(getParam(withFields, withFieldTypes));
     }
@@ -258,31 +252,10 @@ public class ClassType extends AbsClassType {
         return new ClassParamDTO(
                 NncUtils.get(superType, Type::getId),
                 NncUtils.get(superType, Type::toDTO),
-                withFields ? NncUtils.map(fields, f -> f.toDTO(withFieldTypes)) : List.of(),
+                withFields ? NncUtils.map(getFields(), f -> f.toDTO(withFieldTypes)) : List.of(),
                 NncUtils.map(constraints, ConstraintRT::toDTO),
-//                NncUtils.map(typeParameters, TypeVariable::toDTO),
                 desc
         );
-    }
-
-//    @Override
-//    public ClassType getEffectiveType(TypeMapping mapping) {
-//        return new ParameterizedType(
-//                this,
-//                NncUtils.map(typeParameters, mapping::getEffectiveType)
-//        );
-//    }
-
-    private List<FieldDTO> getFieldDTOs(boolean withFields, boolean withTitleField, boolean withFieldTypes) {
-        if(withFields) {
-            return map(fields, f -> f.toDTO(withFieldTypes));
-        }
-        else if(withTitleField) {
-            return filterAndMap(fields, Field::isAsTitle, f -> f.toDTO(withFieldTypes));
-        }
-        else {
-            return List.of();
-        }
     }
 
     @JsonIgnore
@@ -326,5 +299,9 @@ public class ClassType extends AbsClassType {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return "ClassType " + name + " (id:" + id + ")";
+    }
 }
 

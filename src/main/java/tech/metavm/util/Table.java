@@ -1,6 +1,6 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.ArrayIdentifier;
+import tech.metavm.entity.ModelIdentity;
 import tech.metavm.entity.IdInitializing;
 import tech.metavm.entity.NoProxy;
 
@@ -28,7 +28,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
-    private ArrayIdentifier identifier;
+    private ModelIdentity identifier;
 
     public Table(Class<T> klass, Collection<T> data) {
         this(TypeReference.of(klass), data, DEFAULT_INDEX_BUILD_THRESHOLD);
@@ -288,18 +288,18 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     @SuppressWarnings("unused")
-    public ArrayIdentifier getIdentifier() {
+    public ModelIdentity getIdentifier() {
         return identifier;
     }
 
     @SuppressWarnings("unused")
-    public void setIdentifier(ArrayIdentifier identifier) {
+    public void setIdentifier(ModelIdentity identifier) {
         this.identifier = identifier;
     }
 
     @SuppressWarnings("unused")
     public String getIdentifierName() {
-        return NncUtils.get(identifier, ArrayIdentifier::name);
+        return NncUtils.get(identifier, ModelIdentity::name);
     }
 
     public interface IndexMapper<T, K> extends Function<T, K>, Serializable {

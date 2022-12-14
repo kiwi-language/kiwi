@@ -1,6 +1,8 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.NncUtils;
 
 public class StringInstance extends PrimitiveInstance {
 
@@ -16,6 +18,18 @@ public class StringInstance extends PrimitiveInstance {
         return value;
     }
 
+    public BooleanInstance contains(StringInstance that) {
+        return InstanceUtils.createBoolean(value.contains(that.value));
+    }
+
+    public BooleanInstance startsWith(StringInstance that) {
+        return InstanceUtils.createBoolean(value.startsWith(that.value));
+    }
+
+    public BooleanInstance isBlank() {
+        return InstanceUtils.createBoolean(NncUtils.isBlank(value));
+    }
+
     @Override
     public String toString() {
         return "StringInstance " + value + ":" + getType().getName();
@@ -25,4 +39,5 @@ public class StringInstance extends PrimitiveInstance {
     public String getTitle() {
         return value;
     }
+
 }

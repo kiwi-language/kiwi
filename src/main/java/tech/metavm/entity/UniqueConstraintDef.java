@@ -18,6 +18,7 @@ public class UniqueConstraintDef {
         this.indexDefField = indexDefField;
         this.declaringTypeDef = declaringTypeDef;
         indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
+        uniqueConstraint.setIndexDef(indexDef);
         declaringTypeDef.addUniqueConstraintDef(this);
     }
 

@@ -5,6 +5,7 @@ import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -76,6 +77,10 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     @Override
     public boolean contains(Object o) {
         return elements.contains(o);
+    }
+
+    public BooleanInstance instanceContains(Instance instance) {
+        return InstanceUtils.createBoolean(contains(instance));
     }
 
     @NotNull

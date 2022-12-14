@@ -103,6 +103,10 @@ public class EntityProp {
         return entityMap;
     }
 
+    public Field getField() {
+        return field;
+    }
+
     public Object get(Object object) {
         return ReflectUtils.get(object, field);
     }

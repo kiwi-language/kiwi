@@ -1,11 +1,11 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.InstanceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ListTree extends NTree {
 
@@ -30,16 +30,17 @@ public class ListTree extends NTree {
     }
 
     @Override
-    public List<Object> getValue() {
-        return NncUtils.map(children, NTree::getValue);
+    public ArrayInstance getValue() {
+//        return NncUtils.map(children, NTree::getValue);
+        return InstanceUtils.createArray(idList);
     }
 
-    public Object getFieldValue(String fieldPath) {
-        List<Object> results = new ArrayList<>();
+    public Instance getFieldValue(String fieldPath) {
+        ArrayInstance arrayInstance = InstanceUtils.createArray(List.of());
         for (NTree child : children) {
-            results.add(child.getFieldValue(fieldPath));
+            arrayInstance.add(child.getFieldValue(fieldPath));
         }
-        return results;
+        return arrayInstance;
     }
 
     @Override

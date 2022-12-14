@@ -1,6 +1,7 @@
 package tech.metavm.user;
 
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.user.persistence.RolePO;
 import tech.metavm.user.rest.dto.RoleDTO;
@@ -10,6 +11,7 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 @EntityType("角色")
 public class RoleRT extends Entity {
 
+    @EntityField("名称")
     private String name;
 
     public RoleRT() {

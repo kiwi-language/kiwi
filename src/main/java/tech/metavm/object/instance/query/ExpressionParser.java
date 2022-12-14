@@ -1,6 +1,10 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.instance.PrimitiveInstance;
+import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -63,7 +67,26 @@ public class ExpressionParser {
             }
             else {
                 if(token.isConstant()) {
-                    exprStack.push(new ConstantExpression(token.value()/*, context.getInstanceContext()*/));
+                    PrimitiveInstance constValue;
+                    if (token.isString()) {
+                        constValue = InstanceUtils.createString((String) token.value());
+                    }
+                    else if (token.isInt()) {
+                        constValue = InstanceUtils.createLong((long) token.value());
+                    }
+                    else if(token.isFloat()) {
+                        constValue = InstanceUtils.createDouble((double) token.value());
+                    }
+                    else if (token.isBoolean()) {
+                        constValue = InstanceUtils.createBoolean((boolean) token.value());
+                    }
+                    else if (token.isNull()) {
+                        constValue = InstanceUtils.createNull();
+                    }
+                    else {
+                        throw new InternalException("Invalid constant token type " + token.type());
+                    }
+                    exprStack.push(new ConstantExpression(constValue));
                 }
                 else {
                     exprStack.push(parseField(token.getName()));

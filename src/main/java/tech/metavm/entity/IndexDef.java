@@ -38,4 +38,5 @@ public class IndexDef<T extends Entity> {
     public List<String> getFieldNames() {
         return fieldNames;
     }
+
 }

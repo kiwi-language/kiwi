@@ -95,6 +95,7 @@ public class MockRegistry {
                 "Big Foo",
                 new Bar("Bar001")
         );
+        foo.setCode("Foo001");
 
         foo.setQux(new Qux(100));
         Baz baz1 = new Baz();

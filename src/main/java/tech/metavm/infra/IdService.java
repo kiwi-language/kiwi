@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.infra.persistence.BlockMapper;
+import tech.metavm.infra.persistence.BlockPO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.InternalException;
@@ -32,8 +33,16 @@ public class IdService implements EntityIdProvider {
         this.regionManager = regionManager;
         cache = new IdBlockCache(
                 CACHE_CAPACITY,
-                id -> new BlockRT(blockMapper.selectByPoint(id))
+                this::loadBlock
         );
+    }
+
+    private BlockRT loadBlock(long point) {
+        BlockPO blockPO = NncUtils.requireNonNull(
+                blockMapper.selectByPoint(point),
+                () -> new InternalException("Can not find a block containing id " + point)
+        );
+        return new BlockRT(blockPO);
     }
 
     public BlockRT getBydId(long id) {

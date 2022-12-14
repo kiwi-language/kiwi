@@ -2,8 +2,6 @@ package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.PrimitiveType;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.IdentitySet;
 
 import java.util.Objects;
@@ -34,6 +32,11 @@ public abstract class PrimitiveInstance extends Instance {
 
     @Override
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
+        return getValue();
+    }
+
+    @Override
+    public Object toSearchConditionValue() {
         return getValue();
     }
 

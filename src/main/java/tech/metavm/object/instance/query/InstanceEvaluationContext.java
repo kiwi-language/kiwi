@@ -14,7 +14,7 @@ public class InstanceEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Object evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
         if(expression instanceof FieldExpression fieldExpr) {
             return instance.getResolved(fieldExpr.getFieldIds());
         }

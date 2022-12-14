@@ -1,12 +1,18 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Null;
 import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.Table;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Set;
 
 public abstract class PojoParser<T, D extends PojoDef<T>> {
 
@@ -25,7 +31,10 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
 
     protected D parse() {
         def = createDef(getSuperDef());
-        defMap.addDef(def);
+        Type type = def.getType();
+        type.setNullableType(new UnionType(Set.of(type, defMap.getType(Null.class))));
+        type.setArrayType(new ArrayType(type, false));
+        defMap.preAddDef(def);
         getPropertyFields().forEach(f -> parseField(f, def));
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         return def;
@@ -49,16 +58,28 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
 
     protected abstract D createDef(PojoDef<? super T> parentDef);
 
-    private void parseField(Field reflectField, PojoDef<?> declaringTypeDef) {
-        ModelDef<?,?> targetDef = defMap.getDef(reflectField.getGenericType());
-        tech.metavm.object.meta.Field field = createField(reflectField, declaringTypeDef, targetDef);
-        new FieldDef(
-                field,
-                typeFactory.isNullable(field.getType()),
-                reflectField,
-                declaringTypeDef,
-                targetDef
-        );
+    private void parseField(Field javaField, PojoDef<?> declaringTypeDef) {
+        if(Instance.class.isAssignableFrom(javaField.getType())) {
+            Type fieldType = javaField.getType() == ArrayInstance.class ?
+                    defMap.getType(Table.class) : defMap.getType(Object.class);
+            tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, fieldType);
+            new InstanceFieldDef(
+                    javaField,
+                    field,
+                    declaringTypeDef
+            );
+        }
+        else {
+            ModelDef<?, ?> targetDef = defMap.getDef(javaField.getGenericType());
+            tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, getFieldType(javaField, targetDef));
+            new FieldDef(
+                    field,
+                    typeFactory.isNullable(field.getType()),
+                    javaField,
+                    declaringTypeDef,
+                    targetDef
+            );
+        }
     }
 
     private void parseUniqueConstraint(Field indexDefField, PojoDef<T> declaringTypeDef) {
@@ -82,7 +103,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
 
     protected tech.metavm.object.meta.Field createField(Field reflectField,
                                                         PojoDef<?> declaringTypeDef,
-                                                        ModelDef<?,?> targetDef) {
+                                                        Type fieldType) {
         EntityField annotation = reflectField.getAnnotation(EntityField.class);
         boolean unique = annotation != null && annotation.unique();
         boolean asTitle = annotation != null && annotation.asTitle();
@@ -95,7 +116,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
                 unique,
                 asTitle,
                 null,
-                getFieldType(reflectField, targetDef),
+                fieldType,
                 isChild
         );
     }
@@ -103,7 +124,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
     private Type getFieldType(Field reflectField, ModelDef<?,?> targetDef) {
         Type refType = targetDef.getType();
         if(reflectField.isAnnotationPresent(Nullable.class)) {
-            return typeFactory.getNullableType(refType);
+            return defMap.internType(typeFactory.getNullableType(refType));
         }
         else {
             return refType;
@@ -115,6 +136,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         return createType(
                 typeFactory,
                 ReflectUtils.getMetaTypeName(javaType),
+                javaType.getSimpleName(),
                 NncUtils.get(superDef, PojoDef::getType)
         );
     }
@@ -123,6 +145,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         return genericType;
     }
 
-    protected abstract ClassType createType(TypeFactory typeFactory, String name, ClassType superType);
+    protected abstract ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType);
 
 }

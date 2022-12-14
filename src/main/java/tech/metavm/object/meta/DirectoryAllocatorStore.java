@@ -16,7 +16,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
 
     private static final String ID_FILE_DIR = "/id";
 
-    private static final Pattern ID_FILE_NAME_PTN = Pattern.compile("([^.\\s]+)\\.properties");
+    private static final Pattern ID_FILE_NAME_PTN = Pattern.compile(".+\\.properties");
 
     private final String saveDir;
 

@@ -22,7 +22,7 @@ public class Field extends Entity {
 
     @EntityField("名称")
     private String name;
-    @EntityField("声明类型")
+    @EntityField("所属类型")
     private final ClassType declaringType;
     @EntityField("可见范围")
     private Access access;
@@ -37,6 +37,10 @@ public class Field extends Entity {
     private Type type;
     @EntityField("是否从对象字段")
     private boolean isChildField;
+
+    public Field(String name, ClassType declaringType, Type type) {
+        this(name, declaringType, Access.GLOBAL, false, false, null, type, false);
+    }
 
     public Field(
              String name,

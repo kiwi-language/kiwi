@@ -86,8 +86,6 @@ public class ClassInstance extends Instance {
         }
     }
 
-
-
     private void addField(InstanceField field) {
         fields.add(field);
     }
@@ -97,7 +95,7 @@ public class ClassInstance extends Instance {
         return titleField != null ? field(titleField).getDisplayValue() : getId() + "";
     }
 
-    public Object getResolved(List<Long> fieldPath) {
+    public Instance getResolved(List<Long> fieldPath) {
         long fieldId = fieldPath.get(0);
         InstanceField field = field(fieldId);
         if(fieldPath.size() > 1) {

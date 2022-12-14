@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.EvaluationContext;
@@ -22,6 +23,7 @@ public class ConstantValue extends Value {
         );
     }
 
+    @EntityField("值")
     private final Object value;
 
     public ConstantValue(ValueDTO valueDTO/*, InstanceContext context*/) {

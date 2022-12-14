@@ -18,7 +18,11 @@ public interface DefMap {
         }
     }
 
+    tech.metavm.object.meta.Type internType(tech.metavm.object.meta.Type type);
+
     ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type);
+
+    void preAddDef(ModelDef<?,?> def);
 
     void addDef(ModelDef<?, ?> def);
 

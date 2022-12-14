@@ -45,6 +45,7 @@ public class EntityQueryServiceTest extends TestCase {
                 new EntityQuery<>(
                         Foo.class,
                         null,
+                        List.of(),
                         1,
                         20,
                         List.of(
@@ -58,12 +59,30 @@ public class EntityQueryServiceTest extends TestCase {
         Assert.assertSame(foo, page.data().get(0));
     }
 
+    public void testSearchText() {
+        Foo foo = addEntity(MockRegistry.getFoo());
+        Page<Foo> page = entityQueryService.query(
+                new EntityQuery<>(
+                        Foo.class,
+                        "Foo001",
+                        List.of("code"),
+                        1,
+                        20,
+                        List.of()
+                ),
+                entityContext
+        );
+        Assert.assertEquals(1, page.total());
+        Assert.assertSame(foo, page.data().get(0));
+    }
+
     public void testSearchTypes() {
         ClassType fooType = addEntity(MockRegistry.getClassType(Foo.class));
         Page<ClassType> page = entityQueryService.query(
                 new EntityQuery<>(
                         ClassType.class,
                         null,
+                        List.of(),
                         1,
                         20,
                         List.of(

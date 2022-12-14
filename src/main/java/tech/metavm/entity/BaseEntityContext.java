@@ -44,6 +44,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public <T> T getModel(Class<T> klass, Instance instance) {
+        if(!getDefContext().containsTypeDef(instance.getType())) {
+            // If there's no java type for the instance type, return the instance
+            return klass.cast(instance);
+        }
         beforeGetModel(klass, instance);
         if(parent != null && parent.containsInstance(instance)) {
             return parent.getModel(klass, instance);
@@ -70,6 +74,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     protected <T> void beforeGetModel(Class<T> klass, Instance instance) {}
+
+    protected void beforeFinish() {}
 
     @Override
     public boolean containsInstance(Instance instance) {
@@ -206,10 +212,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
+
+    public void initIds() {
+        NncUtils.requireNonNull(instanceContext);
+        flushAndWriteInstances();
+        instanceContext.initIds();
+    }
+
     public void finish() {
         NncUtils.requireNonNull(instanceContext);
-        flush(instanceContext);
-        models().forEach(this::writeModel);
+        flush();
+        updateInstances();
+        writeInstances(instanceContext);
         instanceContext.finish();
     }
 
@@ -222,22 +236,23 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return model2instance.keySet();
     }
 
-    public void flush() {
-        NncUtils.requireNonNull(instanceContext, "Instance context required");
-        flush(instanceContext);
+    public void flushAndWriteInstances() {
+        NncUtils.requireNonNull(instanceContext);
+        flush();
+        writeInstances(instanceContext);
     }
 
-    protected void flush(IInstanceContext instanceContext) {}
+    protected void flush() {}
 
-    private void writeModel(Object model) {
-        Instance instance = model2instance.get(model);
-        if(instance == null) {
-            createInstanceFromModel(model);
-        }
-        else {
-            ModelDef<?,?> def = getDefContext().getDef(instance.getType());
-            def.updateInstanceHelper(model, instance, this);
-        }
+    protected void writeInstances(IInstanceContext instanceContext) {}
+
+    private void updateInstances() {
+        new IdentityHashMap<>(model2instance).forEach(this::updateInstance);
+    }
+
+    private void updateInstance(Object model, Instance instance) {
+        ModelDef<?,?> def = getDefContext().getDef(instance.getType());
+        def.updateInstanceHelper(model, instance, this);
     }
 
     public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {
@@ -317,12 +332,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return TypeUtil.createUnion(typeMembers);
     }
 
-    public void initIds() {
-        NncUtils.requireNonNull(instanceContext);
-        flush(instanceContext);
-        instanceContext.initIds();
-    }
-
     @Override
     public Instance getInstance(Object model) {
         if(parent != null && parent.containsModel(model)) {
@@ -364,13 +373,13 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if((model instanceof Entity entity) && entity.getId() != null) {
             entityMap.put(entity.key(), entity);
         }
-        if(!instance.isValue() && !lateBinding()
+        if(!instance.isValue() && !manualInstanceWriting()
                 && instanceContext != null && !instanceContext.containsInstance(instance)) {
             instanceContext.bind(instance);
         }
     }
 
-    protected abstract boolean lateBinding();
+    protected abstract boolean manualInstanceWriting();
 
     protected abstract DefContext getDefContext();
 

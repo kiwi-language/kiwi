@@ -3,6 +3,7 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.EntityType;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType("基础类型")
 public class PrimitiveType extends Type {
@@ -48,6 +49,11 @@ public class PrimitiveType extends Type {
 
     @Override
     public String toString() {
-        return "PrimitiveType " + kind.getName();
+        return "PrimitiveType " + kind.getName() + " @" + super.hashCode();
+    }
+
+    @Override
+    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return kind.getJavaClass().getName();
     }
 }

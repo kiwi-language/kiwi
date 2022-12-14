@@ -1,23 +1,25 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.instance.Instance;
+
 import java.util.List;
 
 public class ValueTree extends NTree {
 
-    private final Object value;
+    private final Instance value;
 
-    public ValueTree(Path path, Object value) {
+    public ValueTree(Path path, Instance value) {
         super(path);
         this.value = value;
     }
 
     @Override
-    public Object getValue() {
+    public Instance getValue() {
         return value;
     }
 
     @Override
-    protected Object getFieldValue(String fieldPath) {
+    protected Instance getFieldValue(String fieldPath) {
         return value;
     }
 

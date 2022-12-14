@@ -1,6 +1,7 @@
 package tech.metavm.user;
 
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
 import tech.metavm.user.persistence.UserPO;
@@ -18,12 +19,16 @@ public class UserRT extends Entity {
 
     public static final IndexDef<UserRT> IDX_LOGIN_NAME = new IndexDef<UserRT>(UserRT.class, "loginName");
 
+    @EntityField("账号")
     private final String loginName;
 
+    @EntityField("密码")
     private String password;
 
+    @EntityField("名称")
     private String name;
 
+    @EntityField("角色列表")
     private Table<RoleRT> roles;
 
     public UserRT(String loginName, String password, String name, List<RoleRT> roles) {

@@ -2,6 +2,8 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityType;
 
+import java.util.function.Function;
+
 @EntityType("任意类型")
 public class AnyType extends Type {
 
@@ -22,6 +24,11 @@ public class AnyType extends Type {
     @Override
     protected Object getParam() {
         return null;
+    }
+
+    @Override
+    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return "Any";
     }
 
     @Override

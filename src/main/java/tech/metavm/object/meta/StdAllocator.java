@@ -16,7 +16,6 @@ public class StdAllocator {
 
     private final AllocatorStore store;
     private final String fileName;
-//    private final long base;
     private long nextId;
     private final Map<String, Long> code2id = new LinkedHashMap<>();
     private final Map<Long, String> id2code = new LinkedHashMap<>();
@@ -48,10 +47,6 @@ public class StdAllocator {
 
     public Long getId(String code) {
         return code2id.get(code);
-//        if(id == null) {
-//            id = allocateId(code);
-//        }
-//        return id;
     }
 
     public String getCodeById(long id) {
@@ -81,10 +76,6 @@ public class StdAllocator {
         return javaType;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
     public void save() {
         Properties properties = new Properties();
         properties.put(ID_BASE_PROP_KEY, Long.toString(nextId));
@@ -97,6 +88,10 @@ public class StdAllocator {
         List<Long> result = NncUtils.range(nextId, nextId + count);
         nextId += count;
         return result;
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 
     public void putId(String code, long id) {

@@ -70,6 +70,7 @@ public class TestEnumDef extends TestCase {
 
         private final Map<Type, ModelDef<?,?>> javaType2Def = new HashMap<>();
         private final Map<tech.metavm.object.meta.Type, ModelDef<?,?>> type2Def = new HashMap<>();
+        private final Map<tech.metavm.object.meta.Type, tech.metavm.object.meta.Type> internTypeMap = new HashMap<>();
 
         @Override
         public ModelDef<?, ?> getDef(Type type) {
@@ -77,8 +78,18 @@ public class TestEnumDef extends TestCase {
         }
 
         @Override
+        public tech.metavm.object.meta.Type internType(tech.metavm.object.meta.Type type) {
+            return internTypeMap.computeIfAbsent(type, t -> type);
+        }
+
+        @Override
         public ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type) {
             return type2Def.get(type);
+        }
+
+        @Override
+        public void preAddDef(ModelDef<?, ?> def) {
+            addDef(def);
         }
 
         @Override

@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
@@ -8,49 +8,50 @@ import java.util.Arrays;
 import java.util.List;
 
 public enum Function {
-    IS_BLANK(Boolean.class),
-    MAX,
-    MIN,
-    SUM,
-    IF(types -> ValueUtil.getConvertibleType(types.get(1), types.get(2))),
+
+    MAX$_INT(Integer.class, Integer.class, Integer.class),
+    MAX$_LONG(Long.class, Long.class, Long.class),
+    MAX$_DOUBLE(Double.class, Double.class, Double.class),
+
+    MIN$_INT(Integer.class, Integer.class, Integer.class),
+    MIN$_LONG(Long.class, Long.class, Long.class),
+    MIN$_DOUBLE(Double.class, Double.class, Double.class),
+
+    SUM$_INT(Integer.class, Integer.class, Integer.class),
+    SUM$_LONG(Long.class, Long.class, Long.class),
+    SUM$_DOUBLE(Double.class, Double.class, Double.class),
+
+    IF(Object.class, List.of(Boolean.class, Object.class, Object.class),
+            types -> ValueUtil.getConvertibleType(types.get(1), types.get(2))),
+
+    IS_BLANK(Boolean.class, String.class),
 
     ;
 
     private final FunctionDesc desc;
 
-//    private final Type resultType;
+    private final String code;
 
-    private final Class<?> resultJavaType;
+    private final List<Class<?>> parameterTypes;
 
-    private final java.util.function.Function<List<Type>, Type> resultTypeFunc;
+//    private final Class<?> resultType;
 
-    Function() {
-        this(null, null);
+
+    Function(Class<?> resultType, Class<?>...argumentTypes) {
+        this(resultType, Arrays.asList(argumentTypes),null);
     }
 
-    Function(Class<?> resultJavaType) {
-        this(resultJavaType, null);
-    }
-
-    Function(java.util.function.Function<List<Type>, Type> resultTypeFunc) {
-        this(null, resultTypeFunc);
-    }
-
-    Function(Class<?> resultJavaType, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
-        desc = new FunctionDesc(this);
+    Function(Class<?> resultType, List<Class<?>> parameterTypes, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
+        this.parameterTypes = parameterTypes;
 //        this.resultType = resultType;
-        this.resultJavaType = resultJavaType;
-        this.resultTypeFunc = resultTypeFunc;
+//        this.resultTypeFunc = resultTypeFunc;
+        code = extractCodeFromName(name());
+        desc = new FunctionDesc(this);
     }
 
-    public Type getResultType(List<Type> argumentTypes/*, InstanceContext context*/) {
-        if(resultJavaType != null) {
-            return ModelDefRegistry.getType(resultJavaType);
-        }
-        if(resultTypeFunc != null) {
-            return resultTypeFunc.apply(argumentTypes);
-        }
-        return ValueUtil.getConvertibleType(argumentTypes);
+    private static String extractCodeFromName(String name) {
+        int dollarIndex = name.indexOf('$');
+        return dollarIndex == -1 ? name : name.substring(0 ,dollarIndex);
     }
 
     public static Function getByNameRequired(String name) {
@@ -60,12 +61,19 @@ public enum Function {
                 .orElseThrow(() -> new RuntimeException("No func found for name: " + name));
     }
 
+    public Type getReturnType(List<Type> argumentTypes) {
+        return desc.getReturnType(argumentTypes);
+    }
+
     public List<Class<?>> getParameterTypes() {
-        return Arrays.asList(desc.getParamTypes());
+        return parameterTypes;
     }
 
-    public Object evaluate(List<Object> arguments) {
-        return desc.evaluate(arguments.toArray());
+    public Instance evaluate(List<Instance> arguments) {
+        return desc.evaluate(arguments);
     }
 
+    public String code() {
+        return code;
+    }
 }

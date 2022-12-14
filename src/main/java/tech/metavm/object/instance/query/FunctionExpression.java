@@ -43,7 +43,7 @@ public class FunctionExpression extends Expression {
 
     @Override
     public Type getType() {
-        return function.getResultType(NncUtils.map(arguments, Expression::getType)/*, context*/);
+        return function.getReturnType(NncUtils.map(arguments, Expression::getType)/*, context*/);
     }
 
     @Override

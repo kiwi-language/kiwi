@@ -1,8 +1,9 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.util.InstanceUtils;
 
-public class LongInstance extends PrimitiveInstance {
+public class LongInstance extends NumberInstance {
 
     private final long value;
 
@@ -41,6 +42,22 @@ public class LongInstance extends PrimitiveInstance {
 
     public LongInstance mod(LongInstance that) {
         return new LongInstance(value % that.value, getType());
+    }
+
+    public BooleanInstance isGreaterThan(LongInstance that) {
+        return InstanceUtils.createBoolean(value > that.value);
+    }
+
+    public BooleanInstance isGreaterThanOrEqualTo(LongInstance that) {
+        return InstanceUtils.createBoolean(value >= that.value);
+    }
+
+    public BooleanInstance isLessThan(LongInstance that) {
+        return InstanceUtils.createBoolean(value < that.value);
+    }
+
+    public BooleanInstance isLessThanOrEqualTo(LongInstance that) {
+        return InstanceUtils.createBoolean(value <= that.value);
     }
 
     @Override

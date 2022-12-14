@@ -19,7 +19,7 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testAllocateColumn() {
-        ClassType fooType = typeFactory.createRefClass("Foo", null);
+        ClassType fooType = typeFactory.createClass("Foo", null);
 
         ClassType barType = typeFactory.createValueClass("Bar", null);
 
@@ -53,7 +53,7 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testAllocateColumnForArray() {
-        ClassType bazType = typeFactory.createRefClass("Baz", null);
+        ClassType bazType = typeFactory.createClass("Baz", null);
         ClassType barType = typeFactory.createValueClass("Bar", null);
 
         Field barsField = new Field(

@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;
@@ -21,6 +22,10 @@ public class EntityDesc {
 
     public List<EntityProp> getProps() {
         return props;
+    }
+
+    public List<EntityProp> getNonTransientProps() {
+        return NncUtils.filterNot(props, EntityProp::isTransient);
     }
 
     public Class<?> getKlass() {

@@ -4,22 +4,27 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.Table;
 import tech.metavm.util.TestUtils;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class StdAllocatorsTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(StdAllocatorTest.class);
 
     private StdAllocators allocators;
+    private AllocatorStore allocatorStore;
 
     @Override
     protected void setUp() {
-        TestUtils.clearTestResourceDir("id");
-        allocators = new StdAllocators(new MemAllocatorStore());
+        allocatorStore = new MemAllocatorStore();
+        allocators = new StdAllocators(allocatorStore);
     }
 
     public void testSmoking() {
@@ -65,6 +70,23 @@ public class StdAllocatorsTest extends TestCase {
         Assert.assertEquals(typeCategoryClassId, allocators.getTypeId(enumConstantId));
 
         allocators.save();
+    }
+
+    public void testFileNames() {
+        allocators.allocate(
+                Map.of(
+                        Type.class, 1,
+                        ParameterizedTypeImpl.create(Table.class, Type.class), 1
+                )
+        );
+
+        allocators.save();
+
+        Assert.assertEquals(
+                Set.of("/id/" + Type.class.getName() +".properties",
+                        "/id/" + ParameterizedTypeImpl.create(Table.class, Type.class).getTypeName() + ".properties"),
+                new HashSet<>(allocatorStore.getFileNames())
+        );
     }
 
 }

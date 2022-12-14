@@ -18,12 +18,12 @@ public enum PrimitiveKind {
     ;
 
     private final String name;
-    private final Class<?> valueClass;
+    private final Class<?> javaClass;
     private final TypeCategory typeCategory;
 
-    PrimitiveKind(String name, Class<?> valueClass, TypeCategory typeCategory) {
+    PrimitiveKind(String name, Class<?> javaClass, TypeCategory typeCategory) {
         this.name = name;
-        this.valueClass = valueClass;
+        this.javaClass = javaClass;
         this.typeCategory = typeCategory;
     }
 
@@ -32,7 +32,11 @@ public enum PrimitiveKind {
     }
 
     public boolean checkValue(Object value) {
-        return value != null && value.getClass() == valueClass;
+        return value != null && value.getClass() == javaClass;
+    }
+
+    public Class<?> getJavaClass() {
+        return javaClass;
     }
 
     public TypeCategory getTypeCategory() {

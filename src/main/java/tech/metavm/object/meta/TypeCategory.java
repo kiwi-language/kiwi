@@ -44,6 +44,8 @@ public enum TypeCategory {
     PASSWORD(22, SQLType.TEXT),
     @EnumConstant("任意类型")
     ANY(21, SQLType.ANY),
+    @EnumConstant("实例")
+    INSTANCE(21, SQLType.REFERENCE),
     ;
 
     private final int code;

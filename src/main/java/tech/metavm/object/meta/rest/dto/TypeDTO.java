@@ -7,6 +7,7 @@ import java.util.List;
 public record TypeDTO(
         Long id,
         String name,
+        String code,
         int category,
         boolean ephemeral,
         boolean anonymous,
@@ -21,7 +22,7 @@ public record TypeDTO(
 
     public static TypeDTO createClass(Long id, String name, List<FieldDTO> fieldDTOs) {
         return new TypeDTO(
-                id, name, TypeCategory.CLASS.code(), false, false,
+                id, name, null, TypeCategory.CLASS.code(), false, false,
                 null, null,
                 new ClassParamDTO(
                         null, null, fieldDTOs, List.of(), null
@@ -38,7 +39,7 @@ public record TypeDTO(
                                       List<ConstraintDTO> constraintDTOs,
                                       String desc) {
         return new TypeDTO(
-                id, name, TypeCategory.CLASS.code(),
+                id, name, null, TypeCategory.CLASS.code(),
                 ephemeral, anonymous, null, null,
                 new ClassParamDTO(
                         superTypeId,

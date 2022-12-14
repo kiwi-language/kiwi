@@ -50,16 +50,22 @@ public class TableManagerTest extends TestCase {
         ClassType type = ModelDefRegistry.getClassType(Type.class);
         TableDTO tableDTO = tableManager.get(type.getId());
         Assert.assertNotNull(tableDTO.id());
+        Assert.assertEquals(type.getName(), tableDTO.name());
         Assert.assertEquals(type.getFields().size(), tableDTO.fields().size());
-        for (ColumnDTO field : tableDTO.fields()) {
-            Assert.assertNotNull(field.id());
-            Assert.assertEquals(field.name(), type.getField(field.id()).getName());
+        for (ColumnDTO column : tableDTO.fields()) {
+            Assert.assertNotNull(column.id());
+            Field field = type.getField(column.id());
+            Assert.assertNotNull(field);
+            Assert.assertEquals(field.getName(), column.name());
+            Assert.assertEquals(field.isUnique(), column.unique());
+            Assert.assertEquals(field.isArray(), column.multiValued());
+            Assert.assertEquals(field.isNotNull(), column.required());
         }
     }
 
     public void testSave() {
         TableDTO tableDTO = new TableDTO(
-                null, "Foo", null,
+                null, "傻", "Foo", null,
                 false, false,
                 new TitleFieldDTO(
                         "name", TableManager.ColumnType.STRING.code(),

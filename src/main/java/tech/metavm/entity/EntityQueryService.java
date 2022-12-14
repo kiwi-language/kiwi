@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
 import tech.metavm.object.instance.InstanceQueryService;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
@@ -25,18 +26,19 @@ public class EntityQueryService {
     }
 
     private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
-        Type type = ModelDefRegistry.getType(entityQuery.entityType());
+        ClassType type = ModelDefRegistry.getClassType(entityQuery.entityType());
+        EntityDef<?> entityDef = ModelDefRegistry.getEntityDef(type);
         return new InstanceQuery(
                 type.getId(),
                 entityQuery.searchText(),
+                NncUtils.map(entityQuery.searchFields(), entityDef::getFieldByJavaFieldName),
                 entityQuery.page(),
                 entityQuery.pageSize(),
-                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(type ,f, context))
+                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef ,f, context))
         );
     }
 
-    private InstanceQueryField convertToInstanceQueryField(Type type, EntityQueryField entityQueryField, IEntityContext context) {
-        EntityDef<?> entityDef = ModelDefRegistry.getEntityDef(type);
+    private InstanceQueryField convertToInstanceQueryField(EntityDef<?> entityDef, EntityQueryField entityQueryField, IEntityContext context) {
         Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
         Object instanceValue = convertValue(entityQueryField.value(), context);
         return new InstanceQueryField(field, instanceValue);

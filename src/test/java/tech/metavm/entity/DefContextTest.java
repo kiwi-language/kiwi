@@ -10,12 +10,18 @@ import tech.metavm.flow.NodeRT;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
+import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.query.ConstantExpression;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DefContextTest extends TestCase {
 
@@ -24,16 +30,20 @@ public class DefContextTest extends TestCase {
     private DefContext defContext;
     private MockModelInstanceMap modelInstanceMap;
     private TypeFactory typeFactory;
+    private MockIdProvider idProvider;
 
     @Override
     protected void setUp() {
+        idProvider = new MockIdProvider();
         defContext = new DefContext(o -> null);
         modelInstanceMap = new MockModelInstanceMap(defContext);
         typeFactory = new TypeFactory(defContext::getType);
     }
 
-    private EntityDef<ClassType> getTypeDef() {
-        return defContext.getEntityDef(ClassType.class);
+    public void testGetDef() {
+//        ClassType fooType = defContext.getClassType(Foo.class);
+        Field field = defContext.getField(ClassType.class, "fields");
+        Assert.assertFalse(field.isUnique());
     }
 
     public void testConvertToInstance() {
@@ -46,7 +56,7 @@ public class DefContextTest extends TestCase {
 
     public void testConvertFoo() {
         EntityDef<Foo> fooDef = defContext.getEntityDef(Foo.class);
-        Foo foo = new Foo("傻不拉几", new Bar("呆头呆脑"));
+        Foo foo = new Foo(" Big Foo", new Bar("Bar001"));
         ClassInstance instance = fooDef.createInstance(foo, modelInstanceMap);
         Foo recoveredFoo = fooDef.createModel(instance, modelInstanceMap);
         Assert.assertFalse(EntityUtils.isPojoDifferent(foo, recoveredFoo));
@@ -91,6 +101,44 @@ public class DefContextTest extends TestCase {
         Assert.assertTrue(fieldType.getUnderlyingType() instanceof ArrayType);
         ArrayType arrayType = (ArrayType) fieldType.getUnderlyingType();
         Assert.assertSame(defContext.getType(Baz.class), arrayType.getElementType());
+    }
+
+    public void test_field_with_instance_type() {
+        PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
+        ClassType quxType = defContext.getClassType(Qux.class);
+        Field quxAmountField = defContext.getField(Qux.class, "amount");
+        Instance qux = new ClassInstance(
+                Map.of(
+                        quxAmountField, InstanceUtils.longInstance(100L)
+                ),
+                quxType
+        );
+        qux.initId(idProvider.allocateOne(TestConstants.TENANT_ID, quxType));
+
+        ConstantExpression model = new ConstantExpression(qux);
+        Instance instance = def.createInstance(model, modelInstanceMap);
+        ConstantExpression recoveredModel = def.createModelHelper(instance, modelInstanceMap);
+        MatcherAssert.assertThat(recoveredModel, PojoMatcher.of(model));
+    }
+
+    public void testGetIdentityMap() {
+        PojoDef<Type> def = defContext.getPojoDef(Type.class);
+        ClassType type = def.getType();
+        Map<Identifiable, ModelIdentity> identityMap = defContext.getIdentityMap();
+        Set<ModelAndPath> models = ReflectUtils.getReachableObjects(
+                List.of(type), o -> true, true
+        );
+        for (ModelAndPath modelAndPath : models) {
+            Object model = modelAndPath.model();
+            String path  = modelAndPath.path();
+            if(model instanceof Identifiable identifiable) {
+                ModelIdentity identity = identityMap.get(identifiable);
+                Assert.assertNotNull(
+                        "Can not find identity for model '" + model + "' at path '" + path + "'",
+                        identity
+                );
+            }
+        }
     }
 
 }

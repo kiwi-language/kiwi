@@ -26,7 +26,7 @@ public abstract class NTree {
 
     public abstract List<NTree> getChildren();
 
-    public abstract Object getValue();
+    public abstract Instance getValue();
 
     public static NTree create(Path path, Instance instance) {
         if(instance instanceof ClassInstance classInstance) {
@@ -36,12 +36,12 @@ public abstract class NTree {
             return new ListTree(path, array.getElements());
         }
         if(instance instanceof PrimitiveInstance primitiveInstance) {
-            return new ValueTree(path, primitiveInstance.getValue());
+            return new ValueTree(path, primitiveInstance);
         }
         throw new InternalException("Can not create tree for instance " + instance);
     }
 
-    protected abstract Object getFieldValue(String fieldPath);
+    protected abstract Instance getFieldValue(String fieldPath);
 
     public abstract void load();
 

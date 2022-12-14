@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.rest.FlowDTO;
@@ -18,10 +19,15 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 @EntityType("流程")
 public class FlowRT extends Entity {
 
+    @EntityField("名称")
     private String name;
+    @EntityField("所属类型")
     private final ClassType type;
+    @EntityField("根流程范围")
     private final ScopeRT rootScope;
+    @EntityField("输入类型")
     private final ClassType inputType;
+    @EntityField("输出类型")
     private final ClassType outputType;
 
     private final transient Table<ScopeRT> scopes;

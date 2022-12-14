@@ -10,7 +10,7 @@ public class ReferenceValue extends Value {
 
 //    private final String nodeId;
 //    private final String fieldId;
-    private final transient Expression expression;
+    private final Expression expression;
 
     public ReferenceValue(ValueDTO valueDTO, ParsingContext parsingContext) {
         super(valueDTO/*, parsingContext.getInstanceContext()*/);

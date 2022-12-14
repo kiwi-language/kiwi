@@ -15,12 +15,20 @@ public class Foo extends Entity {
     @EntityField(value = "名称", asTitle = true)
     private String name;
 
+    @EntityField(value = "编号")
+    @Nullable
+    private String code;
+
     @ChildEntity("巴")
     private Bar bar;
 
     @EntityField("量子X")
     @Nullable
     private Qux qux;
+
+    @EntityField("量子X2")
+    @Nullable
+    private Qux qux2;
 
     @EntityField("巴子")
     @Nullable
@@ -70,12 +78,30 @@ public class Foo extends Entity {
     }
 
     @Nullable
+    public Qux getQux2() {
+        return qux2;
+    }
+
+    public void setQux2(@Nullable Qux qux2) {
+        this.qux2 = qux2;
+    }
+
+    @Nullable
     public Table<Baz> getBazList() {
         return bazList;
     }
 
     public void setBazList(@Nullable List<Baz> bazList) {
         this.bazList = new Table<>(Baz.class, bazList);
+    }
+
+    @Nullable
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = code;
     }
 
     @Override

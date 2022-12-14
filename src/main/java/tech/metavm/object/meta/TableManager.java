@@ -43,6 +43,7 @@ public class TableManager {
         TypeDTO typeDTO = new TypeDTO(
                 table.id(),
                 table.name(),
+                table.code(),
                 TypeCategory.CLASS.code(),
                 table.ephemeral(),
                 table.anonymous(),
@@ -180,7 +181,8 @@ public class TableManager {
         return new TypeInfo(
                 getColumnType(concreteType),
                 concreteType.getName(),
-                concreteType.isEnum() || concreteType.isClass() ? concreteType.getId() : null,
+                concreteType.isEnum() || concreteType.isClass() || concreteType.isValue() ?
+                        concreteType.getId() : null,
                 isArray(type) ? getElementType(type).isNotNull() : type.isNotNull(),
                 isArray(type),
                 getChoiceOptions(concreteType, fieldDefaultValue)
@@ -202,6 +204,9 @@ public class TableManager {
     private ColumnType getColumnType(Type type) {
         if(isLong(type)) {
             return ColumnType.LONG;
+        }
+        if(isInt(type)) {
+            return ColumnType.INT;
         }
         if(isDouble(type)) {
             return ColumnType.DOUBLE;
@@ -283,7 +288,7 @@ public class TableManager {
         IEntityContext context = newContext();
         Page<TypeDTO> typePage = classTypeManager.query(
                 searchText,
-                List.of(TypeCategory.CLASS.code()),
+                List.of(TypeCategory.CLASS.code(), TypeCategory.VALUE.code()),
                 page,
                 pageSize,
                 context
@@ -300,6 +305,7 @@ public class TableManager {
         return new TableDTO(
                 typeDTO.id(),
                 typeDTO.name(),
+                typeDTO.code(),
                 param.desc(),
                 typeDTO.ephemeral(),
                 typeDTO.anonymous(),
@@ -315,6 +321,7 @@ public class TableManager {
     private static final Set<Class<?>> CONFIDENTIAL_JAVA_CLASSES = Set.of(Password.class);
 
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
+        NncUtils.requireNonNull(fieldDTO.typeId(), "字段'" + fieldDTO.name() + "'的typeId为空");
         Type fieldType = context.getType(fieldDTO.typeId());
         if(ModelDefRegistry.containsTypeDef(fieldType)) {
             Class<?> javaClass = ModelDefRegistry.getJavaClass(fieldType);
@@ -354,12 +361,14 @@ public class TableManager {
         STRING(1, String.class),
         DOUBLE(2, Double.class),
         LONG(3, Long.class),
+        INT(4, Integer.class),
         BOOL(6, Boolean.class),
         ENUM(7, null),
         TIME(9, Date.class),
         TABLE(10, null),
         DATE(13, Date.class),
-        ANY(14, null),
+        PASSWORD(14, null),
+        ANY(15, null),
         ;
 
         private final int code;

@@ -47,9 +47,27 @@ public record Token (
     }
 
     public boolean isConstant() {
-        return type == TokenType.INTEGER || type == TokenType.FLOAT || type == TokenType.NULL
-                || type == TokenType.SINGLE_QUOTED_STRING || type == TokenType.DOUBLE_QUOTED_STRING
-                || type == TokenType.BOOLEAN;
+        return isInt() || isFloat() || isNull() || isString() || isBoolean();
+    }
+
+    public boolean isString() {
+        return type == TokenType.SINGLE_QUOTED_STRING || type == TokenType.DOUBLE_QUOTED_STRING;
+    }
+
+    public boolean isInt() {
+        return type == TokenType.INTEGER;
+    }
+
+    public boolean isFloat() {
+        return type == TokenType.FLOAT;
+    }
+
+    public boolean isNull() {
+        return type == TokenType.NULL;
+    }
+
+    public boolean isBoolean() {
+        return type == TokenType.BOOLEAN;
     }
 
     public boolean isVariable() {

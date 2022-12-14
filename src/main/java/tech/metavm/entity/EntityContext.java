@@ -22,7 +22,7 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
     }
 
     @Override
-    protected boolean lateBinding() {
+    protected boolean manualInstanceWriting() {
         return false;
     }
 

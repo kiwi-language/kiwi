@@ -31,7 +31,7 @@ public class FlowLoadingBuffer implements EvaluationContext {
         return node2path.computeIfAbsent(node, k -> Path.createRoot());
     }
 
-    public Object evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
         if(expression instanceof NodeExpression nodeExpression) {
             return evaluateNodeExpr(nodeExpression, evaluator);
         }

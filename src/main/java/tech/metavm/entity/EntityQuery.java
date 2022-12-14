@@ -7,6 +7,7 @@ import java.util.List;
 public record EntityQuery<T extends Entity>(
         Class<T> entityType,
         String searchText,
+        List<String> searchFields,
         int page,
         int pageSize,
         List<EntityQueryField> fields
@@ -21,6 +22,7 @@ public record EntityQuery<T extends Entity>(
         return new EntityQuery<>(
                 entityType,
                 searchText,
+                List.of(),
                 page,
                 pageSize,
                 List.of()
@@ -37,6 +39,7 @@ public record EntityQuery<T extends Entity>(
         return new EntityQuery<>(
                 entityType,
                 searchText,
+                List.of(),
                 page,
                 pageSize,
                 fields
@@ -53,6 +56,7 @@ public record EntityQuery<T extends Entity>(
         return new EntityQuery<>(
                 typeReference.getType(),
                 searchText,
+                List.of(),
                 page,
                 pageSize,
                 fields

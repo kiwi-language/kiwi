@@ -3,6 +3,7 @@ package tech.metavm.object.instance.search;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.util.Column;
 import tech.metavm.util.InternalException;
@@ -47,12 +48,7 @@ public class SearchBuilder {
     }
 
     private static String parseConstant(ConstantExpression expression) {
-        Object value = expression.getValue();
-        if(value instanceof Instance instance) {
-            NncUtils.requireNonNull(instance.getId());
-            return instance.getId() + "";
-        }
-        return toString(expression.getValue());
+        return toString(expression.getValue().toSearchConditionValue());
     }
 
     private static String parseBinary(BinaryExpression expression) {
@@ -64,10 +60,12 @@ public class SearchBuilder {
         ) {
             FieldExpression fieldExpr = (FieldExpression) expression.getFirst();
             ConstantExpression constExpr = (ConstantExpression) expression.getSecond();
-            Object constValue = constExpr.getValue();
+            Instance constValue = constExpr.getValue();
             Column column = fieldExpr.getLastField().getColumn();
             String columnName = operator == Operator.LIKE ? column.fuzzyName() : column.name();
-            String value = operator == Operator.STARTS_WITH ? escape((String) constValue) + "*" : toString(constValue);
+            String value = operator == Operator.STARTS_WITH ?
+                    escape(((StringInstance) constValue).getValue()) + "*" :
+                    toString(constValue.toSearchConditionValue());
             return parenthesize(columnName + getEsOperator(operator) + value);
         }
         if(operator == Operator.IN) {

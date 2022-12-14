@@ -47,7 +47,7 @@ public class TypeUtil {
     }
 
     public static ClassType createClass(String name, ClassType superType) {
-        return TYPE_FACTORY.createRefClass(name, superType);
+        return TYPE_FACTORY.createClass(name, superType);
     }
 
     public static UnionType createUnion(Set<Type> members) {

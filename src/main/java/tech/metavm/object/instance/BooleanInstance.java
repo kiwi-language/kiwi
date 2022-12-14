@@ -16,6 +16,22 @@ public class BooleanInstance extends PrimitiveInstance {
         return value;
     }
 
+    public boolean isTrue() {
+        return value;
+    }
+
+    public BooleanInstance negate() {
+        return new BooleanInstance(!value, getType());
+    }
+
+    public BooleanInstance and(BooleanInstance that) {
+        return new BooleanInstance(value && that.value, getType());
+    }
+
+    public BooleanInstance or(BooleanInstance that) {
+        return new BooleanInstance(value || that.value, getType());
+    }
+
     @Override
     public String toString() {
         return "BooleanInstance " + value + ":" + getType().getName();
@@ -25,4 +41,5 @@ public class BooleanInstance extends PrimitiveInstance {
     public String getTitle() {
         return value ? "是" : "否";
     }
+
 }

@@ -51,11 +51,13 @@ public class ClassTypeManager {
                                int pageSize,
                                IEntityContext context) {
         List<TypeCategory> categories = categoryCodes != null ?
-                NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired) : List.of(TypeCategory.CLASS);
+                NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired)
+                : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
         Page<ClassType> typePage = entityQueryService.query(
-                EntityQuery.create(
+                new EntityQuery<>(
                         ClassType.class,
                         searchText,
+                        List.of("code"),
                         page,
                         pageSize,
                         List.of(

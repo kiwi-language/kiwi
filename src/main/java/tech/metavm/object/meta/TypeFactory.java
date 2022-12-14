@@ -67,11 +67,7 @@ public class TypeFactory {
 
     @SuppressWarnings("unused")
     public ClassType createClass(String name) {
-        return createRefClass(name, null);
-    }
-
-    public ClassType createRefClass(String name, ClassType superType) {
-        return createClass(name, superType, TypeCategory.CLASS);
+        return createClass(name, null);
     }
 
     public ClassType createValueClass(String name) {
@@ -79,11 +75,27 @@ public class TypeFactory {
     }
 
     public ClassType createValueClass(String name, ClassType superType) {
-        return createClass(name, superType, TypeCategory.VALUE);
+        return createValueClass(name, null, superType);
+    }
+
+    public ClassType createValueClass(String name, String code, ClassType superType) {
+        ClassType type = createClass(name, superType, TypeCategory.VALUE);
+        if(code != null) {
+            type.setCode(code);
+        }
+        return type;
     }
 
     public ClassType createClass(String name, ClassType superType) {
-        return createClass(name, superType, TypeCategory.CLASS);
+        return createClass(name, null, superType);
+    }
+
+    public ClassType createClass(String name, String code, ClassType superType) {
+        ClassType type =  createClass(name, superType, TypeCategory.CLASS);
+        if(code != null) {
+            type.setCode(code);
+        }
+        return type;
     }
 
     public ClassType createClass(String name, ClassType superType, TypeCategory category) {
@@ -131,7 +143,15 @@ public class TypeFactory {
     }
 
     public EnumType createEnum(String name, boolean anonymous, ClassType superType) {
-        return new EnumType(name, superType, anonymous);
+        return createEnum(name, null, anonymous, superType);
+    }
+
+    public EnumType createEnum(String name, String code, boolean anonymous, ClassType superType) {
+        EnumType enumType = new EnumType(name, superType, anonymous);
+        if(code != null) {
+            enumType.setCode(code);
+        }
+        return enumType;
     }
 
     public UnionType getNullableType(Type type) {

@@ -48,10 +48,11 @@ public class FlowManager {
         ClassType inputType = saveInputType(null, List.of(), flowDTO.name(), context);
         ClassType outputType = saveOutputType(null, List.of(), flowDTO.name(), context);
         FlowRT flow = new FlowRT(flowDTO, inputType, outputType, context.getClassType(flowDTO.typeId()));
+        context.finish();
         NodeRT<?> selfNode = createSelfNode(flow);
         NodeRT<?> inputNode = createInputNode(flow, selfNode);
         createReturnNode(flow, inputNode);
-        context.finish();
+        context.bind(flow);
         return flow.getId();
     }
 

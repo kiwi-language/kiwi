@@ -1,7 +1,7 @@
 package tech.metavm.object.meta;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.ArrayIdentifier;
+import tech.metavm.entity.ModelIdentity;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
@@ -50,8 +50,8 @@ public class StdAllocators {
         if(object instanceof Enum<?> enumConstant) {
             return getId0(enumConstant.getClass(), enumConstant.name());
         }
-        if(object instanceof ArrayIdentifier arrayIdentifier) {
-            return getId0(Table.class, arrayIdentifier.name());
+        if(object instanceof ModelIdentity modelIdentity) {
+            return getId0(modelIdentity.type(), modelIdentity.name());
         }
         throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
     }
@@ -66,21 +66,21 @@ public class StdAllocators {
         else if(object instanceof Enum<?> enumConstant) {
             putId0(enumConstant.getClass(), enumConstant.name(), id);
         }
-        else if(object instanceof ArrayIdentifier arrayIdentifier) {
-            putId0(Table.class, arrayIdentifier.name(), id);
+        else if(object instanceof ModelIdentity modelIdentity) {
+            putId0(modelIdentity.type(), modelIdentity.name(), id);
         }
         else {
             throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
         }
     }
 
-    private Long getId0(Class<?> entityType, String entityCode) {
-        StdAllocator allocator = getAllocator(entityType);
+    private Long getId0(Type javaType, String entityCode) {
+        StdAllocator allocator = getAllocator(javaType);
         return allocator.getId(entityCode);
     }
 
-    private void putId0(Class<?> entityType, String entityCode, long id) {
-        allocatorMap.get(entityType).putId(entityCode, id);
+    private void putId0(Type javaType, String entityCode, long id) {
+        allocatorMap.get(javaType).putId(entityCode, id);
     }
 
     public long getTypeId(long id) {

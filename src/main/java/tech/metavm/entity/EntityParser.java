@@ -29,8 +29,8 @@ public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> 
     }
 
     @Override
-    protected ClassType createType(TypeFactory typeFactory, String name, ClassType superType) {
-        return typeFactory.createRefClass(name, superType);
+    protected ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType) {
+        return typeFactory.createClass(name, code, superType);
     }
 
 }

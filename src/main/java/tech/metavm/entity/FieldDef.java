@@ -5,45 +5,45 @@ import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.instance.PrimitiveInstance;
-import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 
-public class FieldDef {
+public class FieldDef implements IFieldDef {
 
-    private final Field reflectField;
+    private final Field javaField;
     private final boolean nullable;
     private final PojoDef<?> declaringTypeDef;
     private final tech.metavm.object.meta.Field field;
     private final ModelDef<?, ?> targetDef;
-    private final TypeCategory typeCategory;
 
     public FieldDef(tech.metavm.object.meta.Field field,
                     boolean nullable,
-                    Field reflectField,
+                    Field javaField,
                     PojoDef<?> declaringTypeDef,
                     ModelDef<?, ?> targetDef) {
-        this.reflectField = reflectField;
+        this.javaField = javaField;
         this.nullable = nullable;
-        typeCategory = ValueUtil.getTypeCategory(reflectField.getGenericType());
         this.targetDef = targetDef;
         this.declaringTypeDef = declaringTypeDef;
         this.field = field;
         declaringTypeDef.addFieldDef(this);
     }
 
-    public void setModelField(Object entity, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    @Override
+    public void setModelField(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
         Object fieldValue = getModelFieldValue(instance, modelInstanceMap);
-        ReflectUtils.set(entity, reflectField, fieldValue);
+        ReflectUtils.set(model, javaField, fieldValue);
     }
 
+    @Override
     public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
         return convertValue(instance.get(field), modelInstanceMap);
     }
 
+    @Override
     public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
-        Object fieldValue = ReflectUtils.get(model, reflectField);
+        Object fieldValue = ReflectUtils.get(model, javaField);
         if(fieldValue == null) {
             if(nullable) {
                 return InstanceUtils.nullInstance();
@@ -56,6 +56,7 @@ public class FieldDef {
         return instanceMap.getInstance(fieldValue);
     }
 
+    @Override
     @JsonIgnore
     @SuppressWarnings("unused")
     public PojoDef<?> getDeclaringTypeDef() {
@@ -78,17 +79,20 @@ public class FieldDef {
     }
 
     private String fieldName() {
-        return reflectField.getDeclaringClass().getName() + "." + reflectField.getName();
+        return javaField.getDeclaringClass().getName() + "." + javaField.getName();
     }
 
-    public java.lang.reflect.Field getReflectField() {
-        return reflectField;
+    @Override
+    public java.lang.reflect.Field getJavaField() {
+        return javaField;
     }
 
+    @Override
     public tech.metavm.object.meta.Field getField() {
         return field;
     }
 
+    @Override
     public String getName() {
         return field.getName();
     }

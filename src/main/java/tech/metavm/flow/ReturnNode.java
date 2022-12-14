@@ -22,7 +22,7 @@ import java.util.Map;
 @EntityType("结束节点")
 public class ReturnNode extends NodeRT<ReturnParamDTO> {
 
-    @EntityField("字段值")
+    @EntityField("字段值列表")
     private final Table<FieldParam> fieldParams = new Table<>(FieldParam.class);
 
     public ReturnNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {

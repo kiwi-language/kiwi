@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.object.instance.Instance;
+
 import java.util.Set;
 
 public class TreeEvaluationContext implements EvaluationContext {
@@ -11,7 +13,7 @@ public class TreeEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Object evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
         if(expression instanceof FieldExpression fieldExpression) {
             return objectTree.getFieldValue(fieldExpression.getPathString());
         }

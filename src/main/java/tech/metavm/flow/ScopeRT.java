@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
@@ -15,10 +16,12 @@ import java.util.List;
 @EntityType("流程范围")
 public class ScopeRT extends Entity  {
 
-    private transient final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {});
-
+    @EntityField("所属流程")
     private final FlowRT flow;
-    private transient NodeRT<?> owner;
+    @EntityField("所属节点")
+    private NodeRT<?> owner;
+
+    private transient final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {});
 
     public ScopeRT(FlowRT flow) {
         this.flow = flow;

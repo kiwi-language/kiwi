@@ -46,27 +46,6 @@ public class PojoDefTest extends TestCase {
         Assert.assertFalse(EntityUtils.isPojoDifferent(foo, recoveredFoo));
     }
 
-    public void testGetEntityMapping() {
-        EntityDef<Foo> fooDef = defMap.getEntityDef(Foo.class);
-        Map<Object, Identifiable> mapping = fooDef.getEntityMapping();
-        ClassType fooType = (ClassType) mapping.get(Foo.class);
-
-        int mappingSize = 4 + ReflectUtils.getDeclaredPersistentFields(Foo.class).size()
-                + ReflectUtils.getIndexDefFields(Foo.class).size();
-        Assert.assertEquals(mappingSize, mapping.size());
-
-        Assert.assertEquals("傻", fooType.getName());
-        Assert.assertEquals(TypeCategory.CLASS, fooType.getCategory());
-
-        Field nameField = (Field) mapping.get(ReflectUtils.getField(Foo.class, "name"));
-        Assert.assertEquals("名称", nameField.getName());
-        Assert.assertEquals(defMap.getType(String.class), nameField.getType());
-
-        Field barField = (Field) mapping.get(ReflectUtils.getField(Foo.class, "bar"));
-        Assert.assertEquals("巴", barField.getName());
-        Assert.assertEquals("巴", barField.getType().getName());
-    }
-
     public void testUniqueConstraint() {
         EntityDef<Foo> fooDef = defMap.getEntityDef(Foo.class);
         ClassType fooType = fooDef.getType();
@@ -93,7 +72,7 @@ public class PojoDefTest extends TestCase {
         model.addOffspring(new Animal(3L, 10L));
         model.setExtraInfo("This guy is a genius");
         PojoDef<LivingBeing> def = defMap.getEntityDef(LivingBeing.class);
-        FieldDef fieldDef = def.getFieldDef(ReflectUtils.getField(LivingBeing.class, "offsprings"));
+        FieldDef fieldDef = (FieldDef) def.getFieldDef(ReflectUtils.getField(LivingBeing.class, "offsprings"));
         tech.metavm.object.meta.Type fieldType = fieldDef.getTargetDef().getType();
         Assert.assertTrue(fieldType instanceof ArrayType);
         ArrayType arrayType = (ArrayType) fieldType;
@@ -109,7 +88,7 @@ public class PojoDefTest extends TestCase {
         LivingBeing model = new LivingBeing(30L);
         model.addAncestor(new Animal(58, 140L));
         PojoDef<LivingBeing> def = defMap.getEntityDef(LivingBeing.class);
-        FieldDef fieldDef = def.getFieldDef(ReflectUtils.getField(LivingBeing.class, "ancestors"));
+        FieldDef fieldDef = (FieldDef) def.getFieldDef(ReflectUtils.getField(LivingBeing.class, "ancestors"));
         tech.metavm.object.meta.Type fieldType = fieldDef.getTargetDef().getType();
         Assert.assertTrue(fieldType instanceof ArrayType);
         ArrayType arrayType = (ArrayType) fieldType;
@@ -121,12 +100,21 @@ public class PojoDefTest extends TestCase {
         MatcherAssert.assertThat(recoveredModel, PojoMatcher.of(model));
     }
 
+    public void test_nullable_field_type() {
+        PojoDef<Foo> def = defMap.getEntityDef(Foo.class);
+
+        tech.metavm.object.meta.ClassType fooType = def.getType();
+        Field fooQuxField = fooType.getFieldByJavaField(ReflectUtils.getField(Foo.class, "qux"));
+        LOGGER.info(fooQuxField.getType().getName());
+    }
+
     public static class MockDefMap implements DefMap {
 
         private final Map<Type, ModelDef<?,?>> class2def = new HashMap<>();
         private final ModelInstanceMap modelInstanceMap;
         private final AnyTypeDef<Object> objectDef;
         private final ValueDef<Enum<?>> enumDef;
+        private final Map<tech.metavm.object.meta.Type, tech.metavm.object.meta.Type> typeInternMap = new HashMap<>();
 
         public MockDefMap(ModelInstanceMap modelInstanceMap) {
             this.modelInstanceMap = modelInstanceMap;
@@ -147,10 +135,20 @@ public class PojoDefTest extends TestCase {
         }
 
         @Override
+        public tech.metavm.object.meta.Type internType(tech.metavm.object.meta.Type type) {
+            return typeInternMap.computeIfAbsent(type, t -> type);
+        }
+
+        @Override
         public ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type) {
             return NncUtils.find(
                     class2def.values(), def -> def.getType() == type
             );
+        }
+
+        @Override
+        public void preAddDef(ModelDef<?, ?> def) {
+            addDef(def);
         }
 
         private ModelDef<?,?> parseType(Type genericType) {

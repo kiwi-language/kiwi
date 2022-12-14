@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
@@ -14,7 +15,10 @@ import java.util.List;
 @ValueType("字段表达式")
 public class FieldExpression extends Expression {
 
+    @EntityField("目标对象")
     private final Expression instance;
+
+    @EntityField("字段路径")
     private final Table<Field> fieldPath;
 
     public FieldExpression(Expression instance, Field field) {
@@ -22,7 +26,6 @@ public class FieldExpression extends Expression {
     }
 
     public FieldExpression(Expression instance, ClassType type, List<Long> fieldPath) {
-//        super(type.getContext().getInstanceContext());
         this.instance = instance;
         ClassType tmp = type;
         List<Field> fields = new ArrayList<>();
@@ -35,7 +38,6 @@ public class FieldExpression extends Expression {
     }
 
     public FieldExpression(Expression instance, List<Field> fieldPath) {
-//        super(instance.context);
         this.instance = instance;
         this.fieldPath = new Table<>(Field.class, fieldPath);
     }

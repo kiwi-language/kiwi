@@ -7,6 +7,8 @@ import java.lang.reflect.Field;
 import java.util.Date;
 
 import static tech.metavm.object.meta.PrimitiveKind.INT;
+import static tech.metavm.util.ReflectUtils.*;
+import static tech.metavm.util.ReflectUtils.ENUM_ORDINAL_FIELD;
 
 public class StandardDefBuilder {
 
@@ -100,7 +102,7 @@ public class StandardDefBuilder {
                 Entity.class,
                 Entity.class,
                 null,
-                typeFactory.createRefClass("实体", null),
+                typeFactory.createClass("实体", null),
                 defMap
         );
 
@@ -115,7 +117,7 @@ public class StandardDefBuilder {
                 )
         );
 
-        ClassType enumType = typeFactory.createRefClass("枚举", null);
+        ClassType enumType = typeFactory.createClass("枚举", null);
         enumDef = new ValueDef<>(
                 new TypeReference<Enum<?>>() {}.getType(),
                 Enum.class, // Enum is not a RuntimeGeneric, use the raw class
@@ -125,26 +127,26 @@ public class StandardDefBuilder {
         );
 
         enumNameDef = createFieldDef(
-                ReflectUtils.getField(Enum.class, "name"),
-                createField("名称", true, stringType, enumType),
+                ENUM_NAME_FIELD,
+                createField(ENUM_NAME_FIELD, true, stringType, enumType),
                 enumDef
         );
 
         enumOrdinalDef = createFieldDef(
-                ReflectUtils.getField(Enum.class, "ordinal"),
-                createField("序号", false, intType, enumType),
+                ENUM_ORDINAL_FIELD,
+                createField(ENUM_ORDINAL_FIELD, false, intType, enumType),
                 enumDef
         );
 
         defMap.addDef(enumDef);
     }
 
-    private tech.metavm.object.meta.Field createField(String name,
+    private tech.metavm.object.meta.Field createField(Field javaField,
                                                       boolean asTitle,
                                                       Type type,
                                                       ClassType declaringType) {
         return new tech.metavm.object.meta.Field(
-                name,
+                getMetaFieldName(javaField),
                 declaringType,
                 Access.GLOBAL,
                 false,

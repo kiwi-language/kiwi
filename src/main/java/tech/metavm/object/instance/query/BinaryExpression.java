@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
@@ -9,12 +10,14 @@ import java.util.List;
 
 @ValueType("二元表达式")
 public class BinaryExpression extends Expression {
+    @EntityField("运算符")
     private final Operator operator;
+    @EntityField("运算数一")
     private final Expression first;
+    @EntityField("运算数二")
     private final Expression second;
 
     public BinaryExpression(Operator operator, Expression first, Expression second) {
-//        super(first.context);
         this.operator = operator;
         this.first = first;
         this.second = second;

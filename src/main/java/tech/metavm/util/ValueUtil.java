@@ -107,6 +107,18 @@ public class ValueUtil {
         return klass == Double.class || klass == double.class || klass == Float.class || klass == float.class;
     }
 
+    public static boolean isPrimitive(Object object) {
+        return isPrimitiveType(object.getClass());
+    }
+
+    public static boolean isJavaType(Object object) {
+        return java.lang.reflect.Type.class.isAssignableFrom(object.getClass());
+    }
+
+    public static boolean isEnumConstant(Object object) {
+        return isEnumType(object.getClass());
+    }
+
     public static boolean isPrimitiveType(Class<?> klass) {
         return PRIMITIVE_TYPES.contains(klass);
     }
@@ -176,15 +188,6 @@ public class ValueUtil {
             if(isPassword(klass)) {
                 return TypeCategory.PASSWORD;
             }
-            if (isArrayType(klass)) {
-                return TypeCategory.ARRAY;
-            }
-            if (isEnumType(klass)) {
-                return TypeCategory.ENUM;
-            }
-            if(Object.class.equals(klass) || Record.class.equals(klass) || isValueType(klass)) {
-                return TypeCategory.VALUE;
-            }
             if(Date.class.equals(klass)) {
                 return TypeCategory.TIME;
             }
@@ -194,8 +197,20 @@ public class ValueUtil {
             if(Null.class.equals(klass)) {
                 return TypeCategory.NULL;
             }
+            if(Object.class.equals(klass) || Record.class.equals(klass) || isValueType(klass)) {
+                return TypeCategory.VALUE;
+            }
+            if (isArrayType(klass)) {
+                return TypeCategory.ARRAY;
+            }
+            if (isEnumType(klass)) {
+                return TypeCategory.ENUM;
+            }
             if (isEntityType(klass)) {
                 return TypeCategory.CLASS;
+            }
+            if(Instance.class.isAssignableFrom(klass)) {
+                return TypeCategory.INSTANCE;
             }
         }
         if(type instanceof ParameterizedType parameterizedType) {

@@ -35,7 +35,7 @@ public class ObjectTree extends NTree {
                 addField(new ObjectTree(childPath, inst));
             }
             else if(fieldValue instanceof PrimitiveInstance primInst){
-                addField(new ValueTree(childPath, primInst.getValue()));
+                addField(new ValueTree(childPath, primInst));
             }
             else if(fieldValue instanceof ArrayInstance array){
                 addField(new ListTree(childPath, array.getElements()));
@@ -61,13 +61,14 @@ public class ObjectTree extends NTree {
         return result;
     }
 
-    public Map<String, Object> getValue() {
-        Map<String, Object> map = new HashMap<>();
-        fields.forEach((name, child) -> map.put(name, child.getValue()));
-        return map;
+    public ClassInstance getValue() {
+//        Map<String, Object> map = new HashMap<>();
+//        fields.forEach((name, child) -> map.put(name, child.getValue()));
+//        return map;
+        return instance;
     }
 
-    public Object getFieldValue(String fieldPath) {
+    public Instance getFieldValue(String fieldPath) {
         int idx = fieldPath.indexOf('.');
         if(idx > 0) {
             String fieldName = fieldPath.substring(0, idx);

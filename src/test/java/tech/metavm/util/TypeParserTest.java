@@ -67,7 +67,6 @@ public class TypeParserTest extends TestCase {
         Assert.assertEquals(parsedType, parsedType);
     }
 
-
     public void testSuperWildcard() {
         ParameterizedType parameterizedType = ParameterizedTypeImpl.create(
                 Table.class,

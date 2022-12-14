@@ -1,8 +1,9 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.util.InstanceUtils;
 
-public class IntInstance extends PrimitiveInstance {
+public class IntInstance extends NumberInstance {
 
     private final int value;
     
@@ -44,6 +45,23 @@ public class IntInstance extends PrimitiveInstance {
         return new IntInstance(value % that.value, getType());
     }
 
+
+    public BooleanInstance isGreaterThan(IntInstance that) {
+        return InstanceUtils.createBoolean(value > that.value);
+    }
+
+    public BooleanInstance isGreaterThanOrEqualTo(IntInstance that) {
+        return InstanceUtils.createBoolean(value >= that.value);
+    }
+
+    public BooleanInstance isLessThan(IntInstance that) {
+        return InstanceUtils.createBoolean(value < that.value);
+    }
+
+    public BooleanInstance isLessThanOrEqualTo(IntInstance that) {
+        return InstanceUtils.createBoolean(value <= that.value);
+    }
+    
     @Override
     public String getTitle() {
         return Integer.toString(value);

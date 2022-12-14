@@ -4,13 +4,12 @@ import javassist.util.proxy.ProxyObject;
 import tech.metavm.entity.EntityMethodHandler;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.meta.AnyType;
 import tech.metavm.object.meta.PrimitiveKind;
 import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.object.meta.Type;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class InstanceUtils {
@@ -24,6 +23,61 @@ public class InstanceUtils {
 //    public static void resetGetTypeFunc() {
 //        getTypeFunc = ModelDefRegistry::getType;
 //    }
+
+    public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
+            Integer.class, new PrimitiveType(PrimitiveKind.INT),
+            Long.class, new PrimitiveType(PrimitiveKind.LONG),
+            Double.class, new PrimitiveType(PrimitiveKind.DOUBLE),
+            Boolean.class, new PrimitiveType(PrimitiveKind.BOOLEAN),
+            String.class, new PrimitiveType(PrimitiveKind.STRING),
+            Date.class, new PrimitiveType(PrimitiveKind.TIME),
+            Password.class, new PrimitiveType(PrimitiveKind.PASSWORD),
+            Null.class, new PrimitiveType(PrimitiveKind.NULL),
+            Object.class, new AnyType()
+    );
+
+    public static final Map<Type, Class<?>> BASIC_TYPE_JAVA_CLASS;
+
+    public static final Map<Class<?>, Class<?>> JAVA_CLASS_TO_INSTANCE_CLASS = Map.of(
+            Integer.class, IntInstance.class,
+            Long.class, LongInstance.class,
+            Double.class, DoubleInstance.class,
+            Boolean.class, BooleanInstance.class,
+            String.class, StringInstance.class,
+            Date.class, TimeInstance.class,
+            Password.class, PasswordInstance.class,
+            Null.class, NullInstance.class,
+            Object.class, Instance.class
+    );
+
+    private static final Map<Class<?>, Class<?>> INSTANCE_CLASS_TO_JAVA_CLASS;
+
+    static {
+        Map<Type, Class<?>> map = new HashMap<>();
+        JAVA_CLASS_TO_BASIC_TYPE.forEach((javaClass, basicType) -> map.put(basicType, javaClass));
+        BASIC_TYPE_JAVA_CLASS = Collections.unmodifiableMap(map);
+
+        Map<Class<?>, Class<?>> classMap = new HashMap<>();
+        JAVA_CLASS_TO_INSTANCE_CLASS.forEach((javaClass, instanceClass) -> classMap.put(instanceClass, javaClass));
+        INSTANCE_CLASS_TO_JAVA_CLASS = Collections.unmodifiableMap(classMap);
+    }
+
+
+    public static BooleanInstance equals(Instance first, Instance second) {
+        return createBoolean(Objects.equals(first, second));
+    }
+
+    public static BooleanInstance notEquals(Instance first, Instance second) {
+        return createBoolean(!Objects.equals(first, second));
+    }
+
+    public static LongInstance convertToLong(IntInstance intInstance) {
+        return createLong((long) intInstance.getValue());
+    }
+
+    public static boolean isAllIntegers(Instance instance1, Instance instance2) {
+        return instance1 instanceof IntInstance && instance2 instanceof IntInstance;
+    }
 
     public static Instance resolveValue(Type fieldType, Object columnValue) {
         if(columnValue instanceof Instance instance) {
@@ -147,6 +201,30 @@ public class InstanceUtils {
         );
     }
 
+    public static LongInstance max(LongInstance a, LongInstance b) {
+        return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
+    }
+
+    public static IntInstance max(IntInstance a, IntInstance b) {
+        return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
+    }
+
+    public static DoubleInstance max(DoubleInstance a, DoubleInstance b) {
+        return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
+    }
+
+    public static LongInstance min(LongInstance a, LongInstance b) {
+        return a.isLessThanOrEqualTo(b).getValue() ? a : b;
+    }
+
+    public static IntInstance min(IntInstance a, IntInstance b) {
+        return a.isLessThanOrEqualTo(b).getValue() ? a : b;
+    }
+
+    public static DoubleInstance min(DoubleInstance a, DoubleInstance b) {
+        return a.isLessThanOrEqualTo(b).getValue() ? a : b;
+    }
+
     public static boolean isInitialized(Instance instance) {
         if(instance instanceof ProxyObject proxyObject) {
             EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
@@ -157,44 +235,133 @@ public class InstanceUtils {
         }
     }
 
+    public static StringInstance createString(String value) {
+        return new StringInstance(value, getStringType());
+    }
+
+    public static IntInstance createInt(int value) {
+        return new IntInstance(value, getIntType());
+    }
+
+    public static LongInstance createLong(long value) {
+        return new LongInstance(value, getLongType());
+    }
+
+    public static DoubleInstance createDouble(double value) {
+        return new DoubleInstance(value, getDoubleType());
+    }
+
+    public static NullInstance createNull() {
+        return new NullInstance(getNullType());
+    }
+
+    public static BooleanInstance createBoolean(boolean b) {
+        return new BooleanInstance(b, getBooleanType());
+    }
+
     public static PrimitiveType getStringType() {
-//        return getPrimitiveType(String.class);
-        return new PrimitiveType(PrimitiveKind.STRING);
+        return getPrimitiveType(String.class);
     }
 
     public static PrimitiveType getIntType() {
-//        return getPrimitiveType(Integer.class);
-        return new PrimitiveType(PrimitiveKind.INT);
+        return getPrimitiveType(Integer.class);
     }
 
     public static PrimitiveType getLongType() {
-//        return getPrimitiveType(Long.class);
-        return new PrimitiveType(PrimitiveKind.LONG);
+        return getPrimitiveType(Long.class);
     }
 
     public static PrimitiveType getBooleanType() {
-//        return getPrimitiveType(Boolean.class);
-        return new PrimitiveType(PrimitiveKind.BOOLEAN);
+        return getPrimitiveType(Boolean.class);
     }
 
-    private static PrimitiveType getDoubleType() {
-//        return getPrimitiveType(Double.class);
-        return new PrimitiveType(PrimitiveKind.DOUBLE);
+    public static PrimitiveType getDoubleType() {
+        return getPrimitiveType(Double.class);
     }
 
-    private static PrimitiveType getTimeType() {
-//        return getPrimitiveType(Date.class);
-        return new PrimitiveType(PrimitiveKind.TIME);
+    public static PrimitiveType getTimeType() {
+        return getPrimitiveType(Date.class);
     }
 
-    private static PrimitiveType getPasswordType() {
-//        return getPrimitiveType(Password.class);
-        return new PrimitiveType(PrimitiveKind.PASSWORD);
+    public static PrimitiveType getPasswordType() {
+        return getPrimitiveType(Password.class);
     }
 
-    private static PrimitiveType getNullType() {
-        return new PrimitiveType(PrimitiveKind.NULL);
-//        return getPrimitiveType(Null.class);
+    public static PrimitiveType getNullType() {
+        return getPrimitiveType(Null.class);
+    }
+
+    public static AnyType getAnyType() {
+        return new AnyType();
+    }
+
+    private static ArrayType getAnyArrayType() {
+        return new ArrayType(getAnyType());
+    }
+
+    public static ArrayInstance createArray() {
+        return createArray(List.of());
+    }
+
+    public static ArrayInstance createArray(List<Instance> instances) {
+        return new ArrayInstance(getAnyArrayType(), instances);
+    }
+
+    public static PrimitiveType getPrimitiveType(Class<?> javaClass) {
+        return NncUtils.cast(
+                PrimitiveType.class,
+                getBasicType(javaClass),
+                "Can not get a primitive type for java class '" + javaClass + "'. "
+        );
+    }
+
+    public static Type getBasicType(Class<?> javaClass) {
+        javaClass = ReflectUtils.getBoxedClass(javaClass);
+        return NncUtils.requireNonNull(
+                JAVA_CLASS_TO_BASIC_TYPE.get(javaClass),
+                "Can not find a basic type for java class '" + javaClass.getName() + "'"
+        );
+    }
+
+    public static Class<?> getJavaClassByBasicType(Type type) {
+        return NncUtils.requireNonNull(
+                BASIC_TYPE_JAVA_CLASS.get(type),
+                "Type '" + type + "' is not a basic type"
+        );
+    }
+
+    public static Class<?> getInstanceClassByJavaClass(Class<?> javaClass) {
+        return NncUtils.requireNonNull(
+                JAVA_CLASS_TO_INSTANCE_CLASS.get(javaClass),
+                "Can not find instance class for java class '" + javaClass.getName() + "'"
+        );
+    }
+
+    public static Class<?> getJavaClassByInstanceClass(Class<?> instanceClass) {
+        return NncUtils.requireNonNull(
+                INSTANCE_CLASS_TO_JAVA_CLASS.get(instanceClass),
+                "Can not find java class for instance class '" + instanceClass.getName() + "'"
+        );
+    }
+
+    public static Type getTypeByInstanceClass(Class<?> instanceClass) {
+        return getBasicType(getJavaClassByInstanceClass(instanceClass));
+    }
+
+    public static boolean isTrue(Instance instance) {
+        return (instance instanceof BooleanInstance booleanInstance) && booleanInstance.isTrue();
+    }
+
+    public static DoubleInstance sum(DoubleInstance a, DoubleInstance b) {
+        return a.add(b);
+    }
+
+    public static IntInstance sum(IntInstance a, IntInstance b) {
+        return a.add(b);
+    }
+
+    public static LongInstance sum(LongInstance a, LongInstance b) {
+        return a.add(b);
     }
 
 //    public static PrimitiveType getPrimitiveType(Class<?> klass) {

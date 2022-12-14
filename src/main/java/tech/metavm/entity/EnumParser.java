@@ -5,6 +5,8 @@ import tech.metavm.util.ReflectUtils;
 
 import java.util.Arrays;
 
+import static tech.metavm.util.ReflectUtils.getMetaTypeName;
+
 public class EnumParser<T extends Enum<?>> {
 
     public static <T extends Enum<?>> EnumDef<T> parse(Class<T> enumType, ValueDef<Enum<?>> parentDef, DefMap defMap) {
@@ -28,7 +30,12 @@ public class EnumParser<T extends Enum<?>> {
         enumDef =  new EnumDef<>(
                 enumType,
                 parentDef,
-                typeFactory.createEnum(ReflectUtils.getMetaTypeName(enumType), false, parentDef.getType())
+                typeFactory.createEnum(
+                        getMetaTypeName(enumType),
+                        enumType.getSimpleName(),
+                        false,
+                        parentDef.getType()
+                )
         );
         Arrays.stream(enumType.getEnumConstants()).forEach(ec -> parseEnumConstant(ec, enumDef));
         defMap.addDef(enumDef);

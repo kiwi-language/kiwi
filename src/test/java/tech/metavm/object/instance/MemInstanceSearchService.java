@@ -7,6 +7,7 @@ import tech.metavm.object.instance.query.InstanceEvaluationContext;
 import tech.metavm.object.instance.search.IndexSourceBuilder;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.MultiTenantMap;
 import tech.metavm.util.NncUtils;
 
@@ -59,7 +60,7 @@ public class MemInstanceSearchService implements InstanceSearchService {
         ExpressionEvaluator evaluator = new ExpressionEvaluator(
                 condition, new InstanceEvaluationContext(instance), true
         );
-        return Boolean.TRUE.equals(evaluator.evaluate());
+        return InstanceUtils.isTrue(evaluator.evaluate());
     }
 
     public void add(long tenantId, ClassInstance instance) {

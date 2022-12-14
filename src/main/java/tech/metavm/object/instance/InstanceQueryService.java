@@ -14,7 +14,9 @@ import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static tech.metavm.util.InstanceUtils.resolveValue;
 
@@ -48,7 +50,7 @@ public class InstanceQueryService {
     public Page<Long> query(InstanceQueryDTO query, IInstanceContext context) {
         return query(
                 query.typeId(),
-                buildConditionForSearchText(query.typeId(), query.searchText(), context),
+                buildConditionForSearchText(query.typeId(), query.searchText(), List.of(), context),
                 query.page(),
                 query.pageSize(),
                 context
@@ -67,7 +69,9 @@ public class InstanceQueryService {
     }
 
     private Expression buildCondition(InstanceQuery query, IInstanceContext context) {
-        Expression condition = buildConditionForSearchText(query.typeId(), query.searchText(), context);
+        Expression condition = buildConditionForSearchText(
+                query.typeId(), query.searchText(), query.searchFields(), context
+        );
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition;
             if(queryField.value() instanceof Collection<?> values) {
@@ -87,25 +91,41 @@ public class InstanceQueryService {
         return condition;
     }
 
-    private Expression buildConditionForSearchText(long typeId, String searchText, IInstanceContext context) {
+    private Expression buildConditionForSearchText(long typeId, String searchText,
+                                                   List<Field> searchFields, IInstanceContext context) {
         if(NncUtils.isEmpty(searchText)) {
             return null;
         }
+        Set<Field> searchFieldSet = new HashSet<>(searchFields);
         ClassType type = context.getEntityContext().getClassType(typeId);
         Field titleField = type.getTileField();
-        PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(searchText);
-        if(titleField == null) {
+        if(titleField != null && !searchFields.contains(titleField)) {
+            searchFieldSet.add(titleField);
+        }
+        if(searchFieldSet.isEmpty()) {
             return null;
         }
-        if(titleField.isString()) {
-            return ExpressionUtil.or(
-                    ExpressionUtil.fieldLike(titleField, searchTextInst),
-                    ExpressionUtil.fieldStartsWith(titleField, searchTextInst)
-            );
+        PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(searchText);
+        Expression result = null;
+        for (Field field : searchFieldSet) {
+            Expression expression;
+            if(field.isString()) {
+                expression =  ExpressionUtil.or(
+                        ExpressionUtil.fieldLike(field, searchTextInst),
+                        ExpressionUtil.fieldStartsWith(field, searchTextInst)
+                );
+            }
+            else {
+                expression = ExpressionUtil.fieldEq(field, searchTextInst);
+            }
+            if(result == null) {
+                result = expression;
+            }
+            else {
+                result = ExpressionUtil.or(result, expression);
+            }
         }
-        else {
-            return ExpressionUtil.fieldEq(titleField, searchTextInst);
-        }
+        return result;
     }
 
 }

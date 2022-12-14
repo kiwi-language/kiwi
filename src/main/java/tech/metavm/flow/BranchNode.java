@@ -1,14 +1,11 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.meta.IdConstants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -19,7 +16,9 @@ import java.util.ListIterator;
 @EntityType("分支节点")
 public class BranchNode extends NodeRT<BranchParamDTO> {
 
+    @EntityField("是否包容")
     private boolean inclusive;
+    @EntityField("分支列表")
     private final Table<Branch> branches = new Table<>(Branch.class);
 
     public BranchNode(NodeDTO nodeDTO, BranchParamDTO param, ScopeRT scope) {

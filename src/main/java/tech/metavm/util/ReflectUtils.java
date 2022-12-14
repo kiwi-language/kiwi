@@ -14,6 +14,10 @@ public class ReflectUtils {
 
     public static final Unsafe UNSAFE;
 
+    public static final Field ENUM_NAME_FIELD = getField(Enum.class, "name");
+
+    public static final Field ENUM_ORDINAL_FIELD = getField(Enum.class, "ordinal");
+
     static {
         Field unsafeField = getDeclaredField(Unsafe.class, "theUnsafe");
         unsafeField.setAccessible(true);
@@ -50,7 +54,7 @@ public class ReflectUtils {
         return type;
     }
 
-    private static Class<?> getBoxedClass(Class<?> klass) {
+    public static Class<?> getBoxedClass(Class<?> klass) {
         if(PRIMITIVE_CLASSES.containsKey(klass)) {
             return PRIMITIVE_CLASSES.get(klass);
         }
@@ -80,7 +84,17 @@ public class ReflectUtils {
         return method.getDeclaringClass().getName() + "." + method.getName();
     }
 
+    public static String getMetaFieldName(Class<?> klass, String javaFieldName) {
+        return getMetaFieldName(getField(klass, javaFieldName));
+    }
+
     public static String getMetaFieldName(Field javaField) {
+        if(ENUM_NAME_FIELD.equals(javaField)) {
+            return "名称";
+        }
+        if(ENUM_ORDINAL_FIELD.equals(javaField)) {
+            return "序号";
+        }
         EntityField entityField = javaField.getAnnotation(EntityField.class);
         ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
         return NncUtils.firstNonNull(
@@ -100,7 +114,57 @@ public class ReflectUtils {
         );
     }
 
+    public static Method tryGetMethodByName(Class<?> klass, String methodName) {
+        return getMethodByName(klass, methodName, false);
+    }
+
+    public static Class<?> getActualReturnType(Method method, List<Class<?>> argumentClasses) {
+        Type returnType = method.getGenericReturnType();
+        if(returnType instanceof Class<?> klass) {
+            return klass;
+        }
+        Type[] argumentTypes = method.getGenericParameterTypes();
+        if(returnType instanceof TypeVariable<?> typeVariable) {
+            int i = 0;
+            for (Class<?> argumentClass : argumentClasses) {
+                if(argumentTypes[i] == typeVariable) {
+                    return argumentClass;
+                }
+                i++;
+            }
+            return Object.class;
+        }
+        throw new InternalException("Can not resolve return type '" + returnType + "'. " +
+                "Only type variable return type is supported right now.");
+    }
+
     public static Method getMethodByName(@NotNull Class<?> klass, String methodName) {
+        return getMethodByName(klass, methodName, true);
+    }
+
+    public static Method getMethod(@NotNull Class<?> klass, String name, List<Class<?>> parameterClasses) {
+        Class<?>[] paramClasses = new Class<?>[parameterClasses.size()];
+        parameterClasses.toArray(paramClasses);
+        Class<?> k = klass;
+        while(k != null && k != Object.class) {
+            Method[] methods = k.getDeclaredMethods();
+            for (Method method : methods) {
+                if (method.getName().equals(name) &&
+                        Arrays.equals(method.getParameterTypes(), paramClasses)) {
+                    method.setAccessible(true);
+                    return method;
+                }
+            }
+            k = k.getSuperclass();
+        }
+        throw new RuntimeException(
+                "Method " + klass.getName() + "." + name + "(" +
+                        NncUtils.join(paramClasses, Class::getName)
+                        +") not found"
+        );
+    }
+
+    public static Method getMethodByName(@NotNull Class<?> klass, String methodName, boolean failIfNotFound) {
         Class<?> k = klass;
         while(k != null && k != Object.class) {
             Method[] methods = k.getDeclaredMethods();
@@ -112,7 +176,10 @@ public class ReflectUtils {
             }
             k = k.getSuperclass();
         }
-        throw new RuntimeException("Method " + klass.getName() + "." + methodName + " not found");
+        if(failIfNotFound) {
+            throw new RuntimeException("Method " + klass.getName() + "." + methodName + " not found");
+        }
+        return null;
     }
 
     public static Object newInstance(Class<?> klass) {
@@ -215,6 +282,15 @@ public class ReflectUtils {
         }
     }
 
+    public static Type getType(Object object) {
+        if(object instanceof RuntimeGeneric runtimeGeneric) {
+            return runtimeGeneric.getGenericType();
+        }
+        else {
+            return object.getClass();
+        }
+    }
+
     public static List<Field> getIndexDefFields(Class<?> klass) {
         return getDeclaredStaticFields(
                 klass,
@@ -242,6 +318,98 @@ public class ReflectUtils {
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Field getDeclaredFieldByMetaFieldName(Class<?> klass, String metaFieldName) {
+        for (Field declaredField : klass.getDeclaredFields()) {
+            if(getMetaFieldName(declaredField).equals(metaFieldName)) {
+                return declaredField;
+            }
+        }
+        throw new InternalException("Can not find a declared field for meta field name '" + metaFieldName + "' " +
+                        "in class '" + klass.getName() + "'");
+    }
+
+    public static Set<ModelAndPath> getReachableObjects(Collection<Object> objects,
+                                                  Predicate<Object> filter,
+                                                  boolean ignoreTransientFields) {
+        Set<ModelAndPath> result = new IdentitySet<>();
+        Set<Object> visited = new IdentitySet<>();
+        for (Object object : objects) {
+            getReachableObjects0(object, filter, ignoreTransientFields, new LinkedList<>(), visited, result);
+        }
+        return result;
+    }
+
+    private static void getReachableObjects0(Object object,
+                                             Predicate<Object> filter,
+                                             boolean ignoreTransientFields,
+                                             LinkedList<String> path,
+                                             Set<Object> visited,
+                                             Set<ModelAndPath> result) {
+        if(object == null || ValueUtil.isPrimitive(object) || visited.contains(object) || !filter.test(object)) {
+            return;
+        }
+        result.add(new ModelAndPath(object, NncUtils.join(path, Objects::toString, ".")));
+        visited.add(object);
+        if(object instanceof Collection<?> collection) {
+            int index = 0;
+            for (Object item : collection) {
+                path.addLast(index + "");
+                getReachableObjects0(item, filter, ignoreTransientFields, path, visited, result);
+                path.removeLast();
+                index++;
+            }
+        }
+        else {
+            for (EntityProp prop : DescStore.get(object.getClass()).getProps()) {
+                if (prop.isAccessible() && !(ignoreTransientFields && prop.isTransient())) {
+                    path.addLast(prop.getName());
+                    getReachableObjects0(prop.get(object), filter, ignoreTransientFields, path, visited, result);
+                    path.removeLast();
+                }
+            }
+        }
+    }
+
+    public static Map<Object, List<Reference>> buildInvertedIndex(Collection<Object> objects, Predicate<Object> filter) {
+        List<Reference> references = extractReferences(objects, filter);
+        Map<Object, List<Reference>> index = new IdentityHashMap<>();
+        for (Reference reference : references) {
+            index.computeIfAbsent(reference.target(), t -> new ArrayList<>()).add(reference);
+        }
+        return index;
+    }
+
+    public static List<Reference> extractReferences(Collection<Object> objects, Predicate<Object> filter) {
+        List<Reference> result = new LinkedList<>();
+        Set<Object> visited = new IdentitySet<>();
+        for (Object object : objects) {
+            extractReferences0(object, visited, filter, result);
+        }
+        return result;
+    }
+
+    private static void extractReferences0(Object object, Set<Object> visited, Predicate<Object> filter, List<Reference> result) {
+        if(object == null || ValueUtil.isPrimitive(object) || ValueUtil.isJavaType(object)
+                || !filter.test(object) || visited.contains(object)) {
+            return;
+        }
+        visited.add(object);
+        for (EntityProp prop : DescStore.get(object.getClass()).getProps()) {
+            if (prop.isAccessible()) {
+                Object fieldValue = prop.get(object);
+                if (fieldValue != null && !ValueUtil.isPrimitive(fieldValue) && !ValueUtil.isJavaType(fieldValue)) {
+                    result.add(new Reference(object, prop.getField().getName(), fieldValue));
+                    extractReferences0(fieldValue, visited, filter, result);
+                }
+            }
+        }
+    }
+
+    private static boolean isReferenceTraversalTarget(Object object, Predicate<Object> filter, Set<Object> visited) {
+        return object != null && !ValueUtil.isPrimitive(object) && !ValueUtil.isJavaType(object)
+                && filter.test(object) && !visited.contains(object);
     }
 
     public static Object getFieldValue(Object object, Field field) {
@@ -280,6 +448,31 @@ public class ReflectUtils {
             }
         }
         return allFields;
+    }
+
+    public static String getSimpleTypeName(Type type) {
+        return getSimpleTypeName0(type, new IdentitySet<>());
+    }
+
+    private static String getSimpleTypeName0(Type type, IdentitySet<Type> visited) {
+        if(visited.contains(type)) {
+            throw new InternalException("Circular reference");
+        }
+        visited.add(type);
+        if(type instanceof Class<?> klass) {
+            return klass.getSimpleName();
+        }
+        if(type instanceof ParameterizedType parameterizedType) {
+            Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
+                return rawClass.getSimpleName() + "<" +
+                        NncUtils.join(
+                                parameterizedType.getActualTypeArguments(),
+                                t -> getSimpleTypeName0(t, visited)
+                        ) + ">";
+        }
+        else {
+            throw new InternalException("Can not erase type " + type);
+        }
     }
 
     public static Type eraseType(Type type) {

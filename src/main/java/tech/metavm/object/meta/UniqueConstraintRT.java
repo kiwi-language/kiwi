@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -18,6 +19,8 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
 
     @EntityField("唯一约束项")
     private Table<UniqueConstraintItem> items;
+
+    private transient IndexDef<?> indexDef;
 
     public UniqueConstraintRT(ConstraintDTO constraintDTO, UniqueConstraintParam param, ClassType type) {
         super(ConstraintKind.UNIQUE, type, constraintDTO.message());
@@ -76,9 +79,20 @@ public class UniqueConstraintRT extends ConstraintRT<UniqueConstraintParam> {
         );
     }
 
+    public Table<UniqueConstraintItem> getItems() {
+        return items;
+    }
+
     @Override
     public String getDesc() {
         return "唯一属性(" + NncUtils.join(items, UniqueConstraintItem::getName) + ")";
     }
 
+    public IndexDef<?> getIndexDef() {
+        return indexDef;
+    }
+
+    public void setIndexDef(IndexDef<?> indexDef) {
+        this.indexDef = indexDef;
+    }
 }

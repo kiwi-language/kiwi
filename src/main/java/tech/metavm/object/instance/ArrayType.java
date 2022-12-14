@@ -1,14 +1,23 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
 
 import java.util.Objects;
+import java.util.function.Function;
 
+@EntityType("数组类型")
 public class ArrayType extends Type {
 
+    @EntityField("元素类型")
     private final Type elementType;
+
+    public ArrayType(Type elementType) {
+        this(elementType, false);
+    }
 
     public ArrayType(Type elementType, boolean ephemeral) {
         super(getArrayTypeName(elementType), false, ephemeral, TypeCategory.ARRAY);
@@ -44,6 +53,11 @@ public class ArrayType extends Type {
                 elementType.getId(),
                 elementType.toDTO()
         );
+    }
+
+    @Override
+    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return elementType.getCanonicalName(getJavaType) + "[]";
     }
 
     @Override

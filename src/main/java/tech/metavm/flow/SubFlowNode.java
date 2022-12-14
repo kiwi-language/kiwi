@@ -18,11 +18,11 @@ import java.util.Map;
 @EntityType("子流程节点")
 public class SubFlowNode extends NodeRT<SubFlowParam> {
 
-    @EntityField("调用对象")
+    @EntityField("目标对象")
     private Value selfId;
-    @EntityField("参数")
+    @EntityField("参数列表")
     private Table<FieldParam> arguments;
-    @EntityField("流程")
+    @EntityField("子流程")
     private FlowRT subFlow;
 
     public SubFlowNode(NodeDTO nodeDTO,

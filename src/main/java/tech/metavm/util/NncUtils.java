@@ -45,6 +45,15 @@ public class NncUtils {
         }
     }
 
+    public static <T> T cast(Class<T> klass, Object object, String message) {
+        if(klass.isInstance(object)) {
+            return klass.cast(object);
+        }
+        else {
+            throw new InternalException(message);
+        }
+    }
+
     public static String toJSONString(Object object) {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
@@ -343,6 +352,16 @@ public class NncUtils {
         return list.stream()
                 .sorted(comparator)
                 .map(mapper)
+                .collect(Collectors.toList());
+    }
+
+    public static <T, R> List<R> mapAndSort(Collection<T> list, Function<T, R> mapper, Comparator<R> comparator) {
+        if(list == null) {
+            return List.of();
+        }
+        return list.stream()
+                .map(mapper)
+                .sorted(comparator)
                 .collect(Collectors.toList());
     }
 

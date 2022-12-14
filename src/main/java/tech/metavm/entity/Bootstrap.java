@@ -4,7 +4,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.object.meta.BootIdProvider;
-import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.StdAllocators;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.ReflectUtils;
@@ -42,24 +41,32 @@ public class Bootstrap implements InitializingBean {
         ModelDefRegistry.setDefContext(defContext);
 
         ReflectUtils.getModelClasses().forEach(defContext::getDef);
-        defContext.flush();
+        defContext.flushAndWriteInstances();
         ModelDefRegistry.setDefContext(defContext);
     }
 
     @Transactional
     public void save() {
-        if(ModelDefRegistry.getDefContext().isFinished()) {
+        DefContext defContext = ModelDefRegistry.getDefContext();
+        if(defContext.isFinished()) {
             return;
         }
-        ModelDefRegistry.getDefContext().finish();
-        for (ModelDef<?, ?> def : ModelDefRegistry.getDefContext().getAllDefList()) {
-            def.getEntityMapping().forEach((javaConstruct, entity) ->
-                    stdAllocators.putId(javaConstruct, entity.getId())
-            );
-            def.getInstanceMapping().forEach((javaConstruct, instance) ->
-                    stdAllocators.putId(javaConstruct, instance.getId())
-            );
-        }
+        defContext.finish();
+
+        defContext.getIdentityMap().forEach((entity, javaConstruct) ->
+                stdAllocators.putId(javaConstruct, entity.getId())
+        );
+        defContext.getInstanceMapping().forEach((javaConstruct, instance) ->
+                stdAllocators.putId(javaConstruct, instance.getId())
+        );
+//        for (ModelDef<?, ?> def : defContext.getAllDefList()) {
+//            def.getEntityMapping().forEach((javaConstruct, entity) ->
+//                    stdAllocators.putId(javaConstruct, entity.getId())
+//            );
+//            def.getInstanceMapping().forEach((javaConstruct, instance) ->
+//                    stdAllocators.putId(javaConstruct, instance.getId())
+//            );
+//        }
         stdAllocators.save();
     }
 

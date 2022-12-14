@@ -14,7 +14,7 @@ public class ClassTypeFactoryTest extends TestCase {
 
     public void testCreateClass() {
         TypeFactory typeFactory = new TypeFactory(MockRegistry::getType);
-        ClassType type = typeFactory.createRefClass("Foo", MockRegistry.getEntityType());
+        ClassType type = typeFactory.createClass("Foo", MockRegistry.getEntityType());
         Assert.assertNotNull(type.getDeclaredFields());
         Assert.assertNotNull(type.getDeclaredConstraints());
         Assert.assertNotNull(type.getDeclaredFlows());

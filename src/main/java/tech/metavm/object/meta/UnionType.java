@@ -8,8 +8,8 @@ import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 @EntityType("联合类型")
 public class UnionType extends Type {
@@ -85,6 +85,17 @@ public class UnionType extends Type {
 
     @Override
     public String toString() {
-        return "UnionType " + NncUtils.join(typeMembers, Type::getName,"|");
+        List<String> memberNames = NncUtils.mapAndSort(typeMembers, Type::getName, String::compareTo);
+        return "UnionType " + String.join("|", memberNames) + " @" + super.hashCode();
+    }
+
+    @Override
+    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+        List<String> memberCanonicalNames = NncUtils.mapAndSort(
+                typeMembers,
+                m -> m.getCanonicalName(getJavaType),
+                String::compareTo
+        );
+        return String.join("|", memberCanonicalNames);
     }
 }

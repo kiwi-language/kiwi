@@ -4,10 +4,12 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.flow.FlowRT;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ChangeLogPlugin;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.*;
@@ -99,17 +101,58 @@ public class BootstrapTest extends TestCase {
     public void testReboot() {
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
         bootstrap.bootAndSave();
+        DefContext defContext1 = ModelDefRegistry.getDefContext();
+
+//        ClassType typeType1 = ModelDefRegistry.getClassType(Type.class);
+//        Table<FlowRT> flows1 = typeType1.getDeclaredFlows();
+//        Table<ConstraintRT<?>> constraints1 = typeType1.getDeclaredConstraints();
+//        Table<Field> fields1 = typeType1.getDeclaredFields();
+//        Assert.assertNotNull(typeType1.getNullableType());
 
         Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
         bootstrap2.boot();
 
-        Type typeType = ModelDefRegistry.getType(Type.class);
-        Assert.assertNotNull(typeType.getId());
+        DefContext defContext2 = ModelDefRegistry.getDefContext();
 
-        Type tableType = ModelDefRegistry.getType(Table.class);
-        Assert.assertNotNull(tableType.getId());
-        Assert.assertTrue(tableType instanceof ArrayType);
-        Assert.assertEquals(tableType, StandardTypes.getArrayType());
+        for (Class<?> modelClass : ReflectUtils.getModelClasses()) {
+            Type type1 = defContext1.getType(modelClass),
+                    type2 = defContext2.getType(modelClass);
+            Assert.assertEquals(
+                    "Identity for class '" + modelClass.getName() + "' changed after reboot",
+                    type1.getId(), type2.getId());
+        }
+
+//        ClassType typeType2 = ModelDefRegistry.getClassType(Type.class);
+
+//        Table<FlowRT> flows2 = typeType2.getDeclaredFlows();
+//        Table<ConstraintRT<?>> constraints2 = typeType2.getDeclaredConstraints();
+//        Table<Field> fields2 = typeType2.getDeclaredFields();
+
+//        Type nullableClassType = ModelDefRegistry.getType(ClassType.class).getNullableType();
+//        Assert.assertNotNull(nullableClassType);
+//        Assert.assertNotNull(nullableClassType.getId());
+//
+//        Assert.assertEquals(typeType1.getId(), typeType2.getId());
+//        Assert.assertEquals(flows1.getId(), flows2.getId());
+//        Assert.assertEquals(fields1.getId(), fields2.getId());
+//        Assert.assertEquals(constraints1.getId(), constraints2.getId());
+//
+//        Assert.assertNotNull(typeType2.getNullableType());
+//        Assert.assertNotNull(typeType2.getNullableType().getId());
+//        Assert.assertNotNull(typeType2.getArrayType());
+//        Assert.assertNotNull(typeType2.getArrayType().getId());
+//
+//        Type tableType = ModelDefRegistry.getType(Table.class);
+//        Assert.assertNotNull(tableType.getId());
+//        Assert.assertTrue(tableType instanceof ArrayType);
+//        Assert.assertEquals(tableType, StandardTypes.getArrayType());
+//
+//        Instance enumConstantInst = ModelDefRegistry.getDefContext().getInstance(TypeCategory.CLASS);
+//        Assert.assertNotNull(enumConstantInst.getId());
+//
+//        Type nullableClassType2 = ModelDefRegistry.getType(ClassType.class).getNullableType();
+//        Assert.assertNotNull(nullableClassType2);
+//        Assert.assertEquals(nullableClassType.getId(), nullableClassType2.getId());
     }
 
 }
