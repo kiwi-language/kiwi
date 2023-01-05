@@ -1,23 +1,18 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@ValueType("表达式")
-public abstract class Expression {
-
-//    protected final InstanceContext context;
+@EntityType("表达式")
+public abstract class Expression extends Entity {
 
     public abstract String buildSelf(VarType symbolType);
 
     public abstract int precedence();
-
-//    protected Expression(InstanceContext context) {
-//        this.context = context;
-//    }
 
     public final String build(VarType symbolType, boolean withParenthesis) {
         String expr = buildSelf(symbolType);

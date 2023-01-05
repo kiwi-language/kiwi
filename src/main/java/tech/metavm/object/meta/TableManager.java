@@ -4,11 +4,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
 import tech.metavm.object.meta.rest.dto.*;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Password;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Comparator;
@@ -22,12 +22,12 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 @Component
 public class TableManager {
 
-    private final ClassTypeManager classTypeManager;
+    private final TypeManager typeManager;
 
     private final InstanceContextFactory instanceContextFactory;
 
-    public TableManager(ClassTypeManager classTypeManager, InstanceContextFactory instanceContextFactory) {
-        this.classTypeManager = classTypeManager;
+    public TableManager(TypeManager typeManager, InstanceContextFactory instanceContextFactory) {
+        this.typeManager = typeManager;
         this.instanceContextFactory = instanceContextFactory;
     }
 
@@ -54,10 +54,11 @@ public class TableManager {
                         null,
                         List.of(),
                         List.of(),
+                        null,
                         null
                 )
         );
-        ClassType type = classTypeManager.saveType(typeDTO, context);
+        ClassType type = typeManager.saveType(typeDTO, context);
         context.initIds();
         NncUtils.map(table.fields(), column -> saveField(column, type, context));
         saveTitleField(table.titleField(), type, context);
@@ -83,14 +84,13 @@ public class TableManager {
                         Access.GLOBAL,
                         titleFieldDTO.unique(),
                         true,
-                        null,
+                        InstanceUtils.nullInstance(),
                         titleFieldType,
                         false
                 );
             } else {
                 titleField.setName(titleFieldDTO.name());
                 titleField.setUnique(titleFieldDTO.unique());
-                titleField.setDefaultValue(titleFieldDTO.defaultValue());
             }
         }
     }
@@ -128,19 +128,22 @@ public class TableManager {
 
     private Field saveField(ColumnDTO column, Type declaringType, IEntityContext context) {
         Type type;
-        Object defaultValue;
+        FieldValueDTO defaultValue;
         if(column.type() == ColumnType.ENUM.code) {
             EnumEditContext enumEditContext = saveEnum(column, context);
             type = getType(column, enumEditContext.getType(), context);
             defaultValue = column.multiValued() ?
-                    NncUtils.map(enumEditContext.getDefaultOptions(), EnumConstantRT::getId)
-                    : NncUtils.getFirst(enumEditContext.getDefaultOptions(), EnumConstantRT::getId);
+                    new ArrayFieldValueDTO(
+                            null,
+                            NncUtils.map(enumEditContext.getDefaultOptions(), EnumConstantRT::toFieldValue)
+                    )
+                    : NncUtils.getFirst(enumEditContext.getDefaultOptions(), EnumConstantRT::toFieldValue);
         }
         else {
             type = getType(column, NncUtils.get(column.targetId(), context::getType), context);
             defaultValue = column.defaultValue();
         }
-        return classTypeManager.saveField(
+        return typeManager.saveField(
                 new FieldDTO(
                         column.id(),
                         column.name(),
@@ -176,20 +179,20 @@ public class TableManager {
         );
     }
 
-    private TypeInfo getTypeInfo(Type type, Object fieldDefaultValue) {
+    private TypeInfo getTypeInfo(Type type, FieldValueDTO fieldDefaultValue) {
         Type concreteType = type.getConcreteType();
         return new TypeInfo(
                 getColumnType(concreteType),
                 concreteType.getName(),
                 concreteType.isEnum() || concreteType.isClass() || concreteType.isValue() ?
                         concreteType.getId() : null,
-                isArray(type) ? getElementType(type).isNotNull() : type.isNotNull(),
-                isArray(type),
+                type.isNotNull(),
+                type.isUnionNullable() ? type.getUnderlyingType().isArray() : type.isArray(),
                 getChoiceOptions(concreteType, fieldDefaultValue)
         );
     }
 
-    private List<ChoiceOptionDTO> getChoiceOptions(Type type, Object fieldDefaultValue) {
+    private List<ChoiceOptionDTO> getChoiceOptions(Type type, FieldValueDTO fieldDefaultValue) {
         if(type instanceof EnumType enumType) {
             return getChoiceOptions(
                     NncUtils.sortByInt(enumType.getEnumConstants(), EnumConstantRT::getOrdinal),
@@ -232,7 +235,7 @@ public class TableManager {
         throw new InternalException("Can not get column type for type: " + type);
     }
 
-    private List<ChoiceOptionDTO> getChoiceOptions(List<EnumConstantRT> enumConstants, Object fieldDefaultValue) {
+    private List<ChoiceOptionDTO> getChoiceOptions(List<EnumConstantRT> enumConstants, FieldValueDTO fieldDefaultValue) {
         return NncUtils.sortAndMap(
                 enumConstants,
                 Comparator.comparingInt(EnumConstantRT::getOrdinal),
@@ -245,12 +248,18 @@ public class TableManager {
         );
     }
 
-    private boolean isPreselected(EnumConstantRT enumConstant, Object fieldDefaultValue) {
-        if(fieldDefaultValue instanceof Long l) {
-            return l.equals(enumConstant.getId());
+    private boolean isPreselected(EnumConstantRT enumConstant, FieldValueDTO fieldDefaultValue) {
+        if(fieldDefaultValue instanceof ReferenceFieldValueDTO ref) {
+            return ref.getId() == enumConstant.getId();
         }
-        if(fieldDefaultValue instanceof List<?> list) {
-            return list.contains(enumConstant.getId());
+        if(fieldDefaultValue instanceof ArrayFieldValueDTO array) {
+            for (FieldValueDTO element : array.getElements()) {
+                if(element instanceof ReferenceFieldValueDTO ref) {
+                    if(ref.getId() == enumConstant.getId()) {
+                        return true;
+                    }
+                }
+            }
         }
         return false;
     }
@@ -268,17 +277,20 @@ public class TableManager {
         Type type;
         if(concreteType != null) {
             type = concreteType;
-            if (!required) {
-                type = getNullableType(type);
-            }
             if (multiValued) {
                 type = getArrayType(type);
+            }
+            if (!required) {
+                type = getNullableType(type);
             }
         }
         else {
             throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
         }
         if(type.getId() == null) {
+            if(!context.containsModel(type)){
+                context.bind(type);
+            }
             context.initIds();
         }
         return type;
@@ -286,7 +298,7 @@ public class TableManager {
 
     public Page<TableDTO> list(String searchText, int page, int pageSize) {
         IEntityContext context = newContext();
-        Page<TypeDTO> typePage = classTypeManager.query(
+        Page<TypeDTO> typePage = typeManager.query(
                 searchText,
                 List.of(TypeCategory.CLASS.code(), TypeCategory.VALUE.code()),
                 page,

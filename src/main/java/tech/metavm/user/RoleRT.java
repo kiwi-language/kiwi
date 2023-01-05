@@ -11,7 +11,7 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 @EntityType("角色")
 public class RoleRT extends Entity {
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
 
     public RoleRT() {

@@ -8,7 +8,7 @@ import java.util.Objects;
 
 @ValueType("列")
 public record Column(
-        @EntityField("列名") String name,
+        @EntityField(value = "列名", asTitle = true) String name,
         @EntityField("列类型") SQLType type
 ) {
 
@@ -24,6 +24,10 @@ public record Column(
             throw new UnsupportedOperationException("fuzzy name is only available for string columns");
         }
         return "t" + name.substring(1);
+    }
+
+    public Column copy() {
+        return new Column(name, type);
     }
 
     @Override

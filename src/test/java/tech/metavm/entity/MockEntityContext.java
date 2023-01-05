@@ -17,7 +17,9 @@ public class MockEntityContext extends EntityContext {
                 parent,
                 defContext
         );
-        requireNonNull((MemInstanceContext) getInstanceContext()).setEntityContext(this);
+        MemInstanceContext instanceContext = requireNonNull((MemInstanceContext) getInstanceContext());
+        instanceContext.setEntityContext(this);
+
     }
 
 }

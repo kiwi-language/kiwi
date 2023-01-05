@@ -2,9 +2,11 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.GetRelatedParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.query.FlowParsingContext;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
@@ -12,14 +14,25 @@ import tech.metavm.util.NncUtils;
 @EntityType("查询关联对象节点")
 public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
 
+    public static GetRelatedNode create(NodeDTO nodeDTO, IEntityContext context) {
+        ScopeRT scope = context.getScope(nodeDTO.scopeId());
+        NodeRT<?> prev = context.getNode(nodeDTO.prevId());
+        FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context.getInstanceContext());
+        GetRelatedParamDTO param = nodeDTO.getParam();
+        Value objectId = ValueFactory.getValue(param.objectId(), parsingContext);
+        GetRelatedNode node = new GetRelatedNode(nodeDTO, objectId, scope);
+        node.setParam(param, context);
+        return node;
+    }
+
     @EntityField("对象")
     private Value objectId;
     @EntityField("字段")
     private Field field;
 
-    public GetRelatedNode(NodeDTO nodeDTO, ClassType type, ScopeRT scope) {
-        super(nodeDTO, type, scope);
-        setParam(nodeDTO.getParam());
+    public GetRelatedNode(NodeDTO nodeDTO, Value objectId, ScopeRT scope) {
+        super(nodeDTO, objectId.getType(), scope);
+        this.objectId = objectId;
     }
 
     @Override
@@ -28,8 +41,8 @@ public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
     }
 
     @Override
-    protected void setParam(GetRelatedParamDTO param) {
-        objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
+    protected void setParam(GetRelatedParamDTO param, IEntityContext entityContext) {
+        objectId = ValueFactory.getValue(param.objectId(), getParsingContext(entityContext));
         field = getType().getField(param.fieldId());
     }
 

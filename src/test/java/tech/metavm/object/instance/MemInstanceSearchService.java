@@ -1,9 +1,8 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.dto.Page;
-import tech.metavm.object.instance.query.Expression;
-import tech.metavm.object.instance.query.ExpressionEvaluator;
-import tech.metavm.object.instance.query.InstanceEvaluationContext;
+import tech.metavm.entity.EntityUtils;
+import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.search.IndexSourceBuilder;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
@@ -11,10 +10,7 @@ import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.MultiTenantMap;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static tech.metavm.util.Constants.ROOT_TENANT_ID;
 import static tech.metavm.util.TestContext.getTenantId;
@@ -27,8 +23,8 @@ public class MemInstanceSearchService implements InstanceSearchService {
     @Override
     public Page<Long> search(SearchQuery query) {
         List<Long> result = new ArrayList<>();
-        doSearch(getTenantId(), query.condition(), result);
-        doSearch(ROOT_TENANT_ID, query.condition(), result);
+        doSearch(getTenantId(), query, result);
+        doSearch(ROOT_TENANT_ID, query, result);
         Collections.sort(result);
         return new Page<>(
                 getPage(result, query.from(), query.end()),
@@ -36,9 +32,10 @@ public class MemInstanceSearchService implements InstanceSearchService {
         );
     }
 
-    private void doSearch(long tenantId, Expression condition, List<Long> result) {
-        for (ClassInstance instance : instanceMap.values(tenantId)) {
-            if(match(instance, condition)) {
+    private void doSearch(long tenantId, SearchQuery query, List<Long> result) {
+        Collection<ClassInstance> instances = instanceMap.values(tenantId);
+        for (ClassInstance instance : instances) {
+            if(match(instance, query)) {
                 result.add(instance.getId());
             }
         }
@@ -56,9 +53,12 @@ public class MemInstanceSearchService implements InstanceSearchService {
         return result.subList(start, Math.min(end, result.size()));
     }
 
-    private boolean match(ClassInstance instance, Expression condition) {
+    private boolean match(ClassInstance instance, SearchQuery query) {
+        if(!query.typeIds().contains(instance.getType().getId())) {
+            return false;
+        }
         ExpressionEvaluator evaluator = new ExpressionEvaluator(
-                condition, new InstanceEvaluationContext(instance), true
+                query.condition(), new InstanceEvaluationContext(instance), true
         );
         return InstanceUtils.isTrue(evaluator.evaluate());
     }

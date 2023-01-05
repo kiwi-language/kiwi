@@ -2,9 +2,11 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -14,14 +16,19 @@ import java.util.List;
 @EntityType("更新对象节点")
 public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
+    public static UpdateObjectNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
+        UpdateObjectNode node = new UpdateObjectNode(nodeDTO, entityContext.getScope(nodeDTO.scopeId()));
+        node.setParam(nodeDTO.getParam(), entityContext);
+        return node;
+    }
+
     @EntityField("对象")
     private Value objectId;
     @EntityField("更新字段")
     private Table<UpdateField> fieldParams;
 
-    public UpdateObjectNode(NodeDTO nodeDTO, UpdateObjectParamDTO param, ScopeRT scope) {
+    public UpdateObjectNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
     }
 
     public Value getObjectId() {
@@ -33,13 +40,14 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     }
 
     @Override
-    protected void setParam(UpdateObjectParamDTO param) {
-        objectId = ValueFactory.getValue(param.objectId(), getParsingContext());
+    protected void setParam(UpdateObjectParamDTO param, IEntityContext entityContext) {
+        ParsingContext parsingContext = getParsingContext(entityContext);
+        objectId = ValueFactory.getValue(param.objectId(), parsingContext);
         fieldParams = new Table<>(
                 UpdateField.class,
                 NncUtils.map(
                     param.fields(),
-                    fieldParamDTO -> new UpdateField((ClassType) objectId.getType(), fieldParamDTO, getParsingContext())
+                    fieldParamDTO -> new UpdateField((ClassType) objectId.getType(), fieldParamDTO, parsingContext)
                 )
         );
     }

@@ -3,7 +3,6 @@ package tech.metavm.util;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Function;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -173,7 +172,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException duplicateKey(ClassInstance instance, long constraintId) {
-        UniqueConstraintRT constraint = instance.getType().getUniqueConstraint(constraintId);
+        IndexConstraintRT constraint = instance.getType().getUniqueConstraint(constraintId);
         return new BusinessException(
                 ErrorCode.DUPLICATE_KEY,
                 NncUtils.join(constraint.getFields(), Field::getName)

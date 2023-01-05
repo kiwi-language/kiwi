@@ -13,9 +13,7 @@ import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.Function;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
@@ -27,6 +25,8 @@ public class ClassType extends AbsClassType {
     @EntityField("超类")
     @Nullable
     private final ClassType superType;
+    @EntityField("子类列表")
+    private final Table<ClassType> subTypes = new Table<>(ClassType.class);
     @EntityField("描述")
     private @Nullable String desc;
     @ChildEntity("字段列表")
@@ -49,6 +49,9 @@ public class ClassType extends AbsClassType {
                 @Nullable String desc) {
         super(name, anonymous, ephemeral, category);
         this.superType = superType;
+        if(superType != null) {
+            superType.addSubType(this);
+        }
         this.desc = desc;
     }
 
@@ -62,6 +65,13 @@ public class ClassType extends AbsClassType {
         this.desc = desc;
     }
 
+    void addSubType(ClassType subType) {
+        if(subTypes.contains(subType)) {
+            throw new InternalException("Subtype '" + subType + "' is already added to this type");
+        }
+        subTypes.add(subType);
+    }
+
     @Nullable
     @SuppressWarnings("unused")
     public String getDesc() {
@@ -71,10 +81,19 @@ public class ClassType extends AbsClassType {
     @Override
     public List<Field> getFields() {
         if(superType != null) {
-            return merge(superType.getFields(), fields);
+            return merge(superType.getFields(), readyFields());
         }
         else {
-            return map(fields, Function.identity());
+            return readyFields();
+        }
+    }
+
+    private List<Field> getAllFields() {
+        if(superType != null) {
+            return merge(superType.getAllFields(), fields);
+        }
+        else {
+            return NncUtils.map(fields, Function.identity());
         }
     }
 
@@ -101,6 +120,22 @@ public class ClassType extends AbsClassType {
             throw BusinessException.multipleTitleFields();
         }
         requireNonNull(fields).add(field);
+    }
+
+    public void addFlow(FlowRT flow) {
+        if(flows.contains(flow)) {
+            throw new InternalException("Flow '" + flow + "' is already added to the class type");
+        }
+        flows.add(flow);
+    }
+
+    public Set<Long> getTypeIdsInHierarchy() {
+        Set<Long> typeIds = new HashSet<>();
+        typeIds.add(this.id);
+        for (ClassType subType : subTypes) {
+            typeIds.addAll(subType.getTypeIdsInHierarchy());
+        }
+        return typeIds;
     }
 
     public void addConstraint(ConstraintRT<?> constraint) {
@@ -138,8 +173,15 @@ public class ClassType extends AbsClassType {
         if(superType != null && superType.containsField(fieldId)) {
             return superType.getField(fieldId);
         }
-        return findRequired(fields, f -> f.getId() == fieldId,
-                        "Field id " + id + "  not found in type " + name);
+        Field field = fields.get(Entity::getId, fieldId);
+        if(field != null && field.isReady()) {
+            return field;
+        }
+        throw new InternalException("Field '" + fieldId + "' does not exist or is not ready");
+    }
+
+    private List<Field> readyFields() {
+        return fields.filter(Field::isReady, true);
     }
 
     public boolean containsField(long fieldId) {
@@ -171,8 +213,8 @@ public class ClassType extends AbsClassType {
         if(fieldType.getSQLType() == null) {
             return null;
         }
-        List<Column> usedColumns = filterAndMap(
-                getFields(),
+        Set<Column> usedColumns = filterAndMapUnique(
+                getFieldsInHierarchy(),
                 f -> !f.equals(field),
                 Field::getColumn
         );
@@ -181,7 +223,23 @@ public class ClassType extends AbsClassType {
         if(columns.isEmpty()) {
             throw BusinessException.invalidField(field, "属性数量超出限制");
         }
-        return columns.poll();
+        return columns.poll().copy();
+    }
+
+    private List<Field> getFieldsInHierarchy() {
+        List<Field> result = new ArrayList<>();
+        if(superType != null) {
+            result.addAll(superType.getAllFields());
+        }
+        getFieldsDownwardInHierarchy0(result);
+        return result;
+    }
+
+    private void getFieldsDownwardInHierarchy0(List<Field> results) {
+        results.addAll(fields);
+        for (ClassType subType : subTypes) {
+            subType.getFieldsDownwardInHierarchy0(results);
+        }
     }
 
     public Field getFieldNyNameRequired(String fieldName) {
@@ -196,7 +254,6 @@ public class ClassType extends AbsClassType {
     public void removeField(Field field) {
         if(requireNonNull(fields).contains(field)) {
             fields.remove(field);
-//            field.remove();
         }
     }
 
@@ -234,7 +291,7 @@ public class ClassType extends AbsClassType {
 
     @Override
     protected ClassParamDTO getParam() {
-        return getParam(false, false);
+        return getParam(true, false);
     }
 
     @Override
@@ -254,8 +311,13 @@ public class ClassType extends AbsClassType {
                 NncUtils.get(superType, Type::toDTO),
                 withFields ? NncUtils.map(getFields(), f -> f.toDTO(withFieldTypes)) : List.of(),
                 NncUtils.map(constraints, ConstraintRT::toDTO),
-                desc
+                desc,
+                getExtra()
         );
+    }
+
+    protected Object getExtra() {
+        return null;
     }
 
     @JsonIgnore
@@ -280,8 +342,8 @@ public class ClassType extends AbsClassType {
         return find(requireNonNull(constraints), c -> c.getId() == id);
     }
 
-    public UniqueConstraintRT getUniqueConstraint(long id) {
-        return getConstraint(UniqueConstraintRT.class, id);
+    public IndexConstraintRT getUniqueConstraint(long id) {
+        return getConstraint(IndexConstraintRT.class, id);
     }
 
     @SuppressWarnings("unused")

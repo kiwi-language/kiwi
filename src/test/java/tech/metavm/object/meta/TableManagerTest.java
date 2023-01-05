@@ -3,6 +3,7 @@ package tech.metavm.object.meta;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.*;
+import tech.metavm.job.JobManager;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.ArrayType;
@@ -12,6 +13,7 @@ import tech.metavm.object.meta.rest.dto.ColumnDTO;
 import tech.metavm.object.meta.rest.dto.TableDTO;
 import tech.metavm.object.meta.rest.dto.TitleFieldDTO;
 import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.MockTransactionOperations;
 
 import java.util.List;
 
@@ -26,10 +28,12 @@ public class TableManagerTest extends TestCase {
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()));
         bootstrap.bootAndSave();
 
+        JobManager jobManager = new JobManager(instanceContextFactory, new MockTransactionOperations());
+
         EntityQueryService entityQueryService =
                 new EntityQueryService(new InstanceQueryService(new MemInstanceSearchService()));
-        ClassTypeManager classTypeManager = new ClassTypeManager(instanceContextFactory, entityQueryService, null);
-        tableManager = new TableManager(classTypeManager, instanceContextFactory);
+        TypeManager typeManager = new TypeManager(instanceContextFactory, entityQueryService, jobManager,null);
+        tableManager = new TableManager(typeManager, instanceContextFactory);
     }
 
     public void testSmoking() {
@@ -81,6 +85,41 @@ public class TableManagerTest extends TestCase {
 
         TableDTO saved = tableManager.save(tableDTO);
         Assert.assertNotNull(saved.id());
+    }
+
+    public void testMultiValuedField() {
+
+        TableDTO bar = tableManager.save(new TableDTO(
+                null, "Bar", "Bar", null,
+                false, false,
+                new TitleFieldDTO(
+                        "code", TableManager.ColumnType.STRING.code(),
+                        true, null
+                ),
+                List.of()
+        ));
+
+
+        TableDTO foo = tableManager.save(new TableDTO(
+                null, "Foo", "Foo", null,
+                false, false,
+                new TitleFieldDTO(
+                        "name", TableManager.ColumnType.STRING.code(),
+                        false, null
+                ),
+                List.of(
+                        new ColumnDTO(
+                                null, "bars", TableManager.ColumnType.TABLE.code(),
+                                Access.GLOBAL.code(), null,
+                                bar.id(), null, true, true, false,
+                                 false, null, null
+                        )
+                )
+        ));
+
+        TableDTO loadedFoo = tableManager.get(foo.id());
+
+        Assert.assertEquals(2, loadedFoo.fields().size());
     }
 
 }

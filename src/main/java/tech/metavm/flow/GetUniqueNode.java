@@ -1,15 +1,15 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContext;
-import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.object.meta.TypeUtil;
-import tech.metavm.object.meta.UniqueConstraintRT;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -18,12 +18,22 @@ import java.util.List;
 @EntityType("唯一索引节点")
 public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
-    private UniqueConstraintRT constraint;
-    private Table<Value> values;
+    public static GetUniqueNode create(NodeDTO nodeDTO, IEntityContext context) {
+        GetUniqueParamDTO param = nodeDTO.getParam();
+        IndexConstraintRT constraint = context.getEntity(IndexConstraintRT.class, param.constraintId());
+        GetUniqueNode node = new GetUniqueNode(nodeDTO, constraint, context.getScope(nodeDTO.scopeId()));
+        node.setParam(param, context);
+        return node;
+    }
 
-    public GetUniqueNode(NodeDTO nodeDTO, UniqueConstraintRT constraint, ScopeRT scope) {
+    @EntityField("索引")
+    private IndexConstraintRT constraint;
+    @EntityField("字段值列表")
+    private final Table<Value> values = new Table<>(Value.class);
+
+    public GetUniqueNode(NodeDTO nodeDTO, IndexConstraintRT constraint, ScopeRT scope) {
         super(nodeDTO, TypeUtil.getNullableType(constraint.getDeclaringType()), scope);
-        setParam(nodeDTO.getParam());
+        this.constraint = constraint;
     }
 
     @Override
@@ -35,25 +45,21 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     }
 
     @Override
-    protected void setParam(GetUniqueParamDTO param) {
-//        constraint = getContext().getUniqueConstraint(param.constraintId());
-//        values = NncUtils.map(
-//                param.values(),
-//                valueDTO -> ValueFactory.getValue(valueDTO, getParsingContext())
-//        );
-    }
-
-    public void setValues(List<ValueDTO> values) {
-        this.values = new Table<>(
-                Value.class,
+    protected void setParam(GetUniqueParamDTO param, IEntityContext entityContext) {
+        ParsingContext parsingContext = getParsingContext(entityContext);
+        setValues(
                 NncUtils.map(
-                    values,
-                    valueDTO -> ValueFactory.getValue(valueDTO, getParsingContext())
+                        param.values(), v -> ValueFactory.getValue(v, parsingContext)
                 )
         );
     }
 
-    public void setConstraint(UniqueConstraintRT constraint) {
+    public void setValues(List<Value> values) {
+        this.values.clear();
+        this.values.addAll(values);
+    }
+
+    public void setConstraint(IndexConstraintRT constraint) {
         this.constraint = constraint;
     }
 

@@ -3,9 +3,11 @@ package tech.metavm.object.instance.search;
 
 import tech.metavm.object.instance.query.Expression;
 
+import java.util.Set;
+
 public record SearchQuery (
         long tenantId,
-        long typeId,
+        Set<Long> typeIds,
         Expression condition,
         int page,
         int pageSize

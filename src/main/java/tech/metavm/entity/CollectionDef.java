@@ -9,6 +9,7 @@ import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.RuntimeGeneric;
 
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -86,7 +87,14 @@ public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, Array
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
-        instance.addAll(NncUtils.map(model, instanceMap::getInstance));
+        if(elementDef instanceof InstanceDef<?>) {
+            for (E e : model) {
+                instance.add(elementDef.getInstanceType().cast(e));
+            }
+        }
+        else {
+            instance.addAll(NncUtils.map(new ArrayList<>(model), instanceMap::getInstance));
+        }
     }
 
     @Override

@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeUtil;
@@ -11,9 +13,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@ValueType("数组表达式")
+@EntityType("数组表达式")
 public class ArrayExpression extends Expression {
 
+    @EntityField("表达式列表")
     private final Table<Expression> expressions;
 
     public ArrayExpression(Collection<Expression> expressions) {

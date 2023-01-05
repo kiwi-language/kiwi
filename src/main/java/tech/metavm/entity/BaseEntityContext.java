@@ -10,16 +10,20 @@ import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.*;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
-import tech.metavm.util.*;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
+import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static tech.metavm.entity.EntityUtils.isModelInitialized;
 import static tech.metavm.entity.EntityUtils.tryGetId;
 
 public abstract class BaseEntityContext implements CompositeTypeFactory, IEntityContext {
 
-    private final Map<EntityKey, Entity> entityMap = new HashMap<>();
+    private final Map<EntityKey, Object> entityMap = new HashMap<>();
     private final @Nullable IInstanceContext instanceContext;
     private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
@@ -31,11 +35,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if(instanceContext != null) {
             instanceContext.addListener(instance -> {
                 Object model = instance2model.get(instance);
-                if (model instanceof IdInitializing idInitializing) {
-                    NncUtils.requireNull(idInitializing.getId());
-                    idInitializing.initId(instance.getId());
-                    if(idInitializing instanceof Entity entity) {
-                        entityMap.put(entity.key(), entity);
+                if(model != null) {
+                    entityMap.put(EntityKey.create(model.getClass(), instance.getId()), model);
+                    if (model instanceof IdInitializing idInitializing) {
+                        NncUtils.requireNull(idInitializing.getId());
+                        idInitializing.initId(instance.getId());
+//                    if(idInitializing instanceof Entity entity) {
+//                        entityMap.put(entity.key(), entity);
+//                    }
                     }
                 }
             });
@@ -164,8 +171,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @SuppressWarnings("unused")
-    public UniqueConstraintRT getUniqueConstraint(long id) {
-        return getEntity(UniqueConstraintRT.class, id);
+    public IndexConstraintRT getUniqueConstraint(long id) {
+        return getEntity(IndexConstraintRT.class, id);
     }
 
     @SuppressWarnings("unused")
@@ -178,15 +185,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public boolean containsEntity(Class<? extends Entity> entityType,  long id) {
+    public boolean containsEntity(Class<?> entityType,  long id) {
         return entityMap.containsKey(new EntityKey(entityType, id));
     }
 
-    public <T extends Entity> T getEntity(Class<T> entityType, long id) {
+    public <T> T getEntity(Class<T> entityType, long id) {
         if (parent != null && parent.containsEntity(entityType, id)) {
             return parent.getEntity(entityType, id);
         }
-        Entity entity = entityMap.get(new EntityKey(entityType, id));
+        Object entity = entityMap.get(new EntityKey(entityType, id));
         if (entity != null) {
             return entityType.cast(entity);
         }
@@ -201,15 +208,16 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public <T> T get(Class<T> klass, long id) {
-        if(Entity.class.isAssignableFrom(klass)) {
-            return klass.cast(getEntity(klass.asSubclass(Entity.class), id));
-        }
-        else if(Enum.class.isAssignableFrom(klass)) {
-            return klass.cast(getEnum(klass.asSubclass(Enum.class), id));
-        }
-        else {
-            throw new InternalException("Invalid model type: " + klass.getName());
-        }
+        return klass.cast(getEntity(klass, id));
+//        if(Enum.class.isAssignableFrom(klass)) {
+//            return klass.cast(getEnum(klass.asSubclass(Enum.class), id));
+//        }
+//        else {
+//            return klass.cast(getEntity(klass, id));
+//        }
+//        else {
+//            throw new InternalException("Invalid model type: " + klass.getName());
+//        }
     }
 
 
@@ -251,8 +259,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private void updateInstance(Object model, Instance instance) {
-        ModelDef<?,?> def = getDefContext().getDef(instance.getType());
-        def.updateInstanceHelper(model, instance, this);
+        if(isModelInitialized(model)) {
+            ModelDef<?, ?> def = getDefContext().getDef(instance.getType());
+            def.updateInstanceHelper(model, instance, this);
+        }
     }
 
     public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {
@@ -282,7 +292,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return instanceContext.getTenantId();
     }
 
-    public boolean remove(Entity entity) {
+    public boolean remove(Object entity) {
         Instance instance = model2instance.remove(entity);
         if(instance == null) {
             return false;
@@ -291,8 +301,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if(instanceContext != null) {
             instanceContext.remove(instance);
         }
-        if (entity.getId() != null) {
-            entityMap.remove(entity.key());
+        if (instance.getId() != null) {
+            entityMap.remove(EntityKey.create(entity.getClass(), instance.getId()));
         }
         return true;
     }
@@ -309,7 +319,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private IndexKeyPO createIndexKey(IndexDef<?> uniqueConstraintDef, Object...values) {
-        UniqueConstraintRT constraint = getDefContext().getUniqueConstraint(uniqueConstraintDef);
+        IndexConstraintRT constraint = getDefContext().getUniqueConstraint(uniqueConstraintDef);
         NncUtils.requireNonNull(constraint);
         return IndexKeyPO.create(constraint.getId(), Arrays.asList(values));
     }
@@ -370,8 +380,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     protected void addMapping(Object model, Instance instance) {
         instance2model.put(instance, model);
         model2instance.put(model, instance);
-        if((model instanceof Entity entity) && entity.getId() != null) {
-            entityMap.put(entity.key(), entity);
+//        if((model instanceof Entity entity) && entity.getId() != null) {
+        if(instance.getId() != null) {
+            entityMap.put(EntityKey.create(model.getClass(), instance.getId()), model);
         }
         if(!instance.isValue() && !manualInstanceWriting()
                 && instanceContext != null && !instanceContext.containsInstance(instance)) {

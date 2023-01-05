@@ -1,61 +1,53 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.query.EvaluationContext;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.query.*;
+import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.InstanceUtils;
 
-import java.util.Objects;
-
-@ValueType("常量值")
+@EntityType("常量值")
 public class ConstantValue extends Value {
 
-    public static ConstantValue create(Object value/*, InstanceContext context*/) {
-        return new ConstantValue(
-                new ValueDTO(
-                        ValueKind.CONSTANT.code(),
-                        value,
-                        null
-                )/*,
-                context*/
-        );
+    @EntityField("值")
+    private final Expression expression;
+
+    public ConstantValue(ValueDTO valueDTO, ParsingContext parsingContext) {
+        super(ValueKind.CONSTANT);
+        if(valueDTO.isNull()) {
+            expression = ExpressionUtil.constant(InstanceUtils.nullInstance());
+        }
+        else {
+            expression = ExpressionParser.parse(
+                    ExpressionUtil.constantToExpression(valueDTO.value()),
+                    parsingContext
+            );
+        }
     }
 
-    @EntityField("值")
-    private final Object value;
-
-    public ConstantValue(ValueDTO valueDTO/*, InstanceContext context*/) {
-        super(valueDTO/*, context*/);
-        this.value = valueDTO.value();
+    public ConstantValue(Expression expression) {
+        super(ValueKind.CONSTANT);
+        this.expression = expression;
     }
 
     @Override
-    protected Object getDTOValue(boolean persisting) {
-        return value;
+    protected FieldValueDTO getDTOValue(boolean persisting) {
+        ConstantExpression constantExpression = (ConstantExpression) expression;
+        return ExpressionUtil.expressionToConstant(constantExpression);
     }
 
     @Override
     public Type getType() {
-        return ValueUtil.getValueType(value);
+        return expression.getType();
     }
 
     @Override
-    public Object evaluate(EvaluationContext context) {
-        return value;
+    public Instance evaluate(EvaluationContext context) {
+        return ExpressionEvaluator.evaluate(expression, context);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConstantValue that = (ConstantValue) o;
-        return Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(ValueKind.CONSTANT, value);
-    }
 }

@@ -100,7 +100,8 @@
     <foreach collection="typeIds" item="typeId" open="(" close=")" separator=",">
       #{typeId}
     </foreach>
-    limit #{start},#{limit}
+    and id > #{startIdExclusive}
+    limit #{limit}
   </select>
 
   <update id="updateSyncVersion">

@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.util.IdentitySet;
 
@@ -56,6 +57,14 @@ public abstract class PrimitiveInstance extends Instance {
     @Override
     public int hashCode() {
         return Objects.hash(getValue(), getType());
+    }
+
+    @Override
+    public PrimitiveFieldValueDTO toFieldValueDTO() {
+        return new PrimitiveFieldValueDTO(
+                getTitle(),
+                getValue()
+        );
     }
 
     @Override

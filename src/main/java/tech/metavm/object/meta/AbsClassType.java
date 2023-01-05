@@ -26,19 +26,19 @@ public abstract class AbsClassType extends Type {
         return NncUtils.findRequired(getFields(), f -> f.getId() == fieldId);
     }
 
-    public UniqueConstraintRT getUniqueConstraint(long constraintId) {
+    public IndexConstraintRT getUniqueConstraint(long constraintId) {
         return NncUtils.findRequired(
-                getConstraints(UniqueConstraintRT.class),
+                getConstraints(IndexConstraintRT.class),
                 c -> Objects.equals(c.getId(), constraintId)
         );
     }
 
-    public UniqueConstraintRT getUniqueConstraint(List<Field> fields) {
+    public IndexConstraintRT getUniqueConstraint(List<Field> fields) {
         return find(getUniqueConstraints(), c -> c.getFields().equals(fields));
     }
 
-    public List<UniqueConstraintRT> getUniqueConstraints() {
-        return getConstraints(UniqueConstraintRT.class);
+    public List<IndexConstraintRT> getUniqueConstraints() {
+        return getConstraints(IndexConstraintRT.class);
     }
 
     public abstract void addConstraint(ConstraintRT<?> constraint);

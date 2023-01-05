@@ -1,14 +1,18 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.instance.NullInstance;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.*;
+import tech.metavm.util.Null;
+import tech.metavm.util.Password;
+import tech.metavm.util.Table;
+import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Field;
 import java.util.Date;
 
 import static tech.metavm.object.meta.PrimitiveKind.INT;
 import static tech.metavm.util.ReflectUtils.*;
-import static tech.metavm.util.ReflectUtils.ENUM_ORDINAL_FIELD;
 
 public class StandardDefBuilder {
 
@@ -23,6 +27,8 @@ public class StandardDefBuilder {
     private PrimitiveDef<Integer> intDef;
 
     private PrimitiveDef<Long> longDef;
+
+    private PrimitiveDef<Null> nullDef;
 
     private FieldDef enumNameDef;
 
@@ -39,6 +45,7 @@ public class StandardDefBuilder {
         TypeFactory typeFactory = new TypeFactory(defMap::getType);
 
         AnyType objectType = new AnyType();
+        objectType.setArrayType(new ArrayType(objectType));
 
         objectDef = new AnyTypeDef<>(
                 Object.class,
@@ -82,10 +89,11 @@ public class StandardDefBuilder {
                 typeFactory.createPrimitive(PrimitiveKind.PASSWORD)
         ));
 
-        defMap.addDef(new PrimitiveDef<>(
+        nullDef = new PrimitiveDef<>(
                 Null.class,
                 typeFactory.createPrimitive(PrimitiveKind.NULL)
-        ));
+        );
+        defMap.addDef(nullDef);
 
         defMap.addDef(objectDef);
 
@@ -113,7 +121,7 @@ public class StandardDefBuilder {
                     Table.class,
                     Table.class,
                     objectDef,
-                    typeFactory.createArrayType(objectType)
+                    objectType.getArrayType()
                 )
         );
 
@@ -139,6 +147,10 @@ public class StandardDefBuilder {
         );
 
         defMap.addDef(enumDef);
+
+//        defMap.addDef(new InstanceDef<>(Instance.class));
+//        defMap.addDef(new InstanceDef<>(ClassInstance.class));
+//        defMap.addDef(new InstanceDef<>(ArrayInstance.class));
     }
 
     private tech.metavm.object.meta.Field createField(Field javaField,
@@ -151,7 +163,7 @@ public class StandardDefBuilder {
                 Access.GLOBAL,
                 false,
                 asTitle,
-                null,
+                new NullInstance((PrimitiveType) nullDef.getType()),
                 type,
                 false
         );

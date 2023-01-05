@@ -5,8 +5,8 @@ import tech.metavm.flow.FlowRT;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.ConstraintRT;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.object.meta.UnionType;
-import tech.metavm.object.meta.UniqueConstraintRT;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.Table;
@@ -18,6 +18,11 @@ public record ModelIdentity(
         Type type,
         String name
 ) {
+
+    public ModelIdentity(Type type, String name) {
+        this.type = type;
+        this.name = name;
+    }
 
     public static ModelIdentity classTypeFields(Class<?> javaType) {
         return new ModelIdentity(
@@ -81,7 +86,7 @@ public record ModelIdentity(
 
     public static ModelIdentity uniqueConstraint(java.lang.reflect.Field javaField) {
         return new ModelIdentity(
-                UniqueConstraintRT.class,
+                IndexConstraintRT.class,
                 ReflectUtils.getFieldQualifiedName(javaField)
         );
     }

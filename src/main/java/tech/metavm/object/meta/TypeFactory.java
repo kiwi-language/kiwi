@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.InstanceFactory;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.NncUtils;
@@ -32,12 +33,15 @@ public class TypeFactory {
                 typeDTO.ephemeral(),
                 param.desc()
         );
+        if(typeDTO.code() != null) {
+            type.setCode(typeDTO.code());
+        }
         context.bind(type);
         for (FieldDTO field : param.fields()) {
             createField(type, field, context);
         }
         for (ConstraintDTO constraint : param.constraints()) {
-            ConstraintFactory.createFromDTO(constraint, type);
+            ConstraintFactory.createFromDTO(constraint, context);
         }
         return type;
     }
@@ -46,19 +50,20 @@ public class TypeFactory {
         return type.isNullable();
     }
 
-    private EnumConstantRT createEnumConstant(ClassType type, EnumConstantDTO ec) {
+    private EnumConstantRT createEnumConstant(EnumType type, EnumConstantDTO ec) {
         return new EnumConstantRT(type, ec.name(), ec.ordinal());
     }
 
-    public Field createField(ClassType type, FieldDTO fieldDTO, IEntityContext context) {
+    public Field createField(ClassType declaringType, FieldDTO fieldDTO, IEntityContext context) {
+        Type fieldType = context.getType(fieldDTO.typeId());
         Field field =  new Field(
                 fieldDTO.name(),
-                type,
+                declaringType,
                 Access.getByCodeRequired(fieldDTO.access()),
                 fieldDTO.unique(),
                 fieldDTO.asTitle(),
-                fieldDTO.defaultValue(),
-                context.getType(fieldDTO.typeId()),
+                InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context),
+                fieldType,
                 fieldDTO.isChild()
         );
         context.bind(field);
@@ -113,12 +118,8 @@ public class TypeFactory {
         return new ArrayType(elementType, false);
     }
 
-    public boolean isNullType(ClassType type) {
-        return type == getNullType();
-    }
-
-    public Type getNullType() {
-        return getTypeFunc.apply(Null.class);
+    public PrimitiveType getNullType() {
+        return (PrimitiveType) getTypeFunc.apply(Null.class);
     }
 
     public EnumType createEnum(String name) {
@@ -129,8 +130,8 @@ public class TypeFactory {
         return createEnum(name, anonymous, getEnumType());
     }
 
-    public EnumType getEnumType() {
-        return (EnumType) getTypeFunc.apply(Enum.class);
+    public ClassType getEnumType() {
+        return (ClassType) getTypeFunc.apply(Enum.class);
     }
 
     public AnyType getObjectType() {
@@ -163,14 +164,8 @@ public class TypeFactory {
         return nullableType;
     }
 
-
     public UnionType createUnion(Set<Type> types) {
         return new UnionType(types);
     }
-
-//    public ParameterizedType createParameterized(ClassType rawType, List<Type> typeArguments) {
-//        return new ParameterizedType(rawType, typeArguments);
-//    }
-
 
 }

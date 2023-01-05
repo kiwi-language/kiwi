@@ -9,6 +9,7 @@ import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.InstanceEvaluationContext;
 import tech.metavm.object.instance.query.TypeParsingContext;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
+import tech.metavm.util.InstanceUtils;
 
 @EntityType("校验约束")
 public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
@@ -16,9 +17,9 @@ public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
     @EntityField("条件")
     private Value condition;
 
-    public CheckConstraintRT(ConstraintDTO constraintDTO, CheckConstraintParam param, ClassType type) {
-        super(ConstraintKind.CHECK, type, constraintDTO.message());
-        setParam(param);
+    public CheckConstraintRT(Value condition, ClassType type, String message) {
+        super(ConstraintKind.CHECK, type, message);
+        setCondition(condition);
     }
 
     @Override
@@ -38,12 +39,12 @@ public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
         return "";
     }
 
-    public void setParam(CheckConstraintParam param) {
-        condition = ValueFactory.getValue(param.value(), new TypeParsingContext(getDeclaringType()));
+    public void setCondition(Value condition) {
+        this.condition = condition;
     }
 
     public boolean check(ClassInstance instance) {
-        return Boolean.TRUE.equals(condition.evaluate(new InstanceEvaluationContext(instance)));
+        return InstanceUtils.isTrue(condition.evaluate(new InstanceEvaluationContext(instance)));
     }
 
 }

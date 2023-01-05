@@ -1,21 +1,21 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.InstanceContext;
-import tech.metavm.entity.ValueType;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.instance.query.ParsingContext;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.ValueFormatter;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.InternalException;
 
 import static tech.metavm.object.meta.TypeUtil.*;
 
-@ValueType("更新字段")
-public class UpdateField {
+@EntityType("更新字段")
+public class UpdateField extends Entity {
     @EntityField("字段")
     private final Field field;
     @EntityField("操作")
@@ -38,8 +38,8 @@ public class UpdateField {
     }
 
     public void execute(ClassInstance instance, EvaluationContext context, InstanceContext instanceContext) {
-        Object evaluatedValue = value.evaluate(context);
-        Object updateValue;
+        Instance evaluatedValue = value.evaluate(context);
+        Instance updateValue;
         if(op == UpdateOp.SET) {
             updateValue = evaluatedValue;
         }
@@ -75,10 +75,7 @@ public class UpdateField {
             throw new InternalException("Unsupported update operation: " + op);
         }
 
-        instance.set(
-                field,
-                ValueFormatter.parse(updateValue, field.getType(), instanceContext)
-        );
+        instance.set(field, updateValue);
     }
 
     public UpdateFieldDTO toDTO(boolean persisting) {

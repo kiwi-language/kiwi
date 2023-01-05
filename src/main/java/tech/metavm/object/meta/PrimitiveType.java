@@ -1,5 +1,6 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
 import java.util.Objects;
@@ -8,10 +9,12 @@ import java.util.function.Function;
 @EntityType("基础类型")
 public class PrimitiveType extends Type {
 
+    @EntityField("分类")
     private final PrimitiveKind kind;
 
     public PrimitiveType(PrimitiveKind kind) {
         super(kind.getName(), false, true, kind.getTypeCategory());
+        setCode(kind.name());
         this.kind = kind;
     }
 

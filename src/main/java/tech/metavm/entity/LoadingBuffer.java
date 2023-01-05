@@ -3,6 +3,8 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Type;
+import tech.metavm.util.IdAndValue;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -18,6 +20,7 @@ public class LoadingBuffer {
     private final Set<Long> loaded = new HashSet<>();
     private final InstanceContext context;
     private final IInstanceStore instanceStore;
+    private final Map<Long, RangeCache<Long>> rangeCaches = new HashMap<>();
 
     public LoadingBuffer(InstanceContext context) {
         this.context = context;
@@ -43,14 +46,6 @@ public class LoadingBuffer {
 
     public void preload(Map<Long, InstancePO> supplierMap) {
         supplierMap.forEach(this::preload);
-    }
-
-    public List<InstancePO> getByType(ClassType type) {
-        if(!byTypeResultMap.containsKey(type)) {
-            byTypeRequests.add(type);
-            flush();
-        }
-        return byTypeResultMap.get(type);
     }
 
     public InstancePO getEntityPO(long id) {

@@ -14,7 +14,6 @@ import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
@@ -48,13 +47,13 @@ public class InstanceManager {
         ClassType type = context.getClassType(request.typeId());
         SearchQuery searchQuery = new SearchQuery(
                 ContextUtil.getTenantId(),
-                request.typeId(),
-                ExpressionParser.parse(type, request.condition()),
+                type.getTypeIdsInHierarchy(),
+                ExpressionParser.parse(type, request.condition(), context),
                 request.page(),
                 request.pageSize()
         );
         Page<Long> idPage = instanceSearchService.search(searchQuery);
-        List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(type, sel));
+        List<Expression> selects = NncUtils.map(request.selects(), sel -> ExpressionParser.parse(type, sel, context));
 
         GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor(context);
         return new Page<>(
@@ -103,7 +102,7 @@ public class InstanceManager {
         long tenantId = ContextUtil.getTenantId();
         InstanceContext context = createContext(tenantId);
         ClassType type = context.getClassType(query.typeId());
-        Expression expression = ExpressionParser.parse(type, query.searchText());
+        Expression expression = ExpressionParser.parse(type, query.searchText(), context);
         if(expression instanceof ConstantExpression) {
             Field titleField = type.getTileField();
             PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(query.searchText());
@@ -114,7 +113,7 @@ public class InstanceManager {
         }
         SearchQuery searchQuery = new SearchQuery(
                 tenantId,
-                query.typeId(),
+                type.getTypeIdsInHierarchy(),
                 expression,
                 query.page(),
                 query.pageSize()

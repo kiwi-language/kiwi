@@ -1,12 +1,11 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -176,6 +175,7 @@ public abstract class BaseInstanceContext implements IInstanceContext{
         if(instance.getId() != null) {
             instanceMap.remove(instance.getId());
         }
+        EntityUtils.ensureProxyInitialized(instance);
         if(instance instanceof ClassInstance classInstance) {
             for (Field field : classInstance.getType().getFields()) {
                 if (field.isChildField()) {
@@ -204,7 +204,21 @@ public abstract class BaseInstanceContext implements IInstanceContext{
 
     public void bind(Instance instance) {
         NncUtils.requireNull(instance.getId(), "Can not bind a persisted instance");
-        getAllNewInstances(List.of(instance)).forEach(this::add);
+        for (Instance inst : getAllNewInstances(List.of(instance))) {
+            if(inst.getId() == null) {
+                add(inst);
+            }
+        }
+    }
+
+    protected void rebind() {
+        for (Instance instance : new ArrayList<>(instances)) {
+            for (Instance inst : getAllNewInstances(List.of(instance))) {
+                if (inst.getId() == null && !containsInstance(inst)) {
+                    add(inst);
+                }
+            }
+        }
     }
 
     private void add(Instance instance) {
@@ -238,18 +252,20 @@ public abstract class BaseInstanceContext implements IInstanceContext{
 
     private Set<Instance> getAllNewInstances(Collection<Instance> instances) {
         Set<Instance> result = new IdentitySet<>();
-        getAllNewInstances(instances, result);
+        getAllNewInstances(instances, result, new IdentitySet<>());
         return result;
     }
 
-    private void getAllNewInstances(Collection<Instance> instances, Set<Instance> result) {
+    private void getAllNewInstances(Collection<Instance> instances, Set<Instance> result, Set<Instance> visited) {
+        instances = NncUtils.filterNot(instances, visited::contains);
+        visited.addAll(instances);
         List<Instance> newInstances = NncUtils.filter(instances,
-                inst -> !this.instances.contains(inst) && !result.contains(inst) && !inst.isValue()
+                inst -> !containsInstance(inst) && !result.contains(inst) && !inst.isValue()
         );
         result.addAll(newInstances);
-        Set<Instance> refInstances = new IdentitySet<>(NncUtils.flatMap(newInstances, Instance::getRefInstances));
+        Set<Instance> refInstances = new IdentitySet<>(NncUtils.flatMap(instances, Instance::getRefInstances));
         if(!refInstances.isEmpty()) {
-            getAllNewInstances(refInstances, result);
+            getAllNewInstances(refInstances, result, visited);
         }
     }
 

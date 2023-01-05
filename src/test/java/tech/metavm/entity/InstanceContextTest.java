@@ -17,7 +17,7 @@ import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.UniqueConstraintRT;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -235,7 +235,7 @@ public class InstanceContextTest extends TestCase {
     }
 
     public void testIndex() {
-        UniqueConstraintRT uniqueConstraint = MockRegistry.getUniqueConstraint(Foo.IDX_NAME);
+        IndexConstraintRT uniqueConstraint = MockRegistry.getUniqueConstraint(Foo.IDX_NAME);
         MockEntityContext entityContext = new MockEntityContext(
                 MockRegistry.getDefContext(), idProvider, MockRegistry.getDefContext()
         );
@@ -244,7 +244,7 @@ public class InstanceContextTest extends TestCase {
                 MockRegistry.getInstanceContext(),
                 manualTypeResolver,
                 List.of(
-                        new UniqueConstraintPlugin(instanceStore.getIndexItemMapper())
+                        new IndexConstraintPlugin(instanceStore.getIndexItemMapper())
                 )
         );
 

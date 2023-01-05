@@ -3,7 +3,10 @@ package tech.metavm.object.instance;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
+import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
+import tech.metavm.object.instance.rest.ArrayParamDTO;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
@@ -183,18 +186,21 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     @Override
+    @NoProxy
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
         return toReferencePO();
     }
 
     @Override
     public String getTitle() {
-        return null;
+        return "";
     }
 
     @Override
-    protected Object getParam() {
-        return null;
+    protected ArrayParamDTO getParam() {
+        return new ArrayParamDTO(
+                NncUtils.map(elements, Instance::toFieldValueDTO)
+        );
     }
 
     private static Object elementToPO(long tenantId, Object element, IdentitySet<Instance> visited) {
@@ -212,6 +218,20 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         else {
             return element;
         }
+    }
+
+    @Override
+    @NoProxy
+    public ArrayType getType() {
+        return (ArrayType) super.getType();
+    }
+
+    @Override
+    public ArrayFieldValueDTO toFieldValueDTO() {
+        return new ArrayFieldValueDTO(
+                getId(),
+                NncUtils.map(elements, Instance::toFieldValueDTO)
+        );
     }
 
     public void clear() {

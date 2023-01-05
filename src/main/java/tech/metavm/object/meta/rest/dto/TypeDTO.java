@@ -25,7 +25,7 @@ public record TypeDTO(
                 id, name, null, TypeCategory.CLASS.code(), false, false,
                 null, null,
                 new ClassParamDTO(
-                        null, null, fieldDTOs, List.of(), null
+                        null, null, fieldDTOs, List.of(), null, null
                 )
         );
     }
@@ -46,7 +46,8 @@ public record TypeDTO(
                         null,
                         fieldDTOs,
                         constraintDTOs,
-                        desc
+                        desc,
+                        null
                 )
         );
     }

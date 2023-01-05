@@ -142,6 +142,15 @@ public class ReflectUtils {
         return getMethodByName(klass, methodName, true);
     }
 
+    public static Method tryGetStaticMethod(Class<?> klass, String name, Class<?>...paramTypes) {
+        try {
+            Method method =  klass.getMethod(name, paramTypes);
+            return Modifier.isStatic(method.getModifiers()) ? method : null;
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
     public static Method getMethod(@NotNull Class<?> klass, String name, List<Class<?>> parameterClasses) {
         Class<?>[] paramClasses = new Class<?>[parameterClasses.size()];
         parameterClasses.toArray(paramClasses);
@@ -536,11 +545,19 @@ public class ReflectUtils {
         return getField(recordComponent.getDeclaringRecord(), recordComponent.getName());
     }
 
-    public static <T> Constructor<T> getConstructor(Class<T> cls, Class<?>... argTypes) {
+    public static <T> Constructor<T> getConstructor(Class<T> klass, Class<?>... paramTypes) {
         try {
-            return cls.getConstructor(argTypes);
+            return klass.getConstructor(paramTypes);
         } catch (Exception e) {
             throw new RuntimeException("Constructor not found", e);
+        }
+    }
+
+    public static <T> Constructor<T> getConstructorIfPresent(Class<T> klass, Class<?>...paramTypes) {
+        try {
+            return klass.getConstructor(paramTypes);
+        } catch (Exception e) {
+            return null;
         }
     }
 

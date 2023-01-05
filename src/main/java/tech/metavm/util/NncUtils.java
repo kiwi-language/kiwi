@@ -200,6 +200,10 @@ public class NncUtils {
         return getFirst(list, Function.identity());
     }
 
+    public static <T> T getLast(List<T> list) {
+        return list.get(list.size() - 1);
+    }
+
     public static boolean isNotEmpty(Map<?,?> map) {
         return !isEmpty(map);
     }
@@ -363,6 +367,25 @@ public class NncUtils {
                 .map(mapper)
                 .sorted(comparator)
                 .collect(Collectors.toList());
+    }
+
+    public static <K, V> V binarySearch(List<V> list, K key, ToIntBiFunction<V, K> compare) {
+        int l = 0, h = list.size();
+        while (l != h) {
+            int m = l + h >> 1;
+            V v = list.get(m);
+            int c = compare.applyAsInt(v, key);
+            if(c == 0) {
+                return v;
+            }
+            else if(c < 0) {
+                l = m + 1;
+            }
+            else {
+                h = m;
+            }
+        }
+        return null;
     }
 
     public static <T, R> @Nullable R mapFirst(List<T> list, Function<T, R> mapping) {

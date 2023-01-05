@@ -1,6 +1,5 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 

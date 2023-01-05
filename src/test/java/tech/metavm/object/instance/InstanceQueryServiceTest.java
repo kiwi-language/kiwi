@@ -26,6 +26,7 @@ public class InstanceQueryServiceTest extends TestCase {
         EntityIdProvider idProvider = new MockIdProvider();
         MockRegistry.setUp(idProvider);
         context = new MemInstanceContext();
+        context.setTypeProvider(MockRegistry::getType);
         instanceSearchService = new MemInstanceSearchService();
         instanceQueryService = new InstanceQueryService(instanceSearchService);
     }

@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.PrimitiveInstance;
@@ -11,10 +12,10 @@ import tech.metavm.util.ValueUtil;
 
 import java.util.Objects;
 
-@ValueType("常量表达式")
+@EntityType("常量表达式")
 public class ConstantExpression extends Expression {
 
-    @EntityField("常量值")
+    @EntityField(value = "常量值", asTitle = true)
     private final Instance value;
 
     public ConstantExpression(Instance value) {
@@ -34,7 +35,7 @@ public class ConstantExpression extends Expression {
             return primitiveInstance.getValue() + "";
         }
         else {
-            return "$" + NncUtils.requireNonNull(value.getId());
+            return "$$" + NncUtils.requireNonNull(value.getId());
         }
     }
 

@@ -1,12 +1,13 @@
 package tech.metavm.object.meta.rest.dto;
 
+import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.Access;
 
 public record FieldDTO(
         Long id,
         String name,
         int access,
-        Object defaultValue,
+        FieldValueDTO defaultValue,
         boolean unique,
         boolean asTitle,
         Long declaringTypeId,
@@ -32,10 +33,10 @@ public record FieldDTO(
         );
     }
 
-    public static FieldDTO createSimple(long id,
+    public static FieldDTO createSimple(Long id,
                                         String name,
                                         int access,
-                                        Object defaultValue,
+                                        FieldValueDTO defaultValue,
                                         long declaringTypeId,
                                         long typeId) {
         return new FieldDTO(

@@ -5,11 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.slf4j.Logger;
+import tech.metavm.entity.*;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.log.InstanceLogServiceImpl;
+import tech.metavm.object.meta.MemAllocatorStore;
+import tech.metavm.object.meta.StdAllocators;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
+import java.util.List;
 
 public class TestUtils {
 
@@ -33,6 +39,14 @@ public class TestUtils {
             return OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new InternalException(e);
+        }
+    }
+
+    public static <T> T readJSON(Class<T> klass, String json) {
+        try {
+            return OBJECT_MAPPER.readValue(json, klass);
+        } catch (JsonProcessingException e) {
+            throw new InternalException("Fail to read JSON '" + json + "'", e);
         }
     }
 
@@ -78,6 +92,23 @@ public class TestUtils {
 
     public static void logJSON(Logger logger, String title, Object object) {
         logger.info(title + "\n" + toJSONString(object));
+    }
+
+    public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider) {
+        IInstanceStore instanceStore = new MemInstanceStore();
+        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore)
+                .setIdService(idProvider).setDefaultAsyncProcessing(false);
+        InstanceContextFactory.setStdContext(MockRegistry.getInstanceContext());
+        instanceContextFactory.setPlugins(List.of(
+                new CheckConstraintPlugin(),
+                new IndexConstraintPlugin(new MemIndexItemMapper()),
+                new ChangeLogPlugin(new InstanceLogServiceImpl(
+                        new MemInstanceSearchService(),
+                        instanceContextFactory,
+                        instanceStore
+                ))
+        ));
+        return instanceContextFactory;
     }
 
 }

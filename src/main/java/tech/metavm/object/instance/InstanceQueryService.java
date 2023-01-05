@@ -10,13 +10,11 @@ import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static tech.metavm.util.InstanceUtils.resolveValue;
 
@@ -58,9 +56,12 @@ public class InstanceQueryService {
     }
 
     public Page<Long> query(long typeId, Expression expression, int page, int pageSize, IInstanceContext context) {
+        Type type = context.getType(typeId);
+        Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getTypeIdsInHierarchy() :
+                Set.of(typeId);
         SearchQuery searchQuery = new SearchQuery(
                 context.getTenantId(),
-                typeId,
+                typeIds,
                 expression,
                 page,
                 pageSize

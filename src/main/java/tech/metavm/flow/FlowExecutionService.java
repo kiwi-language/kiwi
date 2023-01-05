@@ -1,12 +1,10 @@
 package tech.metavm.flow;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.flow.rest.FieldValueDTO;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
@@ -18,8 +16,11 @@ import java.util.List;
 @Component
 public class FlowExecutionService {
 
-    @Autowired
-    private InstanceContextFactory instanceContextFactory;
+    private final InstanceContextFactory instanceContextFactory;
+
+    public FlowExecutionService(InstanceContextFactory instanceContextFactory) {
+        this.instanceContextFactory = instanceContextFactory;
+    }
 
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
@@ -34,18 +35,19 @@ public class FlowExecutionService {
         return NncUtils.get(result, Instance::toDTO);
     }
 
-    private InstanceDTO createArgument(long typeId, List<FieldValueDTO> fields) {
+    private InstanceDTO createArgument(long typeId, List<InstanceFieldDTO> fields) {
         return InstanceDTO.valueOf(
                 typeId,
                 NncUtils.map(fields, this::createField)
         );
     }
 
-    private InstanceFieldDTO createField(FieldValueDTO fieldValueDTO) {
-        return InstanceFieldDTO.valueOf(
-                fieldValueDTO.fieldId(),
-                fieldValueDTO.value()
-        );
+    private InstanceFieldDTO createField(InstanceFieldDTO fieldValueDTO) {
+//        return InstanceFieldDTO.valueOf(
+//                fieldValueDTO.fieldId(),
+//                fieldValueDTO
+//        );
+        return fieldValueDTO;
     }
 
     private InstanceContext newContext() {

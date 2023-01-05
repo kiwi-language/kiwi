@@ -39,7 +39,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
 
     @Override
     protected ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType) {
-        return typeFactory.createValueClass(name, code, superType);
+        return typeFactory.createClass(name, code, superType);
     }
 
 }

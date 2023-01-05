@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -21,15 +22,16 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     @EntityField("分支列表")
     private final Table<Branch> branches = new Table<>(Branch.class);
 
-    public BranchNode(NodeDTO nodeDTO, BranchParamDTO param, ScopeRT scope) {
+    public BranchNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
+        BranchParamDTO param = nodeDTO.getParam();
+        inclusive = param.inclusive();
         branches.add(Branch.create(1L, this));
         branches.add(Branch.createPreselected(this));
     }
 
     @Override
-    protected void setParam(BranchParamDTO param) {
+    protected void setParam(BranchParamDTO param, IEntityContext entityContext) {
         inclusive = param.inclusive();
     }
 
@@ -41,20 +43,22 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         );
     }
 
-    public Branch addBranch(BranchDTO branchDTO) {
-        return addBranch(branchDTO.condition());
+    public Branch addBranch(BranchDTO branchDTO, IEntityContext entityContext) {
+        return addBranch(
+                ValueFactory.getValue(branchDTO.condition(), getParsingContext(entityContext))
+        );
     }
 
-    public Branch addBranch(ValueDTO condition) {
+    public Branch addBranch(Value condition) {
         long branchId;
-        long maxId = 1;
+        long maxIndex = 1;
         for (Branch branch : branches) {
             if(!branch.isPreselected()) {
-                maxId = Math.max(branch.getId(), maxId);
+                maxIndex = Math.max(branch.getIndex(), maxIndex);
             }
         }
-        branchId = maxId + 1;
-        Branch branch = new Branch(branchId, condition, false, new ScopeRT(getFlow()), this);
+        branchId = maxIndex + 1;
+        Branch branch = new Branch(branchId, condition, false, new ScopeRT(getFlow(), this), this);
         branches.add(branches.size() - 1, branch);
         return branch;
     }
@@ -63,15 +67,15 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         return new ArrayList<>(branches);
     }
 
-    public Branch getBranch(long id) {
-        return NncUtils.find(branches, branch -> branch.getId() == id);
+    public Branch getBranch(long index) {
+        return NncUtils.find(branches, branch -> branch.getIndex() == index);
     }
 
-    public Branch deleteBranch(long id) {
+    public Branch deleteBranch(long index) {
         ListIterator<Branch> listIt = branches.listIterator();
         while (listIt.hasNext()) {
             Branch branch = listIt.next();
-            if(branch.getId() == id) {
+            if(branch.getIndex() == index) {
                 listIt.remove();
                 return branch;
             }

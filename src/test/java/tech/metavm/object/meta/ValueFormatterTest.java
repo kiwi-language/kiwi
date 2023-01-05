@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MemInstanceContext;
+import tech.metavm.entity.MockEntityContext;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
@@ -20,13 +21,7 @@ public class ValueFormatterTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         MockRegistry.setUp(new MockIdProvider());
-//        InstanceUtils.setGetTypeFunc(MockRegistry::getType);
     }
-
-//    @Override
-//    protected void tearDown() {
-//        InstanceUtils.resetGetTypeFunc();
-//    }
 
     public void testParse() {
         Instance instance = MockRegistry.getFooInstance();
@@ -35,7 +30,6 @@ public class ValueFormatterTest extends TestCase {
         MemInstanceContext context = new MemInstanceContext();
         context.setTypeProvider(MockRegistry::getType);
         context.replace(instance);
-
         Instance recoveredInst = ValueFormatter.parseInstance(instanceDTO, context);
 
         Assert.assertNotNull(recoveredInst);

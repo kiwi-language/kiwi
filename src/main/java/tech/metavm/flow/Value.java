@@ -1,22 +1,25 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.EvaluationContext;
+import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.Type;
 
-@ValueType("流程值")
-public abstract class Value {
+@EntityType("流程值")
+public abstract class Value extends Entity {
 
     @EntityField("类别")
     private final ValueKind kind;
 
-    public Value(ValueDTO valueDTO) {
-        kind = ValueKind.getByCodeRequired(valueDTO.kind());
+    public Value(ValueKind kind) {
+        this.kind = kind;
     }
 
-    protected abstract Object getDTOValue(boolean persisting);
+    protected abstract FieldValueDTO getDTOValue(boolean persisting);
 
     public ValueDTO toDTO(boolean persisting) {
         return new ValueDTO(kind.code(), getDTOValue(persisting), persisting ? null :
@@ -26,6 +29,6 @@ public abstract class Value {
 
     public abstract Type getType();
 
-    public abstract Object evaluate(EvaluationContext evaluationContext);
+    public abstract Instance evaluate(EvaluationContext evaluationContext);
 
 }

@@ -1,10 +1,7 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.instance.PrimitiveInstance;
+import tech.metavm.object.instance.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
@@ -43,6 +40,7 @@ public class FieldDef implements IFieldDef {
 
     @Override
     public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
+        EntityUtils.ensureProxyInitialized(model);
         Object fieldValue = ReflectUtils.get(model, javaField);
         if(fieldValue == null) {
             if(nullable) {
@@ -68,8 +66,8 @@ public class FieldDef implements IFieldDef {
             if(primitiveInstance.isNull()) {
                 return null;
             }
-            if(primitiveInstance.isPassword()) {
-                return ((Password) primitiveInstance.getValue()).getPassword();
+            if(primitiveInstance instanceof PasswordInstance passwordInstance) {
+                return new Password(passwordInstance);
             }
             return primitiveInstance.getValue();
         }

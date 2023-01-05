@@ -32,13 +32,13 @@ public class IdentityContextTest extends TestCase {
         Field fooNameField = new Field(
                 ReflectUtils.getMetaFieldName(Foo.class, "name"),
                 fooType, stringType);
-        UniqueConstraintRT uniqueConstraint =
-                new UniqueConstraintRT(fooType, List.of(fooNameField), "name is required");
+        IndexConstraintRT uniqueConstraint =
+                new IndexConstraintRT(fooType, List.of(fooNameField), Foo.IDX_NAME.isUnique(), "name is required");
         uniqueConstraint.setIndexDef(Foo.IDX_NAME);
 
         context.getIdentityMap(fooType);
 
-        Map<Identifiable, ModelIdentity> model2modelId = context.getIdentityMap();
+        Map<Object, ModelIdentity> model2modelId = context.getIdentityMap();
 
         context.getIdentityMap().forEach((model, modelId) -> LOGGER.info(model + " -> " + modelId));
 

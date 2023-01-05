@@ -116,13 +116,25 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                     new TypeReference<Collection<?>>(){}.getType()
             );
             if (genericType instanceof ParameterizedType pType) {
-                ModelDef<?,?> elementDef = getDef(pType.getActualTypeArguments()[0]);
-                return CollectionDef.createHelper(
-                        collectionClass,
-                        genericType,
-                        elementDef,
-                        TypeUtil.getArrayType(elementDef.getType())
-                );
+                Type elementJavaType = pType.getActualTypeArguments()[0];
+                if((elementJavaType instanceof Class<?> elementJavaClass) &&
+                        Instance.class.isAssignableFrom(elementJavaClass)) {
+                    return InstanceCollectionDef.create(
+                            collectionClass,
+                            genericType,
+                            elementJavaClass,
+                            objectDef.getType().getArrayType()
+                    );
+                }
+                else {
+                    ModelDef<?, ?> elementDef = getDef(pType.getActualTypeArguments()[0]);
+                    return CollectionDef.createHelper(
+                            collectionClass,
+                            genericType,
+                            elementDef,
+                            TypeUtil.getArrayType(elementDef.getType())
+                    );
+                }
             }
             else {
                 return CollectionDef.createHelper(
@@ -174,7 +186,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @Override
     public void preAddDef(ModelDef<?,?> def) {
         javaType2Def.put(def.getJavaType(), def);
-        type2Def.put(def.getType(), def);
+        if(!(def instanceof InstanceDef)) {
+            type2Def.put(def.getType(), def);
+        }
     }
 
     @Override
@@ -233,12 +247,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getEnumDef(klass).getEnumConstantDef(id).getValue();
     }
 
-    public UniqueConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
+    public IndexConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
         EntityDef<?> entityDef = (EntityDef<?>) getDef(indexDef.getType());
         return entityDef.getUniqueConstraintDef(indexDef).getUniqueConstraint();
     }
 
-    public Map<Identifiable, ModelIdentity> getIdentityMap() {
+    public Map<Object, ModelIdentity> getIdentityMap() {
         return identityContext.getIdentityMap();
     }
 
@@ -280,18 +294,19 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return;
         }
         ModelDef<?,?> def = getDefByModel(model);
-        Long id = EntityUtils.tryGetId(model);
+        ModelIdentity identity = identityContext.getIdentity(model);
+        Long id = identity != null ? getId.apply(identity) : null;
         if(def.isProxySupported()) {
             Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType());
-             if(id != null) {
-                 instance.initId(id);
-             }
+            if(id != null) {
+                instance.initId(id);
+            }
             addMapping(model, instance);
             def.initInstanceHelper(instance, model, this);
         }
         else {
             Instance instance = def.createInstanceHelper(model, this);
-            if(id != null) {
+            if(id != null && instance.getId() == null) {
                 instance.initId(id);
             }
             addMapping(model, instance);
@@ -359,7 +374,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public boolean remove(Entity entity) {
+    public boolean remove(Object entity) {
         throw new UnsupportedOperationException();
     }
 

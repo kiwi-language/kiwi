@@ -5,18 +5,16 @@ public record InstanceFieldDTO(
         String fieldName,
         Integer type,
         Boolean multiValued,
-        Object value,
-        String displayValue
+        FieldValueDTO value
 ) {
 
-    public static InstanceFieldDTO valueOf(Long fieldId, Object value) {
+    public static InstanceFieldDTO valueOf(Long fieldId, FieldValueDTO value) {
         return new InstanceFieldDTO(
                 fieldId,
                 null,
                 null,
                 null,
-                value,
-                null
+                value
         );
     }
 

@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
@@ -7,10 +9,11 @@ import tech.metavm.util.Table;
 
 import java.util.List;
 
-@ValueType("函数表达式")
+@EntityType("函数表达式")
 public class FunctionExpression extends Expression {
-
+    @EntityField("函数")
     private final Function function;
+    @EntityField("参数表达式列表")
     private final Table<Expression> arguments;
 
     public FunctionExpression(Function function, Expression argument) {

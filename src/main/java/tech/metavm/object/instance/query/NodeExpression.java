@@ -1,12 +1,15 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.meta.Type;
 
-@ValueType("节点表达式")
+@EntityType("节点表达式")
 public class NodeExpression extends Expression {
 
+    @EntityField("节点")
     private final NodeRT<?> node;
 
     public NodeExpression(NodeRT<?> node) {

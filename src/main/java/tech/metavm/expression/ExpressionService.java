@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.expression.dto.*;
 import tech.metavm.flow.NodeRT;
@@ -11,6 +12,8 @@ import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.query.*;
+import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.EntityContextBean;
@@ -33,7 +36,11 @@ public class ExpressionService extends EntityContextBean {
 
     public BoolExprDTO parseBoolExpr(BoolExprParseRequest request) {
         try {
-            Expression expression = ExpressionParser.parse(extractExpr(request.value()), getParsingContext(request.context()));
+            IEntityContext context = newContext();
+            Expression expression = ExpressionParser.parse(
+                    extractExpr(request.value()),
+                    getParsingContext(request.context(), context.getInstanceContext())
+            );
             if(expression == null) {
                 return new BoolExprDTO(List.of());
             }
@@ -47,23 +54,25 @@ public class ExpressionService extends EntityContextBean {
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {
         if(value.kind() == ValueKind.CONSTANT.code()) {
-            if(Boolean.TRUE.equals(value.value())) {
-                return "true";
+            if(value.value() instanceof PrimitiveFieldValueDTO primValue) {
+                if(Boolean.TRUE.equals(primValue.getValue())) {
+                    return "true";
+                }
             }
             else {
                 throw new ExpressionParsingException();
             }
         }
         if(value.kind() == ValueKind.REFERENCE.code()) {
-            String ref = (String) value.value();
-            return ref.replaceAll("-", ".") + " = true";
+            ExpressionFieldValueDTO exprValue = (ExpressionFieldValueDTO) value.value();
+            return exprValue.getExpression().replaceAll("-", ".") + " = true";
         }
         else {
-            return (String) value.value();
+            return ((ExpressionFieldValueDTO) value.value()).getExpression();
         }
     }
 
-    private ParsingContext getParsingContext(ParsingContextDTO contextDTO) {
+    private ParsingContext getParsingContext(ParsingContextDTO contextDTO, IInstanceContext instanceContext) {
         IEntityContext context = newContext();
         if(contextDTO instanceof FlowParsingContextDTO flowContext) {
             NodeRT<?> prev = NncUtils.get(flowContext.getPrevNodeId(), context::getNode);
@@ -74,11 +83,11 @@ public class ExpressionService extends EntityContextBean {
             if(prev == null) {
                 throw BusinessException.invalidParams("请求参数错误");
             }
-            return new FlowParsingContext(/*context.getInstanceContext(), */prev);
+            return new FlowParsingContext(prev, instanceContext);
         }
         else if(contextDTO instanceof TypeParsingContextDTO typeContext) {
             return new TypeParsingContext(
-                    context.getClassType(typeContext.getTypeId())
+                    context.getClassType(typeContext.getTypeId()), instanceContext
             );
         }
         throw BusinessException.invalidParams("请求参数错误，未识别的解析上下文类型: " + contextDTO.getClass().getName());
@@ -151,7 +160,7 @@ public class ExpressionService extends EntityContextBean {
 
     private ValueDTO parseExprValue(Expression expression) throws ExpressionParsingException {
         if(expression instanceof ConstantExpression constantExpression) {
-            return ValueDTO.constValue(constantExpression.getValue());
+            return ValueDTO.constValue(ExpressionUtil.expressionToConstant(constantExpression));
         }
         if(expression instanceof FieldExpression || expression instanceof NodeExpression) {
             return parseRefValue(expression);

@@ -1,10 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.*;
-import tech.metavm.mocks.Bar;
-import tech.metavm.mocks.Baz;
-import tech.metavm.mocks.Foo;
-import tech.metavm.mocks.Qux;
+import tech.metavm.mocks.*;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
@@ -37,7 +34,9 @@ public class MockRegistry {
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
         ReflectUtils.getModelClasses().forEach(DEF_CONTEXT::getDef);
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
+        INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         initIds();
+        ContextUtil.setContextInfo(TENANT_ID, 1L);
     }
 
     public static void initIds() {
@@ -83,11 +82,47 @@ public class MockRegistry {
         );
         ClassInstance instance = getEntityDef(Foo.class).createInstance(foo, MODEL_INSTANCE_MAP);
         if(initId) {
-            for (Instance inst : InstanceUtils.getAllNonValueInstances(List.of(instance))) {
+            initInstanceIds(instance);
+        }
+        return instance;
+    }
+
+    public static Coupon getCoupon() {
+        Product product = new Product("shoes", 100, 100);
+        return new Coupon(0.8, DiscountType.PERCENTAGE, CouponState.UNUSED, product);
+    }
+
+    public static ClassInstance getNewCouponInstance() {
+        return getCouponInstance(false);
+    }
+
+    public static ClassInstance getCouponInstance() {
+        return getCouponInstance(true);
+    }
+
+    private static ClassInstance getCouponInstance(boolean initId) {
+        Coupon coupon = getCoupon();
+        ClassInstance instance = getEntityDef(Coupon.class).createInstance(coupon, MODEL_INSTANCE_MAP);
+        if(initId) {
+            initInstanceIds(instance);
+        }
+        INSTANCE_CONTEXT.replace(instance);
+        return instance;
+    }
+
+    private static void initInstanceIds(Instance instance) {
+        for (Instance inst : InstanceUtils.getAllNonValueInstances(List.of(instance))) {
+            if(inst.getId() == null) {
                 inst.initId(ID_PROVIDER.allocateOne(TENANT_ID, inst.getType()));
             }
         }
-        return instance;
+    }
+
+    private static void initModelIds(Entity model) {
+        EntityUtils.traverse(
+                model,
+                m -> m.initId(ID_PROVIDER.allocateOne(TENANT_ID, getType(m.getEntityType())))
+        );
     }
 
     public static Foo getFoo() {
@@ -144,6 +179,7 @@ public class MockRegistry {
     }
 
     public static Type getType(Class<?> javaType) {
+        javaType = EntityUtils.getRealType(javaType);
         return DEF_CONTEXT.getType(javaType);
     }
 
@@ -188,7 +224,7 @@ public class MockRegistry {
         }
     }
 
-    public static UniqueConstraintRT getUniqueConstraint(IndexDef<?> def) {
+    public static IndexConstraintRT getUniqueConstraint(IndexDef<?> def) {
         EntityDef<?> entityDef = (EntityDef<?>) getDef(def.getType());
         initIds();
         return entityDef.getUniqueConstraintDef(def).getUniqueConstraint();

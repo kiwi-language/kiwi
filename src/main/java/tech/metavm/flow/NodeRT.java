@@ -4,14 +4,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.query.FlowParsingContext;
 import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 
@@ -23,12 +27,15 @@ public abstract class NodeRT<P> extends Entity {
     @EntityField("类别")
     private final NodeKind kind;
     @EntityField("输出类型")
+    @Nullable
     private Type outputType;
     @EntityField("范围")
     private final ScopeRT scope;
     @EntityField("前驱")
+    @Nullable
     private NodeRT<?> predecessor;
     @EntityField("后继")
+    @Nullable
     private NodeRT<?> successor;
 
     private transient ParsingContext parsingContext;
@@ -46,7 +53,7 @@ public abstract class NodeRT<P> extends Entity {
     protected NodeRT(
             String name,
             NodeKind kind,
-            Type outputType,
+            @Nullable Type outputType,
             NodeRT<?> previous,
             ScopeRT scope
     ) {
@@ -59,7 +66,6 @@ public abstract class NodeRT<P> extends Entity {
             previous.insertAfter(this);
         }
         this.scope.addNode(this);
-        parsingContext = FlowParsingContext.create(this);
     }
 
     @JsonIgnore
@@ -80,7 +86,7 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     @JsonIgnore
-    public NodeRT<?> getSuccessor() {
+    public @Nullable NodeRT<?> getSuccessor() {
         return successor;
     }
 
@@ -101,44 +107,48 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     @JsonIgnore
-    public NodeRT<?> getPredecessor() {
+    public @Nullable NodeRT<?> getPredecessor() {
         return predecessor;
+    }
+
+    void setSuccessor(@Nullable NodeRT<?> node) {
+        this.successor = node;
+    }
+
+    void setPredecessor(@Nullable NodeRT<?> node) {
+        this.predecessor = node;
     }
 
     public void insertAfter(NodeRT<?> next) {
         if(this.successor != null) {
-            next.successor = this.successor;
-            this.successor.predecessor = next;
+            next.setSuccessor(this.successor);
+            this.successor.setPredecessor(next);
         }
         this.successor = next;
-        next.predecessor = this;
+        next.setPredecessor(this);
     }
 
     @Override
     public void remove() {
         if(this.predecessor != null) {
-            this.predecessor.successor = this.successor;
+            this.predecessor.setSuccessor(this.successor);
         }
         if(this.successor != null) {
-            this.successor.predecessor = this.predecessor;
+            this.successor.setPredecessor(this.predecessor);
         }
         this.predecessor = null;
         this.successor = null;
         scope.removeNode(this);
-//        context.remove(this);
     }
 
-    public void update(NodeDTO nodeDTO) {
+    public void update(NodeDTO nodeDTO, IEntityContext entityContext) {
         setName(nodeDTO.name());
-        setParam(nodeDTO.getParam());
+        setParam(nodeDTO.getParam(), entityContext);
     }
 
     @JsonIgnore
-    public final ParsingContext getParsingContext() {
-        if(parsingContext == null) {
-            parsingContext = FlowParsingContext.create(this);
-        }
-        return parsingContext;
+    public final ParsingContext getParsingContext(IEntityContext entityContext) {
+        return parsingContext = FlowParsingContext.create(this, entityContext.getInstanceContext());
     }
 
     protected void setOutputType(ClassType outputType) {
@@ -154,9 +164,20 @@ public abstract class NodeRT<P> extends Entity {
                 NncUtils.get(predecessor, Entity::getId),
                 NncUtils.get(outputType, Entity::getId),
                 getParam(false),
-                NncUtils.get(getType(), Type::toDTO),
+                getTypeDTO(),
                 scope.getId()
         );
+    }
+
+    private TypeDTO getTypeDTO() {
+        Type type = getType();
+        if(type == null) {
+            return null;
+        }
+        if(type instanceof ClassType classType) {
+            return classType.toDTO(true, true);
+        }
+        return type.toDTO();
     }
 
     public final NodePO toPO() {
@@ -181,7 +202,7 @@ public abstract class NodeRT<P> extends Entity {
 
     protected abstract P getParam(boolean persisting);
 
-    protected abstract void setParam(P p);
+    protected abstract void setParam(P p, IEntityContext context);
 
     @JsonIgnore
     public Type getType() {

@@ -15,6 +15,12 @@ public record FlowDTO (
         long outputTypeId
 ) {
 
+    public static FlowDTO create(String name, long typeId) {
+        return new FlowDTO(
+                null, name, typeId, null, null, 0L, 0L
+        );
+    }
+
     public void requiredId() {
         if(id == null) {
             throw BusinessException.invalidParams("objectId is required");

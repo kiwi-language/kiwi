@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -21,12 +22,12 @@ public class InputNode extends NodeRT<InputParamDTO> {
         );
     }
 
-    public InputNode(NodeDTO nodeDTO, ClassType type, ScopeRT scope) {
+    public InputNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, scope.getFlow().getInputType(), scope);
     }
 
     @Override
-    protected void setParam(InputParamDTO param) {
+    protected void setParam(InputParamDTO param, IEntityContext entityContext) {
 
     }
 

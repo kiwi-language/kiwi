@@ -1,24 +1,26 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.DeleteObjectParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.meta.IdConstants;
 
 @EntityType("删除对象节点")
 public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
 
+    public static DeleteObjectNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
+        DeleteObjectNode node = new DeleteObjectNode(nodeDTO, entityContext.getScope(nodeDTO.scopeId()));
+        node.setParam(nodeDTO.getParam(), entityContext);
+        return node;
+    }
+
     @EntityField("对象")
     private Value objectId;
 
-    public DeleteObjectNode(NodeDTO nodeDTO, DeleteObjectParamDTO param, ScopeRT scope) {
+    public DeleteObjectNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
     }
 
     public Value getObjectId() {
@@ -31,16 +33,16 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
     }
 
     @Override
-    protected void setParam(DeleteObjectParamDTO param) {
-        setObjectId(param.objectId());
+    protected void setParam(DeleteObjectParamDTO param, IEntityContext entityContext) {
+        setObjectId(param.objectId(), entityContext);
     }
 
-    public void setObjectId(ValueDTO objectId) {
-        this.objectId = ValueFactory.getValue(objectId, getParsingContext());
+    public void setObjectId(ValueDTO objectId, IEntityContext entityContext) {
+        this.objectId = ValueFactory.getValue(objectId, getParsingContext(entityContext));
     }
 
     @Override
     public void execute(FlowFrame frame) {
-        frame.deleteInstance((long) objectId.evaluate(frame));
+        frame.deleteInstance(objectId.evaluate(frame));
     }
 }

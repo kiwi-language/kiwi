@@ -19,8 +19,6 @@ import java.util.Set;
 @Component
 public class InstanceStore implements IInstanceStore {
 
-    private static final long BY_TYPE_LIMIT = 50;
-
     private final InstanceMapperGateway instanceMapperGateway;
     private final IndexItemMapper indexItemMapper;
 
@@ -75,10 +73,14 @@ public class InstanceStore implements IInstanceStore {
     }
 
     @Override
-    public List<InstancePO> getByTypeIds(Collection<Long> typeIds, InstanceContext context)
+    public List<InstancePO> getByTypeIds(Collection<Long> typeIds,
+                                         long startIdExclusive,
+                                         long limit,
+                                         InstanceContext context)
     {
-        return instanceMapperGateway.selectByInstanceTypeIds(context.getTenantId(), typeIds, 0,
-                typeIds.size() * BY_TYPE_LIMIT);
+        return instanceMapperGateway.selectByInstanceTypeIds(
+                context.getTenantId(), typeIds, startIdExclusive, limit
+        );
     }
 
     public String getTitle(Long id, InstanceContext context) {

@@ -7,7 +7,7 @@ import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.mappers.IndexItemMapper;
-import tech.metavm.object.meta.UniqueConstraintRT;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
@@ -20,11 +20,11 @@ import static tech.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
 import static tech.metavm.entity.DifferenceAttributeKey.OLD_INDEX_ITEMS;
 
 @Component
-public class UniqueConstraintPlugin implements ContextPlugin {
+public class IndexConstraintPlugin implements ContextPlugin {
 
     private final IndexItemMapper indexItemMapper;
 
-    public UniqueConstraintPlugin(IndexItemMapper indexItemMapper) {
+    public IndexConstraintPlugin(IndexItemMapper indexItemMapper) {
         this.indexItemMapper = indexItemMapper;
     }
 
@@ -51,9 +51,9 @@ public class UniqueConstraintPlugin implements ContextPlugin {
 
         Map<IndexKeyPO, Long> oldKeyMap = NncUtils.toMap(oldItems, IndexItemPO::getKey, IndexItemPO::getInstanceId);
         for (IndexItemPO currentItem : currentItems) {
-            UniqueConstraintRT constraint =
-                    context.getEntityContext().getEntity(UniqueConstraintRT.class, currentItem.getConstraintId());
-            if(constraint.containsNull(currentItem.getKey())) {
+            IndexConstraintRT constraint =
+                    context.getEntityContext().getEntity(IndexConstraintRT.class, currentItem.getConstraintId());
+            if(!constraint.isUnique() || constraint.containsNull(currentItem.getKey())) {
                 continue;
             }
             Long existingInstanceId = oldKeyMap.get(currentItem.getKey());

@@ -3,6 +3,9 @@ package tech.metavm.util;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.IntInstance;
+import tech.metavm.object.instance.LongInstance;
+import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.*;
 
 import java.lang.reflect.ParameterizedType;
@@ -47,7 +50,37 @@ public class ValueUtil {
         if(isAssignable(type2, type1)) {
             return type1;
         }
+        if(isConvertible(type1, type2)) {
+            return type2;
+        }
+        if(isConvertible(type2, type1)) {
+            return type1;
+        }
         throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
+    }
+
+    public static boolean isConvertible(Type from, Type to) {
+        if(from.isInt() && to.isLong()) {
+            return true;
+        }
+        return (from.isInt() || from.isLong()) && to.isDouble();
+    }
+
+    public static Instance convert(Instance instance, Type type) {
+        if ((instance instanceof IntInstance intInstance)) {
+            if(type.isLong()) {
+                return InstanceUtils.longInstance(intInstance.getValue());
+            }
+            if(type.isDouble()) {
+                return InstanceUtils.doubleInstance(intInstance.getValue());
+            }
+        }
+        if(instance instanceof LongInstance longInstance) {
+            if(type.isDouble()) {
+                return InstanceUtils.doubleInstance(longInstance.getValue());
+            }
+        }
+        throw new InternalException("Can not convert instance '" + instance + "' to type '" + type + "'");
     }
 
     public static Type getConvertibleType(List<Type> types) {
@@ -318,5 +351,12 @@ public class ValueUtil {
         else {
             return false;
         }
+    }
+
+    public static long getLong(Object columnValue) {
+        if(!isInteger(columnValue)) {
+            throw new InternalException("Value '" + columnValue + "' can not be converted to a long value");
+        }
+        return ((Number) columnValue).longValue();
     }
 }

@@ -2,6 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
@@ -12,10 +13,10 @@ import tech.metavm.util.Table;
 import java.util.ArrayList;
 import java.util.List;
 
-@ValueType("字段表达式")
+@EntityType("字段表达式")
 public class FieldExpression extends Expression {
 
-    @EntityField("目标对象")
+    @EntityField("对象")
     private final Expression instance;
 
     @EntityField("字段路径")

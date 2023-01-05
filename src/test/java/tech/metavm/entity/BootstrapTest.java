@@ -7,10 +7,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.flow.FlowRT;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.ChangeLogPlugin;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
@@ -69,8 +66,10 @@ public class BootstrapTest extends TestCase {
         );
 
         ClassType typeType = ModelDefRegistry.getClassType(ClassType.class);
+        Type longType = ModelDefRegistry.getType(Long.class);
         Assert.assertNotNull(typeType.getId());
         Assert.assertTrue(instanceSearchService.contains(typeType.getId()));
+        Assert.assertTrue(instanceSearchService.contains(longType.getId()));
 
         IEntityContext entityContext = context.getEntityContext();
         Foo foo = new Foo("大傻", new Bar("巴巴巴巴"));
@@ -120,6 +119,13 @@ public class BootstrapTest extends TestCase {
             Assert.assertEquals(
                     "Identity for class '" + modelClass.getName() + "' changed after reboot",
                     type1.getId(), type2.getId());
+        }
+
+        for (Column column : SQLType.columns()) {
+            if(defContext2.containsModel(column)) {
+                Instance colInstance = defContext2.getInstance(column);
+                Assert.assertNotNull(colInstance.getId());
+            }
         }
 
 //        ClassType typeType2 = ModelDefRegistry.getClassType(Type.class);

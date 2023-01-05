@@ -1,15 +1,17 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.ClassType;
 
-@ValueType("当前对象表达式")
+@EntityType("当前对象表达式")
 public class ThisExpression extends Expression {
 
+    @EntityField("类型")
     private final ClassType type;
 
     public ThisExpression(ClassType type) {
-//        super(type.getInstanceContext());
         this.type = type;
     }
 

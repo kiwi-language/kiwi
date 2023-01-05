@@ -53,13 +53,26 @@ public class UnionType extends Type {
 
     @Override
     public boolean isAssignableFrom(Type that) {
-        if(typeMembers.contains(that)) {
-            return true;
-        }
+        List<Type> thatTypes;
         if(that instanceof UnionType thatUnionType) {
-            return typeMembers.containsAll(thatUnionType.typeMembers);
+            thatTypes = thatUnionType.typeMembers;
         }
-        return false;
+        else {
+            thatTypes = List.of(that);
+        }
+        for (Type thatType : thatTypes) {
+            boolean anyMatch = false;
+            for (Type typeMember : typeMembers) {
+                if(typeMember.isAssignableFrom(thatType)) {
+                    anyMatch = true;
+                    break;
+                }
+            }
+            if(!anyMatch) {
+                return false;
+            }
+        }
+        return true;
     }
 
 

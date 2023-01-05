@@ -16,11 +16,14 @@ import tech.metavm.util.NncUtils;
 @Component
 public class RoleManager {
 
-    @Autowired
-    private InstanceContextFactory instanceContextFactory;
+    private final InstanceContextFactory instanceContextFactory;
 
-    @Autowired
-    private InstanceQueryService instanceQueryService;
+    private final InstanceQueryService instanceQueryService;
+
+    public RoleManager(InstanceContextFactory instanceContextFactory, InstanceQueryService instanceQueryService) {
+        this.instanceContextFactory = instanceContextFactory;
+        this.instanceQueryService = instanceQueryService;
+    }
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
         InstanceQueryDTO query = new InstanceQueryDTO(

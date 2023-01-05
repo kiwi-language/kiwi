@@ -1,11 +1,8 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
-import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.meta.IdConstants;
 
 @EntityType("当前记录节点")
 public class SelfNode extends NodeRT<Void> {
@@ -15,7 +12,7 @@ public class SelfNode extends NodeRT<Void> {
     }
 
     @Override
-    protected void setParam(Void param) {
+    protected void setParam(Void param, IEntityContext entityContext) {
 
     }
 

@@ -34,12 +34,13 @@ public class TypeUtil {
     }
 
     public static ArrayType getArrayType(Type type) {
-        ArrayType arrayType = type.getArrayType();
-        if(arrayType == null) {
-            arrayType = TYPE_FACTORY.createArrayType(type);
-            type.setArrayType(arrayType);
-        }
-        return arrayType;
+        return type.getArrayType();
+//        ArrayType arrayType = type.getArrayType();
+//        if(arrayType == null) {
+//            arrayType = TYPE_FACTORY.createArrayType(type);
+//            type.setArrayType(arrayType);
+//        }
+//        return arrayType;
     }
 
     public static EnumType createEnum(String name, boolean anonymous) {

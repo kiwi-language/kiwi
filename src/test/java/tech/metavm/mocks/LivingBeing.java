@@ -14,6 +14,7 @@ public class LivingBeing extends Entity {
     @EntityField("年龄")
     private long age;
 
+    @EntityField("额外信息")
     private Object extraInfo;
 
     private final Table<LivingBeing> offsprings = new Table<>(LivingBeing.class);

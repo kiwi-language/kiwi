@@ -22,6 +22,8 @@ public interface IInstanceContext extends InstanceSink {
 
     List<Instance> batchGet(Collection<Long> ids);
 
+    List<Instance> getByType(Type type, Instance startExclusive, long limit);
+
     IEntityContext getEntityContext();
 
     boolean containsInstance(Instance instance);

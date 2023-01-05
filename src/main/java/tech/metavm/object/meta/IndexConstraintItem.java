@@ -3,40 +3,37 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.*;
-import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.flow.ExpressionValue;
+import tech.metavm.flow.ReferenceValue;
+import tech.metavm.flow.Value;
 import tech.metavm.object.instance.query.Expression;
+import tech.metavm.object.instance.query.ExpressionUtil;
 import tech.metavm.object.instance.query.FieldExpression;
 import tech.metavm.object.instance.query.ThisExpression;
-import tech.metavm.object.instance.query.TypeParsingContext;
 
 @EntityType("唯一约束项")
-public class UniqueConstraintItem extends Entity {
+public class IndexConstraintItem extends Entity {
 
-    public static UniqueConstraintItem createFieldItem(UniqueConstraintRT constraint, Field field) {
-        return new UniqueConstraintItem(
+    public static IndexConstraintItem createFieldItem(IndexConstraintRT constraint, Field field) {
+        return new IndexConstraintItem(
                 constraint,
                 field.getName(),
-                new ValueDTO(
-                        ValueKind.REFERENCE.code(),
-                        field.getName(),
-                        null
-                )
+                new ReferenceValue(ExpressionUtil.fieldExpr(field))
         );
     }
 
     @EntityField("唯一约束")
-    private final transient UniqueConstraintRT constraint;
+    private final transient IndexConstraintRT constraint;
     @EntityField("名称")
     private String name;
     @EntityField("值")
     private Value value;
 
-    public UniqueConstraintItem(UniqueConstraintRT constraint, String name, ValueDTO valueDTO) {
-//        super(constraint.getContext());
+    public IndexConstraintItem(IndexConstraintRT constraint, String name, Value value) {
         setName(name);
         this.constraint = constraint;
-        setValue(ValueFactory.getValue(valueDTO, new TypeParsingContext(constraint.getDeclaringType())));
+        setValue(value);// ;ValueFactory.getValue(valueDTO, new TypeParsingContext(constraint.getDeclaringType())));
+        constraint.addItem(this);
     }
 
     public String getName() {
@@ -81,6 +78,7 @@ public class UniqueConstraintItem extends Entity {
 
     public UniqueConstraintItemDTO toDTO(boolean forPersistence) {
         return new UniqueConstraintItemDTO(
+                id,
                 name,
                 value.toDTO(forPersistence)
         );

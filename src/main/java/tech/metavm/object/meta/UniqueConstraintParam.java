@@ -12,7 +12,7 @@ public record UniqueConstraintParam(
         return new UniqueConstraintParam(
                 List.of(
                         new UniqueConstraintItemDTO(
-                                name, value
+                                null, name, value
                         )
                 )
         );

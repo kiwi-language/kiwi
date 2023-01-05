@@ -18,6 +18,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing {
         return id;
     }
 
+    @NoProxy
     public final EntityKey key() {
         if(id == null) {
             return null;
@@ -57,8 +58,9 @@ public abstract class Entity implements Model, Identifiable, IdInitializing {
     }
 
     @JsonIgnore
+    @NoProxy
     public Class<? extends Entity> getEntityType() {
-        return EntityUtils.getEntityType(this);
+        return EntityUtils.getEntityType(this).asSubclass(Entity.class);
     }
 
 //    @Override

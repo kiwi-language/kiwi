@@ -1,6 +1,7 @@
 package tech.metavm.tools;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import graphql.org.antlr.v4.runtime.misc.ObjectEqualityComparator;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
@@ -17,10 +18,44 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 public class DiskFormatter {
+
+
+    private static final String CONFIG_HOST = "host";
+    private static final String CONFIG_ES_PORT ="es_port";
+    private static final String CONFIG_DELETE_ID_FILES = "delete_id_files";
+
+    public static final Map<String, Object> DEV_CONFIG = Map.of(
+            CONFIG_HOST, "47.104.104.66",
+            CONFIG_ES_PORT, 9500,
+            CONFIG_DELETE_ID_FILES, false
+    );
+
+    public static final Map<String, Object> LOCAL_CONFIG = Map.of(
+            CONFIG_HOST, "localhost",
+            CONFIG_ES_PORT, 9200,
+            CONFIG_DELETE_ID_FILES, true
+    );
+
+    public static final Map<String, Object> CONFIG = DEV_CONFIG;
+
+//    public static final String HOST = "localhost";
+
+    private static String host() {
+        return (String) CONFIG.get(CONFIG_HOST);
+    }
+
+    private static int esPort() {
+        return (int) CONFIG.get(CONFIG_ES_PORT);
+    }
+
+    private static boolean shouldDeleteIdFiles() {
+        return (boolean) CONFIG.get(CONFIG_DELETE_ID_FILES);
+    }
 
     private static void clearDataBases() {
         try(DruidDataSource dataSource = new DruidDataSource()) {
@@ -28,11 +63,12 @@ public class DiskFormatter {
             dataSource.setUsername("root");
             dataSource.setPassword("85263670");
             dataSource.setMaxActive(1);
-            dataSource.setUrl("jdbc:mysql://localhost:3306/object?allowMultiQueries=true");
+            dataSource.setUrl("jdbc:mysql://" + host() + ":3306/object?allowMultiQueries=true");
 
             try(Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
                 statement.execute("delete from id_block where id > 0");
+//                statement.execute("delete from id_region where start >= 0");
                 statement.execute("delete from tenant where id>0");
                 statement.execute("delete from instance where id>=0");
                 statement.execute("delete from instance_array where id>=0");
@@ -46,7 +82,7 @@ public class DiskFormatter {
     }
 
     private static void clearEs() {
-        RestClientBuilder builder = RestClient.builder(new HttpHost("localhost", 9200));
+        RestClientBuilder builder = RestClient.builder(new HttpHost(host(), esPort()));
         try(RestHighLevelClient client = new RestHighLevelClient(builder)) {
             DeleteByQueryRequest request = new DeleteByQueryRequest("instance");
             request.setQuery(new MatchAllQueryBuilder());
@@ -69,8 +105,10 @@ public class DiskFormatter {
 
     public static void main(String[] args) {
         clearEs();
-        deleteIdFiles();
         clearDataBases();
+        if(shouldDeleteIdFiles()) {
+            deleteIdFiles();
+        }
     }
 
 }

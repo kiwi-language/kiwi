@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.meta.ClassType;
@@ -15,8 +16,8 @@ public class ExpressionParser {
 
     public static final int FUNC_PRECEDENCE = 0;
 
-    public static Expression parse(ClassType type, String expression) {
-        return parse(expression, new TypeParsingContext(type));
+    public static Expression parse(ClassType type, String expression, IInstanceContext instanceContext) {
+        return parse(expression, new TypeParsingContext(type, instanceContext));
     }
 
     public static Expression parse(String expression, ParsingContext context) {
@@ -105,17 +106,27 @@ public class ExpressionParser {
     }
 
     private Expression parseField(String fieldPath) {
-        String[] splits = fieldPath.split("\\.");
-        List<Var> vars = new ArrayList<>();
-        for (String split : splits) {
-            if(split.startsWith("$")) {
-                vars.add(new Var(VarType.ID, Long.parseLong(split.substring(1))));
+        if(fieldPath.startsWith("$$")) {
+            try {
+                long id = Long.parseLong(fieldPath.substring(2));
+                return new ConstantExpression(context.getInstanceContext().get(id));
             }
-            else {
-                vars.add(new Var(VarType.NAME, split));
+            catch (NumberFormatException e) {
+                throw new InternalException("Invalid id constant '" + fieldPath + "'");
             }
         }
-        return context.parse(vars);
+        else {
+            String[] splits = fieldPath.split("\\.");
+            List<Var> vars = new ArrayList<>();
+            for (String split : splits) {
+                if (split.startsWith("$")) {
+                    vars.add(new Var(VarType.ID, Long.parseLong(split.substring(1))));
+                } else {
+                    vars.add(new Var(VarType.NAME, split));
+                }
+            }
+            return context.parse(vars);
+        }
     }
 
     private boolean hasPrecedentOp(int precedence) {
@@ -186,12 +197,6 @@ public class ExpressionParser {
             return new Op(null, function);
         }
 
-    }
-
-    public static void main(String[] args) {
-        String query = "material.creator.name starts with '钢' and max(amount, aux_amount) > 100";
-        Expression expression = ExpressionParser.parse(null, query);
-        System.out.println(expression);
     }
 
 }

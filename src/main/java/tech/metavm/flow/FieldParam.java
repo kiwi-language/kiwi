@@ -1,20 +1,21 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.EvaluationContext;
 import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 
 import java.util.Objects;
 
-@ValueType("字段值")
-public class FieldParam {
+@EntityType("字段值")
+public class FieldParam extends Entity {
     @EntityField("字段")
     private final Field field;
     @EntityField("值")
@@ -44,14 +45,8 @@ public class FieldParam {
         );
     }
 
-    private Object getFieldValue(Value value, EvaluationContext evaluationContext) {
-        Object evaluated = value.evaluate(evaluationContext);
-        if(evaluated instanceof Instance instance) {
-            return instance.getId();
-        }
-        else {
-            return evaluated;
-        }
+    private FieldValueDTO getFieldValue(Value value, EvaluationContext evaluationContext) {
+        return value.evaluate(evaluationContext).toFieldValueDTO();
     }
 
     @Override

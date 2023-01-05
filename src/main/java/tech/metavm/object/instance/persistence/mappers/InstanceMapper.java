@@ -16,7 +16,7 @@ public interface InstanceMapper {
 
     List<InstancePO> selectByTypeIds(@Param("tenantId") long tenantId,
                                      @Param("typeIds") Collection<Long> typeIds,
-                                     @Param("start") long start,
+                                     @Param("startIdExclusive") long startIdExclusive,
                                      @Param("limit") long limit);
 
     void batchInsert(List<InstancePO> records);

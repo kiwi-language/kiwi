@@ -176,10 +176,20 @@ public class EntityUtils {
         return false;
     }
 
-    private static void ensureProxyInitialized(Object object) {
+    public static void ensureProxyInitialized(Object object) {
         if(object instanceof ProxyObject proxyObject) {
             EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
             handler.ensureInitialized(object);
+        }
+    }
+
+    public static boolean isModelInitialized(Object object) {
+        if(object instanceof ProxyObject proxyObject) {
+            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            return handler.isInitialized();
+        }
+        else{
+            return true;
         }
     }
 
@@ -284,7 +294,7 @@ public class EntityUtils {
         traverse(entity, action, new IdentitySet<>());
     }
 
-    public static void traverse(Entity entity, Consumer<Entity> action, IdentitySet<Entity> visited) {
+    private static void traverse(Entity entity, Consumer<Entity> action, IdentitySet<Entity> visited) {
         if(entity == null || visited.contains(entity)) {
             return;
         }
@@ -357,7 +367,7 @@ public class EntityUtils {
         return isSpringBean(klass);
     }
 
-    public static <T extends Entity> Class<? extends Entity> getEntityType(T entity) {
+    public static <T> Class<?> getEntityType(T entity) {
         return getEntityType(entity.getClass());
     }
 
@@ -371,23 +381,29 @@ public class EntityUtils {
 
     public static Class<?> getRealType(Class<?> type) {
         if(ProxyObject.class.isAssignableFrom(type)) {
-            return type.getSuperclass().asSubclass(Entity.class);
+            return type.getSuperclass();
         }
         return type;
     }
 
-    public static Class<? extends Entity> getEntityType(Class<? extends Entity> type) {
-        Class<?> tmp = type;
-        while (tmp.getSuperclass() != Entity.class && tmp != Object.class) {
+    public static Class<?> getEntityType(Class<?> type) {
+        if(ProxyObject.class.isAssignableFrom(type)) {
+            return type.getSuperclass();
+        }
+        else {
+            return type;
+        }
+//        Class<?> tmp = type;
+//        while (tmp.getSuperclass() != Entity.class && tmp != Object.class) {
 //            if(tmp.isAnnotationPresent(EntityType.class)) {
 //                return tmp.asSubclass(Entity.class);
 //            }
-            tmp = tmp.getSuperclass();
-        }
-        if (tmp == Object.class) {
-            throw new RuntimeException("Class '" + type.getName() + "' is not an entity type");
-        }
-        return tmp.asSubclass(Entity.class);
+//            tmp = tmp.getSuperclass();
+//        }
+//        if (tmp == Object.class) {
+//            throw new RuntimeException("Class '" + type.getName() + "' is not an entity type");
+//        }
+//        return tmp.asSubclass(Entity.class);
     }
 
     public static Class<? extends Value> getValueType(Value value) {

@@ -2,14 +2,16 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceFactory;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.OutputFieldDTO;
 import tech.metavm.flow.rest.ReturnParamDTO;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.instance.rest.ObjectParamDTO;
+import tech.metavm.object.instance.rest.ClassInstanceParamDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
@@ -21,6 +23,14 @@ import java.util.Map;
 
 @EntityType("结束节点")
 public class ReturnNode extends NodeRT<ReturnParamDTO> {
+
+    public static ReturnNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
+        NodeRT<?> prev = NncUtils.get(nodeDTO.prevId(), entityContext::getNode);
+        ScopeRT scope = entityContext.getScope(nodeDTO.scopeId());
+        ReturnNode node = new ReturnNode(nodeDTO, prev, scope);
+        node.setParam(nodeDTO.getParam(), entityContext);
+        return node;
+    }
 
     @EntityField("字段值列表")
     private final Table<FieldParam> fieldParams = new Table<>(FieldParam.class);
@@ -35,19 +45,19 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
         );
     }
 
-    public ReturnNode(NodeDTO nodeDTO, ReturnParamDTO param, ScopeRT scope) {
+    public ReturnNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, scope.getFlow().getOutputType(), scope);
-        setParam(param);
     }
 
     @Override
-    protected void setParam(ReturnParamDTO param) {
+    protected void setParam(ReturnParamDTO param, IEntityContext entityContext) {
         fieldParams.clear();
         Map<Long, OutputFieldDTO> outFieldMap = NncUtils.toMap(param.fields(), OutputFieldDTO::id);
+        ParsingContext parsingContext = getParsingContext(entityContext);
         for (Field field : getType().getFields()) {
             OutputFieldDTO outputFieldDTO = outFieldMap.get(field.getId());
             if(outputFieldDTO != null) {
-                fieldParams.add(new FieldParam(field, outputFieldDTO.value(), getParsingContext()));
+                fieldParams.add(new FieldParam(field, outputFieldDTO.value(), parsingContext));
             }
         }
     }
@@ -69,7 +79,10 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     }
 
     private Value fieldValue(Field field) {
-        return fieldParams.get(FieldParam::getField, field).getValue();
+        return NncUtils.get(
+                fieldParams.get(FieldParam::getField, field),
+                FieldParam::getValue
+        );
     }
 
     @Override
@@ -84,7 +97,7 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
                 getType().getId(),
                 getType().getName(),
             "临时对象",
-                new ObjectParamDTO(
+                new ClassInstanceParamDTO(
                         getFieldValues(frame)
                 )
         );
@@ -99,7 +112,7 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
             instanceFields.add(
                     InstanceFieldDTO.valueOf(
                             field.getId(),
-                            NncUtils.get(value, v -> v.evaluate(frame))
+                            NncUtils.get(value, v -> v.evaluate(frame).toFieldValueDTO())
                     )
             );
         }

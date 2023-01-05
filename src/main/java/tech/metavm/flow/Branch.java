@@ -1,35 +1,43 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.BranchDTO;
-import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.query.ExpressionUtil;
 import tech.metavm.object.instance.query.FlowParsingContext;
 import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
-@tech.metavm.entity.ValueType("分支")
-public class Branch {
+@EntityType("分支")
+public class Branch extends Entity {
 
     private static final long PRESELECTED_BRANCH_ID = 10000;
 
-    public static Branch create(long id, BranchNode owner) {
+    public static Branch create(long index, BranchNode owner) {
         return new Branch(
-                id, null, false, new ScopeRT(owner.getFlow()), owner
+                index,
+                new ConstantValue(ExpressionUtil.constant(InstanceUtils.trueInstance())),
+                false,
+                new ScopeRT(owner.getFlow(), owner),
+                owner
         );
     }
 
     public static Branch createPreselected(BranchNode owner) {
         return new Branch(
                 PRESELECTED_BRANCH_ID,
-                new ValueDTO(ValueKind.CONSTANT.code(), true, null),
+                new ConstantValue(ExpressionUtil.constant(InstanceUtils.trueInstance())),
                 true,
-                new ScopeRT(owner.getFlow()),
+                new ScopeRT(owner.getFlow(), owner),
                 owner
         );
     }
 
     @EntityField("ID")
-    private final long id;
+    private final long index;
     @EntityField("分支节点")
     private final BranchNode owner;
     @EntityField("范围")
@@ -41,17 +49,16 @@ public class Branch {
 
     private transient ParsingContext parsingContext;
 
-    public Branch(long id, ValueDTO condition, boolean preselected, ScopeRT scope, BranchNode owner) {
-        this.id = id;
+    public Branch(long index, Value condition, boolean preselected, ScopeRT scope, BranchNode owner) {
+        this.index = index;
         this.owner = owner;
         this.scope = scope;
         this.preselected = preselected;
-        parsingContext = getParsingContext();
-        this.condition = ValueFactory.getValue(condition, parsingContext);
+        this.condition = condition;
     }
 
-    public long getId() {
-        return id;
+    public long getIndex() {
+        return index;
     }
 
     public Value getCondition() {
@@ -68,7 +75,7 @@ public class Branch {
 
     public BranchDTO toDTO(boolean withNodes, boolean persisting) {
         return new BranchDTO(
-                id,
+                index,
                 owner.getId(),
                 NncUtils.get(condition, v -> v.toDTO(persisting)),
                 scope.toDTO(withNodes),
@@ -76,28 +83,25 @@ public class Branch {
         );
     }
 
-    private ParsingContext getParsingContext() {
-        if(parsingContext == null) {
-            parsingContext = FlowParsingContext.create(owner.getScope(), owner);
-        }
-        return parsingContext;
+    private ParsingContext getParsingContext(IEntityContext entityContext) {
+        return FlowParsingContext.create(owner.getScope(), owner, entityContext);
     }
 
     public boolean isPreselected() {
         return preselected;
     }
 
-    public void update(BranchDTO branchDTO) {
-        condition = ValueFactory.getValue(branchDTO.condition(), getParsingContext());
+    public void update(BranchDTO branchDTO, IEntityContext entityContext) {
+        condition = ValueFactory.getValue(branchDTO.condition(), getParsingContext(entityContext));
     }
 
     public void remove() {
-        owner.deleteBranch(this.id);
+        owner.deleteBranch(this.index);
         getScope().remove();
     }
 
     public boolean checkCondition(FlowFrame frame) {
-        return Boolean.TRUE.equals(condition.evaluate(frame));
+        return InstanceUtils.isTrue(condition.evaluate(frame));
     }
 
     public boolean isEmpty() {

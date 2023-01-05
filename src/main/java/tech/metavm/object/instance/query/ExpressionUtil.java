@@ -1,12 +1,10 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.*;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.object.meta.Field;
+import tech.metavm.util.*;
 
 import java.util.Collection;
 
@@ -64,7 +62,7 @@ public class ExpressionUtil {
     public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
-                new FieldExpression(thisObject(field.getDeclaringType()), field),
+                fieldExpr(field),
                 new ConstantExpression(strInstance)
         );
     }
@@ -72,7 +70,7 @@ public class ExpressionUtil {
     public static Expression fieldLike(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.LIKE,
-                new FieldExpression(thisObject(field.getDeclaringType()), field),
+                fieldExpr(field),
                 new ConstantExpression(strInstance)
         );
     }
@@ -80,15 +78,19 @@ public class ExpressionUtil {
     public static Expression fieldEq(Field field, Instance value) {
         return new BinaryExpression(
                 Operator.EQ,
-                new FieldExpression(thisObject(field.getDeclaringType()), field),
+                fieldExpr(field),
                 new ConstantExpression(value)
         );
+    }
+
+    public static FieldExpression fieldExpr(Field field) {
+        return new FieldExpression(thisObject(field.getDeclaringType()), field);
     }
 
     public static Expression fieldIn(Field field, Collection<? extends Instance> values) {
         return new BinaryExpression(
                 Operator.IN,
-                new FieldExpression(thisObject(field.getDeclaringType()), field),
+                fieldExpr(field),
                 new ArrayExpression(
                         NncUtils.map(values, ConstantExpression::new)
                 )
@@ -145,7 +147,7 @@ public class ExpressionUtil {
 
     public static boolean isConstantTrue(Expression expression) {
         if(expression instanceof ConstantExpression constantExpression) {
-            return Boolean.TRUE.equals(constantExpression.getValue());
+            return InstanceUtils.isTrue(constantExpression.getValue());
         }
         else {
             return false;
@@ -167,6 +169,12 @@ public class ExpressionUtil {
     public static DoubleInstance castFloat(Instance value) {
         if(value instanceof DoubleInstance doubleInstance) {
             return doubleInstance;
+        }
+        if(value instanceof IntInstance intInstance) {
+            return InstanceUtils.doubleInstance(intInstance.getValue());
+        }
+        if(value instanceof LongInstance longInstance) {
+            return InstanceUtils.doubleInstance(longInstance.getValue());
         }
         else {
             throw BusinessException.invalidExpressionValue("数值", value);
@@ -198,6 +206,31 @@ public class ExpressionUtil {
         else {
             throw BusinessException.invalidExpressionValue("集合", value);
         }
+    }
+
+    public static String constantToExpression(FieldValueDTO fieldValue) {
+        if(fieldValue instanceof PrimitiveFieldValueDTO primitiveFieldValue) {
+            Object value = primitiveFieldValue.getValue();
+            if (value instanceof String str) {
+                return "'" + str + "'";
+            } else {
+                return value.toString();
+            }
+        }
+        if(fieldValue instanceof ReferenceFieldValueDTO refFieldValue) {
+            return "$$" + refFieldValue.getId();
+        }
+        if(fieldValue instanceof ArrayFieldValueDTO arrayFieldValue) {
+            return "[" + NncUtils.join(arrayFieldValue.getElements(), ExpressionUtil::constantToExpression) + "]";
+        }
+        if(fieldValue instanceof ExpressionFieldValueDTO exprFieldValue) {
+            return exprFieldValue.getExpression();
+        }
+        throw new InternalException("Can not convert value '" + fieldValue + "' to expression");
+    }
+
+    public static FieldValueDTO expressionToConstant(ConstantExpression expression) {
+        return expression.getValue().toFieldValueDTO();
     }
 
 }

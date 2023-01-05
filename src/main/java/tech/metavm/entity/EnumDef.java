@@ -5,6 +5,7 @@ import tech.metavm.object.instance.EmptyModelInstanceMap;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.EnumType;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -18,9 +19,9 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final ValueDef<Enum<?>> parentDef;
     private final Class<T> enumType;
     private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
-    private final ClassType type;
+    private final EnumType type;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, EnumType type) {
         super(enumType, Instance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
@@ -93,14 +94,16 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     ClassInstance createInstance(Enum<?> value) {
-        return new ClassInstance(
+        ClassInstance instance = new ClassInstance(
                 parentDef.getInstanceFields(value, new EmptyModelInstanceMap()),
                 type
         );
+        type.addEnumConstant(instance);
+        return instance;
     }
 
     @Override
-    public ClassType getType() {
+    public EnumType getType() {
         return type;
     }
 

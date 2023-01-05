@@ -61,6 +61,8 @@ public class EnumEditContext {
                 EnumConstantRT option;
                 if (optionDTO.id() == null) {
                     option = new EnumConstantRT(convertToEnumConstant(optionDTO, ordinal++), type);
+                    entityContext.getInstanceContext().bind(option.getInstance());
+                    type.addEnumConstant(option.getInstance());
                 } else {
                     option = type.getEnumConstant(optionDTO.id());
                     option.update(convertToEnumConstant(optionDTO, ordinal++));
@@ -83,16 +85,7 @@ public class EnumEditContext {
 
     private EnumType createType() {
         type = TypeUtil.createEnum(name, anonymous);
-//                entityContext.getEnumType(),
-//                TypeCategory.ENUM,
-//                anonymous,
-//                false,
-//                null,
-//                null,
-//                name,
-//                entityContext
-//        );
-//        createFields();
+        entityContext.bind(type);
         entityContext.initIds();
         return type;
     }

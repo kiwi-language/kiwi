@@ -1,8 +1,9 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.UniqueConstraintRT;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 
@@ -13,7 +14,8 @@ import java.util.function.Predicate;
 
 public class IdentityContext {
 
-    private final Map<Object, ModelIdentity> map = new IdentityHashMap<>();
+    private final Map<Object, ModelIdentity> model2identity = new IdentityHashMap<>();
+    private final Map<ModelIdentity, Object> identity2model = new HashMap<>();
     private final Map<Object, List<Reference>> invertedIndex = new IdentityHashMap<>();
     private final Predicate<ClassType> isClassTypeInitialized;
     private final Function<tech.metavm.object.meta.Type, Type> getJavaType;
@@ -25,12 +27,23 @@ public class IdentityContext {
     }
 
     public ModelIdentity getModelId(Object model) {
-        return map.get(model);
+        return model2identity.get(model);
     }
 
     public void putModelId(Object model, ModelIdentity modelId, Map<Object, ModelIdentity> tempMap) {
-        map.put(model, modelId);
+        model2identity.put(model, modelId);
+        identity2model.put(modelId, model);
         tempMap.put(model, modelId);
+    }
+
+    public Object getModel(ModelIdentity identity) {
+        return NncUtils.requireNonNull(
+                identity2model.get(identity), "Can not find model for identity '" + identity + "'"
+        );
+    }
+
+    public ModelIdentity getIdentity(Object model) {
+        return model2identity.get(model);
     }
 
     public Map<Object, ModelIdentity> getIdentityMap(Object model) {
@@ -40,7 +53,7 @@ public class IdentityContext {
     }
 
     private void getIdentityMap0(Object model, Map<Object, ModelIdentity> result, LinkedList<String> path) {
-        if(map.containsKey(model) || ValueUtil.isPrimitive(model)) {
+        if(model2identity.containsKey(model) || ValueUtil.isPrimitive(model) || (model instanceof Instance)) {
             return;
         }
         if((model instanceof ClassType classType) && !isClassTypeInitialized.test(classType)) {
@@ -52,7 +65,7 @@ public class IdentityContext {
         else if(model instanceof Field field) {
             putModelId(model, ModelIdentity.field(getJavaField(field)), result);
         }
-        else if(model instanceof UniqueConstraintRT uniqueConstraint) {
+        else if(model instanceof IndexConstraintRT uniqueConstraint) {
             putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(uniqueConstraint)), result);
         }
         else {
@@ -105,14 +118,14 @@ public class IdentityContext {
             throw new InternalException("Can not create an identifier for model '" + model +
                     "' because there's no reference to the model");
         }
-        if(refs.size() > 1) {
-            throw new InternalException("Can not create an identifier for model '" + model +
-                    "' because there are multiple references to the model: " + refs);
-        }
+//        if(refs.size() > 1) {
+//            throw new InternalException("Can not create an identifier for model '" + model +
+//                    "' because there are multiple references to the model: " + refs);
+//        }
         return refs.get(0);
     }
 
-    private java.lang.reflect.Field getIndexDefField(UniqueConstraintRT uniqueConstraint) {
+    private java.lang.reflect.Field getIndexDefField(IndexConstraintRT uniqueConstraint) {
         NncUtils.requireNonNull(uniqueConstraint.getIndexDef(),
                 "Can not create model id for unique constraint '" + uniqueConstraint + " because" +
                         " indexDef is not present"
@@ -139,14 +152,8 @@ public class IdentityContext {
         return getJavaType.apply(type);
     }
 
-    public Map<Identifiable, ModelIdentity> getIdentityMap() {
-        Map<Identifiable , ModelIdentity> result = new IdentityHashMap<>();
-        map.forEach((model, modelId) -> {
-            if(model instanceof  Identifiable identifiable) {
-                result.put(identifiable, modelId);
-            }
-        });
-        return result;
+    public Map<Object, ModelIdentity> getIdentityMap() {
+        return model2identity;
     }
 
 }

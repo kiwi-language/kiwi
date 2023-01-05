@@ -27,8 +27,7 @@ public class MemInstanceContext extends BaseInstanceContext {
     private @Nullable Function<Long, Type> typeProvider;
 
     public MemInstanceContext() {
-        super(TENANT_ID, new MockIdProvider(), null);
-        instanceStore = new MemInstanceStore();
+        this(TENANT_ID, new MockIdProvider(), new MemInstanceStore(), null);
     }
 
     public MemInstanceContext(long tenantId,
@@ -37,6 +36,7 @@ public class MemInstanceContext extends BaseInstanceContext {
                               IInstanceContext parent) {
         super(tenantId, idProvider, parent);
         this.instanceStore = instanceStore;
+        typeProvider = typeId -> getEntityContext().getType(typeId);
     }
 
     public MemInstanceContext initData(Collection<Instance> instances) {
@@ -81,6 +81,12 @@ public class MemInstanceContext extends BaseInstanceContext {
     public Type getType(long id) {
         NncUtils.requireNonNull(typeProvider, "typeProvider not set");
         return typeProvider.apply(id);
+    }
+
+
+    @Override
+    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
+        return null;
     }
 
     @Override

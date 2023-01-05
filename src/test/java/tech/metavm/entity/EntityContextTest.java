@@ -11,11 +11,9 @@ import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.*;
@@ -177,7 +175,7 @@ public class EntityContextTest extends TestCase {
         fooInst.initId(idProvider.allocateOne(-1L, fooType));
         instanceContext.replace(fooInst);
 
-        UniqueConstraintRT constraint = MockRegistry.getUniqueConstraint(Foo.IDX_NAME);
+        IndexConstraintRT constraint = MockRegistry.getUniqueConstraint(Foo.IDX_NAME);
 
         instanceContext.addIndex(
                 new IndexKeyPO(constraint.getId(), List.of(fooInst.getString(fooNameField).getValue())),
@@ -226,14 +224,10 @@ public class EntityContextTest extends TestCase {
                                         fooType.getId(),
                                         null,
                                         new CheckConstraintParam(
-                                                new ValueDTO(
-                                                        ValueKind.EXPRESSION.code(),
-                                                        "名称 = 'Big Foo'",
-                                                        null
-                                                )
+                                                ValueDTO.exprValue("名称 = 'Big Foo'")
                                         )
                                 ),
-                                fooType
+                                context
                         ),
                         ConstraintFactory.createFromDTO(
                                 new ConstraintDTO(
@@ -243,14 +237,10 @@ public class EntityContextTest extends TestCase {
                                         null,
                                         UniqueConstraintParam.create(
                                                 "名称唯一",
-                                                new ValueDTO(
-                                                        ValueKind.REFERENCE.code(),
-                                                        "名称",
-                                                        null
-                                                )
+                                                ValueDTO.refValue("名称")
                                         )
                                 ),
-                                fooType
+                                context
                         )
                 )
         );
@@ -263,7 +253,7 @@ public class EntityContextTest extends TestCase {
         ArrayInstance arrayInstance = (ArrayInstance) instance;
         Assert.assertEquals(arrayInstance.size(), constraints.size());
         Assert.assertEquals(MockRegistry.getType(CheckConstraintRT.class), arrayInstance.get(0).getType());
-        Assert.assertEquals(MockRegistry.getType(UniqueConstraintRT.class), arrayInstance.get(1).getType());
+        Assert.assertEquals(MockRegistry.getType(IndexConstraintRT.class), arrayInstance.get(1).getType());
     }
 
     public void testIntegrationWithInstanceContext() {
@@ -279,6 +269,27 @@ public class EntityContextTest extends TestCase {
         TestUtils.logJSON(LOGGER, loadedFoo);
 
         MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
+    }
+
+    public void testGetRecord() {
+        Column column = new Column("x1", SQLType.INT64);
+        context.bind(column);
+        context.finish();
+
+        Instance instance = context.getInstance(column);
+        Assert.assertNotNull(instance.getId());
+
+        EntityContext context2 = newContext(instanceContext);
+        Column column1 = context2.get(Column.class, instance.getId());
+        Assert.assertEquals(column, column1);
+    }
+
+    public void testGetEnum() {
+        Instance instance = context.getInstance(TypeCategory.CLASS);
+        Assert.assertNotNull(instance.getId());
+
+        TypeCategory typeCategory = context.get(TypeCategory.class, instance.getId());
+        Assert.assertSame(TypeCategory.CLASS, typeCategory);
     }
 
     private EntityContext newContext() {

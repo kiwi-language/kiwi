@@ -33,7 +33,7 @@ public class IntegrationTest extends TestCase {
     private InstanceContextFactory instanceContextFactory;
     private EntityIdProvider idProvider;
     private CheckConstraintPlugin checkConstraintPlugin;
-    private UniqueConstraintPlugin uniqueConstraintPlugin;
+    private IndexConstraintPlugin indexConstraintPlugin;
 
     @Override
     protected void setUp() throws Exception {
@@ -62,9 +62,9 @@ public class IntegrationTest extends TestCase {
         instanceStore = new InstanceStore(instanceMapperGateway, indexItemMapper);
 
         checkConstraintPlugin = new CheckConstraintPlugin();
-        uniqueConstraintPlugin = new UniqueConstraintPlugin(indexItemMapper);
+        indexConstraintPlugin = new IndexConstraintPlugin(indexItemMapper);
         instanceContextFactory = new InstanceContextFactory(instanceStore)
-                .setPlugins(List.of(checkConstraintPlugin, uniqueConstraintPlugin))
+                .setPlugins(List.of(checkConstraintPlugin, indexConstraintPlugin))
                 .setIdService(idProvider);
 
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()));
@@ -125,24 +125,31 @@ public class IntegrationTest extends TestCase {
         final String fooName = "Big Foo";
         final String barCode = "Bar001";
 
-        ClassInstance fooInstance = new ClassInstance(
+        ClassInstance barInstance = new ClassInstance(
                 Map.of(
-                        fooNameField, InstanceUtils.stringInstance(fooName),
-                        fooBarField,
-                        new ClassInstance(
-                                Map.of(
-                                        barCodeField, InstanceUtils.stringInstance(barCode)
-                                ),
-                                barType
-                        )
+                        barCodeField, InstanceUtils.stringInstance(barCode)
                 ),
-                fooType
+                barType
         );
 
-        context.bind(fooInstance);
+//        ClassInstance fooInstance = new ClassInstance(
+//                Map.of(
+//                        fooNameField, InstanceUtils.stringInstance(fooName),
+//                        fooBarField,
+//                        new ClassInstance(
+//                                Map.of(
+//                                        barCodeField, InstanceUtils.stringInstance(barCode)
+//                                ),
+//                                barType
+//                        )
+//                ),
+//                fooType
+//        );
+
+        context.bind(barInstance);
         context.finish();
 
-        Assert.assertTrue(instanceSearchService.contains(fooInstance.getId()));
+        Assert.assertTrue(instanceSearchService.contains(barInstance.getId()));
     }
 
 }

@@ -4,40 +4,52 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
-import tech.metavm.object.meta.persistence.FieldPO;
+import tech.metavm.job.JobManager;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
-public class ClassTypeManager {
+public class TypeManager {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ClassTypeManager.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(TypeManager.class);
 
     private final InstanceContextFactory instanceContextFactory;
 
     private final EntityQueryService entityQueryService;
 
-    private final TransactionTemplate transactionTemplate;
+    private final JobManager jobManager;
 
-    public ClassTypeManager(InstanceContextFactory instanceContextFactory, EntityQueryService entityQueryService, TransactionTemplate transactionTemplate) {
+    private final TransactionOperations transactionTemplate;
+
+    public TypeManager(InstanceContextFactory instanceContextFactory,
+                       EntityQueryService entityQueryService,
+                       JobManager jobManager,
+                       TransactionOperations transactionTemplate) {
         this.instanceContextFactory = instanceContextFactory;
         this.entityQueryService = entityQueryService;
+        this.jobManager = jobManager;
         this.transactionTemplate = transactionTemplate;
+    }
+
+    public Map<String, TypeDTO> getPrimitiveTypes() {
+        Map<String, TypeDTO> primitiveTypes = new HashMap<>();
+        primitiveTypes.put("int", ModelDefRegistry.getType(Integer.class).toDTO());
+        primitiveTypes.put("long", ModelDefRegistry.getType(Long.class).toDTO());
+        primitiveTypes.put("number", ModelDefRegistry.getType(Double.class).toDTO());
+        primitiveTypes.put("string", ModelDefRegistry.getType(String.class).toDTO());
+        primitiveTypes.put("time", ModelDefRegistry.getType(Date.class).toDTO());
+        primitiveTypes.put("password", ModelDefRegistry.getType(Password.class).toDTO());
+        primitiveTypes.put("null", ModelDefRegistry.getType(Null.class).toDTO());
+        return primitiveTypes;
     }
 
     public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, int page, int pageSize) {
@@ -53,9 +65,9 @@ public class ClassTypeManager {
         List<TypeCategory> categories = categoryCodes != null ?
                 NncUtils.map(categoryCodes, TypeCategory::getByCodeRequired)
                 : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
-        Page<ClassType> typePage = entityQueryService.query(
+        Page<Type> typePage = entityQueryService.query(
                 new EntityQuery<>(
-                        ClassType.class,
+                        Type.class,
                         searchText,
                         List.of("code"),
                         page,
@@ -68,14 +80,19 @@ public class ClassTypeManager {
         );
 
         return new Page<>(
-                NncUtils.map(typePage.data(), t -> t.toDTO(false, false)),
+                NncUtils.map(typePage.data(), Type::toDTO),
                 typePage.total()
         );
     }
 
     public TypeDTO getType(long id, boolean includingFields, boolean includingFieldTypes) {
-        ClassType classType = newContext().getClassType(id);
-        return NncUtils.get(classType, t -> t.toDTO(includingFields, includingFieldTypes));
+        Type type = newContext().getType(id);
+        if(type instanceof ClassType classType) {
+            return NncUtils.get(classType, t -> t.toDTO(includingFields, includingFieldTypes));
+        }
+        else {
+            return type.toDTO();
+        }
     }
 
     public TypeDTO getArrayType(long id) {
@@ -178,7 +195,7 @@ public class ClassTypeManager {
     }
 
     @Transactional
-    public void deleteType(long id) {
+    public void remove(long id) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(id);
         if(type == null) {
@@ -193,27 +210,16 @@ public class ClassTypeManager {
             throw new InternalException("Circular reference. category: " + type + " is already visited");
         }
         visited.add(type.getId());
-//        List<Type> dependentTypes = getDependentTypes(type, context);
-//        if(NncUtils.isNotEmpty(dependentTypes)) {
-//            dependentTypes.forEach(t -> deleteType0(t, visited, context));
-//        }
         List<Field> referringFields = context.selectByKey(
-                FieldPO.INDEX_TYPE_ID, type.getId()
+                Field.INDEX_TYPE_ID, type.getId()
         );
         List<String> referringFieldNames = NncUtils.map(referringFields, Field::getName);
         if(NncUtils.isNotEmpty(referringFieldNames)) {
             throw BusinessException.typeReferredByFields(type, referringFieldNames);
         }
-//        flowManager.deleteByOwner(type);
         type.remove();
+        context.remove(type);
     }
-
-//    public List<Type> getDependentTypes(Type type, IEntityContext context) {
-//        return NncUtils.merge(
-//                context.selectByKey(TypePO.INDEX_RAW_TYPE_ID, type.getId()),
-//                context.selectByKey(TypePO.INDEX_TYPE_ARG_ID, type.getId())
-//        );
-//    }
 
     @Transactional
     public long saveField(FieldDTO fieldDTO) {
@@ -248,6 +254,12 @@ public class ClassTypeManager {
         NncUtils.requireNonNull(fieldDTO.id(), "列ID必填");
         Field field = context.getEntity(Field.class, fieldDTO.id());
         field.update(fieldDTO);
+        if(fieldDTO.defaultValue() != null) {
+            field.setDefaultValue(InstanceFactory.resolveValue(fieldDTO.defaultValue(), field.getType(), context));
+        }
+        else {
+            field.setDefaultValue(InstanceUtils.nullInstance());
+        }
         return field;
     }
 
@@ -259,7 +271,8 @@ public class ClassTypeManager {
     @Transactional
     public void removeField(long fieldId) {
         IEntityContext context = newContext();
-        removeField(context.getField(fieldId), context);
+        Field field = context.getField(fieldId);
+        removeField(field, context);
         context.finish();
     }
 
@@ -268,7 +281,10 @@ public class ClassTypeManager {
         if(type.isAnonymous()) {
             context.remove(type);
         }
+//        field.setState(MetadataState.DELETING);
+//        jobManager.addJob(field);
         field.remove();
+        context.remove(field);
     }
 
     @Transactional
@@ -288,13 +304,14 @@ public class ClassTypeManager {
 
     public Page<ConstraintDTO> listConstraints(long typeId, int page, int pageSize) {
         IEntityContext context = newContext();
+        ClassType type = context.getClassType(typeId);
         Page<ConstraintRT<?>> dataPage =  entityQueryService.query(
                 EntityQuery.create(
                         new TypeReference<>() {},
                         null,
                         page,
                         pageSize,
-                        List.of(new EntityQueryField("typeId", typeId))
+                        List.of(new EntityQueryField("type", type))
                 ),
                 context
         );
@@ -316,10 +333,9 @@ public class ClassTypeManager {
     @Transactional
     public long saveConstraint(ConstraintDTO constraintDTO) {
         IEntityContext context = newContext();
-        ClassType type = context.getClassType(constraintDTO.typeId());
         ConstraintRT<?> constraint;
         if(constraintDTO.id() == null || constraintDTO.id() == 0L) {
-            constraint = ConstraintFactory.createFromDTO(constraintDTO, type);
+            constraint = ConstraintFactory.createFromDTO(constraintDTO, context);
         }
         else {
             constraint = context.getEntity(ConstraintRT.class, constraintDTO.id());

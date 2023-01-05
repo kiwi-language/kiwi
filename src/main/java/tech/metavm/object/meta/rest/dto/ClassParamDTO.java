@@ -7,6 +7,7 @@ public record ClassParamDTO(
         TypeDTO superType,
         List<FieldDTO> fields,
         List<ConstraintDTO> constraints,
-        String desc
+        String desc,
+        Object extra
 ) {
 }

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.PrimitiveType;
 
 public class PasswordInstance extends PrimitiveInstance {
@@ -14,6 +15,13 @@ public class PasswordInstance extends PrimitiveInstance {
     @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public PrimitiveFieldValueDTO toFieldValueDTO() {
+        return new PrimitiveFieldValueDTO(
+                "******", null
+        );
     }
 
     @Override

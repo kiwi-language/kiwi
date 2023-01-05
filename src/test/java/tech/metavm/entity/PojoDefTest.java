@@ -51,7 +51,7 @@ public class PojoDefTest extends TestCase {
         ClassType fooType = fooDef.getType();
         UniqueConstraintDef nameConstraintDef = fooDef.getUniqueConstraintDef(Foo.IDX_NAME);
         Assert.assertNotNull(nameConstraintDef);
-        UniqueConstraintRT constraint = nameConstraintDef.getUniqueConstraint();
+        IndexConstraintRT constraint = nameConstraintDef.getUniqueConstraint();
         Assert.assertEquals(
                 List.of(fooType.getFieldByName("名称")),
                 constraint.getFields()

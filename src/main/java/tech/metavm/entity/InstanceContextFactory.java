@@ -26,6 +26,8 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     private ApplicationContext applicationContext;
 
+    private boolean defaultAsyncProcessing = true;
+
     private final Executor executor = new ThreadPoolExecutor(
             16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000)
     );
@@ -38,7 +40,7 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     @Override
     public InstanceContext newContext(long tenantId) {
-        return newContext(tenantId, true, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
+        return newContext(tenantId, defaultAsyncProcessing, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
     }
 
     @Override
@@ -93,4 +95,8 @@ public class InstanceContextFactory implements IInstanceContextFactory {
         return STD_CONTEXT;
     }
 
+    public InstanceContextFactory setDefaultAsyncProcessing(boolean defaultAsyncProcessing) {
+        this.defaultAsyncProcessing = defaultAsyncProcessing;
+        return this;
+    }
 }

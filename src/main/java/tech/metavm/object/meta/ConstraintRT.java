@@ -40,8 +40,6 @@ public abstract class ConstraintRT<T> extends Entity {
 
     protected abstract T getParam(boolean forPersistence);
 
-    protected abstract void setParam(T param);
-
     public ConstraintDTO toDTO() {
         return new ConstraintDTO(
                 getId(),
@@ -71,7 +69,6 @@ public abstract class ConstraintRT<T> extends Entity {
 
     public void update(ConstraintDTO constraintDTO) {
         setMessage(constraintDTO.message());
-        setParam(constraintDTO.getParam());
     }
 
 }

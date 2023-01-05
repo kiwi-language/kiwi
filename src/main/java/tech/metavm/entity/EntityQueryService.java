@@ -6,7 +6,10 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ValueUtil;
 
 import java.util.Collection;
 
@@ -60,7 +63,13 @@ public class EntityQueryService {
     }
 
     private Object convertSingleValue(Object value, IEntityContext context) {
-        return context.containsModel(value) ? context.getInstance(value) : value;
+        if(ValueUtil.isPrimitive(value)) {
+            return InstanceUtils.primitiveInstance(value);
+        }
+        if(context.containsModel(value)) {
+            return context.getInstance(value);
+        }
+        throw new InternalException("Can not convert query field value '" + value + "'");
     }
 
 }

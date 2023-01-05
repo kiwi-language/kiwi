@@ -12,6 +12,9 @@ import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 
+import java.util.List;
+import java.util.Set;
+
 public class SearchBuilderTest extends TestCase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchBuilderTest.class);
@@ -36,7 +39,7 @@ public class SearchBuilderTest extends TestCase {
 
         SearchQuery query = new SearchQuery(
                 -1L,
-                100L,
+                Set.of(100L),
                 condition,
                 1,
                 20

@@ -1,5 +1,8 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.meta.ClassType;
@@ -13,28 +16,37 @@ import java.util.Objects;
 
 public class FlowParsingContext implements ParsingContext {
 
-    public static FlowParsingContext create(NodeRT<?> currentNode) {
-        return new FlowParsingContext(/*currentNode.getInstanceContext(), */currentNode.getGlobalPredecessor());
+    public static FlowParsingContext create(NodeRT<?> currentNode, IInstanceContext instanceContext) {
+        return new FlowParsingContext(currentNode.getGlobalPredecessor(), instanceContext);
     }
 
-    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor) {
+    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor, IEntityContext entityContext) {
+        return create(scope, predecessor, entityContext.getInstanceContext());
+    }
+
+    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor, IInstanceContext instanceContext) {
         return new FlowParsingContext(
-//                scope.getInstanceContext(),
                 predecessor != null ?
                         predecessor
-                        : NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor)
+                        : NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor),
+                instanceContext
         );
     }
 
-//    private final InstanceContext context;
+    private final IInstanceContext instanceContext;
     private final NodeRT<?> lastNode;
     private long lastBuiltVersion = 0L;
     private final Map<Long, NodeRT<?>> id2node = new HashMap<>();
     private final Map<String, NodeRT<?>> name2node = new HashMap<>();
 
-    public FlowParsingContext(/*InstanceContext context, */NodeRT<?> lastNode) {
-//        this.context = context;
+    public FlowParsingContext(NodeRT<?> lastNode, IInstanceContext instanceContext) {
         this.lastNode = lastNode;
+        this.instanceContext = instanceContext;
+    }
+
+    @Override
+    public IInstanceContext getInstanceContext() {
+        return instanceContext;
     }
 
     private void rebuildIfOutdated() {

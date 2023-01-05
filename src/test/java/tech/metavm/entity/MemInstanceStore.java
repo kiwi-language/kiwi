@@ -52,10 +52,10 @@ public class MemInstanceStore implements IInstanceStore {
     private void remove(InstancePO instancePO) {
         NncUtils.requireNonNull(instancePO.getId());
         NncUtils.requireNonNull(instancePO.getTypeId());
-        map.remove(instancePO.getId());
         typeIdToInstances.get(instancePO.getTypeId()).removeIf(
                 inst -> Objects.equals(instancePO.getId(), inst.getId())
         );
+        map.remove(instancePO.getId());
     }
 
     @Override
@@ -77,11 +77,19 @@ public class MemInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public List<InstancePO> getByTypeIds(Collection<Long> typeIds, InstanceContext context) {
+    public List<InstancePO> getByTypeIds(Collection<Long> typeIds,
+                                         long startIdExclusive,
+                                         long limit,
+                                         InstanceContext context) {
         List<InstancePO> instances = NncUtils.flatMap(
                 typeIds,
                 typeIdToInstances::get
         );
+
+        instances = NncUtils.filter(instances, i -> i.getId() > startIdExclusive);
+        instances.sort(Comparator.comparingLong(InstancePO::getId));
+        instances = instances.subList(0, Math.min(instances.size(), (int) limit));
+
         return NncUtils.map(
                 instances,
                 EntityUtils::copyPojo
@@ -93,11 +101,12 @@ public class MemInstanceStore implements IInstanceStore {
         boolean allSuccessful = true;
         for (VersionPO version : versions) {
             InstancePO instancePO = map.get(version.id());
-            if(instancePO.getSyncVersion() < version.version()) {
-                instancePO.setSyncVersion(version.version());
-            }
-            else {
-                allSuccessful = false;
+            if(instancePO != null) {
+                if (instancePO.getSyncVersion() < version.version()) {
+                    instancePO.setSyncVersion(version.version());
+                } else {
+                    allSuccessful = false;
+                }
             }
         }
         return allSuccessful;

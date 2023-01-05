@@ -1,5 +1,6 @@
 package tech.metavm.object.meta.rest.dto;
 
+import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.Access;
 
 import javax.annotation.Nullable;
@@ -17,7 +18,7 @@ public record ColumnDTO(
         boolean multiValued,
         boolean unique,
         boolean asTitle,
-        Object defaultValue,
+        FieldValueDTO defaultValue,
         List<ChoiceOptionDTO> choiceOptions
 ) {
 

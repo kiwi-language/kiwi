@@ -2,6 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
 
@@ -77,7 +78,7 @@ public enum Operator {
     }
 
     public Type resultType() {
-        return ModelDefRegistry.getType(javaType);
+        return NncUtils.get(javaType, ModelDefRegistry::getType);
     }
 
     public int precedence() {

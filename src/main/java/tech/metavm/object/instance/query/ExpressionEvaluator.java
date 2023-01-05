@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static tech.metavm.object.instance.query.ExpressionUtil.*;
+import static tech.metavm.util.InstanceUtils.falseInstance;
+import static tech.metavm.util.InstanceUtils.isAllIntegers;
 import static tech.metavm.util.ValueUtil.isCollection;
 
 public class ExpressionEvaluator {
@@ -103,6 +105,7 @@ public class ExpressionEvaluator {
         Operator op = binaryExpression.getOperator();
         Instance firstValue = evaluate(binaryExpression.getFirst()),
                 secondValue = evaluate(binaryExpression.getSecond());
+
         if(op == Operator.EQ) {
             if(firstValue.getType() instanceof EnumType enumType) {
 //                EnumConstantRT opt = NncUtils.find(
@@ -128,66 +131,75 @@ public class ExpressionEvaluator {
             return InstanceUtils.notEquals(firstValue, secondValue);
         }
         if(op == Operator.GE) {
-            if(InstanceUtils.isAllIntegers(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isGreaterThanOrEqualTo(castInteger(secondValue));
             }
             return castFloat(firstValue).isGreaterThanOrEqualTo(castFloat(secondValue));
         }
         if(op == Operator.GT) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isGreaterThan(castInteger(secondValue));
             }
             return castFloat(firstValue).isGreaterThan(castFloat(secondValue));
         }
         if(op == Operator.LE) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isLessThanOrEqualTo(castInteger(secondValue));
             }
             return castFloat(firstValue).isLessThanOrEqualTo(castFloat(secondValue));
         }
         if(op == Operator.LT) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isLessThan(castInteger(secondValue));
             }
             return castFloat(firstValue).isLessThan(castFloat(secondValue));
         }
         if(op == Operator.ADD) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).add(castInteger(secondValue));
             }
             return castFloat(firstValue).add(castFloat(secondValue));
         }
         if(op == Operator.SUBTRACT) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).subtract(castInteger(secondValue));
             }
             return castFloat(firstValue).subtract(castFloat(secondValue));
         }
         if(op == Operator.MULTIPLY) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).mul(castInteger(secondValue));
             }
             return castFloat(firstValue).mul(castFloat(secondValue));
         }
         if(op == Operator.DIVIDE) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).div(castInteger(secondValue));
             }
             return castFloat(firstValue).div(castFloat(secondValue));
         }
         if(op == Operator.MOD) {
-            if(isAllInteger(firstValue, secondValue)) {
+            if(isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).mod(castInteger(secondValue));
             }
             return castFloat(firstValue).mod(castFloat(secondValue));
         }
         if(op == Operator.STARTS_WITH) {
+            if(InstanceUtils.isAnyNull(firstValue, secondValue)) {
+                return InstanceUtils.falseInstance();
+            }
             return castString(firstValue).startsWith(castString(secondValue));
         }
         if(op == Operator.LIKE) {
+            if(InstanceUtils.isAnyNull(firstValue, secondValue)) {
+                return falseInstance();
+            }
             return castString(firstValue).contains(castString(secondValue));
         }
         if(op == Operator.IN) {
+            if(InstanceUtils.isAnyNull(firstValue, secondValue)) {
+                return InstanceUtils.falseInstance();
+            }
             return castCollection(secondValue).instanceContains(firstValue);
         }
         if(op == Operator.AND) {

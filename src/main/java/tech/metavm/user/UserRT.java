@@ -4,28 +4,25 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
-import tech.metavm.user.persistence.UserPO;
 import tech.metavm.user.rest.dto.UserDTO;
-import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Password;
 import tech.metavm.util.Table;
 
 import java.util.List;
 
-import static tech.metavm.util.ContextUtil.getTenantId;
-
 @EntityType("用户")
 public class UserRT extends Entity {
 
-    public static final IndexDef<UserRT> IDX_LOGIN_NAME = new IndexDef<UserRT>(UserRT.class, "loginName");
+    public static final IndexDef<UserRT> IDX_LOGIN_NAME = new IndexDef<>(UserRT.class, "loginName");
 
     @EntityField("账号")
     private final String loginName;
 
     @EntityField("密码")
-    private String password;
+    private Password password;
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
 
     @EntityField("角色列表")
@@ -38,33 +35,16 @@ public class UserRT extends Entity {
         setRoles(roles);
     }
 
-    //    public UserRT(UserPO userPO, EntityContext context) {
-//        super(userPO.getId(), context);
-//        this.loginName = userPO.getLoginName();
-//        this.password = userPO.getPassword();
-//        this.name = userPO.getName();
-//        this.roles = NncUtils.map(userPO.getRoleIds(), context::getRole);
-//    }
-//
-//    public UserRT(UserDTO userDTO, EntityContext context) {
-//        super(context);
-//        loginName = userDTO.loginName();
-//        setName(userDTO.name());
-//        setPassword(userDTO.password());
-//        roles = NncUtils.map(userDTO.roleIds(), rId -> context.get(RoleRT.class, rId));
-//    }
-
-
     public void setName(String name) {
         this.name = name;
     }
 
     public void setPassword(String password) {
-        this.password = EncodingUtils.md5(password);
+        this.password = new Password(password);
     }
 
     public String getPassword() {
-        return password;
+        return password.getPassword();
     }
 
     public String getName() {
@@ -90,17 +70,6 @@ public class UserRT extends Entity {
                 getName(),
                 null,
                 NncUtils.map(getRoles(), Entity::getId)
-        );
-    }
-
-    public UserPO toPO() {
-        return new UserPO(
-                id,
-                getTenantId(),
-                name,
-                loginName,
-                password,
-                NncUtils.map(roles, Entity::getId)
         );
     }
 

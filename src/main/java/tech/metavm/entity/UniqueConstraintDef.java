@@ -1,19 +1,18 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.UniqueConstraintRT;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;
 
 public class UniqueConstraintDef {
 
-    private final UniqueConstraintRT uniqueConstraint;
+    private final IndexConstraintRT uniqueConstraint;
     private final Field indexDefField;
     private final IndexDef<?> indexDef;
     private final PojoDef<?> declaringTypeDef;
 
-    public UniqueConstraintDef(UniqueConstraintRT uniqueConstraint, Field indexDefField, PojoDef<?> declaringTypeDef) {
+    public UniqueConstraintDef(IndexConstraintRT uniqueConstraint, Field indexDefField, PojoDef<?> declaringTypeDef) {
         this.uniqueConstraint = uniqueConstraint;
         this.indexDefField = indexDefField;
         this.declaringTypeDef = declaringTypeDef;
@@ -22,7 +21,7 @@ public class UniqueConstraintDef {
         declaringTypeDef.addUniqueConstraintDef(this);
     }
 
-    public UniqueConstraintRT getUniqueConstraint() {
+    public IndexConstraintRT getUniqueConstraint() {
         return uniqueConstraint;
     }
 

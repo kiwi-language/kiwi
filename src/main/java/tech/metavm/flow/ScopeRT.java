@@ -10,6 +10,7 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
@@ -19,15 +20,17 @@ public class ScopeRT extends Entity  {
     @EntityField("所属流程")
     private final FlowRT flow;
     @EntityField("所属节点")
+    @Nullable
     private NodeRT<?> owner;
-
-    private transient final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {});
+    @EntityField("节点列表")
+    private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {});
 
     public ScopeRT(FlowRT flow) {
-        this.flow = flow;
+        this(flow, null);
     }
 
-    public void setOwner(NodeRT<?> owner) {
+    public ScopeRT(FlowRT flow, @Nullable NodeRT<?> owner) {
+        this.flow = flow;
         this.owner = owner;
     }
 
@@ -70,7 +73,7 @@ public class ScopeRT extends Entity  {
         return NncUtils.find(getNodes(), node -> node.getPredecessor() == null);
     }
 
-    public NodeRT<?> getOwner() {
+    public @Nullable NodeRT<?> getOwner() {
         return owner;
     }
 

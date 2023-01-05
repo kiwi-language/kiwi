@@ -5,11 +5,11 @@ import tech.metavm.entity.ModelIdentity;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.Table;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +74,10 @@ public class StdAllocators {
         }
     }
 
+    public StdAllocator getAllocatorById(long id) {
+        return NncUtils.find(allocatorMap.values(), a -> a.contains(id));
+    }
+
     private Long getId0(Type javaType, String entityCode) {
         StdAllocator allocator = getAllocator(javaType);
         return allocator.getId(entityCode);
@@ -130,12 +134,13 @@ public class StdAllocators {
     }
 
     private boolean isArrayType(Type javaType) {
-        if(javaType instanceof ParameterizedType parameterizedType) {
-            return parameterizedType.getRawType() == Table.class;
-        }
-        else {
-            return javaType == Table.class;
-        }
+        return Collection.class.isAssignableFrom(ReflectUtils.getRawClass(javaType));
+//        if(javaType instanceof ParameterizedType parameterizedType) {
+//            return parameterizedType.getRawType() == Table.class;
+//        }
+//        else {
+//            return javaType == Table.class;
+//        }
     }
 
     private StdAllocator getTypeAllocator() {

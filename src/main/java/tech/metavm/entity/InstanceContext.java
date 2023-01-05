@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import javassist.util.proxy.ProxyObject;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.dto.ErrorCode;
@@ -13,14 +12,9 @@ import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Constructor;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-
-import static tech.metavm.object.meta.TypeUtil.*;
 
 public class InstanceContext extends BaseInstanceContext {
 
@@ -85,6 +79,11 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     @Override
+    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
+        return null;
+    }
+
+    @Override
     public void preload(Collection<Long> ids, LoadingOption...options) {
         for (Long id : ids) {
             preload(id, options);
@@ -98,7 +97,11 @@ public class InstanceContext extends BaseInstanceContext {
     private <I extends Instance> I constructInstance(Class<I> klass, long id) {
         long typeId = idService.getTypeId(id);
         Type type = getType(typeId);
-        Constructor<I> constructor = ReflectUtils.getConstructor(klass, type.getClass());
+        Class<?> typeClass = EntityUtils.getEntityType(type.getClass());
+        if(typeClass == EnumType.class) {
+            typeClass = ClassType.class;
+        }
+        Constructor<I> constructor = ReflectUtils.getConstructor(klass, typeClass);
         return ReflectUtils.invokeConstructor(constructor, type);
     }
 
@@ -166,7 +169,7 @@ public class InstanceContext extends BaseInstanceContext {
             return get(referencePO.id());
         }
         else if(fieldType.isReference()) {
-            return get((long) columnValue);
+            return get(ValueUtil.getLong(columnValue));
         }
         else if(columnValue instanceof InstancePO instancePO) {
             Class<? extends Instance> instanceType =
@@ -195,6 +198,7 @@ public class InstanceContext extends BaseInstanceContext {
             throw new IllegalStateException("Already finished");
         }
         finished = true;
+        rebind();
         initIds();
         ContextDifference difference = new ContextDifference();
         List<InstancePO> bufferedPOs = getBufferedEntityPOs();
@@ -217,12 +221,30 @@ public class InstanceContext extends BaseInstanceContext {
         return finished;
     }
 
+    public static final int MAX_ITERATION = 5;
+
     private List<InstancePO> getBufferedEntityPOs() {
-        return NncUtils.filterAndMap(
-                instances,
-                InstanceUtils::isInitialized,
-                instance -> instance.toPO(tenantId)
-        );
+        List<InstancePO> instancePOs = new ArrayList<>();
+        Set<Instance> processed = new IdentitySet<>();
+        int it = 0;
+        for(;;) {
+            if(it++ >= MAX_ITERATION) {
+                throw new InternalException("getBufferedEntityPOs reached max number of iteration " +
+                        "(" + MAX_ITERATION + ")");
+            }
+            boolean added = false;
+            for (Instance instance : new ArrayList<>(instances)) {
+                if (InstanceUtils.isInitialized(instance) && !processed.contains(instance)) {
+                    instancePOs.add(instance.toPO(tenantId));
+                    processed.add(instance);
+                    added = true;
+                }
+            }
+            if(!added) {
+                break;
+            }
+        }
+        return instancePOs;
     }
 
     private void registerTransactionSynchronization() {

@@ -1,42 +1,34 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.*;
+import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.Type;
 
-@ValueType("引用值")
+@EntityType("引用值")
 public class ReferenceValue extends Value {
 
-//    private final String nodeId;
-//    private final String fieldId;
+    @EntityField("表达式")
     private final Expression expression;
 
     public ReferenceValue(ValueDTO valueDTO, ParsingContext parsingContext) {
-        super(valueDTO/*, parsingContext.getInstanceContext()*/);
-        String value = (String) valueDTO.value();
-//        if(value.contains(".")) {
-//            String[] splits = value.split("\\.");
-//            nodeId = splits[0];
-//            fieldId = splits[1];
-            expression = ExpressionParser.parse(value, parsingContext);
-//        }
-//        else {
-//            nodeId = value;
-//            fieldId = null;
-//            expression = ExpressionParser.parse(value, parsingContext);
-//        }
+        super(ValueKind.REFERENCE);
+        ExpressionFieldValueDTO exprValue = (ExpressionFieldValueDTO) valueDTO.value();
+        expression = ExpressionParser.parse(exprValue.getExpression(), parsingContext);
+    }
+
+    public ReferenceValue(Expression expression) {
+        super(ValueKind.REFERENCE);
+        this.expression = expression;
     }
 
     @Override
-    protected Object getDTOValue(boolean persisting) {
-        return expression.buildSelf(persisting ? VarType.ID : VarType.NAME);
-//        if(fieldId != null) {
-//            return nodeId + "." + fieldId;
-//        }
-//        else {
-//            return nodeId + "";
-//        }
+    protected FieldValueDTO getDTOValue(boolean persisting) {
+        return new ExpressionFieldValueDTO(expression.buildSelf(persisting ? VarType.ID : VarType.NAME));
     }
 
     @Override
@@ -49,7 +41,7 @@ public class ReferenceValue extends Value {
     }
 
     @Override
-    public Object evaluate(EvaluationContext context) {
+    public Instance evaluate(EvaluationContext context) {
         return ExpressionEvaluator.evaluate(expression, context);
     }
 

@@ -50,8 +50,9 @@ public class DefContextTest extends TestCase {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
         Instance instance = typeDef.createInstance(type, modelInstanceMap);
-        InstanceDTO instanceDTO = instance.toDTO();
-        TestUtils.logJSON(LOGGER, "instance", instanceDTO);
+//        InstanceDTO instanceDTO = instance.toDTO();
+//        TestUtils.logJSON(LOGGER, "instance", instanceDTO);
+        Assert.assertEquals(type.getId(), instance.getId());
     }
 
     public void testConvertFoo() {
@@ -124,14 +125,14 @@ public class DefContextTest extends TestCase {
     public void testGetIdentityMap() {
         PojoDef<Type> def = defContext.getPojoDef(Type.class);
         ClassType type = def.getType();
-        Map<Identifiable, ModelIdentity> identityMap = defContext.getIdentityMap();
+        Map<Object, ModelIdentity> identityMap = defContext.getIdentityMap();
         Set<ModelAndPath> models = ReflectUtils.getReachableObjects(
-                List.of(type), o -> true, true
+                List.of(type), o -> !(o instanceof Instance), true
         );
         for (ModelAndPath modelAndPath : models) {
             Object model = modelAndPath.model();
             String path  = modelAndPath.path();
-            if(model instanceof Identifiable identifiable) {
+            if((model instanceof Identifiable identifiable)) {
                 ModelIdentity identity = identityMap.get(identifiable);
                 Assert.assertNotNull(
                         "Can not find identity for model '" + model + "' at path '" + path + "'",

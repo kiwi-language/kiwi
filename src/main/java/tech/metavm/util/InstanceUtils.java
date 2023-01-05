@@ -76,7 +76,20 @@ public class InstanceUtils {
     }
 
     public static boolean isAllIntegers(Instance instance1, Instance instance2) {
-        return instance1 instanceof IntInstance && instance2 instanceof IntInstance;
+        return isInteger(instance1) && isInteger(instance2);
+    }
+
+    private static boolean isInteger(Instance instance) {
+        return instance instanceof IntInstance || instance instanceof LongInstance;
+    }
+
+    public static boolean isAnyNull(Instance...instances) {
+        for (Instance instance : instances) {
+            if(instance instanceof NullInstance) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static Instance resolveValue(Type fieldType, Object columnValue) {
@@ -90,11 +103,14 @@ public class InstanceUtils {
 
     public static PrimitiveInstance resolvePrimitiveValue(Type fieldType, Object columnValue) {
         if(columnValue == null) {
-            return null;
+            return InstanceUtils.nullInstance();
         }
         if(ValueUtil.isInteger(columnValue)) {
             if(fieldType.isInt()) {
                 return intInstance(((Number) columnValue).intValue());
+            }
+            else if(fieldType.isDouble()) {
+                return doubleInstance(((Number) columnValue).doubleValue());
             }
             else if(fieldType.isTime()) {
                 return timeInstance(((Number) columnValue).longValue());
@@ -110,9 +126,43 @@ public class InstanceUtils {
             return booleanInstance(bool);
         }
         else if(columnValue instanceof String str) {
+            if(fieldType.isPassword()) {
+                return passwordInstance(str);
+            }
             return stringInstance(str);
         }
+        else if(columnValue instanceof Password password) {
+            return passwordInstance(password.getPassword());
+        }
         throw new InternalException("Can not resolve column value '" + columnValue + "' for type " + fieldType);
+    }
+
+    public static PrimitiveInstance primitiveInstance(Object value) {
+        if(value == null) {
+            return nullInstance();
+        }
+        if(value instanceof Integer i) {
+            return intInstance(i);
+        }
+        if(value instanceof Long l) {
+            return longInstance(l);
+        }
+        if(value instanceof Double d) {
+            return doubleInstance(d);
+        }
+        if(value instanceof Boolean b) {
+            return booleanInstance(b);
+        }
+        if(value instanceof String s) {
+            return stringInstance(s);
+        }
+        if(value instanceof Date date) {
+            return timeInstance(date.getTime());
+        }
+        if(value instanceof Password password) {
+            return passwordInstance(password.getPassword());
+        }
+        throw new InternalException("Value '" + value + "' is not a primitive value");
     }
 
     public static PrimitiveInstance intInstance(int value) {
@@ -147,6 +197,14 @@ public class InstanceUtils {
 
     public static NullInstance nullInstance() {
         return new NullInstance(getNullType());
+    }
+
+    public static BooleanInstance trueInstance() {
+        return booleanInstance(true);
+    }
+
+    public static BooleanInstance falseInstance() {
+        return booleanInstance(false);
     }
 
     public static PasswordInstance passwordInstance(String password) {

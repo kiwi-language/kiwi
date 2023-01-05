@@ -4,11 +4,13 @@ import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.IndexItemPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.instance.rest.ObjectParamDTO;
+import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.InstanceFieldValueDTO;
+import tech.metavm.object.instance.rest.ClassInstanceParamDTO;
+import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.UniqueConstraintRT;
+import tech.metavm.object.meta.IndexConstraintRT;
 import tech.metavm.util.*;
 
 import java.util.*;
@@ -62,7 +64,7 @@ public class ClassInstance extends Instance {
     }
 
     public List<IndexItemPO> getUniqueKeys(long tenantId) {
-        List<UniqueConstraintRT> uniqueConstraints = type.getConstraints(UniqueConstraintRT.class);
+        List<IndexConstraintRT> uniqueConstraints = type.getConstraints(IndexConstraintRT.class);
         return NncUtils.map(
                 uniqueConstraints,
                 c -> c.getKey(tenantId,this)
@@ -263,9 +265,25 @@ public class ClassInstance extends Instance {
 
     @Override
     protected Object getParam() {
-        return new ObjectParamDTO(
+        return new ClassInstanceParamDTO(
                 NncUtils.map(fields, InstanceField::toDTO)
         );
+    }
+
+    @Override
+    public FieldValueDTO toFieldValueDTO() {
+        if(isValue()) {
+            return new InstanceFieldValueDTO(
+                    getTitle(),
+                    toDTO()
+            );
+        }
+        else {
+            return new ReferenceFieldValueDTO(
+                    getTitle(),
+                    NncUtils.requireNonNull(getId(), "Id required")
+            );
+        }
     }
 
     public InstancePO toPO(long tenantId) {
@@ -289,6 +307,7 @@ public class ClassInstance extends Instance {
     }
 
     @Override
+    @NoProxy
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
         if(isValue()) {
             return toPO(tenantId, visited);

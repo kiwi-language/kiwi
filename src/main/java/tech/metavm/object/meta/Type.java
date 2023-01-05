@@ -16,9 +16,9 @@ import java.util.function.Function;
 @EntityType("类型")
 public abstract class Type extends Entity {
 
-    public static final IndexDef<Type> UNIQUE_NAME = new IndexDef<>(Type.class, "name");
+    public static IndexDef<Type> UNIQUE_NAME = new IndexDef<>(Type.class, "name");
 
-    public static final PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
+    public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
 
     @EntityField(value = "名称", asTitle = true)
     protected String name;
@@ -28,9 +28,9 @@ public abstract class Type extends Entity {
     @EntityField("是否匿名")
     protected boolean anonymous;
     @EntityField("是否临时")
-    protected final boolean ephemeral;
+    protected boolean ephemeral;
     @EntityField("类别")
-    protected final TypeCategory category;
+    protected TypeCategory category;
     @EntityField("数组类型")
     @Nullable
     private ArrayType arrayType;
@@ -45,11 +45,11 @@ public abstract class Type extends Entity {
         this.category = category;
     }
 
-    public final String getName() {
+    public String getName() {
         return name;
     }
 
-    public final void setName(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -62,11 +62,11 @@ public abstract class Type extends Entity {
         this.code = code;
     }
 
-    public final TypeCategory getCategory() {
+    public TypeCategory getCategory() {
         return category;
     }
 
-    public final boolean isAnonymous() {
+    public boolean isAnonymous() {
         return anonymous;
     }
 
@@ -74,19 +74,23 @@ public abstract class Type extends Entity {
         this.anonymous = anonymous;
     }
 
-    public final boolean isEphemeral() {
+    public boolean isEphemeral() {
         return ephemeral;
     }
 
-    public final boolean isPersistent() {
+    public boolean isPersistent() {
         return !isEphemeral();
     }
 
-    public final boolean isNullable() {
+    public boolean isNullable() {
         return isAssignableFrom(NULL_TYPE);
     }
 
-    public final boolean isNull() {
+    public boolean isUnionNullable() {
+        return isNullable() && this instanceof UnionType;
+    }
+
+    public boolean isNull() {
         return category.isNull();
     }
 
@@ -157,11 +161,14 @@ public abstract class Type extends Entity {
     }
 
     public boolean isReference() {
-        return isClass() || isArray() || isEnum();
+        return isClass() || isArray() || isEnum() ||
+                (!(this instanceof AnyType) && isNullable() && getUnderlyingType().isReference());
     }
 
-    @Nullable
     public ArrayType getArrayType() {
+        if(arrayType == null) {
+            arrayType = new ArrayType(this);
+        }
         return arrayType;
     }
 

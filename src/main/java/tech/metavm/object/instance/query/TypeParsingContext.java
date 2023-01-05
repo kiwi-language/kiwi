@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.BusinessException;
@@ -11,14 +13,25 @@ import java.util.List;
 public class TypeParsingContext implements ParsingContext {
 
     private final ClassType type;
+    private final IInstanceContext instanceContext;
 
-    public TypeParsingContext(ClassType type) {
+    public TypeParsingContext(ClassType type, IInstanceContext instanceContext) {
         this.type = type;
+        this.instanceContext = instanceContext;
     }
 
     @Override
     public FieldExpression parse(List<Var> varPath) {
         return new FieldExpression(ExpressionUtil.thisObject(type), getFields(type, varPath));
+    }
+
+    public ClassType getType() {
+        return type;
+    }
+
+    @Override
+    public IInstanceContext getInstanceContext() {
+        return instanceContext;
     }
 
     public static List<Field> getFields(ClassType type, List<Var> varPath) {

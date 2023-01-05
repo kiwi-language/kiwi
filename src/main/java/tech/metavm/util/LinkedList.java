@@ -283,7 +283,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             }
             node = node.next;
         }
-        return node;
+        return null;
     }
 
     public List<T> filter(Predicate<T> filter) {

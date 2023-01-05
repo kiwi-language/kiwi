@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Objects;
 
@@ -20,6 +20,8 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 @EntityType("字段")
 public class Field extends Entity {
 
+    public static final IndexDef<Field> INDEX_TYPE_ID = new IndexDef<>(Field.class, false,"type");
+
     @EntityField("名称")
     private String name;
     @EntityField("所属类型")
@@ -27,8 +29,7 @@ public class Field extends Entity {
     @EntityField("可见范围")
     private Access access;
     @EntityField("默认值")
-    @Nullable
-    private Object defaultValue;
+    private Instance defaultValue;
     @EntityField("是否作为标题")
     private boolean asTitle;
     @EntityField("列")
@@ -37,9 +38,12 @@ public class Field extends Entity {
     private Type type;
     @EntityField("是否从对象字段")
     private boolean isChildField;
+//    @EntityField("状态")
+//    private MetadataState state;
 
     public Field(String name, ClassType declaringType, Type type) {
-        this(name, declaringType, Access.GLOBAL, false, false, null, type, false);
+        this(name, declaringType, Access.GLOBAL, false, false,
+                InstanceUtils.nullInstance(), type, false);
     }
 
     public Field(
@@ -48,7 +52,7 @@ public class Field extends Entity {
              Access access,
              Boolean unique,
              boolean asTitle,
-             Object defaultValue,
+             Instance defaultValue,
              Type type,
              boolean isChildField
     ) {
@@ -108,30 +112,26 @@ public class Field extends Entity {
         setAccess(Access.getByCodeRequired(update.access()));
         setUnique(update.unique());
         setAsTitle(update.asTitle());
-        setDefaultValue(update.defaultValue());
         setUnique(update.unique());
     }
 
-    void setType(Type type) {
-//        ClassType concreteType = type.getConcreteType();
-//        if(!EntityUtils.entityEquals(getConcreteType(), concreteType)) {
-//            throw BusinessException.invalidField(this, "列类型不允许修改");
-//        }
-//        if(isArray() != type.isArray()) {
-//            throw BusinessException.invalidField(this, "是否多选不支持修改");
-//        }
-        this.type = type;
-    }
+//    public void setState(MetadataState state) {
+//        this.state = state;
+//    }
+//
+//    public MetadataState getState() {
+//        return state;
+//    }
 
-    public void setChildField(boolean childField) {
-        isChildField = childField;
+    public boolean isReady() {
+        return  true;
     }
 
     public void setAccess(Access access) {
         this.access = access;
     }
 
-    public void setDefaultValue(@Nullable Object defaultValue) {
+    public void setDefaultValue(@Nullable Instance defaultValue) {
         this.defaultValue = defaultValue;
     }
 
@@ -139,7 +139,7 @@ public class Field extends Entity {
         if(unique && isArray()) {
             throw BusinessException.invalidField(this, "数组不支持唯一性约束");
         }
-        UniqueConstraintRT constraint = declaringType.getUniqueConstraint(List.of(this));
+        IndexConstraintRT constraint = declaringType.getUniqueConstraint(List.of(this));
         if(constraint != null && !unique) {
             declaringType.removeConstraint(constraint.getId());
         }
@@ -150,7 +150,6 @@ public class Field extends Entity {
 
     public void remove() {
         declaringType.removeField(this);
-//        context.remove(this);
     }
 
     public boolean isEnum() {
@@ -189,7 +188,7 @@ public class Field extends Entity {
         return getConcreteType().isString();
     }
 
-    public Object getDefaultValue() {
+    public Instance getDefaultValue() {
         return defaultValue;
     }
 
@@ -271,7 +270,7 @@ public class Field extends Entity {
                 id,
                 name,
                 access.code(),
-                defaultValue,
+                NncUtils.get(defaultValue, Instance::toFieldValueDTO),
                 isUnique(),
                 asTitle,
                 declaringType.getId(),
@@ -287,7 +286,7 @@ public class Field extends Entity {
 
     @Override
     public String toString() {
-        return "Field " + getQualifiedName() + ":" + type.getName();
+        return "Field " + getName() + ":" + type.getName();
     }
 
 }

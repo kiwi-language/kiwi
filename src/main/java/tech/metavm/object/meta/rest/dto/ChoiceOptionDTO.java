@@ -6,4 +6,5 @@ public record ChoiceOptionDTO(
         int order,
         boolean defaultSelected
 ) {
+
 }

@@ -1,11 +1,13 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.IInstanceContext;
 
 import java.util.List;
 
 public interface ParsingContext {
 
     Expression parse(List<Var> varPath);
+
+    IInstanceContext getInstanceContext();
 
 }

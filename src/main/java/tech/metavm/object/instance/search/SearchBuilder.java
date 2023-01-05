@@ -26,8 +26,12 @@ public class SearchBuilder {
     }
 
     public static String buildQueryString(SearchQuery query) {
-        String tenantIdParam = "(" + TENANT_ID +  ":" + query.tenantId() + " OR " + TENANT_ID +  ":\\-1)";
-        String queryString = tenantIdParam + " AND " + TYPE_ID + ":" + query.typeId();
+        String queryString = "(" + TENANT_ID +  ":" + query.tenantId() + " OR " + TENANT_ID +  ":\\-1)";
+        if(!query.typeIds().isEmpty()) {
+            String typeIdCondition = "(" +
+                    NncUtils.join(query.typeIds(), id -> TYPE_ID + ":" + id, " OR ") + ")";
+            queryString += " AND " + typeIdCondition;
+        }
         if(query.condition() != null) {
             queryString += " AND " + parse(query.condition());
         }

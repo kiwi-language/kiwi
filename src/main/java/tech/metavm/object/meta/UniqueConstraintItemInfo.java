@@ -8,15 +8,8 @@ public record UniqueConstraintItemInfo(
         ValueDTO value
 ) {
 
-    public static UniqueConstraintItemInfo createForField(String name, long fieldId) {
-        return new UniqueConstraintItemInfo(
-                name,
-                new ValueDTO(ValueKind.REFERENCE.code(), "$" + fieldId, null)
-        );
-    }
-
     public UniqueConstraintItemDTO toDTO() {
-        return new UniqueConstraintItemDTO(name, value);
+        return new UniqueConstraintItemDTO(null, name, value);
     }
 
 }

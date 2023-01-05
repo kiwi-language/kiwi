@@ -1,27 +1,32 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityContext;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.persistence.NodePO;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.ExceptionParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.StringInstance;
 
 @EntityType("异常节点")
 public class ExceptionNode extends NodeRT<ExceptionParamDTO> {
 
-    @EntityField("提示信息")
+    public static ExceptionNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
+        ExceptionNode node = new ExceptionNode(nodeDTO, entityContext.getScope(nodeDTO.scopeId()));
+        node.setParam(nodeDTO.getParam(), entityContext);
+        return node;
+    }
+
+    @EntityField("错误提示")
     private Value message;
 
-    public ExceptionNode(NodeDTO nodeDTO, ExceptionParamDTO param, ScopeRT scope) {
+    public ExceptionNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
-        setParam(param);
     }
 
     @Override
-    protected void setParam(ExceptionParamDTO param) {
+    protected void setParam(ExceptionParamDTO param, IEntityContext entityContext) {
         if(param != null) {
-            message = ValueFactory.getValue(param.message(), getParsingContext());
+            message = ValueFactory.getValue(param.message(), getParsingContext(entityContext));
         }
     }
 
@@ -32,7 +37,7 @@ public class ExceptionNode extends NodeRT<ExceptionParamDTO> {
 
     @Override
     public void execute(FlowFrame frame) {
-        String messageStr = message != null ? (String) message.evaluate(frame) : null;
+        String messageStr = message != null ? ((StringInstance)message.evaluate(frame)).getValue() : null;
         frame.exception(messageStr);
     }
 

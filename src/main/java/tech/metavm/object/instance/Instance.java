@@ -4,12 +4,15 @@ import tech.metavm.entity.IdInitializing;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.NullType;
 import java.util.Set;
 
@@ -55,7 +58,7 @@ public abstract class Instance implements IdInitializing {
 
     @NoProxy
     public boolean isArray() {
-        return type.isArray();
+        return this instanceof ArrayInstance;
     }
 
     @NoProxy
@@ -93,6 +96,9 @@ public abstract class Instance implements IdInitializing {
         if(this.id != null) {
             throw new InternalException("id already initialized");
         }
+        if(isArray() && !TypeCategory.ARRAY.idRangeContains(id)) {
+            throw new InternalException("Invalid id for array instance");
+        }
         this.id = id;
     }
 
@@ -119,6 +125,8 @@ public abstract class Instance implements IdInitializing {
                 param
         );
     }
+
+    public abstract FieldValueDTO toFieldValueDTO();
 
     public InstanceDTO toDTO() {
         return toDTO(getParam());

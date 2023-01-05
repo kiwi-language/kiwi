@@ -95,7 +95,7 @@ public enum SQLType {
         return columnName != null && prefix != null && columnName.startsWith(prefix);
     }
 
-    public static Map<SQLType, Queue<Column>> getColumnMap(List<Column> usedColumns) {
+    public static Map<SQLType, Queue<Column>> getColumnMap(Collection<Column> usedColumns) {
         Set<Column> usedColumnSet = new HashSet<>(usedColumns);
         Map<SQLType, Queue<Column>> result = new HashMap<>();
         for (Column column : COLUMNS) {

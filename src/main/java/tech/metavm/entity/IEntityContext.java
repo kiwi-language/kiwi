@@ -25,9 +25,13 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(typeReference.getType(), id);
     }
 
-    boolean containsEntity(Class<? extends Entity> entityType, long id);
+    default <T> List<T> getByType(Class<T> type, T startExclusive, long limit) {
+        return List.of();
+    }
 
-    <T extends Entity> T getEntity(Class<T> entityType, long id);
+    boolean containsEntity(Class<?> entityType, long id);
+
+    <T> T getEntity(Class<T> entityType, long id);
 
     default Type getType(long id) {
         return getEntity(Type.class, id);
@@ -69,7 +73,7 @@ public interface IEntityContext extends ModelInstanceMap {
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object...refValues);
 
-    boolean remove(Entity entity);
+    boolean remove(Object model);
 
     default <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...refValues) {
         return NncUtils.getFirst(selectByKey(indexDef, refValues));

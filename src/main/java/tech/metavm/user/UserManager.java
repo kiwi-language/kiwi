@@ -17,11 +17,14 @@ import tech.metavm.util.NncUtils;
 @Component
 public class UserManager {
 
-    @Autowired
-    private InstanceQueryService instanceQueryService;
+    private final InstanceQueryService instanceQueryService;
 
-    @Autowired
-    private InstanceContextFactory instanceContextFactory;
+    private final InstanceContextFactory instanceContextFactory;
+
+    public UserManager(InstanceQueryService instanceQueryService, InstanceContextFactory instanceContextFactory) {
+        this.instanceQueryService = instanceQueryService;
+        this.instanceContextFactory = instanceContextFactory;
+    }
 
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
         IEntityContext context = newContext();
