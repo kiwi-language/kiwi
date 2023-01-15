@@ -1,5 +1,13 @@
 package tech.metavm.entity;
 
+import tech.metavm.flow.ReferenceValue;
+import tech.metavm.object.instance.query.ExpressionUtil;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Index;
+import tech.metavm.object.meta.IndexField;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
@@ -7,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class IndexDef<T extends Entity> {
+public class IndexDef<T> {
 
     private final Class<T> type;
     private final Type genericType;
@@ -46,7 +54,30 @@ public class IndexDef<T extends Entity> {
         return fieldNames;
     }
 
+    public String fieldName(int index) {
+        return fieldNames.get(index);
+    }
+
     public boolean isUnique() {
         return unique;
     }
+
+    public Index createIndex(DefContext defContext) {
+        Class<?> javaType = getType();
+        ClassType type = defContext.getClassType(getType());
+        List<Field> fields = NncUtils.map(
+                getFieldNames(),
+                fieldName -> type.getFieldByJavaField(ReflectUtils.getField(javaType, fieldName))
+        );
+        Index index = new Index(type, isUnique(), null);
+        for (Field field : fields) {
+            new IndexField(
+                    index,
+                    field.getName(),
+                    new ReferenceValue(ExpressionUtil.fieldExpr(field))
+            );
+        }
+        return index;
+    }
+
 }

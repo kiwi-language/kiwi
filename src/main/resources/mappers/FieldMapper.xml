@@ -4,7 +4,7 @@
 
   <resultMap id="BaseResultMap" type="tech.metavm.object.meta.persistence.FieldPO">
     <!--@mbg.generated-->
-    <!--@Table field-->
+    <!--@Table indexItem-->
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="tenant_id" jdbcType="BIGINT" property="tenantId" />
     <result column="name" jdbcType="VARCHAR" property="name" />

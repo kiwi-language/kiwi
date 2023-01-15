@@ -1,13 +1,12 @@
 package tech.metavm.entity;
 
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
@@ -17,7 +16,7 @@ public class RecordDef<T extends Record> extends PojoDef<T> {
 
     private final Constructor<T> constructor;
 
-    public RecordDef(Class<T> javaType, Type genericType,  @Nullable PojoDef<? super T> parentDef, ClassType type, DefMap defMap) {
+    public RecordDef(Class<T> javaType, Type genericType, @Nullable PojoDef<? super T> parentDef, ClassType type, DefMap defMap) {
         super(javaType, genericType, parentDef, type, defMap);
         Class<?>[] componentTypes =
                 Arrays.stream(javaType.getRecordComponents()).map(RecordComponent::getType).toArray(Class<?>[]::new);

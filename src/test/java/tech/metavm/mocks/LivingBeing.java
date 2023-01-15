@@ -3,6 +3,7 @@ package tech.metavm.mocks;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 import tech.metavm.util.Table;
 
 import java.util.ArrayList;
@@ -10,6 +11,10 @@ import java.util.List;
 
 @EntityType("生物")
 public class LivingBeing extends Entity {
+
+    public static final IndexDef<LivingBeing> IDX_AGE = new IndexDef<>(
+        LivingBeing.class, "age"
+    );
 
     @EntityField("年龄")
     private long age;
@@ -19,7 +24,7 @@ public class LivingBeing extends Entity {
 
     private final Table<LivingBeing> offsprings = new Table<>(LivingBeing.class);
 
-    private final List<LivingBeing> ancestors = new ArrayList<>();
+    private final Table<LivingBeing> ancestors = new Table<>(LivingBeing.class);
 
     public LivingBeing(long age) {
         this.age = age;

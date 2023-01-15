@@ -1,8 +1,7 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.EntityField;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;
@@ -16,11 +15,11 @@ import java.util.List;
 @EntityType("数组表达式")
 public class ArrayExpression extends Expression {
 
-    @EntityField("表达式列表")
-    private final Table<Expression> expressions;
+    @ChildEntity("表达式列表")
+    private final Table<Expression> expressions = new Table<>(Expression.class, true);
 
     public ArrayExpression(Collection<Expression> expressions) {
-        this.expressions = new Table<>(Expression.class, expressions);
+        this.expressions.addAll(expressions);
     }
 
     public static ArrayExpression merge(Expression first, Expression second) {

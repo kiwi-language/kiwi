@@ -1,24 +1,22 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.RuntimeGeneric;
+import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, ArrayInstance> {
+public class CollectionDef<E, C extends Table<E>> extends ModelDef<C, ArrayInstance> {
 
     @SuppressWarnings("unchecked")
-    static <E, C extends Collection<E>> CollectionDef<?, ?> createHelper(Class<?> javaClass,
+    static <E, C extends Table<E>> CollectionDef<?, ?> createHelper(Class<?> javaClass,
                                                                          java.lang.reflect.Type javaType,
-                                                                         ModelDef<?,?> elementDef, Type type) {
+                                                                         ModelDef<?,?> elementDef, ArrayType type) {
         if(javaType instanceof Class<?>) {
             NncUtils.requireEquals(Object.class, elementDef.getJavaClass(),
                     "For a raw collection def, element type should be object");
@@ -34,20 +32,21 @@ public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, Array
         else {
             throw new InternalException("Invalid java type '" + javaType + "' for collection def");
         }
-        return new CollectionDef<>((Class<C>) javaClass, javaType, (ModelDef<E, ?>) elementDef, type);
+        CollectionDef<E, C>  def = new CollectionDef<>((Class<C>) javaClass, javaType, type, (ModelDef<E, ?>) elementDef);
+        return def;
     }
 
-    private final Type type;
+    private final ArrayType type;
     private final ModelDef<E, ?> elementDef;
 
-    public CollectionDef(Class<C> javaClass, java.lang.reflect.Type javaType, ModelDef<E, ?> elementDef, Type type) {
+    public CollectionDef(Class<C> javaClass, java.lang.reflect.Type javaType, ArrayType type, ModelDef<E, ?> elementDef) {
         super(javaClass, javaType, ArrayInstance.class);
         this.elementDef = elementDef;
         this.type = type;
     }
 
     @Override
-    public Type getType() {
+    public ArrayType getType() {
         return type;
     }
 
@@ -71,6 +70,7 @@ public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, Array
 
     @Override
     public void initModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
+        model.setElementAsChild(instance.isElementAsChild());
         model.addAll(
                 NncUtils.map(
                         instance.getElements(),
@@ -82,11 +82,13 @@ public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, Array
     @Override
     public void updateModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
         model.clear();
+        model.setElementAsChild(instance.isElementAsChild());
         initModel(model, instance, modelInstanceMap);
     }
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
+        instance.setElementAsChild(model.isElementAsChild());
         if(elementDef instanceof InstanceDef<?>) {
             for (E e : model) {
                 instance.add(elementDef.getInstanceType().cast(e));
@@ -100,6 +102,7 @@ public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, Array
     @Override
     public void updateInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
         instance.clear();
+        instance.setElementAsChild(model.isElementAsChild());
         initInstance(instance, model, instanceMap);
     }
 
@@ -112,4 +115,5 @@ public class CollectionDef<E, C extends Collection<E>> extends ModelDef<C, Array
     public boolean isProxySupported() {
         return RuntimeGeneric.class.isAssignableFrom(getJavaClass());
     }
+
 }

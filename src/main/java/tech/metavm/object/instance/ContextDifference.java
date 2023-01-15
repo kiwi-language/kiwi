@@ -64,8 +64,8 @@
 //
 //    private boolean isDifferent(Instance before, Instance after) {
 //        Type type = before.getType();
-//        for (Field field : type.getFields()) {
-//            if(!Objects.equals(before.getRaw(field), after.getRaw(field))) {
+//        for (Field indexItem : type.getFields()) {
+//            if(!Objects.equals(before.getRaw(indexItem), after.getRaw(indexItem))) {
 //                return true;
 //            }
 //        }

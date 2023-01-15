@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
@@ -13,16 +14,16 @@ import java.util.List;
 public class FunctionExpression extends Expression {
     @EntityField("函数")
     private final Function function;
-    @EntityField("参数表达式列表")
-    private final Table<Expression> arguments;
+    @ChildEntity("参数表达式列表")
+    private final Table<Expression> arguments = new Table<>(Expression.class, true);
 
     public FunctionExpression(Function function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {
-            arguments = arrayExpression.getExpressions();
+            arguments.addAll(arrayExpression.getExpressions());
         }
         else {
-            arguments = new Table<>(Expression.class, List.of(argument));
+            arguments.add(argument);
         }
     }
 

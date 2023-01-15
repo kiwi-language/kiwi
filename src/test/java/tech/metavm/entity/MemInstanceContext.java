@@ -2,9 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.InternalException;
@@ -12,7 +10,8 @@ import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 import static tech.metavm.util.Constants.ROOT_TENANT_ID;
@@ -21,9 +20,7 @@ import static tech.metavm.util.TestConstants.TENANT_ID;
 public class MemInstanceContext extends BaseInstanceContext {
 
     private boolean finished;
-    private final Map<IndexKeyPO, List<Long>> index = new HashMap<>();
     private IEntityContext entityContext;
-    private final IInstanceStore instanceStore;
     private @Nullable Function<Long, Type> typeProvider;
 
     public MemInstanceContext() {
@@ -34,9 +31,9 @@ public class MemInstanceContext extends BaseInstanceContext {
                               EntityIdProvider idProvider,
                               IInstanceStore instanceStore,
                               IInstanceContext parent) {
-        super(tenantId, idProvider, parent);
-        this.instanceStore = instanceStore;
+        super(tenantId, idProvider, instanceStore, parent);
         typeProvider = typeId -> getEntityContext().getType(typeId);
+        setCreateJob(job -> getEntityContext().bind(job));
     }
 
     public MemInstanceContext initData(Collection<Instance> instances) {
@@ -46,10 +43,6 @@ public class MemInstanceContext extends BaseInstanceContext {
 
     public void setTypeProvider(@Nullable Function<Long, Type> typeProvider) {
         this.typeProvider = typeProvider;
-    }
-
-    void addIndex(IndexKeyPO key, long instanceId) {
-        index.computeIfAbsent(key, k -> new ArrayList<>()).add(instanceId);
     }
 
     @Override
@@ -70,6 +63,7 @@ public class MemInstanceContext extends BaseInstanceContext {
                 NncUtils.map(instances, instance -> instance.toPO(ROOT_TENANT_ID))
         );
         instanceStore.save(changeList);
+        finished = true;
     }
 
     @Override
@@ -83,16 +77,12 @@ public class MemInstanceContext extends BaseInstanceContext {
         return typeProvider.apply(id);
     }
 
-
     @Override
-    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
-        return null;
-    }
-
-    @Override
-    public List<Instance> selectByKey(IndexKeyPO indexKeyPO) {
-        List<Long> instanceIds = index.get(indexKeyPO);
-        return NncUtils.map(instanceIds, this::get);
+    protected boolean checkAliveInStore(long id) {
+        return instanceStore.load(
+                StoreLoadRequest.create(id),
+                this
+        ).size() > 0;
     }
 
     public void setEntityContext(IEntityContext entityContext) {

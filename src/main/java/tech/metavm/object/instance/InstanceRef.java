@@ -69,9 +69,9 @@
 //    }
 //
 //    @Override
-//    public IInstance getInstance(Field field) {
+//    public IInstance getInstance(Field indexItem) {
 //        ensureLoaded();
-//        return realInstance.getInstance(field);
+//        return realInstance.getInstance(indexItem);
 //    }
 //
 //    @Override
@@ -81,9 +81,9 @@
 //    }
 //
 //    @Override
-//    public Object getRaw(Field field) {
+//    public Object getRaw(Field indexItem) {
 //        ensureLoaded();
-//        return realInstance.getRaw(field);
+//        return realInstance.getRaw(indexItem);
 //    }
 //
 //    @Override
@@ -93,9 +93,9 @@
 //    }
 //
 //    @Override
-//    public String getString(Field field) {
+//    public String getString(Field indexItem) {
 //        ensureLoaded();
-//        return realInstance.getString(field);
+//        return realInstance.getString(indexItem);
 //    }
 //
 //    @Override
@@ -111,9 +111,9 @@
 //    }
 //
 //    @Override
-//    public void set(Field field, Object value) {
+//    public void set(Field indexItem, Object value) {
 //        ensureLoaded();
-//        realInstance.set(field, value);
+//        realInstance.set(indexItem, value);
 //    }
 //
 //    @Override
@@ -141,9 +141,9 @@
 //    }
 //
 //    @Override
-//    public InstanceArray getInstanceArray(Field field) {
+//    public InstanceArray getInstanceArray(Field indexItem) {
 //        ensureLoaded();
-//        return realInstance.getInstanceArray(field);
+//        return realInstance.getInstanceArray(indexItem);
 //    }
 //
 ////    public <T extends Entity> T createEntityRef(Class<T> klass) {

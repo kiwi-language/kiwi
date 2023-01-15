@@ -15,7 +15,6 @@ import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.ConstantExpression;
-import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
@@ -83,7 +82,7 @@ public class DefContextTest extends TestCase {
         Assert.assertTrue(typeDef.getType() instanceof ClassType);
         ClassType classType = (ClassType) typeDef.getType();
 
-        Table<ConstraintRT<?>> constraints = classType.getDeclaredConstraints();
+        Table<Constraint<?>> constraints = classType.getDeclaredConstraints();
         Assert.assertNotNull(constraints);
         Assert.assertNotNull(constraints.getId());
     }

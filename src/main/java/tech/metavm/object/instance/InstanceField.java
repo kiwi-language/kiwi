@@ -3,8 +3,8 @@ package tech.metavm.object.instance;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -17,7 +17,8 @@ public class InstanceField {
     InstanceField(ClassInstance owner, Field field, Instance value) {
         this.field = field;
         this.owner = owner;
-        this.value = checkValue(value);
+        this.value = InstanceUtils.nullInstance();
+        setValue(value);
     }
 
     public Field getField() {
@@ -40,7 +41,14 @@ public class InstanceField {
     }
 
     void setValue(Instance value) {
-        this.value = checkValue(value);
+        value = checkValue(value);
+        if(!this.value.isNull()) {
+            owner.getOutgoingReference(this.value, field).clear();
+        }
+        if(!value.isNull()) {
+            new ReferenceRT(owner, value, field);
+        }
+        this.value = value;
     }
 
     Instance checkValue(Instance value) {
@@ -48,17 +56,12 @@ public class InstanceField {
             return value;
         }
         else {
-            throw new InternalException("Value '" + value + "' is not assignable to field '" + field + "'");
+            throw new InternalException("Value '" + value + "' is not assignable to '" + field + "'");
         }
     }
 
     public Object getColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        if(field.isReference()) {
-            return value.isNull() ? null : NncUtils.requireNonNull(value.getId());
-        }
-        else {
-            return value.toColumnValue(tenantId, visited);
-        }
+        return value.toColumnValue(tenantId, visited);
     }
 
     public @NotNull Instance getValue() {

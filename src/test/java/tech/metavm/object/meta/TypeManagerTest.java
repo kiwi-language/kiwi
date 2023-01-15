@@ -11,9 +11,7 @@ import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockTransactionOperations;
-import tech.metavm.util.PojoMatcher;
+import tech.metavm.util.*;
 
 import java.util.List;
 
@@ -21,27 +19,19 @@ public class TypeManagerTest extends TestCase {
 
     private TypeManager typeManager;
     private MemInstanceSearchService instanceSearchService;
+    @SuppressWarnings("FieldCanBeLocal")
+    private MemInstanceStore instanceStore;
 
     @Override
     protected void setUp() throws Exception {
-        MemInstanceStore instanceStore = new MemInstanceStore();
+        instanceStore = new MemInstanceStore();
         EntityIdProvider idProvider = new MockIdProvider();
+        MockRegistry.setUp(idProvider, instanceStore);
+
         instanceSearchService = new MemInstanceSearchService();
 
-        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore)
-                .setIdService(idProvider).setDefaultAsyncProcessing(false);
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()));
-        bootstrap.bootAndSave();
-
-        instanceContextFactory.setPlugins(List.of(
-                new CheckConstraintPlugin(),
-                new IndexConstraintPlugin(new MemIndexItemMapper()),
-                new ChangeLogPlugin(new InstanceLogServiceImpl(
-                        instanceSearchService,
-                        instanceContextFactory,
-                        instanceStore
-                ))
-        ));
+        InstanceContextFactory instanceContextFactory =
+                TestUtils.getInstanceContextFactory(idProvider, instanceStore, instanceSearchService);
 
         TransactionOperations transactionOperations = new MockTransactionOperations();
 

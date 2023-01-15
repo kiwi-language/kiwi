@@ -147,7 +147,7 @@ public class InstanceFactory {
                 );
             }
         }
-        throw new InternalException("Can not resolve field value: " + rawValue);
+        throw new InternalException("Can not resolve indexItem value: " + rawValue);
     }
 
 }

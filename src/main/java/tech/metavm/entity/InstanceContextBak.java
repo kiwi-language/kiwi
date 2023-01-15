@@ -273,8 +273,8 @@
 //
 //    private Map<Field, Object> getInstanceFields(InstancePO instancePO, Type type) {
 //        Map<Field, Object> data = new HashMap<>();
-//        for (Field field : type.getFields()) {
-//            data.put(field, resolveColumnValue(field.getType(), instancePO.get(field.getColumnName())));
+//        for (Field indexItem : type.getFields()) {
+//            data.put(indexItem, resolveColumnValue(indexItem.getType(), instancePO.get(indexItem.getColumnName())));
 //        }
 //        return data;
 //    }
@@ -331,9 +331,9 @@
 //    public void remove(Instance instance) {
 //        boolean removed = instances.remove(get0(instance.getId()));
 //        if(removed) {
-//            for (Field field : instance.getType().getFields()) {
-//                if (field.isChildField()) {
-//                    Instance ref = instance.getInstance(field);
+//            for (Field indexItem : instance.getType().getFields()) {
+//                if (indexItem.isChildField()) {
+//                    Instance ref = instance.getInstance(indexItem);
 //                    if (ref != null) {
 //                        remove(ref);
 //                    }

@@ -2,10 +2,8 @@ package tech.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
@@ -46,8 +44,7 @@ public class EntityProxyFactoryTest extends TestCase {
         List<String> list = EntityProxyFactory.getProxy(
                 new TypeReference<ArrayList<String>>() {}.getType(),
                 null,
-                l -> l.add("Abc"),
-                k -> ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(k))
+                k -> ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(k)), l -> l.add("Abc")
         );
         Assert.assertEquals(List.of("Abc"), list);
     }

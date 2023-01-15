@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.flow.FlowRT;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
@@ -15,6 +16,7 @@ import java.util.function.Function;
 public class DefContext extends BaseEntityContext implements DefMap, IEntityContext {
     private final Map<Type, ModelDef<?,?>> javaType2Def = new HashMap<>();
     private final Map<tech.metavm.object.meta.Type, ModelDef<?, ?>> type2Def = new IdentityHashMap<>();
+    private final IdentitySet<ModelDef<?,?>> processedDefSet = new IdentitySet<>();
     private final IdentitySet<ClassType> initializedClassTypes = new IdentitySet<>();
     private final AnyTypeDef<Object> objectDef;
     private final ValueDef<Enum<?>> enumDef;
@@ -51,8 +53,15 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             return existing;
         }
         ModelDef<?,?> def = parseType(javaType);
-        addDef(def);
+        if(!processedDefSet.contains(def)) {
+            addDef(def);
+        }
         return def;
+    }
+
+    @Override
+    public boolean containsDef(Type javaType) {
+        return javaType2Def.containsKey(javaType);
     }
 
     private void checkJavaType(Type javaType) {
@@ -62,8 +71,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
     }
 
-    public tech.metavm.object.meta.Type getType(Class<?> javaType) {
-        return getDef(javaType).getType();
+    public tech.metavm.object.meta.Type getType(Class<?> javaClass) {
+        return getDef(javaClass).getType();
     }
 
     public ClassType getClassType(Class<?> javaType) {
@@ -104,46 +113,34 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type) {
-        return NncUtils.requireNonNull(type2Def.get(type), () -> new InternalException("Can not find def for type " + type.getId()));
+        return NncUtils.requireNonNull(type2Def.get(type), () -> new InternalException("Can not find def for type " + type));
     }
 
-    private ModelDef<?,?> parseType(Type genericType) {
+    private DefParser<?,?,?> getParser(Type genericType) {
         genericType = ReflectUtils.eraseType(genericType);
         Class<?> rawClass = ReflectUtils.getRawClass(genericType);
         TypeCategory typeCategory = ValueUtil.getTypeCategory(genericType);
-        if(Collection.class.isAssignableFrom(rawClass)) {
-            Class<? extends Collection<?>> collectionClass = rawClass.asSubclass(
-                    new TypeReference<Collection<?>>(){}.getType()
+        if(Table.class.isAssignableFrom(rawClass)) {
+            Class<? extends Table<?>> collectionClass = rawClass.asSubclass(
+                    new TypeReference<Table<?>>(){}.getType()
             );
             if (genericType instanceof ParameterizedType pType) {
                 Type elementJavaType = pType.getActualTypeArguments()[0];
                 if((elementJavaType instanceof Class<?> elementJavaClass) &&
                         Instance.class.isAssignableFrom(elementJavaClass)) {
-                    return InstanceCollectionDef.create(
-                            collectionClass,
+                    return new InstanceCollectionParser<>(
                             genericType,
+                            collectionClass,
                             elementJavaClass,
                             objectDef.getType().getArrayType()
                     );
                 }
-                else {
-                    ModelDef<?, ?> elementDef = getDef(pType.getActualTypeArguments()[0]);
-                    return CollectionDef.createHelper(
-                            collectionClass,
-                            genericType,
-                            elementDef,
-                            TypeUtil.getArrayType(elementDef.getType())
-                    );
-                }
             }
-            else {
-                return CollectionDef.createHelper(
-                        collectionClass,
-                        collectionClass,
-                        objectDef,
-                        TypeUtil.getArrayType(objectDef.getType())
-                );
-            }
+            return new CollectionParser<>(
+                    collectionClass,
+                    genericType,
+                    this
+            );
         }
         else if(Instance.class.isAssignableFrom(rawClass)) {
             throw  new InternalException("Instance def should be predefined by StandardDefBuilder");
@@ -152,14 +149,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             if (typeCategory.isEnum()) {
                 Class<? extends Enum<?>> enumType = rawClass.asSubclass(new TypeReference<Enum<?>>() {
                 }.getType());
-                return EnumParser.parse(
+                return new EnumParser<>(
                         enumType,
                         enumDef,
                         this
                 );
             }
             if (typeCategory.isEntity()) {
-                return EntityParser.parse(
+                return new EntityParser<>(
                         rawClass.asSubclass(Entity.class),
                         genericType,
                         this
@@ -167,12 +164,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             }
             if (typeCategory.isValue()) {
                 if(Record.class.isAssignableFrom(rawClass)) {
-                    return RecordParser.parse(
+                    return new RecordParser<>(
                             rawClass.asSubclass(Record.class), genericType, this
                     );
                 }
                 else {
-                    return ValueParser.parse(
+                    return new ValueParser<>(
                             rawClass,
                             genericType,
                             this
@@ -180,13 +177,37 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 }
             }
         }
-        throw new InternalException("Can not parse definition for type: " + genericType);
+        throw new InternalException("Can not get def parser for type: " + genericType);
+    }
+
+    private ModelDef<?,?> parseType(Type genericType) {
+        DefParser<?,?,?> parser = getParser(genericType);
+        for (Type dependencyType : parser.getDependencyTypes()) {
+            getDef(dependencyType);
+        }
+        ModelDef<?,?> def;
+        if((def = javaType2Def.get(genericType)) != null) {
+            return def;
+        }
+        def = parser.create();
+        preAddDef(def);
+        parser.initialize();
+        afterDefInitialized(def);
+        return def;
     }
 
     @Override
     public void preAddDef(ModelDef<?,?> def) {
+        ModelDef<?,?> existing = javaType2Def.get(def.getJavaType());
+        if(existing != null && existing != def) {
+            throw new InternalException("Def for java type " + def.getJavaType() + " already exists");
+        }
         javaType2Def.put(def.getJavaType(), def);
-        if(!(def instanceof InstanceDef)) {
+        if(!(def instanceof InstanceDef) && !(def instanceof InstanceCollectionDef<?,?>)) {
+            existing = type2Def.get(def.getType());
+            if(existing != null && existing != def) {
+                throw new InternalException("Def for type " + def.getType() + " already exists");
+            }
             type2Def.put(def.getType(), def);
         }
     }
@@ -194,10 +215,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @Override
     public void addDef(ModelDef<?, ?> def) {
         preAddDef(def);
-        afterDefCreated(def);
+        afterDefInitialized(def);
     }
 
-    private void afterDefCreated(ModelDef<?,?> def) {
+    private void afterDefInitialized(ModelDef<?,?> def) {
+        if(processedDefSet.contains(def)) {
+            return;
+        }
+        processedDefSet.add(def);
         if(def.getType() instanceof ClassType classType) {
             initializedClassTypes.add(classType);
         }
@@ -247,9 +272,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getEnumDef(klass).getEnumConstantDef(id).getValue();
     }
 
-    public IndexConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
+    public Index getIndexConstraint(IndexDef<?> indexDef) {
         EntityDef<?> entityDef = (EntityDef<?>) getDef(indexDef.getType());
-        return entityDef.getUniqueConstraintDef(indexDef).getUniqueConstraint();
+        return entityDef.getIndexConstraintDef(indexDef).getIndexConstraint();
     }
 
     public Map<Object, ModelIdentity> getIdentityMap() {
@@ -262,11 +287,15 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     public Instance getInstance(Object model) {
+        return getInstance(model, null);
+    }
+
+    public Instance getInstance(Object model, ModelDef<?,?> def) {
         if(model instanceof Instance instance) {
             return instance;
         }
         if(pendingModels.contains(model)) {
-            generateInstance(model);
+            generateInstance(model, def);
         }
         return super.getInstance(model);
     }
@@ -289,11 +318,17 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private void generateInstance(Object model) {
+        getInstance(model, null);
+    }
+
+    private void generateInstance(Object model, ModelDef<?,?> def) {
         pendingModels.remove(model);
         if(containsModel(model)) {
             return;
         }
-        ModelDef<?,?> def = getDefByModel(model);
+        if(def == null) {
+            def = getDefByModel(model);
+        }
         ModelIdentity identity = identityContext.getIdentity(model);
         Long id = identity != null ? getId.apply(identity) : null;
         if(def.isProxySupported()) {

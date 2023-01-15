@@ -11,11 +11,11 @@ import java.util.List;
 
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
 
-    public static <T extends Record> RecordDef<T> parse(Class<T> entityType,
-                                                        Type genericType,
-                                                        DefMap defMap) {
-        return new RecordParser<>(entityType, genericType, defMap).parse();
-    }
+//    public static <T extends Record> RecordDef<T> parse(Class<T> entityType,
+//                                                        Type genericType,
+//                                                        DefMap defMap) {
+//        return new RecordParser<>(entityType, genericType, defMap).parse();
+//    }
 
     public RecordParser(Class<T> entityType, Type genericType, DefMap defMap) {
         super(entityType, genericType, defMap);

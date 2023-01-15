@@ -9,6 +9,8 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
 
+import java.util.List;
+
 @EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
 
@@ -54,11 +56,6 @@ public class InputNode extends NodeRT<InputParamDTO> {
                 fieldDTO.typeId(),
                 fieldDTO.defaultValue()
         );
-    }
-
-    @Override
-    public void remove() {
-        super.remove();
     }
 
     @Override

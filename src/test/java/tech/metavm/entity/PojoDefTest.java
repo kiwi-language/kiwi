@@ -10,12 +10,14 @@ import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Index;
+import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,12 +51,12 @@ public class PojoDefTest extends TestCase {
     public void testUniqueConstraint() {
         EntityDef<Foo> fooDef = defMap.getEntityDef(Foo.class);
         ClassType fooType = fooDef.getType();
-        UniqueConstraintDef nameConstraintDef = fooDef.getUniqueConstraintDef(Foo.IDX_NAME);
+        IndexConstraintDef nameConstraintDef = fooDef.getIndexConstraintDef(Foo.IDX_NAME);
         Assert.assertNotNull(nameConstraintDef);
-        IndexConstraintRT constraint = nameConstraintDef.getUniqueConstraint();
+        Index constraint = nameConstraintDef.getIndexConstraint();
         Assert.assertEquals(
                 List.of(fooType.getFieldByName("名称")),
-                constraint.getFields()
+                constraint.getTypeFields()
         );
     }
 
@@ -92,7 +94,7 @@ public class PojoDefTest extends TestCase {
         tech.metavm.object.meta.Type fieldType = fieldDef.getTargetDef().getType();
         Assert.assertTrue(fieldType instanceof ArrayType);
         ArrayType arrayType = (ArrayType) fieldType;
-        Assert.assertEquals(defMap.getType(Object.class), arrayType.getElementType());
+        Assert.assertEquals(defMap.getType(LivingBeing.class), arrayType.getElementType());
 
         ClassInstance instance = def.createInstance(model, modelInstanceMap);
         LivingBeing recoveredModel = def.createModel(instance, modelInstanceMap);
@@ -135,6 +137,11 @@ public class PojoDefTest extends TestCase {
         }
 
         @Override
+        public boolean containsDef(Type javaType) {
+            return class2def.containsKey(javaType);
+        }
+
+        @Override
         public tech.metavm.object.meta.Type internType(tech.metavm.object.meta.Type type) {
             return typeInternMap.computeIfAbsent(type, t -> type);
         }
@@ -152,6 +159,21 @@ public class PojoDefTest extends TestCase {
         }
 
         private ModelDef<?,?> parseType(Type genericType) {
+            DefParser<?,?,?> parser = getParser(genericType);
+            for (Type dependencyType : parser.getDependencyTypes()) {
+                getDef(dependencyType);
+            }
+            ModelDef<?,?> def;
+            if((def = class2def.get(genericType)) != null) {
+                return def;
+            }
+            def = parser.create();
+            addDef(def);
+            parser.initialize();
+            return def;
+        }
+
+        private DefParser<?,?,?> getParser(Type genericType) {
             Class<?> rawClass = ReflectUtils.getRawClass(genericType);
             if(!RuntimeGeneric.class.isAssignableFrom(rawClass)) {
                 genericType = rawClass;
@@ -170,25 +192,22 @@ public class PojoDefTest extends TestCase {
                     throw new InternalException("Raw TableDef should have been defined by StandardDefBuilder");
                 }
             }*/
-            if(Collection.class.isAssignableFrom(rawClass)) {
-                Class<? extends Collection<?>> collectionClass = rawClass.asSubclass(
-                        new TypeReference<Collection<?>>(){}.getType()
+            if(Table.class.isAssignableFrom(rawClass)) {
+                Class<? extends Table<?>> collectionClass = rawClass.asSubclass(
+                        new TypeReference<Table<?>>(){}.getType()
                 );
                 if (genericType instanceof ParameterizedType pType) {
-                    ModelDef<?,?> elementDef = getDef(pType.getActualTypeArguments()[0]);
-                    return CollectionDef.createHelper(
+                    return new CollectionParser<>(
                             collectionClass,
                             genericType,
-                            elementDef,
-                            TypeUtil.getArrayType(elementDef.getType())
+                            this
                     );
                 }
                 else {
-                    return CollectionDef.createHelper(
+                    return new CollectionParser<>(
                             collectionClass,
                             collectionClass,
-                            objectDef,
-                            TypeUtil.getArrayType(objectDef.getType())
+                            this
                     );
                 }
             }
@@ -196,14 +215,10 @@ public class PojoDefTest extends TestCase {
                 if (typeCategory.isEnum()) {
                     Class<? extends Enum<?>> enumType = rawClass.asSubclass(new TypeReference<Enum<?>>() {
                     }.getType());
-                    return EnumParser.parse(
-                            enumType,
-                            enumDef,
-                            this
-                    );
+                    return new EnumParser<>(enumType, enumDef, this);
                 }
                 if (typeCategory.isEntity()) {
-                    return EntityParser.parse(
+                    return new EntityParser<>(
                             rawClass.asSubclass(Entity.class),
                             genericType,
                             this
@@ -211,12 +226,12 @@ public class PojoDefTest extends TestCase {
                 }
                 if (typeCategory.isValue()) {
                     if(Record.class.isAssignableFrom(rawClass)) {
-                        return RecordParser.parse(
+                        return new RecordParser<>(
                                 rawClass.asSubclass(Record.class), genericType, this
                         );
                     }
                     else {
-                        return ValueParser.parse(
+                        return new ValueParser<>(
                                 rawClass,
                                 genericType,
                                 this

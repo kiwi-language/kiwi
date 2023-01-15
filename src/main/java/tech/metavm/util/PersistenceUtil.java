@@ -3,7 +3,7 @@ package tech.metavm.util;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.instance.persistence.IdentityPO;
 
 import java.util.*;
 
@@ -97,10 +97,10 @@ public class PersistenceUtil {
     }
 
     public static Object writeValue(Object value) {
-        if(value instanceof ReferencePO referencePO) {
+        if(value instanceof IdentityPO identityPO) {
             return Map.of(
                     KEY_KIND, ValueKind.REF.code,
-                    KEY_VALUE, referencePO.id()
+                    KEY_VALUE, identityPO.id()
             );
         }
         else if(value instanceof InstanceArrayPO arrayPO) {
@@ -160,7 +160,7 @@ public class PersistenceUtil {
             ValueWrap wrap = new ValueWrap(map);
             ValueKind kind = ValueKind.getByCode(wrap.getIntRequired(KEY_KIND));
             return switch (kind) {
-                case REF ->  new ReferencePO(wrap.getLong(KEY_VALUE));
+                case REF ->  new IdentityPO(wrap.getLong(KEY_VALUE));
                 case ARRAY -> readArray(tenantId, wrap);
                 case INSTANCE -> readInstance(tenantId, wrap);
             };

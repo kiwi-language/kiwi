@@ -91,7 +91,7 @@
 //    }
 //
 //    @Override
-//    public IInstance getInstance(Field field) {
+//    public IInstance getInstance(Field indexItem) {
 //        return null;
 //    }
 //
@@ -101,7 +101,7 @@
 //    }
 //
 //    @Override
-//    public Object getRaw(Field field) {
+//    public Object getRaw(Field indexItem) {
 //        return null;
 //    }
 //
@@ -111,7 +111,7 @@
 //    }
 //
 //    @Override
-//    public String getString(Field field) {
+//    public String getString(Field indexItem) {
 //        return null;
 //    }
 //
@@ -122,7 +122,7 @@
 //    }
 //
 //    @Override
-//    public void set(Field field, Object value) {
+//    public void set(Field indexItem, Object value) {
 //
 //    }
 //
@@ -148,7 +148,7 @@
 //    }
 //
 //    @Override
-//    public InstanceArray getInstanceArray(Field field) {
+//    public InstanceArray getInstanceArray(Field indexItem) {
 //        return null;
 //    }
 //

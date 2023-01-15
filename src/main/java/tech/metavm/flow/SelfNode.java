@@ -13,7 +13,6 @@ public class SelfNode extends NodeRT<Void> {
 
     @Override
     protected void setParam(Void param, IEntityContext entityContext) {
-
     }
 
     @Override

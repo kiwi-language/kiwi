@@ -17,6 +17,6 @@ public interface InstanceSink {
 
     void initIds();
 
-    void addListener(InstanceSinkListener listener);
+    void addListener(InstanceIdInitListener listener);
 
 }

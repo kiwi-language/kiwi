@@ -3,21 +3,17 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Value;
-import tech.metavm.flow.ValueFactory;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.InstanceEvaluationContext;
-import tech.metavm.object.instance.query.TypeParsingContext;
-import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.InstanceUtils;
 
 @EntityType("校验约束")
-public class CheckConstraintRT extends ConstraintRT<CheckConstraintParam> {
+public class CheckConstraint extends Constraint<CheckConstraintParam> {
 
     @EntityField("条件")
     private Value condition;
 
-    public CheckConstraintRT(Value condition, ClassType type, String message) {
+    public CheckConstraint(Value condition, ClassType type, String message) {
         super(ConstraintKind.CHECK, type, message);
         setCondition(condition);
     }

@@ -1,49 +1,56 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.TypeFactory;
-import tech.metavm.util.ReflectUtils;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.List;
 
 import static tech.metavm.util.ReflectUtils.getMetaTypeName;
 
-public class EnumParser<T extends Enum<?>> {
-
-    public static <T extends Enum<?>> EnumDef<T> parse(Class<T> enumType, ValueDef<Enum<?>> parentDef, DefMap defMap) {
-        return new EnumParser<>(enumType, parentDef, defMap).parse();
-    }
+public class EnumParser<T extends Enum<?>> implements DefParser<T, Instance, EnumDef<T>> {
 
     private final Class<T> enumType;
-    private final ValueDef<Enum<?>> parentDef;
+    private final ValueDef<Enum<?>> superDef;
     private EnumDef<T> enumDef;
     private final DefMap defMap;
     private final TypeFactory typeFactory;
 
-    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> parentDef, DefMap defMap) {
+    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefMap defMap) {
         this.enumType = enumType;
-        this.parentDef = parentDef;
+        this.superDef = superDef;
         this.defMap = defMap;
          typeFactory = new TypeFactory(defMap::getType);
     }
 
-    public EnumDef<T> parse() {
+    private void parseEnumConstant(T value, EnumDef<T> enumDef) {
+        new EnumConstantDef<>(value, enumDef);
+    }
+
+    @Override
+    public EnumDef<T> create() {
         enumDef =  new EnumDef<>(
                 enumType,
-                parentDef,
+                superDef,
                 typeFactory.createEnum(
                         getMetaTypeName(enumType),
                         enumType.getSimpleName(),
                         false,
-                        parentDef.getType()
+                        superDef.getType()
                 )
         );
-        Arrays.stream(enumType.getEnumConstants()).forEach(ec -> parseEnumConstant(ec, enumDef));
-        defMap.addDef(enumDef);
         return enumDef;
     }
 
-    private void parseEnumConstant(T value, EnumDef<T> enumDef) {
-        new EnumConstantDef<>(value, enumDef);
+    @Override
+    public void initialize() {
+        Arrays.stream(enumType.getEnumConstants()).forEach(ec -> parseEnumConstant(ec, enumDef));
+    }
+
+    @Override
+    public List<Type> getDependencyTypes() {
+        return List.of();
     }
 
 }

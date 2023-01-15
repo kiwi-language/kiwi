@@ -21,6 +21,7 @@ public class SQLStatements {
                       `tenant_id` bigint NOT NULL COMMENT '租户ID',
                       `type_id` bigint NOT NULL COMMENT '类型ID',
                       `length` int NOT NULL DEFAULT '0',
+                      `element_as_child` bool NOT NULL default false,
                       `elements` text NOT NULL,
                       version bigint not null default 0,
                       sync_version bigint not null default 0,
@@ -28,17 +29,31 @@ public class SQLStatements {
                       PRIMARY KEY (`id`)
                 )""";
 
-    public static final String CREATE_INDEX_ITEM = """
-            CREATE TABLE `index_item` (
-              `tenant_id` bigint NOT NULL,
-              `constraint_id` bigint NOT NULL,
-              `column1` varchar(64) DEFAULT NULL,
-              `column2` varchar(64) DEFAULT NULL,
-              `column3` varchar(64) DEFAULT NULL,
-              `instance_id` bigint NOT NULL,
-              `column4` varchar(64) DEFAULT NULL,
-              `column5` varchar(64) DEFAULT NULL,
-              UNIQUE KEY `tenant_id` (`tenant_id`,`constraint_id`,`column1`,`column2`,`column3`,`instance_id`)
-            )""";
+    public static final String CREATE_INDEX_ENTRY = """
+            CREATE TABLE `index_entry` (
+                  `tenant_id` bigint NOT NULL,
+                  `constraint_id` bigint NOT NULL,
+                  `column0` varchar(64) DEFAULT NULL,
+                  `column1` varchar(64) DEFAULT NULL,
+                  `column2` varchar(64) DEFAULT NULL,
+                  `column3` varchar(64) DEFAULT NULL,
+                  `column4` varchar(64) DEFAULT NULL,
+                  `column_x_present` bool default false,
+                  `column_x` bigint not null default 0,
+                  `instance_id` bigint NOT NULL
+            );""";
+
+    public static final String CREATE_REFERENCE = """
+            CREATE TABLE `reference` (
+                                         `id` bigint NOT NULL AUTO_INCREMENT,
+                                         `tenant_id` bigint NOT NULL,
+                                         `field_id` bigint NOT NULL,
+                                         `source_id` bigint NOT NULL,
+                                         `target_id` bigint NOT NULL,
+                                         `kind` int NOT NULL,
+                                         PRIMARY KEY (`id`),
+                                         UNIQUE KEY `unique_idx` (`tenant_id`,`field_id`,`target_id`,`source_id`)
+            )
+            """;
 
 }

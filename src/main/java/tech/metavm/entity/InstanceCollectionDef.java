@@ -9,12 +9,13 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.RuntimeGeneric;
+import tech.metavm.util.Table;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.Map;
 
-public class InstanceCollectionDef<E extends Instance, C extends Collection<E>> extends ModelDef<C, ArrayInstance> {
+public class InstanceCollectionDef<E extends Instance, C extends Table<E>> extends ModelDef<C, ArrayInstance> {
 
     public static InstanceCollectionDef<?,?> create(Class<?> javaClass, java.lang.reflect.Type javaType,
                                                     Class<?> elementClass, Type type) {
@@ -43,7 +44,7 @@ public class InstanceCollectionDef<E extends Instance, C extends Collection<E>> 
     private final Type type;
     private final Class<E> elementClass;
 
-    private InstanceCollectionDef(Class<C> javaClass, java.lang.reflect.Type javaType,
+    public InstanceCollectionDef(Class<C> javaClass, java.lang.reflect.Type javaType,
                                     Class<E> elementClass, Type type) {
         super(javaClass, javaType, ArrayInstance.class);
         this.elementClass = elementClass;
@@ -57,6 +58,7 @@ public class InstanceCollectionDef<E extends Instance, C extends Collection<E>> 
 
     @Override
     public void initModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
+        model.setElementAsChild(instance.isElementAsChild());
         for (Instance element : instance) {
             model.add(elementClass.cast(element));
         }
@@ -65,6 +67,7 @@ public class InstanceCollectionDef<E extends Instance, C extends Collection<E>> 
     @Override
     public void updateModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
         model.clear();
+        model.setElementAsChild(instance.isElementAsChild());
         initModel(model, instance, modelInstanceMap);
     }
 
@@ -89,12 +92,14 @@ public class InstanceCollectionDef<E extends Instance, C extends Collection<E>> 
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
+        instance.setElementAsChild(model.isElementAsChild());
         instance.addAll(model);
     }
 
     @Override
     public void updateInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
         instance.clear();
+        instance.setElementAsChild(instance.isElementAsChild());
         instance.addAll(model);
     }
 

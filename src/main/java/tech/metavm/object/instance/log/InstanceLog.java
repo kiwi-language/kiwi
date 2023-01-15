@@ -47,6 +47,10 @@ public class InstanceLog {
         return new VersionPO(tenantId, id, version);
     }
 
+    public boolean isInsert() {
+        return changeType == ChangeType.INSERT;
+    }
+
     public boolean isInsertOrUpdate() {
         return changeType == ChangeType.INSERT || changeType == ChangeType.UPDATE;
     }

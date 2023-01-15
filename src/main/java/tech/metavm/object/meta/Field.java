@@ -10,7 +10,7 @@ import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
 
-import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,7 +22,7 @@ public class Field extends Entity {
 
     public static final IndexDef<Field> INDEX_TYPE_ID = new IndexDef<>(Field.class, false,"type");
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField("所属类型")
     private final ClassType declaringType;
@@ -35,9 +35,9 @@ public class Field extends Entity {
     @EntityField("列")
     private final Column column;
     @EntityField("类型")
-    private Type type;
+    private final Type type;
     @EntityField("是否从对象字段")
-    private boolean isChildField;
+    private final boolean isChildField;
 //    @EntityField("状态")
 //    private MetadataState state;
 
@@ -62,7 +62,7 @@ public class Field extends Entity {
         this.asTitle = asTitle;
         setName(name);
         this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
-                "Fail to allocate a column for field " + this);
+                "Fail to allocate a column for indexItem " + this);
         setDefaultValue(defaultValue);
         declaringType.addField(this);
         this.isChildField = isChildField;
@@ -124,14 +124,14 @@ public class Field extends Entity {
 //    }
 
     public boolean isReady() {
-        return  true;
+        return true;
     }
 
     public void setAccess(Access access) {
         this.access = access;
     }
 
-    public void setDefaultValue(@Nullable Instance defaultValue) {
+    public void setDefaultValue(Instance defaultValue) {
         this.defaultValue = defaultValue;
     }
 
@@ -139,17 +139,24 @@ public class Field extends Entity {
         if(unique && isArray()) {
             throw BusinessException.invalidField(this, "数组不支持唯一性约束");
         }
-        IndexConstraintRT constraint = declaringType.getUniqueConstraint(List.of(this));
+        Index constraint = declaringType.getUniqueConstraint(List.of(this));
         if(constraint != null && !unique) {
-            declaringType.removeConstraint(constraint.getId());
+            declaringType.removeConstraint(constraint);
         }
         if(constraint == null && unique) {
             ConstraintFactory.newUniqueConstraint(List.of(this));
         }
     }
 
-    public void remove() {
+    public List<Object> onRemove() {
+        List<Index> fieldIndices = declaringType.getFieldIndices(this);
+        List<Object> cascades = new ArrayList<>();
+        for (Index fieldIndex : fieldIndices) {
+            declaringType.removeConstraint(fieldIndex);
+            cascades.add(fieldIndex);
+        }
         declaringType.removeField(this);
+        return cascades;
     }
 
     public boolean isEnum() {
@@ -270,7 +277,7 @@ public class Field extends Entity {
                 id,
                 name,
                 access.code(),
-                NncUtils.get(defaultValue, Instance::toFieldValueDTO),
+                defaultValue.toFieldValueDTO(),
                 isUnique(),
                 asTitle,
                 declaringType.getId(),
@@ -286,7 +293,7 @@ public class Field extends Entity {
 
     @Override
     public String toString() {
-        return "Field " + getName() + ":" + type.getName();
+        return "Field " + declaringType.getName() + "." + getName() + ":" + type.getName();
     }
 
 }

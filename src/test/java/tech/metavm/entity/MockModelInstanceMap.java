@@ -38,6 +38,11 @@ public class MockModelInstanceMap implements ModelInstanceMap {
 
     @Override
     public <T> T getModel(Class<T> klass, Instance instance) {
+        return getModel(klass, instance, null);
+    }
+
+    @Override
+    public <T> T getModel(Class<T> klass, Instance instance, ModelDef<?,?> def) {
         if(parent != null && parent.containsInstance(instance)) {
             return parent.getModel(klass, instance);
         }
@@ -46,7 +51,7 @@ public class MockModelInstanceMap implements ModelInstanceMap {
             return klass.cast(existing);
         }
         else {
-            Object ref = createRef(instance);
+            Object ref = createRef(instance, def);
             addMapping(ref, instance);
             return klass.cast(ref);
         }
@@ -57,8 +62,11 @@ public class MockModelInstanceMap implements ModelInstanceMap {
         instance2model.put(instance, model);
     }
 
-    private Object createRef(Instance instance) {
-        Class<?> entityType = defMap.getDef(instance.getType()).getJavaClass();
+    private Object createRef(Instance instance, ModelDef<?,?> def) {
+        if(def == null) {
+            def = defMap.getDef(instance.getType());
+        }
+        Class<?> entityType = def.getJavaClass();
         NncUtils.requireNonNull(entityType);
         if(Modifier.isFinal(entityType.getModifiers())) {
             return defMap.getDef(instance.getType()).createModelHelper(instance, this);
@@ -74,8 +82,7 @@ public class MockModelInstanceMap implements ModelInstanceMap {
         return EntityProxyFactory.getProxy(
                 entityType,
                 instance.getId(),
-                model -> initModel(model, instance),
-                k -> def.createModelProxy(k)
+                k -> def.createModelProxy(k), model -> initModel(model, instance)
         );
     }
 

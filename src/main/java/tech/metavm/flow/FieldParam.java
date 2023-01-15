@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -18,7 +19,7 @@ import java.util.Objects;
 public class FieldParam extends Entity {
     @EntityField("字段")
     private final Field field;
-    @EntityField("值")
+    @ChildEntity("值")
     private final Value value;
 
     public FieldParam(Field field, ValueDTO valueDTO, ParsingContext parsingContext) {

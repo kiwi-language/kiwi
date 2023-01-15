@@ -1,23 +1,30 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.*;
+import tech.metavm.job.JobSchedulerStatus;
+import tech.metavm.job.JobSignal;
 import tech.metavm.mocks.*;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.Index;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
+import static tech.metavm.util.Constants.ROOT_TENANT_ID;
 import static tech.metavm.util.TestConstants.TENANT_ID;
 
 public class MockRegistry {
 
     private static EntityIdProvider ID_PROVIDER;
+    private static MemInstanceStore INSTANCE_STORE;
     private static MemInstanceContext INSTANCE_CONTEXT;
     private static DefContext DEF_CONTEXT;
     private static ModelInstanceMap MODEL_INSTANCE_MAP;
+    public static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
 
     private static String getFieldName(Class<?> javaType, String javaFieldName) {
         java.lang.reflect.Field javaField = ReflectUtils.getField(javaType, javaFieldName);
@@ -25,22 +32,51 @@ public class MockRegistry {
     }
 
     public static void setUp(EntityIdProvider idProvider) {
+        setUp(idProvider, new MemInstanceStore());
+    }
+
+    public static void setUp(EntityIdProvider idProvider, MemInstanceStore instanceStore) {
         NncUtils.requireNonNull(idProvider, "idProvider required");
         ID_PROVIDER = idProvider;
+        INSTANCE_STORE = instanceStore;
         INSTANCE_CONTEXT = new MemInstanceContext(
-                TENANT_ID, idProvider, new MemInstanceStore(), null
+                ROOT_TENANT_ID, idProvider, instanceStore, null
         );
         DEF_CONTEXT = new DefContext(o -> null, INSTANCE_CONTEXT);
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
         ReflectUtils.getModelClasses().forEach(DEF_CONTEXT::getDef);
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
-        initIds();
-        ContextUtil.setContextInfo(TENANT_ID, 1L);
+        DEF_CONTEXT.finish();
+        ContextUtil.setContextInfo(TENANT_ID, TENANT_ID);
+
+        initJobScheduler();
+    }
+
+    private static void initJobScheduler() {
+        IEntityContext rootContext = new InstanceContext(
+                ROOT_TENANT_ID,
+                INSTANCE_STORE,
+                ID_PROVIDER,
+                EXECUTOR,
+                false,
+                List.of(
+                        new CheckConstraintPlugin(),
+                        new IndexConstraintPlugin(INSTANCE_STORE.getIndexEntryMapper())
+                ),
+                INSTANCE_CONTEXT
+        ).getEntityContext();
+        rootContext.bind(new JobSchedulerStatus());
+        rootContext.bind(new JobSignal(TENANT_ID));
+        rootContext.finish();
     }
 
     public static void initIds() {
         DEF_CONTEXT.initIds();
+    }
+
+    public static NullInstance getNullInstance() {
+        return new NullInstance((PrimitiveType) getType(Null.class));
     }
 
     public static ClassInstance getFooInstance() {
@@ -178,15 +214,24 @@ public class MockRegistry {
         return getDef(model.getClass()).createInstanceHelper(model, modelInstanceMap);
     }
 
-    public static Type getType(Class<?> javaType) {
-        javaType = EntityUtils.getRealType(javaType);
+    public static Type getType(Class<?> javaClass) {
+        javaClass = EntityUtils.getRealType(javaClass);
+        return DEF_CONTEXT.getType(javaClass);
+    }
+
+    public static Type getType(java.lang.reflect.Type javaType) {
         return DEF_CONTEXT.getType(javaType);
     }
 
     public static ClassType getClassType(Class<?> javaType) {
         return (ClassType) getType(javaType);
     }
-    
+
+    public static ArrayType getArrayTypeByElementClass(Class<?> elementClass) {
+        ParameterizedType parameterizedType = ParameterizedTypeImpl.create(Table.class, elementClass);
+        return (ArrayType) getType(parameterizedType);
+    }
+
     public static Field getField(Class<?> javaType, String javaFieldName) {
         return DEF_CONTEXT.getField(javaType, javaFieldName);
     }
@@ -224,10 +269,10 @@ public class MockRegistry {
         }
     }
 
-    public static IndexConstraintRT getUniqueConstraint(IndexDef<?> def) {
+    public static Index getIndexConstraint(IndexDef<?> def) {
         EntityDef<?> entityDef = (EntityDef<?>) getDef(def.getType());
         initIds();
-        return entityDef.getUniqueConstraintDef(def).getUniqueConstraint();
+        return entityDef.getIndexConstraintDef(def).getIndexConstraint();
     }
 
     public static AnyType getObjectType() {

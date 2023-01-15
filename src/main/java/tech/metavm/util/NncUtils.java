@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.Identifiable;
@@ -223,6 +225,24 @@ public class NncUtils {
         return source.stream().filter(filter).collect(Collectors.toList());
     }
 
+    public static <T> Set<T> filterUnique(Collection<T> source, Predicate<T> filter) {
+        if(source == null) {
+            return Set.of();
+        }
+        return source.stream().filter(filter).collect(Collectors.toSet());
+    }
+
+    public static <T> List<T> filterAndSort(Collection<T> source, Predicate<T> filter, Comparator<T> comparator) {
+        return filterAndSortAndLimit(source, filter, comparator, Long.MAX_VALUE);
+    }
+
+    public static <T> List<T> filterAndSortAndLimit(Collection<T> source, Predicate<T> filter, Comparator<T> comparator, long limit) {
+        if(source == null) {
+            source = List.of();
+        }
+        return source.stream().filter(filter).sorted(comparator).limit(limit).collect(Collectors.toList());
+    }
+
     public static List<Long> range(long start, long end) {
         return LongStream.range(start, end).boxed().collect(Collectors.toList());
     }
@@ -239,20 +259,20 @@ public class NncUtils {
         return merged;
     }
 
-    public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2, Set<? extends T> coll3) {
+    public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2) {
         if(coll1 == null) {
             coll1 = Set.of();
         }
         if(coll2 == null) {
             coll2 = Set.of();
         }
-        if(coll3 == null) {
-            coll3 = Set.of();
-        }
         Set<T> merged = new HashSet<>(coll1);
         merged.addAll(coll2);
-        merged.addAll(coll3);
         return merged;
+    }
+
+    public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2, Set<? extends T> coll3) {
+        return mergeSets(mergeSets(coll1, coll2), coll3);
     }
 
     @SuppressWarnings("unused")
@@ -737,6 +757,23 @@ public class NncUtils {
         return t != null ? mapping.apply(t) : null;
     }
 
+    public static <T,R> R getOrElse(@Nullable T t, Function<T, R> mapping, R defaultValue) {
+        return t != null ? mapping.apply(t) : defaultValue;
+    }
+
+    public static void afterCommit(Runnable action) {
+        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        }
+        else {
+            action.run();
+        }
+    }
+
     public static <T> boolean listEquals(List<T> list1, List<T> list2) {
         if(list1.size() != list2.size()) {
             return false;
@@ -764,6 +801,18 @@ public class NncUtils {
 
     public static <T> void invokeIfNotNull(T t, Consumer<T> action) {
         if(t != null) {
+            action.accept(t);
+        }
+    }
+
+    public static <T> void invokeIf(T t, Predicate<T> test, Consumer<T> action) {
+        if(test.test(t)) {
+            action.accept(t);
+        }
+    }
+
+    public static <T> void invokeIfNot(T t, Predicate<T> test, Consumer<T> action) {
+        if(!test.test(t)) {
             action.accept(t);
         }
     }
@@ -832,6 +881,10 @@ public class NncUtils {
         if(!value) {
             throw exceptionSupplier.get();
         }
+    }
+
+    public static void requireEquals(Object first, Object second) {
+        requireEquals(first, second, second + " is not equal to the expected value " + first);
     }
 
     public static void requireEquals(Object first, Object second, String message) {

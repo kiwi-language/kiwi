@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -16,7 +17,7 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
         return node;
     }
 
-    @EntityField("对象")
+    @ChildEntity("对象")
     private Value objectId;
 
     public DeleteObjectNode(NodeDTO nodeDTO, ScopeRT scope) {

@@ -35,7 +35,20 @@ public class FieldDef implements IFieldDef {
 
     @Override
     public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        return convertValue(instance.get(field), modelInstanceMap);
+        Instance fieldValue = instance.get(field);
+        if(fieldValue instanceof PrimitiveInstance primitiveInstance) {
+            if(primitiveInstance.isNull()) {
+                return null;
+            }
+            if(primitiveInstance instanceof PasswordInstance passwordInstance) {
+                return new Password(passwordInstance);
+            }
+            return primitiveInstance.getValue();
+        }
+        if(targetDef instanceof InstanceDef<?> || targetDef instanceof InstanceCollectionDef<?,?>) {
+            return modelInstanceMap.getModel(Object.class, fieldValue, targetDef);
+        }
+        return modelInstanceMap.getModel(Object.class, fieldValue);
     }
 
     @Override
@@ -59,21 +72,6 @@ public class FieldDef implements IFieldDef {
     @SuppressWarnings("unused")
     public PojoDef<?> getDeclaringTypeDef() {
         return declaringTypeDef;
-    }
-
-    private Object convertValue(Instance value, ModelInstanceMap modelInstanceMap) {
-        if(value instanceof PrimitiveInstance primitiveInstance) {
-            if(primitiveInstance.isNull()) {
-                return null;
-            }
-            if(primitiveInstance instanceof PasswordInstance passwordInstance) {
-                return new Password(passwordInstance);
-            }
-            return primitiveInstance.getValue();
-        }
-        else {
-            return modelInstanceMap.getModel(Object.class, value);
-        }
     }
 
     private String fieldName() {

@@ -7,6 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.infra.IdService;
+import tech.metavm.job.JobSignal;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.tenant.persistence.TenantPO;
@@ -71,11 +72,12 @@ public class TenantManager {
     @Transactional
     public long create(TenantCreateRequest request) {
         setupContextInfo(-1L);
-        IEntityContext globalContext = newContext();
+        IEntityContext rootContext = newContext();
         long tenantId = idService.allocate(-1L, ModelDefRegistry.getType(TenantRT.class));
         TenantPO tenantPO = new TenantPO(tenantId, request.name());
         tenantMapper.insert(tenantPO);
-        globalContext.finish();
+        rootContext.bind(new JobSignal(tenantId));
+        rootContext.finish();
 
         setupContextInfo(tenantId);
         IEntityContext context = newContext();
@@ -108,12 +110,13 @@ public class TenantManager {
         IEntityContext context = newContext();
         List<Long> userIds = getInstanceIds(tenantId, getTypeId(UserRT.class));
         for (Long userId : userIds) {
-            context.getEntity(UserRT.class, userId).remove();
+            context.remove(context.getEntity(UserRT.class, userId));
         }
         List<Long> roleIds = getInstanceIds(tenantId, getTypeId(RoleRT.class));
         for (Long roleId : roleIds) {
-            context.getEntity(RoleRT.class, roleId).remove();
+            context.remove(context.getEntity(RoleRT.class, roleId));
         }
+        context.remove(context.getByType(JobSignal.class, null, 1).get(0));
         context.finish();
     }
 

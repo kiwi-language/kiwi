@@ -104,7 +104,6 @@ public class FlowManager {
     public void delete(long id) {
         IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, id);
-        flow.remove();
         context.remove(flow);
         context.finish();
     }
@@ -244,10 +243,7 @@ public class FlowManager {
         if(node == null) {
             return;
         }
-        node.remove();
-        if(node instanceof BranchNode branchNode) {
-            branchNode.getBranches().forEach(Branch::remove);
-        }
+        context.remove(node);
         context.finish();
     }
 
@@ -352,7 +348,7 @@ public class FlowManager {
             if(branch == null) {
                 throw BusinessException.branchNotFound(branchId);
             }
-            branch.remove();
+            context.remove(branch);
             context.finish();
         }
         else {

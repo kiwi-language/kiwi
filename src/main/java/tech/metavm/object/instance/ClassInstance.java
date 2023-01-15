@@ -1,8 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.NoProxy;
-import tech.metavm.object.instance.persistence.IndexItemPO;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.instance.rest.InstanceFieldValueDTO;
@@ -10,7 +9,7 @@ import tech.metavm.object.instance.rest.ClassInstanceParamDTO;
 import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.IndexConstraintRT;
+import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 
 import java.util.*;
@@ -63,8 +62,8 @@ public class ClassInstance extends Instance {
         }
     }
 
-    public List<IndexItemPO> getUniqueKeys(long tenantId) {
-        List<IndexConstraintRT> uniqueConstraints = type.getConstraints(IndexConstraintRT.class);
+    public List<IndexEntryPO> getUniqueKeys(long tenantId) {
+        List<Index> uniqueConstraints = type.getConstraints(Index.class);
         return NncUtils.map(
                 uniqueConstraints,
                 c -> c.getKey(tenantId,this)
@@ -141,6 +140,32 @@ public class ClassInstance extends Instance {
         return field(field).getValue();
     }
 
+    @Override
+    public boolean isChild(Instance instance) {
+        for (InstanceField field : fields) {
+            if(field.getField().isChildField()) {
+                Instance fieldValue = field.getValue();
+                if(fieldValue == instance || fieldValue.isChild(instance)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public Set<Instance> getChildren() {
+        Set<Instance> children = new IdentitySet<>();
+        for (InstanceField field : fields) {
+            if(field.getField().isChildField()) {
+                Instance fieldValue = field.getValue();
+                if(fieldValue.isNotNull()) {
+                    children.add(fieldValue);
+                }
+            }
+        }
+        return children;
+    }
+
     public ClassInstance getClassInstance(Field field) {
         return (ClassInstance) field(field).getValue();
     }
@@ -167,7 +192,7 @@ public class ClassInstance extends Instance {
     }
 
 //    public void setRawFieldValue(InstanceFieldDTO fieldValue) {
-//        field(fieldValue.fieldId()).set(fieldValue);
+//        indexItem(fieldValue.fieldId()).set(fieldValue);
 //    }
 
     public void set(Field field, Instance value) {
@@ -221,10 +246,6 @@ public class ClassInstance extends Instance {
         return field(field).getValue();
     }
 
-    public String getIndexValue(Field field) {
-        return IndexKeyPO.getIndexColumn(get(field));
-    }
-
     public Instance get(long fieldId) {
         return get(type.getField(fieldId));
     }
@@ -232,7 +253,7 @@ public class ClassInstance extends Instance {
     protected InstanceField field(Field field) {
         return NncUtils.requireNonNull(
                 fields.get(InstanceField::getField, field),
-                "Can not find instance field for field '" + field + "'"
+                "Can not find instance indexItem for indexItem '" + field + "'"
         );
     }
 
@@ -251,11 +272,11 @@ public class ClassInstance extends Instance {
 
 //    public void update(InstanceDTO update) {
 //        for (InstanceFieldDTO fieldUpdate : update.fields()) {
-//            InstanceField field = field(fieldUpdate.fieldId());
-//            if(field == null) {
+//            InstanceField indexItem = indexItem(fieldUpdate.fieldId());
+//            if(indexItem == null) {
 //                throw BusinessException.fieldNotFound(fieldUpdate.fieldId());
 //            }
-//            field.set(fieldUpdate);
+//            indexItem.set(fieldUpdate);
 //        }
 //    }
 
@@ -313,7 +334,7 @@ public class ClassInstance extends Instance {
             return toPO(tenantId, visited);
         }
         else {
-            return toReferencePO();
+            return toIdentityPO();
         }
     }
 

@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -13,22 +14,24 @@ import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("流程")
 public class FlowRT extends Entity {
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField("所属类型")
     private final ClassType type;
-    @EntityField("根流程范围")
+    @ChildEntity("根流程范围")
     private final ScopeRT rootScope;
-    @EntityField("输入类型")
+    @ChildEntity("输入类型")
     private final ClassType inputType;
-    @EntityField("输出类型")
+    @ChildEntity("输出类型")
     private final ClassType outputType;
 
     private transient Table<ScopeRT> scopes;
@@ -156,17 +159,6 @@ public class FlowRT extends Entity {
     void removeNode(NodeRT<?> node) {
         nodes().remove(node);
         version++;
-    }
-
-    @Override
-    public void remove() {
-        scopes().forEach(ScopeRT::remove);
-        if(inputType.isAnonymous()) {
-            inputType.remove();
-        }
-        if(outputType.isAnonymous()) {
-            outputType.remove();
-        }
     }
 
     public NodeRT<?> getRootNode() {

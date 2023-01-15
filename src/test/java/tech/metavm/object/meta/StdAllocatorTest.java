@@ -27,10 +27,10 @@ public class StdAllocatorTest extends TestCase {
         List<Long> ids = allocator.allocate(3);
         allocator.putId(ClassType.class.getName(), ids.get(0));
         allocator.putId(Field.class.getName(), ids.get(1));
-        allocator.putId(IndexConstraintRT.class.getName(), ids.get(2));
+        allocator.putId(Index.class.getName(), ids.get(2));
         long typeId = allocator.getId(ClassType.class.getName());
         long fieldId = allocator.getId(Field.class.getName());
-        long uniqueConstraintId = allocator.getId(IndexConstraintRT.class.getName());
+        long uniqueConstraintId = allocator.getId(Index.class.getName());
         Assert.assertEquals((long) ids.get(0), typeId);
         Assert.assertEquals((long) ids.get(1), fieldId);
         Assert.assertEquals((long) ids.get(2), uniqueConstraintId);

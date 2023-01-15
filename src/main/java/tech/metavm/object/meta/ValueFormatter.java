@@ -169,7 +169,7 @@ public class ValueFormatter {
 //            context.bind(arrayInstance);
 //            return arrayInstance;
 //        }
-//        throw new InternalException("Can not parse field value '" + rawValue + "'");
+//        throw new InternalException("Can not parse indexItem value '" + rawValue + "'");
     }
 
     public static Object format(Instance value) {

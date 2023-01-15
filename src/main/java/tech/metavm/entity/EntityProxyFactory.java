@@ -19,6 +19,7 @@ public class EntityProxyFactory {
     private static final Map<Class<?>, Class<?>> PROXY_CLASS_MAP = new ConcurrentHashMap<>();
     private static final Field FIELD_PERSISTED = ReflectUtils.getField(Entity.class, "persisted");
     private static final Field FIELD_ID = ReflectUtils.getField(Entity.class, "id");
+    private static final Method HASHCODE_METHOD = ReflectUtils.getMethod(Object.class, "hashCode");
 
     public static <T> T getProxy(TypeReference<T> typeRef, Consumer<T> modelSupplier) {
         return getProxy(typeRef.getType(), null, modelSupplier);
@@ -31,20 +32,20 @@ public class EntityProxyFactory {
     public static <T> T getProxy(Class<T> type,
                                  Long id,
                                  Consumer<T> modelSupplier) {
-        return getProxy(type, id, modelSupplier, ReflectUtils::allocateInstance);
+        return getProxy(type, id, ReflectUtils::allocateInstance, modelSupplier);
     }
 
     public static <T> T getProxy(TypeReference<T> type,
                                  Long id,
                                  Consumer<T> initializer,
                                  Function<Class<? extends T>, T> constructor) {
-        return getProxy(type.getType(), id, initializer, constructor);
+        return getProxy(type.getType(), id, constructor, initializer);
     }
 
     public static <T> T getProxy(Class<T> type,
                                  Long id,
-                                 Consumer<T> initializer,
-                                 Function<Class<? extends T>, T> constructor) {
+                                 Function<Class<? extends T>, T> constructor,
+                                 Consumer<T> initializer) {
         Class<? extends T> proxyClass = getProxyClass(type).asSubclass(type);
         try {
             ProxyObject proxyInstance =  (ProxyObject) constructor.apply(proxyClass);
@@ -82,7 +83,12 @@ public class EntityProxyFactory {
     }
 
     private static boolean shouldIntercept(Method method) {
-        return !isGetIdMethod(method) && !isInitId(method) && !method.isAnnotationPresent(NoProxy.class);
+        return !isGetIdMethod(method) && !isInitId(method) && !method.isAnnotationPresent(NoProxy.class)
+                && !isObjectMethod(method);
+    }
+
+    private static boolean isObjectMethod(Method method) {
+        return method.getDeclaringClass() == Object.class;
     }
 
     private static boolean isGetIdMethod(Method method) {

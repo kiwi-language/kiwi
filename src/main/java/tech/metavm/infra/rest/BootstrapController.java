@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.dto.Result;
 import tech.metavm.entity.Bootstrap;
 import tech.metavm.infra.RegionManager;
+import tech.metavm.job.JobScheduler;
 
 @RestController
 @RequestMapping("/bootstrap")
@@ -15,9 +16,20 @@ public class BootstrapController {
 
     private final RegionManager regionManager;
 
-    public BootstrapController(Bootstrap bootstrap, RegionManager regionManager) {
+    private final JobScheduler jobScheduler;
+
+    public BootstrapController(Bootstrap bootstrap, RegionManager regionManager, JobScheduler jobScheduler) {
         this.bootstrap = bootstrap;
         this.regionManager = regionManager;
+        this.jobScheduler = jobScheduler;
+    }
+
+    @PostMapping
+    public Result<Void> boot() {
+        initRegions();
+        save();
+        initScheduler();
+        return Result.success(null);
     }
 
     @PostMapping("/save")
@@ -29,6 +41,12 @@ public class BootstrapController {
     @PostMapping("/region")
     public Result<Void> initRegions() {
         regionManager.initialize();
+        return Result.success(null);
+    }
+
+    @PostMapping("/scheduler")
+    public Result<Void> initScheduler() {
+        jobScheduler.createSchedulerStatus();
         return Result.success(null);
     }
 

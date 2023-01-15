@@ -1,12 +1,12 @@
 package tech.metavm.job;
 
-import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 //@EntityType("字段删除任务")
@@ -15,6 +15,7 @@ public class FieldRemovalJob {
     public static final long BATCH_SIZE = 100;
 
     private final Field field;
+    @Nullable
     private Instance cursor;
 
     public FieldRemovalJob(Field field) {

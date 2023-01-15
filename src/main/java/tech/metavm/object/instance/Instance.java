@@ -2,18 +2,19 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.IdInitializing;
 import tech.metavm.entity.NoProxy;
+import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.NullType;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Instance implements IdInitializing {
@@ -22,6 +23,9 @@ public abstract class Instance implements IdInitializing {
     private final Type type;
     private long version;
     private long syncVersion;
+
+    private transient final Set<ReferenceRT> outgoingReferences = new HashSet<>();
+    private transient final Set<ReferenceRT> incomingReferences = new HashSet<>();
 
     public Instance(Type type) {
         this.type = type;
@@ -52,6 +56,11 @@ public abstract class Instance implements IdInitializing {
     }
 
     @NoProxy
+    public boolean isNotNull() {
+        return !isNull();
+    }
+
+    @NoProxy
     public boolean isPassword() {
         return type.isPassword();
     }
@@ -62,8 +71,8 @@ public abstract class Instance implements IdInitializing {
     }
 
     @NoProxy
-    public final ReferencePO toReferencePO() {
-        return new ReferencePO(NncUtils.requireNonNull(getId()));
+    public final IdentityPO toIdentityPO() {
+        return new IdentityPO(NncUtils.requireNonNull(getId()));
     }
 
     public abstract Object toColumnValue(long tenantId, IdentitySet<Instance> visited);
@@ -116,6 +125,56 @@ public abstract class Instance implements IdInitializing {
         return syncVersion;
     }
 
+    public boolean isChild(Instance instance) {
+        return false;
+    }
+
+    public Set<Instance> getChildren() {
+        return Set.of();
+    }
+
+    @NoProxy
+    public void addOutgoingReference(ReferenceRT reference) {
+        if(!outgoingReferences.add(reference)) {
+            throw new InternalException(reference + " already exists");
+        }
+    }
+
+    @NoProxy
+    public void removeOutgoingReference(ReferenceRT reference) {
+        if(!outgoingReferences.remove(reference)) {
+            throw new InternalException(reference + " does not exist");
+        }
+    }
+
+    @NoProxy
+    public void addIncomingReference(ReferenceRT reference) {
+        if(!incomingReferences.add(reference)) {
+            throw new InternalException(reference + " already exists");
+        }
+    }
+
+    @NoProxy
+    public void removeIncomingReference(ReferenceRT reference) {
+        if(!incomingReferences.remove(reference)) {
+            throw new InternalException(reference + " does not exist");
+        }
+    }
+
+    @NoProxy
+    public Set<ReferenceRT> getIncomingReferences() {
+        return Collections.unmodifiableSet(incomingReferences);
+    }
+
+    @NoProxy
+    public Set<ReferenceRT> getOutgoingReferences() {
+        return Collections.unmodifiableSet(outgoingReferences);
+    }
+
+    public ReferenceRT getOutgoingReference(Instance target, Field field) {
+        return NncUtils.findRequired(outgoingReferences, ref -> ref.target() == target && ref.field() == field);
+    }
+
     protected InstanceDTO toDTO(Object param) {
         return new InstanceDTO(
                 id,
@@ -133,6 +192,10 @@ public abstract class Instance implements IdInitializing {
     }
 
     public abstract String getTitle();
+
+    public String getDescription() {
+        return type.getName() + "/" + getTitle();
+    }
 
     protected abstract Object getParam();
 

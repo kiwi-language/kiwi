@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -21,9 +22,9 @@ public class ScopeRT extends Entity  {
     private final FlowRT flow;
     @EntityField("所属节点")
     @Nullable
-    private NodeRT<?> owner;
-    @EntityField("节点列表")
-    private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {});
+    private final NodeRT<?> owner;
+    @ChildEntity("节点列表")
+    private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {}, true);
 
     public ScopeRT(FlowRT flow) {
         this(flow, null);

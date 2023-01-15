@@ -21,6 +21,7 @@ public class ArrayType extends Type {
 
     public ArrayType(Type elementType, boolean ephemeral) {
         super(getArrayTypeName(elementType), false, ephemeral, TypeCategory.ARRAY);
+        setCode(elementType.getCode() + "[]");
         this.elementType = elementType;
     }
 

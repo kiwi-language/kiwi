@@ -26,29 +26,27 @@ public abstract class AbsClassType extends Type {
         return NncUtils.findRequired(getFields(), f -> f.getId() == fieldId);
     }
 
-    public IndexConstraintRT getUniqueConstraint(long constraintId) {
+    public Index getUniqueConstraint(long constraintId) {
         return NncUtils.findRequired(
-                getConstraints(IndexConstraintRT.class),
+                getConstraints(Index.class),
                 c -> Objects.equals(c.getId(), constraintId)
         );
     }
 
-    public IndexConstraintRT getUniqueConstraint(List<Field> fields) {
-        return find(getUniqueConstraints(), c -> c.getFields().equals(fields));
+    public Index getUniqueConstraint(List<Field> fields) {
+        return find(getUniqueConstraints(), c -> c.getTypeFields().equals(fields));
     }
 
-    public List<IndexConstraintRT> getUniqueConstraints() {
-        return getConstraints(IndexConstraintRT.class);
+    public List<Index> getUniqueConstraints() {
+        return getConstraints(Index.class);
     }
 
-    public abstract void addConstraint(ConstraintRT<?> constraint);
-
-    public abstract void removeConstraint(long id);
+    public abstract void addConstraint(Constraint<?> constraint);
 
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
         String fieldName = ReflectUtils.getMetaFieldName(javaField);
         return NncUtils.requireNonNull(getFieldByName(fieldName),
-                "Can not find field for java field " + javaField);
+                "Can not find indexItem for java indexItem " + javaField);
     }
 
     public abstract List<FlowRT> getFlows();
@@ -66,11 +64,11 @@ public abstract class AbsClassType extends Type {
     }
 
 
-    public List<ConstraintRT<?>> getConstraints() {
+    public List<Constraint<?>> getConstraints() {
         return List.of();
     }
 
-    public <T extends ConstraintRT<?>> List<T> getConstraints(Class<T> constraintType) {
+    public <T extends Constraint<?>> List<T> getConstraints(Class<T> constraintType) {
         return NncUtils.filterByType(getConstraints(), constraintType);
     }
 

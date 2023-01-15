@@ -17,6 +17,8 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
+import java.util.List;
+
 import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("节点")
@@ -129,7 +131,7 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     @Override
-    public void remove() {
+    public List<Object> onRemove() {
         if(this.predecessor != null) {
             this.predecessor.setSuccessor(this.successor);
         }
@@ -139,6 +141,7 @@ public abstract class NodeRT<P> extends Entity {
         this.predecessor = null;
         this.successor = null;
         scope.removeNode(this);
+        return List.of();
     }
 
     public void update(NodeDTO nodeDTO, IEntityContext entityContext) {

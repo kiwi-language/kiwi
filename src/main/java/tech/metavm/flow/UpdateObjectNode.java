@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -22,10 +23,10 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         return node;
     }
 
-    @EntityField("对象")
+    @ChildEntity("对象")
     private Value objectId;
-    @EntityField("更新字段")
-    private Table<UpdateField> fieldParams;
+    @ChildEntity("更新字段")
+    private final Table<UpdateField> fieldParams = new Table<>(UpdateField.class, true);
 
     public UpdateObjectNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
@@ -43,8 +44,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     protected void setParam(UpdateObjectParamDTO param, IEntityContext entityContext) {
         ParsingContext parsingContext = getParsingContext(entityContext);
         objectId = ValueFactory.getValue(param.objectId(), parsingContext);
-        fieldParams = new Table<>(
-                UpdateField.class,
+        fieldParams.addAll(
                 NncUtils.map(
                     param.fields(),
                     fieldParamDTO -> new UpdateField((ClassType) objectId.getType(), fieldParamDTO, parsingContext)

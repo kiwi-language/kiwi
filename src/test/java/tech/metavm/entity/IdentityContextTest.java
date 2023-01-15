@@ -32,8 +32,8 @@ public class IdentityContextTest extends TestCase {
         Field fooNameField = new Field(
                 ReflectUtils.getMetaFieldName(Foo.class, "name"),
                 fooType, stringType);
-        IndexConstraintRT uniqueConstraint =
-                new IndexConstraintRT(fooType, List.of(fooNameField), Foo.IDX_NAME.isUnique(), "name is required");
+        Index uniqueConstraint =
+                new Index(fooType, List.of(fooNameField), Foo.IDX_NAME.isUnique(), "name is required");
         uniqueConstraint.setIndexDef(Foo.IDX_NAME);
 
         context.getIdentityMap(fooType);

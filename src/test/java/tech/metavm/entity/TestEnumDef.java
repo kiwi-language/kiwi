@@ -31,8 +31,8 @@ public class TestEnumDef extends TestCase {
                 new TypeReference<Enum<?>>(){}.getType(),
                 Enum.class,
                 null,
-                standardDefBuilder.getEnumType()
-                , defMap
+                standardDefBuilder.getEnumType(),
+                defMap
         );
 
         new FieldDef(
@@ -51,11 +51,10 @@ public class TestEnumDef extends TestCase {
                 null
         );
 
-        EnumDef<TypeCategory> typeCategoryDef =  EnumParser.parse(
-                TypeCategory.class,
-                enumDef,
-                defMap
-        );
+        EnumParser<TypeCategory> enumParser = new EnumParser<>(TypeCategory.class, enumDef, defMap);
+
+        EnumDef<TypeCategory> typeCategoryDef =  enumParser.create();
+        enumParser.initialize();
 
         Map<Object, Identifiable> mapping =  typeCategoryDef.getEntityMapping();
         Assert.assertEquals(1, mapping.size());
@@ -75,6 +74,11 @@ public class TestEnumDef extends TestCase {
         @Override
         public ModelDef<?, ?> getDef(Type type) {
             return javaType2Def.get(type);
+        }
+
+        @Override
+        public boolean containsDef(Type javaType) {
+            return javaType2Def.containsKey(javaType);
         }
 
         @Override

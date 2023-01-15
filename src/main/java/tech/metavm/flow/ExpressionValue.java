@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
@@ -12,7 +13,7 @@ import tech.metavm.object.meta.Type;
 @EntityType("表达式值")
 public class ExpressionValue extends Value {
 
-    @EntityField("表达式")
+    @ChildEntity("表达式")
     private final Expression expression;
 
     public ExpressionValue(ValueDTO valueDTO, ParsingContext parsingContext) {

@@ -8,12 +8,10 @@ import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.Index;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -33,24 +31,27 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         this.instanceContext = instanceContext;
         this.parent = parent;
         if(instanceContext != null) {
-            instanceContext.addListener(instance -> {
-                Object model = instance2model.get(instance);
-                if(model != null) {
-                    entityMap.put(EntityKey.create(model.getClass(), instance.getId()), model);
-                    if (model instanceof IdInitializing idInitializing) {
-                        NncUtils.requireNull(idInitializing.getId());
-                        idInitializing.initId(instance.getId());
-//                    if(idInitializing instanceof Entity entity) {
-//                        entityMap.put(entity.key(), entity);
-//                    }
-                    }
-                }
-            });
+            instanceContext.addListener(this::onInstanceIdInitialized);
+            instanceContext.addRemovalListener(this::onInstanceRemoved);
         }
     }
 
     @Override
+    public <T> List<T> getByType(Class<T> javaType, T startExclusive, long limit) {
+        NncUtils.requireNonNull(instanceContext);
+        Instance startInstance = NncUtils.get(startExclusive, this::getInstance);
+        Type type = getDefContext().getType(javaType);
+        List<Instance> instances = instanceContext.getByType(type, startInstance, limit);
+        return NncUtils.map(instances, i -> getModel(javaType, i));
+    }
+
+    @Override
     public <T> T getModel(Class<T> klass, Instance instance) {
+        return getModel(klass, instance, null);
+    }
+
+    @Override
+    public <T> T getModel(Class<T> klass, Instance instance, ModelDef<?,?> def) {
         if(!getDefContext().containsTypeDef(instance.getType())) {
             // If there's no java type for the instance type, return the instance
             return klass.cast(instance);
@@ -66,7 +67,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                     getDefContext().getJavaClass(instance.getType());
             java.lang.reflect.Type genericClass =
                     getDefContext().getJavaType(instance.getType());
-            model = createModel(actualClass, genericClass, instance);
+            model = createModel(actualClass, genericClass, instance, def);
         }
         if(klass.isInstance(model)) {
             return klass.cast(model);
@@ -77,6 +78,27 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                     klass.getName(),
                     EntityUtils.getRealType(model).getName()
             );
+        }
+    }
+
+    private void onInstanceIdInitialized(Instance instance) {
+        Object model = instance2model.get(instance);
+        if(model != null) {
+            entityMap.put(EntityKey.create(model.getClass(), instance.getId()), model);
+            if (model instanceof IdInitializing idInitializing) {
+                NncUtils.requireNull(idInitializing.getId());
+                idInitializing.initId(instance.getId());
+            }
+        }
+    }
+
+    private void onInstanceRemoved(Instance instance) {
+        Object model = instance2model.remove(instance);
+        if(model != null) {
+            model2instance.remove(model);
+            if(instance.getId() != null) {
+                entityMap.remove(new EntityKey(EntityUtils.getEntityType(model), instance.getId()));
+            }
         }
     }
 
@@ -98,15 +120,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return entityMap.containsKey(entityKey);
     }
 
-    protected <T> T createModel(Class<T> actualClass, java.lang.reflect.Type genericType, Instance instance) {
-        ModelDef<?, ?> def = getDefContext().getDef(genericType);
+    protected <T> T createModel(Class<T> actualClass, java.lang.reflect.Type genericType, Instance instance, ModelDef<?,?> def) {
+        if(def == null) {
+            def = getDefContext().getDef(genericType);
+        }
         T model;
         if(def.isProxySupported()) {
+            final ModelDef<?,?> defFinal = def;
             model = EntityProxyFactory.getProxy(
                     actualClass,
                     instance.getId(),
-                    m -> def.initModelHelper(m, instance, this),
-                    k -> actualClass.cast(def.createModelProxyHelper(k))
+                    k -> actualClass.cast(defFinal.createModelProxyHelper(k)),
+                    m -> initializeModel(m, instance, defFinal)
             );
         }
         else {
@@ -114,6 +139,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
         addMapping(model, instance);
         return model;
+    }
+
+    private void initializeModel(Object model, Instance instance, ModelDef<?,?> def) {
+        def.initModelHelper(model, instance, this);
     }
 
     public void bind(Object model) {
@@ -166,18 +195,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @SuppressWarnings("unused")
-    public ConstraintRT<UniqueConstraintParam> getConstraint(long id) {
+    public Constraint<UniqueConstraintParam> getConstraint(long id) {
         return getEntity(new TypeReference<>(){}, id);
     }
 
     @SuppressWarnings("unused")
-    public IndexConstraintRT getUniqueConstraint(long id) {
-        return getEntity(IndexConstraintRT.class, id);
+    public Index getUniqueConstraint(long id) {
+        return getEntity(Index.class, id);
     }
 
     @SuppressWarnings("unused")
-    public CheckConstraintRT getCheckConstraint(long id) {
-        return getEntity(CheckConstraintRT.class, id);
+    public CheckConstraint getCheckConstraint(long id) {
+        return getEntity(CheckConstraint.class, id);
     }
 
     public <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
@@ -265,25 +294,64 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {
-        return NncUtils.getFirst(selectByKey(indexDef, values));
-    }
-
     public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef,
                                                   Object...values) {
         NncUtils.requireNonNull(instanceContext, "instanceContext required");
         IndexKeyPO indexKey = createIndexKey(indexDef, values);
         List<Instance> instances = instanceContext.selectByKey(indexKey);
+        return createEntityList(indexDef.getType(), instances);
+    }
+
+    @Override
+    public <T> List<T> query(EntityIndexQuery<T> query) {
+        NncUtils.requireNonNull(instanceContext, "instanceContext required");
+        Class<T> javaClass = query.indexDef().getType();
+        Index indexConstraint = getDefContext().getIndexConstraint(query.indexDef());
+        List<Instance> instances = instanceContext.query(new InstanceIndexQuery(
+                indexConstraint,
+                NncUtils.map(
+                        query.items(),
+                        item -> createInstanceQueryItem(indexConstraint, javaClass, item)
+                ),
+                query.lastOperator(),
+                query.desc(),
+                query.limit()
+        ));
+        return createEntityList(javaClass, instances);
+    }
+
+    private InstanceIndexQueryItem createInstanceQueryItem(Index indexConstraint,
+                                                           Class<?> javaClass,
+                                                           EntityIndexQueryItem queryItem) {
+        ClassType type = indexConstraint.getDeclaringType();
+        Field field = type.getFieldByJavaField(ReflectUtils.getField(javaClass, queryItem.fieldName()));
+        return new InstanceIndexQueryItem(
+                indexConstraint.getFieldByTypeField(field),
+                resolveInstance(field.getType(), queryItem.value())
+        );
+    }
+
+    private Instance resolveInstance(Type type, Object value) {
+        if(value == null) {
+            return InstanceUtils.nullInstance();
+        }
+        if(containsModel(value)) {
+            return getInstance(value);
+        }
+        return InstanceUtils.resolveValue(type, value);
+    }
+
+    private <T> List<T> createEntityList(Class<T> javaType, List<Instance> instances) {
         return EntityProxyFactory.getProxy(
                 new TypeReference<Table<T>>() {},
                 null,
                 table -> table.initialize(
                         NncUtils.map(
                                 instances,
-                                inst -> getModel(indexDef.getType(), inst)
+                                inst -> getModel(javaType, inst)
                         )
                 ),
-                k -> Table.createProxy(k, indexDef.getType())
+                k -> Table.createProxy(k, javaType)
         );
     }
 
@@ -293,18 +361,46 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public boolean remove(Object entity) {
-        Instance instance = model2instance.remove(entity);
-        if(instance == null) {
+        if(parent != null && parent.containsModel(entity)) {
+            return parent.remove(entity);
+        }
+        Set<Instance> instances = beforeRemove(entity);
+        updateInstances();
+        if(NncUtils.isEmpty(instances)) {
             return false;
         }
-        instance2model.remove(instance);
         if(instanceContext != null) {
-            instanceContext.remove(instance);
+            instanceContext.batchRemove(instances);
         }
-        if (instance.getId() != null) {
-            entityMap.remove(EntityKey.create(entity.getClass(), instance.getId()));
+        else {
+            instances.forEach(this::onInstanceRemoved);
         }
         return true;
+    }
+
+    private Set<Instance> beforeRemove(Object model) {
+        Set<Instance> instancesToRemove = new IdentitySet<>();
+        beforeRemove0(model, instancesToRemove);
+        return instancesToRemove;
+    }
+
+    private void beforeRemove0(Object model, Set<Instance> instancesToRemove) {
+        Instance instance = model2instance.get(model);
+        if(instance == null) {
+            return;
+        }
+        if(instancesToRemove.contains(instance)) {
+            return;
+        }
+        instancesToRemove.add(instance);
+        if(model instanceof RemovalAware removalAware) {
+            List<Object> cascades = removalAware.onRemove();
+            if (NncUtils.isNotEmpty(cascades)) {
+                for (Object cascade : cascades) {
+                    beforeRemove0(cascade, instancesToRemove);
+                }
+            }
+        }
     }
 
     public @Nullable IInstanceContext getInstanceContext() {
@@ -319,9 +415,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private IndexKeyPO createIndexKey(IndexDef<?> uniqueConstraintDef, Object...values) {
-        IndexConstraintRT constraint = getDefContext().getUniqueConstraint(uniqueConstraintDef);
+        Index constraint = getDefContext().getIndexConstraint(uniqueConstraintDef);
         NncUtils.requireNonNull(constraint);
-        return IndexKeyPO.create(constraint.getId(), Arrays.asList(values));
+        return constraint.createIndexKeyByModels(Arrays.asList(values), this);
     }
 
     @Override

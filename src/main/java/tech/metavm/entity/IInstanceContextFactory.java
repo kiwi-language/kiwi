@@ -6,4 +6,6 @@ public interface IInstanceContextFactory {
 
     IInstanceContext newContext(long tenantId, boolean asyncProcessLogs);
 
+    IInstanceContext newRootContext();
+
 }

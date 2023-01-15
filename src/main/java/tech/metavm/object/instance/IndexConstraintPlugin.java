@@ -3,11 +3,11 @@ package tech.metavm.object.instance;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.instance.persistence.IndexItemPO;
+import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.mappers.IndexItemMapper;
-import tech.metavm.object.meta.IndexConstraintRT;
+import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import tech.metavm.object.meta.Index;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
@@ -22,10 +22,10 @@ import static tech.metavm.entity.DifferenceAttributeKey.OLD_INDEX_ITEMS;
 @Component
 public class IndexConstraintPlugin implements ContextPlugin {
 
-    private final IndexItemMapper indexItemMapper;
+    private final IndexEntryMapper indexEntryMapper;
 
-    public IndexConstraintPlugin(IndexItemMapper indexItemMapper) {
-        this.indexItemMapper = indexItemMapper;
+    public IndexConstraintPlugin(IndexEntryMapper indexEntryMapper) {
+        this.indexEntryMapper = indexEntryMapper;
     }
 
     @Override
@@ -37,22 +37,22 @@ public class IndexConstraintPlugin implements ContextPlugin {
                 );
 
         Map<Long, ClassInstance> instanceMap = NncUtils.toMap(currentInstances, Instance::getId);
-        List<IndexItemPO> currentItems = NncUtils.flatMap(
+        List<IndexEntryPO> currentItems = NncUtils.flatMap(
                 currentInstances,
                 instance -> instance.getUniqueKeys(context.getTenantId())
         );
         List<InstancePO> oldInstances = NncUtils.merge(diff.updates(), diff.deletes());
-        List<IndexItemPO> oldItems = NncUtils.isEmpty(oldInstances) && NncUtils.isEmpty(currentItems) ? List.of() :
-                indexItemMapper.selectByInstanceIdsOrKeys(
+        List<IndexEntryPO> oldItems = NncUtils.isEmpty(oldInstances) && NncUtils.isEmpty(currentItems) ? List.of() :
+                indexEntryMapper.selectByInstanceIdsOrKeys(
                         context.getTenantId(),
                         NncUtils.map(oldInstances, InstancePO::getId),
-                        NncUtils.map(currentItems, IndexItemPO::getKey)
+                        NncUtils.map(currentItems, IndexEntryPO::getKey)
                 );
 
-        Map<IndexKeyPO, Long> oldKeyMap = NncUtils.toMap(oldItems, IndexItemPO::getKey, IndexItemPO::getInstanceId);
-        for (IndexItemPO currentItem : currentItems) {
-            IndexConstraintRT constraint =
-                    context.getEntityContext().getEntity(IndexConstraintRT.class, currentItem.getConstraintId());
+        Map<IndexKeyPO, Long> oldKeyMap = NncUtils.toMap(oldItems, IndexEntryPO::getKey, IndexEntryPO::getInstanceId);
+        for (IndexEntryPO currentItem : currentItems) {
+            Index constraint =
+                    context.getEntityContext().getEntity(Index.class, currentItem.getConstraintId());
             if(!constraint.isUnique() || constraint.containsNull(currentItem.getKey())) {
                 continue;
             }
@@ -69,14 +69,14 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     @Override
     public void afterSaving(EntityChange<InstancePO> difference, IInstanceContext context) {
-        List<IndexItemPO> oldItems = difference.getAttribute(OLD_INDEX_ITEMS);
-        List<IndexItemPO> currentItems = difference.getAttribute(NEW_INDEX_ITEMS);
-        ChangeList<IndexItemPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
+        List<IndexEntryPO> oldItems = difference.getAttribute(OLD_INDEX_ITEMS);
+        List<IndexEntryPO> currentItems = difference.getAttribute(NEW_INDEX_ITEMS);
+        ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
         if(NncUtils.isNotEmpty(changeList.inserts())) {
-            indexItemMapper.batchInsert(changeList.inserts());
+            indexEntryMapper.batchInsert(changeList.inserts());
         }
         if(NncUtils.isNotEmpty(changeList.deletes())) {
-            indexItemMapper.batchDelete(changeList.deletes());
+            indexEntryMapper.batchDelete(changeList.deletes());
         }
     }
 

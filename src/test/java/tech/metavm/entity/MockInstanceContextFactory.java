@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import tech.metavm.util.Constants;
+
 import java.util.function.Function;
 
 public class MockInstanceContextFactory implements IInstanceContextFactory{
@@ -18,5 +20,10 @@ public class MockInstanceContextFactory implements IInstanceContextFactory{
     @Override
     public IInstanceContext newContext(long tenantId, boolean asyncProcessLogs) {
         return contextSupplier.apply(tenantId);
+    }
+
+    @Override
+    public IInstanceContext newRootContext() {
+        return contextSupplier.apply(Constants.ROOT_TENANT_ID);
     }
 }

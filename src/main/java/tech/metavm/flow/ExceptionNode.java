@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -16,7 +17,7 @@ public class ExceptionNode extends NodeRT<ExceptionParamDTO> {
         return node;
     }
 
-    @EntityField("错误提示")
+    @ChildEntity("错误提示")
     private Value message;
 
     public ExceptionNode(NodeDTO nodeDTO, ScopeRT scope) {

@@ -78,7 +78,8 @@ public class BootstrapTest extends TestCase {
         ClassType testType = TypeUtil.createValue("Test Type", null);
 
         Field titleField = new Field(
-                "title", testType, Access.GLOBAL, false, true, null,
+                "title", testType, Access.GLOBAL, false, true,
+                InstanceUtils.nullInstance(),
                 StandardTypes.getStringType(), false
         );
 

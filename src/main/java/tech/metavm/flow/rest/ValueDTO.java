@@ -1,5 +1,6 @@
 package tech.metavm.flow.rest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.flow.ValueKind;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
@@ -24,6 +25,7 @@ public record ValueDTO (
         return new ValueDTO(ValueKind.EXPRESSION.code(), new ExpressionFieldValueDTO(expr), null);
     }
 
+    @JsonIgnore
     public boolean isNull() {
         if(value == null) {
             return true;

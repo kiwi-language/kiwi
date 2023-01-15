@@ -256,7 +256,7 @@ public class ReflectUtils {
         try {
             return klass.getDeclaredField(name);
         } catch (NoSuchFieldException e) {
-            throw new RuntimeException("Fail to get field");
+            throw new RuntimeException("Fail to get indexItem");
         }
     }
 
@@ -264,7 +264,7 @@ public class ReflectUtils {
         try {
             field.set(object, value);
         } catch (IllegalAccessException|IllegalArgumentException e) {
-            throw new RuntimeException("Fail to set field", e);
+            throw new RuntimeException("Fail to set indexItem", e);
         }
     }
 
@@ -278,7 +278,7 @@ public class ReflectUtils {
         try {
             return field.get(object);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException("Fail to set field", e);
+            throw new RuntimeException("Fail to set indexItem", e);
         }
     }
 
@@ -335,7 +335,7 @@ public class ReflectUtils {
                 return declaredField;
             }
         }
-        throw new InternalException("Can not find a declared field for meta field name '" + metaFieldName + "' " +
+        throw new InternalException("Can not find a declared indexItem for meta indexItem name '" + metaFieldName + "' " +
                         "in class '" + klass.getName() + "'");
     }
 
@@ -431,7 +431,7 @@ public class ReflectUtils {
         try {
             return field.get(object);
         } catch (IllegalAccessException e) {
-            throw new InternalException("Fail to get field value, field: " + field + ", object: " + object, e);
+            throw new InternalException("Fail to get indexItem value, indexItem: " + field + ", object: " + object, e);
         }
     }
 

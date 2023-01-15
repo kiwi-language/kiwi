@@ -1,16 +1,22 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.job.Job;
+import tech.metavm.job.ReferenceCleanupJob;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.instance.persistence.InstanceArrayPO;
+import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
@@ -21,14 +27,26 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Long, Instance> instanceMap = new HashMap<>();
     protected final Set<Instance> instances = new IdentitySet<>();
+    private final Map<Long, Instance> removedInstanceMap = new HashMap<>();
+    protected final IInstanceStore instanceStore;
 
     private final IInstanceContext parent;
-    private final Set<InstanceSinkListener> listeners = new LinkedHashSet<>();
+    private final Set<InstanceIdInitListener> listeners = new LinkedHashSet<>();
+    private final Set<Consumer<Instance>> removalListeners = new LinkedHashSet<>();
+    private Consumer<Job> createJob;
 
-    public BaseInstanceContext(long tenantId, EntityIdProvider idService, IInstanceContext parent) {
+    public BaseInstanceContext(long tenantId,
+                               EntityIdProvider idService,
+                               IInstanceStore instanceStore,
+                               IInstanceContext parent) {
         this.tenantId = tenantId;
+        this.instanceStore = instanceStore;
         this.idService = idService;
         this.parent = parent;
+    }
+
+    public void setCreateJob(Consumer<Job> createJob) {
+        this.createJob = createJob;
     }
 
     @Override
@@ -156,7 +174,7 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     }
 
     @Override
-    public void addListener(InstanceSinkListener listener) {
+    public void addListener(InstanceIdInitListener listener) {
         listeners.add(listener);
     }
 
@@ -168,38 +186,88 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     @Override
     public abstract Type getType(long id);
 
+    @Override
+    public void batchRemove(Collection<Instance> instances) {
+        Set<Instance> removalBatch = getRemovalBatch(instances);
+        for (Instance toRemove : removalBatch) {
+            remove0(toRemove, removalBatch);
+        }
+    }
+
     public boolean remove(Instance instance) {
+        batchRemove(List.of(instance));
+        return true;
+    }
+
+    private void remove0(Instance instance, Set<Instance> removalBatch) {
+        Set<ReferenceRT> refsOutsideOfRemoval = NncUtils.filterUnique(
+                instance.getIncomingReferences(), r -> !removalBatch.contains(r.source())
+        );
+        if(NncUtils.anyMatch(refsOutsideOfRemoval, ReferenceRT::isStrong)) {
+            throw BusinessException.strongReferencesPreventRemoval(List.of(instance));
+        }
+        new ArrayList<>(refsOutsideOfRemoval).forEach(ReferenceRT::remove);
         if(!instances.remove(instance)) {
-            return false;
+            return;
         }
         if(instance.getId() != null) {
             instanceMap.remove(instance.getId());
+            removedInstanceMap.put(instance.getId(), instance);
         }
-        EntityUtils.ensureProxyInitialized(instance);
-        if(instance instanceof ClassInstance classInstance) {
-            for (Field field : classInstance.getType().getFields()) {
-                if (field.isChildField()) {
-                    Instance ref = classInstance.getInstance(field);
-                    if (ref != null) {
-                        remove(ref);
-                    }
-                }
+        for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
+            if(!removalBatch.contains(ref.target())) {
+                ref.clear();
             }
         }
-        else if(instance instanceof ArrayInstance arrayInstance) {
-            if(arrayInstance.isElementAsChild()) {
-                for (Object element : arrayInstance.getElements()) {
-                    if(element instanceof Instance elementInst) {
-                        remove(elementInst);
-                    }
-                }
-            }
+        for (Consumer<Instance> removalListener : removalListeners) {
+            removalListener.accept(instance);
         }
-        return true;
+        createReferenceCleanupJob(instance);
     }
+
+    private Set<Instance> getRemovalBatch(Collection<Instance> instances) {
+        Set<Instance> result = new IdentitySet<>();
+        for (Instance instance : instances) {
+            getRemovalBatch0(instance, result);
+        }
+        return result;
+    }
+
     @Override
-    public List<Instance> selectByKey(IndexKeyPO indexKeyPO) {
-        return null;
+    public void addRemovalListener(Consumer<Instance> removalListener) {
+        removalListeners.add(removalListener);
+    }
+
+    private void getRemovalBatch0(Instance instance, Set<Instance> result) {
+        if(result.contains(instance)) {
+            return;
+        }
+        result.add(instance);
+        Set<Instance> children = instance.getChildren();
+        for (Instance child : children) {
+            getRemovalBatch0(child, result);
+        }
+    }
+
+    private void createReferenceCleanupJob(Instance instance) {
+        if(createJob != null && isPersisted(instance)) {
+            createJob.accept(new ReferenceCleanupJob(
+                    instance.getId(),
+                    instance.getType().getName(),
+                    instance.getTitle()
+            ));
+        }
+    }
+
+    private boolean isPersisted(Instance instance) {
+        if(instance.getId() == null) {
+            return false;
+        }
+        return isPersisted(instance.getId());
+    }
+
+    protected boolean isPersisted(long id) {
+        return true;
     }
 
     public void bind(Instance instance) {
@@ -269,8 +337,106 @@ public abstract class BaseInstanceContext implements IInstanceContext{
         }
     }
 
+    protected void clearStaleReferences(InstancePO instancePO) {
+        Type type = getType(instancePO.getTypeId());
+        if(type instanceof ClassType classType) {
+            clearStaleRefIdsForObject(instancePO, classType);
+        }
+        else if(type instanceof ArrayType arrayType) {
+            clearStaleRefIdsForArray((InstanceArrayPO) instancePO, arrayType);
+        }
+    }
+
+
+    private void clearStaleRefIdsForObject(InstancePO instancePO, ClassType type) {
+        for (Field field : type.getFields()) {
+            boolean fieldIsRef = field.isReference();
+            Object fieldValue = instancePO.get(field.getColumnName());
+            Long refId = convertToRefId(fieldValue, fieldIsRef);
+            Instance removed;
+            if(field.isNotNull() && (removed = removedInstanceMap.get(refId)) != null) {
+                throw BusinessException.strongReferencesPreventRemoval(List.of(removed));
+            }
+            if(refId != null && !checkAlive(refId)) {
+                instancePO.set(field.getColumnName(), null);
+            }
+        }
+    }
+
+    private void clearStaleRefIdsForArray(InstanceArrayPO arrayPO, ArrayType arrayType) {
+        boolean elementIsRef = arrayType.getElementType().isReference();
+        List<Object> elements = arrayPO.getElements();
+        List<Object> newElements = new ArrayList<>();
+        for (Object element : elements) {
+            Long refId = convertToRefId(element, elementIsRef);
+            Instance removed;
+            if((removed = removedInstanceMap.get(refId)) != null) {
+                throw BusinessException.strongReferencesPreventRemoval(List.of(removed));
+            }
+            if(refId != null && checkAlive(refId)) {
+                newElements.add(element);
+            }
+        }
+        arrayPO.setElements(newElements);
+    }
+
+    private boolean checkAlive(long id) {
+        return !removedInstanceMap.containsKey(id) &&
+                (parent != null && parent.containsId(id) || checkAliveInStore(id));
+    }
+
+    protected abstract boolean checkAliveInStore(long id);
+
+    private Long convertToRefId(Object fieldValue, boolean isRef) {
+        if(isRef && (fieldValue instanceof Long refId)) {
+            return refId;
+        }
+        if(fieldValue instanceof IdentityPO identityPO) {
+            return identityPO.id();
+        }
+        return null;
+    }
+
     private boolean isIdInParent(long id) {
         return parent != null && parent.containsId(id);
+    }
+
+
+    @Override
+    public List<Instance> getByReferenceTargetId(long targetId, Instance startExclusive, long limit) {
+        return NncUtils.map(
+                instanceStore.getByReferenceTargetId(
+                        targetId,
+                        NncUtils.getOrElse(startExclusive, Instance::getId, -1L),
+                        limit,
+                        this
+                ),
+                this::get
+        );
+    }
+
+
+    @Override
+    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
+        List<InstancePO> instancePOs = instanceStore.getByTypeIds(
+                List.of(NncUtils.requireNonNull(type.getId(), "Type id is not initialized")),
+                NncUtils.getOrElse(startExclusive, Instance::getId, -1L),
+                limit,
+                this
+        );
+        return NncUtils.map(instancePOs, instancePO -> get(instancePO.getId()));
+    }
+
+    @Override
+    public List<Instance> selectByKey(IndexKeyPO key) {
+        List<Long> instanceIds = instanceStore.selectByKey(key, this);
+        return NncUtils.map(instanceIds, this::get);
+    }
+
+    @Override
+    public List<Instance> query(InstanceIndexQuery query) {
+        List<Long> instanceIds = instanceStore.query(query, this);
+        return NncUtils.map(instanceIds, this::get);
     }
 
 }

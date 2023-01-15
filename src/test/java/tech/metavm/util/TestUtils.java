@@ -8,8 +8,10 @@ import org.slf4j.Logger;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
-import tech.metavm.object.meta.MemAllocatorStore;
-import tech.metavm.object.meta.StdAllocators;
+import tech.metavm.object.instance.persistence.mappers.InstanceMapperGateway;
+import tech.metavm.object.instance.persistence.mappers.MemInstanceArrayMapper;
+import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
+import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,20 +97,40 @@ public class TestUtils {
     }
 
     public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider) {
-        IInstanceStore instanceStore = new MemInstanceStore();
+        return getInstanceContextFactory(idProvider, new MemInstanceStore());
+    }
+
+    public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider, MemInstanceStore instanceStore) {
+        return getInstanceContextFactory(idProvider, instanceStore, new MemInstanceSearchService());
+    }
+
+    public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider,
+                                                                   MemInstanceStore instanceStore,
+                                                                   MemInstanceSearchService instanceSearchService) {
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore)
                 .setIdService(idProvider).setDefaultAsyncProcessing(false);
         InstanceContextFactory.setStdContext(MockRegistry.getInstanceContext());
         instanceContextFactory.setPlugins(List.of(
                 new CheckConstraintPlugin(),
-                new IndexConstraintPlugin(new MemIndexItemMapper()),
+                new IndexConstraintPlugin(instanceStore.getIndexEntryMapper()),
                 new ChangeLogPlugin(new InstanceLogServiceImpl(
-                        new MemInstanceSearchService(),
+                        instanceSearchService,
                         instanceContextFactory,
                         instanceStore
                 ))
         ));
         return instanceContextFactory;
+    }
+
+    public static IInstanceStore getMemInstanceStore() {
+        return new InstanceStore(
+                new InstanceMapperGateway(
+                        new MemInstanceMapper(),
+                        new MemInstanceArrayMapper()
+                ),
+                new MemIndexEntryMapper(),
+                new MemReferenceMapper()
+        );
     }
 
 }

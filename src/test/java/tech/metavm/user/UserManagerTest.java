@@ -3,7 +3,7 @@ package tech.metavm.user;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.MemIndexItemMapper;
+import tech.metavm.entity.MemIndexEntryMapper;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
@@ -36,7 +36,7 @@ public class UserManagerTest extends TestCase {
         InstanceContextFactory.setStdContext(MockRegistry.getInstanceContext());
 
         instanceContextFactory.setPlugins(List.of(
-                new IndexConstraintPlugin(new MemIndexItemMapper()),
+                new IndexConstraintPlugin(new MemIndexEntryMapper()),
                 new CheckConstraintPlugin(),
                 new ChangeLogPlugin(
                         new InstanceLogServiceImpl(instanceSearchService, instanceContextFactory, instanceStore)

@@ -4,10 +4,10 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
@@ -16,12 +16,13 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
+import static tech.metavm.util.NncUtils.mergeSets;
+
 public class InstanceContext extends BaseInstanceContext {
 
     private boolean finished;
     private final SubContext headContext = new SubContext();
     private final boolean asyncPostProcessing;
-    private final IInstanceStore instanceStore;
 
     private final LoadingBuffer loadingBuffer;
     private final List<ContextPlugin> plugins;
@@ -52,8 +53,7 @@ public class InstanceContext extends BaseInstanceContext {
                            TypeResolver typeResolver
     ) {
 
-        super(tenantId, idService, parent);
-        this.instanceStore = instanceStore;
+        super(tenantId, idService, instanceStore, parent);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
         this.executor = executor;
@@ -63,6 +63,7 @@ public class InstanceContext extends BaseInstanceContext {
                 this,
                 NncUtils.get(parent, IInstanceContext::getEntityContext)
         );
+        setCreateJob(job -> getEntityContext().bind(job));
     }
 
     @Override
@@ -71,16 +72,11 @@ public class InstanceContext extends BaseInstanceContext {
             preload(replacement.getId());
         }
         for (Instance replacement : replacements) {
-            InstancePO existingPO = loadingBuffer.getEntityPO(replacement.getId());
+            InstancePO existingPO = loadingBuffer.getInstancePO(replacement.getId());
             if (existingPO != null) {
                 headContext.add(existingPO);
             }
         }
-    }
-
-    @Override
-    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
-        return null;
     }
 
     @Override
@@ -112,8 +108,8 @@ public class InstanceContext extends BaseInstanceContext {
         return EntityProxyFactory.getProxy(
                 getInstanceJavaType(type),
                 id,
-                this::initializeInstance,
-                klass -> constructInstance(klass, id)
+                klass -> constructInstance(klass, id),
+                this::initializeInstance
         );
     }
 
@@ -131,11 +127,12 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void initializeInstance(Instance instance) {
-        InstancePO instancePO = loadingBuffer.getEntityPO(instance.getId());
+        InstancePO instancePO = loadingBuffer.getInstancePO(instance.getId());
         if(instancePO == null) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
         }
-        headContext.add(instancePO);
+        headContext.add(EntityUtils.copyPojo(instancePO));
+        clearStaleReferences(instancePO);
         initializeInstance(instance, instancePO);
     }
 
@@ -146,6 +143,7 @@ public class InstanceContext extends BaseInstanceContext {
                     arrayPO.getElements(),
                     e -> resolveColumnValue(TypeUtil.getElementType(arrayInstance.getType()), e)
             );
+            arrayInstance.setElementAsChild(arrayPO.isElementAsChild());
             arrayInstance.initialize(elements);
         }
         else if (instance instanceof ClassInstance classInstance){
@@ -161,12 +159,17 @@ public class InstanceContext extends BaseInstanceContext {
         return data;
     }
 
+    @Override
+    protected boolean isPersisted(long id) {
+        return headContext.get(id) != null;
+    }
+
     private Instance resolveColumnValue(Type fieldType, Object columnValue) {
         if(columnValue == null) {
             return InstanceUtils.nullInstance();
         }
-        else if(columnValue instanceof ReferencePO referencePO) {
-            return get(referencePO.id());
+        else if(columnValue instanceof IdentityPO identityPO) {
+            return get(identityPO.id());
         }
         else if(fieldType.isReference()) {
             return get(ValueUtil.getLong(columnValue));
@@ -188,11 +191,6 @@ public class InstanceContext extends BaseInstanceContext {
         return NncUtils.getFirst(selectByKey(key));
     }
 
-    public List<Instance> selectByKey(IndexKeyPO key) {
-        List<Long> instanceIds = instanceStore.selectByKey(key, this);
-        return NncUtils.map(instanceIds, this::get);
-    }
-
     public void finish() {
         if(finished) {
             throw new IllegalStateException("Already finished");
@@ -200,10 +198,12 @@ public class InstanceContext extends BaseInstanceContext {
         finished = true;
         rebind();
         initIds();
-        ContextDifference difference = new ContextDifference();
+        ContextDifference difference = new ContextDifference(this);
         List<InstancePO> bufferedPOs = getBufferedEntityPOs();
         difference.diff(headContext.getEntities(), bufferedPOs);
+        processRemoval(difference.getEntityChange());
         processEntityChangeHelper(difference.getEntityChange());
+        instanceStore.saveReferences(difference.getReferenceChange().toChangeList());
         headContext.clear();
         for (InstancePO entity : bufferedPOs) {
             headContext.add(EntityUtils.copyPojo(entity));
@@ -213,6 +213,21 @@ public class InstanceContext extends BaseInstanceContext {
         }
         else {
             postProcess();
+        }
+    }
+
+    private void processRemoval(EntityChange<InstancePO> entityChange) {
+        if(NncUtils.isEmpty(entityChange.deletes())) {
+            return;
+        }
+        Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
+        Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
+        Set<Long> stronglyReferencedIds = instanceStore.getStronglyReferencedIds(
+                tenantId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
+        );
+        if(NncUtils.isNotEmpty(stronglyReferencedIds)) {
+            List<Instance> srInstances = NncUtils.map(stronglyReferencedIds, this::get);
+            throw BusinessException.strongReferencesPreventRemoval(srInstances);
         }
     }
 
@@ -294,6 +309,11 @@ public class InstanceContext extends BaseInstanceContext {
     @Override
     public Type getType(long id) {
         return typeResolver.getType(this, id);
+    }
+
+    @Override
+    protected boolean checkAliveInStore(long id) {
+        return loadingBuffer.isRefTargetAlive(id);
     }
 
     public void setEntityContext(IEntityContext entityContext) {

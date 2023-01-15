@@ -19,13 +19,15 @@ public interface InstanceMapper {
                                      @Param("startIdExclusive") long startIdExclusive,
                                      @Param("limit") long limit);
 
-    void batchInsert(List<InstancePO> records);
+    void batchInsert(Collection<InstancePO> records);
 
-    void batchUpdate(List<InstancePO> records);
+    void batchUpdate(Collection<InstancePO> records);
 
     void batchDelete(@Param("tenantId") long tenantId,
                      @Param("timestamp") long timestamp,
                      @Param("versions") Collection<VersionPO> versions);
+
+    List<Long> getAliveIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids);
 
     int updateSyncVersion(List<VersionPO> versions);
 

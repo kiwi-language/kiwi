@@ -80,7 +80,7 @@ public class ObjectTree extends NTree {
             if(subTree instanceof ListTree listSubTree) {
                 return listSubTree.getFieldValue(subPath);
             }
-            throw new RuntimeException("Can't get field '" + fieldPath + "' from tree: " + this);
+            throw new RuntimeException("Can't get indexItem '" + fieldPath + "' from tree: " + this);
         }
         else {
             return fields.get(fieldPath).getValue();

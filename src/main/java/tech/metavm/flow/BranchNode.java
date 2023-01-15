@@ -1,12 +1,13 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -19,8 +20,8 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     @EntityField("是否包容")
     private boolean inclusive;
-    @EntityField("分支列表")
-    private final Table<Branch> branches = new Table<>(Branch.class);
+    @ChildEntity("分支列表")
+    private final Table<Branch> branches = new Table<>(Branch.class, true);
 
     public BranchNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
@@ -71,16 +72,10 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         return NncUtils.find(branches, branch -> branch.getIndex() == index);
     }
 
-    public Branch deleteBranch(long index) {
-        ListIterator<Branch> listIt = branches.listIterator();
-        while (listIt.hasNext()) {
-            Branch branch = listIt.next();
-            if(branch.getIndex() == index) {
-                listIt.remove();
-                return branch;
-            }
+    public void deleteBranch(Branch branch) {
+        if(!branches.remove(branch)) {
+            throw new InternalException(branch + " does not exist in " + this);
         }
-        return null;
     }
 
     @Override

@@ -1,9 +1,6 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
+import tech.metavm.entity.*;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
@@ -16,11 +13,11 @@ import java.util.List;
 @EntityType("字段表达式")
 public class FieldExpression extends Expression {
 
-    @EntityField("对象")
+    @ChildEntity("对象")
     private final Expression instance;
 
-    @EntityField("字段路径")
-    private final Table<Field> fieldPath;
+    @ChildEntity("字段路径")
+    private final Table<Field> fieldPath = new Table<>(Field.class);
 
     public FieldExpression(Expression instance, Field field) {
         this(instance, List.of(field));
@@ -35,12 +32,12 @@ public class FieldExpression extends Expression {
             fields.add(field);
             tmp = (ClassType) field.getType();
         }
-        this.fieldPath = new Table<>(Field.class, fields);
+        this.fieldPath.addAll(fields);
     }
 
     public FieldExpression(Expression instance, List<Field> fieldPath) {
         this.instance = instance;
-        this.fieldPath = new Table<>(Field.class, fieldPath);
+        this.fieldPath.addAll(fieldPath);
     }
 
     public Field getLastField() {
@@ -109,5 +106,10 @@ public class FieldExpression extends Expression {
         else {
             return this;
         }
+    }
+
+    @Override
+    protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
+        return super.extractExpressionsRecursively(klass);
     }
 }

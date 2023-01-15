@@ -1,14 +1,11 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.query.ParsingContext;
-import tech.metavm.object.meta.IndexConstraintRT;
+import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -20,18 +17,18 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
     public static GetUniqueNode create(NodeDTO nodeDTO, IEntityContext context) {
         GetUniqueParamDTO param = nodeDTO.getParam();
-        IndexConstraintRT constraint = context.getEntity(IndexConstraintRT.class, param.constraintId());
+        Index constraint = context.getEntity(Index.class, param.constraintId());
         GetUniqueNode node = new GetUniqueNode(nodeDTO, constraint, context.getScope(nodeDTO.scopeId()));
         node.setParam(param, context);
         return node;
     }
 
     @EntityField("索引")
-    private IndexConstraintRT constraint;
-    @EntityField("字段值列表")
-    private final Table<Value> values = new Table<>(Value.class);
+    private Index constraint;
+    @ChildEntity("字段值列表")
+    private final Table<Value> values = new Table<>(Value.class, true);
 
-    public GetUniqueNode(NodeDTO nodeDTO, IndexConstraintRT constraint, ScopeRT scope) {
+    public GetUniqueNode(NodeDTO nodeDTO, Index constraint, ScopeRT scope) {
         super(nodeDTO, TypeUtil.getNullableType(constraint.getDeclaringType()), scope);
         this.constraint = constraint;
     }
@@ -59,7 +56,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
         this.values.addAll(values);
     }
 
-    public void setConstraint(IndexConstraintRT constraint) {
+    public void setConstraint(Index constraint) {
         this.constraint = constraint;
     }
 
@@ -72,13 +69,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     }
 
     private IndexKeyPO buildIndexKey(FlowFrame frame) {
-        return new IndexKeyPO(
-                constraint.getId(),
-                NncUtils.map(
-                        values,
-                        fp -> IndexKeyPO.getIndexColumn(fp.evaluate(frame))
-                )
-        );
+        return constraint.createIndexKey(NncUtils.map(values, fp -> fp.evaluate(frame)));
     }
 
 }

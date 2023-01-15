@@ -59,7 +59,7 @@ public class FlowLoadingBuffer implements EvaluationContext {
 //        List<FieldExpression> fieldExpressions = expression.extractExpressions(FieldExpression.class);
         /*
         Case one:
-        Instance is also a field expression. We should simplify it.
+        Instance is also a indexItem expression. We should simplify it.
         In that way, the category of instance expression is limited.
         This works but restricts the generality of the architecture.
 

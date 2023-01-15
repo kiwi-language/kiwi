@@ -86,11 +86,6 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     }
 
     @Override
-    public void remove() {
-        super.remove();
-    }
-
-    @Override
     public void execute(FlowFrame frame) {
         InstanceDTO instanceDTO = new InstanceDTO(
                 null,

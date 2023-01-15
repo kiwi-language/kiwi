@@ -5,6 +5,7 @@ import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Function;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 
@@ -23,6 +24,13 @@ public class BusinessException extends RuntimeException {
 
     public static BusinessException invalidParams(String detail) {
         return new BusinessException(ErrorCode.INVALID_PARAMETERS, detail);
+    }
+
+    public static BusinessException strongReferencesPreventRemoval(List<Instance> instances) {
+        return new BusinessException(
+                ErrorCode.STRONG_REFS_PREVENT_REMOVAL,
+                NncUtils.join(instances, Instance::getDescription)
+        );
     }
 
     public static BusinessException invalidType(TypeDTO typeDTO, String reason) {
@@ -172,14 +180,14 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException duplicateKey(ClassInstance instance, long constraintId) {
-        IndexConstraintRT constraint = instance.getType().getUniqueConstraint(constraintId);
+        Index constraint = instance.getType().getUniqueConstraint(constraintId);
         return new BusinessException(
                 ErrorCode.DUPLICATE_KEY,
-                NncUtils.join(constraint.getFields(), Field::getName)
+                NncUtils.join(constraint.getTypeFields(), Field::getName)
         );
     }
 
-    public static BusinessException constraintCheckFailed(Instance instance, ConstraintRT<?> constraint) {
+    public static BusinessException constraintCheckFailed(Instance instance, Constraint<?> constraint) {
         String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(
                 ErrorCode.CONSTRAINT_CHECK_FAILED,
@@ -203,6 +211,10 @@ public class BusinessException extends RuntimeException {
 
     public static RuntimeException roleNotFound(long id) {
         throw new BusinessException(ErrorCode.ROLE_NOT_FOUND, id);
+    }
+
+    public static RuntimeException schedulerStatusAlreadyExists() {
+        throw new BusinessException(ErrorCode.SCHEDULER_STATUS_ALREADY_EXISTS);
     }
 
     public ErrorCode getErrorCode() {

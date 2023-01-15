@@ -5,6 +5,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
 
 import java.util.List;
@@ -66,9 +67,6 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     private List<ContextPlugin> getPlugins() {
         return plugins != null ? plugins : List.of();
-//        return new ArrayList<>(
-//                applicationContext.getBeansOfType(ContextPlugin.class).values()
-//        );
     }
 
     @Autowired
@@ -85,6 +83,10 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     public InstanceContext newContext() {
         return newContext(ContextUtil.getTenantId());
+    }
+
+    public IInstanceContext newRootContext() {
+        return newContext(Constants.ROOT_TENANT_ID);
     }
 
     public static void setStdContext(IInstanceContext context) {

@@ -1,17 +1,16 @@
 package tech.metavm.object.instance.persistence;
 
-import java.util.List;
 import java.util.Objects;
 
-public class IndexItemPO {
+public class IndexEntryPO {
 
     private long tenantId;
     private final IndexKeyPO key;
     private long instanceId;
 
-    public IndexItemPO(long tenantId, long constraintId, List<String> columns, long instanceId) {
+    public IndexEntryPO(long tenantId, IndexKeyPO key, long instanceId) {
         this.tenantId = tenantId;
-        key = new IndexKeyPO(constraintId, columns);
+        this.key = key;
         this.instanceId = instanceId;
     }
 
@@ -23,7 +22,7 @@ public class IndexItemPO {
         this.tenantId = tenantId;
     }
 
-    public IndexItemPO() {
+    public IndexEntryPO() {
         key = new IndexKeyPO();
     }
 
@@ -35,32 +34,36 @@ public class IndexItemPO {
         key.setConstraintId(constraintId);
     }
 
-    public void setColumns(List<String> keys) {
-        key.setColumns(keys);
+    public String getColumn0() {
+        return key.getColumn0();
+    }
+
+    public void setColumn0(String column) {
+        key.setColumn0(column);
     }
 
     public String getColumn1() {
         return key.getColumn1();
     }
 
-    public void setColumn1(String column1) {
-        key.setColumn1(column1);
+    public void setColumn1(String column) {
+        key.setColumn1(column);
     }
 
     public String getColumn2() {
         return key.getColumn2();
     }
 
-    public void setColumn2(String column2) {
-        key.setColumn2(column2);
+    public void setColumn2(String column) {
+        key.setColumn2(column);
     }
 
     public String getColumn3() {
         return key.getColumn3();
     }
 
-    public void setColumn3(String column3) {
-        key.setColumn3(column3);
+    public void setColumn3(String column) {
+        key.setColumn3(column);
     }
 
     public String getColumn4() {
@@ -71,12 +74,24 @@ public class IndexItemPO {
         key.setColumn4(column4);
     }
 
-    public String getColumn5() {
-        return key.getColumn5();
+    public void setColumnX(Long columnX) {
+        key.setColumnX(columnX);
     }
 
-    public void setColumn5(String column5) {
-        key.setColumn5(column5);
+    public boolean isColumnXPresent() {
+        return key.isColumnXPresent();
+    }
+
+    public void setColumnXPresent(boolean columnXPresent) {
+        key.setColumnXPresent(columnXPresent);
+    }
+
+    public String getColumn(int i) {
+        return key.getColumn(i);
+    }
+
+    public Long getColumnX() {
+        return key.getColumnX();
     }
 
     public IndexKeyPO getKey() {
@@ -95,12 +110,21 @@ public class IndexItemPO {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        IndexItemPO that = (IndexItemPO) o;
+        IndexEntryPO that = (IndexEntryPO) o;
         return instanceId == that.instanceId && Objects.equals(key, that.key);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(key, instanceId);
+    }
+
+    @Override
+    public String toString() {
+        return "IndexItemPO{" +
+                "tenantId=" + tenantId +
+                ", key=" + key +
+                ", instanceId=" + instanceId +
+                '}';
     }
 }

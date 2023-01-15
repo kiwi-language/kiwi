@@ -66,8 +66,8 @@
 //
 //    private void initType(TypeInfo typeInfo, StdTypeContext context) {
 //        context.addType(typeInfo.toPO());
-//        for (FieldInfo field : typeInfo.fields()) {
-//            context.addField(field.toPO(typeInfo.id()));
+//        for (FieldInfo indexItem : typeInfo.fields()) {
+//            context.addField(indexItem.toPO(typeInfo.id()));
 //        }
 //        for (UniqueConstraintInfo constraint : typeInfo.uniqueConstraints()) {
 //            context.addConstraint(constraint.toPO(typeInfo.id()));
@@ -158,28 +158,28 @@
 //    @SuppressWarnings("unused")
 //    public static FieldPO getFieldPO(long id) {
 //        for (TypeInfo typeInfo : TYPE_INFO_LIST) {
-//            for (FieldInfo field : typeInfo.fields()) {
-//                if(field.id() == id) {
-//                    return convertToFieldPO(typeInfo.id(), field);
+//            for (FieldInfo indexItem : typeInfo.fields()) {
+//                if(indexItem.id() == id) {
+//                    return convertToFieldPO(typeInfo.id(), indexItem);
 //                }
 //            }
 //        }
-//        throw new InternalException("Can not found standard field with id: " + id);
+//        throw new InternalException("Can not found standard indexItem with id: " + id);
 //    }
 //
 //    public static List<FieldPO> getFieldPOs(List<Long> ids) {
 //        Set<Long> idSet = new HashSet<>(ids);
 //        List<FieldPO> results = new ArrayList<>();
 //        for (TypeInfo typeInfo : TYPE_INFO_LIST) {
-//            for (FieldInfo field : typeInfo.fields()) {
-//                if(idSet.contains(field.id())) {
-//                    idSet.remove(field.id());
-//                    results.add(convertToFieldPO(typeInfo.id(), field));
+//            for (FieldInfo indexItem : typeInfo.fields()) {
+//                if(idSet.contains(indexItem.id())) {
+//                    idSet.remove(indexItem.id());
+//                    results.add(convertToFieldPO(typeInfo.id(), indexItem));
 //                }
 //            }
 //        }
 //        if(!idSet.isEmpty()) {
-//            throw new InternalException("Can not found standard field for ids: " + idSet);
+//            throw new InternalException("Can not found standard indexItem for ids: " + idSet);
 //        }
 //        return results;
 //    }
@@ -187,8 +187,8 @@
 //    @SuppressWarnings("unused")
 //    public static boolean isStandardFieldId(long id) {
 //        for (TypeInfo typeInfo : TYPE_INFO_LIST) {
-//            for (FieldInfo field : typeInfo.fields()) {
-//                if(field.id() == id) {
+//            for (FieldInfo indexItem : typeInfo.fields()) {
+//                if(indexItem.id() == id) {
 //                    return true;
 //                }
 //            }

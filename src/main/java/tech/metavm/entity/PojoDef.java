@@ -10,7 +10,6 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,9 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
-    private final PojoDef<? super T> parentDef;
+    private final PojoDef<? super T> superDef;
     private final List<IFieldDef> fieldDefList = new ArrayList<>();
-    private final List<UniqueConstraintDef> uniqueConstraintDefList = new ArrayList<>();
+    private final List<IndexConstraintDef> indexConstraintDefList = new ArrayList<>();
     private final Map<ClassType, PojoDef<? extends T>> subTypeDefList = new HashMap<>();
     protected final ClassType type;
     private Long id;
@@ -28,16 +27,16 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     public PojoDef(Class<T> javaClass,
                    Type javaType,
-                   @Nullable PojoDef<? super T> parentDef,
+                   PojoDef<? super T> superDef,
                    ClassType type,
                    DefMap defMap
     ) {
         super(javaClass, javaType, ClassInstance.class);
-        this.parentDef = parentDef;
         this.type = type;
         this.defMap = defMap;
-        if(parentDef != null) {
-            parentDef.addSubTypeDef(this);
+        this.superDef = superDef;
+        if(superDef != null) {
+            superDef.addSubTypeDef(this);
         }
     }
 
@@ -45,8 +44,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         fieldDefList.add(fieldDef);
     }
 
-    void addUniqueConstraintDef(UniqueConstraintDef uniqueConstraintDef) {
-        this.uniqueConstraintDefList.add(uniqueConstraintDef);
+    void addUniqueConstraintDef(IndexConstraintDef indexConstraintDef) {
+        this.indexConstraintDefList.add(indexConstraintDef);
     }
 
     @Override
@@ -66,8 +65,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     private void setPojoFields(T pojo, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        if (parentDef != null) {
-            parentDef.setPojoFields(pojo, instance, modelInstanceMap);
+        if (superDef != null) {
+            superDef.setPojoFields(pojo, instance, modelInstanceMap);
         }
         setFieldValues(pojo, instance, modelInstanceMap);
     }
@@ -125,8 +124,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     protected Map<Field, Instance> getInstanceFields(Object object, ModelInstanceMap instanceMap) {
         Map<Field, Instance> fieldData = new HashMap<>();
-        if(parentDef != null) {
-            fieldData.putAll(parentDef.getInstanceFields(object, instanceMap));
+        if(superDef != null) {
+            fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
         }
         for (IFieldDef fieldDef : fieldDefList) {
             fieldData.put(fieldDef.getField(), fieldDef.getInstanceFieldValue(object, instanceMap));
@@ -142,9 +141,9 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         return NncUtils.findRequired(fieldDefList, fieldDef -> fieldDef.getJavaField().equals(javaField));
     }
 
-    public UniqueConstraintDef getUniqueConstraintDef(IndexDef<?> indexDef) {
+    public IndexConstraintDef getIndexConstraintDef(IndexDef<?> indexDef) {
         return NncUtils.findRequired(
-                uniqueConstraintDefList,
+                indexConstraintDefList,
                 ucd -> ucd.getIndexDef() == indexDef
         );
     }
@@ -166,8 +165,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         for (IFieldDef fieldDef : fieldDefList) {
             mapping.put(fieldDef.getJavaField(), fieldDef.getField());
         }
-        for (UniqueConstraintDef uniqueConstraintDef : uniqueConstraintDefList) {
-            mapping.put(uniqueConstraintDef.getIndexDefField(), uniqueConstraintDef.getUniqueConstraint());
+        for (IndexConstraintDef indexConstraintDef : indexConstraintDefList) {
+            mapping.put(indexConstraintDef.getIndexDefField(), indexConstraintDef.getIndexConstraint());
         }
         return mapping;
     }
@@ -191,13 +190,13 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         if(fieldDef != null) {
             return fieldDef.getField();
         }
-        return NncUtils.get(parentDef, p -> p.getFieldByJavaFieldName0(javaFieldName));
+        return NncUtils.get(superDef, p -> p.getFieldByJavaFieldName0(javaFieldName));
     }
 
     public Field getFieldByJavaFieldName(String javaFieldName) {
         return NncUtils.requireNonNull(
                 getFieldByJavaFieldName0(javaFieldName),
-                "Can not find field for java field name '" + javaFieldName + "'"
+                "Can not find indexItem for java indexItem name '" + javaFieldName + "'"
         );
     }
 
@@ -212,8 +211,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     @SuppressWarnings("unused")
-    public PojoDef<? super T> getParentDef() {
-        return parentDef;
+    public PojoDef<? super T> getSuperDef() {
+        return superDef;
     }
 
     public ClassType getType() {

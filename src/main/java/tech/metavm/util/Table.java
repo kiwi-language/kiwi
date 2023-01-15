@@ -28,6 +28,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
+    private boolean elementAsChild;
     private ModelIdentity identifier;
 
     public Table(Class<T> klass, Collection<T> data) {
@@ -51,25 +52,34 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         this(TypeReference.of(klass), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
+    public Table(Class<T> klass, boolean elementAsChild) {
+        this(TypeReference.of(klass).getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD, elementAsChild);
+    }
+
     public Table(TypeReference<T> typeRef) {
         this(typeRef, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
+    public Table(TypeReference<T> typeRef, boolean elementAsChild) {
+        this(typeRef.getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD, elementAsChild);
+    }
+
     public Table(TypeReference<T> typeRef, Collection<T> data, int buildIndexThreshold) {
-        this(typeRef.getGenericType(), data, buildIndexThreshold);
+        this(typeRef.getGenericType(), data, buildIndexThreshold, false);
     }
 
     public Table(Type elementType) {
-        this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
+        this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD, false);
     }
 
-    private Table(Type elementType, Collection<T> data, int buildIndexThreshold) {
+    private Table(Type elementType, Collection<T> data, int buildIndexThreshold, boolean elementAsChild) {
         this.genericType = new ParameterizedTypeImpl(
                 null,
                 Table.class,
                 new Type[]{ReflectUtils.eraseType(elementType)}
         );
         this.buildIndexThreshold = buildIndexThreshold;
+        this.elementAsChild = elementAsChild;
         addAll(data);
     }
 
@@ -80,9 +90,17 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         }
     }
 
+    public void setElementAsChild(boolean elementAsChild) {
+        this.elementAsChild = elementAsChild;
+    }
+
     public void initId(long id) {
         NncUtils.requireNull(this.id, "id already initialized");
         this.id = id;
+    }
+
+    public boolean isElementAsChild() {
+        return elementAsChild;
     }
 
     public <K> T get(IndexMapper<T, K> keyMapper, K key) {
@@ -212,7 +230,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     public Table<T> merge(Table<T> that) {
-        Table<T> merged = new Table<>(genericType, List.of(), buildIndexThreshold);
+        Table<T> merged = new Table<>(genericType, List.of(), buildIndexThreshold, elementAsChild);
         indexes.keySet().forEach(merged::buildIndex);
         merged.addAll(this);
         merged.addAll(that);
@@ -225,7 +243,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     public <R> Table<R> mapAndFilter(Function<T, R> mapper, Predicate<R> filter) {
         beforeAccess();
-        Table<R> that = new Table<>(genericType, List.of(), buildIndexThreshold);
+        Table<R> that = new Table<>(genericType, List.of(), buildIndexThreshold, elementAsChild);
         for (T t : this) {
             R r = mapper.apply(t);
             if(filter.test(r)) {
@@ -237,7 +255,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     @SuppressWarnings("unused")
     private Table<T> createSame() {
-        Table<T> that = new Table<>(genericType, List.of(), buildIndexThreshold);
+        Table<T> that = new Table<>(genericType, List.of(), buildIndexThreshold, elementAsChild);
         for (IndexDesc<T> indexDesc : indexes.keySet()) {
             that.buildIndex(indexDesc);
         }

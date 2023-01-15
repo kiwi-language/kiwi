@@ -35,9 +35,9 @@ public class FlowManagerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         EntityIdProvider idProvider = new MockIdProvider();
-        MockRegistry.setUp(idProvider);
+        MemInstanceStore instanceStore = new MemInstanceStore();
+        MockRegistry.setUp(idProvider, instanceStore);
 
-        IInstanceStore instanceStore = new MemInstanceStore();
         instanceContextFactory = new InstanceContextFactory(instanceStore)
                 .setIdService(idProvider)
                 .setDefaultAsyncProcessing(false);
@@ -46,7 +46,7 @@ public class FlowManagerTest extends TestCase {
         InstanceSearchService instanceSearchService = new MemInstanceSearchService();
         instanceContextFactory.setPlugins(List.of(
                         new CheckConstraintPlugin(),
-                        new IndexConstraintPlugin(new MemIndexItemMapper()),
+                        new IndexConstraintPlugin(new MemIndexEntryMapper()),
                         new ChangeLogPlugin(new InstanceLogServiceImpl(
                                 instanceSearchService,
                                 instanceContextFactory,

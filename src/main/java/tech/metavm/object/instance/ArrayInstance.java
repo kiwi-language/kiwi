@@ -6,7 +6,6 @@ import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
 import tech.metavm.object.instance.rest.ArrayParamDTO;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
@@ -19,13 +18,18 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return new ArrayInstance(type);
     }
 
-    private final List<Instance> elements;
-    private final boolean elementAsChild;
+    private final List<Instance> elements = new ArrayList<>();
+    private boolean elementAsChild;
 
     protected ArrayInstance(ArrayType type) {
         super(type);
-        elements = new ArrayList<>();
         this.elementAsChild = false;
+    }
+
+
+    public ArrayInstance(ArrayType type, boolean elementAsChild) {
+        super(type);
+        this.elementAsChild = elementAsChild;
     }
 
     public ArrayInstance(ArrayType type,
@@ -39,7 +43,9 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
                          ) {
         super(type);
         this.elementAsChild = elementAsChild;
-        this.elements = new ArrayList<>(elements);
+        for (Instance element : elements) {
+            addInternally(element);
+        }
     }
 
     public ArrayInstance(Long id,
@@ -51,12 +57,30 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     ) {
         super(id, type, version, syncVersion);
         this.elementAsChild = elementAsChild;
-        this.elements = new ArrayList<>(elements);
+        for (Instance element : elements) {
+            addInternally(element);
+        }
     }
 
     @NoProxy
     public void initialize(List<Instance> elements) {
-        this.elements.addAll(elements);
+        for (Instance element : elements) {
+            addInternally(element);
+        }
+    }
+
+    @Override
+    public boolean isChild(Instance instance) {
+        return elementAsChild && elements.contains(instance);
+    }
+
+    public Set<Instance> getChildren() {
+        if(elementAsChild) {
+            return NncUtils.filterUnique(elements, Instance::isNotNull);
+        }
+        else {
+            return Set.of();
+        }
     }
 
     public Instance get(int i) {
@@ -86,6 +110,10 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return InstanceUtils.createBoolean(contains(instance));
     }
 
+    public void setElementAsChild(boolean elementAsChild) {
+        this.elementAsChild = elementAsChild;
+    }
+
     @NotNull
     @Override
     public Iterator<Instance> iterator() {
@@ -106,18 +134,35 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @Override
     public boolean add(Instance element) {
+        return addInternally(element);
+    }
+
+    private boolean addInternally(Instance element) {
+        new ReferenceRT(this, element, null);
         elements.add(element);
         return true;
     }
 
     public void setElements(List<Instance> elements) {
-        this.elements.clear();
-        this.elements.addAll(elements);
+        for (Instance element : new ArrayList<>(this.elements)) {
+            remove(element);
+        }
+        this.addAll(elements);
     }
 
     @Override
     public boolean remove(Object element) {
-        return elements.remove(element);
+        return removeInternally(element);
+    }
+
+    private boolean removeInternally(Object element) {
+        //noinspection SuspiciousMethodCalls
+        if(elements.remove(element)) {
+            Instance removed = (Instance) element;
+            getOutgoingReference(removed, null).clear();
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -128,17 +173,36 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends Instance> c) {
-        return elements.addAll(c);
+        c.forEach(this::add);
+        return true;
     }
 
     @Override
     public boolean removeAll(@NotNull Collection<?> c) {
-        return elements.removeAll(c);
+        boolean anyChange = false;
+        for (Object o : c) {
+            if(remove(o)) {
+                anyChange = true;
+            }
+        }
+        return anyChange;
     }
 
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
-        return elements.retainAll(c);
+        List<Object> toRemove = new ArrayList<>();
+        for (Object o : c) {
+            if(!contains(o)) {
+                toRemove.add(o);
+            }
+        }
+        if(toRemove.isEmpty()) {
+            return false;
+        }
+        for (Object o : toRemove) {
+            remove(o);
+        }
+        return true;
     }
 
     public int length() {
@@ -188,7 +252,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     @Override
     @NoProxy
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return toReferencePO();
+        return toIdentityPO();
     }
 
     @Override
@@ -203,20 +267,20 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         );
     }
 
-    private static Object elementToPO(long tenantId, Object element, IdentitySet<Instance> visited) {
-        if(element == null) {
+    private static Object elementToPO(long tenantId, Instance element, IdentitySet<Instance> visited) {
+        if(element.isNull()) {
             return null;
         }
-        if(element instanceof Instance instance) {
-            if(instance.isValue()) {
-                return instance.toPO(tenantId, visited);
-            }
-            else {
-                return instance.toReferencePO();
-            }
+        if(element instanceof PrimitiveInstance primitiveInstance) {
+            return primitiveInstance.getValue();
         }
         else {
-            return element;
+            if(element.isValue()) {
+                return element.toPO(tenantId, visited);
+            }
+            else {
+                return element.toIdentityPO();
+            }
         }
     }
 
@@ -235,7 +299,9 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     public void clear() {
-        elements.clear();
+        for (Instance instance : new ArrayList<>(elements)) {
+            remove(instance);
+        }
     }
 
     @Override

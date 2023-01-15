@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.ConstraintRT;
+import tech.metavm.object.meta.Constraint;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -49,7 +49,7 @@ public class TypeParserTest extends TestCase {
     public void testAsteriskWildcard() {
         ParameterizedType parameterizedType = ParameterizedTypeImpl.create(
                 Table.class,
-                ParameterizedTypeImpl.create(ConstraintRT.class, WildcardTypeImpl.createAsterisk())
+                ParameterizedTypeImpl.create(Constraint.class, WildcardTypeImpl.createAsterisk())
         );
         Type parsedType = TypeParser.parse(parameterizedType.getTypeName());
         Assert.assertEquals(parsedType, parsedType);

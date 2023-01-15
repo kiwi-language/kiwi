@@ -12,6 +12,7 @@ import tech.metavm.util.NncUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static tech.metavm.util.PersistenceUtil.convertForLoading;
@@ -34,7 +35,7 @@ public class InstanceMapperGateway {
                     ids,
                     this::isArrayId,
                     arrayIds -> new ArrayList<>(instanceArrayMapper.selectByIds(tenantId, arrayIds)),
-                    instanceIds -> instanceMapper.selectByIds(tenantId, ids)
+                    instanceIds -> instanceMapper.selectByIds(tenantId, instanceIds)
                 )
         );
     }
@@ -73,6 +74,15 @@ public class InstanceMapperGateway {
                 deletes,
                 instances -> instanceMapper.batchDelete(tenantId, timestamp, NncUtils.map(instances, InstancePO::nextVersion)),
                 arrays -> instanceArrayMapper.batchDelete(NncUtils.mapToIds(arrays))
+        );
+    }
+
+    public List<Long> getAliveIds(long tenantId, Collection<Long> ids) {
+        return NncUtils.splitAndMerge(
+                ids,
+                this::isArrayId,
+                arrayIds -> instanceArrayMapper.getAliveIds(tenantId, arrayIds),
+                objectIds -> instanceMapper.getAliveIds(tenantId, objectIds)
         );
     }
 

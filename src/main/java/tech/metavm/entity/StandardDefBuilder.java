@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.NullInstance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.Null;
 import tech.metavm.util.Password;
@@ -97,20 +96,18 @@ public class StandardDefBuilder {
 
         defMap.addDef(objectDef);
 
-        ValueDef<Record> recordDef = new ValueDef<>(
+        ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,
-                null,
-                typeFactory.createValueClass("记录", null),
+                typeFactory.createValueClass("记录", Record.class.getSimpleName(), null),
                 defMap
         );
         defMap.addDef(recordDef);
 
-        EntityDef<Entity> entityDef = new EntityDef<>(
+        EntityDef<Entity> entityDef = createEntityDef(
                 Entity.class,
                 Entity.class,
-                null,
-                typeFactory.createClass("实体", null),
+                typeFactory.createClass("实体", Entity.class.getSimpleName(),null),
                 defMap
         );
 
@@ -125,11 +122,10 @@ public class StandardDefBuilder {
                 )
         );
 
-        ClassType enumType = typeFactory.createClass("枚举", null);
-        enumDef = new ValueDef<>(
+        ClassType enumType = typeFactory.createClass("枚举", Enum.class.getSimpleName(), null);
+        enumDef = createValueDef(
+                Enum.class,// Enum is not a RuntimeGeneric, use the raw class
                 new TypeReference<Enum<?>>() {}.getType(),
-                Enum.class, // Enum is not a RuntimeGeneric, use the raw class
-                null,
                 enumType,
                 defMap
         );
@@ -148,9 +144,38 @@ public class StandardDefBuilder {
 
         defMap.addDef(enumDef);
 
-//        defMap.addDef(new InstanceDef<>(Instance.class));
-//        defMap.addDef(new InstanceDef<>(ClassInstance.class));
-//        defMap.addDef(new InstanceDef<>(ArrayInstance.class));
+        defMap.addDef(new InstanceDef<>(Instance.class));
+        defMap.addDef(new InstanceDef<>(ClassInstance.class));
+        defMap.addDef(new InstanceDef<>(ArrayInstance.class));
+    }
+
+
+    @SuppressWarnings("SameParameterValue")
+    private <T extends Entity> EntityDef<T> createEntityDef(java.lang.reflect.Type javaType,
+                                                            Class<T> javaClass,
+                                                            ClassType type,
+                                                            DefMap defMap) {
+        return new EntityDef<>(
+                javaClass,
+                javaType,
+                null,
+                type,
+                defMap
+        );
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private <T> ValueDef<T> createValueDef(java.lang.reflect.Type javaType,
+                                           Class<T> javaClass,
+                                           ClassType type,
+                                           DefMap defMap) {
+        return new ValueDef<>(
+                javaClass,
+                javaType,
+                null,
+                type,
+                defMap
+        );
     }
 
     private tech.metavm.object.meta.Field createField(Field javaField,

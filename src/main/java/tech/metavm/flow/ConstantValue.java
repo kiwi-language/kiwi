@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
@@ -13,7 +14,7 @@ import tech.metavm.util.InstanceUtils;
 @EntityType("常量值")
 public class ConstantValue extends Value {
 
-    @EntityField("值")
+    @ChildEntity("值")
     private final Expression expression;
 
     public ConstantValue(ValueDTO valueDTO, ParsingContext parsingContext) {

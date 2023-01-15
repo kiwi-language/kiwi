@@ -22,7 +22,7 @@ public class LoopNode extends NodeRT<LoopParam> {
         return new LoopNode(nodeDTO, condition, firstChild, context.getScope(nodeDTO.scopeId()));
     }
 
-    @EntityField("循环条件")
+    @ChildEntity("循环条件")
     private Value condition;
     @EntityField("首节点")
     private final NodeRT<?> firstChild;

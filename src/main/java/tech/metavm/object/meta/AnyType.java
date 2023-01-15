@@ -8,7 +8,8 @@ import java.util.function.Function;
 public class AnyType extends Type {
 
     public AnyType() {
-        super("Any",  false, false, TypeCategory.ANY);
+        super("任意类型",  false, false, TypeCategory.ANY);
+        setCode("Any");
     }
 
     @Override

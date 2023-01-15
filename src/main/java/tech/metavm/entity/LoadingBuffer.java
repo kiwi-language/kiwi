@@ -1,10 +1,13 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.persistence.IdentityPO;
+import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.IdAndValue;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -20,6 +23,7 @@ public class LoadingBuffer {
     private final Set<Long> loaded = new HashSet<>();
     private final InstanceContext context;
     private final IInstanceStore instanceStore;
+    private final Set<Long> aliveIds = new HashSet<>();
     private final Map<Long, RangeCache<Long>> rangeCaches = new HashMap<>();
 
     public LoadingBuffer(InstanceContext context) {
@@ -48,7 +52,7 @@ public class LoadingBuffer {
         supplierMap.forEach(this::preload);
     }
 
-    public InstancePO getEntityPO(long id) {
+    public InstancePO getInstancePO(long id) {
         if(!identityResultMap.containsKey(id)) {
             load(LoadRequest.create(id, ENUM_CONSTANTS_LAZY_LOADING));
             flush();
@@ -72,7 +76,47 @@ public class LoadingBuffer {
     }
 
     private List<InstancePO> loadInstancePOs(List<LoadRequest> requests) {
-        return instanceStore.load(StoreLoadRequest.fromLoadRequests(requests), context);
+        List<InstancePO> instancePOs = instanceStore.load(StoreLoadRequest.fromLoadRequests(requests), context);
+        addAliveIds(instancePOs);
+        return instancePOs;
+    }
+
+    public boolean isRefTargetAlive(long id) {
+        return identityResultMap.containsKey(id) || aliveIds.contains(id);
+    }
+
+    private void addAliveIds(List<InstancePO> instancePOs) {
+        Set<Long> refIds = new HashSet<>();
+        for (InstancePO instancePO : instancePOs) {
+            if(instancePO instanceof InstanceArrayPO arrayPO) {
+                extractRefIdsFromArray(arrayPO, refIds);
+            }
+            else {
+                extractRefIdsFromObject(instancePO, refIds);
+            }
+        }
+        refIds = new HashSet<>(NncUtils.filterNot(refIds, identityResultMap::containsKey));
+        aliveIds.addAll(instanceStore.getAliveInstanceIds(context.getTenantId(), refIds));
+    }
+
+    public void extractRefIdsFromObject(InstancePO instancePO, Set<Long> refIds) {
+        for (Object fieldValue: instancePO.getData().values()) {
+            NncUtils.invokeIfNotNull(convertToRefId(fieldValue), refIds::add);
+        }
+    }
+
+    public void extractRefIdsFromArray(InstanceArrayPO arrayPO, Set<Long> refIds) {
+        List<Object> elements = arrayPO.getElements();
+        for (Object element : elements) {
+            NncUtils.invokeIfNotNull(convertToRefId(element), refIds::add);
+        }
+    }
+
+    private Long convertToRefId(Object fieldValue) {
+        if(fieldValue instanceof IdentityPO identityPO) {
+            return identityPO.id();
+        }
+        return null;
     }
 
     private void flushByTypeRequests() {

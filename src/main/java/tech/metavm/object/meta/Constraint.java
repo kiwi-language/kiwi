@@ -11,7 +11,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 
 @EntityType("约束")
-public abstract class ConstraintRT<T> extends Entity {
+public abstract class Constraint<T> extends Entity {
 
     @EntityField("所属类型")
     private final ClassType declaringType;
@@ -21,7 +21,7 @@ public abstract class ConstraintRT<T> extends Entity {
     @Nullable
     private String message;
 
-    public ConstraintRT(ConstraintKind kind, ClassType declaringType, @Nullable String message) {
+    public Constraint(ConstraintKind kind, ClassType declaringType, @Nullable String message) {
         this.declaringType = declaringType;
         this.kind = kind;
         this.message = message;

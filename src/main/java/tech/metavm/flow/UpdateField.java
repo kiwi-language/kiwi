@@ -1,9 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.query.EvaluationContext;
@@ -20,7 +17,7 @@ public class UpdateField extends Entity {
     private final Field field;
     @EntityField("操作")
     private final UpdateOp op;
-    @EntityField("值")
+    @ChildEntity("值")
     private final Value value;
 
     public UpdateField(ClassType declaringType, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext) {
@@ -54,7 +51,7 @@ public class UpdateField extends Entity {
                 updateValue = instance.getLong(field.getId()).add((LongInstance) evaluatedValue);
             }
             else {
-                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
+                throw new InternalException("Update operation: " + op + " is not supported for indexItem type: " + field.getType());
             }
         }
         else if(op == UpdateOp.DECREASE) {
@@ -68,7 +65,7 @@ public class UpdateField extends Entity {
                 updateValue = instance.getLong(field.getId()).subtract((LongInstance) evaluatedValue);
             }
             else {
-                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
+                throw new InternalException("Update operation: " + op + " is not supported for indexItem type: " + field.getType());
             }
         }
         else {

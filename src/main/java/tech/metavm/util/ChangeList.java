@@ -11,8 +11,13 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
     public static <T> ChangeList<T> empty() {
         return new ChangeList<>(List.of(), List.of(), List.of());
     }
+
     public static <T> ChangeList<T> inserts(List<T> inserts) {
         return new ChangeList<>(inserts, List.of(), List.of());
+    }
+
+    public static <T> ChangeList<T> deletes(List<T> deletes) {
+        return new ChangeList<>(List.of(), List.of(), deletes);
     }
 
     public static <T,K> ChangeList<T> build(List<T> beforeList, List<T> afterList, Function<T, K> keyMapping) {

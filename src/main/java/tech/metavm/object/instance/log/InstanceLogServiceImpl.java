@@ -3,16 +3,22 @@ package tech.metavm.object.instance.log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionOperations;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.IInstanceContextFactory;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.job.Job;
+import tech.metavm.job.JobSignal;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.search.InstanceSearchService;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 
 @Component
@@ -68,8 +74,17 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                 InstanceLog::isInsertOrUpdate,
                 InstanceLog::getId
         );
+        Set<Long> insertIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         IInstanceContext context = instanceContextFactory.newContext(tenantId);
+
         List<ClassInstance> toIndex = NncUtils.filterByType(context.batchGet(idsToLoad), ClassInstance.class);
+        ClassType jobType = ModelDefRegistry.getClassType(Job.class);
+        List<ClassInstance> jobInstances = NncUtils.filter(
+                toIndex, inst -> insertIds.contains(inst.getId()) && jobType.isInstance(inst)
+        );
+        if(NncUtils.isNotEmpty(jobInstances)) {
+            increaseUnfinishedJobCount(tenantId, jobInstances.size());
+        }
         List<Long> toDelete = NncUtils.filterAndMap(
                 logs,
                 InstanceLog::isDelete,
@@ -79,5 +94,11 @@ public class InstanceLogServiceImpl implements InstanceLogService {
         instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));
     }
 
+    private void increaseUnfinishedJobCount(long tenantId, int newJobCount) {
+        IEntityContext rootContext = instanceContextFactory.newRootContext().getEntityContext();
+        JobSignal signal = rootContext.selectByUniqueKey(JobSignal.IDX_TENANT_ID, tenantId);
+        signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
+        rootContext.finish();
+    }
 
 }

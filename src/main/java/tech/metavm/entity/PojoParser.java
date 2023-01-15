@@ -1,9 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.NullInstance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
@@ -15,7 +12,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 
-public abstract class PojoParser<T, D extends PojoDef<T>> {
+public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T, ClassInstance, D> {
 
     protected final Class<T> javaType;
     private final java.lang.reflect.Type genericType;
@@ -28,17 +25,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         this.genericType = genericType;
         this.defMap = defMap;
         typeFactory = new TypeFactory(defMap::getType);
-    }
-
-    protected D parse() {
-        def = createDef(getSuperDef());
-        Type type = def.getType();
-        type.setNullableType(new UnionType(Set.of(type, defMap.getType(Null.class))));
-        type.setArrayType(new ArrayType(type, false));
-        defMap.preAddDef(def);
-        getPropertyFields().forEach(f -> parseField(f, def));
-        getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
-        return def;
     }
 
     private PojoDef<? super T> getSuperDef() {
@@ -57,7 +43,31 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
         return ReflectUtils.getDeclaredPersistentFields(javaType);
     }
 
-    protected abstract D createDef(PojoDef<? super T> parentDef);
+    @Override
+    public List<java.lang.reflect.Type> getDependencyTypes() {
+        Class<? super T> superClass = javaType.getSuperclass();
+        if(superClass != null && superClass != Object.class) {
+            return List.of(superClass);
+        }
+        return List.of();
+    }
+
+    @Override
+    public D create() {
+        def = createDef(getSuperDef());
+        ClassType type = def.getType();
+        type.setNullableType(new UnionType(Set.of(type, defMap.getType(Null.class))));
+        type.setArrayType(new ArrayType(type, false));
+        return def;
+    }
+
+    @Override
+    public void initialize() {
+        getPropertyFields().forEach(f -> parseField(f, def));
+        getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
+    }
+
+    protected abstract D createDef(PojoDef<? super T> superDef);
 
     private void parseField(Field javaField, PojoDef<?> declaringTypeDef) {
         if(Instance.class.isAssignableFrom(javaField.getType())) {
@@ -85,13 +95,13 @@ public abstract class PojoParser<T, D extends PojoDef<T>> {
 
     private void parseUniqueConstraint(Field indexDefField, PojoDef<T> declaringTypeDef) {
         IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
-        IndexConstraintRT uniqueConstraint = new IndexConstraintRT(
+        Index uniqueConstraint = new Index(
                 declaringTypeDef.getType(),
                 NncUtils.map(indexDef.getFieldNames(), this::getFiled),
                 indexDef.isUnique(),
                 null
         );
-        new UniqueConstraintDef(
+        new IndexConstraintDef(
             uniqueConstraint,
             indexDefField,
             declaringTypeDef

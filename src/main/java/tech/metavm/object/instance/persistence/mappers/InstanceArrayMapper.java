@@ -2,8 +2,6 @@ package tech.metavm.object.instance.persistence.mappers;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import tech.metavm.object.instance.persistence.IndexItemPO;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 
 import java.util.Collection;
@@ -27,4 +25,5 @@ public interface InstanceArrayMapper {
 
     List<InstanceArrayPO> head();
 
+    List<Long> getAliveIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids);
 }

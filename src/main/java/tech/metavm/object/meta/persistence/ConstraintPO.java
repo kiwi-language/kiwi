@@ -2,12 +2,12 @@ package tech.metavm.object.meta.persistence;
 
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.IndexDef;
-import tech.metavm.object.meta.ConstraintRT;
+import tech.metavm.object.meta.Constraint;
 import tech.metavm.util.TypeReference;
 
 public class ConstraintPO extends EntityPO {
 
-    public static final IndexDef<ConstraintRT<?>> INDEX_DECLARING_TYPE_ID =
+    public static final IndexDef<Constraint<?>> INDEX_DECLARING_TYPE_ID =
             new IndexDef<>(new TypeReference<>() {}, "typeId");
 
     private Long id;

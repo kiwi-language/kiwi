@@ -9,6 +9,8 @@ public interface DefMap {
 
     ModelDef<?, ?> getDef(Type javaType);
 
+    boolean containsDef(Type javaType);
+
     default ModelDef<?,?> getDefByModel(Object model) {
         if(model instanceof RuntimeGeneric runtimeGeneric) {
             return getDef(runtimeGeneric.getGenericType());
@@ -54,7 +56,11 @@ public interface DefMap {
         );
     }
 
-    default tech.metavm.object.meta.Type getType(Class<?> javaType) {
+    default tech.metavm.object.meta.Type getType(Class<?> javaClass) {
+        return getDef(javaClass).getType();
+    }
+
+    default tech.metavm.object.meta.Type getType(Type javaType) {
         return getDef(javaType).getType();
     }
 

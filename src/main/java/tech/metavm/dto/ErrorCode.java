@@ -27,6 +27,7 @@ public enum ErrorCode {
     FIELD_REQUIRED(303, "属性{}不能为空"),
     INVALID_TYPE_VALUE(304, "数据格式错误，类型: {}, 值: {}"),
     FIELD_VALUE_REQUIRED(305, "属性'{}'不能为空"),
+    STRONG_REFS_PREVENT_REMOVAL(306, "对象被其他对象关联，无法删除: {}"),
 
 
     // Flow相关错误
@@ -59,8 +60,11 @@ public enum ErrorCode {
     CONSTRAINT_CHECK_FAILED(702, "记录'{}'操作失败: {}"),
     CONSTRAINT_NOT_FOUND(703, "约束规则不存在(id:{})"),
 
+    // Job
+    SCHEDULER_STATUS_ALREADY_EXISTS(801, "JobSchedulerStatus已经存在"),
 
     ;
+
 
 
     private final int code;

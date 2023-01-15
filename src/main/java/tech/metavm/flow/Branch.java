@@ -1,15 +1,14 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.object.instance.query.ExpressionUtil;
 import tech.metavm.object.instance.query.FlowParsingContext;
 import tech.metavm.object.instance.query.ParsingContext;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
+
+import java.util.List;
 
 @EntityType("分支")
 public class Branch extends Entity {
@@ -40,9 +39,9 @@ public class Branch extends Entity {
     private final long index;
     @EntityField("分支节点")
     private final BranchNode owner;
-    @EntityField("范围")
+    @ChildEntity("范围")
     private final ScopeRT scope;
-    @EntityField("条件")
+    @ChildEntity("条件")
     private Value condition;
     @EntityField("是否默认")
     private final boolean preselected;
@@ -95,9 +94,9 @@ public class Branch extends Entity {
         condition = ValueFactory.getValue(branchDTO.condition(), getParsingContext(entityContext));
     }
 
-    public void remove() {
-        owner.deleteBranch(this.index);
-        getScope().remove();
+    public List<Object> onRemove() {
+        owner.deleteBranch(this);
+        return List.of();
     }
 
     public boolean checkCondition(FlowFrame frame) {

@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -25,7 +26,7 @@ public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
         return node;
     }
 
-    @EntityField("对象")
+    @ChildEntity("对象")
     private Value objectId;
     @EntityField("字段")
     private Field field;

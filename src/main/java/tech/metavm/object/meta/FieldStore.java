@@ -83,9 +83,9 @@
 //        List<Field> results = new ArrayList<>();
 //        for (FieldPO fieldPO : fieldPOs) {
 //            Type owner = typeMap.get(fieldPO.getDeclaringTypeId());
-//            Field field = NncUtils.get(owner, t -> t.getField(fieldPO.getId()));
-//            if(field != null) {
-//                results.add(field);
+//            Field indexItem = NncUtils.get(owner, t -> t.getField(fieldPO.getId()));
+//            if(indexItem != null) {
+//                results.add(indexItem);
 //            }
 //        }
 //        return results;

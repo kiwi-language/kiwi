@@ -41,7 +41,7 @@ public class DiskFormatter {
             CONFIG_DELETE_ID_FILES, true
     );
 
-    public static final Map<String, Object> CONFIG = DEV_CONFIG;
+    public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
 
 //    public static final String HOST = "localhost";
 
@@ -68,11 +68,12 @@ public class DiskFormatter {
             try(Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
                 statement.execute("delete from id_block where id > 0");
-//                statement.execute("delete from id_region where start >= 0");
+                statement.execute("delete from id_region where start >= 0");
                 statement.execute("delete from tenant where id>0");
                 statement.execute("delete from instance where id>=0");
                 statement.execute("delete from instance_array where id>=0");
-                statement.execute("delete from index_item where instance_id>=0");
+                statement.execute("delete from reference where id>0");
+                statement.execute("delete from index_entry where instance_id>=0");
                 statement.execute("delete from relation where relation.src_instance_id>=0");
             }
             catch (SQLException e) {

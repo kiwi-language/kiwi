@@ -14,6 +14,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
@@ -30,11 +31,15 @@ public class ClassType extends AbsClassType {
     @EntityField("描述")
     private @Nullable String desc;
     @ChildEntity("字段列表")
-    private final Table<Field> fields = new Table<>(Field.class);
+    private final Table<Field> fields = new Table<>(Field.class, true);
     @ChildEntity("约束列表")
-    private final Table<ConstraintRT<?>> constraints = new Table<>(new TypeReference<>() {});
-    @EntityField("流程列表")
-    private final Table<FlowRT> flows = new Table<>(FlowRT.class);
+    private final Table<Constraint<?>> constraints = new Table<>(new TypeReference<>() {}, true);
+    @ChildEntity("流程列表")
+    private final Table<FlowRT> flows = new Table<>(FlowRT.class, true);
+
+    public static volatile AtomicInteger CNT1 = new AtomicInteger(0);
+
+    public static volatile AtomicInteger CNT2 = new AtomicInteger(0);
 
     public ClassType(String name) {
         this(name, null, TypeCategory.CLASS, false, false, null);
@@ -101,7 +106,7 @@ public class ClassType extends AbsClassType {
         return fields;
     }
 
-    public Table<ConstraintRT<?>> getDeclaredConstraints() {
+    public Table<Constraint<?>> getDeclaredConstraints() {
         return constraints;
     }
 
@@ -138,15 +143,20 @@ public class ClassType extends AbsClassType {
         return typeIds;
     }
 
-    public void addConstraint(ConstraintRT<?> constraint) {
+    public List<Index> getFieldIndices(Field field) {
+        return NncUtils.filter(
+                getConstraints(Index.class),
+                index -> index.isFieldIndex(field)
+        );
+    }
+
+    public void addConstraint(Constraint<?> constraint) {
         requireNonNull(constraints).add(constraint);
     }
 
-    @Override
-    public void removeConstraint(long id) {
-        requireNonNull(constraints).removeIf(c -> c.getId() == id);
+    public void removeConstraint(Constraint<?> constraint) {
+        constraints.remove(constraint);
     }
-
 
     @JsonIgnore
     public boolean isEnum() {
@@ -201,7 +211,7 @@ public class ClassType extends AbsClassType {
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
         String fieldName = ReflectUtils.getMetaFieldName(javaField);
         return requireNonNull(getFieldByName(fieldName),
-                "Can not find field for java field " + javaField);
+                "Can not find indexItem for java indexItem " + javaField);
     }
 
     @Override
@@ -246,7 +256,7 @@ public class ClassType extends AbsClassType {
         return filterOneRequired(
                 requireNonNull(fields),
                 f -> f.getName().equals(fieldName),
-                "field not found: " + fieldName
+                "indexItem not found: " + fieldName
         );
     }
 
@@ -310,7 +320,7 @@ public class ClassType extends AbsClassType {
                 NncUtils.get(superType, Type::getId),
                 NncUtils.get(superType, Type::toDTO),
                 withFields ? NncUtils.map(getFields(), f -> f.toDTO(withFieldTypes)) : List.of(),
-                NncUtils.map(constraints, ConstraintRT::toDTO),
+                NncUtils.map(constraints, Constraint::toDTO),
                 desc,
                 getExtra()
         );
@@ -325,25 +335,32 @@ public class ClassType extends AbsClassType {
         return find(getFields(), Field::isAsTitle);
     }
 
-    public <T extends ConstraintRT<?>> List<T> getConstraints(Class<T> constraintType) {
-        return filterAndMap(
+    public <T extends Constraint<?>> List<T> getConstraints(Class<T> constraintType) {
+        List<T> result = filterAndMap(
                 constraints,
                 constraintType::isInstance,
                 constraintType::cast
         );
+        if(superType != null) {
+            result = NncUtils.merge(
+                    superType.getConstraints(constraintType),
+                    result
+            );
+        }
+        return result;
     }
 
-    public <T extends ConstraintRT<?>> T getConstraint(Class<T> constraintType, long id) {
+    public <T extends Constraint<?>> T getConstraint(Class<T> constraintType, long id) {
         return find(getConstraints(constraintType), c -> c.getId() == id);
     }
 
     @SuppressWarnings("unused")
-    public ConstraintRT<?> getConstraint(long id) {
+    public Constraint<?> getConstraint(long id) {
         return find(requireNonNull(constraints), c -> c.getId() == id);
     }
 
-    public IndexConstraintRT getUniqueConstraint(long id) {
-        return getConstraint(IndexConstraintRT.class, id);
+    public Index getUniqueConstraint(long id) {
+        return getConstraint(Index.class, id);
     }
 
     @SuppressWarnings("unused")

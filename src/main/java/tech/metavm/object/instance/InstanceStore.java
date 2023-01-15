@@ -1,49 +1,77 @@
 package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.ContextAttributeKey;
-import tech.metavm.entity.InstanceContext;
-import tech.metavm.entity.LoadingOption;
-import tech.metavm.entity.StoreLoadRequest;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.persistence.*;
-import tech.metavm.object.instance.persistence.mappers.IndexItemMapper;
+import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapperGateway;
+import tech.metavm.object.instance.persistence.mappers.ReferenceMapper;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Component
-public class InstanceStore implements IInstanceStore {
+public class InstanceStore extends BaseInstanceStore {
 
     private final InstanceMapperGateway instanceMapperGateway;
-    private final IndexItemMapper indexItemMapper;
+    private final IndexEntryMapper indexEntryMapper;
+    private final ReferenceMapper referenceMapper;
 
-    public InstanceStore(InstanceMapperGateway instanceMapperGateway, IndexItemMapper indexItemMapper) {
+    public InstanceStore(InstanceMapperGateway instanceMapperGateway,
+                         IndexEntryMapper indexEntryMapper,
+                         ReferenceMapper referenceMapper) {
         this.instanceMapperGateway = instanceMapperGateway;
-        this.indexItemMapper = indexItemMapper;
+        this.indexEntryMapper = indexEntryMapper;
+        this.referenceMapper = referenceMapper;
     }
 
     @Override
     public void save(ChangeList<InstancePO> diff) {
-        if(NncUtils.isNotEmpty(diff.inserts())) {
-            instanceMapperGateway.batchInsert(diff.inserts());
-        }
-        if(NncUtils.isNotEmpty(diff.updates())) {
-            instanceMapperGateway.batchUpdate(diff.updates());
-        }
-        if(NncUtils.isNotEmpty(diff.deletes())) {
-            instanceMapperGateway.batchDelete(diff.deletes());
-        }
+        diff.apply(
+                instanceMapperGateway::batchInsert,
+                instanceMapperGateway::batchUpdate,
+                instanceMapperGateway::batchDelete
+        );
     }
 
     @Override
-    public List<Long> selectByKey(IndexKeyPO key, InstanceContext context) {
-        List<IndexItemPO> indexItems = indexItemMapper.selectByKeys(context.getTenantId(), List.of(key));
-        return NncUtils.map(indexItems, IndexItemPO::getInstanceId);
+    public void saveReferences(ChangeList<ReferencePO> refChanges) {
+        refChanges.apply(
+                referenceMapper::batchInsert,
+                referenceMapper::batchUpdate,
+                referenceMapper::batchDelete
+        );
+    }
+
+    @Override
+    public Set<Long> getStronglyReferencedIds(long tenantId, Set<Long> ids, Set<Long> excludedSourceIds) {
+        return NncUtils.mapUnique(
+                referenceMapper.selectFirstStrongReference(tenantId, ids, excludedSourceIds),
+                ReferencePO::getTargetId
+        );
+    }
+
+    @Override
+    public List<Long> selectByKey(IndexKeyPO key, IInstanceContext context) {
+        List<IndexEntryPO> indexItems = indexEntryMapper.selectByKeys(context.getTenantId(), List.of(key));
+        return NncUtils.map(indexItems, IndexEntryPO::getInstanceId);
+    }
+
+    @Override
+    public List<Long> query(InstanceIndexQuery query, IInstanceContext context) {
+        return NncUtils.map(
+                indexEntryMapper.query(query.toPO(context.getTenantId())),
+                IndexEntryPO::getInstanceId
+        );
+    }
+
+    @Override
+    public List<Long> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context) {
+        return NncUtils.map(
+                referenceMapper.selectByTargetId(context.getTenantId(), targetId, startIdExclusive, limit),
+                ReferencePO::getSourceId
+        );
     }
 
     public boolean updateSyncVersion(List<VersionPO> versions) {
@@ -51,7 +79,7 @@ public class InstanceStore implements IInstanceStore {
     }
 
     @Override
-    public List<InstancePO> load(StoreLoadRequest request, InstanceContext context) {
+    protected List<InstancePO> loadInternally(StoreLoadRequest request, IInstanceContext context) {
         if(NncUtils.isEmpty(request.ids())) {
             return List.of();
         }
@@ -61,7 +89,12 @@ public class InstanceStore implements IInstanceStore {
         return records;
     }
 
-    public void loadTitles(List<Long> ids, InstanceContext context) {
+    @Override
+    public Set<Long> getAliveInstanceIds(long tenantId, Set<Long> instanceIds) {
+        return new HashSet<>(instanceMapperGateway.getAliveIds(tenantId, instanceIds));
+    }
+
+    public void loadTitles(List<Long> ids, IInstanceContext context) {
         if(NncUtils.isEmpty(ids)) {
             return;
         }
@@ -76,11 +109,13 @@ public class InstanceStore implements IInstanceStore {
     public List<InstancePO> getByTypeIds(Collection<Long> typeIds,
                                          long startIdExclusive,
                                          long limit,
-                                         InstanceContext context)
+                                         IInstanceContext context)
     {
-        return instanceMapperGateway.selectByInstanceTypeIds(
+        List<InstancePO> instancePOs =  instanceMapperGateway.selectByInstanceTypeIds(
                 context.getTenantId(), typeIds, startIdExclusive, limit
         );
+        clearStaleReferences(instancePOs, context);
+        return instancePOs;
     }
 
     public String getTitle(Long id, InstanceContext context) {

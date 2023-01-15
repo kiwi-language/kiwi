@@ -17,10 +17,11 @@
     <mappers>
         <mapper resource="mappers/InstanceMapper.xml"/>
         <mapper resource="mappers/InstanceArrayMapper.xml"/>
-        <mapper resource="mappers/IndexItemMapper.xml"/>
+        <mapper resource="mappers/IndexEntryMapper.xml"/>
         <mapper resource="mappers/TenantMapper.xml"/>
         <mapper resource="mappers/BlockMapper.xml"/>
         <mapper resource="mappers/RegionMapper.xml"/>
+        <mapper resource="mappers/ReferenceMapper.xml"/>
     </mappers>
 
 </configuration>

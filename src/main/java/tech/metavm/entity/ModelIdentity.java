@@ -3,9 +3,9 @@ package tech.metavm.entity;
 
 import tech.metavm.flow.FlowRT;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.meta.ConstraintRT;
+import tech.metavm.object.meta.Constraint;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.IndexConstraintRT;
+import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.UnionType;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
@@ -33,7 +33,7 @@ public record ModelIdentity(
 
     public static ModelIdentity classTypeConstraints(Class<?> javaType) {
         return new ModelIdentity(
-                ParameterizedTypeImpl.create(Table.class, ConstraintRT.class),
+                ParameterizedTypeImpl.create(Table.class, Constraint.class),
                 javaType.getName() + ".constraints"
         );
     }
@@ -86,7 +86,7 @@ public record ModelIdentity(
 
     public static ModelIdentity uniqueConstraint(java.lang.reflect.Field javaField) {
         return new ModelIdentity(
-                IndexConstraintRT.class,
+                Index.class,
                 ReflectUtils.getFieldQualifiedName(javaField)
         );
     }

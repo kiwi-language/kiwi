@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EntityChange<T extends InstancePO> implements Comparable<EntityChange<?>> {
+public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
     private final Class<T> entityType;
 
@@ -27,6 +27,14 @@ public class EntityChange<T extends InstancePO> implements Comparable<EntityChan
 
     public void addToInsert(T entity) {
         toInserts.add(entity);
+    }
+
+    public void addAllToInsert(List<T> inserts) {
+        toInserts.addAll(inserts);
+    }
+
+    public void addAllToDelete(List<T> deletes) {
+        toDelete.addAll(deletes);
     }
 
     public void addToUpdate(T entity) {

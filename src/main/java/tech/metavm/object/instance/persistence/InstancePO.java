@@ -64,6 +64,10 @@ public class InstancePO implements Identifiable {
         return data.get(column);
     }
 
+    public void set(String column, Object value) {
+        data.put(column, value);
+    }
+
     public void put(String columnName, Object object) {
         data.put(columnName, object);
     }

@@ -201,24 +201,8 @@ public class TypeManager {
         if(type == null) {
             return;
         }
-        deleteType0(type, new HashSet<>(), context);
-        context.finish();
-    }
-
-    private void deleteType0(ClassType type, Set<Long> visited, IEntityContext context) {
-        if(visited.contains(type.getId())) {
-            throw new InternalException("Circular reference. category: " + type + " is already visited");
-        }
-        visited.add(type.getId());
-        List<Field> referringFields = context.selectByKey(
-                Field.INDEX_TYPE_ID, type.getId()
-        );
-        List<String> referringFieldNames = NncUtils.map(referringFields, Field::getName);
-        if(NncUtils.isNotEmpty(referringFieldNames)) {
-            throw BusinessException.typeReferredByFields(type, referringFieldNames);
-        }
-        type.remove();
         context.remove(type);
+        context.finish();
     }
 
     @Transactional
@@ -281,9 +265,6 @@ public class TypeManager {
         if(type.isAnonymous()) {
             context.remove(type);
         }
-//        field.setState(MetadataState.DELETING);
-//        jobManager.addJob(field);
-        field.remove();
         context.remove(field);
     }
 
@@ -305,7 +286,7 @@ public class TypeManager {
     public Page<ConstraintDTO> listConstraints(long typeId, int page, int pageSize) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(typeId);
-        Page<ConstraintRT<?>> dataPage =  entityQueryService.query(
+        Page<Constraint<?>> dataPage =  entityQueryService.query(
                 EntityQuery.create(
                         new TypeReference<>() {},
                         null,
@@ -316,14 +297,14 @@ public class TypeManager {
                 context
         );
         return new Page<>(
-                NncUtils.map(dataPage.data(), ConstraintRT::toDTO),
+                NncUtils.map(dataPage.data(), Constraint::toDTO),
                 dataPage.total()
         );
     }
 
     public ConstraintDTO getConstraint(long id) {
         IEntityContext context = newContext();
-        ConstraintRT<?> constraint = context.getEntity(ConstraintRT.class, id);
+        Constraint<?> constraint = context.getEntity(Constraint.class, id);
         if(constraint == null) {
             throw BusinessException.constraintNotFound(id);
         }
@@ -333,12 +314,12 @@ public class TypeManager {
     @Transactional
     public long saveConstraint(ConstraintDTO constraintDTO) {
         IEntityContext context = newContext();
-        ConstraintRT<?> constraint;
+        Constraint<?> constraint;
         if(constraintDTO.id() == null || constraintDTO.id() == 0L) {
             constraint = ConstraintFactory.createFromDTO(constraintDTO, context);
         }
         else {
-            constraint = context.getEntity(ConstraintRT.class, constraintDTO.id());
+            constraint = context.getEntity(Constraint.class, constraintDTO.id());
             constraint.update(constraintDTO);
         }
         context.finish();
@@ -348,11 +329,11 @@ public class TypeManager {
     @Transactional
     public void removeConstraint(long id) {
         IEntityContext context = newContext();
-        ConstraintRT<?> constraint = context.getEntity(ConstraintRT.class, id);
+        Constraint<?> constraint = context.getEntity(Constraint.class, id);
         if(constraint == null) {
             throw BusinessException.constraintNotFound(id);
         }
-        constraint.remove();
+        context.remove(constraint);
         context.finish();
     }
 

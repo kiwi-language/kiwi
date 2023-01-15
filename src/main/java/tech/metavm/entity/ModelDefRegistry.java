@@ -5,7 +5,7 @@ import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.IndexConstraintRT;
+import tech.metavm.object.meta.Index;
 import tech.metavm.util.ReflectUtils;
 
 public class ModelDefRegistry {
@@ -85,8 +85,8 @@ public class ModelDefRegistry {
         return getField(ReflectUtils.getField(klass, fieldName));
     }
 
-    public static IndexConstraintRT getUniqueConstraint(IndexDef<?> indexDef) {
-        return DEF_CONTEXT.getUniqueConstraint(indexDef);
+    public static Index getIndexConstraint(IndexDef<?> indexDef) {
+        return DEF_CONTEXT.getIndexConstraint(indexDef);
     }
 
     public static Class<? extends Entity> getEntityType(ClassType type) {

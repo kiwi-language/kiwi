@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.util.Null;
 
@@ -22,5 +23,10 @@ public class NullInstance extends PrimitiveInstance {
     @Override
     public String getTitle() {
         return "空";
+    }
+
+    @Override
+    public PrimitiveFieldValueDTO toFieldValueDTO() {
+        return null;
     }
 }

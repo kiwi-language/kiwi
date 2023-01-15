@@ -86,6 +86,7 @@
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
           #{id}
         </foreach>
+    lock in share mode
   </select>
 
   <select id="selectByTypeIds" resultMap="BaseResultMap">
@@ -125,6 +126,21 @@
     <foreach collection="ids" item="id" separator="," open="(" close=")">
       #{id}
     </foreach>
+  </select>
+
+  <select id="getAliveIds" resultType="java.lang.Long">
+    select
+    id
+    from
+    instance
+    where
+    tenant_id = #{tenantId} and
+    deleted_at = 0 and
+    id in
+    <foreach collection="ids" item="id" open="(" close=")" separator=",">
+      #{id}
+    </foreach>
+    lock in share mode
   </select>
 
 </mapper>

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.PojoMatcher;
@@ -54,6 +55,13 @@ public class ClassInstanceTest extends TestCase {
         ClassInstanceParamDTO paramDTO = (ClassInstanceParamDTO) instanceDTO.param();
         Assert.assertEquals(foo.getType().getFields().size(), paramDTO.fields().size());
         TestUtils.logJSON(LOGGER, instanceDTO);
+    }
+
+    public void testIsChild() {
+        Field fooBarField = MockRegistry.getField(Foo.class, "bar");
+        ClassInstance foo = MockRegistry.getFooInstance();
+        ClassInstance bar = foo.getClassInstance(fooBarField);
+        Assert.assertTrue(foo.isChild(bar));
     }
 
 }

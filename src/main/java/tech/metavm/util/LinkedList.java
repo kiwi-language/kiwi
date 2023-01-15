@@ -490,6 +490,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             }
             lastReturned = nextNode;
             nextNode = nextNode.next;
+            nextIndex++;
             return lastReturned.value;
         }
 
@@ -501,6 +502,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             }
             nextNode = nextNode.prev;
             lastReturned = nextNode;
+            nextIndex--;
             return lastReturned .value;
         }
 
@@ -513,7 +515,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         @Override
         public int previousIndex() {
             checkForModCount();
-            return nextIndex-1;
+            return nextIndex - 1;
         }
 
         @Override

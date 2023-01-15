@@ -145,8 +145,8 @@
 //        return uniqueConstraints;
 //    }
 //
-//    public void addField(FieldInfo field) {
-//        fields.add(field);
+//    public void addField(FieldInfo indexItem) {
+//        fields.add(indexItem);
 //    }
 //
 //    public void addUniqueConstraint(UniqueConstraintInfo uniqueConstraint) {

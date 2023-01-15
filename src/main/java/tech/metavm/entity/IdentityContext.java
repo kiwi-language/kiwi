@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.IndexConstraintRT;
+import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 
@@ -65,7 +65,7 @@ public class IdentityContext {
         else if(model instanceof Field field) {
             putModelId(model, ModelIdentity.field(getJavaField(field)), result);
         }
-        else if(model instanceof IndexConstraintRT uniqueConstraint) {
+        else if(model instanceof Index uniqueConstraint) {
             putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(uniqueConstraint)), result);
         }
         else {
@@ -125,7 +125,7 @@ public class IdentityContext {
         return refs.get(0);
     }
 
-    private java.lang.reflect.Field getIndexDefField(IndexConstraintRT uniqueConstraint) {
+    private java.lang.reflect.Field getIndexDefField(Index uniqueConstraint) {
         NncUtils.requireNonNull(uniqueConstraint.getIndexDef(),
                 "Can not create model id for unique constraint '" + uniqueConstraint + " because" +
                         " indexDef is not present"
@@ -137,7 +137,7 @@ public class IdentityContext {
                 return indexDefField;
             }
         }
-        throw new InternalException("Can not find a indexDef field for UniqueConstraint '" + uniqueConstraint + "'");
+        throw new InternalException("Can not find a indexDef indexItem for UniqueConstraint '" + uniqueConstraint + "'");
     }
 
     private java.lang.reflect.Field getJavaField(Field field) {

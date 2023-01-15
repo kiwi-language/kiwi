@@ -1,10 +1,10 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.object.meta.StandardTypes;
-import tech.metavm.util.InternalException;
 
-public abstract class Entity implements Model, Identifiable, IdInitializing {
+import java.util.List;
+
+public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware {
 
     private boolean persisted;
     protected Long id;
@@ -63,26 +63,9 @@ public abstract class Entity implements Model, Identifiable, IdInitializing {
         return EntityUtils.getEntityType(this).asSubclass(Entity.class);
     }
 
-//    @Override
-//    public final boolean equals(Object o) {
-//        if (this == o) return true;
-//        if(o instanceof Entity e) {
-//            return EntityUtils.entityEquals(this, e);
-//        }
-//        else {
-//            return false;
-//        }
-//    }
+    @Override
+    public List<Object> onRemove() {
+        return List.of();
+    }
 
-    public void remove() {}
-
-//    @Override
-//    public final int hashCode() {
-//        if(id == null) {
-//            return super.hashCode();
-//        }
-//        else {
-//            return Objects.hash(id);
-//        }
-//    }
 }

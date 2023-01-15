@@ -3,9 +3,14 @@ package tech.metavm.mocks;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 
 @EntityType("优惠券")
 public class Coupon extends Entity {
+
+    public static final IndexDef<Coupon> IDX_DISCOUNT_TYPE_DISCOUNT = new IndexDef<>(
+        Coupon.class, "discountType", "discount"
+    );
 
     @EntityField("面额")
     private double discount;

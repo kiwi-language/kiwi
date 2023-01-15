@@ -7,6 +7,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink {
 
@@ -30,7 +31,11 @@ public interface IInstanceContext extends InstanceSink {
 
     boolean containsId(long id);
 
+    List<Instance> getByReferenceTargetId(long targetId, Instance startExclusive, long limit);
+
     void preload(Collection<Long> ids, LoadingOption...options);
+
+    void addRemovalListener(Consumer<Instance> removalListener);
 
     void finish();
 
@@ -46,9 +51,13 @@ public interface IInstanceContext extends InstanceSink {
         return (ClassType) getType(id);
     }
 
+    void batchRemove(Collection<Instance> instances);
+
     boolean remove(Instance instance);
 
     List<Instance> selectByKey(IndexKeyPO indexKeyPO);
+
+    List<Instance> query(InstanceIndexQuery query);
 
     default Instance selectByUniqueKey(IndexKeyPO key) {
         return NncUtils.getFirst(selectByKey(key));

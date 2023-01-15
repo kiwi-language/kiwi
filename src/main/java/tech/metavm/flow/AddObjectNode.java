@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -25,8 +26,8 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
         return node;
     }
 
-    @EntityField("字段")
-    private final Table<FieldParam> fields = new Table<>(FieldParam.class);
+    @ChildEntity("字段")
+    private final Table<FieldParam> fields = new Table<>(FieldParam.class, true);
 
     private AddObjectNode(NodeDTO nodeDTO, ClassType type, ScopeRT scope) {
         super(nodeDTO, type, scope);

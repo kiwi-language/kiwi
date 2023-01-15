@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
@@ -12,7 +13,7 @@ import tech.metavm.object.meta.Type;
 @EntityType("引用值")
 public class ReferenceValue extends Value {
 
-    @EntityField("表达式")
+    @ChildEntity("表达式")
     private final Expression expression;
 
     public ReferenceValue(ValueDTO valueDTO, ParsingContext parsingContext) {
