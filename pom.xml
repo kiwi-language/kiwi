@@ -29,7 +29,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.7.3</version>
                 <configuration>
-                    <mainClass>tech.metavm.Bootstrap</mainClass>
+                    <mainClass>tech.metavm.ObjectApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
