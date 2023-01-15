@@ -55,7 +55,7 @@ CREATE TABLE `constraint` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `indexItem`
+-- Table structure for table `field`
 --
 
 DROP TABLE IF EXISTS `field`;
@@ -176,22 +176,24 @@ CREATE TABLE `id_set_node` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `index_item`
+-- Table structure for table `index_entry`
 --
 
-DROP TABLE IF EXISTS index_entry;
+DROP TABLE IF EXISTS `index_entry`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `index_item` (
+CREATE TABLE `index_entry` (
   `tenant_id` bigint NOT NULL,
   `constraint_id` bigint NOT NULL,
+  `column0` varchar(64) DEFAULT NULL,
   `column1` varchar(64) DEFAULT NULL,
   `column2` varchar(64) DEFAULT NULL,
   `column3` varchar(64) DEFAULT NULL,
-  `instance_id` bigint NOT NULL,
   `column4` varchar(64) DEFAULT NULL,
-  `column5` varchar(64) DEFAULT NULL,
-  UNIQUE KEY `tenant_id` (`tenant_id`,`constraint_id`,`column1`,`column2`,`column3`,`instance_id`)
+  `column_x_present` tinyint(1) DEFAULT '0',
+  `column_x` bigint NOT NULL DEFAULT '0',
+  `instance_id` bigint NOT NULL,
+  KEY `idx` (`tenant_id`,`constraint_id`,`column0`,`column1`,`column2`,`column3`,`column4`,`column_x_present`,`column_x`,`instance_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -227,12 +229,13 @@ CREATE TABLE `instance_array` (
   `tenant_id` bigint NOT NULL COMMENT '租户ID',
   `type_id` bigint NOT NULL COMMENT '类型ID',
   `length` int NOT NULL DEFAULT '0',
+  `element_as_child` tinyint(1) NOT NULL DEFAULT '0',
   `elements` json NOT NULL,
   `version` bigint NOT NULL DEFAULT '0',
   `sync_version` bigint NOT NULL DEFAULT '0',
   `deleted_at` bigint NOT NULL DEFAULT '0' COMMENT '删除时间戳',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7378697630493020827 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7205760404692812 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -351,6 +354,47 @@ CREATE TABLE `node` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `nullable_instance`
+--
+
+DROP TABLE IF EXISTS `nullable_instance`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `nullable_instance` (
+  `id` bigint NOT NULL,
+  `tenant_id` bigint NOT NULL,
+  `type_id` bigint NOT NULL,
+  `value_id` bigint DEFAULT NULL,
+  `version` bigint unsigned NOT NULL DEFAULT '0',
+  `sync_version` bigint unsigned NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` bigint unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `reference`
+--
+
+DROP TABLE IF EXISTS `reference`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reference` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `tenant_id` bigint NOT NULL,
+  `field_id` bigint NOT NULL,
+  `source_id` bigint NOT NULL,
+  `target_id` bigint NOT NULL,
+  `kind` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_idx` (`tenant_id`,`field_id`,`target_id`,`source_id`),
+  KEY `target_idx` (`tenant_id`,`kind`,`target_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11553 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `relation`
 --
 
@@ -434,4 +478,4 @@ CREATE TABLE `type` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-01-06  2:33:20
+-- Dump completed on 2023-01-16  2:57:20
