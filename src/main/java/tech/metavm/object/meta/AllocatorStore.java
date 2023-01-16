@@ -5,11 +5,13 @@ import java.util.Properties;
 
 public interface AllocatorStore {
 
-    String createFile(String code);
+    String getFileName(String code);
 
     List<String> getFileNames();
 
     Properties load(String fileName);
+
+    boolean fileNameExists(String fileName);
 
     void save(String fileName, Properties properties);
 

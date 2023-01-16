@@ -9,7 +9,7 @@ public class MemAllocatorStore implements AllocatorStore {
     private final Map<String, Properties> propertiesMap = new HashMap<>();
 
     @Override
-    public String createFile(String code) {
+    public String getFileName(String code) {
         return "/id/" + code + ".properties";
     }
 
@@ -21,6 +21,11 @@ public class MemAllocatorStore implements AllocatorStore {
     @Override
     public Properties load(String fileName) {
         return NncUtils.get(propertiesMap.get(fileName), this::copyProperties);
+    }
+
+    @Override
+    public boolean fileNameExists(String fileName) {
+        return propertiesMap.containsKey(fileName);
     }
 
     @Override

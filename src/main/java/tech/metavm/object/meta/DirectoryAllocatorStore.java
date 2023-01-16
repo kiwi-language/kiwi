@@ -25,7 +25,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
     }
 
     @Override
-    public String createFile(String code) {
+    public String getFileName(String code) {
         return ID_FILE_DIR + "/" + code + ".properties";
     }
 
@@ -70,4 +70,14 @@ public class DirectoryAllocatorStore implements AllocatorStore {
             throw new InternalException("Fail to save properties to file: " + fileName);
         }
     }
+
+    @Override
+    public boolean fileNameExists(String fileName) {
+        try(InputStream inputStream = StdAllocator.class.getResourceAsStream(fileName)) {
+            return inputStream != null;
+        } catch (IOException e) {
+            throw new InternalException(e);
+        }
+    }
+
 }

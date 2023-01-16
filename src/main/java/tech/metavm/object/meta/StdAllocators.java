@@ -112,12 +112,18 @@ public class StdAllocators {
     }
 
     private StdAllocator createAllocator(Type javaType) {
-        return new StdAllocator(
-                store,
-                store.createFile(javaType.getTypeName()),
-                javaType,
-                allocateNextBaseId(javaType)
-        );
+        String fileName = store.getFileName(javaType.getTypeName());
+        if(store.fileNameExists(fileName)) {
+            return new StdAllocator(store, fileName);
+        }
+        else {
+            return new StdAllocator(
+                    store,
+                    fileName,
+                    javaType,
+                    allocateNextBaseId(javaType)
+            );
+        }
     }
 
     private long allocateNextBaseId(Type javaType) {
