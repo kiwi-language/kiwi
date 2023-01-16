@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
+import org.reflections.util.ConfigurationBuilder;
 import sun.misc.Unsafe;
 import tech.metavm.entity.*;
 
@@ -40,7 +41,8 @@ public class ReflectUtils {
     }
 
     public static Set<Class<?>> getModelClasses() {
-        Reflections reflections = new Reflections("tech.metavm");
+        Reflections reflections =
+                new Reflections(new ConfigurationBuilder().forPackages("tech.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
         Set<Class<?>> valueTypes = reflections.getTypesAnnotatedWith(ValueType.class);

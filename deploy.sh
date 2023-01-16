@@ -1,1 +1,1 @@
-ssh root@metavm.tech 'sh /root/utils/deploy_backend.sh'
+ssh root@metavm.tech 'source /root/.profile && bash /root/utils/deploy_backend.sh'
