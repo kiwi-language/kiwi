@@ -2,6 +2,7 @@ package tech.metavm.infra.rest;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.dto.Result;
 import tech.metavm.entity.Bootstrap;
@@ -25,16 +26,16 @@ public class BootstrapController {
     }
 
     @PostMapping
-    public Result<Void> boot() {
+    public Result<Void> boot(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
         initRegions();
-        save();
+        save(saveIds);
         initScheduler();
         return Result.success(null);
     }
 
     @PostMapping("/save")
-    public Result<Void> save() {
-        bootstrap.save();
+    public Result<Void> save(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
+        bootstrap.save(saveIds);
         return Result.success(null);
     }
 

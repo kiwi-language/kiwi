@@ -33,7 +33,7 @@ public class Bootstrap implements InitializingBean {
     @Transactional
     public void bootAndSave() {
         boot();
-        save();
+        save(true);
     }
 
     public void boot() {
@@ -60,7 +60,7 @@ public class Bootstrap implements InitializingBean {
     }
 
     @Transactional
-    public void save() {
+    public void save(boolean saveIds) {
         DefContext defContext = ModelDefRegistry.getDefContext();
         if(defContext.isFinished()) {
             return;
@@ -81,7 +81,9 @@ public class Bootstrap implements InitializingBean {
 //                    stdAllocators.putId(javaConstruct, instance.getId())
 //            );
 //        }
-        stdAllocators.save();
+        if(saveIds) {
+            stdAllocators.save();
+        }
         check();
     }
 
