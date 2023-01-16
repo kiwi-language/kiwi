@@ -26,7 +26,7 @@ public class SearchBuilder {
     }
 
     public static String buildQueryString(SearchQuery query) {
-        String queryString = "(" + TENANT_ID +  ":" + query.tenantId() + " OR " + TENANT_ID +  ":\\-1)";
+        String queryString = "(" + TENANT_ID +  ":" + query.tenantId() + /*" OR " + TENANT_ID +  ":\\-1*/ ")";
         if(!query.typeIds().isEmpty()) {
             String typeIdCondition = "(" +
                     NncUtils.join(query.typeIds(), id -> TYPE_ID + ":" + id, " OR ") + ")";

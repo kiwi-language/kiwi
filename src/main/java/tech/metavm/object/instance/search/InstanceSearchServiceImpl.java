@@ -30,7 +30,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     @Override
     public Page<Long> search(SearchQuery query) {
         SearchRequest searchRequest = new SearchRequest(INDEX);
-        searchRequest.routing("-1," + query.tenantId());
+        searchRequest.routing(query.tenantId() + "");
         searchRequest.source(SearchBuilder.build(query));
         try {
             SearchResponse response = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
