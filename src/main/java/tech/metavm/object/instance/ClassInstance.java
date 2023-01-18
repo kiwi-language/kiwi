@@ -30,14 +30,6 @@ public class ClassInstance extends Instance {
         this.type = type;
     }
 
-    private ClassInstance(ClassType type, Long id, List<InstanceField> fields, long version, long syncVersion) {
-        super(id, type, version, syncVersion);
-        this.type = type;
-        this.version = version;
-        this.syncVersion = syncVersion;
-        initFields(fields);
-    }
-
     public ClassInstance(Map<Field, Instance> data, ClassType type) {
         this(null, data, type, 0L, 0L);
     }
@@ -47,17 +39,16 @@ public class ClassInstance extends Instance {
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
-
-        for (Field field : type.getFields()) {
-            Instance fieldValue = NncUtils.orElse(data.get(field), field::getDefaultValue);
-            addField(new InstanceField(this, field, fieldValue));
-        }
+        initialize(data);
     }
 
     @NoProxy
-    public void initialize(Map<Field, Instance> fieldMap) {
+    public void initialize(Map<Field, Instance> data) {
         for (Field field : type.getFields()) {
-            Instance fieldValue = fieldMap.get(field);
+            Instance fieldValue = data.get(field);
+            if(fieldValue == null || fieldValue.isNull()) {
+                fieldValue = field.getDefaultValue();
+            }
             addField(new InstanceField(this, field, fieldValue));
         }
     }
@@ -79,12 +70,6 @@ public class ClassInstance extends Instance {
             }
         }
         return result;
-    }
-
-    private void initFields(List<InstanceField> fields) {
-        for (InstanceField field : fields) {
-            addField(field);
-        }
     }
 
     private void addField(InstanceField field) {

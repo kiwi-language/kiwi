@@ -10,10 +10,7 @@ import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -415,16 +412,45 @@ public abstract class BaseInstanceContext implements IInstanceContext{
         );
     }
 
-
     @Override
     public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
+        if(startExclusive == null) {
+            startExclusive = InstanceUtils.nullInstance();
+        }
         List<InstancePO> instancePOs = instanceStore.getByTypeIds(
                 List.of(NncUtils.requireNonNull(type.getId(), "Type id is not initialized")),
-                NncUtils.getOrElse(startExclusive, Instance::getId, -1L),
+                startExclusive.isNull() ? -1L : startExclusive.getId(),
                 limit,
                 this
         );
-        return NncUtils.map(instancePOs, instancePO -> get(instancePO.getId()));
+        List<Instance> persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getId()));
+        if(persistedResult.size() >= limit) {
+            return persistedResult;
+        }
+        return NncUtils.merge(
+                persistedResult,
+                getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()))
+        );
+    }
+
+    public List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit) {
+        List<Instance> typeInstances = NncUtils.filter(
+                instances,
+                type::isInstance
+        );
+        if(startExclusive.isNull()) {
+            return typeInstances.subList(0, Math.min(typeInstances.size(), limit));
+        }
+        int index = typeInstances.indexOf(startExclusive);
+        return typeInstances.subList(
+                index + 1,
+                Math.min(typeInstances.size(), index + 1 + limit)
+        );
+    }
+
+    @Override
+    public boolean existsInstances(Type type) {
+        return NncUtils.isNotEmpty(getByType(type, null, 1));
     }
 
     @Override

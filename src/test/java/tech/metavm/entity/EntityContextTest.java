@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
@@ -381,6 +382,20 @@ public class EntityContextTest extends TestCase {
 
         TypeCategory typeCategory = context.get(TypeCategory.class, instance.getId());
         Assert.assertSame(TypeCategory.CLASS, typeCategory);
+    }
+
+    public void test_add_not_null_field_without_default_value() {
+        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        Foo foo = MockRegistry.getFoo();
+        context.bind(foo);
+        Field field = new Field("testNotNull", fooType, InstanceUtils.getStringType());
+        try {
+            context.bind(field);
+            Assert.fail("Should not succeed");
+        }
+        catch (BusinessException e) {
+            Assert.assertEquals(ErrorCode.INVALID_FIELD, e.getErrorCode());
+        }
     }
 
     private EntityContext newContext() {

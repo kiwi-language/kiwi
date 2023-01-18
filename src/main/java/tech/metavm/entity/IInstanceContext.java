@@ -25,6 +25,8 @@ public interface IInstanceContext extends InstanceSink {
 
     List<Instance> getByType(Type type, Instance startExclusive, long limit);
 
+    boolean existsInstances(Type type);
+
     IEntityContext getEntityContext();
 
     boolean containsInstance(Instance instance);

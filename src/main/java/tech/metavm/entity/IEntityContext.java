@@ -27,6 +27,8 @@ public interface IEntityContext extends ModelInstanceMap {
 
     <T> List<T> getByType(Class<T> type, T startExclusive, long limit);
 
+    boolean existsInstances(Class<?> type);
+
     boolean containsEntity(Class<?> entityType, long id);
 
     <T> T getEntity(Class<T> entityType, long id);

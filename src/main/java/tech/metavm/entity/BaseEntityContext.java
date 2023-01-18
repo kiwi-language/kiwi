@@ -46,6 +46,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
+    public boolean existsInstances(Class<?> type) {
+        return NncUtils.isNotEmpty(getByType(type, null, 1));
+    }
+
+    @Override
     public <T> T getModel(Class<T> klass, Instance instance) {
         return getModel(klass, instance, null);
     }
@@ -150,25 +155,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if(containsModel(model)) {
             return;
         }
+        if(model instanceof BindingAware bindingAware) {
+            bindingAware.onBind(this);
+        }
         createInstanceFromModel(model);
     }
-
-//    @SuppressWarnings("unused")
-//    public <T extends Entity> Table<T> getArray(Class<T> elementType, long id) {
-//        return new Table<>(
-//                NncUtils.map(
-//                        ((InstanceArray) instanceContext.get(id)).getElements(),
-//                        element -> {
-//                            if(element instanceof Instance instance) {
-//                                return getModel(elementType, instance);
-//                            }
-//                            else {
-//                                return elementType.cast(element);
-//                            }
-//                        }
-//                )
-//        );
-//    }
 
     @SuppressWarnings("unused")
     public UserRT getUser(long id) {

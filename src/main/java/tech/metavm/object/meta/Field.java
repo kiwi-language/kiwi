@@ -1,10 +1,7 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
@@ -157,6 +154,16 @@ public class Field extends Entity {
         }
         declaringType.removeField(this);
         return cascades;
+    }
+
+    @Override
+    public void onBind(IEntityContext context) {
+        if(isNullable() || getDefaultValue().isNotNull()) {
+            return;
+        }
+        if(context.getInstanceContext().existsInstances(declaringType)) {
+            throw BusinessException.notNullFieldWithoutDefaultValue(this);
+        }
     }
 
     public boolean isEnum() {

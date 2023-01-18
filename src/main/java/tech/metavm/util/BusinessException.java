@@ -45,6 +45,10 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.INVALID_FIELD, field.name(), reason);
     }
 
+    public static BusinessException notNullFieldWithoutDefaultValue(Field field) {
+        throw invalidField(field, "当类型下已经存在数据时，新增的必填字段必须带默认值");
+    }
+
     public static BusinessException invalidConditionExpr(String expr) {
         throw new BusinessException(ErrorCode.INVALID_CONDITION_EXPR, expr);
     }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
-public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware {
+public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindingAware {
 
     private boolean persisted;
     protected Long id;
@@ -67,5 +67,8 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public List<Object> onRemove() {
         return List.of();
     }
+
+    @Override
+    public void onBind(IEntityContext context) {}
 
 }
