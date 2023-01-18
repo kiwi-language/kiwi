@@ -7,11 +7,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.meta.Access;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
-import tech.metavm.util.PojoMatcher;
-import tech.metavm.util.TestUtils;
+import tech.metavm.util.*;
+
+import java.util.Map;
 
 public class ClassInstanceTest extends TestCase {
 
@@ -62,6 +63,42 @@ public class ClassInstanceTest extends TestCase {
         ClassInstance foo = MockRegistry.getFooInstance();
         ClassInstance bar = foo.getClassInstance(fooBarField);
         Assert.assertTrue(foo.isChild(bar));
+    }
+
+    public void test_add_not_null_field() {
+        ClassType type = new ClassType("Lab");
+        Field titleField = new Field("title",
+                type,
+                Access.GLOBAL,
+                false,
+                true,
+                InstanceUtils.nullInstance(),
+                InstanceUtils.getStringType(),
+                false
+        );
+        Field statusField = new Field(
+                "status",
+                type,
+                Access.GLOBAL,
+                false,
+                false,
+                InstanceUtils.intInstance(1),
+                InstanceUtils.getIntType(),
+                false
+        );
+
+        ClassInstance instance = new ClassInstance(
+                10001L,
+                Map.of(
+                        titleField,
+                        InstanceUtils.stringInstance("Big Foo")
+                ),
+                type,
+                0L,
+                0L
+        );
+
+        Assert.assertEquals(statusField.getDefaultValue(), instance.get(statusField));
     }
 
 }

@@ -49,7 +49,7 @@ public class ClassInstance extends Instance {
         this.syncVersion = syncVersion;
 
         for (Field field : type.getFields()) {
-            Instance fieldValue = NncUtils.orElse(data.get(field), InstanceUtils::nullInstance);
+            Instance fieldValue = NncUtils.orElse(data.get(field), field::getDefaultValue);
             addField(new InstanceField(this, field, fieldValue));
         }
     }
