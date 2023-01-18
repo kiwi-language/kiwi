@@ -3,22 +3,23 @@ package tech.metavm.expression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.*;
 import tech.metavm.expression.dto.*;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.EntityContextBean;
 import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -50,6 +51,51 @@ public class ExpressionService extends EntityContextBean {
             LOGGER.warn("fail to parse expression: " + request.value(), e);
             throw BusinessException.invalidConditionExpr(NncUtils.toJSONString(request.value()));
         }
+    }
+
+    public List<InstanceSearchItemDTO> parseSearchText(long typeId, String searchText) {
+        IInstanceContext context = newContext().getInstanceContext();
+        ClassType type = context.getClassType(typeId);
+        Expression expression = ExpressionParser.parse(searchText, new TypeParsingContext(type, context));
+        return parseExpression(expression);
+    }
+
+    private List<InstanceSearchItemDTO> parseExpression(Expression expression) {
+        List<InstanceSearchItemDTO> result = new ArrayList<>();
+        parseExpression0(expression, result);
+        return result;
+    }
+
+    private void parseExpression0(Expression expression, List<InstanceSearchItemDTO> result) {
+        if(!(expression instanceof BinaryExpression binaryExpression)) {
+            throw BusinessException.invalidExpression(expression.buildSelf(VarType.NAME));
+        }
+        if(binaryExpression.getOperator() == Operator.AND) {
+            parseExpression0(binaryExpression, result);
+        }
+        else {
+            result.add(parseFieldExpr(binaryExpression));
+        }
+    }
+
+    private InstanceSearchItemDTO parseFieldExpr(BinaryExpression binaryExpression) {
+        Expression first = binaryExpression.getFirst();
+        Expression second = binaryExpression.getSecond();
+        Operator operator = binaryExpression.getOperator();
+        if(operator != Operator.EQ && operator != Operator.LIKE
+                || !(first instanceof FieldExpression fieldExpr)
+                || fieldExpr.getFieldPath().size() > 1
+                || !(second instanceof ConstantExpression constExpr)) {
+            throw BusinessException.invalidExpression(binaryExpression.buildSelf(VarType.NAME));
+        }
+        Object searchValue;
+        if(constExpr.getValue() instanceof PrimitiveInstance primitiveInstance) {
+            searchValue = primitiveInstance.getValue();
+        }
+        else {
+            searchValue = NncUtils.requireNonNull(constExpr.getValue().getId());
+        }
+        return new InstanceSearchItemDTO(fieldExpr.getLastField().getId(), searchValue);
     }
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {
