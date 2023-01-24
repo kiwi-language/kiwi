@@ -9,8 +9,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.job.JobSignal;
-import tech.metavm.job.ReferenceCleanupJob;
+import tech.metavm.job.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -56,14 +55,10 @@ public class EntityContextTest extends TestCase {
         context = new EntityContext(instanceContext, MockRegistry.getDefContext(), MockRegistry.getDefContext());
         instanceContext.setEntityContext(context);
 
-
-
         fooType = MockRegistry.getClassType(Foo.class);
-        ClassType barType = MockRegistry.getClassType(Bar.class);
         fooNameField = MockRegistry.getField(Foo.class, "name");
         fooBarField = MockRegistry.getField(Foo.class, "bar");
         barCodeField = MockRegistry.getField(Bar.class, "code");
-//        MockRegistry.initIds();
     }
 
     public void testSmoking() {
@@ -398,6 +393,35 @@ public class EntityContextTest extends TestCase {
         }
     }
 
+    public void test_init_id_manually() {
+        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        Foo foo = new Foo("Big Foo", new Bar("001"));
+        IEntityContext context = newIntegratedContext();
+        context.bind(foo);
+        long fooId = idProvider.allocateOne(TENANT_ID, fooType);
+        context.initIdManually(foo, fooId);
+        context.finish();
+
+        context = newIntegratedContext();
+        Foo loadedFoo = context.getEntity(Foo.class, fooId);
+        MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
+    }
+
+    public void test_multi_level_inheritance() {
+        ClassType type = MockRegistry.getClassType(IndexRebuildGlobalJob.class);
+
+        IEntityContext context = newIntegratedContext();
+        IndexRebuildGlobalJob job = new IndexRebuildGlobalJob();
+        context.bind(job);
+        Instance instance = context.getInstance(job);
+        Assert.assertEquals(type, instance.getType());
+        context.finish();
+
+        context = newIntegratedContext();
+        Job loadedJob = context.getEntity(Job.class, job.getId());
+        Assert.assertTrue(loadedJob instanceof IndexRebuildGlobalJob);
+    }
+
     private EntityContext newContext() {
         return newContext(MockRegistry.getDefContext());
     }
@@ -411,7 +435,7 @@ public class EntityContextTest extends TestCase {
     }
 
     public EntityContext newIntegratedContext(long tenantId) {
-        return (EntityContext) instanceContextFactory.newContext(TENANT_ID).getEntityContext();
+        return (EntityContext) instanceContextFactory.newContext(tenantId).getEntityContext();
     }
 
     private EntityContext newContext(IInstanceContext instanceContext) {

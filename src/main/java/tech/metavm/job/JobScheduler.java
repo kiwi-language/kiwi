@@ -11,6 +11,7 @@ import tech.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.concurrent.*;
 
 import static tech.metavm.job.Job.IDX_STATE_LASTED_SCHEDULED_AT;
@@ -18,7 +19,7 @@ import static tech.metavm.job.JobSignal.IDX_LAST_JOB_CREATED_AT;
 
 @Component
 public class JobScheduler {
-    public static int THREAD_POOL_SIZE = 4;
+    public static int THREAD_POOL_SIZE = 1;
     private final InstanceContextFactory instanceContextFactory;
     private final NavigableMap<Long, JobSignal> activeSignalMap = new ConcurrentSkipListMap<>();
     private final TransactionOperations transactionOperations;
@@ -29,6 +30,8 @@ public class JobScheduler {
     private final Map<Long, Object> monitorMap = new ConcurrentSkipListMap<>();
     private final ThreadPoolExecutor executor;
     private final Executor scheduleExecutor = Executors.newSingleThreadExecutor();
+
+    private final Set<Long> runningJobIds = new ConcurrentSkipListSet<>();
 
     public JobScheduler(InstanceContextFactory instanceContextFactory, TransactionOperations transactionOperations) {
         this.instanceContextFactory = instanceContextFactory;
@@ -75,7 +78,7 @@ public class JobScheduler {
         }
     }
 
-    @Scheduled(fixedDelay = 500)
+    @Scheduled(fixedDelay = 1000)
     public void pollSignals() {
         if(!running) {
             return;
@@ -87,7 +90,7 @@ public class JobScheduler {
                 List.of(
                         new EntityIndexQueryItem(
                                 IDX_LAST_JOB_CREATED_AT.fieldName(0),
-                                lastSignalPollAt - 100L // Account for time differences between machines
+                                lastSignalPollAt - 60000L // Account for time differences between machines
                         )
                 ),
                 IndexQueryOperator.GT,
@@ -176,6 +179,9 @@ public class JobScheduler {
     }
 
     private void runJob(long tenantId, long jobId) {
+        if(!runningJobIds.add(jobId)) {
+            return;
+        }
         IEntityContext context = newContext(tenantId);
         Job job = context.getEntity(Job.class, jobId);
         if(job.isRunnable()) {
@@ -185,6 +191,7 @@ public class JobScheduler {
                 onJobDone(tenantId, jobId);
             }
         }
+        runningJobIds.remove(jobId);
     }
 
     private JobSignal selectSignalForScheduling(IEntityContext rootEntityCtx) {

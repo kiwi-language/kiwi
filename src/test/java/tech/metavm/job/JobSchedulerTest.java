@@ -9,6 +9,8 @@ import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.mocks.TestJob;
 import tech.metavm.util.*;
 
+import static tech.metavm.util.TestConstants.TENANT_ID;
+
 public class JobSchedulerTest extends TestCase {
 
     private InstanceContextFactory instanceContextFactory;
@@ -33,10 +35,6 @@ public class JobSchedulerTest extends TestCase {
     public void test() {
         IEntityContext context = newContext();
         TestJob testJob = new TestJob();
-        JobSignal jobSignal = new JobSignal(TestConstants.TENANT_ID);
-        jobSignal.setLastJobCreatedAt(System.currentTimeMillis());
-        jobSignal.setUnfinishedCount(1);
-        context.bind(jobSignal);
         context.bind(testJob);
         context.finish();
 
@@ -51,7 +49,7 @@ public class JobSchedulerTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newContext(TestConstants.TENANT_ID).getEntityContext();
+        return instanceContextFactory.newContext(TENANT_ID).getEntityContext();
     }
 
     private IEntityContext newRootContext() {

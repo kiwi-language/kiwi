@@ -188,6 +188,14 @@ public class ExpressionTokenizer {
                 position++;
                 tokenType = TokenType.RIGHT_PARENTHESIS;
             }
+            else if(isLeftBracket()) {
+                position++;
+                tokenType = TokenType.LEFT_BRACKET;
+            }
+            else if(isRightBracket()) {
+                position++;
+                tokenType = TokenType.RIGHT_BRACKET;
+            }
             else if(isCombinableOperator()) {
                 position++;
                 if(isOperatorCombo()) {
@@ -244,7 +252,7 @@ public class ExpressionTokenizer {
             case OPERATOR ->  Operator.getByOpRequired(rawValue);
             case FUNCTION -> Function.getByNameRequired(rawValue);
             case VARIABLE -> rawValue;
-            case NULL, KEYWORD, LEFT_PARENTHESIS, RIGHT_PARENTHESIS ->  null;
+            case NULL, KEYWORD, LEFT_PARENTHESIS, RIGHT_PARENTHESIS, LEFT_BRACKET, RIGHT_BRACKET ->  null;
         };
         return new Token(type, rawValue, value);
     }
@@ -352,6 +360,14 @@ public class ExpressionTokenizer {
 
     private boolean isRightParenthesis() {
         return !isEof() && current() == ')';
+    }
+
+    private boolean isLeftBracket() {
+        return !isEof() && current() == '[';
+    }
+
+    private boolean isRightBracket() {
+        return !isEof() && current() == ']';
     }
 
     private boolean isDot() {

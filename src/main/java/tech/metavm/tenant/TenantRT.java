@@ -10,6 +10,10 @@ public class TenantRT extends Entity {
     @EntityField("名称")
     private String name;
 
+    public TenantRT(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return name;
     }

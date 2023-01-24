@@ -10,7 +10,7 @@ import java.util.Map;
 @EntityType("傻")
 public class Foo extends Entity {
 
-    public static final IndexDef<Foo> IDX_NAME = new IndexDef<>(Foo.class, "name");
+    public static final IndexDef<Foo> IDX_NAME = new IndexDef<>(Foo.class, false, "name");
 
     @EntityField(value = "名称", asTitle = true)
     private String name;

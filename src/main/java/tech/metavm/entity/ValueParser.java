@@ -14,8 +14,8 @@ public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
     @Override
     protected ValueDef<T> createDef(PojoDef<? super T> superDef) {
         return new ValueDef<>(
-                javaType,
-                getGenericType(),
+                javaClass,
+                getJavaType(),
                 superDef,
                 createType(),
                 defMap

@@ -199,4 +199,8 @@ public abstract class Instance implements IdInitializing {
 
     protected abstract Object getParam();
 
+    public void incVersion() {
+        version++;
+    }
+
 }

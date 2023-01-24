@@ -21,6 +21,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class ExpressionService extends EntityContextBean {
@@ -30,6 +31,10 @@ public class ExpressionService extends EntityContextBean {
     public static final int CONTEXT_TYPE_TYPE = 1;
 
     public static final int CONTEXT_TYPE_FLOW = 2;
+
+    public static final Set<Operator> SEARCH_EXPR_OPERATORS = Set.of(
+        Operator.EQ, Operator.IN, Operator.STARTS_WITH, Operator.LIKE
+    );
 
     public ExpressionService(InstanceContextFactory instanceContextFactory) {
         super(instanceContextFactory);
@@ -71,7 +76,11 @@ public class ExpressionService extends EntityContextBean {
             throw BusinessException.invalidExpression(expression.buildSelf(VarType.NAME));
         }
         if(binaryExpression.getOperator() == Operator.AND) {
-            parseExpression0(binaryExpression, result);
+            parseExpression0(binaryExpression.getFirst(), result);
+            parseExpression0(binaryExpression.getSecond(), result);
+        }
+        else if(binaryExpression.getOperator() == Operator.OR) {
+            parseExpression0(binaryExpression.getFirst(), result);
         }
         else {
             result.add(parseFieldExpr(binaryExpression));
@@ -82,7 +91,7 @@ public class ExpressionService extends EntityContextBean {
         Expression first = binaryExpression.getFirst();
         Expression second = binaryExpression.getSecond();
         Operator operator = binaryExpression.getOperator();
-        if(operator != Operator.EQ && operator != Operator.LIKE
+        if(!SEARCH_EXPR_OPERATORS.contains(operator)
                 || !(first instanceof FieldExpression fieldExpr)
                 || fieldExpr.getFieldPath().size() > 1
                 || !(second instanceof ConstantExpression constExpr)) {

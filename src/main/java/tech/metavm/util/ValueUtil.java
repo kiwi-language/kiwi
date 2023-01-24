@@ -245,6 +245,9 @@ public class ValueUtil {
             if(Instance.class.isAssignableFrom(klass)) {
                 return TypeCategory.INSTANCE;
             }
+            if(Class.class == klass) {
+                return TypeCategory.CLASS;
+            }
         }
         if(type instanceof ParameterizedType parameterizedType) {
             if(parameterizedType.getRawType() instanceof Class<?> rawClass) {

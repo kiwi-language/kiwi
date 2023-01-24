@@ -86,18 +86,18 @@
   </select>
 
   <select id="selectByTypeIds" resultMap="BaseResultMap">
-    select
+    <foreach collection="queries" open="(" close=")" separator=" UNION DISTINCT " item="query">
+      select
       <include refid="Base_Column_List"/>
-    from
-        instance_array
-    where
-    tenant_id = #{tenantId} and
-    deleted_at = 0 and
-    type_id in
-    <foreach collection="typeIds" item="typeId" open="(" close=")" separator=",">
-      #{typeId}
+      from
+      instance_array
+      where
+      tenant_id = #{tenantId} and
+      deleted_at = 0 and
+      type_id = #{query.typeId} and
+      id >= #{query.startId}
+      limit  #{query.limit}
     </foreach>
-    limit #{start},#{limit}
   </select>
 
   <select id="head" resultMap="BaseResultMap">

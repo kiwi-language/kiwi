@@ -147,7 +147,10 @@ public class InstanceContext extends BaseInstanceContext {
             arrayInstance.initialize(elements);
         }
         else if (instance instanceof ClassInstance classInstance){
-            classInstance.initialize(getInstanceFields(instancePO, classInstance.getType()));
+            classInstance.initialize(
+                    getInstanceFields(instancePO, classInstance.getType()),
+                    instancePO.getVersion(), instancePO.getSyncVersion()
+            );
         }
     }
 
@@ -318,6 +321,19 @@ public class InstanceContext extends BaseInstanceContext {
 
     public void setEntityContext(IEntityContext entityContext) {
         this.entityContext = entityContext;
+    }
+
+    @Override
+    public IInstanceContext newContext(long tenantId) {
+        return new InstanceContext(
+                tenantId,
+                instanceStore,
+                idService,
+                executor,
+                asyncPostProcessing,
+                plugins,
+                getParent()
+        );
     }
 
 }

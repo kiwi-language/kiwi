@@ -12,5 +12,7 @@ public enum TokenType {
     NULL,
     LEFT_PARENTHESIS,
     RIGHT_PARENTHESIS,
-    FUNCTION
+    FUNCTION,
+    LEFT_BRACKET,
+    RIGHT_BRACKET
 }

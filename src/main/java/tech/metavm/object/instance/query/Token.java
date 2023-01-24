@@ -46,6 +46,14 @@ public record Token (
         return type == TokenType.RIGHT_PARENTHESIS;
     }
 
+    public boolean isLeftBracket() {
+        return type == TokenType.LEFT_BRACKET;
+    }
+
+    public boolean isRightBracket() {
+        return type == TokenType.RIGHT_BRACKET;
+    }
+
     public boolean isConstant() {
         return isInt() || isFloat() || isNull() || isString() || isBoolean();
     }

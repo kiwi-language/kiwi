@@ -87,4 +87,10 @@ public class MemInstanceSearchService implements InstanceSearchService {
             instanceMap.remove(getTenantId(), id);
         }
     }
+
+    public void clear() {
+        instanceMap.clear();
+        sourceMap.clear();
+
+    }
 }

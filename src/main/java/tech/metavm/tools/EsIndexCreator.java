@@ -14,8 +14,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static tech.metavm.constant.FieldNames.TENANT_ID;
-import static tech.metavm.constant.FieldNames.TYPE_ID;
+import static tech.metavm.constant.FieldNames.*;
 
 public class EsIndexCreator {
 
@@ -34,8 +33,12 @@ public class EsIndexCreator {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put(TENANT_ID, Map.of("type", "long"));
         properties.put(TYPE_ID, Map.of("type", "long"));
+        properties.put(ID, Map.of("type", "long"));
         for (SQLType columnType : SQLType.values()) {
             for(int i = 0; i < columnType.count(); i++) {
+                if(columnType.esType() == null) {
+                    continue;
+                }
                 String fieldName = columnType.prefix() + i;
                 properties.put(fieldName, Map.of(
                         "type", columnType.esType()

@@ -160,7 +160,7 @@ public class ExpressionParser {
         return exprStack.pop();
     }
 
-    private static record Op (
+    private record Op (
         Operator op,
         Function func
     ) {

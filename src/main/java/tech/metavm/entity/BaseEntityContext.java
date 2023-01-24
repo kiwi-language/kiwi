@@ -161,6 +161,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         createInstanceFromModel(model);
     }
 
+    public void initIdManually(Object model, long id) {
+        Instance instance = getInstance(model);
+        if(instance.getId() != null) {
+            throw new InternalException("Model " + model + " already its id initialized");
+        }
+        NncUtils.requireNonNull(instanceContext).initIdManually(instance, id);
+    }
+
     @SuppressWarnings("unused")
     public UserRT getUser(long id) {
         return getEntity(UserRT.class, id);

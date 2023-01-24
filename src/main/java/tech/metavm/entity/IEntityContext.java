@@ -85,4 +85,6 @@ public interface IEntityContext extends ModelInstanceMap {
 
     void bind(Object entity);
 
+    void initIdManually(Object model, long id);
+
 }

@@ -4,6 +4,7 @@ import javassist.util.proxy.ProxyObject;
 import tech.metavm.entity.EntityMethodHandler;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.persistence.TimePO;
 import tech.metavm.object.meta.AnyType;
 import tech.metavm.object.meta.PrimitiveKind;
 import tech.metavm.object.meta.PrimitiveType;
@@ -104,6 +105,9 @@ public class InstanceUtils {
     public static PrimitiveInstance resolvePrimitiveValue(Type fieldType, Object columnValue) {
         if(columnValue == null) {
             return InstanceUtils.nullInstance();
+        }
+        if(columnValue instanceof TimePO timePO) {
+            return InstanceUtils.timeInstance(timePO.time());
         }
         if(ValueUtil.isInteger(columnValue)) {
             if(fieldType.isInt()) {

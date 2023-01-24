@@ -38,6 +38,12 @@ public class TenantController {
         return Result.voidSuccess();
     }
 
+    @PostMapping("/repair/{id}")
+    public Result<Void> repair(@PathVariable("id") long tenantId) {
+        tenantManager.repair(tenantId);
+        return Result.voidSuccess();
+    }
+
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
         tenantManager.delete(id);

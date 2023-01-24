@@ -74,6 +74,16 @@ public class InstanceStore extends BaseInstanceStore {
         );
     }
 
+    @Override
+    public List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context) {
+        return instanceMapperGateway.selectByTypeIds(context.getTenantId(), queries);
+    }
+
+    @Override
+    public List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context) {
+        return instanceMapperGateway.scanInstances(context.getTenantId(), queries);
+    }
+
     public boolean updateSyncVersion(List<VersionPO> versions) {
         return instanceMapperGateway.updateSyncVersion(versions) == versions.size();
     }
@@ -104,19 +114,19 @@ public class InstanceStore extends BaseInstanceStore {
                 NncUtils.toMap(titlePOs, InstanceTitlePO::id, InstanceTitlePO::title)
         );
     }
-
-    @Override
-    public List<InstancePO> getByTypeIds(Collection<Long> typeIds,
-                                         long startIdExclusive,
-                                         long limit,
-                                         IInstanceContext context)
-    {
-        List<InstancePO> instancePOs =  instanceMapperGateway.selectByInstanceTypeIds(
-                context.getTenantId(), typeIds, startIdExclusive, limit
-        );
-        clearStaleReferences(instancePOs, context);
-        return instancePOs;
-    }
+//
+//    @Override
+//    public List<InstancePO> getByTypeIds(Collection<Long> typeIds,
+//                                         long startIdExclusive,
+//                                         long limit,
+//                                         IInstanceContext context)
+//    {
+//        List<InstancePO> instancePOs =  instanceMapperGateway.selectByTypeIds(
+//                context.getTenantId(), typeIds, startIdExclusive, limit
+//        );
+//        clearStaleReferences(instancePOs, context);
+//        return instancePOs;
+//    }
 
     public String getTitle(Long id, InstanceContext context) {
         Map<Long, String> titleMap = context.getAttribute(ContextAttributeKey.INSTANCE_TITLES);

@@ -88,12 +88,12 @@ public class ReferencePO {
 
     @JsonIgnore
     public String targetKeyWithKind() {
-        return targetId + "-" + targetId + "-" + kind;
+        return tenantId + "-" + targetId + "-" + kind;
     }
 
     @JsonIgnore
     public String targetKeyWithField() {
-        return targetId + "-" + targetId + "-" + fieldId;
+        return tenantId + "-" + targetId + "-" + fieldId;
     }
 
 }

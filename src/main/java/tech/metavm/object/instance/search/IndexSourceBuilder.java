@@ -1,17 +1,14 @@
 package tech.metavm.object.instance.search;
 
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.PrimitiveInstance;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static tech.metavm.constant.FieldNames.TENANT_ID;
-import static tech.metavm.constant.FieldNames.TYPE_ID;
+import static tech.metavm.constant.FieldNames.*;
 
 public class IndexSourceBuilder {
 
@@ -20,6 +17,7 @@ public class IndexSourceBuilder {
         Map<String, Object> source = new HashMap<>();
         source.put(TENANT_ID, tenantId);
         source.put(TYPE_ID, type.getId());
+        source.put(ID, instance.getId());
         for (Field field : type.getFields()) {
             setEsValue(
                     instance.get(field),
@@ -34,17 +32,23 @@ public class IndexSourceBuilder {
         if(!field.getColumn().searchable()) {
             return;
         }
-        if (value instanceof PrimitiveInstance primitiveInstance) {
-            Object primitiveValue = primitiveInstance.getValue();
-            source.put(field.getColumnName(), primitiveValue);
-            if(field.getColumn().type() == SQLType.VARCHAR64) {
-                source.put(field.getColumn().fuzzyName(), primitiveValue);
-            }
-        }
-        else {
-            source.put(field.getColumnName(), value.getId());
+        Object esValue  = getEsValue(value);
+        source.put(field.getColumnName(), esValue);
+        if(field.getColumn().type() == SQLType.VARCHAR64) {
+            source.put(field.getColumn().fuzzyName(), esValue);
         }
     }
 
+    private static Object getEsValue(Instance value) {
+        if(value instanceof ArrayInstance arrayInstance) {
+            return NncUtils.map(arrayInstance.getElements(), IndexSourceBuilder::getEsValue);
+        }
+        else if(value instanceof PrimitiveInstance primitiveInstance) {
+            return primitiveInstance.getValue();
+        }
+        else {
+            return value.getId();
+        }
+    }
 
 }

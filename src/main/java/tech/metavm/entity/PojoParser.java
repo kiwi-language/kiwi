@@ -14,21 +14,21 @@ import java.util.Set;
 
 public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T, ClassInstance, D> {
 
-    protected final Class<T> javaType;
-    private final java.lang.reflect.Type genericType;
+    protected final Class<T> javaClass;
+    private final java.lang.reflect.Type javaType;
     private D def;
     protected final DefMap defMap;
     protected final TypeFactory typeFactory;
 
-    public PojoParser(Class<T> javaType, java.lang.reflect.Type genericType, DefMap defMap) {
+    public PojoParser(Class<T> javaClass, java.lang.reflect.Type javaType, DefMap defMap) {
+        this.javaClass = javaClass;
         this.javaType = javaType;
-        this.genericType = genericType;
         this.defMap = defMap;
         typeFactory = new TypeFactory(defMap::getType);
     }
 
     private PojoDef<? super T> getSuperDef() {
-        Class<? super T> superClass = javaType.getSuperclass();
+        Class<? super T> superClass = javaClass.getSuperclass();
         if(superClass != null && superClass != Object.class) {
             return defMap.getPojoDef(superClass);
         }
@@ -36,18 +36,17 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     }
 
     private List<Field> getIndexDefFields() {
-        return ReflectUtils.getDeclaredStaticFields(javaType, f -> f.getType() == IndexDef.class);
+        return ReflectUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == IndexDef.class);
     }
 
     protected List<Field> getPropertyFields() {
-        return ReflectUtils.getDeclaredPersistentFields(javaType);
+        return ReflectUtils.getDeclaredPersistentFields(javaClass);
     }
 
     @Override
     public List<java.lang.reflect.Type> getDependencyTypes() {
-        Class<? super T> superClass = javaType.getSuperclass();
-        if(superClass != null && superClass != Object.class) {
-            return List.of(superClass);
+        if(javaClass.getSuperclass() != null && javaClass.getSuperclass() != Object.class) {
+            return List.of(javaClass.getGenericSuperclass());
         }
         return List.of();
     }
@@ -80,8 +79,17 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
                     declaringTypeDef
             );
         }
+        else if(Class.class == javaField.getType()) {
+            tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, defMap.getType(ClassType.class));
+            new ClassFieldDef(
+                    declaringTypeDef,
+                    field,
+                    javaField,
+                    defMap
+            );
+        }
         else {
-            ModelDef<?, ?> targetDef = defMap.getDef(javaField.getGenericType());
+            ModelDef<?, ?> targetDef = defMap.getDef(evaluateFieldType(javaField));
             tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, getFieldType(javaField, targetDef));
             new FieldDef(
                     field,
@@ -109,7 +117,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     }
 
     private tech.metavm.object.meta.Field getFiled(String javaFieldName) {
-        Field field = ReflectUtils.getField(javaType, javaFieldName);
+        Field field = ReflectUtils.getField(javaClass, javaFieldName);
         return def.getFieldDef(field).getField();
     }
 
@@ -143,18 +151,22 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         }
     }
 
+    private java.lang.reflect.Type evaluateFieldType(Field javaField) {
+        return ReflectUtils.evaluateFieldType(javaType, javaField.getGenericType());
+    }
+
     protected ClassType createType() {
         PojoDef<? super T> superDef = getSuperDef();
         return createType(
                 typeFactory,
-                ReflectUtils.getMetaTypeName(javaType),
-                javaType.getSimpleName(),
+                ReflectUtils.getMetaTypeName(javaClass),
+                javaClass.getSimpleName(),
                 NncUtils.get(superDef, PojoDef::getType)
         );
     }
 
-    protected final java.lang.reflect.Type getGenericType() {
-        return genericType;
+    protected final java.lang.reflect.Type getJavaType() {
+        return javaType;
     }
 
     protected abstract ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType);

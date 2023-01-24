@@ -1,6 +1,8 @@
 package tech.metavm.object.instance.persistence.mappers;
 
 import org.springframework.stereotype.Component;
+import tech.metavm.object.instance.ByTypeQuery;
+import tech.metavm.object.instance.ScanQuery;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.InstanceTitlePO;
@@ -12,7 +14,6 @@ import tech.metavm.util.NncUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import static tech.metavm.util.PersistenceUtil.convertForLoading;
@@ -40,8 +41,17 @@ public class InstanceMapperGateway {
         );
     }
 
-    public List<InstancePO> selectByInstanceTypeIds(long tenantId, Collection<Long> typeIds, long start, long limit) {
-        return convertForLoading(instanceMapper.selectByTypeIds(tenantId, typeIds, start, limit));
+    public List<InstancePO> selectByTypeIds(long tenantId, Collection<ByTypeQuery> queries) {
+        return convertForLoading(
+                NncUtils.merge(
+                        instanceMapper.selectByTypeIds(tenantId, queries),
+                        instanceArrayMapper.selectByTypeIds(tenantId, queries)
+                )
+        );
+    }
+
+    public List<InstancePO> scanInstances(long tenantId, List<ScanQuery> queries) {
+        return instanceMapper.scan(tenantId, queries);
     }
 
     public void batchInsert(List<InstancePO> inserts) {
@@ -111,7 +121,11 @@ public class InstanceMapperGateway {
     }
 
     public int updateSyncVersion(List<VersionPO> versions) {
-        return instanceMapper.updateSyncVersion(versions);
+        List<VersionPO> objectVersions = NncUtils.filterNot(versions, v -> isArrayId(v.id()));
+        if(NncUtils.isNotEmpty(objectVersions)) {
+            return instanceMapper.updateSyncVersion(objectVersions);
+        }
+        return 0;
     }
 
     public List<InstanceTitlePO> selectTitleByIds(long tenantId, List<Long> ids) {

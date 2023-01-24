@@ -161,9 +161,20 @@ public abstract class BaseInstanceContext implements IInstanceContext{
             NncUtils.biForEach(instances, ids, Instance::initId);
         });
         for (Instance instance : instancesToInitId) {
-            instanceMap.put(instance.getId(), instance);
-            listeners.forEach(l -> l.onIdInitialized(instance));
+            onIdInitialized(instance);
         }
+    }
+
+    @Override
+    public void initIdManually(Instance instance, long id) {
+        NncUtils.requireTrue(instances.contains(instance));
+        instance.initId(id);
+        onIdInitialized(instance);
+    }
+
+    private void onIdInitialized(Instance instance) {
+        instanceMap.put(instance.getId(), instance);
+        listeners.forEach(l -> l.onIdInitialized(instance));
     }
 
     private Function<Map<Type, Integer>, Map<Type, List<Long>>> getIdGenerator() {
@@ -417,10 +428,14 @@ public abstract class BaseInstanceContext implements IInstanceContext{
         if(startExclusive == null) {
             startExclusive = InstanceUtils.nullInstance();
         }
-        List<InstancePO> instancePOs = instanceStore.getByTypeIds(
-                List.of(NncUtils.requireNonNull(type.getId(), "Type id is not initialized")),
-                startExclusive.isNull() ? -1L : startExclusive.getId(),
-                limit,
+        List<InstancePO> instancePOs = instanceStore.queryByTypeIds(
+                List.of(
+                        new ByTypeQuery(
+                                NncUtils.requireNonNull(type.getId(), "Type id is not initialized"),
+                                startExclusive.isNull() ? 0L : startExclusive.getId() + 1L,
+                                limit
+                        )
+                ),
                 this
         );
         List<Instance> persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getId()));
@@ -449,8 +464,21 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     }
 
     @Override
+    public List<Instance> scan(Instance startExclusive, long limit) {
+        return NncUtils.map(
+                instanceStore.scan(List.of(
+                        new ScanQuery(startExclusive.isNull() ? 0L : startExclusive.getId() + 1L, limit)
+                ), this),
+                instancePO -> get(instancePO.getId())
+        );
+    }
+
+    @Override
     public boolean existsInstances(Type type) {
-        return NncUtils.isNotEmpty(getByType(type, null, 1));
+        if(NncUtils.anyMatch(instances, type::isInstance)) {
+            return true;
+        }
+        return type.getId() != null && NncUtils.isNotEmpty(getByType(type, null, 1));
     }
 
     @Override
@@ -465,4 +493,7 @@ public abstract class BaseInstanceContext implements IInstanceContext{
         return NncUtils.map(instanceIds, this::get);
     }
 
+    public IInstanceContext getParent() {
+        return parent;
+    }
 }

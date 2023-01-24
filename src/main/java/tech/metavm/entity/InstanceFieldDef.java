@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;
@@ -33,7 +34,7 @@ public class InstanceFieldDef implements IFieldDef {
 
     @Override
     public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
-        return (Instance) ReflectUtils.get(model, javaField);
+        return (Instance) NncUtils.requireNonNull(ReflectUtils.get(model, javaField));
     }
 
     @Override

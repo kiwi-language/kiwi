@@ -2,6 +2,8 @@ package tech.metavm.object.instance.search;
 
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
+import tech.metavm.constant.FieldNames;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.instance.query.*;
@@ -22,6 +24,7 @@ public class SearchBuilder {
         SearchSourceBuilder builder = new SearchSourceBuilder();
         builder.from(query.from()).size(query.size());
         builder.query(QueryBuilders.queryStringQuery(buildQueryString(query)));
+        builder.sort(FieldNames.ID, SortOrder.DESC);
         return builder;
     }
 
@@ -74,7 +77,13 @@ public class SearchBuilder {
         }
         if(operator == Operator.IN) {
             FieldExpression fieldExpr = (FieldExpression) expression.getFirst();
-            ArrayExpression arrayExpr = (ArrayExpression) expression.getSecond();
+            ArrayExpression arrayExpr;
+            if(expression.getSecond() instanceof ArrayExpression) {
+                arrayExpr = (ArrayExpression) expression.getSecond();
+            }
+            else {
+                arrayExpr = new ArrayExpression(List.of(expression.getSecond()));
+            }
             List<Object> values = new ArrayList<>();
             for (Expression expr : arrayExpr.getExpressions()) {
                 if(expr instanceof ConstantExpression constExpr) {

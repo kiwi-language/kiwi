@@ -83,7 +83,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     public void initInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
         ClassType instanceType = instance.getType();
         if (type == instance.getType()) {
-            instance.initialize(getInstanceFields(model, instanceMap));
+            instance.initialize(getInstanceFields(model, instanceMap), 0L, 0L);
         }
         else {
             getSubTypeDef(instanceType).initInstanceHelper(instance, model, instanceMap);

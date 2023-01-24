@@ -8,6 +8,8 @@ public class Constants {
 
     public static final String META_VM_PKG = "tech.metavm";
 
+    public static final String INITIAL_ROOT_PASSWORD = "123456";
+
     private Constants() {}
 
 }

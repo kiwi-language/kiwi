@@ -1,7 +1,5 @@
 package tech.metavm.util;
 
-import tech.metavm.object.instance.Instance;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,4 +31,9 @@ public class MultiTenantMap<K, V> {
     public Collection<V> values(long tenantId) {
         return getMap(tenantId).values();
     }
+
+    public void clear() {
+        map.clear();
+    }
+
 }

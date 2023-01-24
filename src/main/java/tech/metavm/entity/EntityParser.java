@@ -20,8 +20,8 @@ public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> 
     @Override
     protected EntityDef<T> createDef(PojoDef<? super T> superDef) {
         return new EntityDef<>(
-                javaType,
-                getGenericType(),
+                javaClass,
+                getJavaType(),
                 superDef,
                 createType(),
                 defMap

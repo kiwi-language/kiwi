@@ -90,19 +90,18 @@
   </select>
 
   <select id="selectByTypeIds" resultMap="BaseResultMap">
-    select
+    <foreach collection="queries" item="query" separator=" UNION DISTINCT " open="(" close=")">
+      select
       <include refid="Base_Column_List"/>
-    from
-        instance
-    where
-    tenant_id = #{tenantId} and
-    deleted_at = 0 and
-    type_id in
-    <foreach collection="typeIds" item="typeId" open="(" close=")" separator=",">
-      #{typeId}
+      from
+      instance
+      where
+      tenant_id = #{tenantId} and
+      deleted_at = 0 and
+      type_id = #{query.typeId} and
+      id >= #{query.startId}
+      limit #{query.limit}
     </foreach>
-    and id > #{startIdExclusive}
-    limit #{limit}
   </select>
 
   <update id="updateSyncVersion">
@@ -141,6 +140,20 @@
       #{id}
     </foreach>
     lock in share mode
+  </select>
+
+  <select id="scan" resultMap="BaseResultMap">
+    <foreach collection="queries" item="query" separator=" UNION DISTINCT " open="(" close=")">
+      select
+      <include refid="Base_Column_List"/>
+      from
+      instance
+      where
+      tenant_id = #{tenantId} and
+      deleted_at = 0 and
+      id > #{query.startId}
+      limit #{query.limit}
+    </foreach>
   </select>
 
 </mapper>

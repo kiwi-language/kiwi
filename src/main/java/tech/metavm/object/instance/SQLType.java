@@ -15,7 +15,7 @@ public enum SQLType {
     TEXT("varchar(1024)", "text","t", 2),
     VALUE("json", null, "o", 10),
     REFERENCE("json", "long","r", 20),
-    MULTI_REFERENCE("json", null,"m", 20),
+    MULTI_REFERENCE("json", "long","m", 20),
     UNION("json", null,"u", 10),
     ANY("json", null,"a", 10),
     NULL("json", null,"n", 10),

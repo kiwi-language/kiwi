@@ -43,7 +43,7 @@ public class MemReferenceMapper implements ReferenceMapper {
                                                         Collection<Long> ids,
                                                         Collection<Long> excludedSourceIds) {
         Set<Long> excludedSourceIdSet = new HashSet<>(excludedSourceIds);
-        List<String> keys = NncUtils.map(ids, id -> tenantId + "-1-" + id);
+        List<String> keys = NncUtils.map(ids, id -> tenantId + "-" + id + "-1");
         return NncUtils.mapAndFilter(
                 keys,
                 key -> NncUtils.find(

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.IdentityPO;
+import tech.metavm.object.instance.persistence.TimePO;
 
 import java.util.*;
 
@@ -103,6 +104,12 @@ public class PersistenceUtil {
                     KEY_VALUE, identityPO.id()
             );
         }
+        else if(value instanceof TimePO timePO) {
+            return Map.of(
+                    KEY_KIND, ValueKind.TIME.code,
+                    KEY_VALUE, timePO.time()
+            );
+        }
         else if(value instanceof InstanceArrayPO arrayPO) {
             List<Object> elements = arrayPO.getElements();
             List<Object> elementCols = NncUtils.map(elements, PersistenceUtil::writeValue);
@@ -163,6 +170,7 @@ public class PersistenceUtil {
                 case REF ->  new IdentityPO(wrap.getLong(KEY_VALUE));
                 case ARRAY -> readArray(tenantId, wrap);
                 case INSTANCE -> readInstance(tenantId, wrap);
+                case TIME -> new TimePO(wrap.getLong(KEY_VALUE));
             };
         }
         else {
@@ -206,7 +214,9 @@ public class PersistenceUtil {
     private enum ValueKind {
         REF(1),
         INSTANCE(2),
-        ARRAY(3);
+        ARRAY(3),
+        TIME(4),
+        ;
 
         private final int code;
 

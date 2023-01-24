@@ -13,6 +13,8 @@ public enum Operator {
     // parenthesis
     LEFT_PARENTHESIS("(", 1000, PREFIX, null),
     RIGHT_PARENTHESIS(")", 1000, PREFIX, null),
+    LEFT_BRACKET("[", 1000, PREFIX, null),
+    RIGHT_BRACKET("]", 1000, PREFIX, null),
 
     // prefix
 //        TODO: 支持负数运算符

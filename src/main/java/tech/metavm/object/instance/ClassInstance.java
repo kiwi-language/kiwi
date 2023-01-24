@@ -39,11 +39,13 @@ public class ClassInstance extends Instance {
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
-        initialize(data);
+        initialize(data, version, syncVersion);
     }
 
     @NoProxy
-    public void initialize(Map<Field, Instance> data) {
+    public void initialize(Map<Field, Instance> data, long version, long syncVersion) {
+        this.version = version;
+        this.syncVersion = syncVersion;
         for (Field field : type.getFields()) {
             Instance fieldValue = data.get(field);
             if(fieldValue == null || fieldValue.isNull()) {

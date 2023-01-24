@@ -20,6 +20,7 @@ import tech.metavm.user.UserManager;
 import tech.metavm.user.UserRT;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.user.rest.dto.UserDTO;
+import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
@@ -71,12 +72,24 @@ public class TenantManager {
 
     @Transactional
     public long create(TenantCreateRequest request) {
+        return create(null, request);
+    }
+
+    @Transactional
+    public long createRoot() {
+        return create(-1L, new TenantCreateRequest("root", Constants.INITIAL_ROOT_PASSWORD));
+    }
+
+    private long create(Long id, TenantCreateRequest request) {
         setupContextInfo(-1L);
-        IEntityContext rootContext = newContext();
-        long tenantId = idService.allocate(-1L, ModelDefRegistry.getType(TenantRT.class));
+        IEntityContext rootContext = newRootContext();
+        long tenantId = id != null ? id :
+                idService.allocate(-1L, ModelDefRegistry.getType(TenantRT.class));
         TenantPO tenantPO = new TenantPO(tenantId, request.name());
         tenantMapper.insert(tenantPO);
         rootContext.bind(new JobSignal(tenantId));
+        TenantRT tenantRT = new TenantRT(tenantPO.getName());
+        rootContext.initIdManually(tenantRT, tenantPO.getId());
         rootContext.finish();
 
         setupContextInfo(tenantId);
@@ -101,6 +114,21 @@ public class TenantManager {
         NncUtils.requireNonNull(tenantDTO.id());
         TenantPO tenantPO = new TenantPO(tenantDTO.id(), tenantDTO.name());
         tenantMapper.update(tenantPO);
+        IEntityContext rootContext = newContext();
+        TenantRT tenantRT = rootContext.getEntity(TenantRT.class, tenantPO.getId());
+        tenantRT.setName(tenantPO.getName());
+        rootContext.finish();
+    }
+
+    @Transactional
+    public void repair(long tenantId) {
+        TenantPO tenantPO = tenantMapper.selectById(tenantId);
+        NncUtils.requireNonNull(tenantPO);
+        IEntityContext context = newRootContext();
+        TenantRT tenantRT = new TenantRT(tenantPO.getName());
+        context.bind(tenantRT);
+        context.initIdManually(tenantRT, tenantId);
+        context.finish();
     }
 
     @Transactional
@@ -130,6 +158,10 @@ public class TenantManager {
 
     private IEntityContext newContext() {
         return instanceContextFactory.newContext().getEntityContext();
+    }
+
+    private IEntityContext newRootContext() {
+        return instanceContextFactory.newRootContext().getEntityContext();
     }
 
     private void setupContextInfo(long tenantId) {

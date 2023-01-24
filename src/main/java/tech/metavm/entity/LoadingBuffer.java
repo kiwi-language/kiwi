@@ -1,13 +1,13 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.IdAndValue;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -25,6 +25,7 @@ public class LoadingBuffer {
     private final IInstanceStore instanceStore;
     private final Set<Long> aliveIds = new HashSet<>();
     private final Map<Long, RangeCache<Long>> rangeCaches = new HashMap<>();
+    private final RangeCache<Long> globalRangeCache = new RangeCache<>(this::loadGlobalRange);
 
     public LoadingBuffer(InstanceContext context) {
         this.context = context;
@@ -63,6 +64,55 @@ public class LoadingBuffer {
     public void flush() {
         flushIdRequests();
         flushByTypeRequests();
+    }
+
+    public List<InstancePO> scan(long startId, long limit) {
+        return NncUtils.map(
+                globalRangeCache.query(List.of(new RangeQuery(startId, limit))).values().iterator().next(),
+                identityResultMap::get
+        );
+    }
+
+    private RangeCache<Long> getRangeCache(long typeId) {
+        return rangeCaches.computeIfAbsent(typeId, k -> new RangeCache<>(
+                queries -> loadTypeRange(typeId, queries)
+        ));
+    }
+
+
+    private Map<RangeQuery, List<IdAndValue<Long>>> loadGlobalRange(List<RangeQuery> queries) {
+        List<InstancePO> instancePOS = instanceStore.scan(
+                NncUtils.map(queries, q -> new ScanQuery(q.startId(), q.limit())),
+                context
+        );
+        return buildRangeResult(queries, instancePOS);
+    }
+
+    private Map<RangeQuery, List<IdAndValue<Long>>> loadTypeRange(long typeId, List<RangeQuery> queries) {
+        List<InstancePO> instancePOs = instanceStore.queryByTypeIds(
+                NncUtils.map(queries, q -> new ByTypeQuery(typeId, q.startId(), q.limit())),
+                context
+        );
+        return buildRangeResult(queries, instancePOs);
+    }
+
+    private Map<RangeQuery, List<IdAndValue<Long>>> buildRangeResult(List<RangeQuery> queries, List<InstancePO> instancePOs) {
+        for (InstancePO instancePO : instancePOs) {
+            if(!identityResultMap.containsKey(instancePO.getId())) {
+                identityResultMap.put(instancePO.getId(), instancePO);
+            }
+        }
+        queries = new ArrayList<>(queries);
+        queries.sort(Comparator.comparingLong(RangeQuery::startId));
+        Map<RangeQuery, List<IdAndValue<Long>>> result = new HashMap<>();
+        for (InstancePO instancePO : instancePOs) {
+            int index = NncUtils.binarySearch(queries, instancePO.getId(), (q, id) -> Long.compare(q.startId(), id));
+            RangeQuery query = index >= 0 ? queries.get(index) : queries.get(-index - 1);
+            result.computeIfAbsent(query, k -> new ArrayList<>()).add(
+                    new IdAndValue<>(instancePO.getId(), instancePO.getId())
+            );
+        }
+        return result;
     }
 
     private void flushIdRequests() {

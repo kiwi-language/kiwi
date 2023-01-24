@@ -85,6 +85,13 @@ public class MemInstanceContext extends BaseInstanceContext {
         ).size() > 0;
     }
 
+    @Override
+    public IInstanceContext newContext(long tenantId) {
+        return new MemInstanceContext(
+                tenantId, idService, instanceStore, getParent()
+        );
+    }
+
     public void setEntityContext(IEntityContext entityContext) {
         this.entityContext = entityContext;
     }

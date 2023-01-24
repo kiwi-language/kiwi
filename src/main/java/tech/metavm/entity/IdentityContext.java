@@ -142,7 +142,7 @@ public class IdentityContext {
 
     private java.lang.reflect.Field getJavaField(Field field) {
         Class<?> javaClass = NncUtils.requireNonNull(
-                (Class<?>) getJavaType(field.getDeclaringType()),
+                ReflectUtils.getRawClass(getJavaType(field.getDeclaringType())),
                 "Fail to get java type for type '" + field.getDeclaringType() + "'"
         );
         return ReflectUtils.getDeclaredFieldByMetaFieldName(javaClass, field.getName());

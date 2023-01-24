@@ -23,14 +23,14 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
 
     @Override
     protected List<Field> getPropertyFields() {
-        return NncUtils.map(javaType.getRecordComponents(), ReflectUtils::getField);
+        return NncUtils.map(javaClass.getRecordComponents(), ReflectUtils::getField);
     }
 
     @Override
     protected RecordDef<T> createDef(PojoDef<? super T> parentDef) {
         return new RecordDef<>(
-                javaType,
-                getGenericType(),
+                javaClass,
+                getJavaType(),
                 parentDef,
                 createType(),
                 defMap

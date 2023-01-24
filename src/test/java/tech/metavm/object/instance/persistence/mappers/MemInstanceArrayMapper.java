@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.persistence.mappers;
 
 import tech.metavm.entity.EntityUtils;
+import tech.metavm.object.instance.ByTypeQuery;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -13,13 +15,20 @@ public class MemInstanceArrayMapper implements InstanceArrayMapper {
     private final Map<Long, List<InstanceArrayPO>> type2instances = new HashMap<>();
 
     @Override
-    public List<InstanceArrayPO> selectByTypeIds(long tenantId, Collection<Long> typeIds, long start, long limit) {
-        List<InstanceArrayPO> result = NncUtils.flatMapAndFilter(
-                typeIds,
-                typeId -> type2instances.getOrDefault(typeId, List.of()),
-                i -> i.getTenantId() == tenantId
+    public List<InstanceArrayPO> selectByTypeIds(long tenantId, Collection<ByTypeQuery> queries) {
+        List<InstanceArrayPO> result = NncUtils.flatMap(
+                queries,
+                query -> queryByType(tenantId, query)
         );
-        return result.subList((int) start, Math.min(result.size(), (int) (start + limit)));
+        return NncUtils.deduplicateAndSort(result, Comparator.comparingLong(InstancePO::getId));
+    }
+
+    private List<InstanceArrayPO> queryByType(long tenantId, ByTypeQuery query) {
+        return NncUtils.filterAndLimit(
+                type2instances.get(query.getTypeId()),
+                i -> i.getTenantId() == tenantId,
+                query.getLimit()
+        );
     }
 
     @Override

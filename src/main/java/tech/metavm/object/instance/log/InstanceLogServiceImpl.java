@@ -98,6 +98,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
         IEntityContext rootContext = instanceContextFactory.newRootContext().getEntityContext();
         JobSignal signal = rootContext.selectByUniqueKey(JobSignal.IDX_TENANT_ID, tenantId);
         signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
+        signal.setLastJobCreatedAt(System.currentTimeMillis());
         rootContext.finish();
     }
 

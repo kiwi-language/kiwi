@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink {
 
+    IInstanceContext newContext(long tenantId);
+
     default void replace(Instance instance) {
         replace(List.of(instance));
     }
@@ -24,6 +26,8 @@ public interface IInstanceContext extends InstanceSink {
     List<Instance> batchGet(Collection<Long> ids);
 
     List<Instance> getByType(Type type, Instance startExclusive, long limit);
+
+    List<Instance> scan(Instance startExclusive, long limit);
 
     boolean existsInstances(Type type);
 
@@ -68,4 +72,6 @@ public interface IInstanceContext extends InstanceSink {
     void bind(Instance instance);
 
     <E> E getAttribute(ContextAttributeKey<E> key);
+
+    void initIdManually(Instance instance, long id);
 }

@@ -5,8 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -39,7 +39,7 @@ public class JobManager {
 
     private void executeJob() {
         transactionTemplate.executeWithoutResult(status -> {
-            IEntityContext context = instanceContextFactory.newContext().getEntityContext();
+            IEntityContext context = newContext();
             List<FieldRemovalJob> jobs = context.getByType(FieldRemovalJob.class, null, 1);
             if(NncUtils.isEmpty(jobs)) {
                 return;
@@ -53,11 +53,25 @@ public class JobManager {
     }
 
     @Transactional
-    public void addJob(Field field) {
-        IEntityContext context = instanceContextFactory.newContext().getEntityContext();
-        FieldRemovalJob job = new FieldRemovalJob(field);
+    public void addGlobalJob(Job job) {
+        IEntityContext context = newRootContext();
         context.bind(job);
         context.finish();
+    }
+
+    @Transactional
+    public void runJob(String jobClassName) {
+        IEntityContext context = newContext();
+        Class<? extends Job> jobClass = ReflectUtils.classForName(jobClassName).asSubclass(Job.class);
+
+    }
+
+    private IEntityContext newContext() {
+        return instanceContextFactory.newContext().getEntityContext();
+    }
+
+    private IEntityContext newRootContext() {
+        return instanceContextFactory.newRootContext().getEntityContext();
     }
 
 }

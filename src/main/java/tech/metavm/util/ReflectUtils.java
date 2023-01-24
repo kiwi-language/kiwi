@@ -518,6 +518,50 @@ public class ReflectUtils {
         }
     }
 
+    public static Type evaluateFieldType(Type declaringType, Type fieldType) {
+        if(fieldType instanceof Class<?> klass) {
+            return klass;
+        }
+        if(fieldType instanceof WildcardType wildcardType) {
+            return wildcardType;
+        }
+        if(fieldType instanceof ParameterizedType pType) {
+            return ParameterizedTypeImpl.create(
+                    (Class<?>) pType.getRawType(),
+                    NncUtils.map(
+                            pType.getActualTypeArguments(),
+                            typeArg -> evaluateFieldType(declaringType, typeArg)
+                    )
+            );
+        }
+        if(fieldType instanceof TypeVariable<?> typeVariable) {
+            if(declaringType instanceof ParameterizedType pType) {
+                return evaluateTypeVariable(pType, typeVariable);
+            }
+        }
+        throw new InternalException("Can not evaluate member type " + fieldType + " defined in type " + declaringType);
+    }
+
+    public static List<Field> getDeclaredRawFields(Type type) {
+        if(type instanceof Class<?> klass) {
+            return Arrays.asList(klass.getDeclaredFields());
+        }
+        if(type instanceof ParameterizedType pType) {
+            return getDeclaredRawFields(pType.getRawType());
+        }
+        return List.of();
+    }
+
+    private static Type evaluateTypeVariable(ParameterizedType declaringType, TypeVariable<?> typeVariable) {
+        Class<?> rawClass = (Class<?>) declaringType.getRawType();
+        List<TypeVariable<?>> typeParams = Arrays.asList(rawClass.getTypeParameters());
+        int idx = typeParams.indexOf(typeVariable);
+        if(idx >= 0) {
+            return declaringType.getActualTypeArguments()[idx];
+        }
+        throw new RuntimeException(typeVariable + " is not defined in " + declaringType);
+    }
+
     public static Class<?> getRawClass(Type type) {
         if(type instanceof Class<?> klass) {
             return klass;

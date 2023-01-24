@@ -5,6 +5,7 @@ import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.util.ChangeList;
+import tech.metavm.util.NncUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -29,13 +30,15 @@ public interface IInstanceStore {
     List<Long> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context);
 
     default List<InstancePO> getByTypeIds(Collection<Long> typeIds, IInstanceContext context) {
-        return getByTypeIds(typeIds, -1L, BY_TYPE_LIMIT * typeIds.size(), context);
+        return queryByTypeIds(
+                NncUtils.map(typeIds, typeId -> new ByTypeQuery(typeId, 0L, BY_TYPE_LIMIT)),
+                context
+        );
     }
 
-    List<InstancePO> getByTypeIds(Collection<Long> typeIds,
-                                  long startIdExclusive,
-                                  long limit,
-                                  IInstanceContext context);
+    List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context);
+
+    List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context);
 
     boolean updateSyncVersion(List<VersionPO> versions);
 

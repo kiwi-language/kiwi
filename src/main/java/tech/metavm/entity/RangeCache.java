@@ -22,14 +22,19 @@ public class RangeCache<V> {
         return NncUtils.toMap(queries, Function.identity(), this::query0);
     }
 
+    public List<V> query(RangeQuery query) {
+        return query(List.of(query)).values().iterator().next();
+    }
+
     private List<V> query0(RangeQuery query) {
         if(query.limit() == 0) {
             return List.of();
         }
-        Range<V> r = NncUtils.binarySearch(ranges, query.startId(), Range::compareWithId);
-        if(r == null) {
+        int idx = NncUtils.binarySearch(ranges, query.startId(), Range::compareWithId);
+        if(idx < 0) {
             return List.of();
         }
+        Range<V> r = ranges.get(idx);
         return NncUtils.map(
                 r.query(query.startId(), query.limit()),
                 IdAndValue::value

@@ -236,6 +236,13 @@ public class NncUtils {
         return filterAndSortAndLimit(source, filter, comparator, Long.MAX_VALUE);
     }
 
+    public static <T> List<T> filterAndLimit(Collection<T> source, Predicate<T> filter, long limit) {
+        if(source == null) {
+            source = List.of();
+        }
+        return source.stream().filter(filter).limit(limit).collect(Collectors.toList());
+    }
+
     public static <T> List<T> filterAndSortAndLimit(Collection<T> source, Predicate<T> filter, Comparator<T> comparator, long limit) {
         if(source == null) {
             source = List.of();
@@ -247,7 +254,7 @@ public class NncUtils {
         return LongStream.range(start, end).boxed().collect(Collectors.toList());
     }
 
-    public static <T> List<T> merge(Collection<T> coll1, Collection<T> coll2) {
+    public static <T> List<T> merge(Collection<? extends T> coll1, Collection<? extends T> coll2) {
         if(coll1 == null) {
             coll1 = List.of();
         }
@@ -389,14 +396,14 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <K, V> V binarySearch(List<V> list, K key, ToIntBiFunction<V, K> compare) {
+    public static <K, V> int binarySearch(List<V> list, K key, ToIntBiFunction<V, K> compare) {
         int l = 0, h = list.size();
         while (l != h) {
             int m = l + h >> 1;
             V v = list.get(m);
             int c = compare.applyAsInt(v, key);
             if(c == 0) {
-                return v;
+                return m;
             }
             else if(c < 0) {
                 l = m + 1;
@@ -405,7 +412,7 @@ public class NncUtils {
                 h = m;
             }
         }
-        return null;
+        return -l - 1;
     }
 
     public static <T, R> @Nullable R mapFirst(List<T> list, Function<T, R> mapping) {
@@ -466,7 +473,19 @@ public class NncUtils {
         );
     }
 
+    public static <T> List<T> deduplicateAndSort(List<T> list, Comparator<T> comparator) {
+        if(list == null) {
+            list = List.of();
+        }
+        list = new ArrayList<>(new HashSet<>(list));
+        list.sort(comparator);
+        return list;
+    }
+
     public static <T> @Nullable T find(Collection<T> list, Predicate<T> filter) {
+        if(list == null) {
+            return null;
+        }
         return list.stream().filter(filter).findAny().orElse(null);
     }
 

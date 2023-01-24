@@ -46,9 +46,9 @@ public final class EntityMethodHandler<T> implements MethodHandler {
            return;
         }
         if(state == State.INITIALIZING) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Call method '" + ReflectUtils.getMethodQualifiedName(thisMethod) + "' while initializing proxy");
-            }
+//            if(LOGGER.isDebugEnabled()) {
+//                LOGGER.debug("Call method '" + ReflectUtils.getMethodQualifiedName(thisMethod) + "' while initializing proxy");
+//            }
 //            throw new InternalException(
 //                    InternalErrorCode.PROXY_CIRCULAR_REF,
 //                    thisMethod != null ? ReflectUtils.getMethodQualifiedName(thisMethod) : "null"

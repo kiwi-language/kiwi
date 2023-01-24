@@ -49,7 +49,6 @@ public class MockRegistry {
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         DEF_CONTEXT.finish();
         ContextUtil.setContextInfo(TENANT_ID, TENANT_ID);
-
         initJobScheduler();
     }
 

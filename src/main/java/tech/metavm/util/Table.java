@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,6 +26,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     private Long id;
     private final Type genericType;
+    private final Type elementType;
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
@@ -73,6 +75,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     private Table(Type elementType, Collection<T> data, int buildIndexThreshold, boolean elementAsChild) {
+        this.elementType = elementType;
         this.genericType = new ParameterizedTypeImpl(
                 null,
                 Table.class,
@@ -327,6 +330,11 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     @Override
     public Type getGenericType() {
         return genericType;
+    }
+
+    @Override
+    public Map<TypeVariable<?>, Type> getTypeVariableMap() {
+        return Map.of(Table.class.getTypeParameters()[0], elementType);
     }
 
     @Override

@@ -1,6 +1,11 @@
 package tech.metavm.object.springconfig;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -17,9 +22,21 @@ public class ElasticSearchConfig {
     @Value("${spring.data.elasticsearch.port}")
     private int port;
 
+    @Value("${spring.data.elasticsearch.user}")
+    private String user;
+
+    @Value("${spring.data.elasticsearch.password}")
+    private String password;
+
     @Bean
     public RestHighLevelClient restHighLevelClient() {
-        RestClientBuilder builder = RestClient.builder(new HttpHost(host, port));
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(user, password));
+
+        RestClientBuilder builder = RestClient.builder(new HttpHost(host, port))
+                .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
+
         return new RestHighLevelClient(builder);
     }
 

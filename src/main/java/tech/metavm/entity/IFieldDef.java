@@ -4,9 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.util.ReflectUtils;
 
 public interface IFieldDef {
-    void setModelField(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap);
+
+    default void setModelField(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+        ReflectUtils.set(model, getJavaField(), getModelFieldValue(instance, modelInstanceMap));
+    }
 
     Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap);
 
