@@ -4,10 +4,7 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.ChangeList;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -31,7 +28,7 @@ public class MemInstanceContext extends BaseInstanceContext {
                               EntityIdProvider idProvider,
                               IInstanceStore instanceStore,
                               IInstanceContext parent) {
-        super(tenantId, idProvider, instanceStore, parent);
+        super(tenantId, idProvider, instanceStore, MockRegistry.getDefContext(), parent);
         typeProvider = typeId -> getEntityContext().getType(typeId);
         setCreateJob(job -> getEntityContext().bind(job));
     }

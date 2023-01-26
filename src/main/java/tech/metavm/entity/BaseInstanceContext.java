@@ -10,6 +10,7 @@ import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.tenant.TenantRT;
 import tech.metavm.util.*;
 
 import java.util.*;
@@ -35,11 +36,18 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     public BaseInstanceContext(long tenantId,
                                EntityIdProvider idService,
                                IInstanceStore instanceStore,
-                               IInstanceContext parent) {
+                               DefContext defContext, IInstanceContext parent) {
         this.tenantId = tenantId;
         this.instanceStore = instanceStore;
-        this.idService = idService;
+        this.idService = new WrappedIdProvider(
+                id -> interceptGetTypeId(defContext, id),
+                idService
+        );
         this.parent = parent;
+    }
+
+    private Long interceptGetTypeId(DefContext defContext, long id) {
+        return id == -1L ? defContext.getType(TenantRT.class).getId() : null;
     }
 
     public void setCreateJob(Consumer<Job> createJob) {
@@ -432,7 +440,7 @@ public abstract class BaseInstanceContext implements IInstanceContext{
                 List.of(
                         new ByTypeQuery(
                                 NncUtils.requireNonNull(type.getId(), "Type id is not initialized"),
-                                startExclusive.isNull() ? 0L : startExclusive.getId() + 1L,
+                                startExclusive.isNull() ? -1L : startExclusive.getId() + 1L,
                                 limit
                         )
                 ),
@@ -442,16 +450,17 @@ public abstract class BaseInstanceContext implements IInstanceContext{
         if(persistedResult.size() >= limit) {
             return persistedResult;
         }
+        Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, Instance::getId);
         return NncUtils.merge(
                 persistedResult,
-                getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()))
+                getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()), persistedIds)
         );
     }
 
-    public List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit) {
+    public List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit, Set<Long> persistedIds) {
         List<Instance> typeInstances = NncUtils.filter(
                 instances,
-                type::isInstance
+                i -> type.isInstance(i) && !persistedIds.contains(i.getId())
         );
         if(startExclusive.isNull()) {
             return typeInstances.subList(0, Math.min(typeInstances.size(), limit));
@@ -495,5 +504,10 @@ public abstract class BaseInstanceContext implements IInstanceContext{
 
     public IInstanceContext getParent() {
         return parent;
+    }
+
+    @Override
+    public void increaseVersionsForAll() {
+        instances.forEach(Instance::incVersion);
     }
 }

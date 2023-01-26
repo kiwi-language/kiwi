@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @EntityType("模型扫描任务")
-public abstract class ModelScanJob<T> extends InstanceScanJob implements RuntimeGeneric {
+public abstract class ModelScanJob<T> extends InstanceScanJob {
 
     private final Class<T> entityType;
 

@@ -27,7 +27,7 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     private ApplicationContext applicationContext;
 
-    private boolean defaultAsyncProcessing = true;
+    private boolean defaultAsyncProcessing = false;
 
     private final Executor executor = new ThreadPoolExecutor(
             16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000)

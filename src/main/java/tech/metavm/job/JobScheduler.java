@@ -195,9 +195,14 @@ public class JobScheduler {
     }
 
     private JobSignal selectSignalForScheduling(IEntityContext rootEntityCtx) {
-        JobSignal signal = nextSignal(lastScheduledSignal);
+        JobSignal start = nextSignal(lastScheduledSignal);
+        JobSignal signal = start;
         while (signal != null && !signal.hasUnfinishedJobs()) {
             signal = nextSignal(signal);
+            if(signal == start) {
+                signal = null;
+                break;
+            }
         }
         if(signal != null) {
             signal = rootEntityCtx.getEntity(JobSignal.class, signal.getId());

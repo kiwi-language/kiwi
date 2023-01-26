@@ -74,4 +74,6 @@ public interface IInstanceContext extends InstanceSink {
     <E> E getAttribute(ContextAttributeKey<E> key);
 
     void initIdManually(Instance instance, long id);
+
+    void increaseVersionsForAll();
 }

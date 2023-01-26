@@ -65,6 +65,7 @@ public class Bootstrap implements InitializingBean {
         if(defContext.isFinished()) {
             return;
         }
+        NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
         defContext.finish();
 
         defContext.getIdentityMap().forEach((model, javaConstruct) ->

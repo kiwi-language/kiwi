@@ -52,8 +52,22 @@ public class InstanceContext extends BaseInstanceContext {
                            IInstanceContext parent,
                            TypeResolver typeResolver
     ) {
+        this(tenantId, instanceStore, idService, executor, asyncPostProcessing, plugins,
+                ModelDefRegistry.getDefContext(),
+                parent, typeResolver);
+    }
 
-        super(tenantId, idService, instanceStore, parent);
+    public InstanceContext(long tenantId,
+                           IInstanceStore instanceStore,
+                           EntityIdProvider idService,
+                           Executor executor,
+                           boolean asyncPostProcessing,
+                           List<ContextPlugin> plugins,
+                           DefContext defContext,
+                           IInstanceContext parent,
+                           TypeResolver typeResolver
+    ) {
+        super(tenantId, idService, instanceStore, defContext, parent);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
         this.executor = executor;
@@ -61,7 +75,8 @@ public class InstanceContext extends BaseInstanceContext {
         loadingBuffer = new LoadingBuffer(this);
         entityContext = new EntityContext(
                 this,
-                NncUtils.get(parent, IInstanceContext::getEntityContext)
+                NncUtils.get(parent, IInstanceContext::getEntityContext),
+                defContext
         );
         setCreateJob(job -> getEntityContext().bind(job));
     }

@@ -3,6 +3,10 @@ package tech.metavm.tools;
 import com.alibaba.druid.pool.DruidDataSource;
 import graphql.org.antlr.v4.runtime.misc.ObjectEqualityComparator;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -38,7 +42,7 @@ public class DiskFormatter {
     public static final Map<String, Object> LOCAL_CONFIG = Map.of(
             CONFIG_HOST, "localhost",
             CONFIG_ES_PORT, 9200,
-            CONFIG_DELETE_ID_FILES, true
+            CONFIG_DELETE_ID_FILES, false
     );
 
     public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
@@ -67,14 +71,14 @@ public class DiskFormatter {
 
             try(Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
-                statement.execute("delete from id_block where id > 0");
-                statement.execute("delete from id_region where start >= 0");
-                statement.execute("delete from tenant where id>0");
-                statement.execute("delete from instance where id>=0");
-                statement.execute("delete from instance_array where id>=0");
-                statement.execute("delete from reference where id>0");
-                statement.execute("delete from index_entry where instance_id>=0");
-                statement.execute("delete from relation where relation.src_instance_id>=0");
+                statement.execute("delete from id_block");
+//                statement.execute("delete from id_region");
+                statement.execute("delete from tenant");
+                statement.execute("delete from instance");
+                statement.execute("delete from instance_array");
+                statement.execute("delete from reference");
+                statement.execute("delete from index_entry");
+                statement.execute("delete from relation");
             }
             catch (SQLException e) {
                 throw new InternalException("SQL Error", e);
@@ -83,7 +87,12 @@ public class DiskFormatter {
     }
 
     private static void clearEs() {
-        RestClientBuilder builder = RestClient.builder(new HttpHost(host(), esPort()));
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials("elastic", "85263670"));
+
+        RestClientBuilder builder = RestClient.builder(new HttpHost(host(), esPort()))
+                .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
         try(RestHighLevelClient client = new RestHighLevelClient(builder)) {
             DeleteByQueryRequest request = new DeleteByQueryRequest("instance");
             request.setQuery(new MatchAllQueryBuilder());
