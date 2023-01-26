@@ -14,6 +14,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static tech.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
@@ -37,40 +38,60 @@ public class IndexConstraintPlugin implements ContextPlugin {
                 );
 
         Map<Long, ClassInstance> instanceMap = NncUtils.toMap(currentInstances, Instance::getId);
-        List<IndexEntryPO> currentItems = NncUtils.flatMap(
+        List<IndexEntryPO> currentEntries = NncUtils.flatMap(
                 currentInstances,
                 instance -> instance.getUniqueKeys(context.getTenantId())
         );
         List<InstancePO> oldInstances = NncUtils.merge(diff.updates(), diff.deletes());
-        List<IndexEntryPO> oldItems = NncUtils.isEmpty(oldInstances) && NncUtils.isEmpty(currentItems) ? List.of() :
-                indexEntryMapper.selectByInstanceIdsOrKeys(
-                        context.getTenantId(),
-                        NncUtils.map(oldInstances, InstancePO::getId),
-                        NncUtils.map(currentItems, IndexEntryPO::getKey)
-                );
+        Set<Long> oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getId);
+        List<IndexEntryPO> oldAndConflictingItems =
+                NncUtils.isEmpty(oldInstances) && NncUtils.isEmpty(currentEntries) ? List.of() :
+                        indexEntryMapper.selectByInstanceIdsOrKeys(
+                            context.getTenantId(),
+                            NncUtils.map(oldInstances, InstancePO::getId),
+                            NncUtils.map(currentEntries, IndexEntryPO::getKey)
+                    );
 
-        Map<IndexKeyPO, Long> oldKeyMap = NncUtils.toMap(oldItems, IndexEntryPO::getKey, IndexEntryPO::getInstanceId);
-        for (IndexEntryPO currentItem : currentItems) {
+        List<IndexEntryPO> oldEntries = NncUtils.filter(
+                oldAndConflictingItems,
+                e -> oldInstanceIds.contains(e.getInstanceId())
+        );
+
+        List<IndexEntryPO> conflictingEntries = NncUtils.filterNot(
+                oldAndConflictingItems,
+                e -> oldInstanceIds.contains(e.getInstanceId())
+        );
+
+        Map<IndexKeyPO, List<Long>> newKeyMap = NncUtils.toMultiMap(
+                currentEntries, IndexEntryPO::getKey, IndexEntryPO::getInstanceId
+        );
+        Map<IndexKeyPO, Long> conflictingKeyMap = NncUtils.toMap(conflictingEntries, IndexEntryPO::getKey, IndexEntryPO::getInstanceId);
+        for (IndexEntryPO currentItem : currentEntries) {
             Index constraint =
                     context.getEntityContext().getEntity(Index.class, currentItem.getConstraintId());
             if(!constraint.isUnique() || constraint.containsNull(currentItem.getKey())) {
                 continue;
             }
-            Long existingInstanceId = oldKeyMap.get(currentItem.getKey());
-            if(existingInstanceId != null && !existingInstanceId.equals(currentItem.getInstanceId())) {
+            if(newKeyMap.get(currentItem.getKey()).size() > 1) {
+                throw BusinessException.constraintCheckFailed(
+                        instanceMap.get(currentItem.getInstanceId()), constraint
+                );
+            }
+            Long conflictingInstanceId = conflictingKeyMap.get(currentItem.getKey());
+            if(conflictingInstanceId != null && !conflictingInstanceId.equals(currentItem.getInstanceId())) {
                 throw BusinessException.constraintCheckFailed(
                         instanceMap.get(currentItem.getInstanceId()), constraint
                 );
             }
         }
-        diff.setAttribute(OLD_INDEX_ITEMS, oldItems);
-        diff.setAttribute(NEW_INDEX_ITEMS, currentItems);
+        diff.setAttribute(OLD_INDEX_ITEMS, oldEntries);
+        diff.setAttribute(NEW_INDEX_ITEMS, currentEntries);
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> difference, IInstanceContext context) {
-        List<IndexEntryPO> oldItems = difference.getAttribute(OLD_INDEX_ITEMS);
-        List<IndexEntryPO> currentItems = difference.getAttribute(NEW_INDEX_ITEMS);
+    public void afterSaving(EntityChange<InstancePO> diff, IInstanceContext context) {
+        List<IndexEntryPO> oldItems = diff.getAttribute(OLD_INDEX_ITEMS);
+        List<IndexEntryPO> currentItems = diff.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
         if(NncUtils.isNotEmpty(changeList.inserts())) {
             indexEntryMapper.batchInsert(changeList.inserts());

@@ -86,7 +86,6 @@
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
           #{id}
         </foreach>
-    lock in share mode
   </select>
 
   <select id="selectByTypeIds" resultMap="BaseResultMap">

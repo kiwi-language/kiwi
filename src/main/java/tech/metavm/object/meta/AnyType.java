@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 
 import java.util.function.Function;
 
-@EntityType("任意类型")
+@EntityType("Any类型")
 public class AnyType extends Type {
 
     public AnyType() {

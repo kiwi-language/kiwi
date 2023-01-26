@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.tenant.TenantRT;
 
-@EntityType("索引重建任务")
+@EntityType("索引重建全局任务")
 public class IndexRebuildGlobalJob extends GlobalJob {
 
     public IndexRebuildGlobalJob() {

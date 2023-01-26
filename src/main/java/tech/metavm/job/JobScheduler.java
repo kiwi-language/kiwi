@@ -1,5 +1,6 @@
 package tech.metavm.job;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,9 @@ public class JobScheduler {
     private volatile boolean running;
     private final Map<Long, Object> monitorMap = new ConcurrentSkipListMap<>();
     private final ThreadPoolExecutor executor;
-    private final Executor scheduleExecutor = Executors.newSingleThreadExecutor();
+    private final Executor scheduleExecutor = Executors.newSingleThreadExecutor(
+            r -> new Thread(r, "scheduler-worker-1")
+    );
 
     private final Set<Long> runningJobIds = new ConcurrentSkipListSet<>();
 
@@ -182,16 +185,20 @@ public class JobScheduler {
         if(!runningJobIds.add(jobId)) {
             return;
         }
-        IEntityContext context = newContext(tenantId);
-        Job job = context.getEntity(Job.class, jobId);
-        if(job.isRunnable()) {
-            job.run(context.getInstanceContext());
-            context.finish();
-            if(job.isFinished()) {
-                onJobDone(tenantId, jobId);
+        try {
+            IEntityContext context = newContext(tenantId);
+            Job job = context.getEntity(Job.class, jobId);
+            if (job.isRunnable()) {
+                job.run(context.getInstanceContext());
+                context.finish();
+                if (job.isFinished()) {
+                    onJobDone(tenantId, jobId);
+                }
             }
         }
-        runningJobIds.remove(jobId);
+        finally {
+            runningJobIds.remove(jobId);
+        }
     }
 
     private JobSignal selectSignalForScheduling(IEntityContext rootEntityCtx) {

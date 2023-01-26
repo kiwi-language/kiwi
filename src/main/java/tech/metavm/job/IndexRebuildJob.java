@@ -1,10 +1,12 @@
 package tech.metavm.job;
 
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.Instance;
 
 import java.util.List;
 
+@EntityType("索引重建任务")
 public class IndexRebuildJob extends InstanceScanJob {
 
     protected IndexRebuildJob() {

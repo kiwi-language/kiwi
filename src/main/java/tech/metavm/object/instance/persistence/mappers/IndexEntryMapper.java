@@ -22,8 +22,8 @@ public interface IndexEntryMapper {
 
     List<IndexEntryPO> selectByInstanceIdsOrKeys(
             @Param("tenantId") long tenantId,
-            @Param("instanceIds") List<Long> instanceIds,
-            @Param("keys") List<IndexKeyPO> keys
+            @Param("instanceIds") Collection<Long> instanceIds,
+            @Param("keys") Collection<IndexKeyPO> keys
             );
 
     void batchInsert(Collection<IndexEntryPO> items);

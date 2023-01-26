@@ -46,7 +46,9 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     }
 
     @Override
-    public List<IndexEntryPO> selectByInstanceIdsOrKeys(long tenantId, List<Long> instanceIds, List<IndexKeyPO> keys) {
+    public List<IndexEntryPO> selectByInstanceIdsOrKeys(long tenantId,
+                                                        Collection<Long> instanceIds,
+                                                        Collection<IndexKeyPO> keys) {
         return NncUtils.merge(
                 NncUtils.flatMap(instanceIds, this::getItemsByInstanceId),
                 NncUtils.flatMap(keys, this::getItems)

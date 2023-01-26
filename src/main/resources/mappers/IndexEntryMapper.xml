@@ -74,7 +74,7 @@
     from
     index_entry
     where
-    tenant_id = #{tenantId} and
+    tenant_id = #{tenantId} and (
     <trim suffixOverrides="or">
       <if test="instanceIds != null and instanceIds.size() != 0">
         instance_id in
@@ -91,6 +91,7 @@
         or
       </if>
     </trim>
+    )
   </select>
 
   <select id="query" resultMap="BaseResultMap">
