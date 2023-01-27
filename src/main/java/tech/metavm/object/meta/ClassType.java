@@ -262,9 +262,11 @@ public class ClassType extends AbsClassType {
 
     @Override
     public void removeField(Field field) {
-        if(requireNonNull(fields).contains(field)) {
-            fields.remove(field);
-        }
+        fields.remove(field);
+    }
+
+    public void removeFlow(FlowRT flow) {
+        flows.remove(flow);
     }
 
     public TypePO toPO() {

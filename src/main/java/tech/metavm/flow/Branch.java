@@ -94,7 +94,7 @@ public class Branch extends Entity {
         condition = ValueFactory.getValue(branchDTO.condition(), getParsingContext(entityContext));
     }
 
-    public List<Object> onRemove() {
+    public List<Object> beforeRemove() {
         owner.deleteBranch(this);
         return List.of();
     }

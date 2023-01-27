@@ -131,7 +131,7 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     @Override
-    public List<Object> onRemove() {
+    public List<Object> beforeRemove() {
         if(this.predecessor != null) {
             this.predecessor.setSuccessor(this.successor);
         }

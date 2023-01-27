@@ -180,4 +180,9 @@ public class FlowRT extends Entity {
         return version;
     }
 
+    @Override
+    public List<Object> beforeRemove() {
+        type.removeFlow(this);
+        return List.of();
+    }
 }

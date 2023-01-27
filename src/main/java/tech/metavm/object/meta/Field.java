@@ -145,7 +145,7 @@ public class Field extends Entity {
         }
     }
 
-    public List<Object> onRemove() {
+    public List<Object> beforeRemove() {
         List<Index> fieldIndices = declaringType.getFieldIndices(this);
         List<Object> cascades = new ArrayList<>();
         for (Index fieldIndex : fieldIndices) {

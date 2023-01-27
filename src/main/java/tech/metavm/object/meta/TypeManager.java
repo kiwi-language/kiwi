@@ -293,7 +293,7 @@ public class TypeManager {
                         null,
                         page,
                         pageSize,
-                        List.of(new EntityQueryField("type", type))
+                        List.of(new EntityQueryField("declaringType", type))
                 ),
                 context
         );

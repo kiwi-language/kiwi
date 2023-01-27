@@ -64,7 +64,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @Override
-    public List<Object> onRemove() {
+    public List<Object> beforeRemove() {
         return List.of();
     }
 

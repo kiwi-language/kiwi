@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface RemovalAware {
 
-    List<Object> onRemove();
+    List<Object> beforeRemove();
 
 }

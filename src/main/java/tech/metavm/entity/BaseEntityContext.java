@@ -393,7 +393,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
         instancesToRemove.add(instance);
         if(model instanceof RemovalAware removalAware) {
-            List<Object> cascades = removalAware.onRemove();
+            List<Object> cascades = removalAware.beforeRemove();
             if (NncUtils.isNotEmpty(cascades)) {
                 for (Object cascade : cascades) {
                     beforeRemove0(cascade, instancesToRemove);
