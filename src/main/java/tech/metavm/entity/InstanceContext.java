@@ -4,10 +4,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.persistence.IdentityPO;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
-import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
@@ -89,7 +86,7 @@ public class InstanceContext extends BaseInstanceContext {
         for (Instance replacement : replacements) {
             InstancePO existingPO = loadingBuffer.getInstancePO(replacement.getId());
             if (existingPO != null) {
-                headContext.add(existingPO);
+                headContext.add(existingPO, replacement.getType());
             }
         }
     }
@@ -146,7 +143,7 @@ public class InstanceContext extends BaseInstanceContext {
         if(instancePO == null) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
         }
-        headContext.add(EntityUtils.copyPojo(instancePO));
+        headContext.add(EntityUtils.copyPojo(instancePO), instance.getType());
         clearStaleReferences(instancePO);
         initializeInstance(instance, instancePO);
     }
@@ -216,15 +213,18 @@ public class InstanceContext extends BaseInstanceContext {
         finished = true;
         rebind();
         initIds();
-        ContextDifference difference = new ContextDifference(this);
-        List<InstancePO> bufferedPOs = getBufferedEntityPOs();
+        ContextDifference difference = new ContextDifference();
+        List<InstancePO> bufferedPOs = getBufferedInstancePOs();
         difference.diff(headContext.getEntities(), bufferedPOs);
+        Set<ReferencePO> headRefs = headContext.getReferences();
+        List<ReferencePO> bufferedRefs = getBufferedReferences(bufferedPOs);
+        difference.diffReferences(headRefs, bufferedRefs);
         processRemoval(difference.getEntityChange());
         processEntityChangeHelper(difference.getEntityChange());
         instanceStore.saveReferences(difference.getReferenceChange().toChangeList());
         headContext.clear();
-        for (InstancePO entity : bufferedPOs) {
-            headContext.add(EntityUtils.copyPojo(entity));
+        for (InstancePO instancePO : bufferedPOs) {
+            headContext.add(EntityUtils.copyPojo(instancePO), getType(instancePO.getTypeId()));
         }
         if(TransactionSynchronizationManager.isActualTransactionActive()) {
             registerTransactionSynchronization();
@@ -244,7 +244,7 @@ public class InstanceContext extends BaseInstanceContext {
                 tenantId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
         );
         if(NncUtils.isNotEmpty(stronglyReferencedIds)) {
-            List<Instance> srInstances = NncUtils.map(stronglyReferencedIds, this::get);
+            List<Instance> srInstances = NncUtils.map(stronglyReferencedIds, this::getRemoved);
             throw BusinessException.strongReferencesPreventRemoval(srInstances);
         }
     }
@@ -256,7 +256,7 @@ public class InstanceContext extends BaseInstanceContext {
 
     public static final int MAX_ITERATION = 5;
 
-    private List<InstancePO> getBufferedEntityPOs() {
+    private List<InstancePO> getBufferedInstancePOs() {
         List<InstancePO> instancePOs = new ArrayList<>();
         Set<Instance> processed = new IdentitySet<>();
         int it = 0;
@@ -278,6 +278,13 @@ public class InstanceContext extends BaseInstanceContext {
             }
         }
         return instancePOs;
+    }
+
+    private List<ReferencePO> getBufferedReferences(List<InstancePO> instancePOs) {
+        return NncUtils.flatMap(
+                instancePOs,
+                instancePO -> getType(instancePO.getTypeId()).extractReferences(instancePO)
+        );
     }
 
     private void registerTransactionSynchronization() {

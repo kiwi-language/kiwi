@@ -2,10 +2,16 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.persistence.InstanceArrayPO;
+import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
+import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -46,6 +52,26 @@ public class ArrayType extends Type {
 
     public Type getElementType() {
         return elementType;
+    }
+
+    @Override
+    public List<ReferencePO> extractReferences(InstancePO instancePO) {
+        InstanceArrayPO arrayPO = (InstanceArrayPO) instancePO;
+        List<ReferencePO> refs = new ArrayList<>();
+        boolean isRefType = getElementType().isReference();
+        for (Object element : arrayPO.getElements()) {
+            NncUtils.invokeIfNotNull(
+                    ReferencePO.convertToRefId(element, isRefType),
+                    targetId -> refs.add(new ReferencePO(
+                            arrayPO.getTenantId(),
+                            arrayPO.getId(),
+                            targetId,
+                            -1L,
+                            ReferenceKind.getFromType(elementType).code()
+                    ))
+            );
+        }
+        return refs;
     }
 
     @Override

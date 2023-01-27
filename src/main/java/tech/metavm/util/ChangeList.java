@@ -20,11 +20,11 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         return new ChangeList<>(List.of(), List.of(), deletes);
     }
 
-    public static <T,K> ChangeList<T> build(List<T> beforeList, List<T> afterList, Function<T, K> keyMapping) {
+    public static <T,K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping) {
         return build(beforeList, afterList, keyMapping, Objects::equals);
     }
 
-    public static <T,K> ChangeList<T> build(List<T> beforeList, List<T> afterList, Function<T, K> keyMapping, BiPredicate<T, T> equals) {
+    public static <T,K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping, BiPredicate<T, T> equals) {
         if(beforeList == null) {
             beforeList = List.of();
         }

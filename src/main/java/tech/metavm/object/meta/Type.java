@@ -7,10 +7,13 @@ import tech.metavm.entity.IndexDef;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.function.Function;
 
 @EntityType("类型")
@@ -196,6 +199,10 @@ public abstract class Type extends Entity {
 
     public SQLType getSQLType() {
         return category.getSQLType();
+    }
+
+    public List<ReferencePO> extractReferences(InstancePO instancePO) {
+        return List.of();
     }
 
     protected TypeDTO toDTO(Object param) {

@@ -112,6 +112,9 @@ public abstract class BaseInstanceContext implements IInstanceContext{
     }
 
     private Instance getSelf(long id) {
+        if(removedInstanceMap.containsKey(id)) {
+            throw new InternalException("Can not get instance " + id + " because it's already removed");
+        }
         Instance instance = instanceMap.get(id);
         if(instance == null) {
             instance = createInstance(id);
@@ -132,11 +135,16 @@ public abstract class BaseInstanceContext implements IInstanceContext{
 
     @Override
     public boolean containsId(long id) {
-        return parent != null && parent.containsId(id) || instanceMap.get(id) != null;
+        return parent != null && parent.containsId(id) || instanceMap.get(id) != null
+                || removedInstanceMap.get(id) != null;
     }
 
     @Override
     public abstract void finish();
+
+    protected Instance getRemoved(long id) {
+        return NncUtils.requireNonNull(removedInstanceMap.get(id));
+    }
 
     @Override
     public abstract boolean isFinished();

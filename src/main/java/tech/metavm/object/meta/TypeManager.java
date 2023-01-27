@@ -257,15 +257,11 @@ public class TypeManager {
     public void removeField(long fieldId) {
         IEntityContext context = newContext();
         Field field = context.getField(fieldId);
-        removeField(field, context);
+        context.remove(field);
         context.finish();
     }
 
     private void removeField(Field field, IEntityContext context) {
-        Type type = field.getType();
-        if(type.isAnonymous()) {
-            context.remove(type);
-        }
         context.remove(field);
     }
 

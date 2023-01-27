@@ -152,6 +152,9 @@ public class Field extends Entity {
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
+        if(type.isAnonymous()) {
+            cascades.add(type);
+        }
         declaringType.removeField(this);
         return cascades;
     }

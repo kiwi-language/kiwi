@@ -96,4 +96,17 @@ public class ReferencePO {
         return tenantId + "-" + targetId + "-" + fieldId;
     }
 
+    public static Long convertToRefId(Object fieldValue, boolean isRef) {
+        if(fieldValue == null) {
+            return null;
+        }
+        if(fieldValue instanceof IdentityPO identityPO){
+            return identityPO.id();
+        }
+        if(isRef) {
+            return (Long) fieldValue;
+        }
+        return null;
+    }
+
 }

@@ -6,7 +6,10 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.FlowRT;
+import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -378,6 +381,24 @@ public class ClassType extends AbsClassType {
     @JsonIgnore
     public ClassType getConcreteType() {
         return this;
+    }
+
+    @Override
+    public List<ReferencePO> extractReferences(InstancePO instancePO) {
+        List<ReferencePO> refs = new ArrayList<>();
+        for (Field field : getFields()) {
+            NncUtils.invokeIfNotNull(
+                    ReferencePO.convertToRefId(instancePO.get(field.getColumnName()), field.isReference()),
+                    targetId -> refs.add(new ReferencePO(
+                            instancePO.getTenantId(),
+                            instancePO.getId(),
+                            targetId,
+                            field.getId(),
+                            ReferenceKind.getFromType(field.getType()).code()
+                    ))
+            );
+        }
+        return refs;
     }
 
     @Override

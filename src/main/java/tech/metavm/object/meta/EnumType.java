@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
@@ -15,7 +16,8 @@ import java.util.List;
 @EntityType("枚举类型")
 public class EnumType extends ClassType {
 
-    private final Table<ClassInstance> enumConstants = new Table<>(ClassInstance.class);
+    @ChildEntity("枚举值列表")
+    private final Table<ClassInstance> enumConstants = new Table<>(ClassInstance.class, true);
 
     public EnumType(String name, @Nullable ClassType superType, boolean anonymous) {
         super(name,
