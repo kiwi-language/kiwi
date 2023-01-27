@@ -114,10 +114,10 @@ public class TableManager {
         return convertToColumnDTO(fieldDTO, context.getType(fieldDTO.typeId()));
     }
 
-    private EnumEditContext saveEnum(ColumnDTO fieldEdit, IEntityContext context) {
+    private EnumEditContext saveEnum(Type declaringType, ColumnDTO fieldEdit, IEntityContext context) {
         EnumEditContext enumEditContext = new EnumEditContext(
                 fieldEdit.targetId(),
-                fieldEdit.name(),
+                declaringType.getName() + "_" + fieldEdit.name(),
                 true,
                 fieldEdit.choiceOptions(),
                 context
@@ -130,7 +130,7 @@ public class TableManager {
         Type type;
         FieldValueDTO defaultValue;
         if(column.type() == ColumnType.ENUM.code) {
-            EnumEditContext enumEditContext = saveEnum(column, context);
+            EnumEditContext enumEditContext = saveEnum(declaringType, column, context);
             type = getType(column, enumEditContext.getType(), context);
             defaultValue = column.multiValued() ?
                     new ArrayFieldValueDTO(
