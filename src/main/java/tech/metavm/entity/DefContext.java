@@ -49,6 +49,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 //            javaType = ReflectUtils.getRawClass(javaType);
 //        }
         javaType = ReflectUtils.eraseType(javaType);
+        if(javaType instanceof Class<?> klass) {
+            javaType = EntityUtils.getRealType(klass);
+        }
         ModelDef<?,?> existing = javaType2Def.get(javaType);
         if(existing != null) {
             return existing;

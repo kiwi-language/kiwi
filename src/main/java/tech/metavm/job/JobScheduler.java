@@ -160,8 +160,12 @@ public class JobScheduler {
         JobSignal signal = activeSignalMap.get(tenantId);
         if(signal != null) {
             IEntityContext rootContext = newRootContext();
+            signal = rootContext.selectByUniqueKey(JobSignal.IDX_TENANT_ID, tenantId);
             if (signal.decreaseUnfinishedJobCount()) {
                 removeSignal(signal);
+            }
+            else {
+                addSignal(signal);
             }
             rootContext.finish();
         }

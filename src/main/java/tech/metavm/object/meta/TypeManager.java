@@ -73,7 +73,8 @@ public class TypeManager {
                         page,
                         pageSize,
                         List.of(
-                                new EntityQueryField("category", categories)
+                                new EntityQueryField("category", categories),
+                                new EntityQueryField("anonymous", false)
                         )
                 ),
                 context
