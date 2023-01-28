@@ -8,6 +8,7 @@ import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.Table;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
@@ -55,8 +56,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     public D create() {
         def = createDef(getSuperDef());
         ClassType type = def.getType();
-        type.setNullableType(new UnionType(Set.of(type, defMap.getType(Null.class))));
-        type.setArrayType(new ArrayType(type, false));
+        TypeUtil.fillCompositeTypes(type, typeFactory);
         return def;
     }
 

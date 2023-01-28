@@ -50,43 +50,7 @@ public class StandardDefBuilder {
                 Object.class,
                 objectType
         );
-
-        PrimitiveType intType = typeFactory.createPrimitive(INT);
-        defMap.addDef(intDef = new PrimitiveDef<>(
-                Integer.class,
-                intType
-        ));
-
-        defMap.addDef(longDef = new PrimitiveDef<>(
-                Long.class,
-                typeFactory.createPrimitive( PrimitiveKind.LONG)
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Double.class,
-                typeFactory.createPrimitive( PrimitiveKind.DOUBLE)
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Boolean.class,
-                typeFactory.createPrimitive( PrimitiveKind.BOOLEAN)
-        ));
-
-        PrimitiveType stringType = typeFactory.createPrimitive(PrimitiveKind.STRING);
-        defMap.addDef(stringDef = new PrimitiveDef<>(
-                String.class,
-                stringType
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Date.class,
-                typeFactory.createPrimitive(PrimitiveKind.TIME)
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Password.class,
-                typeFactory.createPrimitive(PrimitiveKind.PASSWORD)
-        ));
+        defMap.addDef(objectDef);
 
         nullDef = new PrimitiveDef<>(
                 Null.class,
@@ -94,7 +58,42 @@ public class StandardDefBuilder {
         );
         defMap.addDef(nullDef);
 
-        defMap.addDef(objectDef);
+        PrimitiveType intType = typeFactory.createPrimitiveWithComposition(INT);
+        defMap.addDef(intDef = new PrimitiveDef<>(
+                Integer.class,
+                intType
+        ));
+
+        defMap.addDef(longDef = new PrimitiveDef<>(
+                Long.class,
+                typeFactory.createPrimitiveWithComposition( PrimitiveKind.LONG)
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Double.class,
+                typeFactory.createPrimitiveWithComposition( PrimitiveKind.DOUBLE)
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Boolean.class,
+                typeFactory.createPrimitiveWithComposition( PrimitiveKind.BOOLEAN)
+        ));
+
+        PrimitiveType stringType = typeFactory.createPrimitiveWithComposition(PrimitiveKind.STRING);
+        defMap.addDef(stringDef = new PrimitiveDef<>(
+                String.class,
+                stringType
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Date.class,
+                typeFactory.createPrimitiveWithComposition(PrimitiveKind.TIME)
+        ));
+
+        defMap.addDef(new PrimitiveDef<>(
+                Password.class,
+                typeFactory.createPrimitiveWithComposition(PrimitiveKind.PASSWORD)
+        ));
 
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,

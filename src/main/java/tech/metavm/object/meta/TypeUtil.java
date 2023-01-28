@@ -76,6 +76,14 @@ public class TypeUtil {
         return NncUtils.findRequired(type.getTypeMembers(), t -> !t.equals(StandardTypes.getNullType()));
     }
 
+    public static void fillCompositeTypes(Type type, TypeFactory typeFactory) {
+        Type nullType = typeFactory.getNullType();
+        type.setNullableType(new UnionType(Set.of(type, nullType)));
+        ArrayType arrayType = new ArrayType(type, false);
+        arrayType.setNullableType(new UnionType(Set.of(arrayType, nullType)));
+        type.setArrayType(arrayType);
+    }
+
     public static boolean isNullable(Type type) {
         return TYPE_FACTORY.isNullable(type);
     }

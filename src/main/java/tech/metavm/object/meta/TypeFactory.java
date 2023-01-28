@@ -19,6 +19,12 @@ public class TypeFactory {
         this.getTypeFunc = getTypeFunc;
     }
 
+    public PrimitiveType createPrimitiveWithComposition(PrimitiveKind kind) {
+        PrimitiveType primitiveType = createPrimitive(kind);
+        TypeUtil.fillCompositeTypes(primitiveType, this);
+        return primitiveType;
+    }
+
     public PrimitiveType createPrimitive(PrimitiveKind kind) {
         return new PrimitiveType(kind);
     }
