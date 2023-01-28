@@ -17,6 +17,10 @@ public class FunctionExpression extends Expression {
     @ChildEntity("参数表达式列表")
     private final Table<Expression> arguments = new Table<>(Expression.class, true);
 
+    public FunctionExpression(Function function) {
+        this(function, new ArrayExpression(List.of()));
+    }
+
     public FunctionExpression(Function function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {

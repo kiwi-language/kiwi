@@ -6,6 +6,7 @@ import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
+import java.util.Date;
 import java.util.List;
 
 public class FunctionMethods {
@@ -98,6 +99,10 @@ public class FunctionMethods {
 
     public static Object IF(Boolean condition, Object value1, Object value2) {
         return condition ? value1 : value2;
+    }
+
+    public static TimeInstance NOW() {
+        return InstanceUtils.timeInstance(System.currentTimeMillis());
     }
 
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {

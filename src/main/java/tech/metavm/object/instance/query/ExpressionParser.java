@@ -136,8 +136,14 @@ public class ExpressionParser {
     private void writeExpression() {
         Op op = opStack.pop();
         if(op.isFunc()) {
-            Expression arg = popExprRequired();
-            exprStack.push(new FunctionExpression(op.func(), arg/*, context.getInstanceContext()*/));
+            FunctionExpression funcExpr;
+            if(op.func.getParameterTypes().isEmpty()) {
+                funcExpr = new FunctionExpression(op.func);
+            }
+            else {
+                funcExpr = new FunctionExpression(op.func, exprStack.pop());
+            }
+            exprStack.push(funcExpr);
         }
         else if(op.isComma()) {
             Expression second = popExprRequired(), first = popExprRequired();

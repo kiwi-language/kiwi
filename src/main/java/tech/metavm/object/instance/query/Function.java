@@ -5,6 +5,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public enum Function {
@@ -25,6 +26,8 @@ public enum Function {
             types -> ValueUtil.getConvertibleType(types.get(1), types.get(2))),
 
     IS_BLANK(Boolean.class, String.class),
+
+    NOW(Date.class)
 
     ;
 
