@@ -2,11 +2,12 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
-import tech.metavm.entity.InstanceContext;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -38,6 +39,7 @@ public class FlowParsingContext implements ParsingContext {
     private long lastBuiltVersion = 0L;
     private final Map<Long, NodeRT<?>> id2node = new HashMap<>();
     private final Map<String, NodeRT<?>> name2node = new HashMap<>();
+    private final Map<NodeRT<?>, NodeExpression> node2expression = new HashMap<>();
 
     public FlowParsingContext(NodeRT<?> lastNode, IInstanceContext instanceContext) {
         this.lastNode = lastNode;
@@ -45,8 +47,29 @@ public class FlowParsingContext implements ParsingContext {
     }
 
     @Override
-    public IInstanceContext getInstanceContext() {
-        return instanceContext;
+    public Instance getInstance(long id) {
+        return instanceContext.get(id);
+    }
+
+    @Override
+    public boolean isContextVar(Var var) {
+        rebuildIfOutdated();
+        return getNode(var) != null;
+    }
+
+    @Override
+    public Expression resolveVar(Var var) {
+        NodeRT<?> node = getNode(var);
+        if(node == null) {
+            throw new InternalException(var + " is not a context var of " + this);
+        }
+        return node2expression.computeIfAbsent(node, NodeExpression::new);
+    }
+
+
+    @Override
+    public Expression getDefaultExpr() {
+        throw new InternalException("Flow context has no default context expression");
     }
 
     private void rebuildIfOutdated() {
@@ -86,15 +109,10 @@ public class FlowParsingContext implements ParsingContext {
         }
     }
 
-//    @Override
-//    public InstanceContext getInstanceContext() {
-//        return context;
-//    }
-
     private NodeRT<?> getNode(Var var) {
         return switch (var.getType()) {
-            case ID -> id2node.get(var.getLongSymbol());
-            case NAME -> name2node.get(var.getStringSymbol());
+            case ID -> id2node.get(var.getId());
+            case NAME -> name2node.get(var.getName());
         };
     }
 

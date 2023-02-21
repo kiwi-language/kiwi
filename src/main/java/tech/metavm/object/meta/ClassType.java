@@ -10,6 +10,7 @@ import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.instance.query.Var;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -102,6 +103,28 @@ public class ClassType extends AbsClassType {
         }
         else {
             return NncUtils.map(fields, Function.identity());
+        }
+    }
+
+    public List<Field> getFieldsByPath(List<String> path) {
+        List<Field> result = new ArrayList<>();
+        getFieldsByPath0(path, result);
+        return result;
+    }
+
+    private void getFieldsByPath0(List<String> path, List<Field> result) {
+        NncUtils.requireMinimumSize(path, 1);
+        String fieldName = path.get(0);
+        Field field = getFieldNyNameRequired(fieldName);
+        result.add(field);
+        if(path.size() > 1) {
+            Type fieldType = field.getType();
+            if(fieldType instanceof ClassType classType) {
+                classType.getFieldsByPath0(path.subList(1, path.size()), result);
+            }
+            else {
+                throw new InternalException("Invalid field path '" + NncUtils.join(path, ".") + "'");
+            }
         }
     }
 
@@ -211,6 +234,15 @@ public class ClassType extends AbsClassType {
         return find(fields, f -> f.getName().equals(fieldName));
     }
 
+    public Field getFieldByVar(Var var) {
+        if(var.isId()) {
+            return getField(var.getId());
+        }
+        else {
+            return getFieldByName(var.getName());
+        }
+    }
+
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
         String fieldName = ReflectUtils.getMetaFieldName(javaField);
         return requireNonNull(getFieldByName(fieldName),
@@ -306,7 +338,7 @@ public class ClassType extends AbsClassType {
 
     @Override
     protected ClassParamDTO getParam() {
-        return getParam(true, false);
+        return getParam(true, true);
     }
 
     @Override

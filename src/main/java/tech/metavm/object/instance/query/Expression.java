@@ -1,8 +1,10 @@
 package tech.metavm.object.instance.query;
 
+import org.elasticsearch.script.field.Field;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.InternalException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,40 @@ public abstract class Expression extends Entity {
     }
 
     public abstract Type getType();
+
+    protected abstract List<Expression> getChildren();
+
+    public Expression getVariableChild() {
+        for (Expression child : getChildren()) {
+            if(child instanceof FieldExpression || child instanceof ThisExpression) {
+                return child;
+            }
+        }
+        throw new InternalException("Can not find a variable child");
+    }
+
+    public <E extends Expression> E getChild(Class<E> type) {
+        for (Expression child : getChildren()) {
+            if(type.isInstance(child)) {
+                return type.cast(child);
+            }
+        }
+        throw new InternalException("Can not find a child expression of type '" + type.getName() + "'");
+    }
+
+    public ConstantExpression getConstChild() {
+        return getChild(ConstantExpression.class);
+    }
+
+    public abstract Expression cloneWithNewChildren(List<Expression> children);
+
+    public FieldExpression getFieldChild() {
+        return getChild(FieldExpression.class);
+    }
+
+    public ArrayExpression getArrayChild() {
+        return getChild(ArrayExpression.class);
+    }
 
     @Override
     public String toString() {

@@ -6,14 +6,16 @@ import org.junit.Assert;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.*;
 import tech.metavm.job.JobManager;
+import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.meta.rest.dto.LoadByPathsResponse;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
 import java.util.List;
+import java.util.Map;
 
 public class TypeManagerTest extends TestCase {
 
@@ -86,6 +88,21 @@ public class TypeManagerTest extends TestCase {
 
         typeManager.remove(savedTypeDTO.id());
         Assert.assertFalse(instanceSearchService.contains(savedTypeDTO.id()));
+    }
+
+    public void testLoadByPaths() {
+        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        PrimitiveType stringType = MockRegistry.getStringType();
+        String path1 = "傻.巴.编号";
+        String path2 = "$" + fooType.getId() + ".巴子.*.巴巴巴巴.*.编号";
+        LoadByPathsResponse response = typeManager.loadByPaths(List.of(path1, path2));
+
+        Assert.assertEquals(
+                Map.of(path1, stringType.getId(), path2, stringType.getId()),
+                response.path2typeId()
+        );
+
+        Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
     }
 
 }

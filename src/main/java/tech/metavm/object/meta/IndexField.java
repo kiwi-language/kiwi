@@ -5,6 +5,7 @@ import tech.metavm.flow.ExpressionValue;
 import tech.metavm.flow.ReferenceValue;
 import tech.metavm.flow.Value;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.IntInstance;
 import tech.metavm.object.instance.LongInstance;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -97,7 +98,15 @@ public class IndexField extends Entity {
             }
             else {
                 key.setColumnXPresent(true);
-                key.setColumnX(((LongInstance) fieldValue).getValue());
+                if(fieldValue instanceof LongInstance longInstance) {
+                    key.setColumnX(longInstance.getValue());
+                }
+                else if(fieldValue instanceof IntInstance intInstance) {
+                    key.setColumnX(intInstance.getValue().longValue());
+                }
+                else {
+                    throw  new InternalException("Can not set column X with " + fieldValue);
+                }
             }
         }
         else {
@@ -126,7 +135,7 @@ public class IndexField extends Entity {
     }
 
     public boolean isColumnX() {
-        return value.getType().isLong() && constraint.isLastItem(this);
+        return (value.getType().isLong() || value.getType().isInt()) && constraint.isLastItem(this);
     }
 
     public Instance convertModelToInstance(Object model, IEntityContext entityContext) {

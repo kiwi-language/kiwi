@@ -2,20 +2,20 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.Instance;
 
-import java.util.Set;
-
 public class TreeEvaluationContext implements EvaluationContext {
 
-    private final ObjectTree objectTree;
+    private final ObjectNode objectNode;
+    private final Instance instance;
 
-    public TreeEvaluationContext(ObjectTree objectTree) {
-        this.objectTree = objectTree;
+    public TreeEvaluationContext(ObjectNode objectNode, Instance instance) {
+        this.objectNode = objectNode;
+        this.instance = instance;
     }
 
     @Override
     public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
         if(expression instanceof FieldExpression fieldExpression) {
-            return objectTree.getFieldValue(fieldExpression.getPathString());
+            return objectNode.getByPath(instance, Path.create(fieldExpression.getPathString()));
         }
         else {
             throw new RuntimeException("Unsupported expression");
@@ -23,7 +23,8 @@ public class TreeEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Set<Class<? extends Expression>> supportedExpressionClasses() {
-        return Set.of(FieldExpression.class);
+    public boolean isContextExpression(Expression expression) {
+        return expression instanceof FieldExpression;
     }
+
 }

@@ -2,12 +2,14 @@ package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.rest.ArrayParamDTO;
 import tech.metavm.object.instance.rest.ClassInstanceParamDTO;
+import tech.metavm.object.instance.rest.PrimitiveParamDTO;
 import tech.metavm.util.NncUtils;
 
 public enum InstanceKind {
 
     CLASS(1, ClassInstanceParamDTO.class),
     ARRAY(2, ArrayParamDTO.class),
+    PRIMITIVE(3, PrimitiveParamDTO.class)
 
     ;
 

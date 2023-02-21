@@ -6,6 +6,8 @@ import tech.metavm.entity.ValueType;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.meta.Type;
 
+import java.util.List;
+
 @EntityType("节点表达式")
 public class NodeExpression extends Expression {
 
@@ -36,6 +38,16 @@ public class NodeExpression extends Expression {
     @Override
     public Type getType() {
         return node.getType();
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return List.of();
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        return new NodeExpression(node);
     }
 
 }

@@ -6,6 +6,7 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 public class ExpressionUtil {
@@ -218,7 +219,7 @@ public class ExpressionUtil {
             }
         }
         if(fieldValue instanceof ReferenceFieldValueDTO refFieldValue) {
-            return "$$" + refFieldValue.getId();
+            return Constants.CONSTANT_ID_PREFIX + refFieldValue.getId();
         }
         if(fieldValue instanceof ArrayFieldValueDTO arrayFieldValue) {
             return "[" + NncUtils.join(arrayFieldValue.getElements(), ExpressionUtil::constantToExpression) + "]";
@@ -231,6 +232,21 @@ public class ExpressionUtil {
 
     public static FieldValueDTO expressionToConstant(ConstantExpression expression) {
         return expression.getValue().toFieldValueDTO();
+    }
+
+    public static @Nullable String getAlias(Expression expression) {
+        return expression instanceof AsExpression asExpression ? asExpression.getAlias() : null;
+    }
+
+    public InternalException notContextExpression(Expression expression, EvaluationContext context) {
+        return new InternalException(expression + " is not a context expression of " + context);
+    }
+
+    public static long parseIdFromConstantVar(String var) {
+        if(var.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+            return Long.parseLong(var.substring(Constants.CONSTANT_ID_PREFIX.length()));
+        }
+        throw new InternalException("Path item '" + var + "' does not represent an identity");
     }
 
 }

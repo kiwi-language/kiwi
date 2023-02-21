@@ -3,11 +3,11 @@ package tech.metavm.object.instance.query;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
+import java.util.Collections;
 import java.util.List;
 
 @EntityType("函数表达式")
@@ -41,7 +41,7 @@ public class FunctionExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        return function + "(" + NncUtils.join(arguments, arg -> arg.buildSelf(symbolType), ", ") + ")";
+        return function.code() + "(" + NncUtils.join(arguments, arg -> arg.buildSelf(symbolType), ", ") + ")";
     }
 
     @Override
@@ -51,7 +51,18 @@ public class FunctionExpression extends Expression {
 
     @Override
     public Type getType() {
-        return function.getReturnType(NncUtils.map(arguments, Expression::getType)/*, context*/);
+        return function.getReturnType(NncUtils.map(arguments, Expression::getType));
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return Collections.unmodifiableList(arguments);
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        NncUtils.requireLength(children, this.arguments.size());
+        return new FunctionExpression(function, new ArrayExpression(children));
     }
 
     @Override

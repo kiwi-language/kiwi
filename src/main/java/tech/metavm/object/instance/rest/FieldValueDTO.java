@@ -15,7 +15,7 @@ import java.util.Objects;
                 @JsonSubTypes.Type(value = ExpressionFieldValueDTO.class, name = "5"),
         }
 )
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class FieldValueDTO {
     private final int type;
     private final String displayValue;

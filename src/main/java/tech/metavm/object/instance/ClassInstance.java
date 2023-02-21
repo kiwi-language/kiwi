@@ -157,7 +157,7 @@ public class ClassInstance extends Instance {
         return (ClassInstance) field(field).getValue();
     }
 
-    public Object get(String fieldPath) {
+    public Instance get(String fieldPath) {
         int idx = fieldPath.indexOf('.');
         if(idx == -1) {
             return get(getType().getFieldNyNameRequired(fieldPath));
@@ -272,7 +272,7 @@ public class ClassInstance extends Instance {
     }
 
     @Override
-    protected Object getParam() {
+    protected ClassInstanceParamDTO getParam() {
         return new ClassInstanceParamDTO(
                 NncUtils.map(fields, InstanceField::toDTO)
         );

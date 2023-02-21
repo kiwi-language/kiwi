@@ -10,10 +10,13 @@ import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("类型")
@@ -223,7 +226,25 @@ public abstract class Type extends Entity {
         return toDTO(getParam());
     }
 
+    protected void extractCompositeTypesRecursively(Set<Type> result) {
+        if(nullableType != null) {
+            result.add(nullableType);
+            nullableType.extractCompositeTypesRecursively(result);
+        }
+        if(arrayType != null) {
+            result.add(arrayType);
+            arrayType.extractCompositeTypesRecursively(result);
+        }
+    }
+
     protected abstract Object getParam();
+
+    @Override
+    public List<Object> beforeRemove() {
+        Set<Type> compositeTypes = new IdentitySet<>();
+        extractCompositeTypesRecursively(compositeTypes);
+        return new ArrayList<>(compositeTypes);
+    }
 
     @Override
     public String toString() {

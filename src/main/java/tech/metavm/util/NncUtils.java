@@ -26,6 +26,18 @@ public class NncUtils {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
 
+
+    public static void requireLength(Collection<?> collection, int expectedSize) {
+        if(collection.size() != expectedSize) {
+            throw new InternalException("Expected collection size is " + expectedSize
+                    + ", actual collection size is " + collection.size());
+        }
+    }
+
+    public static void requireMinimumSize(Object[] array, int minSize) {
+        requireMinimumSize(Arrays.asList(array), minSize);
+    }
+
     public static void requireMinimumSize(Collection<?> collection, int minSize) {
         if(collection == null) {
            throw new InternalException("collection is null");
@@ -33,6 +45,12 @@ public class NncUtils {
         if(collection.size() < minSize) {
             throw new InternalException("collection has less elements than required. Minimum size: " + minSize );
         }
+    }
+
+    public static <T> List<T> append(List<T> list, T element) {
+        List<T> newList = new ArrayList<>(list);
+        newList.add(element);
+        return newList;
     }
 
     public static byte[] readFromFile(String filePath) throws IOException {
@@ -585,6 +603,11 @@ public class NncUtils {
     public static String join(Collection<String> strList, String delimiter) {
         return String.join(delimiter, strList);
     }
+
+    public static String joinWithDot(Collection<String> strList) {
+        return String.join(".", strList);
+    }
+
 
     public static <K, T> Map<K, T> toMap(Collection<T> list, Function<T, K> keyMapper) {
         return toMap(list, keyMapper, Function.identity());

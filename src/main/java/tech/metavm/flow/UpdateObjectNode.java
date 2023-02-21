@@ -44,6 +44,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     protected void setParam(UpdateObjectParamDTO param, IEntityContext entityContext) {
         ParsingContext parsingContext = getParsingContext(entityContext);
         objectId = ValueFactory.getValue(param.objectId(), parsingContext);
+        fieldParams.clear();
         fieldParams.addAll(
                 NncUtils.map(
                     param.fields(),

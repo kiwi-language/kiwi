@@ -1,5 +1,6 @@
 package tech.metavm.util;
 
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.SQLType;
@@ -11,6 +12,8 @@ public record Column(
         @EntityField(value = "列名", asTitle = true) String name,
         @EntityField("列类型") SQLType type
 ) {
+
+    public static final Column ID = new Column("id", SQLType.INT64);
 
     public static Column valueOf(String columnName) {
         if (columnName == null) {

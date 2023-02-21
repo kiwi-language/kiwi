@@ -209,16 +209,32 @@ public class BusinessException extends RuntimeException {
     }
 
 
-    public static RuntimeException userNotFound(long id) {
+    public static BusinessException userNotFound(long id) {
         throw new BusinessException(ErrorCode.USER_NOT_FOUND, id);
     }
 
-    public static RuntimeException roleNotFound(long id) {
+    public static BusinessException roleNotFound(long id) {
         throw new BusinessException(ErrorCode.ROLE_NOT_FOUND, id);
     }
 
-    public static RuntimeException schedulerStatusAlreadyExists() {
+    public static BusinessException schedulerStatusAlreadyExists() {
         throw new BusinessException(ErrorCode.SCHEDULER_STATUS_ALREADY_EXISTS);
+    }
+
+    public static BusinessException listViewNotFound(ClassType type) {
+        throw new BusinessException(ErrorCode.LIST_VIEW_NOT_FOUND, type.getName());
+    }
+
+    public static BusinessException invalidInstancePath(String path) {
+        throw new BusinessException(ErrorCode.INVALID_INSTANCE_PATH, path);
+    }
+
+    public static BusinessException invalidInstancePath(List<String> path) {
+        throw new BusinessException(ErrorCode.INVALID_INSTANCE_PATH, NncUtils.join(path, "."));
+    }
+
+    public static BusinessException invalidTypePath(String path) {
+        throw new BusinessException(ErrorCode.INVALID_TYPE_PATH, path);
     }
 
     public ErrorCode getErrorCode() {

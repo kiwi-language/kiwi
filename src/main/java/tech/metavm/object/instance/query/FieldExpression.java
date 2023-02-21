@@ -62,12 +62,22 @@ public class FieldExpression extends Expression {
     }
 
     @Override
+    protected List<Expression> getChildren() {
+        return List.of();
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        return new FieldExpression(instance, fieldPath);
+    }
+
+    @Override
     public String buildSelf(VarType symbolType) {
         String fieldsExpr = switch (symbolType) {
             case ID -> NncUtils.join(fieldPath, f -> idVarName(f.getId()), ".");
             case NAME -> NncUtils.join(fieldPath, Field::getName, ".");
         };
-        if(instance instanceof ThisExpression) {
+        if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {
             return fieldsExpr;
         }
         else {
@@ -82,14 +92,7 @@ public class FieldExpression extends Expression {
     }
 
     public String getPathString() {
-        StringBuilder builder = new StringBuilder();
-        for (Field field : fieldPath) {
-            if(builder.length() > 0) {
-                builder.append('.');
-            }
-            builder.append(field.getName());
-        }
-        return builder.toString();
+        return NncUtils.join(fieldPath, Field::getName, ".");
     }
 
     public Expression getInstance() {

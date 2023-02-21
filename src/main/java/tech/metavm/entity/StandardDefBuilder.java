@@ -143,9 +143,9 @@ public class StandardDefBuilder {
 
         defMap.addDef(enumDef);
 
-        defMap.addDef(new InstanceDef<>(Instance.class));
-        defMap.addDef(new InstanceDef<>(ClassInstance.class));
-        defMap.addDef(new InstanceDef<>(ArrayInstance.class));
+        defMap.addDef(new InstanceDef<>(Instance.class, objectType));
+        defMap.addDef(new InstanceDef<>(ClassInstance.class, objectType));
+        defMap.addDef(new InstanceDef<>(ArrayInstance.class, objectType));
     }
 
 

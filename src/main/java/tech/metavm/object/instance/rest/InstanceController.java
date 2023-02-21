@@ -6,7 +6,7 @@ import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
 import tech.metavm.object.instance.InstanceManager;
 
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/instance")
@@ -24,7 +24,7 @@ public class InstanceController {
     }
 
     @PostMapping("/select")
-    public Result<Page<Object[]>> select(@RequestBody SelectRequestDTO request) {
+    public Result<Page<InstanceDTO[]>> select(@RequestBody SelectRequestDTO request) {
         return Result.success(instanceManager.select(request));
     }
 
@@ -45,14 +45,25 @@ public class InstanceController {
     }
 
     @GetMapping("/{id:[0-9]+}")
-    public Result<InstanceDTO> get(@PathVariable("id") long id) {
-        return Result.success(instanceManager.get(id));
+    public Result<InstanceDTO> get(@PathVariable("id") long id,
+                                   @RequestParam(value = "depth", defaultValue = "1") int depth) {
+        return Result.success(instanceManager.get(id, depth));
+    }
+
+    @PostMapping("/batch-get")
+    public Result<List<InstanceDTO>> batchGet(@RequestBody BatchGetInstancesRequest request) {
+        return Result.success(instanceManager.batchGet(request.ids(), request.depth()));
     }
 
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
         instanceManager.delete(id, false);
         return Result.success(null);
+    }
+
+    @PostMapping("/load-by-paths")
+    public Result<List<InstanceDTO>> loadByPaths(@RequestBody LoadInstancesByPathsRequest request) {
+        return Result.success(instanceManager.loadByPaths(request));
     }
 
 }

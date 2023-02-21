@@ -5,6 +5,8 @@ import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
 import tech.metavm.object.instance.rest.ArrayParamDTO;
+import tech.metavm.object.instance.rest.InstanceFieldValueDTO;
+import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InstanceUtils;
@@ -25,7 +27,6 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         super(type);
         this.elementAsChild = false;
     }
-
 
     public ArrayInstance(ArrayType type, boolean elementAsChild) {
         super(type);
@@ -291,11 +292,8 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     @Override
-    public ArrayFieldValueDTO toFieldValueDTO() {
-        return new ArrayFieldValueDTO(
-                getId(),
-                NncUtils.map(elements, Instance::toFieldValueDTO)
-        );
+    public InstanceFieldValueDTO toFieldValueDTO() {
+        return new InstanceFieldValueDTO(getTitle(), toDTO());
     }
 
     public void clear() {

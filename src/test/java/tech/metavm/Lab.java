@@ -1,11 +1,13 @@
 package tech.metavm;
 
-import java.util.Date;
-
 public class Lab {
 
     public static void main(String[] args) {
-        System.out.println(new Date(1672212183812L));
+        test(new Integer[] {1,2,3});
+    }
+
+    static void test(Object[] obj) {
+        obj[1] = "s";
     }
 
 }

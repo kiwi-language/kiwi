@@ -26,4 +26,8 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
         return false;
     }
 
+    @Override
+    public Type getType(Class<?> javaType) {
+        return defContext.getType(javaType);
+    }
 }

@@ -12,9 +12,9 @@ public record InstanceDTO(
         Long typeId,
         String typeName,
         String title,
-        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
-        Object param
+        InstanceParamDTO param
 ) {
 
     public static InstanceDTO valueOf(Long id, long typeId, String title, List<InstanceFieldDTO> fields){

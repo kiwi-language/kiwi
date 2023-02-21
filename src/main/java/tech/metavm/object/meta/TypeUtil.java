@@ -124,4 +124,23 @@ public class TypeUtil {
         return type == StandardTypes.getNullType();
     }
 
+    public static ClassType ensureClassArray(Type type) {
+        if(type.isUnionNullable()) {
+            type = type.getUnderlyingType();
+        }
+        if(!(type instanceof ArrayType arrayType)) {
+            throw new InternalException("array expression must has an array type");
+        }
+        Type elementType = arrayType.getElementType();
+        if(elementType.isUnionNullable()) {
+            elementType = elementType.getUnderlyingType();
+        }
+        if(elementType instanceof ClassType classType) {
+            return classType;
+        }
+        else {
+            throw new InternalException("Only reference array is supported for AllMatchExpression right now");
+        }
+    }
+
 }

@@ -7,6 +7,7 @@ import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.meta.UnionType;
 import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
 import tech.metavm.util.NncUtils;
 
@@ -27,12 +28,19 @@ public class ArrayType extends Type {
 
     public ArrayType(Type elementType, boolean ephemeral) {
         super(getArrayTypeName(elementType), false, ephemeral, TypeCategory.ARRAY);
-        setCode(elementType.getCode() + "[]");
+        if(elementType.getCode() != null) {
+            setCode(elementType.getCode() + "[]");
+        }
         this.elementType = elementType;
     }
 
     private static String getArrayTypeName(Type elementType) {
-        return elementType.getName() + "[]";
+        if(elementType instanceof UnionType) {
+            return "(" + elementType.getName() + ")[]";
+        }
+        else {
+            return elementType.getName() + "[]";
+        }
     }
 
     @Override

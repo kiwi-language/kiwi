@@ -33,6 +33,8 @@ public interface IEntityContext extends ModelInstanceMap {
 
     <T> T getEntity(Class<T> entityType, long id);
 
+    Type getType(Class<?> javaType);
+
     default Type getType(long id) {
         return getEntity(Type.class, id);
     }

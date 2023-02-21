@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.Expression;
-import tech.metavm.object.instance.query.Path;
+import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
 
@@ -12,7 +12,7 @@ import java.util.LinkedList;
 public class FlowStack {
 
     private final InstanceContext context;
-    private final Path root = new Path("root");
+    private final PathTree root = new PathTree("root");
     private final LinkedList<NodeRT<?>> actionBuffer = new LinkedList<>();
     private final LinkedList<FlowFrame> stack = new LinkedList<>();
     private Instance ret;

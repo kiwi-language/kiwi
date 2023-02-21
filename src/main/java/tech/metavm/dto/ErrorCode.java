@@ -20,6 +20,7 @@ public enum ErrorCode {
     ERROR_DELETING_TYPE(209, "删除失败，原因: {}"),
     TYPE_NOT_FOUND(210, "类型不存在, ID: {}"),
     INVALID_COLUMN(211, "列'{}'配置错误，原因: {}"),
+    INVALID_TYPE_PATH(307, "路径不合法: {}"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "实例不存在(id: {})"),
@@ -28,6 +29,7 @@ public enum ErrorCode {
     INVALID_TYPE_VALUE(304, "数据格式错误，类型: {}, 值: {}"),
     FIELD_VALUE_REQUIRED(305, "属性'{}'不能为空"),
     STRONG_REFS_PREVENT_REMOVAL(306, "对象被其他对象关联，无法删除: {}"),
+    INVALID_INSTANCE_PATH(307, "对象路径不合法: {}"),
 
 
     // Flow相关错误
@@ -63,9 +65,11 @@ public enum ErrorCode {
     // Job
     SCHEDULER_STATUS_ALREADY_EXISTS(801, "JobSchedulerStatus已经存在"),
 
+    // VIEW
+    LIST_VIEW_NOT_FOUND(901, "找不到类型'{}'的列表视图"),
+
+
     ;
-
-
 
     private final int code;
     private final String message;

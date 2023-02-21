@@ -2,15 +2,15 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
-import java.util.Objects;
+import java.util.List;
 
 @EntityType("常量表达式")
 public class ConstantExpression extends Expression {
@@ -35,13 +35,27 @@ public class ConstantExpression extends Expression {
             return primitiveInstance.getValue() + "";
         }
         else {
-            return "$$" + NncUtils.requireNonNull(value.getId());
+            return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(value.getId());
         }
     }
 
     @Override
     public Type getType() {
         return ValueUtil.getValueType(value);
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return List.of();
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        return new ConstantExpression(value);
+    }
+
+    public boolean isString() {
+        return value instanceof StringInstance;
     }
 
     @Override

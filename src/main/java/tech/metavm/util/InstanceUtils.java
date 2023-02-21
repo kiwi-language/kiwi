@@ -3,6 +3,7 @@ package tech.metavm.util;
 import javassist.util.proxy.ProxyObject;
 import tech.metavm.entity.EntityMethodHandler;
 import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.TimePO;
 import tech.metavm.object.meta.AnyType;
@@ -11,6 +12,7 @@ import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.object.meta.Type;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class InstanceUtils {
@@ -63,7 +65,6 @@ public class InstanceUtils {
         INSTANCE_CLASS_TO_JAVA_CLASS = Collections.unmodifiableMap(classMap);
     }
 
-
     public static BooleanInstance equals(Instance first, Instance second) {
         return createBoolean(Objects.equals(first, second));
     }
@@ -103,40 +104,46 @@ public class InstanceUtils {
     }
 
     public static PrimitiveInstance resolvePrimitiveValue(Type fieldType, Object columnValue) {
+        return resolvePrimitiveValue(fieldType, columnValue, JAVA_CLASS_TO_BASIC_TYPE::get);
+    }
+
+    public static PrimitiveInstance resolvePrimitiveValue(Type fieldType,
+                                                          Object columnValue,
+                                                          Function<Class<?>, Type> getTypeFunc) {
         if(columnValue == null) {
-            return InstanceUtils.nullInstance();
+            return InstanceUtils.nullInstance(getTypeFunc);
         }
         if(columnValue instanceof TimePO timePO) {
-            return InstanceUtils.timeInstance(timePO.time());
+            return InstanceUtils.timeInstance(timePO.time(), getTypeFunc);
         }
         if(ValueUtil.isInteger(columnValue)) {
             if(fieldType.isInt()) {
-                return intInstance(((Number) columnValue).intValue());
+                return intInstance(((Number) columnValue).intValue(), getTypeFunc);
             }
             else if(fieldType.isDouble()) {
-                return doubleInstance(((Number) columnValue).doubleValue());
+                return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
             }
             else if(fieldType.isTime()) {
-                return timeInstance(((Number) columnValue).longValue());
+                return timeInstance(((Number) columnValue).longValue(), getTypeFunc);
             }
             else {
-                return longInstance(((Number) columnValue).longValue());
+                return longInstance(((Number) columnValue).longValue(), getTypeFunc);
             }
         }
         else if(ValueUtil.isFloat(columnValue)) {
-            return doubleInstance(((Number) columnValue).doubleValue());
+            return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
         }
         else if(columnValue instanceof Boolean bool) {
-            return booleanInstance(bool);
+            return booleanInstance(bool, getTypeFunc);
         }
         else if(columnValue instanceof String str) {
             if(fieldType.isPassword()) {
-                return passwordInstance(str);
+                return passwordInstance(str, getTypeFunc);
             }
-            return stringInstance(str);
+            return stringInstance(str, getTypeFunc);
         }
         else if(columnValue instanceof Password password) {
-            return passwordInstance(password.getPassword());
+            return passwordInstance(password.getPassword(), getTypeFunc);
         }
         throw new InternalException("Can not resolve column value '" + columnValue + "' for type " + fieldType);
     }
@@ -169,38 +176,52 @@ public class InstanceUtils {
         throw new InternalException("Value '" + value + "' is not a primitive value");
     }
 
+    public static PrimitiveInstance intInstance(int value, Function<Class<?>, Type> getTypeFunc) {
+        return new IntInstance(value, getIntType(getTypeFunc));
+    }
+
     public static PrimitiveInstance intInstance(int value) {
-        return new IntInstance(
-                value, getIntType()
-        );
+        return intInstance(value, defaultGetTypeFunc());
     }
 
     public static LongInstance longInstance(long value) {
-        return new LongInstance(
-                value, getLongType()
-        );
+        return longInstance(value, defaultGetTypeFunc());
+    }
+
+    public static LongInstance longInstance(long value, Function<Class<?>, Type> getTypeFunc) {
+        return new LongInstance(value, getLongType(getTypeFunc));
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
-        return new BooleanInstance(
-                value, getBooleanType()
-        );
+        return booleanInstance(value, defaultGetTypeFunc());
+    }
+
+    public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
+        return new BooleanInstance(value, getBooleanType(getTypeFunc));
     }
 
     public static DoubleInstance doubleInstance(double value) {
-        return new DoubleInstance(
-                value, getDoubleType()
-        );
+        return doubleInstance(value, defaultGetTypeFunc());
+    }
+
+    public static DoubleInstance doubleInstance(double value, Function<Class<?>, Type> getTypeFunc) {
+        return new DoubleInstance(value, getDoubleType(getTypeFunc));
+    }
+
+    public static TimeInstance timeInstance(long value, Function<Class<?>, Type> getTypeFunc) {
+        return new TimeInstance(value, getTimeType(getTypeFunc));
     }
 
     public static TimeInstance timeInstance(long value) {
-        return new TimeInstance(
-                value, getTimeType()
-        );
+        return timeInstance(value, defaultGetTypeFunc());
     }
 
     public static NullInstance nullInstance() {
-        return new NullInstance(getNullType());
+        return nullInstance(defaultGetTypeFunc());
+    }
+
+    public static NullInstance nullInstance(Function<Class<?>, Type> getTypeFunc) {
+        return new NullInstance(getNullType(getTypeFunc));
     }
 
     public static BooleanInstance trueInstance() {
@@ -212,15 +233,19 @@ public class InstanceUtils {
     }
 
     public static PasswordInstance passwordInstance(String password) {
-        return new PasswordInstance(
-                password, getPasswordType()
-        );
+        return passwordInstance(password, defaultGetTypeFunc());
+    }
+
+    public static PasswordInstance passwordInstance(String password, Function<Class<?>, Type> getTypeFunc) {
+        return new PasswordInstance(password, getPasswordType(getTypeFunc));
     }
 
     public static StringInstance stringInstance(String value) {
-        return new StringInstance(
-                value, getStringType()
-        );
+        return stringInstance(value, defaultGetTypeFunc());
+    }
+
+    public static StringInstance stringInstance(String value, Function<Class<?>, Type> getTypeFunc) {
+        return new StringInstance(value, getStringType(getTypeFunc));
     }
 
     public static Set<Instance> getAllNewInstances(Instance instance, IInstanceContext context) {
@@ -321,16 +346,32 @@ public class InstanceUtils {
         return new BooleanInstance(b, getBooleanType());
     }
 
+    public static PrimitiveType getStringType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(String.class, getTypeFunc);
+    }
+
     public static PrimitiveType getStringType() {
-        return getPrimitiveType(String.class);
+        return getPrimitiveType(String.class, ModelDefRegistry::getType);
+    }
+
+    public static PrimitiveType getIntType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Integer.class, getTypeFunc);
     }
 
     public static PrimitiveType getIntType() {
         return getPrimitiveType(Integer.class);
     }
 
+    public static PrimitiveType getLongType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Long.class, getTypeFunc);
+    }
+
     public static PrimitiveType getLongType() {
         return getPrimitiveType(Long.class);
+    }
+
+    public static PrimitiveType getBooleanType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Boolean.class, getTypeFunc);
     }
 
     public static PrimitiveType getBooleanType() {
@@ -338,27 +379,47 @@ public class InstanceUtils {
     }
 
     public static PrimitiveType getDoubleType() {
-        return getPrimitiveType(Double.class);
+        return getDoubleType(defaultGetTypeFunc());
+    }
+
+    public static PrimitiveType getDoubleType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Double.class, getTypeFunc);
     }
 
     public static PrimitiveType getTimeType() {
         return getPrimitiveType(Date.class);
     }
 
+    public static PrimitiveType getTimeType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Date.class, getTypeFunc);
+    }
+
     public static PrimitiveType getPasswordType() {
         return getPrimitiveType(Password.class);
+    }
+
+    public static PrimitiveType getPasswordType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Password.class, getTypeFunc);
     }
 
     public static PrimitiveType getNullType() {
         return getPrimitiveType(Null.class);
     }
 
+    public static PrimitiveType getNullType(Function<Class<?>, Type> getTypeFunc) {
+        return getPrimitiveType(Null.class, getTypeFunc);
+    }
+
     public static AnyType getAnyType() {
         return new AnyType();
     }
 
+    public static AnyType getAnyType(Function<Class<?>, Type> getTypeFunc) {
+        return (AnyType) getTypeFunc.apply(Object.class);
+    }
+
     private static ArrayType getAnyArrayType() {
-        return new ArrayType(getAnyType());
+        return ModelDefRegistry.getType(Object.class).getArrayType();
     }
 
     public static ArrayInstance createArray() {
@@ -370,19 +431,31 @@ public class InstanceUtils {
     }
 
     public static PrimitiveType getPrimitiveType(Class<?> javaClass) {
+        return getPrimitiveType(javaClass, defaultGetTypeFunc());
+    }
+
+    public static PrimitiveType getPrimitiveType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
         return NncUtils.cast(
                 PrimitiveType.class,
-                getBasicType(javaClass),
+                getBasicType(javaClass, getTypeFunc),
                 "Can not get a primitive type for java class '" + javaClass + "'. "
         );
     }
 
     public static Type getBasicType(Class<?> javaClass) {
+        return getBasicType(javaClass, defaultGetTypeFunc());
+    }
+
+    public static Type getBasicType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
         javaClass = ReflectUtils.getBoxedClass(javaClass);
         return NncUtils.requireNonNull(
-                JAVA_CLASS_TO_BASIC_TYPE.get(javaClass),
+                getTypeFunc.apply(javaClass),
                 "Can not find a basic type for java class '" + javaClass.getName() + "'"
         );
+    }
+
+    private static Function<Class<?>, Type> defaultGetTypeFunc() {
+        return JAVA_CLASS_TO_BASIC_TYPE::get;
     }
 
     public static Class<?> getJavaClassByBasicType(Type type) {

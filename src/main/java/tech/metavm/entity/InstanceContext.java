@@ -26,6 +26,7 @@ public class InstanceContext extends BaseInstanceContext {
     private final Executor executor;
     private IEntityContext entityContext;
     private final TypeResolver typeResolver;
+    private final DefContext defContext;
 
     public InstanceContext(long tenantId,
                            IInstanceStore instanceStore,
@@ -75,6 +76,7 @@ public class InstanceContext extends BaseInstanceContext {
                 NncUtils.get(parent, IInstanceContext::getEntityContext),
                 defContext
         );
+        this.defContext = defContext;
         setCreateJob(job -> getEntityContext().bind(job));
     }
 
@@ -198,7 +200,7 @@ public class InstanceContext extends BaseInstanceContext {
             return instance;
         }
         else {
-            return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue);
+            return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue, defContext::getType);
         }
     }
 

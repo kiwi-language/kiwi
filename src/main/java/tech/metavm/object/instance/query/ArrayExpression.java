@@ -10,6 +10,7 @@ import tech.metavm.util.ValueUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @EntityType("数组表达式")
@@ -54,6 +55,16 @@ public class ArrayExpression extends Expression {
         return TypeUtil.getArrayType(
                 ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType))
         );
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return Collections.unmodifiableList(expressions);
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        return new ArrayExpression(children);
     }
 
     @Override

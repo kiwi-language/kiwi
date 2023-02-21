@@ -2,6 +2,8 @@ package tech.metavm.object.instance.query;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
@@ -10,10 +12,13 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.TestUtils;
+import tech.metavm.view.ListView;
 
 import static tech.metavm.util.TestConstants.TENANT_ID;
 
 public class ExpressionParserTest extends TestCase {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionParserTest.class);
 
     private InstanceContextFactory instanceContextFactory;
 
@@ -35,6 +40,17 @@ public class ExpressionParserTest extends TestCase {
         );
         Assert.assertNotNull(expression);
         Assert.assertEquals(exprString, expression.buildSelf(VarType.NAME));
+    }
+
+    public void testAllMatch() {
+        ClassType listViewType = MockRegistry.getClassType(ListView.class);
+        IInstanceContext context = instanceContextFactory.newContext(TENANT_ID);
+        String str = "AllMatch(可见字段, 所属类型=this.类型)";
+        Expression expression = ExpressionParser.parse(
+                str, new TypeParsingContext(listViewType, context)
+        );
+        Assert.assertTrue(expression instanceof AllMatchExpression);
+        LOGGER.info(expression.buildSelf(VarType.NAME));
     }
 
 }

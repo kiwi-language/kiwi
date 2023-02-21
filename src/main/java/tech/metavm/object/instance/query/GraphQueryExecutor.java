@@ -1,48 +1,54 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.InstanceContext;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.entity.EntityUtils;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static tech.metavm.object.instance.query.PathResolver.resolvePath;
 
 public class GraphQueryExecutor {
 
-    private final InstanceContext context;
-
-    public GraphQueryExecutor(InstanceContext context) {
-        this.context = context;
-    }
-
-    public List<Object[]> execute(List<Long> instanceIds, List<Expression> expressions) {
-        Path path = resolvePath(expressions);
-        List<ObjectTree> roots = new ArrayList<>();
-        for (Long instanceId : instanceIds) {
-            roots.add(new ObjectTree(path, (ClassInstance) context.get(instanceId)));
-        }
-        loadTree(roots);
+    public List<InstanceDTO[]> execute(ClassType type, List<Instance> instances, List<Expression> expressions) {
+        PathTree path = resolvePath(expressions);
+        ObjectNode tree = new ObjectNode(path, type);
+        loadTree(NncUtils.map(instances, i -> new NodeInstancePair(tree, i)));
         Expression[] exprArray = new Expression[expressions.size()];
         expressions.toArray(exprArray);
-        List<Object[]> results = new ArrayList<>();
-        for (ObjectTree root : roots) {
-            Object[] value = new Object[exprArray.length];
+        List<InstanceDTO[]> results = new ArrayList<>();
+        for (Instance instance : instances) {
+            InstanceDTO[] value = new InstanceDTO[exprArray.length];
             results.add(value);
             for(int j = 0; j < exprArray.length; j++) {
-                value[j] = ExpressionEvaluator.evaluate(exprArray[j], root);
+                value[j] = ExpressionEvaluator.evaluate(exprArray[j], tree, instance).toDTO();
             }
         }
         return results;
     }
 
-    private void loadTree(List<? extends NTree> trees) {
-        NncUtils.forEach(trees, NTree::load);
+    public void loadTree(Map<Instance, InstanceNode<?>> instance2node) {
+        List<NodeInstancePair> keyValues = new ArrayList<>();
+        instance2node.forEach((i, n) -> keyValues.add(new NodeInstancePair(n, i)));
+        loadTree(keyValues);
+    }
 
-        List<NTree> nextLevel = NncUtils.flatMap(trees, NTree::getChildren);
-        if(NncUtils.isNotEmpty(nextLevel)) {
-            loadTree(nextLevel);
+    private void loadTree(List<NodeInstancePair> node2instance) {
+        Queue<NodeInstancePair> queue = new LinkedList<>();
+        for (NodeInstancePair pair : node2instance) {
+            queue.offer(pair);
+        }
+        while (!queue.isEmpty()) {
+            NodeInstancePair pair = queue.poll();
+            InstanceNode<?> node = pair.node();
+            Instance instance = pair.instance();
+            EntityUtils.ensureProxyInitialized(instance);
+            List<NodeInstancePair> childPairs = node.getNodeInstancePairsForChildren(instance);
+            for (NodeInstancePair childPair : childPairs) {
+                queue.offer(childPair);
+            }
         }
     }
 

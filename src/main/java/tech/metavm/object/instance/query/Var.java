@@ -1,10 +1,29 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ValueUtil;
 
 import java.util.List;
 
 public class Var {
+
+    public static final String ID_PREFIX = "$";
+
+    public static Var parse(String str) {
+        if(str.startsWith(ID_PREFIX)) {
+            String idString = str.substring(ID_PREFIX.length());
+            if(ValueUtil.isIntegerStr(idString)) {
+                return idVar(Long.parseLong(idString));
+            }
+            else {
+                throw new InternalException("Malformed var '" + str + "'");
+            }
+        }
+        else {
+            return nameVar(str);
+        }
+    }
 
     public static List<Var> idVars(Long...ids) {
         return NncUtils.map(ids, Var::idVar);
@@ -34,12 +53,30 @@ public class Var {
         return type;
     }
 
-    public String getStringSymbol() {
-        return (String) symbol;
+    public String getName() {
+        if(isName()) {
+            return (String) symbol;
+        }
+        else {
+            throw new InternalException(this + " is not a name var");
+        }
     }
 
-    public long getLongSymbol() {
-        return (long) symbol;
+    public long getId() {
+        if(isId()) {
+            return (long) symbol;
+        }
+        else {
+            throw new InternalException(this + " is not an id var");
+        }
+    }
+
+    public boolean isId() {
+        return type == VarType.ID;
+    }
+
+    public boolean isName() {
+        return type == VarType.NAME;
     }
 
     @Override

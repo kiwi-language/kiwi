@@ -226,7 +226,8 @@ public class ExpressionService extends EntityContextBean {
     }
 
     private int parseOpCode(Operator operator) {
-        return ConditionOpCode.getByOperator(operator).code();
+//        return ConditionOpCode.getByOperator(operator).code();
+        return operator.code();
     }
 
     private ConditionDTO parseUnary(UnaryExpression expression) throws ExpressionParsingException {

@@ -10,10 +10,13 @@ import tech.metavm.object.meta.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static tech.metavm.object.meta.TypeUtil.isInt;
 
 public class ValueUtil {
+
+    public static final Pattern INT_PATTERN = Pattern.compile("-?[0-9]+");
 
     public static Type getValueType(Object value) {
         if(value instanceof String) {
@@ -114,6 +117,10 @@ public class ValueUtil {
     public static boolean isInteger(Class<?> klass) {
         return klass == int.class || klass == Integer.class || klass == short.class || klass == Short.class
                 || klass == byte.class || klass == Byte.class;
+    }
+
+    public static boolean isIntegerStr(String str) {
+        return INT_PATTERN.matcher(str).matches();
     }
 
     public static boolean isLong(Class<?> klass) {

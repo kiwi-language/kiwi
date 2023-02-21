@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
@@ -9,6 +10,8 @@ public class ExpressionTokenizer {
     private final String expression;
     private Token next;
     private int position;
+//    private int numUnpairedLeftParentheses = 0;
+//    private ParsingContext parsingContext;
 
     private static final Set<Character> SPACES = Set.of(
         ' ', '\t', '\r'
@@ -33,7 +36,7 @@ public class ExpressionTokenizer {
     public static final Set<String> KEYWORDS = new HashSet<>();
 
     private static final Set<String> KEYWORD_SEQUENCES = Set.of(
-            "IS NULL", "IS NOT NULL", "STARTS WITH", "NOT EXISTS"
+            "IS NULL", "IS NOT NULL", "STARTS WITH", "NOT EXISTS", "ALLMATCH", "AS"
     );
 
     public static final String NULL = "NULL";
@@ -87,15 +90,78 @@ public class ExpressionTokenizer {
         KEYWORD_SEQUENCES.forEach(ExpressionTokenizer::addPath);
     }
 
-    public ExpressionTokenizer(String queryString) {
+    public ExpressionTokenizer(String queryString, int offset/*, ParsingContext parsingContext*/) {
         this.expression = queryString;
+        this.position = offset;
+//        this.parsingContext = parsingContext;
         next = forward();
     }
 
-    public Token next() {
+    public Token nextToken() {
         Token current = next;
         next = forward();
         return current;
+    }
+
+    public Token peekToken() {
+        if(next == null) {
+            throw new InternalException("EOF");
+        }
+        return next;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public Token nextToken(TokenType expectedTokenType) {
+        return nextToken(expectedTokenType, null, null);
+    }
+
+    public Token nextVariable() {
+        return nextToken(TokenType.VARIABLE, null, null);
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public Token nextOperator(Operator operator) {
+        return nextToken(TokenType.OPERATOR, operator, null);
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public Token nextKeyword(String keyword) {
+        return nextToken(TokenType.KEYWORD, null, keyword);
+    }
+
+    public Token nextToken(TokenType expectedTokenType, Operator expectedOperator, String keyword) {
+        Token token = nextToken();
+        if(expectedTokenType != null && token.type() != expectedTokenType) {
+            throw incorrectTokenType(expectedTokenType, token);
+        }
+        if(expectedOperator != null && token.getOperator() != expectedOperator) {
+            throw incorrectOperator(expectedOperator, token);
+        }
+        if(keyword != null && !token.rawValue().equalsIgnoreCase(keyword)) {
+            throw incorrectKeyword(keyword, token);
+        }
+        return token;
+    }
+
+    private QueryStringException incorrectTokenType(TokenType expectedTokenType, Token actualToken) {
+        return new QueryStringException(
+                "Expecting token type " + expectedTokenType.name() + " at position " + position
+                        + " but got token '" + actualToken + "'"
+        );
+    }
+
+    private QueryStringException incorrectOperator(Operator expectedOperator, Token actualToken) {
+        return new QueryStringException(
+                "Expecting operator " + expectedOperator.name() + " at position " + position
+                        + " but got token '" + actualToken + "'"
+        );
+    }
+
+    private QueryStringException incorrectKeyword(String expectedRawValue, Token actualToken) {
+        return new QueryStringException(
+                "Expecting keyword " + expectedRawValue + " at position " + position
+                        + " but got token '" + actualToken + "'"
+        );
     }
 
     public boolean hasNext() {
@@ -107,7 +173,6 @@ public class ExpressionTokenizer {
         if(token == null) {
             return null;
         }
-
         if(token.isVariable()) {
             skipSpaces();
             if(isDot()) {
@@ -145,15 +210,28 @@ public class ExpressionTokenizer {
                 tokens.add(token);
             }
             String tokenSeq = tokenSequenceValue(tokens);
-            return new Token(
-                    TokenType.OPERATOR,
-                    tokenSeq,
-                    Operator.getByOpRequired(tokenSeq)
-            );
+            if(Operator.isOperator(tokenSeq)) {
+                return new Token(
+                        TokenType.OPERATOR,
+                        tokenSeq,
+                        Operator.getByOpRequired(tokenSeq)
+                );
+            }
+            else {
+                return new Token(
+                        TokenType.KEYWORD,
+                        tokenSeq,
+                        null
+                );
+            }
         }
         else {
             return token;
         }
+    }
+
+    public int getPosition() {
+        return position;
     }
 
     private String tokenSequenceValue(List<Token> tokens) {
@@ -183,10 +261,12 @@ public class ExpressionTokenizer {
             if(isLeftParenthesis()) {
                 position++;
                 tokenType = TokenType.LEFT_PARENTHESIS;
+//                numUnpairedLeftParentheses++;
             }
             else if(isRightParenthesis()) {
                 position++;
                 tokenType = TokenType.RIGHT_PARENTHESIS;
+//                numUnpairedLeftParentheses--;
             }
             else if(isLeftBracket()) {
                 position++;
@@ -429,10 +509,10 @@ public class ExpressionTokenizer {
 
     public static void main(String[] args) {
         String query = "material.creator.name starts with '钢' and (material.virtual = true OR number > 0)";
-        ExpressionTokenizer tokenizer = new ExpressionTokenizer(query);
+        ExpressionTokenizer tokenizer = new ExpressionTokenizer(query, 0/*, null*/);
 
         while (tokenizer.hasNext()) {
-            System.out.println(tokenizer.next());
+            System.out.println(tokenizer.nextToken());
         }
     }
 

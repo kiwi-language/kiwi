@@ -9,6 +9,7 @@ public class Constants {
     public static final String META_VM_PKG = "tech.metavm";
 
     public static final String INITIAL_ROOT_PASSWORD = "123456";
+    public static final String CONSTANT_ID_PREFIX = "$$";
 
     private Constants() {}
 

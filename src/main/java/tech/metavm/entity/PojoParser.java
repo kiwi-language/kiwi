@@ -1,17 +1,20 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.flow.ValueFactory;
+import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.NullInstance;
+import tech.metavm.object.instance.query.TypeParsingContext;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Null;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.Table;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Set;
 
 public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T, ClassInstance, D> {
 
@@ -40,6 +43,10 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         return ReflectUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == IndexDef.class);
     }
 
+    private List<Field> getConstraintDefFields() {
+        return ReflectUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == ConstraintDef.class);
+    }
+
     protected List<Field> getPropertyFields() {
         return ReflectUtils.getDeclaredPersistentFields(javaClass);
     }
@@ -64,6 +71,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     public void initialize() {
         getPropertyFields().forEach(f -> parseField(f, def));
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
+        getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
     }
 
     protected abstract D createDef(PojoDef<? super T> superDef);
@@ -113,6 +121,26 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
             uniqueConstraint,
             indexDefField,
             declaringTypeDef
+        );
+    }
+
+    private void parseCheckConstraint(Field constraintField, PojoDef<T> declaringTypeDef) {
+        ConstraintDef<?> constraintDef = (ConstraintDef<?>) ReflectUtils.get(null, constraintField);
+        tech.metavm.flow.Value value = ValueFactory.getValue(
+                ValueDTO.exprValue(constraintDef.expression()),
+                new TypeParsingContext(declaringTypeDef.getType(), id -> {
+                    throw new UnsupportedOperationException();
+                })
+        );
+        CheckConstraint checkConstraint = new CheckConstraint(
+                value,
+                declaringTypeDef.getType(),
+                ""
+        );
+        new CheckConstraintDef(
+                checkConstraint,
+                constraintField,
+                declaringTypeDef
         );
     }
 

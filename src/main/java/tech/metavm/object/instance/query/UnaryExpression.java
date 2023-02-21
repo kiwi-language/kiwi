@@ -3,8 +3,8 @@ package tech.metavm.object.instance.query;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
@@ -53,6 +53,17 @@ public class UnaryExpression extends Expression {
         else {
             return operand.getType();
         }
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return List.of(operand);
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        NncUtils.requireLength(children, 1);
+        return new UnaryExpression(operator, children.get(0));
     }
 
     @Override

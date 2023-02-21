@@ -6,6 +6,7 @@ import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceParamDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeCategory;
@@ -175,10 +176,10 @@ public abstract class Instance implements IdInitializing {
         return NncUtils.findRequired(outgoingReferences, ref -> ref.target() == target && ref.field() == field);
     }
 
-    protected InstanceDTO toDTO(Object param) {
+    protected InstanceDTO toDTO(InstanceParamDTO param) {
         return new InstanceDTO(
                 id,
-                type.getId(),
+                NncUtils.requireNonNull(type.getId(), "typeId required"),
                 type.getName(),
                 getTitle(),
                 param
@@ -197,7 +198,7 @@ public abstract class Instance implements IdInitializing {
         return type.getName() + "/" + getTitle();
     }
 
-    protected abstract Object getParam();
+    protected abstract InstanceParamDTO getParam();
 
     public void incVersion() {
         version++;

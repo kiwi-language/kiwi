@@ -5,6 +5,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
@@ -55,6 +56,17 @@ public class BinaryExpression extends Expression {
             return operator.resultType();
         }
         return ValueUtil.getConvertibleType(first.getType(), second.getType());
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return List.of(first, second);
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        NncUtils.requireLength(children, 2);
+        return new BinaryExpression(operator, children.get(0), children.get(1));
     }
 
     @Override

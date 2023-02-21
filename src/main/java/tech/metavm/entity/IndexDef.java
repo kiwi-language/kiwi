@@ -54,6 +54,18 @@ public class IndexDef<T> {
         return fieldNames;
     }
 
+    public String firstFieldName() {
+        return fieldName(0);
+    }
+
+    public String secondFieldName() {
+        return fieldName(1);
+    }
+
+    public String thirdFieldName() {
+        return fieldName(2);
+    }
+
     public String fieldName(int index) {
         return fieldNames.get(index);
     }

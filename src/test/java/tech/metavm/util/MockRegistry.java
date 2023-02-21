@@ -5,6 +5,7 @@ import tech.metavm.job.JobSchedulerStatus;
 import tech.metavm.job.JobSignal;
 import tech.metavm.mocks.*;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
 
@@ -21,7 +22,7 @@ public class MockRegistry {
 
     private static EntityIdProvider ID_PROVIDER;
     private static MemInstanceStore INSTANCE_STORE;
-    private static MemInstanceContext INSTANCE_CONTEXT;
+    private static InstanceContext INSTANCE_CONTEXT;
     private static DefContext DEF_CONTEXT;
     private static ModelInstanceMap MODEL_INSTANCE_MAP;
     public static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
@@ -39,14 +40,20 @@ public class MockRegistry {
         NncUtils.requireNonNull(idProvider, "idProvider required");
         ID_PROVIDER = idProvider;
         INSTANCE_STORE = instanceStore;
-        INSTANCE_CONTEXT = new MemInstanceContext(
-                ROOT_TENANT_ID, idProvider, instanceStore, null
+        INSTANCE_CONTEXT = new InstanceContext(
+                ROOT_TENANT_ID, instanceStore, idProvider, EXECUTOR,
+                false,
+                List.of(
+                        new CheckConstraintPlugin(),
+                        new IndexConstraintPlugin(instanceStore.getIndexEntryMapper())
+                ),
+                null
         );
         DEF_CONTEXT = new DefContext(o -> null, INSTANCE_CONTEXT);
+        INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
         ReflectUtils.getModelClasses().forEach(DEF_CONTEXT::getDef);
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
-        INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         DEF_CONTEXT.finish();
         ContextUtil.setContextInfo(TENANT_ID, TENANT_ID);
         initJobScheduler();
@@ -326,12 +333,15 @@ public class MockRegistry {
         return (ClassType) getType(Table.class);
     }
 
+    public static StringInstance createString(String value) {
+        return new StringInstance(value, getStringType());
+    }
 
     public static DefContext getDefContext() {
         return DEF_CONTEXT;
     }
 
-    public static MemInstanceContext getInstanceContext() {
+    public static IInstanceContext getInstanceContext() {
         return INSTANCE_CONTEXT;
     }
 

@@ -10,6 +10,7 @@ import tech.metavm.flow.rest.*;
 import tech.metavm.job.JobManager;
 import tech.metavm.mocks.Coupon;
 import tech.metavm.mocks.CouponState;
+import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.search.InstanceSearchService;
@@ -159,6 +160,13 @@ public class FlowManagerTest extends TestCase {
         ClassType roleType = MockRegistry.getClassType(RoleRT.class);
         Page<FlowSummaryDTO> dataPage2 = flowManager.list(roleType.getId(), 1, 20, null);
         Assert.assertEquals(0, dataPage2.total());
+    }
+
+    public void testRemove() {
+        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        FlowDTO flowDTO = FlowDTO.create("test", fooType.getId());
+        long flowId = flowManager.create(flowDTO);
+        flowManager.delete(flowId);
     }
 
 }

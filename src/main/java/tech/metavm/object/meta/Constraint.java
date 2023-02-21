@@ -9,6 +9,7 @@ import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 @EntityType("约束")
 public abstract class Constraint<T> extends Entity {
@@ -71,4 +72,9 @@ public abstract class Constraint<T> extends Entity {
         setMessage(constraintDTO.message());
     }
 
+    @Override
+    public List<Object> beforeRemove() {
+        declaringType.removeConstraint(this);
+        return List.of();
+    }
 }

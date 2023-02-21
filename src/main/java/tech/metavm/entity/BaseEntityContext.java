@@ -4,6 +4,7 @@ import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.flow.FlowRT;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -391,15 +392,38 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if(instancesToRemove.contains(instance)) {
             return;
         }
+        EntityUtils.ensureProxyInitialized(model);
         instancesToRemove.add(instance);
+        List<Object> cascades = new ArrayList<>(getChildModels(model));
         if(model instanceof RemovalAware removalAware) {
-            List<Object> cascades = removalAware.beforeRemove();
-            if (NncUtils.isNotEmpty(cascades)) {
-                for (Object cascade : cascades) {
-                    beforeRemove0(cascade, instancesToRemove);
+            cascades.addAll(removalAware.beforeRemove());
+        }
+        if (NncUtils.isNotEmpty(cascades)) {
+            for (Object cascade : cascades) {
+                beforeRemove0(cascade, instancesToRemove);
+            }
+        }
+    }
+
+    private Set<Object> getChildModels(Object model) {
+        Set<Object> childModels = new IdentitySet<>();
+        Type type = getDefContext().getType(model.getClass());
+        if(model instanceof Table<?> table) {
+           if(table.isElementAsChild()) {
+               childModels.addAll(NncUtils.filter(table, Objects::nonNull));
+           }
+        }
+        else if(type instanceof ClassType classType){
+            for (Field field : classType.getFields()) {
+                if (field.isChildField()) {
+                    Object child = ReflectUtils.get(model, getDefContext().getJavaField(field));
+                    if (child != null) {
+                        childModels.add(child);
+                    }
                 }
             }
         }
+        return childModels;
     }
 
     public @Nullable IInstanceContext getInstanceContext() {

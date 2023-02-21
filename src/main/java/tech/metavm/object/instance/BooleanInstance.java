@@ -20,7 +20,7 @@ public class BooleanInstance extends PrimitiveInstance {
         return value;
     }
 
-    public BooleanInstance negate() {
+    public BooleanInstance not() {
         return new BooleanInstance(!value, getType());
     }
 

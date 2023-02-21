@@ -20,6 +20,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     private final PojoDef<? super T> superDef;
     private final List<IFieldDef> fieldDefList = new ArrayList<>();
     private final List<IndexConstraintDef> indexConstraintDefList = new ArrayList<>();
+    private final List<CheckConstraintDef> checkConstraintDefList = new ArrayList<>();
     private final Map<ClassType, PojoDef<? extends T>> subTypeDefList = new HashMap<>();
     protected final ClassType type;
     private Long id;
@@ -46,6 +47,10 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     void addUniqueConstraintDef(IndexConstraintDef indexConstraintDef) {
         this.indexConstraintDefList.add(indexConstraintDef);
+    }
+
+    void addCheckConstraintDef(CheckConstraintDef checkConstraintDef) {
+        this.checkConstraintDefList.add(checkConstraintDef);
     }
 
     @Override
@@ -219,6 +224,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         return type;
     }
 
-
-
+    public DefMap getDefMap() {
+        return defMap;
+    }
 }

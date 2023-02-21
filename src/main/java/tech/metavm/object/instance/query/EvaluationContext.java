@@ -1,18 +1,15 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.instance.Instance;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 
 public interface EvaluationContext {
 
+    @Nullable
     Instance evaluate(Expression expression, ExpressionEvaluator evaluator);
 
-    Set<Class<? extends Expression>> supportedExpressionClasses();
-
-    default boolean isExpressionSupported(Class<? extends Expression> expressionClass) {
-        return supportedExpressionClasses().contains(EntityUtils.getRealType(expressionClass));
-    }
+    boolean isContextExpression(Expression expression);
 
 }

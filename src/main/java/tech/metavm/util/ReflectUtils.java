@@ -278,9 +278,10 @@ public class ReflectUtils {
             return ((Enum<?>) object).ordinal();
         }
         try {
+            field.setAccessible(true);
             return field.get(object);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException("Fail to set indexItem", e);
+            throw new RuntimeException("Fail to get field '" + field.getName() + "'", e);
         }
     }
 

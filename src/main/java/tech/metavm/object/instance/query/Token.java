@@ -1,10 +1,16 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.util.Constants;
+
 public record Token (
         TokenType type,
         String rawValue,
         Object value
 ) {
+
+    public static final String ALL_MATCH = "AllMatch";
+
+    public static final String AS = "AS";
 
     public String getName() {
         return (String) value;
@@ -36,6 +42,14 @@ public record Token (
 
     public boolean isFunction() {
         return type == TokenType.FUNCTION;
+    }
+
+    public boolean isAllMatch() {
+        return type == TokenType.KEYWORD && rawValue.equalsIgnoreCase(ALL_MATCH);
+    }
+
+    public boolean isAs() {
+        return type == TokenType.KEYWORD && rawValue.equalsIgnoreCase(AS);
     }
 
     public boolean isLeftParenthesis() {
@@ -76,6 +90,10 @@ public record Token (
 
     public boolean isBoolean() {
         return type == TokenType.BOOLEAN;
+    }
+
+    public boolean isIdConstant() {
+        return type == TokenType.VARIABLE && rawValue.startsWith(Constants.CONSTANT_ID_PREFIX);
     }
 
     public boolean isVariable() {

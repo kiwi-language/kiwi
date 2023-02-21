@@ -6,13 +6,13 @@ import java.util.List;
 
 public class PathResolver {
 
-    public static Path resolvePath(List<Expression> expressions) {
+    public static PathTree resolvePath(List<Expression> expressions) {
         PathResolver resolver = new PathResolver();
         expressions.forEach(resolver::fillPath);
         return resolver.root;
     }
 
-    private final Path root = new Path("root");
+    private final PathTree root = new PathTree("root");
 
     private void fillPath(Expression expression) {
         fillPath0(expression, new IdentitySet<>());
@@ -20,7 +20,7 @@ public class PathResolver {
 
     private void fillPath0(Expression expression, IdentitySet<Expression> visited) {
         if(visited.contains(expression)) {
-            throw new RuntimeException("Circular reference in expressionw");
+            throw new RuntimeException("Circular reference in expression");
         }
         visited.add(expression);
         if(expression instanceof UnaryExpression unaryExpression) {

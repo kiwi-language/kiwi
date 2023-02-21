@@ -2,6 +2,7 @@ package tech.metavm.object.instance;
 
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
+import tech.metavm.object.instance.rest.PrimitiveParamDTO;
 import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.util.IdentitySet;
 
@@ -22,8 +23,8 @@ public abstract class PrimitiveInstance extends Instance {
     }
 
     @Override
-    protected Object getParam() {
-        return null;
+    protected PrimitiveParamDTO getParam() {
+        return new PrimitiveParamDTO(getValue());
     }
 
     @Override

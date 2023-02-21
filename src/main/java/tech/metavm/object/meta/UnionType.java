@@ -1,8 +1,10 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.rest.dto.UnionTypeParamDTO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
@@ -18,7 +20,7 @@ public class UnionType extends Type {
             UnionType.class, "typeMembers"
     );
 
-    @EntityField("成员类型集合")
+    @ChildEntity("成员类型集合")
     private final Table<Type> typeMembers;
 
     public UnionType(Set<Type> typeMembers) {

@@ -9,63 +9,68 @@ import java.util.Arrays;
 import static tech.metavm.object.instance.query.OperatorTypes.*;
 
 public enum Operator {
-
-    // parenthesis
-    LEFT_PARENTHESIS("(", 1000, PREFIX, null),
-    RIGHT_PARENTHESIS(")", 1000, PREFIX, null),
-    LEFT_BRACKET("[", 1000, PREFIX, null),
-    RIGHT_BRACKET("]", 1000, PREFIX, null),
-
     // prefix
 //        TODO: 支持负数运算符
 //    NEGATE("-", 1, PREFIX, null),
-    NOT("!", 1, PREFIX, Boolean.class),
+    NOT(1, "!", 1, PREFIX, Boolean.class),
 
     // Multiply and division
-    MULTIPLY("*", 2, BINARY, null),
-    DIVIDE("/", 2, BINARY, null),
-    MOD("%", 2, BINARY, null),
+    MULTIPLY(2, "*", 2, BINARY, null),
+    DIVIDE(3, "/", 2, BINARY, null),
+    MOD(4, "%", 2, BINARY, null),
 
     // addition and subtraction
-    ADD("+", 3, BINARY, null),
-    SUBTRACT("-", 3, BINARY, null),
+    ADD(5, "+", 3, BINARY, null),
+    SUBTRACT(6, "-", 3, BINARY, null),
 
     // relational
-    GT(">", 4, BINARY, Boolean.class),
-    GE(">=", 4, BINARY, Boolean.class),
-    LT("<", 4, BINARY, Boolean.class),
-    LE("<=", 4, BINARY, Boolean.class),
+    GT(7, ">", 4, BINARY, Boolean.class),
+    GE(8, ">=", 4, BINARY, Boolean.class),
+    LT(9, "<", 4, BINARY, Boolean.class),
+    LE(10, "<=", 4, BINARY, Boolean.class),
 
     // euqality
-    EQ("=", 5, BINARY, Boolean.class),
-    NE("!=", 5, BINARY, Boolean.class),
-    STARTS_WITH("STARTS WITH", 5, BINARY, Boolean.class),
-    LIKE("LIKE", 5, BINARY, Boolean.class),
-    IN("IN", 5, BINARY, Boolean.class),
-    IS_NULL("IS NULL",5, POSTFIX, Boolean.class),
-    IS_NOT_NULL("IS NOT NULL", 5, POSTFIX, Boolean.class),
-    EXISTS("EXISTS", 5, PREFIX, Boolean.class),
-    NOT_EXISTS("NOT EXISTS", 5, PREFIX, Boolean.class),
+    EQ(11, "=", 5, BINARY, Boolean.class),
+    NE(12, "!=", 5, BINARY, Boolean.class),
+    STARTS_WITH(13, "STARTS WITH", 5, BINARY, Boolean.class),
+    LIKE(14, "LIKE", 5, BINARY, Boolean.class),
+    IN(15, "IN", 5, BINARY, Boolean.class),
+    IS_NULL(16, "IS NULL",5, POSTFIX, Boolean.class),
+    IS_NOT_NULL(17, "IS NOT NULL", 5, POSTFIX, Boolean.class),
+    EXISTS(18, "EXISTS", 5, PREFIX, Boolean.class),
+    NOT_EXISTS(19, "NOT EXISTS", 5, PREFIX, Boolean.class),
 
-    AND("AND", 6, BINARY, Boolean.class),
-    OR("OR", 7, BINARY, Boolean.class),
+    AND(20, "AND", 6, BINARY, Boolean.class),
+    OR(21, "OR", 7, BINARY, Boolean.class),
 
-    COMMA(",", 8, BINARY, null)
+    COMMA(22, ",", 8, BINARY, null),
 
+
+    // parenthesis
+    LEFT_PARENTHESIS(23, "(", 1000, PREFIX, null),
+    RIGHT_PARENTHESIS(24, ")", 1000, PREFIX, null),
+    LEFT_BRACKET(25, "[", 1000, PREFIX, null),
+    RIGHT_BRACKET(26, "]", 1000, PREFIX, null),
 
     ;
 
 
+    private final int code;
     private final String op;
     private final int precedence;
     private final int type;
     private final Class<?> javaType;
 
-    Operator(String op, int precedence, int type, Class<?> javaType) {
+    Operator(int code, String op, int precedence, int type, Class<?> javaType) {
+        this.code = code;
         this.op = op;
         this.precedence = precedence;
         this.type = type;
         this.javaType = javaType;
+    }
+
+    public static Operator getByCode(int code) {
+        return NncUtils.findRequired(values(), op -> op.code == code);
     }
 
     public static Operator getByOpRequired(String op) {
@@ -101,6 +106,10 @@ public enum Operator {
 
     public boolean isBinary() {
         return type == BINARY;
+    }
+
+    public int code() {
+        return this.code;
     }
 
     @Override

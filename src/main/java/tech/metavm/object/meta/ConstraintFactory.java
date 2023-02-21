@@ -14,18 +14,6 @@ import java.util.List;
 
 public class ConstraintFactory {
 
-//    public static ConstraintRT<?> createFromPO(ConstraintPO constraintPO, EntityContext context) {
-//        if(constraintPO.getKind() == ConstraintKind.UNIQUE.code()) {
-//            UniqueConstraintParam param = NncUtils.readJSONString(constraintPO.getParam(), new TypeReference<>() {});
-//            return new UniqueConstraintRT(constraintPO, param, context);
-//        }
-//        if(constraintPO.getKind() == ConstraintKind.CHECK.code()) {
-//            CheckConstraintParam param = NncUtils.readJSONString(constraintPO.getParam(), new TypeReference<>() {});
-//            return new CheckConstraintRT(constraintPO, param, context);
-//        }
-//        throw new InternalException("Invalid constraint kind: " + constraintPO.getKind());
-//    }
-
     public static Constraint<?> createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
         ClassType type = entityContext.getClassType(constraintDTO.typeId());
         ParsingContext parsingContext = new TypeParsingContext(type, entityContext.getInstanceContext());
@@ -65,7 +53,6 @@ public class ConstraintFactory {
         Constraint<?> constraint = entityContext.getEntity(new TypeReference<>() {}, constraintDTO.id());
         ClassType type = entityContext.getClassType(constraintDTO.typeId());
         ParsingContext parsingContext = new TypeParsingContext(type, entityContext.getInstanceContext());
-
         constraint.update(constraintDTO);
         if(constraint instanceof Index indexConstraint) {
             updateIndexConstraint(indexConstraint, constraintDTO.getParam(), parsingContext);

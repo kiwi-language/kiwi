@@ -5,9 +5,7 @@ import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
 import tech.metavm.object.meta.TypeManager;
-import tech.metavm.object.meta.rest.dto.ConstraintDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -45,6 +43,13 @@ public class TypeController {
             return Result.failure(ErrorCode.RECORD_NOT_FOUND);
         }
         return Result.success(typeDTO);
+    }
+
+    @PostMapping("/batch-get")
+    public Result<List<TypeDTO>> batchGet(@RequestBody BatchGetRequest request) {
+        return Result.success(
+                typeManager.batchGetTypes(request.ids(), request.includingFields(), request.includingFieldTypes())
+        );
     }
 
     @PostMapping
@@ -110,9 +115,20 @@ public class TypeController {
         return Result.success(typeManager.getConstraint(id));
     }
 
+    @PostMapping("/load-by-paths")
+    public Result<LoadByPathsResponse> loadByPaths(@RequestBody LoadByPathsRequest request) {
+        return Result.success(typeManager.loadByPaths(request.paths()));
+    }
+
     @PostMapping("/constraint")
     public Result<Long> saveConstraint(@RequestBody ConstraintDTO constraint) {
         return Result.success(typeManager.saveConstraint(constraint));
+    }
+
+    @PostMapping("/init-composite-types/{id}")
+    public Result<Void> initCompositeTypes(@PathVariable long id) {
+        typeManager.initCompositeTypes(id);
+        return Result.voidSuccess();
     }
 
     @DeleteMapping("/constraint/{id:[0-9]+}")

@@ -9,11 +9,11 @@ import java.util.Map;
 
 public class InstanceDef<I extends Instance> extends ModelDef<I, I> {
 
-    private final Type type;
+    private final AnyType type;
 
-    protected InstanceDef(Class<I> instanceClass) {
+    protected InstanceDef(Class<I> instanceClass, AnyType type) {
         super(instanceClass, instanceClass);
-        this.type = new AnyType();
+        this.type = type;
     }
 
     @Override

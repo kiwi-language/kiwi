@@ -1,90 +1,100 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ValueUtil;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class Path {
 
-    public static Path merge(Path path1, Path...paths) {
-        Path merged = path1.copy();
-        for (Path p : paths) {
-            merged.merge(p);
-        }
-        return merged;
+    public static boolean isIndexItem(String pathItem) {
+        return ValueUtil.isIntegerStr(pathItem);
     }
 
-    public static Path merge(List<Path> paths) {
-        if(NncUtils.isEmpty(paths)) {
-            return Path.createRoot();
-        }
-        Path merged = Path.createRoot();
-        for (Path path : paths) {
-            merged.merge(path);
-        }
-        return merged;
+    public static boolean isAsteriskItem(String pathITem) {
+        return pathITem.equalsIgnoreCase("*");
     }
 
-    public static Path createRoot() {
-        return new Path("root");
-    }
-
-    private final Map<String, Path> childMap = new LinkedHashMap<>();
-    private final String name;
-
-    public Path(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Collection<Path> getChildren() {
-        return childMap.values();
-    }
-
-    public void addPath(List<String> strPath) {
-        if(NncUtils.isEmpty(strPath)) {
-            return;
-        }
-        Path child = getOrCreateChild(strPath.get(0));
-        if(strPath.size() > 1) {
-            child.addPath(strPath.subList(1, strPath.size()));
-        }
-    }
-
-    public Path getOrCreateChild(String name) {
-        return childMap.computeIfAbsent(name, Path::new);
-    }
-
-    public void fillPath(String pathStr) {
-        int idx = pathStr.indexOf('.');
-        if(idx > 0) {
-            String childName = pathStr.substring(0, idx);
-            getOrCreateChild(childName).fillPath(pathStr.substring(idx + 1));
+    public static int parseIndexItem(String pathItem) {
+        if(isIndexItem(pathItem)) {
+            return Integer.parseInt(pathItem);
         }
         else {
-            getOrCreateChild(pathStr);
+            throw new InternalException("'" + pathItem + "' is not an index item");
         }
     }
 
-    public Path copy() {
-        Path copy = new Path(name);
-        childMap.forEach((childName, child) -> copy.childMap.put(childName, child.copy()));
-        return copy;
+    public static Path create(String pathString) {
+        List<String> values = Arrays.asList(pathString.split("\\."));
+        return new Path(values, 0, values.size());
     }
 
-    public void merge(Path that) {
-        that.childMap.forEach((childName, thatChild) -> {
-            Path child = childMap.get(childName);
-            if(child != null) {
-                child.merge(thatChild);
-            }
-            else {
-                childMap.put(childName, thatChild.copy());
-            }
-        });
+    private final List<String> values;
+    private final int offset;
+    private final int length;
+
+    public Path(List<String> values, int offset, int length) {
+        this.values = values;
+        this.offset = offset;
+        this.length = length;
     }
 
+    public List<String> getPath() {
+        return this.values.subList(offset, offset + length);
+    }
+
+    public String getPathString() {
+        return NncUtils.joinWithDot(getPath());
+    }
+
+    public String firstItem() {
+        return this.values.get(offset);
+    }
+
+    public String getItem(int index) {
+        checkIndex(index);
+        return this.values.get(offset + index);
+    }
+
+    public int length() {
+        return length;
+    }
+
+    public Path subPath(int start, int end) {
+        if(end < start) {
+            throw new InternalException("end can not be less than start");
+        }
+        checkIndex(start);
+        checkIndex(end - 1);
+        return new Path(this.values, offset + start, end - start);
+    }
+
+    private void checkIndex(int index) {
+        if(index < offset || index >= offset + length) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    public int firstItemAsIndex() {
+        return parseIndexItem(firstItem());
+    }
+
+    public Path subPath() {
+        return new Path(values, offset + 1, length - 1);
+    }
+
+    public boolean hasSubPath() {
+        return length > 0;
+    }
+
+    public boolean isEmpty() {
+        return length == 0;
+    }
+
+    @Override
+    public String toString() {
+        return getPathString();
+    }
 }

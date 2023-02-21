@@ -1,30 +1,23 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.StringInstance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.EnumType;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.*;
 
 import java.util.List;
 import java.util.Objects;
 
 import static tech.metavm.object.instance.query.ExpressionUtil.*;
-import static tech.metavm.util.InstanceUtils.falseInstance;
-import static tech.metavm.util.InstanceUtils.isAllIntegers;
+import static tech.metavm.util.InstanceUtils.*;
 import static tech.metavm.util.ValueUtil.isCollection;
 
 public class ExpressionEvaluator {
 
-    public static Instance evaluate(Expression expression, ObjectTree objectTree) {
-        return new ExpressionEvaluator(expression, new TreeEvaluationContext(objectTree)).evaluate();
+    public static Instance evaluate(Expression expression, ObjectNode objectNode, Instance instance) {
+        return new ExpressionEvaluator(expression, new TreeEvaluationContext(objectNode, instance)).evaluate();
     }
 
-    public static Object evaluate(Expression expression, ClassInstance instance) {
+    public static Instance evaluate(Expression expression, ClassInstance instance) {
         return new ExpressionEvaluator(expression, new InstanceEvaluationContext(instance)).evaluate();
     }
 
@@ -52,6 +45,9 @@ public class ExpressionEvaluator {
 
     public Instance evaluate(Expression expression) {
         Objects.requireNonNull(expression);
+        if(context.isContextExpression(expression)) {
+            return evaluateInContext(expression);
+        }
         if(expression instanceof UnaryExpression unaryExpression) {
             return evaluateUnary(unaryExpression);
         }
@@ -70,10 +66,17 @@ public class ExpressionEvaluator {
         if(expression instanceof FieldExpression fieldExpression) {
             return evaluateField(fieldExpression);
         }
-        if(context.isExpressionSupported(expression.getClass())) {
-            return evaluateInContext(expression);
+        if(expression instanceof AllMatchExpression allMatchExpression) {
+            return evaluateAllMatch(allMatchExpression);
+        }
+        if(expression instanceof AsExpression asExpression) {
+            return evaluateAs(asExpression);
         }
         throw new RuntimeException("Unsupported expression: " + expression);
+    }
+
+    private Instance evaluateAs(AsExpression expression) {
+        return evaluate(expression.getExpression());
     }
 
     private Instance evaluateField(FieldExpression fieldExpression) {
@@ -82,8 +85,8 @@ public class ExpressionEvaluator {
     }
 
     private Instance evaluateFunction(FunctionExpression functionExpression) {
-        List<Instance> argValues = NncUtils.map(functionExpression.getArguments(), this::evaluate);
-        return functionExpression.getFunction().evaluate(argValues);
+        List<Instance> args = NncUtils.map(functionExpression.getArguments(), this::evaluate);
+        return functionExpression.getFunction().evaluate(args);
     }
 
     private ArrayInstance evaluateList(ArrayExpression listExpression) {
@@ -91,6 +94,30 @@ public class ExpressionEvaluator {
                 listExpression.getExpressions(),
                 this::evaluate
         ));
+    }
+
+    private BooleanInstance evaluateAllMatch(AllMatchExpression expression) {
+        Instance instance = evaluate(expression.getArray());
+        if(instance.isNull()) {
+            return trueInstance();
+        }
+        if(!(instance instanceof ArrayInstance array)) {
+            throw new InternalException("Expecting array instance for AllMatchExpression but got " + instance);
+        }
+        for (Instance element : array.getElements()) {
+            if (element instanceof ClassInstance classInstance) {
+                EvaluationContext subContext = new SubEvaluationContext(context, expression.getCursor(), classInstance);
+                if(!InstanceUtils.isTrue(
+                        ExpressionEvaluator.evaluate(expression.getCondition(), subContext))
+                ) {
+                    return InstanceUtils.falseInstance();
+                }
+            }
+            else {
+                throw new InternalException("AllMatchExpression only supports reference array right now");
+            }
+        }
+        return InstanceUtils.trueInstance();
     }
 
     private Instance evaluateInContext(Expression expression) {
@@ -215,7 +242,7 @@ public class ExpressionEvaluator {
         Operator op = expr.getOperator();
         Instance value = evaluate(expr.getOperand());
         if(op == Operator.NOT) {
-            return castBoolean(value).negate();
+            return castBoolean(value).not();
         }
 //        TODO: 支持负数运算符
 //        if(op == Operator.NEGATE) {

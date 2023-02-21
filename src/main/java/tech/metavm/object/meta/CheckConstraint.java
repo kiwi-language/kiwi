@@ -1,5 +1,6 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.ConstraintDef;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Value;
@@ -12,6 +13,8 @@ public class CheckConstraint extends Constraint<CheckConstraintParam> {
 
     @EntityField("条件")
     private Value condition;
+
+    private transient ConstraintDef<?> constraintDef;
 
     public CheckConstraint(Value condition, ClassType type, String message) {
         super(ConstraintKind.CHECK, type, message);
@@ -43,4 +46,11 @@ public class CheckConstraint extends Constraint<CheckConstraintParam> {
         return InstanceUtils.isTrue(condition.evaluate(new InstanceEvaluationContext(instance)));
     }
 
+    public ConstraintDef<?> getConstraintDef() {
+        return constraintDef;
+    }
+
+    public void setConstraintDef(ConstraintDef<?> constraintDef) {
+        this.constraintDef = constraintDef;
+    }
 }

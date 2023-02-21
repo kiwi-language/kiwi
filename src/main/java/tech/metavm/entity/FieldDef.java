@@ -62,7 +62,11 @@ public class FieldDef implements IFieldDef {
             throw new InternalException("Field " + fieldName() + " can not be null");
         }
         if(ValueUtil.isPrimitiveType(fieldValue.getClass())) {
-            return InstanceUtils.resolvePrimitiveValue(field.getType(), fieldValue);
+            return InstanceUtils.resolvePrimitiveValue(
+                    field.getType(),
+                    fieldValue,
+                    declaringTypeDef.getDefMap()::getType
+            );
         }
         return instanceMap.getInstance(fieldValue);
     }

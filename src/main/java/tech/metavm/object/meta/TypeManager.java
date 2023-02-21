@@ -8,10 +8,11 @@ import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
 import tech.metavm.job.JobManager;
-import tech.metavm.object.meta.rest.dto.ClassParamDTO;
-import tech.metavm.object.meta.rest.dto.ConstraintDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.instance.query.ExpressionUtil;
+import tech.metavm.object.instance.query.Path;
+import tech.metavm.object.instance.query.Var;
+import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.*;
 
 import java.util.*;
@@ -96,6 +97,19 @@ public class TypeManager {
         }
     }
 
+    public List<TypeDTO> batchGetTypes(List<Long> ids, boolean includingFields, boolean includingFieldTypes) {
+        IEntityContext context = newContext();
+        List<Type> types = NncUtils.map(ids, context::getType);
+        return NncUtils.map(types, t -> {
+            if(t instanceof ClassType classType) {
+                return classType.toDTO(includingFields, includingFieldTypes);
+            }
+            else {
+                return t.toDTO();
+            }
+        });
+    }
+
     public TypeDTO getArrayType(long id) {
         return getOrCreateCompositeType(id, TypeUtil::getArrayType);
     }
@@ -174,7 +188,9 @@ public class TypeManager {
     public ClassType createType(TypeDTO classDTO, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "名称");
         ensureTypeNameAvailable(classDTO, context);
-        return TypeUtil.createAndBind(classDTO, context);
+        ClassType type = TypeUtil.createAndBind(classDTO, context);
+        initCompositeTypes(type, context);
+        return type;
     }
 
     public ClassType updateType(TypeDTO typeDTO, IEntityContext context) {
@@ -317,7 +333,7 @@ public class TypeManager {
         }
         else {
             constraint = context.getEntity(Constraint.class, constraintDTO.id());
-            constraint.update(constraintDTO);
+            ConstraintFactory.update(constraintDTO, context);
         }
         context.finish();
         return constraint.getId();
@@ -332,6 +348,91 @@ public class TypeManager {
         }
         context.remove(constraint);
         context.finish();
+    }
+
+    public LoadByPathsResponse loadByPaths(List<String> paths) {
+        IEntityContext context = newContext();
+        Map<String, Type> path2type = new HashMap<>();
+
+        List<Path> pathList = new ArrayList<>();
+        for (String path : paths) {
+            pathList.add(Path.create(path));
+        }
+        int maxLevels = 1;
+        for (Path path : pathList) {
+            String firstItem = path.firstItem();
+            Type type;
+            if(firstItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+                type = context.getType(ExpressionUtil.parseIdFromConstantVar(firstItem));
+            }
+            else {
+                type = context.selectByUniqueKey(Type.UNIQUE_NAME, firstItem);
+            }
+            path2type.put(firstItem, type);
+            maxLevels = Math.max(maxLevels, path.length());
+        }
+
+        for (int i = 1; i < maxLevels; i++) {
+            for (Path path : pathList) {
+                if(path.length() <= i) {
+                    continue;
+                }
+                Var var = Var.parse(path.getItem(i));
+                Path subPath = path.subPath(0, i + 1);
+                Path parentPath = path.subPath(0, i);
+                Type parent = NncUtils.requireNonNull(path2type.get(parentPath.toString()));
+                if(parent.isUnionNullable()) {
+                    parent = parent.getUnderlyingType();
+                }
+                if(parent instanceof ClassType classType) {
+                    Field field = NncUtils.requireNonNull(
+                            classType.getFieldByVar(var),
+                            () -> BusinessException.invalidTypePath(path.toString())
+                    );
+                    path2type.put(subPath.toString(), field.getType());
+                }
+                else if((parent instanceof ArrayType arrayType) && var.isName() && var.getName().equals("*")) {
+                    path2type.put(subPath.toString(), arrayType.getElementType());
+                }
+                else {
+                    throw BusinessException.invalidTypePath(path.toString());
+                }
+            }
+        }
+        Map<String, Long> path2typeId = new HashMap<>();
+        List<TypeDTO> typeDTOs = new ArrayList<>();
+        Set<Long> visitedTypeIds = new HashSet<>();
+        Set<String> pathSet = new HashSet<>(paths);
+
+        path2type.forEach((path, type) -> {
+            if(pathSet.contains(path)) {
+                path2typeId.put(path, type.getId());
+                if (!visitedTypeIds.contains(type.getId())) {
+                    visitedTypeIds.add(type.getId());
+                    typeDTOs.add(type.toDTO());
+                }
+            }
+        });
+        return new LoadByPathsResponse(path2typeId, typeDTOs);
+    }
+
+    @Transactional
+    public void initCompositeTypes(long id) {
+        IEntityContext context = newContext();
+        initCompositeTypes(context.getType(id), context);
+        context.finish();
+    }
+
+    private void initCompositeTypes(Type type, IEntityContext context) {
+        if(type.getNullableType() == null) {
+            UnionType nullableType = new UnionType(Set.of(type, context.getType(Null.class)));
+            nullableType.getArrayType();
+            type.setNullableType(nullableType);
+        }
+        ArrayType arrayType = type.getArrayType();
+        if(arrayType.getNullableType() == null) {
+            arrayType.setNullableType(new UnionType(Set.of(arrayType, context.getType(Null.class))));
+        }
     }
 
 }

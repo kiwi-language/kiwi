@@ -36,7 +36,7 @@ public class SearchBuilder {
                     NncUtils.join(query.typeIds(), id -> TYPE_ID + ":" + id, " OR ") + ")";
             queryString += " AND " + typeIdCondition;
         }
-        if(query.condition() != null) {
+        if(query.condition() != null && !ExpressionUtil.isConstantTrue(query.condition())) {
             queryString += " AND " + parse(query.condition());
         }
         return queryString;
@@ -66,10 +66,10 @@ public class SearchBuilder {
                 || operator == Operator.GT || operator == Operator.GE
                 || operator == Operator.LT || operator == Operator.LE
         ) {
-            FieldExpression fieldExpr = (FieldExpression) expression.getFirst();
-            ConstantExpression constExpr = (ConstantExpression) expression.getSecond();
+            Expression fieldExpr = expression.getVariableChild();
+            ConstantExpression constExpr = expression.getConstChild();
             Instance constValue = constExpr.getValue();
-            Column column = fieldExpr.getLastField().getColumn();
+            Column column = getColumn(fieldExpr);
             String columnName = operator == Operator.LIKE ? column.fuzzyName() : column.name();
             String value = operator == Operator.STARTS_WITH ?
                     escape(((StringInstance) constValue).getValue()) + "*" :
@@ -77,13 +77,13 @@ public class SearchBuilder {
             return parenthesize(columnName + getEsOperator(operator) + value);
         }
         if(operator == Operator.IN) {
-            FieldExpression fieldExpr = (FieldExpression) expression.getFirst();
+            Expression fieldExpr = expression.getVariableChild();
             ArrayExpression arrayExpr;
             if(expression.getSecond() instanceof ArrayExpression) {
-                arrayExpr = (ArrayExpression) expression.getSecond();
+                arrayExpr = expression.getArrayChild();
             }
             else {
-                arrayExpr = new ArrayExpression(List.of(expression.getSecond()));
+                arrayExpr = new ArrayExpression(List.of(expression.getConstChild()));
             }
             List<Object> values = new ArrayList<>();
             for (Expression expr : arrayExpr.getExpressions()) {
@@ -97,7 +97,7 @@ public class SearchBuilder {
             }
             return parenthesize(
                     NncUtils.join(
-                        values, v -> fieldExpr.getLastField().getColumnName() + ":" + toString(v), " OR "
+                        values, v -> getColumn(fieldExpr).name() + ":" + toString(v), " OR "
                     )
                 );
         }
@@ -110,6 +110,18 @@ public class SearchBuilder {
             return parenthesize(first + " OR " +second);
         }
         throw new RuntimeException("Unsupported operator: " + operator);
+    }
+
+    private static Column getColumn(Expression expression) {
+        if(expression instanceof ThisExpression) {
+            return Column.ID;
+        }
+        else if(expression instanceof FieldExpression fieldExpression) {
+            return fieldExpression.getLastField().getColumn();
+        }
+        else {
+            throw new InternalException("Can not get es field for " + expression);
+        }
     }
 
     private static String getEsOperator(Operator operator) {

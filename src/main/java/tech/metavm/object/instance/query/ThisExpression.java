@@ -5,6 +5,8 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.meta.ClassType;
 
+import java.util.List;
+
 @EntityType("当前对象表达式")
 public class ThisExpression extends Expression {
 
@@ -28,5 +30,15 @@ public class ThisExpression extends Expression {
     @Override
     public ClassType getType() {
         return type;
+    }
+
+    @Override
+    protected List<Expression> getChildren() {
+        return List.of();
+    }
+
+    @Override
+    public Expression cloneWithNewChildren(List<Expression> children) {
+        return new ThisExpression(type);
     }
 }

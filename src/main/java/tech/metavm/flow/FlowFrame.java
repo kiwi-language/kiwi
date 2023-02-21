@@ -10,9 +10,9 @@ import tech.metavm.object.instance.query.ExpressionEvaluator;
 import tech.metavm.object.instance.query.NodeExpression;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.FlowExecutionException;
 import tech.metavm.util.InternalException;
@@ -169,10 +169,9 @@ public class FlowFrame implements EvaluationContext {
     }
 
     @Override
-    public Set<Class<? extends Expression>> supportedExpressionClasses() {
-        return Set.of(NodeExpression.class);
+    public boolean isContextExpression(Expression expression) {
+        return expression instanceof NodeExpression;
     }
-
 
     public void resume(Instance result) {
         setResult(result);
