@@ -83,7 +83,7 @@ public class FlowRT extends Entity {
                 name,
                 type.getId(),
                 rootScope.toDTO(true),
-                getType().toDTO(),
+                type.toDTO(true, true),
                 inputType.getId(),
                 outputType.getId()
         );

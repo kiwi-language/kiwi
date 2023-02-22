@@ -18,4 +18,8 @@ public record UniqueConstraintParam(
         );
     }
 
+    public int getKind() {
+        return ConstraintKind.UNIQUE.code();
+    }
+
 }

@@ -338,7 +338,7 @@ public class ClassType extends AbsClassType {
 
     @Override
     protected ClassParamDTO getParam() {
-        return getParam(true, true);
+        return getParam(true, false);
     }
 
     @Override

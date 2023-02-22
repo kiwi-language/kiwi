@@ -9,7 +9,7 @@ public record ConstraintDTO(
         int kind,
         long typeId,
         String message,
-        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
+        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(ConstraintParamTypeIdResolver.class)
         Object param
 ) {
