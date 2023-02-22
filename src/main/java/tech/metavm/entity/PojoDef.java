@@ -201,7 +201,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     public Field getFieldByJavaFieldName(String javaFieldName) {
         return NncUtils.requireNonNull(
                 getFieldByJavaFieldName0(javaFieldName),
-                "Can not find indexItem for java indexItem name '" + javaFieldName + "'"
+                "Can not find field for java field name '" + javaFieldName + "'"
         );
     }
 

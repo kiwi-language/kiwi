@@ -240,7 +240,7 @@ public class ClassInstance extends Instance {
     protected InstanceField field(Field field) {
         return NncUtils.requireNonNull(
                 fields.get(InstanceField::getField, field),
-                "Can not find instance indexItem for indexItem '" + field + "'"
+                "Can not find instance field for '" + field + "'"
         );
     }
 

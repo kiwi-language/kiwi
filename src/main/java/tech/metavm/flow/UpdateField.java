@@ -51,7 +51,7 @@ public class UpdateField extends Entity {
                 updateValue = instance.getLong(field.getId()).add((LongInstance) evaluatedValue);
             }
             else {
-                throw new InternalException("Update operation: " + op + " is not supported for indexItem type: " + field.getType());
+                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
             }
         }
         else if(op == UpdateOp.DECREASE) {
@@ -65,7 +65,7 @@ public class UpdateField extends Entity {
                 updateValue = instance.getLong(field.getId()).subtract((LongInstance) evaluatedValue);
             }
             else {
-                throw new InternalException("Update operation: " + op + " is not supported for indexItem type: " + field.getType());
+                throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
             }
         }
         else {

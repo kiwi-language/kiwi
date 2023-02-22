@@ -59,7 +59,7 @@ public class Field extends Entity {
         this.asTitle = asTitle;
         setName(name);
         this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
-                "Fail to allocate a column for indexItem " + this);
+                "Fail to allocate a column for field " + this);
         setDefaultValue(defaultValue);
         declaringType.addField(this);
         this.isChildField = isChildField;

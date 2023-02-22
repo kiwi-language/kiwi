@@ -246,7 +246,7 @@ public class ClassType extends AbsClassType {
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
         String fieldName = ReflectUtils.getMetaFieldName(javaField);
         return requireNonNull(getFieldByName(fieldName),
-                "Can not find indexItem for java indexItem " + javaField);
+                "Can not find field for java indexItem " + javaField);
     }
 
     @Override
@@ -288,10 +288,8 @@ public class ClassType extends AbsClassType {
     }
 
     public Field getFieldNyNameRequired(String fieldName) {
-        return filterOneRequired(
-                requireNonNull(fields),
-                f -> f.getName().equals(fieldName),
-                "indexItem not found: " + fieldName
+        return NncUtils.requireNonNull(
+                getFieldByName(fieldName), "field not found: " + fieldName
         );
     }
 

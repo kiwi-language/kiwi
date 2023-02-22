@@ -69,7 +69,7 @@ public class EntityQueryService {
         if(context.containsModel(value)) {
             return context.getInstance(value);
         }
-        throw new InternalException("Can not convert query indexItem value '" + value + "'");
+        throw new InternalException("Can not convert query field value '" + value + "'");
     }
 
 }

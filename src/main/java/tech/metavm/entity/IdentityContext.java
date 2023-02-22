@@ -137,7 +137,7 @@ public class IdentityContext {
                 return indexDefField;
             }
         }
-        throw new InternalException("Can not find a indexDef indexItem for UniqueConstraint '" + uniqueConstraint + "'");
+        throw new InternalException("Can not find a indexDef field for UniqueConstraint '" + uniqueConstraint + "'");
     }
 
     private java.lang.reflect.Field getJavaField(Field field) {
