@@ -16,10 +16,8 @@ public class ConstraintPO extends EntityPO {
     private String message;
     private String param;
 
-    public ConstraintPO() {
-    }
-
-    public ConstraintPO(Long id, Long declaringTypeId, Integer kind, String message, String param) {
+    public ConstraintPO(Long id, Long tenantId, Long declaringTypeId, Integer kind, String message, String param) {
+        super(id, tenantId);
         this.id = id;
         this.declaringTypeId = declaringTypeId;
         this.kind = kind;

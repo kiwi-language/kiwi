@@ -9,9 +9,9 @@ import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
 import tech.metavm.job.JobManager;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.query.ExpressionUtil;
+import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.instance.query.Path;
-import tech.metavm.object.instance.query.Var;
+import tech.metavm.expression.Var;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.*;
 

@@ -12,13 +12,12 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class ClassInstance extends Instance {
 
-    protected final ClassType type;
-    private transient long version;
-    private transient long syncVersion;
+    private final ClassType klass;
     private final Table<InstanceField> fields = new Table<>(InstanceField.class, 1);
 
     public static Instance allocate(ClassType type) {
@@ -26,27 +25,25 @@ public class ClassInstance extends Instance {
     }
 
     protected ClassInstance(ClassType type) {
-        super(type);
-        this.type = type;
+        this(Map.of(), type);
     }
 
     public ClassInstance(Map<Field, Instance> data, ClassType type) {
         this(null, data, type, 0L, 0L);
     }
 
-    public ClassInstance(Long id, Map<Field, Instance> data, ClassType type, long version, long syncVersion) {
+    public ClassInstance(@Nullable Long id, Map<Field, Instance> data, ClassType type, long version, long syncVersion) {
         super(id, type, version, syncVersion);
-        this.type = type;
-        this.version = version;
-        this.syncVersion = syncVersion;
+        this.klass = type;
         initialize(data, version, syncVersion);
     }
 
     @NoProxy
     public void initialize(Map<Field, Instance> data, long version, long syncVersion) {
-        this.version = version;
-        this.syncVersion = syncVersion;
-        for (Field field : type.getFields()) {
+        setVersion(version);
+        setSyncVersion(syncVersion);
+
+        for (Field field : klass.getFields()) {
             Instance fieldValue = data.get(field);
             if(fieldValue == null || fieldValue.isNull()) {
                 fieldValue = field.getDefaultValue();
@@ -56,7 +53,7 @@ public class ClassInstance extends Instance {
     }
 
     public List<IndexEntryPO> getUniqueKeys(long tenantId) {
-        List<Index> uniqueConstraints = type.getConstraints(Index.class);
+        List<Index> uniqueConstraints = klass.getConstraints(Index.class);
         return NncUtils.map(
                 uniqueConstraints,
                 c -> c.getKey(tenantId,this)
@@ -79,7 +76,7 @@ public class ClassInstance extends Instance {
     }
 
     public String getTitle() {
-        Field titleField = type.getTileField();
+        Field titleField = klass.getTileField();
         return titleField != null ? field(titleField).getDisplayValue() : getId() + "";
     }
 
@@ -97,7 +94,7 @@ public class ClassInstance extends Instance {
 
     @SuppressWarnings("unused")
     public boolean isPersistent() {
-        return type.isPersistent();
+        return klass.isPersistent();
     }
 
     @SuppressWarnings("unused")
@@ -115,7 +112,7 @@ public class ClassInstance extends Instance {
 
     @NoProxy
     public ClassType getType() {
-        return type;
+        return klass;
     }
 
     @NoProxy
@@ -234,7 +231,7 @@ public class ClassInstance extends Instance {
     }
 
     public Instance get(long fieldId) {
-        return get(type.getField(fieldId));
+        return get(klass.getField(fieldId));
     }
 
     protected InstanceField field(Field field) {
@@ -248,14 +245,6 @@ public class ClassInstance extends Instance {
         return fields.get(field -> field.getField().getName(), name);
     }
 
-    public long getVersion() {
-        return version;
-    }
-
-    @SuppressWarnings("unused")
-    public long getSyncVersion() {
-        return syncVersion;
-    }
 
 //    public void update(InstanceDTO update) {
 //        for (InstanceFieldDTO fieldUpdate : update.fields()) {
@@ -268,7 +257,7 @@ public class ClassInstance extends Instance {
 //    }
 
     protected InstanceField field(long fieldId) {
-        return field(type.getField(fieldId));
+        return field(klass.getField(fieldId));
     }
 
     @Override
@@ -305,12 +294,12 @@ public class ClassInstance extends Instance {
         visited.add(this);
         return new InstancePO(
                 tenantId,
-                getId(),
+                getIdRequired(),
                 getType().getId(),
                 getTitle(),
                 getTableData(tenantId, visited),
-                version,
-                syncVersion
+                getVersion(),
+                getSyncVersion()
         );
     }
 
@@ -323,11 +312,6 @@ public class ClassInstance extends Instance {
         else {
             return toIdentityPO();
         }
-    }
-
-    @SuppressWarnings("unused")
-    public void incVersion() {
-        version++;
     }
 
     private Map<String, Object> getTableData(long tenantId, IdentitySet<Instance> visited) {
@@ -354,7 +338,7 @@ public class ClassInstance extends Instance {
     public String toString() {
         return "Instance{" +
                 "id=" + getId() +
-                ", type=" + type +
+                ", type=" + klass +
                 ", title=" + getTitle() +
                 '}';
     }

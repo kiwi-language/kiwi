@@ -12,6 +12,7 @@ public class ByTypeQuery {
     }
 
     public ByTypeQuery() {
+        this(0L, 0L, 0L);
     }
 
     public long getTypeId() {

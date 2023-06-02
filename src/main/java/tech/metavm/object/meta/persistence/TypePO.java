@@ -40,9 +40,6 @@ public class TypePO extends EntityPO {
 
     private Set<Long> typeMemberIds;
 
-    public TypePO() {
-    }
-
     public TypePO(Long id,
                   Long tenantId,
                   Long superTypeId,

@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.flow.ReferenceValue;
-import tech.metavm.object.instance.query.ExpressionUtil;
+import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Index;

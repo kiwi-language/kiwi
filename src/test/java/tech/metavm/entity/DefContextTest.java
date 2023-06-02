@@ -14,7 +14,7 @@ import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.query.ConstantExpression;
+import tech.metavm.expression.ConstantExpression;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 

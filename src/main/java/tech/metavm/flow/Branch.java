@@ -2,9 +2,9 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.BranchDTO;
-import tech.metavm.object.instance.query.ExpressionUtil;
-import tech.metavm.object.instance.query.FlowParsingContext;
-import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 

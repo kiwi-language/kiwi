@@ -4,10 +4,10 @@ import tech.metavm.entity.InstanceContext;
 import tech.metavm.entity.InstanceFactory;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.query.EvaluationContext;
-import tech.metavm.object.instance.query.Expression;
-import tech.metavm.object.instance.query.ExpressionEvaluator;
-import tech.metavm.object.instance.query.NodeExpression;
+import tech.metavm.expression.EvaluationContext;
+import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionEvaluator;
+import tech.metavm.expression.NodeExpression;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.ClassType;
@@ -20,7 +20,6 @@ import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class FlowFrame implements EvaluationContext {
 

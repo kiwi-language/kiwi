@@ -6,7 +6,6 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 public class InstanceField {
 
@@ -26,7 +25,7 @@ public class InstanceField {
     }
 
     public long getId() {
-        return field.getId();
+        return field.getIdRequired();
     }
 
     public String getName() {

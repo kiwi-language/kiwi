@@ -1,8 +1,8 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.dto.Page;
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.object.instance.query.*;
+import tech.metavm.expression.ExpressionEvaluator;
+import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.object.instance.search.IndexSourceBuilder;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;

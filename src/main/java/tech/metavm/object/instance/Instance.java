@@ -14,12 +14,14 @@ import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Instance implements IdInitializing {
 
+    @Nullable
     private Long id;
     private final Type type;
     private long version;
@@ -29,10 +31,10 @@ public abstract class Instance implements IdInitializing {
     private transient final Set<ReferenceRT> incomingReferences = new HashSet<>();
 
     public Instance(Type type) {
-        this.type = type;
+        this(null, type, 0L, 0L);
     }
 
-    public Instance(Long id, Type type, long version, long syncVersion) {
+    public Instance(@Nullable Long id, Type type, long version, long syncVersion) {
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
@@ -96,8 +98,14 @@ public abstract class Instance implements IdInitializing {
 
     @Override
     @NoProxy
+    @Nullable
     public Long getId() {
         return id;
+    }
+
+    @NoProxy
+    public Long getIdRequired() {
+        return NncUtils.requireNonNull(getId());
     }
 
     @Override
@@ -204,4 +212,11 @@ public abstract class Instance implements IdInitializing {
         version++;
     }
 
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public void setSyncVersion(long syncVersion) {
+        this.syncVersion = syncVersion;
+    }
 }

@@ -3,7 +3,7 @@ package tech.metavm.util;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.query.Function;
+import tech.metavm.expression.Function;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.rest.dto.TypeDTO;

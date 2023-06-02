@@ -29,9 +29,6 @@ public class FieldPO extends EntityPO implements Identifiable {
 
     private Long typeId;
 
-    public FieldPO() {
-    }
-
     public FieldPO(Long id,
                    Long tenantId,
                    String name,

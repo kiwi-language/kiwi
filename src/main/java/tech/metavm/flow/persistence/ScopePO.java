@@ -15,12 +15,10 @@ public class ScopePO extends EntityPO {
     private Long flowId;
     private Long deletedAt;
 
-    public ScopePO(Long id, Long flowId) {
+    public ScopePO(Long id, Long tenantId, Long flowId) {
+        super(id, tenantId);
         this.id = id;
         this.flowId = flowId;
-    }
-
-    public ScopePO() {
     }
 
     public Long getFlowId() {

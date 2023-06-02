@@ -5,9 +5,8 @@ import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.instance.query.EvaluationContext;
-import tech.metavm.object.instance.query.InstanceEvaluationContext;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.expression.EvaluationContext;
+import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType("索引")
-public class Index extends Constraint<UniqueConstraintParam> {
+public class Index extends Constraint<UniqueConstraintParamDTO> {
 
     @ChildEntity("索引字段列表")
     private final Table<IndexField> fields = new Table<>(IndexField.class, true);
@@ -102,8 +101,8 @@ public class Index extends Constraint<UniqueConstraintParam> {
     }
 
     @Override
-    protected UniqueConstraintParam getParam(boolean forPersistence) {
-        return new UniqueConstraintParam(
+    protected UniqueConstraintParamDTO getParam(boolean forPersistence) {
+        return new UniqueConstraintParamDTO(
                 NncUtils.map(fields, item -> item.toDTO(forPersistence))
         );
     }

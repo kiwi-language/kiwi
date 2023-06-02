@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
@@ -310,7 +309,7 @@ public class EntityContextTest extends TestCase {
                                         ConstraintKind.CHECK.code(),
                                         fooType.getId(),
                                         null,
-                                        new CheckConstraintParam(
+                                        new CheckConstraintParamDTO(
                                                 ValueDTO.exprValue("名称 = 'Big Foo'")
                                         )
                                 ),
@@ -322,7 +321,7 @@ public class EntityContextTest extends TestCase {
                                         ConstraintKind.UNIQUE.code(),
                                         fooType.getId(),
                                         null,
-                                        UniqueConstraintParam.create(
+                                        UniqueConstraintParamDTO.create(
                                                 "名称唯一",
                                                 ValueDTO.refValue("名称")
                                         )

@@ -2,6 +2,8 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.ModelDef;
 
+import javax.annotation.Nullable;
+
 public class EmptyModelInstanceMap implements ModelInstanceMap{
     @Override
     public Instance getInstance(Object model) {
@@ -14,7 +16,7 @@ public class EmptyModelInstanceMap implements ModelInstanceMap{
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance, ModelDef<?, ?> def) {
+    public <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?, ?> def) {
         return null;
     }
 }

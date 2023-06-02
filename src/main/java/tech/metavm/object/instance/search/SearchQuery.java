@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.search;
 
 
-import tech.metavm.object.instance.query.Expression;
+import tech.metavm.expression.Expression;
 
 import java.util.Set;
 

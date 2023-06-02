@@ -4,12 +4,10 @@ import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.flow.FlowRT;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.Index;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.*;
@@ -57,7 +55,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance, ModelDef<?,?> def) {
+    public <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?,?> def) {
         if(!getDefContext().containsTypeDef(instance.getType())) {
             // If there's no java type for the instance type, return the instance
             return klass.cast(instance);
@@ -90,10 +88,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private void onInstanceIdInitialized(Instance instance) {
         Object model = instance2model.get(instance);
         if(model != null) {
-            entityMap.put(EntityKey.create(model.getClass(), instance.getId()), model);
+            entityMap.put(EntityKey.create(model.getClass(), instance.getIdRequired()), model);
             if (model instanceof IdInitializing idInitializing) {
                 NncUtils.requireNull(idInitializing.getId());
-                idInitializing.initId(instance.getId());
+                idInitializing.initId(instance.getIdRequired());
             }
         }
     }
@@ -103,7 +101,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if(model != null) {
             model2instance.remove(model);
             if(instance.getId() != null) {
-                entityMap.remove(new EntityKey(EntityUtils.getEntityType(model), instance.getId()));
+                entityMap.remove(new EntityKey(EntityUtils.getEntityType(model), instance.getIdRequired()));
             }
         }
     }
@@ -126,7 +124,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return entityMap.containsKey(entityKey);
     }
 
-    protected <T> T createModel(Class<T> actualClass, java.lang.reflect.Type genericType, Instance instance, ModelDef<?,?> def) {
+    protected <T> T createModel(Class<T> actualClass,
+                                java.lang.reflect.Type genericType,
+                                Instance instance,
+                                @Nullable ModelDef<?,?> def) {
         if(def == null) {
             def = getDefContext().getDef(genericType);
         }
@@ -195,7 +196,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @SuppressWarnings("unused")
-    public Constraint<UniqueConstraintParam> getConstraint(long id) {
+    public Constraint<UniqueConstraintParamDTO> getConstraint(long id) {
         return getEntity(new TypeReference<>(){}, id);
     }
 
@@ -434,7 +435,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         NncUtils.requireNonNull(instanceContext);
         IndexKeyPO indexKey = createIndexKey(uniqueConstraintDef, fieldValues);
         Instance instance = instanceContext.selectByUniqueKey(indexKey);
-        return getEntity(entityType, instance.getId());
+        return getEntity(entityType, instance.getIdRequired());
     }
 
     private IndexKeyPO createIndexKey(IndexDef<?> uniqueConstraintDef, Object...values) {
@@ -448,11 +449,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         boolean allPersisted = NncUtils.allMatch(typeMembers, t -> t.getId() != null);
         if(allPersisted) {
             List<Type> types = new ArrayList<>(typeMembers);
-            types.sort(Comparator.comparingLong(Entity::getId));
+            types.sort(Comparator.comparingLong(Entity::getIdRequired));
             UnionType pType = getByUniqueKey(
                     UnionType.class,
                     UnionType.UNIQUE_TYPE_ELEMENTS,
-                    NncUtils.join(types, t -> t.getId().toString())
+                    NncUtils.join(types, t -> t.getIdRequired().toString())
             );
             if(pType != null) {
                 return pType;
@@ -501,7 +502,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         model2instance.put(model, instance);
 //        if((model instanceof Entity entity) && entity.getId() != null) {
         if(instance.getId() != null) {
-            entityMap.put(EntityKey.create(model.getClass(), instance.getId()), model);
+            entityMap.put(EntityKey.create(model.getClass(), instance.getIdRequired()), model);
         }
         if(!instance.isValue() && !manualInstanceWriting()
                 && instanceContext != null && !instanceContext.containsInstance(instance)) {

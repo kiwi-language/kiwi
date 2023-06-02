@@ -5,14 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.query.Expression;
-import tech.metavm.object.instance.query.ExpressionUtil;
+import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 
-import java.util.List;
 import java.util.Set;
 
 public class SearchBuilderTest extends TestCase {

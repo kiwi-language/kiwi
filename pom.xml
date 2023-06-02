@@ -6,6 +6,7 @@
 
     <groupId>tech.metavm</groupId>
     <artifactId>object</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
 
     <parent>
@@ -16,42 +17,13 @@
 
     <build>
         <plugins>
-<!--            <plugin>-->
-<!--                <groupId>org.jsweet</groupId>-->
-<!--                <artifactId>jsweet-maven-plugin</artifactId>-->
-<!--                <version>${jsweet.transpiler.version}</version>-->
-<!--                <configuration>-->
-<!--                    <verbose>true</verbose>-->
-<!--                    <tsOut>target/ts</tsOut>-->
-<!--                    <outDir>target/js</outDir>-->
-<!--                    <candiesJsOut>webapp/candies</candiesJsOut>-->
-<!--                    <targetVersion>ES6</targetVersion>-->
-<!--                    <module>none</module>-->
-<!--                    <moduleResolution>classic</moduleResolution>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>generate-js</id>-->
-<!--                        <phase>generate-sources</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>jsweet</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                    <execution>-->
-<!--                        <id>clean</id>-->
-<!--                        <phase>clean</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>clean</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>16</source>
-                    <target>16</target>
+                    <source>18</source>
+                    <target>18</target>
+                    <compilerArgs>--enable-preview</compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -61,6 +33,18 @@
                 <configuration>
                     <mainClass>tech.metavm.ObjectApplication</mainClass>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>4.12.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -215,17 +199,17 @@
             <scope>test</scope>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.jsweet</groupId>-->
-<!--            <artifactId>jsweet-core</artifactId>-->
-<!--            <version>${jsweet.core.version}</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.12.0</version>
+        </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.jsweet.candies</groupId>-->
-<!--            <artifactId>jquery</artifactId>-->
-<!--            <version>1.10.0-20170726</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>fr.inria.gforge.spoon</groupId>
+            <artifactId>spoon-core</artifactId>
+            <version>10.3.0</version>
+        </dependency>
 
     </dependencies>
 

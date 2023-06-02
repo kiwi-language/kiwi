@@ -2,7 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.query.Expression;
+import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;

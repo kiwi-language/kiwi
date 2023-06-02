@@ -32,9 +32,6 @@ public class NodePO extends EntityPO {
 
     private Long scopeId;
 
-    public NodePO() {
-    }
-
     public NodePO(Long id,
                   Long tenantId,
                   String name,
@@ -45,6 +42,7 @@ public class NodePO extends EntityPO {
                   Long scopeId,
                   String param,
                   Long deletedAt) {
+        super(id, tenantId);
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;

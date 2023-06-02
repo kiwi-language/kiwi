@@ -1,13 +1,12 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;

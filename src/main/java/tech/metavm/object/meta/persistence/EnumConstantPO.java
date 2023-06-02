@@ -12,9 +12,6 @@ public class EnumConstantPO extends EntityPO {
         this.ordinal = ordinal;
     }
 
-    public EnumConstantPO() {
-    }
-
     public String getName() {
         return name;
     }

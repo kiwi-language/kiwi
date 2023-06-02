@@ -2,6 +2,8 @@ package tech.metavm.object.instance.query;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import tech.metavm.expression.Function;
+import tech.metavm.expression.FunctionDesc;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;

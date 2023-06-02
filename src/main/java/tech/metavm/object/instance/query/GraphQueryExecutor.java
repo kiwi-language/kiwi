@@ -1,6 +1,8 @@
 package tech.metavm.object.instance.query;
 
 import tech.metavm.entity.EntityUtils;
+import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.ClassType;

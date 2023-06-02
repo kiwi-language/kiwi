@@ -10,7 +10,6 @@ import tech.metavm.flow.ScopeRT;
 import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.PrimitiveInstance;
-import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.ClassType;

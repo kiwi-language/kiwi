@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.metavm.entity.Identifiable;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -20,16 +21,16 @@ public class InstancePO implements Identifiable {
     private Long tenantId;
     private Long id;
     private Long typeId;
-    private String title;
-    private Map<String, Object> data;
+    private @Nullable String title;
+    private Map<String, @org.jetbrains.annotations.Nullable Object> data;
     private Long version;
     private Long syncVersion;
 
     public InstancePO(Long tenantId,
                       Long id,
                       Long typeId,
-                      String title,
-                      Map<String, Object> data,
+                      @Nullable String title,
+                      Map<String, @org.jetbrains.annotations.Nullable Object> data,
                       Long version,
                       Long syncVersion) {
         this.tenantId = tenantId;
@@ -39,9 +40,6 @@ public class InstancePO implements Identifiable {
         this.data = data;
         this.version = version;
         this.syncVersion = syncVersion;
-    }
-
-    public InstancePO() {
     }
 
     public Long getSyncVersion() {
@@ -60,15 +58,16 @@ public class InstancePO implements Identifiable {
         return typeId;
     }
 
+    @Nullable
     public Object get(String column) {
         return data.get(column);
     }
 
-    public void set(String column, Object value) {
+    public void set(String column, @Nullable Object value) {
         data.put(column, value);
     }
 
-    public void put(String columnName, Object object) {
+    public void put(String columnName, @Nullable Object object) {
         data.put(columnName, object);
     }
 
@@ -80,7 +79,7 @@ public class InstancePO implements Identifiable {
         return title;
     }
 
-    public Map<String, Object> getData() {
+    public Map<String, @org.jetbrains.annotations.Nullable Object> getData() {
         return data;
     }
 

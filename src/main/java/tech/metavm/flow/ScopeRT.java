@@ -7,6 +7,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
@@ -36,12 +37,12 @@ public class ScopeRT extends Entity  {
     }
 
     public ScopePO toPO() {
-        return new ScopePO(getId(), flow.getId());
+        return new ScopePO(getIdRequired(), ContextUtil.getTenantId(), flow.getId());
     }
 
     public ScopeDTO toDTO(boolean withNodes) {
         return new ScopeDTO(
-                getId(),
+                getIdRequired(),
                 withNodes ? NncUtils.map(getNodes(), NodeRT::toDTO) : List.of()
         );
     }

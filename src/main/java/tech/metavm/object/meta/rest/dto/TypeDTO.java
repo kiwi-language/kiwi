@@ -2,17 +2,18 @@ package tech.metavm.object.meta.rest.dto;
 
 import tech.metavm.object.meta.TypeCategory;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public record TypeDTO(
         Long id,
         String name,
-        String code,
+        @Nullable String code,
         int category,
         boolean ephemeral,
         boolean anonymous,
-        Long nullableTypeId,
-        Long arrayTypeId,
+        @Nullable Long nullableTypeId,
+        @Nullable Long arrayTypeId,
         Object param
 ) {
 

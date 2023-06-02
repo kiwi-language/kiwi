@@ -24,10 +24,8 @@ public class FlowPO extends EntityPO {
 
     private Long outputTypeId;
 
-    public FlowPO() {
-    }
-
     public FlowPO(Long id, Long tenantId, String name, Long declaringTypeId, Long rootScopeId, Long inputTypeId, Long outputTypeId) {
+        super(id, tenantId);
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;

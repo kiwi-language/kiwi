@@ -13,9 +13,8 @@ public class EntityPO implements Identifiable {
     public EntityPO(Long id, Long tenantId) {
         this.id = id;
         this.tenantId = tenantId;
-    }
-
-    public EntityPO() {
+        version = 0L;
+        syncVersion = 0L;
     }
 
     @Override

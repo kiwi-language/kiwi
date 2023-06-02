@@ -5,7 +5,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.query.EvaluationContext;
+import tech.metavm.expression.EvaluationContext;
 import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.Type;
 

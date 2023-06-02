@@ -35,15 +35,15 @@ public class Foo extends Entity {
     private Table<Baz> bazList;
 
     public Foo(String name, Bar bar) {
-        setName(name);
-        setBar(bar);
+        this.name = name;
+        this.bar = bar;
     }
 
     public Foo(String name, Bar bar, @Nullable Qux qux, @Nullable List<Baz> bazList) {
-        setName(name);
-        setBar(bar);
-        setQux(qux);
-        setBazList(bazList);
+        this.name = name;
+        this.bar = bar;
+        this.qux = qux;
+        this.bazList = new Table<Baz>(Baz.class, bazList);
     }
 
     public String getName() {

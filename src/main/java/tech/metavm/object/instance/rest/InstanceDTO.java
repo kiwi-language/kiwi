@@ -4,11 +4,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
 public record InstanceDTO(
-        Long id,
+        @Nullable Long id,
         Long typeId,
         String typeName,
         String title,
@@ -17,7 +18,7 @@ public record InstanceDTO(
         InstanceParamDTO param
 ) {
 
-    public static InstanceDTO valueOf(Long id, long typeId, String title, List<InstanceFieldDTO> fields){
+    public static InstanceDTO valueOf(@Nullable Long id, long typeId, String title, List<InstanceFieldDTO> fields){
         return new InstanceDTO(id, typeId, null, title, new ClassInstanceParamDTO(fields));
     }
 
@@ -25,7 +26,7 @@ public record InstanceDTO(
         return valueOf(null, typeId, fields);
     }
 
-    public static InstanceDTO valueOf(Long id, long typeId, List<InstanceFieldDTO> fields) {
+    public static InstanceDTO valueOf(@Nullable Long id, long typeId, List<InstanceFieldDTO> fields) {
         return new InstanceDTO(
                 id,
                 typeId,

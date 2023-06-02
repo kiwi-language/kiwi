@@ -36,14 +36,14 @@ public class InstanceDTOBuilder {
         else {
             InstanceDTO instanceDTO = new InstanceDTO(
                     instance.getId(),
-                    instance.getType().getId(),
+                    instance.getType().getIdRequired(),
                     instance.getType().getName(),
                     instance.getTitle(),
                     new ClassInstanceParamDTO(
                             NncUtils.map(
                                     instance.getType().getFields(),
                                     f -> new InstanceFieldDTO(
-                                            f.getId(),
+                                            f.getIdRequired(),
                                             f.getName(),
                                             f.getType().getConcreteType().getCategory().code(),
                                             f.getType().isArray(),
@@ -63,7 +63,7 @@ public class InstanceDTOBuilder {
         else {
             InstanceDTO instanceDTO = new InstanceDTO(
                     array.getId(),
-                    array.getType().getId(),
+                    array.getType().getIdRequired(),
                     array.getType().getName(),
                     array.getTitle(),
                     new ArrayParamDTO(

@@ -4,6 +4,7 @@ import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class MockModelInstanceMap implements ModelInstanceMap {
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance, ModelDef<?,?> def) {
+    public <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?,?> def) {
         if(parent != null && parent.containsInstance(instance)) {
             return parent.getModel(klass, instance);
         }

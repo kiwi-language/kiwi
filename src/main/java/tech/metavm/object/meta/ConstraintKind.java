@@ -3,8 +3,8 @@ package tech.metavm.object.meta;
 import tech.metavm.util.NncUtils;
 
 public enum ConstraintKind {
-    UNIQUE(1, UniqueConstraintParam.class),
-    CHECK(2, CheckConstraintParam.class)
+    UNIQUE(1, UniqueConstraintParamDTO.class),
+    CHECK(2, CheckConstraintParamDTO.class)
     ;
 
     private final int code;

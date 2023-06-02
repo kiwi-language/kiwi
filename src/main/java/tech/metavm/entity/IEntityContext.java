@@ -13,6 +13,7 @@ import tech.metavm.user.UserRT;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public interface IEntityContext extends ModelInstanceMap {
@@ -71,7 +72,7 @@ public interface IEntityContext extends ModelInstanceMap {
 
     void finish();
 
-    IInstanceContext getInstanceContext();
+    @Nullable IInstanceContext getInstanceContext();
 
     <T> List<T> query(EntityIndexQuery<T> query);
 
@@ -79,6 +80,7 @@ public interface IEntityContext extends ModelInstanceMap {
 
     boolean remove(Object model);
 
+    @Nullable
     default <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {
         return NncUtils.getFirst(selectByKey(indexDef, values));
     }

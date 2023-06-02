@@ -8,6 +8,7 @@ import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -97,11 +98,11 @@ public class TypeFactory {
         return type;
     }
 
-    public ClassType createClass(String name, ClassType superType) {
+    public ClassType createClass(String name, @Nullable ClassType superType) {
         return createClass(name, null, superType);
     }
 
-    public ClassType createClass(String name, String code, ClassType superType) {
+    public ClassType createClass(String name, String code, @Nullable ClassType superType) {
         ClassType type =  createClass(name, superType, TypeCategory.CLASS);
         if(code != null) {
             type.setCode(code);
@@ -109,7 +110,7 @@ public class TypeFactory {
         return type;
     }
 
-    public ClassType createClass(String name, ClassType superType, TypeCategory category) {
+    public ClassType createClass(String name, @Nullable ClassType superType, TypeCategory category) {
         return new ClassType(
                 name,
                 superType,

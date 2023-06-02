@@ -8,9 +8,6 @@ public final class InstanceArrayPO extends InstancePO {
     private List<Object> elements;
     private boolean elementAsChild;
 
-    public InstanceArrayPO() {
-    }
-
     public InstanceArrayPO(
             Long id,
             long typeId,

@@ -5,11 +5,11 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Value;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.query.InstanceEvaluationContext;
+import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.util.InstanceUtils;
 
 @EntityType("校验约束")
-public class CheckConstraint extends Constraint<CheckConstraintParam> {
+public class CheckConstraint extends Constraint<CheckConstraintParamDTO> {
 
     @EntityField("条件")
     private Value condition;
@@ -27,8 +27,8 @@ public class CheckConstraint extends Constraint<CheckConstraintParam> {
     }
 
     @Override
-    protected CheckConstraintParam getParam(boolean forPersistence) {
-        return new CheckConstraintParam(
+    protected CheckConstraintParamDTO getParam(boolean forPersistence) {
+        return new CheckConstraintParamDTO(
                 condition.toDTO(forPersistence)
         );
     }

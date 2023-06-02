@@ -1,5 +1,7 @@
 package tech.metavm.util;
 
+import org.jetbrains.annotations.Nullable;
+
 public class ValuePlaceholder<T> {
 
     private T value;
@@ -16,6 +18,15 @@ public class ValuePlaceholder<T> {
             throw new IllegalStateException("Value is already set");
         }
         this.value = value;
+    }
+
+    public boolean isSet() {
+        return this.value != null;
+    }
+
+    @Nullable
+    public T orElseNull() {
+        return isSet() ? value : null;
     }
 
 }

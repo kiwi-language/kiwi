@@ -5,6 +5,7 @@ import javassist.util.proxy.ProxyObject;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -25,25 +26,25 @@ public class EntityProxyFactory {
         return getProxy(typeRef.getType(), null, modelSupplier);
     }
 
-    public static <T> T getProxy(Class<T> type, Consumer<T> modelSupplier) {
-        return getProxy(type, null, modelSupplier);
+    public static <T> T getProxy(Class<T> type, Consumer<T> initializer) {
+        return getProxy(type, null, initializer);
     }
 
     public static <T> T getProxy(Class<T> type,
-                                 Long id,
-                                 Consumer<T> modelSupplier) {
-        return getProxy(type, id, ReflectUtils::allocateInstance, modelSupplier);
+                                 @Nullable Long id,
+                                 Consumer<T> initializer) {
+        return getProxy(type, id, ReflectUtils::allocateInstance, initializer);
     }
 
     public static <T> T getProxy(TypeReference<T> type,
-                                 Long id,
+                                 @Nullable Long id,
                                  Consumer<T> initializer,
                                  Function<Class<? extends T>, T> constructor) {
         return getProxy(type.getType(), id, constructor, initializer);
     }
 
     public static <T> T getProxy(Class<T> type,
-                                 Long id,
+                                 @Nullable Long id,
                                  Function<Class<? extends T>, T> constructor,
                                  Consumer<T> initializer) {
         Class<? extends T> proxyClass = getProxyClass(type).asSubclass(type);

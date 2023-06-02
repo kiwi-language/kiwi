@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.object.meta.persistence.ConstraintPO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -16,17 +17,16 @@ public record UniqueConstraintInfo(
     }
 
     public ConstraintPO toPO(long typeId) {
-        ConstraintPO po = new ConstraintPO();
-        po.setId(id);
-        po.setKind(ConstraintKind.UNIQUE.code());
-        po.setDeclaringTypeId(typeId);
-        po.setMessage(message);
-        po.setParam(NncUtils.toJSONString(getParam()));
-        return po;
+        return new ConstraintPO(
+            id, ContextUtil.getTenantId(), typeId,
+                ConstraintKind.UNIQUE.code(),
+                message,
+                NncUtils.toJSONString(getParam())
+        );
     }
 
-    public UniqueConstraintParam getParam() {
-        return new UniqueConstraintParam(
+    public UniqueConstraintParamDTO getParam() {
+        return new UniqueConstraintParamDTO(
                 NncUtils.map(items, UniqueConstraintItemInfo::toDTO)
         );
     }

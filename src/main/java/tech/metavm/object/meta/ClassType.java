@@ -10,7 +10,7 @@ import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.instance.query.Var;
+import tech.metavm.expression.Var;
 import tech.metavm.object.meta.persistence.TypePO;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;

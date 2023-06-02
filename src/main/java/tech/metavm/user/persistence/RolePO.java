@@ -11,9 +11,6 @@ public class RolePO extends EntityPO {
         this.name = name;
     }
 
-    public RolePO() {
-    }
-
     public String getName() {
         return name;
     }

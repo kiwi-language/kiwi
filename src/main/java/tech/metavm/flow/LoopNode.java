@@ -1,12 +1,10 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
-import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.LoopParam;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.query.FlowParsingContext;
-import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.util.NncUtils;
 
 @EntityType("循环节点")

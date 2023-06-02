@@ -4,7 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;

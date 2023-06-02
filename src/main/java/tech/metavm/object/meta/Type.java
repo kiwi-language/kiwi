@@ -210,14 +210,14 @@ public abstract class Type extends Entity {
 
     protected TypeDTO toDTO(Object param) {
         return new TypeDTO(
-                id,
+                getIdRequired(),
                 name,
                 code,
                 category.code(),
                 ephemeral,
                 anonymous,
-                NncUtils.get(nullableType, Entity::getId),
-                NncUtils.get(arrayType, Entity::getId),
+                NncUtils.get(nullableType, Entity::getIdRequired),
+                NncUtils.get(arrayType, Entity::getIdRequired),
                 param
         );
     }

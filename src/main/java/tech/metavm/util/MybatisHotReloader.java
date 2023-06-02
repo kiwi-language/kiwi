@@ -6,7 +6,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.apache.ibatis.builder.ResultMapResolver;
@@ -14,6 +13,8 @@ import org.apache.ibatis.builder.annotation.MapperAnnotationBuilder;
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.mapping.ResultMap;
 import org.apache.ibatis.session.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.Resource;
@@ -28,8 +29,10 @@ import java.util.*;
 import java.util.concurrent.*;
 
 @RequiredArgsConstructor
-@Slf4j
 public class MybatisHotReloader implements InitializingBean, DisposableBean {
+
+    public static final Logger log = LoggerFactory.getLogger(MybatisHotReloader.class);
+
     @NonNull
     private Resource[] mapperLocations;
     @NonNull

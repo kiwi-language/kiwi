@@ -5,13 +5,15 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.EnumConstantRT;
 import tech.metavm.object.meta.Field;
 
+import javax.annotation.Nullable;
+
 public interface ModelInstanceMap {
 
     Instance getInstance(Object model);
 
     <T> T getModel(Class<T> klass, Instance instance);
 
-    <T> T getModel(Class<T> klass, Instance instance, ModelDef<?,?> def);
+    <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?,?> def);
 
     default ClassType getType(Instance instance) {
         return getModel(ClassType.class, instance);

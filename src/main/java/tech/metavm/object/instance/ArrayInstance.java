@@ -24,13 +24,11 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     private boolean elementAsChild;
 
     protected ArrayInstance(ArrayType type) {
-        super(type);
-        this.elementAsChild = false;
+        this(type, false);
     }
 
     public ArrayInstance(ArrayType type, boolean elementAsChild) {
-        super(type);
-        this.elementAsChild = elementAsChild;
+        this(type, List.of(), elementAsChild);
     }
 
     public ArrayInstance(ArrayType type,

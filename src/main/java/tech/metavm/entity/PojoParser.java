@@ -6,7 +6,7 @@ import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.NullInstance;
-import tech.metavm.object.instance.query.TypeParsingContext;
+import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;

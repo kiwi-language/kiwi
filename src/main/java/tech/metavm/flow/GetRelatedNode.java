@@ -7,7 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.GetRelatedParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.query.FlowParsingContext;
+import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;

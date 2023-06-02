@@ -6,6 +6,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -45,7 +46,7 @@ public abstract class Constraint<T> extends Entity {
         return new ConstraintDTO(
                 getId(),
                 kind.code(),
-                declaringType.getId(),
+                declaringType.getIdRequired(),
                 message,
                 getParam(false)
         );
@@ -61,7 +62,8 @@ public abstract class Constraint<T> extends Entity {
     public ConstraintPO toPO() {
         return new ConstraintPO(
                 getId(),
-                declaringType.getId(),
+                ContextUtil.getTenantId(),
+                declaringType.getIdRequired(),
                 kind.code(),
                 message,
                 NncUtils.toJSONString(getParam(true))

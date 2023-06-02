@@ -8,7 +8,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.OutputFieldDTO;
 import tech.metavm.flow.rest.ReturnParamDTO;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.instance.rest.ClassInstanceParamDTO;

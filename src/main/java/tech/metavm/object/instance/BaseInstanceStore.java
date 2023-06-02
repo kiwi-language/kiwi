@@ -10,6 +10,7 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -89,7 +90,7 @@ public abstract class BaseInstanceStore implements IInstanceStore {
         arrayPO.setElements(newElements);
     }
 
-    private Long convertToRefId(Object fieldValue, boolean isRef) {
+    private @Nullable Long convertToRefId(@Nullable Object fieldValue, boolean isRef) {
         if(isRef && (fieldValue instanceof Long refId)) {
             return refId;
         }

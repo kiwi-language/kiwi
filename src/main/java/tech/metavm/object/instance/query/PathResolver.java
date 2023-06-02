@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.query;
 
+import tech.metavm.expression.*;
 import tech.metavm.util.IdentitySet;
 
 import java.util.List;

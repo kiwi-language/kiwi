@@ -3,8 +3,8 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.ValueFactory;
-import tech.metavm.object.instance.query.ParsingContext;
-import tech.metavm.object.instance.query.TypeParsingContext;
+import tech.metavm.expression.ParsingContext;
+import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -27,7 +27,7 @@ public class ConstraintFactory {
         throw new InternalException("Invalid constraint kind: " + constraintDTO.kind());
     }
 
-    public static Index createIndexConstraint(UniqueConstraintParam param,
+    public static Index createIndexConstraint(UniqueConstraintParamDTO param,
                                               ClassType type,
                                               String message,
                                               ParsingContext parsingContext) {
@@ -42,7 +42,7 @@ public class ConstraintFactory {
         return index;
     }
 
-    public static CheckConstraint createCheckConstraint(CheckConstraintParam param,
+    public static CheckConstraint createCheckConstraint(CheckConstraintParamDTO param,
                                                         ClassType type,
                                                         String message,
                                                         ParsingContext parsingContext) {
@@ -63,7 +63,7 @@ public class ConstraintFactory {
     }
 
     public static void updateIndexConstraint(Index indexConstraint,
-                                             UniqueConstraintParam param,
+                                             UniqueConstraintParamDTO param,
                                              ParsingContext parsingContext) {
         for (UniqueConstraintItemDTO itemDTO : param.items()) {
             Value value = ValueFactory.getValue(itemDTO.value(), parsingContext);
@@ -79,7 +79,7 @@ public class ConstraintFactory {
     }
 
     public static void updateCheckConstraint(CheckConstraint checkConstraint,
-                                             CheckConstraintParam param,
+                                             CheckConstraintParamDTO param,
                                              ParsingContext parsingContext) {
         checkConstraint.setCondition(ValueFactory.getValue(param.value(), parsingContext));
     }

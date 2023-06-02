@@ -1,12 +1,15 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindingAware {
 
     private boolean persisted;
+    @Nullable
     protected Long id;
     private long version;
     private long syncVersion;
@@ -14,8 +17,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public Entity() {
     }
 
+    @Nullable
     public final Long getId() {
         return id;
+    }
+
+    @NoProxy
+    public final Long getIdRequired() {
+        return NncUtils.requireNonNull(getId());
     }
 
     @NoProxy

@@ -19,9 +19,6 @@ public class UserPO extends EntityPO {
         this.roleIds = roleIds;
     }
 
-    public UserPO() {
-    }
-
     public String getName() {
         return name;
     }

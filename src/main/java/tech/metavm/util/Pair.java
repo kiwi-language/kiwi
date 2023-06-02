@@ -1,6 +1,8 @@
 package tech.metavm.util;
 
-public record Pair<T>(T first, T second) {
+import javax.annotation.Nullable;
+
+public record Pair<T>(@Nullable T first, @Nullable T second) {
 
     public T any() {
         return NncUtils.anyNonNull(first, second);

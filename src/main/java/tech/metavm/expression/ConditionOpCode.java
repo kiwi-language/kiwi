@@ -1,6 +1,6 @@
 //package tech.metavm.expression;
 //
-//import tech.metavm.object.instance.query.Operator;
+//import tech.metavm.expression.Operator;
 //import tech.metavm.util.NncUtils;
 //
 //public enum ConditionOpCode {

@@ -1,8 +1,8 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.query.ExpressionUtil;
-import tech.metavm.object.instance.query.ParsingContext;
+import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.util.InstanceUtils;
 
 public class ValueFactory {

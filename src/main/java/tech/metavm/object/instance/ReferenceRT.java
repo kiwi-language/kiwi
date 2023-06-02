@@ -1,6 +1,5 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
@@ -39,16 +38,6 @@ public record ReferenceRT(Instance source, Instance target, @Nullable Field fiel
         } else {
             throw new InternalException("Unexpected source: " + source);
         }
-    }
-
-    public ReferencePO toPO(long tenantId) {
-        return new ReferencePO(
-                tenantId,
-                source().getId(),
-                target.getId(),
-                field != null ? field.getId() : -1L,
-                getKind().code()
-        );
     }
 
 }

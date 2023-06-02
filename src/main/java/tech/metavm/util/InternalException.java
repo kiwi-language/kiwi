@@ -7,6 +7,7 @@ public class InternalException extends RuntimeException {
     private InternalErrorCode errorCode;
 
     public InternalException() {
+        this((String) null, null);
     }
 
     public InternalException(InternalErrorCode errorCode, Object...params) {
@@ -15,7 +16,7 @@ public class InternalException extends RuntimeException {
     }
 
     public InternalException(String message) {
-        super(message);
+        this(message, null);
     }
 
     public InternalException(String message, Throwable cause) {
@@ -23,7 +24,7 @@ public class InternalException extends RuntimeException {
     }
 
     public InternalException(Throwable cause) {
-        super(cause);
+        this(null, cause);
     }
 
     public InternalException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
