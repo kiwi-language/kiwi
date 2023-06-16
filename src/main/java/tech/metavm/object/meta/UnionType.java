@@ -1,17 +1,16 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.rest.dto.UnionTypeParamDTO;
-import tech.metavm.transpile.ir.IRType;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("联合类型")

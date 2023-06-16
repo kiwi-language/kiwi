@@ -6,8 +6,6 @@ import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import sun.misc.Unsafe;
 import tech.metavm.entity.*;
-import tech.metavm.transpile.ir.IRClass;
-import tech.metavm.transpile.ir.IRField;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -585,18 +583,6 @@ public class ReflectUtils {
         }
         if(hasNonObjectSuper(klass)) {
             return getDeclaredFieldRecursively(klass.getSuperclass(), name);
-        }
-        else {
-            throw new InternalException("Can not find field '" + name + "' in class '" + klass.getSimpleName() + "'");
-        }
-    }
-
-    public static IRField getDeclaredFieldRecursively(IRClass klass, String name) {
-        if(klass.isFieldDeclared(name)) {
-            return klass.getField(name);
-        }
-        if(klass.getRawSuperClass() != null) {
-            return getDeclaredFieldRecursively(klass.getRawSuperClass(), name);
         }
         else {
             throw new InternalException("Can not find field '" + name + "' in class '" + klass.getSimpleName() + "'");
