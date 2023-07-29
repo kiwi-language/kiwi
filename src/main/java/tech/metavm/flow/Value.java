@@ -27,6 +27,10 @@ public abstract class Value extends Entity {
         );
     }
 
+    public ValueKind getKind() {
+        return kind;
+    }
+
     public abstract Type getType();
 
     public abstract Instance evaluate(EvaluationContext evaluationContext);

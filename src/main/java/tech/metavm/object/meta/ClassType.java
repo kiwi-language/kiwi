@@ -408,6 +408,10 @@ public class ClassType extends AbsClassType {
         return findById(flows, id);
     }
 
+    public FlowRT getFlowByCode(String code) {
+        return null; // TODO to implement
+    }
+
     @JsonIgnore
     public ClassType getConcreteType() {
         return this;

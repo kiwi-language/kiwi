@@ -68,6 +68,10 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         return new ArrayList<>(branches);
     }
 
+    public Branch getBranchByIndex(int index) {
+        return branches.get(index);
+    }
+
     public Branch getBranch(long index) {
         return NncUtils.find(branches, branch -> branch.getIndex() == index);
     }

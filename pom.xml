@@ -15,6 +15,19 @@
         <version>2.7.3</version>
     </parent>
 
+    <repositories>
+        <repository>
+            <id>intellij</id>
+            <name>intellij</name>
+            <url>https://www.jetbrains.com/intellij-repository/releases</url>
+        </repository>
+        <repository>
+            <id>intellij-third-party</id>
+            <name>intellij-third-party</name>
+            <url> https://cache-redirector.jetbrains.com/intellij-dependencies</url>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>
@@ -72,19 +85,6 @@
             <url>https://repository.jsweet.org/artifactory/plugins-snapshot-local</url>
         </pluginRepository>
     </pluginRepositories>
-    <repositories>
-        <repository>
-            <id>jsweet-central</id>
-            <name>libs-release</name>
-            <url>https://repository.jsweet.org/artifactory/libs-release-local</url>
-        </repository>
-        <repository>
-            <snapshots />
-            <id>jsweet-snapshots</id>
-            <name>libs-snapshot</name>
-            <url>https://repository.jsweet.org/artifactory/libs-snapshot-local</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
@@ -209,6 +209,24 @@
             <groupId>fr.inria.gforge.spoon</groupId>
             <artifactId>spoon-core</artifactId>
             <version>10.3.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.java</groupId>
+            <artifactId>java-psi-impl</artifactId>
+            <version>222.4554.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.graphstream</groupId>
+            <artifactId>gs-core</artifactId>
+            <version>2.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.graphstream</groupId>
+            <artifactId>gs-ui-swing</artifactId>
+            <version>2.0</version>
         </dependency>
 
     </dependencies>

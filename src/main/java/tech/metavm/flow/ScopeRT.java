@@ -71,6 +71,10 @@ public class ScopeRT extends Entity  {
         return nodes;
     }
 
+    public NodeRT<?> getNodeByIndex(int index) {
+        return nodes.get(index);
+    }
+
     public NodeRT<?> getFirstNode() {
         return NncUtils.find(getNodes(), node -> node.getPredecessor() == null);
     }

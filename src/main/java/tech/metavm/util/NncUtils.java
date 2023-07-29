@@ -29,7 +29,7 @@ public class NncUtils {
 
 
     public static void requireLength(Collection<?> collection, int expectedSize) {
-        if(collection.size() != expectedSize) {
+        if (collection.size() != expectedSize) {
             throw new InternalException("Expected collection size is " + expectedSize
                     + ", actual collection size is " + collection.size());
         }
@@ -45,13 +45,12 @@ public class NncUtils {
     }
 
     public static String firstCharToUpperCase(String s) {
-        if(s.isEmpty()) {
+        if (s.isEmpty()) {
             return s;
         }
-        if(s.length() == 1) {
+        if (s.length() == 1) {
             return s.toUpperCase();
-        }
-        else {
+        } else {
             return Character.toUpperCase(s.charAt(0)) + s.substring(1);
         }
     }
@@ -62,16 +61,22 @@ public class NncUtils {
         return copy;
     }
 
+    public static <T> Set<T> setDiff(Set<T> set1, Set<T> set2) {
+        Set<T> diff = new HashSet<>(set1);
+        diff.removeAll(set2);
+        return diff;
+    }
+
     public static void requireMinimumSize(Object[] array, int minSize) {
         requireMinimumSize(Arrays.asList(array), minSize);
     }
 
     public static void requireMinimumSize(Collection<?> collection, int minSize) {
-        if(collection == null) {
-           throw new InternalException("collection is null");
+        if (collection == null) {
+            throw new InternalException("collection is null");
         }
-        if(collection.size() < minSize) {
-            throw new InternalException("collection has less elements than required. Minimum size: " + minSize );
+        if (collection.size() < minSize) {
+            throw new InternalException("collection has less elements than required. Minimum size: " + minSize);
         }
     }
 
@@ -92,7 +97,7 @@ public class NncUtils {
         try (InputStream inputStream = new FileInputStream(filePath)) {
             byte[] bytes = new byte[inputStream.available()];
             int n = inputStream.read(bytes);
-            if(n != bytes.length) {
+            if (n != bytes.length) {
                 throw new InternalException("read  bytes " + n + " is not equal to available bytes " + bytes.length + "" +
                         " in file '" + filePath + "'");
             }
@@ -101,10 +106,9 @@ public class NncUtils {
     }
 
     public static <T> T cast(Class<T> klass, Object object, String message) {
-        if(klass.isInstance(object)) {
+        if (klass.isInstance(object)) {
             return klass.cast(object);
-        }
-        else {
+        } else {
             throw new InternalException(message);
         }
     }
@@ -118,7 +122,7 @@ public class NncUtils {
     }
 
     public static <T> void forEach(Collection<T> collection, Consumer<T> action) {
-        if(NncUtils.isEmpty(collection)) {
+        if (NncUtils.isEmpty(collection)) {
             return;
         }
         collection.forEach(action);
@@ -166,14 +170,14 @@ public class NncUtils {
 
     @SuppressWarnings("unused")
     public static <T> T firstNonNull(T t1, T t2) {
-        if(t1 == null && t2 == null) {
+        if (t1 == null && t2 == null) {
             throw new IllegalArgumentException("Arguments can't both be null");
         }
         return t1 != null ? t1 : t2;
     }
 
     public static <T> T firstNonNull(T t1, T t2, T t3) {
-        if(t1 == null && t2 == null && t3 == null) {
+        if (t1 == null && t2 == null && t3 == null) {
             throw new IllegalArgumentException("Arguments can't all be null");
         }
         return t1 != null ? t1 : (t2 != null ? t2 : t3);
@@ -181,10 +185,10 @@ public class NncUtils {
 
 
     public static <T> T firstNonNull(T t1, T t2, T t3, T t4) {
-        if(t1 == null && t2 == null && t3 == null && t4 == null) {
+        if (t1 == null && t2 == null && t3 == null && t4 == null) {
             throw new IllegalArgumentException("Arguments can't all be null");
         }
-        return t1 != null ? t1 : (t2 != null ? t2 : (t3 != null ? t3 : t4 ));
+        return t1 != null ? t1 : (t2 != null ? t2 : (t3 != null ? t3 : t4));
     }
 
 
@@ -203,7 +207,7 @@ public class NncUtils {
     }
 
     public static boolean isEmptyValue(Object value) {
-        if(value instanceof String str) {
+        if (value instanceof String str) {
             return isEmpty(str);
         }
         return value == null;
@@ -243,7 +247,7 @@ public class NncUtils {
     }
 
     public static List<Integer> splitIntegers(String str) {
-        if(isEmpty(str)) {
+        if (isEmpty(str)) {
             return List.of();
         }
         String[] splits = str.split(",");
@@ -251,8 +255,7 @@ public class NncUtils {
         for (String split : splits) {
             try {
                 results.add(Integer.parseInt(split.trim()));
-            }
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 throw new InternalException("string '" + str + "' is not a valid integer list");
             }
         }
@@ -282,12 +285,12 @@ public class NncUtils {
     }
 
     @PassNonNull
-    public static boolean isNotEmpty(Map<?,?> map) {
+    public static boolean isNotEmpty(Map<?, ?> map) {
         return !isEmpty(map);
     }
 
     @PassNull
-    public static boolean isEmpty(Map<?,?> map) {
+    public static boolean isEmpty(Map<?, ?> map) {
         return map == null || map.isEmpty();
     }
 
@@ -296,7 +299,7 @@ public class NncUtils {
     }
 
     public static <T> List<T> filter(Collection<T> source, Predicate<T> filter) {
-        if(source == null) {
+        if (source == null) {
             return List.of();
         }
         return source.stream().filter(filter).collect(Collectors.toList());
@@ -311,7 +314,7 @@ public class NncUtils {
     }
 
     public static <T> Set<T> filterUnique(Collection<T> source, Predicate<T> filter) {
-        if(source == null) {
+        if (source == null) {
             return Set.of();
         }
         return source.stream().filter(filter).collect(Collectors.toSet());
@@ -322,14 +325,14 @@ public class NncUtils {
     }
 
     public static <T> List<T> filterAndLimit(Collection<T> source, Predicate<T> filter, long limit) {
-        if(source == null) {
+        if (source == null) {
             source = List.of();
         }
         return source.stream().filter(filter).limit(limit).collect(Collectors.toList());
     }
 
     public static <T> List<T> filterAndSortAndLimit(Collection<T> source, Predicate<T> filter, Comparator<T> comparator, long limit) {
-        if(source == null) {
+        if (source == null) {
             source = List.of();
         }
         return source.stream().filter(filter).sorted(comparator).limit(limit).collect(Collectors.toList());
@@ -340,10 +343,10 @@ public class NncUtils {
     }
 
     public static <T> List<T> merge(Collection<? extends T> coll1, Collection<? extends T> coll2) {
-        if(coll1 == null) {
+        if (coll1 == null) {
             coll1 = List.of();
         }
-        if(coll2 == null) {
+        if (coll2 == null) {
             coll2 = List.of();
         }
         List<T> merged = new ArrayList<>(coll1);
@@ -352,10 +355,10 @@ public class NncUtils {
     }
 
     public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2) {
-        if(coll1 == null) {
+        if (coll1 == null) {
             coll1 = Set.of();
         }
-        if(coll2 == null) {
+        if (coll2 == null) {
             coll2 = Set.of();
         }
         Set<T> merged = new HashSet<>(coll1);
@@ -390,7 +393,7 @@ public class NncUtils {
     }
 
     public static <T, R> List<R> map(Collection<T> source, Function<T, R> mapping) {
-        if(source == null) {
+        if (source == null) {
             return List.of();
         }
         return source.stream().map(mapping).collect(Collectors.toList());
@@ -400,7 +403,7 @@ public class NncUtils {
         return NncUtils.mapUnique(collection, Identifiable::getIdRequired);
     }
 
-    public static  <T, R> Map<R, Integer> mapAndCount(List<T> list, Function<T, R> keyMapper) {
+    public static <T, R> Map<R, Integer> mapAndCount(List<T> list, Function<T, R> keyMapper) {
         Map<R, Integer> countMap = new HashMap<>();
         for (T item : list) {
             R key = keyMapper.apply(item);
@@ -424,14 +427,14 @@ public class NncUtils {
     }
 
     public static <T, R> Set<R> mapUnique(Collection<T> source, Function<T, R> mapping) {
-        if(source == null) {
+        if (source == null) {
             return Set.of();
         }
         return source.stream().map(mapping).collect(Collectors.toSet());
     }
 
     public static <T, R> List<R> map(T[] source, Function<T, R> mapping) {
-        if(source == null) {
+        if (source == null) {
             return List.of();
         }
         return Arrays.stream(source).map(mapping).collect(Collectors.toList());
@@ -462,7 +465,7 @@ public class NncUtils {
     }
 
     public static <T, R> List<R> sortAndMap(Collection<T> list, Comparator<T> comparator, Function<T, R> mapper) {
-        if(list == null) {
+        if (list == null) {
             return List.of();
         }
         return list.stream()
@@ -472,7 +475,7 @@ public class NncUtils {
     }
 
     public static <T, R> List<R> mapAndSort(Collection<T> list, Function<T, R> mapper, Comparator<R> comparator) {
-        if(list == null) {
+        if (list == null) {
             return List.of();
         }
         return list.stream()
@@ -487,13 +490,11 @@ public class NncUtils {
             int m = l + h >> 1;
             V v = list.get(m);
             int c = compare.applyAsInt(v, key);
-            if(c == 0) {
+            if (c == 0) {
                 return m;
-            }
-            else if(c < 0) {
+            } else if (c < 0) {
                 l = m + 1;
-            }
-            else {
+            } else {
                 h = m;
             }
         }
@@ -504,34 +505,34 @@ public class NncUtils {
         return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
     }
 
-    public static <T,R> void biForEach(List<T> list1, List<R> list2, BiConsumer<T,R> action) {
-        if(list1.size() != list2.size()) {
+    public static <T, R> void biForEach(List<T> list1, List<R> list2, BiConsumer<T, R> action) {
+        if (list1.size() != list2.size()) {
             throw new RuntimeException("Both lists must have the same size");
         }
         Iterator<T> it1 = list1.iterator();
         Iterator<R> it2 = list2.iterator();
 
-        while(it1.hasNext() && it2.hasNext()) {
+        while (it1.hasNext() && it2.hasNext()) {
             action.accept(it1.next(), it2.next());
         }
     }
 
     public static <T1, T2, R> List<R> biMap(List<T1> list1, List<T2> list2, BiFunction<T1, T2, R> mapper) {
-        if(list1.size() != list2.size()) {
+        if (list1.size() != list2.size()) {
             throw new RuntimeException("Both lists must have the same size");
         }
         Iterator<T1> it1 = list1.iterator();
         Iterator<T2> it2 = list2.iterator();
 
         List<R> result = new ArrayList<>();
-        while(it1.hasNext() && it2.hasNext()) {
+        while (it1.hasNext() && it2.hasNext()) {
             result.add(mapper.apply(it1.next(), it2.next()));
         }
         return result;
     }
 
     public static <T, R> List<R> filterAndMap(Collection<T> source, Predicate<T> filter, Function<T, R> mapping) {
-        if(source == null) {
+        if (source == null) {
             return List.of();
         }
         return source.stream()
@@ -540,13 +541,13 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <T,R> List<R> filterByType(Collection<T> source, Class<R> type) {
+    public static <T, R> List<R> filterByType(Collection<T> source, Class<R> type) {
         return filterAndMap(source, type::isInstance, type::cast);
     }
 
     @SuppressWarnings("unused")
     public static <T, R> Set<R> filterAndMapUnique(Collection<T> source, Predicate<T> filter, Function<T, R> mapping) {
-        if(source == null) {
+        if (source == null) {
             return Set.of();
         }
         return source.stream()
@@ -573,7 +574,7 @@ public class NncUtils {
     }
 
     public static <T> List<T> deduplicateAndSort(List<T> list, Comparator<T> comparator) {
-        if(list == null) {
+        if (list == null) {
             list = List.of();
         }
         list = new ArrayList<>(new HashSet<>(list));
@@ -582,7 +583,7 @@ public class NncUtils {
     }
 
     public static <T> @Nullable T find(Collection<T> list, Predicate<T> filter) {
-        if(list == null) {
+        if (list == null) {
             return null;
         }
         return list.stream().filter(filter).findAny().orElse(null);
@@ -610,10 +611,10 @@ public class NncUtils {
     public static <T> void splitAndForEach(Collection<T> collection, Predicate<T> test, Consumer<List<T>> action1, Consumer<List<T>> action2) {
         List<T> list1 = filter(collection, test);
         List<T> list2 = filterNot(collection, test);
-        if(isNotEmpty(list1)) {
+        if (isNotEmpty(list1)) {
             action1.accept(list1);
         }
-        if(isNotEmpty(list2)) {
+        if (isNotEmpty(list2)) {
             action2.accept(list2);
         }
     }
@@ -626,7 +627,7 @@ public class NncUtils {
     public static <T> int indexOf(List<T> list, Predicate<T> predicate) {
         int i = 0;
         for (T t : list) {
-            if(predicate.test(t)) {
+            if (predicate.test(t)) {
                 return i;
             }
             i++;
@@ -644,7 +645,7 @@ public class NncUtils {
 
     public static <T> T findRequired(Collection<T> collection, Predicate<T> filter,
                                      Supplier<RuntimeException> exceptionSupplier) {
-        if(collection == null) {
+        if (collection == null) {
             throw exceptionSupplier.get();
         }
         return collection.stream().filter(filter).findAny()
@@ -657,7 +658,7 @@ public class NncUtils {
 
     @SuppressWarnings("unused")
     public static <T> void invokeIfNotEmpty(Collection<T> collection, Consumer<Collection<T>> action) {
-        if(isNotEmpty(collection)) {
+        if (isNotEmpty(collection)) {
             action.accept(collection);
         }
     }
@@ -711,7 +712,7 @@ public class NncUtils {
     }
 
     public static <K, T> Map<K, T> toMap(T[] array, Function<T, K> keyMapper) {
-        if(array == null) {
+        if (array == null) {
             return Map.of();
         }
         return toMap(Arrays.asList(array), keyMapper, Function.identity());
@@ -724,12 +725,12 @@ public class NncUtils {
     public static <K, V> List<Pair<V>> buildPairsForMap(Map<? extends K, ? extends V> map1,
                                                         Map<? extends K, ? extends V> map2) {
         List<Pair<V>> pairs = new ArrayList<>();
-        map1.forEach((k1,v1) ->
-            pairs.add(new Pair<>(v1, map2.get(k1)))
+        map1.forEach((k1, v1) ->
+                pairs.add(new Pair<>(v1, map2.get(k1)))
         );
 
-        map2.forEach((k2,v2)->{
-            if(!map1.containsKey(k2)) {
+        map2.forEach((k2, v2) -> {
+            if (!map1.containsKey(k2)) {
                 pairs.add(new Pair<>(null, v2));
             }
         });
@@ -737,7 +738,7 @@ public class NncUtils {
     }
 
     public static <K, T, R> Map<K, R> toMap(Collection<T> list, Function<T, ? extends K> keyMapper, Function<T, ? extends R> valueMapper) {
-        if(list == null) {
+        if (list == null) {
             return new HashMap<>();
         }
         Map<K, R> map = new HashMap<>();
@@ -748,7 +749,7 @@ public class NncUtils {
     }
 
     public static <K, T> IdentityHashMap<K, T> toIdentityMap(Collection<T> list, Function<T, K> keyMapping) {
-        if(list == null) {
+        if (list == null) {
             return new IdentityHashMap<>();
         }
         IdentityHashMap<K, T> map = new IdentityHashMap<>();
@@ -763,18 +764,18 @@ public class NncUtils {
     }
 
     public static <K, T, R> Map<K, List<R>> toMultiMap(Collection<T> list, Function<T, K> keyMapper, Function<T, R> valueMapper) {
-        if(list == null) {
+        if (list == null) {
             return new HashMap<>();
         }
         Map<K, List<R>> map = new HashMap<>();
         for (T item : list) {
-            map.computeIfAbsent(keyMapper.apply(item), k->new ArrayList<>()).add(valueMapper.apply(item));
+            map.computeIfAbsent(keyMapper.apply(item), k -> new ArrayList<>()).add(valueMapper.apply(item));
         }
         return map;
     }
 
     public static <T, R> List<R> mapAndFilter(Collection<T> source, Function<T, R> mapping, Predicate<R> filter) {
-        if(source == null) {
+        if (source == null) {
             return List.of();
         }
         return source.stream()
@@ -784,7 +785,7 @@ public class NncUtils {
     }
 
     public static <T, R> Set<R> mapAndFilterUnique(Collection<T> source, Function<T, R> mapping, Predicate<R> filter) {
-        if(source == null) {
+        if (source == null) {
             return Set.of();
         }
         return source.stream()
@@ -797,7 +798,7 @@ public class NncUtils {
         return buildPairs(list1, list2, EntityPO::getId);
     }
 
-    public static <T,R> Map<T,R> buildMap(List<T> list1, Collection<R> list2) {
+    public static <T, R> Map<T, R> buildMap(List<T> list1, Collection<R> list2) {
         requireTrue(list1.size() == list2.size(), "both list must have same size");
         Map<T, R> map = new LinkedHashMap<>();
         Iterator<T> it1 = list1.iterator();
@@ -824,20 +825,19 @@ public class NncUtils {
     }
 
     public static <T, K> List<Pair<T>> buildPairs(Collection<T> list1, Collection<T> list2, Function<T, K> keyMapping) {
-       Map<K, Queue<T>> firstMap = new HashMap<>();
+        Map<K, Queue<T>> firstMap = new HashMap<>();
         for (T t : list1) {
-            firstMap.computeIfAbsent(keyMapping.apply(t), (k)->new LinkedList<>())
+            firstMap.computeIfAbsent(keyMapping.apply(t), (k) -> new LinkedList<>())
                     .offer(t);
         }
         List<Pair<T>> result = new ArrayList<>();
         for (T second : list2) {
-           Queue<T> firsts = firstMap.get(keyMapping.apply(second));
-           if(isEmpty(firsts)) {
-               result.add(new Pair<>(null, second));
-           }
-           else {
-               result.add(new Pair<>(firsts.poll(), second));
-           }
+            Queue<T> firsts = firstMap.get(keyMapping.apply(second));
+            if (isEmpty(firsts)) {
+                result.add(new Pair<>(null, second));
+            } else {
+                result.add(new Pair<>(firsts.poll(), second));
+            }
         }
 
         for (Queue<T> firsts : firstMap.values()) {
@@ -854,16 +854,16 @@ public class NncUtils {
         return new ArrayList<>(new HashSet<>(list));
     }
 
-    public static <T,R> List<R> flatMap(Collection<T> list, Function<T, Collection<R>> mapping) {
+    public static <T, R> List<R> flatMap(Collection<T> list, Function<T, Collection<R>> mapping) {
         return flatMapAndFilter(list, mapping, e -> true);
     }
 
-    public static <T,R> List<R> flatMapAndFilter(Collection<T> list, Function<T, Collection<R>> mapping, Predicate<R> filter) {
-        if(NncUtils.isEmpty(list)) {
+    public static <T, R> List<R> flatMapAndFilter(Collection<T> list, Function<T, Collection<R>> mapping, Predicate<R> filter) {
+        if (NncUtils.isEmpty(list)) {
             return List.of();
         }
         return list.stream()
-                .flatMap(e ->{
+                .flatMap(e -> {
                     Collection<R> coll = mapping.apply(e);
                     return coll != null ? coll.stream() : Stream.empty();
                 })
@@ -872,7 +872,7 @@ public class NncUtils {
     }
 
     @SuppressWarnings("unused")
-    public static <T,R> List<R> flatMap(T[] array, Function<T, List<R>> mapping) {
+    public static <T, R> List<R> flatMap(T[] array, Function<T, List<R>> mapping) {
         List<R> result = new ArrayList<>();
         for (T item : array) {
             result.addAll(mapping.apply(item));
@@ -885,7 +885,7 @@ public class NncUtils {
     }
 
     public static <T> List<T> filterNot(Collection<T> list, Predicate<T> filter) {
-        if(list == null) {
+        if (list == null) {
             return List.of();
         }
         return list.stream().filter(item -> !filter.test(item)).collect(Collectors.toList());
@@ -902,30 +902,29 @@ public class NncUtils {
         return t != null ? mapping.apply(t) : defaultSupplier.get();
     }
 
-    public static <T,R> R getOrElse(@Nullable T t, Function<T, R> mapping, R defaultValue) {
+    public static <T, R> R getOrElse(@Nullable T t, Function<T, R> mapping, R defaultValue) {
         return t != null ? mapping.apply(t) : defaultValue;
     }
 
     public static void afterCommit(Runnable action) {
-        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 public void afterCommit() {
                     action.run();
                 }
             });
-        }
-        else {
+        } else {
             action.run();
         }
     }
 
     public static <T> boolean listEquals(List<T> list1, List<T> list2) {
-        if(list1.size() != list2.size()) {
+        if (list1.size() != list2.size()) {
             return false;
         }
         Iterator<T> it1 = list1.iterator(), it2 = list2.iterator();
         while (it1.hasNext() && it2.hasNext()) {
-            if(!Objects.equals(it1.next(), it2.next())) {
+            if (!Objects.equals(it1.next(), it2.next())) {
                 return false;
             }
         }
@@ -946,19 +945,19 @@ public class NncUtils {
     }
 
     public static <T> void invokeIfNotNull(@Nullable T t, Consumer<T> action) {
-        if(t != null) {
+        if (t != null) {
             action.accept(t);
         }
     }
 
     public static <T> void invokeIf(T t, Predicate<T> test, Consumer<T> action) {
-        if(test.test(t)) {
+        if (test.test(t)) {
             action.accept(t);
         }
     }
 
     public static <T> void invokeIfNot(T t, Predicate<T> test, Consumer<T> action) {
-        if(!test.test(t)) {
+        if (!test.test(t)) {
             action.accept(t);
         }
     }
@@ -983,7 +982,7 @@ public class NncUtils {
 
     @Nullable
     public static <T> T requireNull(@Nullable T value, Supplier<RuntimeException> exceptionSupplier) {
-        if(value != null) {
+        if (value != null) {
             throw exceptionSupplier.get();
         }
         return null;
@@ -1000,7 +999,7 @@ public class NncUtils {
     }
 
     public static void requireRangeInclusively(int value, int min, int max) {
-        requireTrue(value >= min && value <= max, () -> new InternalException("参数必须在区间[" + min + "," + max+"]中"));
+        requireTrue(value >= min && value <= max, () -> new InternalException("参数必须在区间[" + min + "," + max + "]中"));
     }
 
     public static <T> T requireNonNull(@Nullable T value, String message) {
@@ -1008,7 +1007,7 @@ public class NncUtils {
     }
 
     public static <T> T requireNonNull(@Nullable T value, Supplier<RuntimeException> exceptionSupplier) {
-        if(value == null) {
+        if (value == null) {
             throw exceptionSupplier.get();
         }
         return value;
@@ -1027,7 +1026,7 @@ public class NncUtils {
     }
 
     public static void requireTrue(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if(!value) {
+        if (!value) {
             throw exceptionSupplier.get();
         }
     }
@@ -1041,7 +1040,7 @@ public class NncUtils {
     }
 
     public static void requireEquals(Object first, Object second, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if(!Objects.equals(first, second)) {
+        if (!Objects.equals(first, second)) {
             throw exceptionSupplier.get();
         }
     }
@@ -1052,7 +1051,7 @@ public class NncUtils {
     }
 
     public static <T> Collection<T> requireNotEmpty(Collection<T> collection, String message) {
-        if(isEmpty(collection)) {
+        if (isEmpty(collection)) {
             throw BusinessException.invalidParams(message);
         }
         return collection;
@@ -1065,7 +1064,7 @@ public class NncUtils {
     }
 
     public static <T> List<T> requireNotEmpty(List<T> collection, String message) {
-        if(isEmpty(collection)) {
+        if (isEmpty(collection)) {
             throw BusinessException.invalidParams(message);
         }
         return collection;
@@ -1073,12 +1072,12 @@ public class NncUtils {
 
     @SuppressWarnings("unused")
     public static <E> void addIfNotNull(List<E> list, E item) {
-        if(item != null) {
+        if (item != null) {
             list.add(item);
         }
     }
 
-    public static <T> List<T> merge(List<T> list, T...elements) {
+    public static <T> List<T> merge(List<T> list, T... elements) {
         var merged = new ArrayList<>(list);
         merged.addAll(Arrays.asList(elements));
         return merged;
@@ -1093,8 +1092,7 @@ public class NncUtils {
     public static <T, R> List<R> splitAndMerge(Collection<T> source,
                                                Predicate<T> test,
                                                Function<List<T>, List<R>> loader1,
-                                               Function<List<T>, List<R>> loader2)
-    {
+                                               Function<List<T>, List<R>> loader2) {
         List<T> list1 = filter(source, test);
         List<T> list2 = filterNot(source, test);
         List<R> result1 = isNotEmpty(list1) ? loader1.apply(list1) : List.of();
@@ -1116,9 +1114,9 @@ public class NncUtils {
         return collection.stream().allMatch(predicate);
     }
 
-    public static <K,V> Map<K,V> cloneMap(Map<K,V> map, Function<V,V> valueClone) {
-        var clone = new HashMap<K,V>();
-        map.forEach((k,v) -> clone.put(k, valueClone.apply(v)));
+    public static <K, V> Map<K, V> cloneMap(Map<K, V> map, Function<V, V> valueClone) {
+        var clone = new HashMap<K, V>();
+        map.forEach((k, v) -> clone.put(k, valueClone.apply(v)));
         return clone;
     }
 
@@ -1126,12 +1124,12 @@ public class NncUtils {
         return NncUtils.allMatch(booleans, b -> b);
     }
 
-    public static <T,R> Set<R> flatMapUnique(Collection<T> list, Function<T, ? extends Collection<R>> mapper) {
-        if(NncUtils.isEmpty(list)) {
+    public static <T, R> Set<R> flatMapUnique(Collection<T> list, Function<T, ? extends Collection<R>> mapper) {
+        if (NncUtils.isEmpty(list)) {
             return Set.of();
         }
         return list.stream()
-                .flatMap(e ->{
+                .flatMap(e -> {
                     Collection<R> coll = mapper.apply(e);
                     return coll != null ? coll.stream() : Stream.empty();
                 })
