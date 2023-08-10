@@ -41,9 +41,13 @@ public class FlowRT extends Entity {
     private Long version = 1L;
 
     public FlowRT(FlowDTO flowDTO, ClassType inputType, ClassType outputType, ClassType declaringType) {
+        this(flowDTO.name(), inputType, outputType, declaringType);
+    }
+
+    public FlowRT(String name, ClassType inputType, ClassType outputType, ClassType declaringType) {
         this.inputType = inputType;
         this.outputType = outputType;
-        setName(flowDTO.name());
+        setName(name);
         this.scopes = new Table<>(ScopeRT.class);
         this.nodes = new Table<>(new TypeReference<>() {});
         type = declaringType;

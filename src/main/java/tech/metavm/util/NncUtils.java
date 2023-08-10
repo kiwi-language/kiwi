@@ -61,10 +61,16 @@ public class NncUtils {
         return copy;
     }
 
-    public static <T> Set<T> setDiff(Set<T> set1, Set<T> set2) {
+    public static <T> Set<T> diffSet(Set<T> set1, Set<T> set2) {
         Set<T> diff = new HashSet<>(set1);
         diff.removeAll(set2);
         return diff;
+    }
+
+    public static <T> Set<T> unionSet(Set<T> set1, Set<T> set2) {
+        Set<T> union = new HashSet<>(set1);
+        set1.addAll(set2);
+        return union;
     }
 
     public static void requireMinimumSize(Object[] array, int minSize) {

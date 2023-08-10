@@ -17,14 +17,19 @@
 
     <repositories>
         <repository>
+            <id>intellij-third-party</id>
+            <name>intellij-third-party</name>
+            <url>https://cache-redirector.jetbrains.com/intellij-dependencies</url>
+        </repository>
+        <repository>
+            <id>intellij-snapshots</id>
+            <name>intellij-snapshots</name>
+            <url>https://www.jetbrains.com/intellij-repository/snapshots</url>
+        </repository>
+        <repository>
             <id>intellij</id>
             <name>intellij</name>
             <url>https://www.jetbrains.com/intellij-repository/releases</url>
-        </repository>
-        <repository>
-            <id>intellij-third-party</id>
-            <name>intellij-third-party</name>
-            <url> https://cache-redirector.jetbrains.com/intellij-dependencies</url>
         </repository>
     </repositories>
 
@@ -79,7 +84,7 @@
             <url>https://repository.jsweet.org/artifactory/plugins-release-local</url>
         </pluginRepository>
         <pluginRepository>
-            <snapshots />
+            <snapshots/>
             <id>jsweet-plugins-snapshots</id>
             <name>plugins-snapshot</name>
             <url>https://repository.jsweet.org/artifactory/plugins-snapshot-local</url>
@@ -214,6 +219,18 @@
         <dependency>
             <groupId>com.jetbrains.intellij.java</groupId>
             <artifactId>java-psi-impl</artifactId>
+            <version>222.4554.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>code-style</artifactId>
+            <version>222.4554.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>code-style-impl</artifactId>
             <version>222.4554.10</version>
         </dependency>
 

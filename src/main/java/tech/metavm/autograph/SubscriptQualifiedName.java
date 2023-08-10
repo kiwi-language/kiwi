@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class SubscriptQualifiedName extends CompositeQualifiedName {
 
@@ -31,4 +32,5 @@ public class SubscriptQualifiedName extends CompositeQualifiedName {
     public int hashCode() {
         return Objects.hash(parent, index);
     }
+
 }

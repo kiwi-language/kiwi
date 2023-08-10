@@ -40,7 +40,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         enterLexicalScope(expression);
         builder.beginStatement(expression);
         builder.enterCondSection(expression);
-        processBasicElement(expression.getExpression());
+        processBasicElement(requireNonNull(expression.getExpression()));
         requireNonNull(expression.getBody()).accept(this);
         builder.exitCondSection(expression);
         builder.endStatement(expression);
@@ -52,7 +52,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
     public void visitSwitchLabeledRuleStatement(PsiSwitchLabeledRuleStatement statement) {
         var switchExpr = getEnclosingScope(PsiSwitchExpression.class);
         builder.newCondBranch(switchExpr);
-        if(statement.getCaseLabelElementList() != null) {
+        if (statement.getCaseLabelElementList() != null) {
             statement.getCaseLabelElementList().accept(this);
         }
         requireNonNull(statement.getBody()).accept(this);
@@ -228,7 +228,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
     public void visitIfStatement(PsiIfStatement statement) {
         builder.beginStatement(statement);
         builder.enterCondSection(statement);
-        processBasicElement(statement.getCondition());
+        processBasicElement(requireNonNull(statement.getCondition()));
         builder.newCondBranch(statement);
         if (statement.getThenBranch() != null) {
             statement.getThenBranch().accept(this);
@@ -284,7 +284,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitReturnStatement(PsiReturnStatement statement) {
-        if(statement.getReturnValue() != null) {
+        if (statement.getReturnValue() != null) {
             statement.getReturnValue().accept(this);
         }
         processExitStatement(statement, Set.of(PsiMethod.class), false, null);
@@ -318,9 +318,14 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         processBasicElement(statement);
     }
 
+    @Override
+    public void visitExpressionStatement(PsiExpressionStatement statement) {
+        processBasicElement(statement);
+    }
+
     private void processBasicElement(PsiElement element) {
-        builder.addOrdinaryNode(element);
         element.acceptChildren(this);
+        if (builder != null) builder.addOrdinaryNode(element);
     }
 
     public Map<PsiMethod, Graph> getGraphs() {

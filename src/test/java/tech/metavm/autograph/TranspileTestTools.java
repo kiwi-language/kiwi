@@ -3,8 +3,10 @@ package tech.metavm.autograph;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
+import tech.metavm.util.InternalException;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
@@ -29,7 +31,11 @@ public class TranspileTestTools {
     }
 
     public static PsiJavaFile getPsiJavaFile(Class<?> klass) {
-        return getPsiJavaFile(getClassFilePath(klass));
+        return getPsiJavaFile(klass, false);
+    }
+
+    public static PsiJavaFile getPsiJavaFile(Class<?> klass, boolean writable) {
+        return getPsiJavaFile(getClassFilePath(klass), writable);
     }
 
     private static String getClassFilePath(Class<?> klass) {
@@ -37,9 +43,21 @@ public class TranspileTestTools {
     }
 
     public static PsiJavaFile getPsiJavaFile(String path) {
-        var file = APP_ENV.getLocalFileSystem().findFileByPath(path);
-        assert file != null;
-        return (PsiJavaFile) PsiManager.getInstance(PROJECT).findFile(file);
+        return getPsiJavaFile(path, false);
     }
 
+    public static PsiJavaFile getPsiJavaFile(String path, boolean writable) {
+        var file = APP_ENV.getLocalFileSystem().findFileByIoFile(new File(path));
+        assert file != null;
+        try {
+            if(writable) file.setWritable(true);
+            return (PsiJavaFile) PsiManager.getInstance(PROJECT).findFile(file);
+        } catch (IOException e) {
+            throw new InternalException("Fail to set writable of file " + path, e);
+        }
+    }
+
+    public static Project getProject() {
+        return PROJECT;
+    }
 }

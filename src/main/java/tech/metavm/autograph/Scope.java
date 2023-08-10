@@ -11,6 +11,7 @@ public class Scope {
     private final Set<QualifiedName> modified = new HashSet<>();
     private final Set<QualifiedName> defined = new HashSet<>();
     private final Set<QualifiedName> read = new HashSet<>();
+    private final Set<QualifiedName> isolatedNames = new HashSet<>();
     private final Scope parent;
     private final String methodName;
 
@@ -21,6 +22,10 @@ public class Scope {
 
     void addModified(QualifiedName qualifiedName) {
         modified.add(qualifiedName);
+    }
+
+    void addIsolatedName(QualifiedName isolatedName) {
+        isolatedNames.add(isolatedName);
     }
 
     void addRead(QualifiedName qualifiedName) {
@@ -72,6 +77,16 @@ public class Scope {
         modified.addAll(from.modified);
         defined.addAll(from.defined);
         read.addAll(from.read);
+    }
+
+
+    public void complete() {
+        if(parent != null) {
+            // TODO: check correctness
+            parent.defined.addAll(defined);
+            parent.read.addAll(NncUtils.diffSet(read, isolatedNames));
+            parent.modified.addAll(NncUtils.diffSet(modified, isolatedNames));
+        }
     }
 
     @Override

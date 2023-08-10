@@ -20,7 +20,7 @@ public class FieldParam extends Entity {
     @EntityField("字段")
     private final Field field;
     @ChildEntity("值")
-    private final Value value;
+    private Value value;
 
     public FieldParam(Field field, ValueDTO valueDTO, ParsingContext parsingContext) {
         this.field = field;
@@ -33,6 +33,10 @@ public class FieldParam extends Entity {
 
     public Value getValue() {
         return value;
+    }
+
+    public void setValue(Value value) {
+        this.value = value;
     }
 
     public FieldParamDTO toDTO(boolean persisting) {

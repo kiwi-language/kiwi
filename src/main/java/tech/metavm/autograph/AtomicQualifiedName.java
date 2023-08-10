@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class AtomicQualifiedName extends QualifiedName {
     private final String name;
@@ -28,5 +29,20 @@ public class AtomicQualifiedName extends QualifiedName {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    @Override
+    public boolean isSimple() {
+        return true;
+    }
+
+    @Override
+    public boolean isComposite() {
+        return false;
+    }
+
+    @Override
+    public Set<QualifiedName> supportSet() {
+        return Set.of();
     }
 }

@@ -80,7 +80,7 @@ public class FlowManagerTest extends TestCase {
         Field userNameField = MockRegistry.getField(UserRT.class, "name");
 
         NodeDTO updateNode = new NodeDTO(
-                null, flowId, "UpdateUser", NodeKind.UPDATE_Object.code(),
+                null, flowId, "UpdateUser", NodeKind.UPDATE_OBJECT.code(),
                 selfNodeId, null,
                 new UpdateObjectParamDTO(
                     ValueDTO.refValue("当前记录"),
@@ -119,7 +119,7 @@ public class FlowManagerTest extends TestCase {
 
         NodeDTO selfNode = flowDTO.rootScope().nodes().get(1);
         NodeDTO updateNode = new NodeDTO(
-                null, flowId, "UpdateState", NodeKind.UPDATE_Object.code(),
+                null, flowId, "UpdateState", NodeKind.UPDATE_OBJECT.code(),
                 selfNode.id(), null,
                 new UpdateObjectParamDTO(
                         ValueDTO.refValue("当前记录"),

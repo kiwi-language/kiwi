@@ -1,12 +1,8 @@
 package tech.metavm.autograph;
 
-import com.fasterxml.jackson.core.sym.NameN;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class MethodQualifiedName extends QualifiedName {
 
@@ -47,5 +43,23 @@ public class MethodQualifiedName extends QualifiedName {
 
     public List<QualifiedName> getParameterNames() {
         return Collections.unmodifiableList(parameterNames);
+    }
+
+    @Override
+    public boolean isSimple() {
+        return false;
+    }
+
+    @Override
+    public boolean isComposite() {
+        return true;
+    }
+
+    @Override
+    public Set<QualifiedName> supportSet() {
+        Set<QualifiedName> set = new HashSet<>();
+        set.add(className);
+        set.addAll(parameterNames);
+        return set;
     }
 }

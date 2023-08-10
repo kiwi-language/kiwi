@@ -50,6 +50,10 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
         );
     }
 
+    public void setField(long fieldId, Value value) {
+        fields.get(FieldParam::getId, fieldId).setValue(value);
+    }
+
     @Override
     protected void setParam(AddObjectParamDTO param, IEntityContext entityContext) {
 //        setOutputType(context.getType(param.typeId()));

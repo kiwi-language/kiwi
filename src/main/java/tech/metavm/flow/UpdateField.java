@@ -16,9 +16,9 @@ public class UpdateField extends Entity {
     @EntityField("字段")
     private final Field field;
     @EntityField("操作")
-    private final UpdateOp op;
+    private UpdateOp op;
     @ChildEntity("值")
-    private final Value value;
+    private Value value;
 
     public UpdateField(ClassType declaringType, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext) {
         this(
@@ -73,6 +73,14 @@ public class UpdateField extends Entity {
         }
 
         instance.set(field, updateValue);
+    }
+
+    public void setValue(Value value) {
+        this.value = value;
+    }
+
+    public void setOp(UpdateOp op) {
+        this.op = op;
     }
 
     public UpdateFieldDTO toDTO(boolean persisting) {

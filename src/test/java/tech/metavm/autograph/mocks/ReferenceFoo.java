@@ -1,7 +1,5 @@
 package tech.metavm.autograph.mocks;
 
-import java.sql.Ref;
-
 public class ReferenceFoo {
 
     private String[] args;

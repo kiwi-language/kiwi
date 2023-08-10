@@ -4,14 +4,12 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiElement;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.autograph.mocks.ScopeFoo;
 
 public class ActivityAnalyzerTest extends TestCase {
 
-    public static final String SOURCE
-            = "/Users/leen/workspace/object/src/test/java/tech/metavm/autograph/mocks/ScopeFoo.java";
-
     public void test() {
-        var psiFile = TranspileTestTools.getPsiJavaFile(SOURCE);
+        var psiFile = TranspileTestTools.getPsiJavaFile(ScopeFoo.class);
         var qnResolver = new QnResolver();
         psiFile.accept(qnResolver);
         var analyzer = new ActivityAnalyzer();
@@ -24,13 +22,14 @@ public class ActivityAnalyzerTest extends TestCase {
         @Override
         public void visitElement(@NotNull PsiElement element) {
             Scope scope;
-            if((scope = element.getUserData(Keys.STATIC_SCOPE)) != null) {
+            if((scope = element.getUserData(Keys.SCOPE)) != null) {
                 System.out.println(element);
                 System.out.println(scope);
                 System.out.println();
             }
             super.visitElement(element);
         }
+
     }
 
 }

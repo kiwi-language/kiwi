@@ -4,6 +4,9 @@ import com.intellij.core.CoreApplicationEnvironment;
 import com.intellij.core.JavaCoreProjectEnvironment;
 import com.intellij.lang.jvm.facade.JvmElementProvider;
 import com.intellij.openapi.Disposable;
+import com.intellij.pom.PomModel;
+import com.intellij.pom.core.impl.PomModelImpl;
+import com.intellij.pom.tree.TreeAspect;
 import com.intellij.psi.PsiElementFinder;
 import com.intellij.psi.impl.PsiElementFinderImpl;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +18,8 @@ public class IrCoreProjectEnvironment extends JavaCoreProjectEnvironment {
         super(parentDisposable, applicationEnvironment);
         //noinspection UnstableApiUsage
         var projectExtArea = getProject().getExtensionArea();
+        getProject().registerService(TreeAspect.class, TreeAspect.class);
+        getProject().registerService(PomModel.class, PomModelImpl.class);
         registerExtensionPoint(projectExtArea, "com.intellij.java.elementFinder", PsiElementFinder.class);
         registerExtensionPoint(projectExtArea, JvmElementProvider.EP_NAME, JvmElementProvider.class);
         //noinspection UnstableApiUsage

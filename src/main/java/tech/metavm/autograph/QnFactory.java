@@ -12,20 +12,20 @@ import static tech.metavm.autograph.AccessMode.*;
 public class QnFactory {
 
     public static QnAndMode getQnAndMode(PsiElement element) {
-        getQn(element);
         return element.getUserData(Keys.QN_AND_MODE);
     }
 
     public static boolean hasQn(PsiElement element) {
-        return getQn(element) != null;
+        return getOrCreateQn(element) != null;
     }
 
-    public static QualifiedName getQn(PsiElement element) {
+    public static QualifiedName getOrCreateQn(PsiElement element) {
         var qnAndMode = element.getUserData(Keys.QN_AND_MODE);
         if (qnAndMode != null) return qnAndMode.qualifiedName();
         var qn = switch (element) {
-            case PsiReferenceExpression reference -> getReferenceQn(reference);
+            case PsiJavaCodeReferenceElement ref -> getReferenceQn(ref);
             case PsiArrayAccessExpression arrayAccess -> getArrayAccessQn(arrayAccess);
+            case PsiThisExpression thisExpr -> getThisExprQn(thisExpr);
             case PsiLocalVariable localVariable -> getLocalVariableQn(localVariable);
             case PsiParameter parameter -> getParameterQn(parameter);
             case PsiField field -> getFieldQn(field, null);
@@ -37,24 +37,37 @@ public class QnFactory {
         return qn;
     }
 
-    private static QualifiedName getArrayAccessQn(PsiArrayAccessExpression arrayAccess) {
-        var arrayQn = getQn(arrayAccess);
-        if (arrayQn != null && arrayAccess.getIndexExpression() instanceof PsiLiteral idxLiteral) {
-            return new AttributeQualifiedName(arrayQn, requireNonNull(idxLiteral.getValue()).toString());
-        } else return null;
+    private static QualifiedName getThisExprQn(PsiThisExpression ignored) {
+        return new AtomicQualifiedName("this");
     }
 
-    public static QualifiedName getReferenceQn(PsiReferenceExpression reference) {
-        var target = requireNonNull(reference.resolve());
+    private static QualifiedName getReferenceQn(PsiJavaCodeReferenceElement reference) {
+        var target = reference.resolve();
         return switch (target) {
+            case null -> null;
             case PsiField field -> getFieldQn(field, reference.getQualifier());
             case PsiLocalVariable localVariable -> getLocalVariableQn(localVariable);
             case PsiParameter parameter -> getParameterQn(parameter);
             case PsiMethod method -> getMethodQn(method);
             case PsiClass klass -> getClassQn(klass);
+            case PsiPackage pkg -> getPackageQn(pkg);
             default -> throw new IllegalStateException("Unexpected value: " + target);
         };
     }
+
+    private static QualifiedName getPackageQn(PsiPackage pkg) {
+        return pkg.getParentPackage() == null || pkg.getParentPackage().getName() == null ?
+                new AtomicQualifiedName(pkg.getName()) :
+                new AttributeQualifiedName(getPackageQn(pkg.getParentPackage()), pkg.getName());
+    }
+
+    private static QualifiedName getArrayAccessQn(PsiArrayAccessExpression arrayAccess) {
+        var arrayQn = getOrCreateQn(arrayAccess);
+        if (arrayQn != null && arrayAccess.getIndexExpression() instanceof PsiLiteral idxLiteral) {
+            return new AttributeQualifiedName(arrayQn, requireNonNull(idxLiteral.getValue()).toString());
+        } else return null;
+    }
+
 
     public static AccessMode getAccessMode(PsiElement element) {
         if(element instanceof PsiLocalVariable localVariable) {
@@ -101,7 +114,7 @@ public class QnFactory {
                         new AttributeQualifiedName(getClassQn(requireNonNull(field.getContainingClass())),
                                 "this"), field.getName());
             } else {
-                var qualifierQn = getQn(qualifier);
+                var qualifierQn = getOrCreateQn(qualifier);
                 if (qualifierQn != null) return new AttributeQualifiedName(qualifierQn, field.getName());
                 else return null;
             }

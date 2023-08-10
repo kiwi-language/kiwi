@@ -31,4 +31,9 @@ public class CfgNode {
     public PsiElement getElement() {
         return element;
     }
+
+    @Override
+    public String toString() {
+        return element.toString();
+    }
 }

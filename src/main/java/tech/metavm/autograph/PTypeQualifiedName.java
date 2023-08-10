@@ -2,10 +2,7 @@ package tech.metavm.autograph;
 
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class PTypeQualifiedName extends QualifiedName {
 
@@ -40,5 +37,23 @@ public class PTypeQualifiedName extends QualifiedName {
     @Override
     public String toString() {
         return rawTypeName + "<" + NncUtils.join(typeArgumentNames, Objects::toString) + ">";
+    }
+
+    @Override
+    public boolean isSimple() {
+        return false;
+    }
+
+    @Override
+    public boolean isComposite() {
+        return true;
+    }
+
+    @Override
+    public Set<QualifiedName> supportSet() {
+        Set<QualifiedName> set = new HashSet<>();
+        set.add(rawTypeName);
+        set.addAll(typeArgumentNames);
+        return set;
     }
 }

@@ -432,9 +432,10 @@ public class ReflectUtils {
         return null;
     }
 
-    public static Object newInstance(Class<?> klass) {
+    public static <T> T newInstance(Class<T> klass) {
         try {
-            return UNSAFE.allocateInstance(klass);
+            //noinspection unchecked
+            return (T) UNSAFE.allocateInstance(klass);
         } catch (InstantiationException e) {
             throw new RuntimeException("Fail to create instance of " + klass.getName(), e);
         }

@@ -5,14 +5,46 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class TreeAnnotator extends JavaRecursiveElementVisitor {
+public class ReachingDefAnalyzer extends JavaRecursiveElementVisitor {
 
     private Analyzer currentAnalyzer;
     private CfgNode currentCfgNode;
     private final Map<PsiMethod, Graph> graphs;
 
-    public TreeAnnotator(Map<PsiMethod, Graph> graphs) {
+    public ReachingDefAnalyzer(Map<PsiMethod, Graph> graphs) {
         this.graphs = new HashMap<>(graphs);
+    }
+
+    @Override
+    public void visitElement(@NotNull PsiElement element) {
+        CfgNode parent = currentCfgNode;
+        CfgNode cfgNode;
+        if (currentAnalyzer != null && (cfgNode = currentAnalyzer.getGraph().nodeIndex().get(element)) != null) {
+            currentCfgNode = cfgNode;
+        }
+        super.visitElement(element);
+        currentCfgNode = parent;
+    }
+
+    private void processNameElement(PsiElement element) {
+        var qnAndMode = QnFactory.getQnAndMode(element);
+        if (qnAndMode != null) processName(element, qnAndMode);
+        super.visitElement(element);
+    }
+
+    @Override
+    public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
+        processNameElement(reference);
+    }
+
+    @Override
+    public void visitArrayAccessExpression(PsiArrayAccessExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitVariable(PsiVariable variable) {
+        processNameElement(variable);
     }
 
     @Override
@@ -30,11 +62,13 @@ public class TreeAnnotator extends JavaRecursiveElementVisitor {
     private void processName(PsiElement element, QnAndMode qnAndMode) {
         if (currentAnalyzer == null) return;
         if (currentCfgNode == null) return;
+        var qn = qnAndMode.qualifiedName();
+        if(qn instanceof CompositeQualifiedName) return;
         Definition def;
         if (qnAndMode.isRead()) {
-            def = currentAnalyzer.getIn(currentCfgNode).getDef(qnAndMode.qualifiedName());
+            def = currentAnalyzer.getIn(currentCfgNode).getDef(qn);
         } else if (qnAndMode.isWrite()) {
-            def = currentAnalyzer.getOut(currentCfgNode).getDef(qnAndMode.qualifiedName());
+            def = currentAnalyzer.getOut(currentCfgNode).getDef(qn);
         } else def = null;
         if (def != null) element.putUserData(Keys.DEFINITIONS, List.of(def));
     }
@@ -48,19 +82,6 @@ public class TreeAnnotator extends JavaRecursiveElementVisitor {
             definedIn.addAll(defOut.value.keySet());
         }
         element.putUserData(Keys.DEFINED_VARS_IN, definedIn);
-    }
-
-    @Override
-    public void visitElement(@NotNull PsiElement element) {
-        CfgNode parent = currentCfgNode;
-        CfgNode cfgNode;
-        if (currentAnalyzer != null && (cfgNode = currentAnalyzer.getGraph().nodeIndex().get(element)) != null) {
-            currentCfgNode = cfgNode;
-        }
-        var qnAndName = QnFactory.getQnAndMode(element);
-        if (qnAndName != null) processName(element, qnAndName);
-        super.visitElement(element);
-        currentCfgNode = parent;
     }
 
     @Override
@@ -155,20 +176,22 @@ public class TreeAnnotator extends JavaRecursiveElementVisitor {
                 defIn = defIn.merge(getOut(prev));
             }
             NodeState defOut;
-            Scope scope = node.getElement().getUserData(Keys.NODE_SCOPE);
+            Scope scope = node.getElement().getUserData(Keys.SCOPE);
             if (scope != null) {
                 if (!genMap.containsKey(node)) {
                     var symbols = new HashMap<QualifiedName, Definition>();
                     var newlyDefined = new HashSet<>(scope.getDefined());
-                    newlyDefined.removeAll(scope.getModified());
+                    newlyDefined.addAll(scope.getModified());
                     for (QualifiedName name : newlyDefined) {
                         symbols.put(name, new Definition(node.getElement(), name));
                     }
                     genMap.put(node, new NodeState(symbols));
                 }
-                defOut = NodeState.createFrom(genMap.get(node)).subtract(scope.getModified());
+                defOut = NodeState.createFrom(genMap.get(node)).merge(defIn.subtract(scope.getModified()));
             } else {
-                assert canIgnore(node);
+                if(!canIgnore(node)) {
+                    throw new RuntimeException("Missing scope from " + node.getElement());
+                }
                 defOut = defIn;
             }
             setIn(node, defIn);

@@ -2,8 +2,8 @@ package tech.metavm.autograph;
 
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.KeyValue;
+import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,58 +15,109 @@ import static tech.metavm.util.NncUtils.invokeIfNotNull;
 public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     private Scope scope;
+    private final StateStack stateStack = new StateStack();
+
+    private void processNameElement(PsiElement element) {
+        QnAndMode qnAndMode;
+        if ((qnAndMode = QnFactory.getQnAndMode(element)) != null) trackSymbol(qnAndMode);
+        super.visitElement(element);
+    }
+
+    private boolean inConstructor() {
+        if(stateStack.has(MethodState.class)) {
+            MethodState state = stateStack.get(MethodState.class);
+            return state.getMethod().isConstructor();
+        }
+        else return false;
+    }
 
     @Override
-    public void visitElement(@NotNull PsiElement element) {
-        QnAndMode qnAndMode;
-        if ((qnAndMode = element.getUserData(QN_AND_MODE)) != null) trackSymbol(qnAndMode);
-        super.visitElement(element);
+    public void visitReferenceExpression(PsiReferenceExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitArrayAccessExpression(PsiArrayAccessExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitThisExpression(PsiThisExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitVariable(PsiVariable variable) {
+        processNameElement(variable);
     }
 
     @Override
     public void visitMethod(PsiMethod method) {
-        enterScope();
-        for (PsiAnnotation annotation : method.getAnnotations()) annotation.accept(this);
-        var methodQn = QnFactory.getMethodQn(method);
-        if (method.getReturnTypeElement() != null) {
-            method.getReturnTypeElement().accept(this);
+        try(MethodState state = stateStack.create(MethodState.class)) {
+            state.setMethod(method);
+            enterScope();
+            for (PsiAnnotation annotation : method.getAnnotations()) annotation.accept(this);
+            var methodQn = QnFactory.getMethodQn(method);
+            if (method.getReturnTypeElement() != null) {
+                method.getReturnTypeElement().accept(this);
+            }
+            for (PsiParameter parameter : method.getParameterList().getParameters()) {
+                requireNonNull(parameter.getTypeElement()).accept(this);
+            }
+            scope.addDefined(methodQn);
+            scope.addModified(methodQn);
+            exitAndRecordScope(method);
+
+            enterScope(method.getName());
+
+            enterScope(method.getName());
+            visitArgumentDeclarations(method);
+            exitAndRecordScope(method.getParameterList());
+
+            enterScope(method.getName());
+            if (method.getBody() != null) method.getBody().accept(this);
+            exitAndRecordScope(method, BODY_SCOPE);
+
+            exitAndRecordScope(method, ARGS_BODY_SCOPE);
         }
-        for (PsiParameter parameter : method.getParameterList().getParameters()) {
-            requireNonNull(parameter.getTypeElement()).accept(this);
+    }
+
+    @Override
+    public void visitLambdaExpression(PsiLambdaExpression expression) {
+        for (PsiParameter param : expression.getParameterList().getParameters()) {
+
         }
-        scope.addDefined(methodQn);
-        scope.addModified(methodQn);
-        exitAndRecordScope(method);
+    }
 
-        enterScope(method.getName());
-
-        enterScope(method.getName());
-        visitArgumentDeclarations(method);
-        exitAndRecordScope(method.getParameterList());
-
-        enterScope(method.getName());
-        if (method.getBody() != null) method.getBody().accept(this);
-        exitAndRecordScope(method, BODY_SCOPE);
-
-        exitAndRecordScope(method, ARGS_BODY_SCOPE);
+    private void defineSelfParameter() {
+        trackSymbol(new QnAndMode(new AtomicQualifiedName("this"), AccessMode.DEFINE_WRITE));
     }
 
     @Override
     public void visitClass(PsiClass aClass) {
-        enterScope(aClass.getName());
-        for (PsiAnnotation annotation : aClass.getAnnotations()) {
-            annotation.accept(this);
-        }
-        scope.addDefined(QnFactory.getClassQn(aClass));
-        scope.addModified(QnFactory.getClassQn(aClass));
-        exitAndRecordScope(aClass);
+        try (ClassState clsState = stateStack.create(ClassState.class)){
+            clsState.setNode(aClass);
+            enterScope(aClass.getName());
+            for (PsiAnnotation annotation : aClass.getAnnotations()) {
+                annotation.accept(this);
+            }
+            scope.addDefined(QnFactory.getClassQn(aClass));
+            scope.addModified(QnFactory.getClassQn(aClass));
+            exitAndRecordScope(aClass);
 
-        enterScope(aClass.getName());
-        super.visitClass(aClass);
-        exitScope();
+            enterScope(aClass.getName());
+            super.visitClass(aClass);
+            exitScope();
+        }
     }
 
     private void visitArgumentDeclarations(PsiMethod method) {
+        if(!method.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
+            PsiParameter firstParam = method.getParameterList().getParameter(0);
+            if(firstParam == null || !firstParam.getName().equals("this")) {
+                defineSelfParameter();
+            }
+        }
         method.getParameterList().accept(this);
     }
 
@@ -105,6 +156,19 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     @Override
+    public void visitCallExpression(PsiCallExpression callExpression) {
+        enterScope();
+        requireNonNull(callExpression.getArgumentList()).accept(this);
+        exitAndRecordScope(callExpression, ARGS_SCOPE);
+        super.visitCallExpression(callExpression);
+    }
+
+    @Override
+    public void visitAssertStatement(PsiAssertStatement statement) {
+        processStatement(statement);
+    }
+
+    @Override
     public void visitForeachStatement(PsiForeachStatement statement) {
         enterScope();
         statement.getIterationParameter().accept(this);
@@ -120,6 +184,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
         var beforeParent = Scope.copyOf(scope);
         List<Scope> afterChildren = new ArrayList<>();
         for (var child : children) {
+            if(child == null) continue;
             scope.copyFrom(beforeParent);
             processBlockElement(parent, child.value(), child.key());
             afterChildren.add(scope.copy());
@@ -136,7 +201,6 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     private void processStatement(PsiElement statement) {
-        if (QnFactory.getQn(statement) != null) return;
         enterScope();
         statement.acceptChildren(this);
         exitAndRecordScope(statement);
@@ -152,12 +216,13 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     private Scope exitScope() {
         Scope curScope = scope;
+        scope.complete();
         scope = scope.getParent();
         return curScope;
     }
 
     private Scope exitAndRecordScope(PsiElement statement) {
-        return exitAndRecordScope(statement, STATIC_SCOPE);
+        return exitAndRecordScope(statement, SCOPE);
     }
 
     private Scope exitAndRecordScope(PsiElement statement, Key<Scope> scopeKey) {
@@ -167,23 +232,8 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     @Override
-    public void visitLocalVariable(PsiLocalVariable variable) {
-        processStatement(variable);
-    }
-
-    @Override
-    public void visitExpression(PsiExpression expression) {
-        processStatement(expression);
-    }
-
-    @Override
-    public void visitParameter(PsiParameter parameter) {
-        processStatement(parameter);
-    }
-
-    @Override
-    public void visitParameterList(PsiParameterList list) {
-        processStatement(list);
+    public void visitExpressionStatement(PsiExpressionStatement statement) {
+        processStatement(statement);
     }
 
     @Override
@@ -202,7 +252,11 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     @Override
-    public void visitImportStatement(PsiImportStatement statement) {
+    public void visitDeclarationStatement(PsiDeclarationStatement statement) {
+        for (PsiElement declaredElement : statement.getDeclaredElements()) {
+            var qnAndMode = NncUtils.requireNonNull(declaredElement.getUserData(QN_AND_MODE));
+            scope.addIsolatedName(qnAndMode.qualifiedName());
+        }
         processStatement(statement);
     }
 

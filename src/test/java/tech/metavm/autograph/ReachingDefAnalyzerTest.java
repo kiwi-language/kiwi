@@ -6,9 +6,11 @@ import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.autograph.mocks.ReachingDefFoo;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class TreeAnnotatorTest extends TestCase {
+public class ReachingDefAnalyzerTest extends TestCase {
 
     public void test() {
         var psiFile = TranspileTestTools.getPsiJavaFile(ReachingDefFoo.class);
@@ -16,14 +18,18 @@ public class TreeAnnotatorTest extends TestCase {
         psiFile.accept(astToCfg);
         psiFile.accept(new QnResolver());
         psiFile.accept(new ActivityAnalyzer());
-        psiFile.accept(new TreeAnnotator(astToCfg.getGraphs()));
+        psiFile.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
         psiFile.accept(new DefPrinter());
     }
 
     private static class DefPrinter extends JavaRecursiveElementVisitor {
 
+        private final Set<PsiElement> visited = new HashSet<>();
+
         @Override
         public void visitElement(@NotNull PsiElement element) {
+            if(visited.contains(element)) return;
+            visited.add(element);
             var defs = element.getUserData(Keys.DEFINITIONS);
             if (defs != null) printDefs(element, defs);
             super.visitElement(element);

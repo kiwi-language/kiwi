@@ -31,4 +31,6 @@ public class AttributeQualifiedName extends CompositeQualifiedName {
     public int hashCode() {
         return Objects.hash(parent, attributeName);
     }
+
 }
+

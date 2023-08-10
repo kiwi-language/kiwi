@@ -8,7 +8,7 @@ public enum NodeKind {
     INPUT(1, InputNode.class),
 //    GET_OBJECT(2, GetObjectNode.class),
     ADD_OBJECT(3, AddObjectNode.class),
-    UPDATE_Object(4, UpdateObjectNode.class),
+    UPDATE_OBJECT(4, UpdateObjectNode.class),
     DELETE_OBJECT(5, DeleteObjectNode.class),
     GET_RELATED(6, GetRelatedNode.class),
     BRANCH(7, BranchNode.class),

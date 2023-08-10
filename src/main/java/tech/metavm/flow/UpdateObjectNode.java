@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.NodeDTO;
@@ -50,6 +51,12 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
                     fieldParamDTO -> new UpdateField((ClassType) objectId.getType(), fieldParamDTO, parsingContext)
                 )
         );
+    }
+
+    void setField(long fieldId, UpdateOpAndValue opAndValue) {
+        var field = fieldParams.get(Entity::getId, fieldId);
+        field.setOp(opAndValue.op());
+        field.setValue(opAndValue.value());
     }
 
     @Override

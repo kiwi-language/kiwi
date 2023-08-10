@@ -1,15 +1,32 @@
 package tech.metavm.autograph;
 
-import com.intellij.psi.JavaRecursiveElementVisitor;
-import com.intellij.psi.PsiElement;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.psi.*;
 
 public class QnResolver extends JavaRecursiveElementVisitor {
 
-    @Override
-    public void visitElement(@NotNull PsiElement element) {
-        QnFactory.getQn(element);
+    private void processNameElement(PsiElement element) {
+        QnFactory.getOrCreateQn(element);
         super.visitElement(element);
+    }
+
+    @Override
+    public void visitReferenceExpression(PsiReferenceExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitThisExpression(PsiThisExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitArrayAccessExpression(PsiArrayAccessExpression expression) {
+        processNameElement(expression);
+    }
+
+    @Override
+    public void visitVariable(PsiVariable variable) {
+        processNameElement(variable);
     }
 
 }
