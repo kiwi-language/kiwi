@@ -1,12 +1,15 @@
 package tech.metavm.autograph;
 
+import com.intellij.psi.PsiType;
+
 import java.util.Objects;
 import java.util.Set;
 
 public class AtomicQualifiedName extends QualifiedName {
     private final String name;
 
-    public AtomicQualifiedName(String name) {
+    public AtomicQualifiedName(String name, PsiType type) {
+        super(type);
         this.name = name;
     }
 
@@ -45,4 +48,5 @@ public class AtomicQualifiedName extends QualifiedName {
     public Set<QualifiedName> supportSet() {
         return Set.of();
     }
+
 }

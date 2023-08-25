@@ -4,6 +4,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.SubFlowParam;
@@ -50,6 +51,13 @@ public class SubFlowNode extends NodeRT<SubFlowParam> {
                        FlowRT subFlow) {
         super(nodeDTO, subFlow.getOutputType(), scope);
         this.selfId = selfId;
+        this.arguments.addAll(arguments);
+        this.subFlow = subFlow;
+    }
+
+    public SubFlowNode(String name, NodeRT<?> prev, ScopeRT scope, Expression self, List<FieldParam> arguments, FlowRT subFlow) {
+        super(name, NodeKind.SUB_FLOW, subFlow.getOutputType(), prev, scope);
+        this.selfId = new ExpressionValue(self);
         this.arguments.addAll(arguments);
         this.subFlow = subFlow;
     }

@@ -1,13 +1,15 @@
 package tech.metavm.autograph;
 
+import com.intellij.psi.PsiType;
+
 import java.util.Objects;
 
 public class AttributeQualifiedName extends CompositeQualifiedName {
 
     private final String attributeName;
 
-    public AttributeQualifiedName(QualifiedName parent, String attributeName) {
-        super(parent);
+    public AttributeQualifiedName(QualifiedName parent, String attributeName, PsiType type) {
+        super(parent, type);
         this.attributeName = attributeName;
     }
 

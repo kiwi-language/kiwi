@@ -1,20 +1,18 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,6 +31,8 @@ public class FlowRT extends Entity {
     private final ClassType inputType;
     @ChildEntity("输出类型")
     private final ClassType outputType;
+    @ChildEntity("编号")
+    private String code;
 
     private transient Table<ScopeRT> scopes;
     private transient Table<NodeRT<?>> nodes;
@@ -116,6 +116,10 @@ public class FlowRT extends Entity {
         );
     }
 
+    public List<Type> getInputTypes() {
+        return NncUtils.map(inputType.getFields(), Field::getType);
+    }
+
     public void update(FlowDTO flowDTO) {
         setName(flowDTO.name());
     }
@@ -144,6 +148,14 @@ public class FlowRT extends Entity {
             scopes = new Table<>(ScopeRT.class);
         }
         return scopes;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public NodeRT<?> getNode(long id) {

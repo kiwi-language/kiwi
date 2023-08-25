@@ -1,9 +1,9 @@
 package tech.metavm.flow.rest;
 
 public record FlowSummaryDTO(
-    long id,
+    Long id,
     String name,
-    long typeId,
+    Long typeId,
     Long inputTypeId,
     Long outputTypeId,
     boolean inputRequired

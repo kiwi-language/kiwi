@@ -3,7 +3,7 @@ package tech.metavm.flow.rest;
 public record OutputFieldDTO(
         Long id,
         String name,
-        long typeId,
+        Long typeId,
         ValueDTO value
 ) {
 

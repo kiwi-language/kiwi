@@ -56,8 +56,8 @@ public class FlowBuilder {
 
     private NodeDTO createNodeDTO(String name, NodeKind kind) {
         return new NodeDTO(
-                null, 0, name, kind.code(), null,
-                null, null, null, 0
+                null, null, name, kind.code(), null,
+                null, null, null, null
         );
     }
 

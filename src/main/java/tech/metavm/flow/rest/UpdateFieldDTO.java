@@ -1,7 +1,7 @@
 package tech.metavm.flow.rest;
 
 public record UpdateFieldDTO(
-        long fieldId,
+        Long fieldId,
         int opCode,
         ValueDTO value
 ) {

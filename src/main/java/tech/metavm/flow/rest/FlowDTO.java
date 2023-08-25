@@ -11,8 +11,8 @@ public record FlowDTO (
         Long typeId,
         ScopeDTO rootScope,
         TypeDTO type,
-        long inputTypeId,
-        long outputTypeId
+        Long inputTypeId,
+        Long outputTypeId
 ) {
 
     public static FlowDTO create(String name, long typeId) {

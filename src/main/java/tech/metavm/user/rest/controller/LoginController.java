@@ -1,5 +1,8 @@
 package tech.metavm.user.rest.controller;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
@@ -9,9 +12,6 @@ import tech.metavm.user.LoginService;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.user.rest.dto.LoginResponse;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/login")

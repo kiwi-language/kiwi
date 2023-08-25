@@ -1,9 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.SQLType;
@@ -172,7 +169,7 @@ public abstract class Type extends Entity {
     }
 
     public ArrayType getArrayType() {
-        if(arrayType == null) {
+        if (arrayType == null) {
             arrayType = new ArrayType(this);
         }
         return arrayType;
@@ -188,8 +185,8 @@ public abstract class Type extends Entity {
     }
 
     public Type getUnderlyingType() {
-        if(this instanceof UnionType unionType) {
-            if(isNullable()) {
+        if (this instanceof UnionType unionType) {
+            if (isNullable()) {
                 return NncUtils.findRequired(unionType.getTypeMembers(), t -> !t.equals(NULL_TYPE));
             }
         }
@@ -208,9 +205,10 @@ public abstract class Type extends Entity {
         return List.of();
     }
 
-    protected TypeDTO toDTO(Object param) {
+    protected TypeDTO toDTO(Object param, long tmpId) {
         return new TypeDTO(
-                getIdRequired(),
+                getId(),
+                tmpId,
                 name,
                 code,
                 category.code(),
@@ -223,15 +221,33 @@ public abstract class Type extends Entity {
     }
 
     public TypeDTO toDTO() {
-        return toDTO(getParam());
+        try (var context = SerializeContext.enter()) {
+            if (context.isVisited(this)) {
+                return new TypeDTO(
+                        getId(),
+                        context.getTmpId(this),
+                        getName(),
+                        getCode(),
+                        getCategory().code(),
+                        isEphemeral(),
+                        isAnonymous(),
+                        NncUtils.get(nullableType, Entity::getIdRequired),
+                        NncUtils.get(arrayType, Entity::getIdRequired),
+                        null
+                );
+            } else {
+                long tmpId = context.visit(this);
+                return toDTO(getParam(), tmpId);
+            }
+        }
     }
 
     protected void extractCompositeTypesRecursively(Set<Type> result) {
-        if(nullableType != null) {
+        if (nullableType != null) {
             result.add(nullableType);
             nullableType.extractCompositeTypesRecursively(result);
         }
-        if(arrayType != null) {
+        if (arrayType != null) {
             result.add(arrayType);
             arrayType.extractCompositeTypesRecursively(result);
         }

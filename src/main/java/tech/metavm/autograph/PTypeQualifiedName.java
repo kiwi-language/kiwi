@@ -10,6 +10,7 @@ public class PTypeQualifiedName extends QualifiedName {
     private final List<QualifiedName> typeArgumentNames;
 
     public PTypeQualifiedName(QualifiedName rawTypeName, List<QualifiedName> typeArgumentNames) {
+        super(null);
         this.rawTypeName = rawTypeName;
         this.typeArgumentNames = new ArrayList<>(typeArgumentNames);
     }
@@ -56,4 +57,5 @@ public class PTypeQualifiedName extends QualifiedName {
         set.addAll(typeArgumentNames);
         return set;
     }
+
 }

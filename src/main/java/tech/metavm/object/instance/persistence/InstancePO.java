@@ -26,6 +26,9 @@ public class InstancePO implements Identifiable {
     private Long version;
     private Long syncVersion;
 
+    public InstancePO() {
+    }
+
     public InstancePO(Long tenantId,
                       Long id,
                       Long typeId,

@@ -58,6 +58,10 @@ public enum Operator {
     LEFT_BRACKET(25, "[", 1000, PREFIX, null),
     RIGHT_BRACKET(26, "]", 1000, PREFIX, null),
 
+    // POSTFIX
+    PLUS_PLUS(31, "++", 1, POSTFIX, null),
+    MINUS_MINUS(32, "--", 1, POSTFIX, null);
+
     ;
 
 

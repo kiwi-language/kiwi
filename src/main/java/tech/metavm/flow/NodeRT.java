@@ -1,10 +1,7 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.expression.FlowParsingContext;

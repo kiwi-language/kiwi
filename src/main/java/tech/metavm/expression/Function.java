@@ -29,7 +29,7 @@ public enum Function {
 
     NOW(Date.class),
 
-    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
+//    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 
     ;
 

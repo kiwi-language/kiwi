@@ -2,12 +2,13 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import tech.metavm.flow.NodeKind;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 
 public record NodeDTO(
         Long id,
-        long flowId,
+        Long flowId,
         String name,
         int type,
         Long prevId,
@@ -16,8 +17,12 @@ public record NodeDTO(
         @JsonTypeIdResolver(NodeParamTypeIdResolver.class)
         Object param,
         TypeDTO outputType,
-        long scopeId
+        Long scopeId
 ) {
+
+    public static NodeDTO create(String name, NodeKind kind) {
+        return new NodeDTO(null, null, name, kind.code(), null, null, null, null, null);
+    }
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId) {
         return newNode(flowId, name, type, prevId, null, 0L);

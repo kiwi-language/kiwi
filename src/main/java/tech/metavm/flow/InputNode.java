@@ -9,8 +9,6 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
-
 @EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
 
@@ -26,6 +24,10 @@ public class InputNode extends NodeRT<InputParamDTO> {
 
     public InputNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, scope.getFlow().getInputType(), scope);
+    }
+
+    public InputNode(String name, ClassType type, NodeRT<?> prev, ScopeRT scope) {
+        super(name, NodeKind.INPUT, type, prev, scope);
     }
 
     @Override

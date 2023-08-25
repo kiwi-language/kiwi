@@ -24,8 +24,10 @@ public class ClassInstance extends Instance {
         return new ClassInstance(type);
     }
 
-    protected ClassInstance(ClassType type) {
-        this(Map.of(), type);
+    public ClassInstance(ClassType type) {
+//        this(Map.of(), type);
+        super(null, type,0,0);
+        this.klass = type;
     }
 
     public ClassInstance(Map<Field, Instance> data, ClassType type) {

@@ -5,13 +5,14 @@ import tech.metavm.util.InternalException;
 
 import java.util.*;
 
-public class CfgBuilder {
+public class GraphBuilder {
 
     private final String title;
     private CfgNode head;
     private final Map<PsiElement, CfgNode> nodeIndex = new HashMap<>();
+    // enclosing block statements
     private final Map<CfgNode, Set<PsiElement>> owners = new HashMap<>();
-    private final Set<PsiElement> activeStatements = new HashSet<>();
+    private final Set<PsiElement> activeBlockStatements = new HashSet<>();
     private final Set<CfgNode> leaves = new HashSet<>();
     private final Map<PsiElement, Set<CfgNode>> condEntry = new HashMap<>();
     private final Map<PsiElement, List<Set<CfgNode>>> condLeaves = new HashMap<>();
@@ -24,9 +25,9 @@ public class CfgBuilder {
     private final Map<PsiElement, List<CfgNode>> throwNodes = new HashMap<>();
     private final Map<CfgNode, CfgNode> forwardEdges = new HashMap<>();
     private final Set<PsiElement> errors = new HashSet<>();
-    private final Set<PsiElement> defaultCaseFlag = new HashSet<>();
+    private final Set<PsiElement> defaultCaseFlags = new HashSet<>();
 
-    public CfgBuilder(String title) {
+    public GraphBuilder(String title) {
         this.title = title;
     }
 
@@ -66,14 +67,14 @@ public class CfgBuilder {
     }
 
     private CfgNode addNewNode(PsiElement astNode) {
-        if(nodeIndex.containsKey(astNode)) {
+        if (nodeIndex.containsKey(astNode)) {
             throw new InternalException(astNode + " is added twice");
         }
         var node = new CfgNode(astNode);
         nodeIndex.put(astNode, node);
-        owners.put(node, new HashSet<>(activeStatements));
-        if(head == null) head = node;
-        connectNodes(leaves, node);
+        owners.put(node, new HashSet<>(activeBlockStatements));
+        if (head == null) head = node;
+        else connectNodes(leaves, node);
         for (PsiElement sectionId : pendingFinallySections) {
             finallySectionSubGraphs.get(sectionId).begin = node;
         }
@@ -82,11 +83,11 @@ public class CfgBuilder {
     }
 
     void setDefaultCaseFlag(PsiElement sectionId) {
-        defaultCaseFlag.add(sectionId);
+        defaultCaseFlags.add(sectionId);
     }
 
     boolean getDefaultCaseFlag(PsiElement sectionId) {
-        return defaultCaseFlag.contains(sectionId);
+        return defaultCaseFlags.contains(sectionId);
     }
 
     CfgNode addExitNode(PsiElement astNode, PsiElement sectionId, List<PsiCodeBlock> guards) {
@@ -101,17 +102,17 @@ public class CfgBuilder {
         return node;
     }
 
-    void beginStatement(PsiElement statement) {
-        activeStatements.add(statement);
+    void beginBlockStatement(PsiElement statement) {
+        activeBlockStatements.add(statement);
     }
 
-    void endStatement(PsiElement statement) {
-        activeStatements.remove(statement);
+    void endBlockStatement(PsiElement statement) {
+        activeBlockStatements.remove(statement);
     }
 
     private Set<CfgNode> connectJumpToFinnallySections(CfgNode node) {
         Set<CfgNode> cursor = new HashSet<>(List.of(node));
-        if(!finallySections.containsKey(node)) return cursor;
+        if (!finallySections.containsKey(node)) return cursor;
         for (PsiElement guardSectionId : finallySections.get(node)) {
             var guard = finallySectionSubGraphs.get(guardSectionId);
             connectNodes(cursor, guard.begin);
@@ -122,11 +123,19 @@ public class CfgBuilder {
     }
 
     private void connectNodes(Collection<CfgNode> first, CfgNode second) {
-        first.forEach(node -> connectNodes(node, second));
+        connectNodes(first, second, false);
+    }
+
+    private void connectNodes(Collection<CfgNode> first, CfgNode second, boolean isBackEdge) {
+        first.forEach(node -> connectNodes(node, second, isBackEdge));
     }
 
     private void connectNodes(CfgNode first, CfgNode second) {
-        first.addNext(second);
+        connectNodes(first, second, false);
+    }
+
+    private void connectNodes(CfgNode first, CfgNode second, boolean isBackEdge) {
+        first.addNext(second, isBackEdge);
         forwardEdges.put(first, second);
     }
 
@@ -137,9 +146,9 @@ public class CfgBuilder {
 
     void exitLoopSection(PsiElement sectionId) {
         var entry = sectionEntry.get(sectionId);
-        connectNodes(leaves, entry);
+        connectNodes(leaves, entry, true);
         for (CfgNode reentry : continues.get(sectionId)) {
-            connectNodes(connectJumpToFinnallySections(reentry), entry);
+            connectNodes(connectJumpToFinnallySections(reentry), entry, true);
         }
         leaves.clear();
         leaves.add(entry);
@@ -156,11 +165,10 @@ public class CfgBuilder {
     }
 
     void newCondBranch(PsiElement sectionId, boolean fallThrough) {
-        if(!condEntry.containsKey(sectionId)) { // first split
+        if (!condEntry.containsKey(sectionId)) { // first split
             condEntry.put(sectionId, new HashSet<>(leaves));
-        }
-        else { // subsequent splits
-            if(fallThrough) leaves.addAll(condEntry.get(sectionId));
+        } else { // subsequent splits
+            if (fallThrough) leaves.addAll(condEntry.get(sectionId));
             else {
                 condLeaves.get(sectionId).add(new HashSet<>(leaves));
                 setLeaves(condEntry.get(sectionId));
@@ -174,11 +182,11 @@ public class CfgBuilder {
         }
         condEntry.remove(sectionId);
         condLeaves.remove(sectionId);
-        defaultCaseFlag.remove(sectionId);
+        defaultCaseFlags.remove(sectionId);
     }
 
     void enterExceptSection(PsiElement sectionId) {
-        if(throwNodes.containsKey(sectionId)) {
+        if (throwNodes.containsKey(sectionId)) {
             leaves.addAll(throwNodes.get(sectionId));
         }
     }
@@ -193,7 +201,7 @@ public class CfgBuilder {
     void exitFinallySection(PsiElement sectionId) {
         var section = finallySectionSubGraphs.get(sectionId);
         section.ends = new HashSet<>(leaves);
-        if(!section.hasDirectFlow) setLeaves(List.of());
+        if (!section.hasDirectFlow) setLeaves(List.of());
     }
 
     void addError(PsiElement error) {
@@ -213,12 +221,12 @@ public class CfgBuilder {
             CfgNode first = _e.getKey(), second = _e.getValue();
             Set<PsiElement> firstOwners = owners.get(first), secondOwners = owners.get(second);
             for (PsiElement stmt : firstOwners) {
-                if(!secondOwners.contains(stmt)) {
+                if (!secondOwners.contains(stmt)) {
                     stmtNext.get(stmt).add(second);
                 }
             }
             for (PsiElement stmt : secondOwners) {
-                if(!firstOwners.contains(stmt)) {
+                if (!firstOwners.contains(stmt)) {
                     stmtPrev.get(stmt).add(first);
                 }
             }

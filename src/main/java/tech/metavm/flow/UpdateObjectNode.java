@@ -4,11 +4,13 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -30,6 +32,10 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
     public UpdateObjectNode(NodeDTO nodeDTO, ScopeRT scope) {
         super(nodeDTO, null, scope);
+    }
+
+    public UpdateObjectNode(String name, NodeRT<?> prev, ScopeRT scope) {
+        super(name, NodeKind.UPDATE_OBJECT, null, prev, scope);
     }
 
     public Value getObjectId() {
@@ -57,6 +63,24 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         var field = fieldParams.get(Entity::getId, fieldId);
         field.setOp(opAndValue.op());
         field.setValue(opAndValue.value());
+    }
+
+    public void setObjectId(Expression expression) {
+        this.objectId = new ExpressionValue(expression);
+    }
+
+
+    public void setUpdateField(Field field, Expression value) {
+        var updateField = fieldParams.get(UpdateField::getField, field);
+        ExpressionValue exprValue = new ExpressionValue(value);
+        if(updateField == null) {
+            updateField = new UpdateField(field, UpdateOp.SET, exprValue);
+            fieldParams.add(updateField);
+        }
+        else {
+            updateField.setOp(UpdateOp.SET);
+            updateField.setValue(exprValue);
+        }
     }
 
     @Override

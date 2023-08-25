@@ -1,0 +1,28 @@
+GET http://metavm.tech:9500/instance/_search?routing=-1
+Accept: application/json
+Content-Type: application/json
+Authorization: Basic elastic 85263670
+
+{
+  "query": {
+    "query_string": {
+      "query": "(typeId:13021)"
+    }
+  }
+}
+
+<> 2023-02-22T141251.200.json
+<> 2023-02-22T141213.200.json
+<> 2023-02-22T140159.502.html
+
+###
+PUT http://metavm.tech:9500/instance
+Content-Type: application/json
+Authorization: Basic elastic 85263670
+
+{"mappings":{"properties":{"tenantId":{"type":"long"},"typeId":{"type":"long"},"id":{"type":"long"},"l0":{"type":"long"},"l1":{"type":"long"},"l2":{"type":"long"},"l3":{"type":"long"},"l4":{"type":"long"},"l5":{"type":"long"},"l6":{"type":"long"},"l7":{"type":"long"},"l8":{"type":"long"},"l9":{"type":"long"},"l10":{"type":"long"},"l11":{"type":"long"},"l12":{"type":"long"},"l13":{"type":"long"},"l14":{"type":"long"},"l15":{"type":"long"},"l16":{"type":"long"},"l17":{"type":"long"},"l18":{"type":"long"},"l19":{"type":"long"},"i0":{"type":"integer"},"i1":{"type":"integer"},"i2":{"type":"integer"},"i3":{"type":"integer"},"i4":{"type":"integer"},"i5":{"type":"integer"},"i6":{"type":"integer"},"i7":{"type":"integer"},"i8":{"type":"integer"},"i9":{"type":"integer"},"s0":{"type":"keyword"},"s1":{"type":"keyword"},"s2":{"type":"keyword"},"s3":{"type":"keyword"},"s4":{"type":"keyword"},"s5":{"type":"keyword"},"s6":{"type":"keyword"},"s7":{"type":"keyword"},"s8":{"type":"keyword"},"s9":{"type":"keyword"},"b0":{"type":"boolean"},"b1":{"type":"boolean"},"b2":{"type":"boolean"},"b3":{"type":"boolean"},"b4":{"type":"boolean"},"b5":{"type":"boolean"},"b6":{"type":"boolean"},"b7":{"type":"boolean"},"b8":{"type":"boolean"},"b9":{"type":"boolean"},"d0":{"type":"double"},"d1":{"type":"double"},"d2":{"type":"double"},"d3":{"type":"double"},"d4":{"type":"double"},"d5":{"type":"double"},"d6":{"type":"double"},"d7":{"type":"double"},"d8":{"type":"double"},"d9":{"type":"double"},"t0":{"type":"text"},"t1":{"type":"text"},"r0":{"type":"long"},"r1":{"type":"long"},"r2":{"type":"long"},"r3":{"type":"long"},"r4":{"type":"long"},"r5":{"type":"long"},"r6":{"type":"long"},"r7":{"type":"long"},"r8":{"type":"long"},"r9":{"type":"long"},"r10":{"type":"long"},"r11":{"type":"long"},"r12":{"type":"long"},"r13":{"type":"long"},"r14":{"type":"long"},"r15":{"type":"long"},"r16":{"type":"long"},"r17":{"type":"long"},"r18":{"type":"long"},"r19":{"type":"long"},"m0":{"type":"long"},"m1":{"type":"long"},"m2":{"type":"long"},"m3":{"type":"long"},"m4":{"type":"long"},"m5":{"type":"long"},"m6":{"type":"long"},"m7":{"type":"long"},"m8":{"type":"long"},"m9":{"type":"long"},"m10":{"type":"long"},"m11":{"type":"long"},"m12":{"type":"long"},"m13":{"type":"long"},"m14":{"type":"long"},"m15":{"type":"long"},"m16":{"type":"long"},"m17":{"type":"long"},"m18":{"type":"long"},"m19":{"type":"long"}}},"settings":{"number_of_replicas":0,"number_of_shards":3}}
+
+###
+DELETE http://metavm.tech:9500/instance
+Content-Type: application/json
+Authorization: Basic elastic 85263670

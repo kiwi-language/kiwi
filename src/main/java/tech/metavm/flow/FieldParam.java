@@ -23,8 +23,12 @@ public class FieldParam extends Entity {
     private Value value;
 
     public FieldParam(Field field, ValueDTO valueDTO, ParsingContext parsingContext) {
+        this(field, ValueFactory.getValue(valueDTO, parsingContext));
+    }
+
+    public FieldParam(Field field, Value value) {
         this.field = field;
-        this.value = ValueFactory.getValue(valueDTO, parsingContext);
+        this.value = value;
     }
 
     public Field getField() {

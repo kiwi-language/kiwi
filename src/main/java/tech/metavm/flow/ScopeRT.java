@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.List;
 
 @EntityType("流程范围")
-public class ScopeRT extends Entity  {
+public class ScopeRT extends Entity {
 
     @EntityField("所属流程")
     private final FlowRT flow;
@@ -25,7 +25,8 @@ public class ScopeRT extends Entity  {
     @Nullable
     private final NodeRT<?> owner;
     @ChildEntity("节点列表")
-    private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {}, true);
+    private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {
+    }, true);
 
     public ScopeRT(FlowRT flow) {
         this(flow, null);
@@ -42,20 +43,19 @@ public class ScopeRT extends Entity  {
 
     public ScopeDTO toDTO(boolean withNodes) {
         return new ScopeDTO(
-                getIdRequired(),
+                getId(),
                 withNodes ? NncUtils.map(getNodes(), NodeRT::toDTO) : List.of()
         );
     }
 
     public void addNode(NodeRT<?> node) {
-        if(node.getPredecessor() != null) {
+        if (node.getPredecessor() != null) {
             nodes.addAfter(node, node.getPredecessor());
-        }
-        else {
-            if(node.getSuccessor() != null) {
+        } else {
+            if (node.getSuccessor() != null) {
                 throw new RuntimeException("New scope root already having successor");
             }
-            if(nodes.size() > 0) {
+            if (!nodes.isEmpty()) {
                 node.insertAfter(nodes.getFirst());
             }
             nodes.addFirst(node);
@@ -95,5 +95,10 @@ public class ScopeRT extends Entity  {
 
     public boolean isEmpty() {
         return nodes.isEmpty();
+    }
+
+    @Nullable
+    public NodeRT<?> getLastNode() {
+        return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
     }
 }

@@ -33,8 +33,8 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     @Override
     public void visitMethod(PsiMethod method) {
         var parentAnalyzer = currentAnalyzer;
-        currentAnalyzer.visitReverse();
         currentAnalyzer = new Analyzer(graphMap.get(method));
+        currentAnalyzer.visitReverse();
         super.visitMethod(method);
         currentAnalyzer = parentAnalyzer;
     }

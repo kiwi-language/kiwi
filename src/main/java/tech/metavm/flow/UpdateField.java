@@ -75,6 +75,10 @@ public class UpdateField extends Entity {
         instance.set(field, updateValue);
     }
 
+    public Field getField() {
+        return field;
+    }
+
     public void setValue(Value value) {
         this.value = value;
     }

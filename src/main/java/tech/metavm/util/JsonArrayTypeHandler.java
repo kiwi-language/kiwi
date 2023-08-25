@@ -3,6 +3,8 @@ package tech.metavm.util;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
+import org.apache.ibatis.type.MappedJdbcTypes;
+import org.apache.ibatis.type.MappedTypes;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
@@ -11,6 +13,10 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class JsonArrayTypeHandler extends BaseTypeHandler<List<Object>> {
+
+    public JsonArrayTypeHandler() {
+        System.out.println("JsonArrayTypeHandler created");
+    }
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, List<Object> parameter, JdbcType jdbcType) throws SQLException {

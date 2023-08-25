@@ -2,7 +2,7 @@ package tech.metavm.flow.rest;
 
 public record BranchDTO(
         Long id,
-        long ownerId,
+        Long ownerId,
         ValueDTO condition,
         ScopeDTO scope,
         boolean preselected

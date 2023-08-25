@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import tech.metavm.util.InternalException;
@@ -28,6 +29,7 @@ public class TranspileTestTools {
         var javaBaseDir = APP_ENV.getJarFileSystem().findFileByPath(BASE_MOD+"!/classes");
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(javaBaseDir));
         PROJECT = PROJECT_ENV.getProject();
+        TranspileUtil.setElementFactory(PROJECT.getService(PsiElementFactory.class));
     }
 
     public static PsiJavaFile getPsiJavaFile(Class<?> klass) {

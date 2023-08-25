@@ -112,6 +112,10 @@ public class ReflectUtils {
         return getConstructorQualifiedSignature(getConstructor(klass, parameterClasses));
     }
 
+    public static boolean isPrimitiveBoxClassName(String name) {
+        return NncUtils.anyMatch(PRIMITIVE_UNBOXING_MAP.keySet(), k -> k.getName().equals(name));
+    }
+
     public static String getMethodQualifiedSignature(Method method) {
         return method.getDeclaringClass().getName() + "." + getMethodSignature(method);
     }

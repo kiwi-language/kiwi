@@ -7,6 +7,7 @@ import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,6 +36,9 @@ public class Field extends Entity {
     private final Type type;
     @EntityField("是否从对象字段")
     private final boolean isChildField;
+    @EntityField("编号")
+    @Nullable
+    private String code;
 //    @EntityField("状态")
 //    private MetadataState state;
 
@@ -43,8 +47,27 @@ public class Field extends Entity {
                 InstanceUtils.nullInstance(), type, false);
     }
 
+    public Field(String name, String code, ClassType declaringType, Type type) {
+        this(name, code, declaringType, Access.GLOBAL, false, false,
+                InstanceUtils.nullInstance(), type, false);
+    }
+
+    public Field(
+            String name,
+            ClassType declaringType,
+            Access access,
+            Boolean unique,
+            boolean asTitle,
+            Instance defaultValue,
+            Type type,
+            boolean isChildField
+    ) {
+        this(name, null, declaringType, access, unique, asTitle, defaultValue, type, isChildField);
+    }
+
     public Field(
              String name,
+             String code,
              ClassType declaringType,
              Access access,
              Boolean unique,
@@ -53,6 +76,7 @@ public class Field extends Entity {
              Type type,
              boolean isChildField
     ) {
+        this.code = code;
         this.declaringType = requireNonNull(declaringType, "属性所属类型");
         this.access = requireNonNull(access, "属性访问控制");
         this.type = type;
@@ -74,6 +98,14 @@ public class Field extends Entity {
 
     public void setName(String name) {
         this.name = NameUtils.checkName(name);
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
     }
 
     @JsonIgnore

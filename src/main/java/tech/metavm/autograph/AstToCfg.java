@@ -10,16 +10,16 @@ import static java.util.Objects.requireNonNull;
 
 public class AstToCfg extends JavaRecursiveElementVisitor {
 
-    private final LinkedList<CfgBuilder> builderStack = new LinkedList<>();
+    private final LinkedList<GraphBuilder> builderStack = new LinkedList<>();
     private final Map<PsiMethod, Graph> graphs = new HashMap<>();
     private final LinkedList<PsiElement> lexicalScopes = new LinkedList<>();
-    private CfgBuilder builder;
+    private GraphBuilder builder;
 
     @Override
     public void visitMethod(PsiMethod method) {
         if (builder != null) builder.addOrdinaryNode(method);
         builderStack.push(builder);
-        builder = new CfgBuilder(method.getName());
+        builder = new GraphBuilder(method.getName());
         enterLexicalScope(method);
         builder.enterSection(method);
         processBasicElement(method.getParameterList());
@@ -38,12 +38,12 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
     public void visitSwitchExpression(PsiSwitchExpression expression) {
         builder.enterSection(expression);
         enterLexicalScope(expression);
-        builder.beginStatement(expression);
+        builder.beginBlockStatement(expression);
         builder.enterCondSection(expression);
         processBasicElement(requireNonNull(expression.getExpression()));
         requireNonNull(expression.getBody()).accept(this);
         builder.exitCondSection(expression);
-        builder.endStatement(expression);
+        builder.endBlockStatement(expression);
         exitLexicalScope();
         builder.exitSection(expression);
     }
@@ -99,7 +99,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
-        builder.beginStatement(statement);
+        builder.beginBlockStatement(statement);
         builder.enterSection(statement);
         enterLexicalScope(statement);
         builder.enterCondSection(statement);
@@ -109,7 +109,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         builder.exitCondSection(statement);
         exitLexicalScope();
         builder.exitSection(statement);
-        builder.endStatement(statement);
+        builder.endBlockStatement(statement);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitForeachStatement(PsiForeachStatement statement) {
-        builder.beginStatement(statement);
+        builder.beginBlockStatement(statement);
         enterLexicalScope(statement);
         builder.enterLoopSection(statement, statement.getIteratedValue());
         if (statement.getBody() != null) {
@@ -146,12 +146,12 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         }
         builder.exitLoopSection(statement);
         exitLexicalScope();
-        builder.endStatement(statement);
+        builder.endBlockStatement(statement);
     }
 
     @Override
     public void visitForStatement(PsiForStatement statement) {
-        builder.beginStatement(statement);
+        builder.beginBlockStatement(statement);
         enterLexicalScope(statement);
         if (statement.getInitialization() != null) {
             statement.getInitialization().accept(this);
@@ -165,7 +165,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
             builder.exitLoopSection(statement);
         }
         exitLexicalScope();
-        builder.endStatement(statement);
+        builder.endBlockStatement(statement);
     }
 
     private List<PsiElement> extractStatementsFromForLoop(PsiForStatement forLoop) {
@@ -202,7 +202,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitTryStatement(PsiTryStatement statement) {
-        builder.beginStatement(statement);
+        builder.beginBlockStatement(statement);
         enterLexicalScope(statement);
         requireNonNull(statement.getTryBlock()).accept(this);
         if (statement.getCatchSections().length > 0) {
@@ -221,12 +221,12 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
             builder.exitFinallySection(statement.getFinallyBlock());
         }
         exitLexicalScope();
-        builder.endStatement(statement);
+        builder.endBlockStatement(statement);
     }
 
     @Override
     public void visitIfStatement(PsiIfStatement statement) {
-        builder.beginStatement(statement);
+        builder.beginBlockStatement(statement);
         builder.enterCondSection(statement);
         processBasicElement(requireNonNull(statement.getCondition()));
         builder.newCondBranch(statement);
@@ -238,12 +238,12 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
             statement.getElseBranch().accept(this);
         }
         builder.exitCondSection(statement);
-        builder.endStatement(statement);
+        builder.endBlockStatement(statement);
     }
 
     @Override
     public void visitWhileStatement(PsiWhileStatement statement) {
-        builder.beginStatement(statement);
+        builder.beginBlockStatement(statement);
         enterLexicalScope(statement);
         builder.enterSection(statement);
         requireNonNull(statement.getCondition()).accept(this);
@@ -252,7 +252,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
         builder.exitLoopSection(statement);
         builder.exitSection(statement);
         exitLexicalScope();
-        builder.endStatement(statement);
+        builder.endBlockStatement(statement);
     }
 
     @Override
@@ -270,11 +270,11 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitCatchSection(PsiCatchSection section) {
-        builder.beginStatement(section);
+        builder.beginBlockStatement(section);
         builder.enterExceptSection(section.getCatchBlock());
         requireNonNull(section.getParameter()).accept(this);
         requireNonNull(section.getCatchBlock()).accept(this);
-        builder.endStatement(section);
+        builder.endBlockStatement(section);
     }
 
     @Override

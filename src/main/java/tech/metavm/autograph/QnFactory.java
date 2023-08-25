@@ -23,7 +23,7 @@ public class QnFactory {
         var qnAndMode = element.getUserData(Keys.QN_AND_MODE);
         if (qnAndMode != null) return qnAndMode.qualifiedName();
         var qn = switch (element) {
-            case PsiJavaCodeReferenceElement ref -> getReferenceQn(ref);
+            case PsiReferenceExpression ref -> getReferenceQn(ref);
             case PsiArrayAccessExpression arrayAccess -> getArrayAccessQn(arrayAccess);
             case PsiThisExpression thisExpr -> getThisExprQn(thisExpr);
             case PsiLocalVariable localVariable -> getLocalVariableQn(localVariable);
@@ -31,151 +31,99 @@ public class QnFactory {
             case PsiField field -> getFieldQn(field, null);
             default -> null;
         };
-        if(qn == null) return null;
+        if (qn == null) return null;
         qnAndMode = new QnAndMode(qn, getAccessMode(element));
         element.putUserData(Keys.QN_AND_MODE, qnAndMode);
         return qn;
     }
 
-    private static QualifiedName getThisExprQn(PsiThisExpression ignored) {
-        return new AtomicQualifiedName("this");
+    private static QualifiedName getThisExprQn(PsiThisExpression expression) {
+        return new AtomicQualifiedName("this", expression.getType());
     }
 
-    private static QualifiedName getReferenceQn(PsiJavaCodeReferenceElement reference) {
+    private static QualifiedName getReferenceQn(PsiReferenceExpression reference) {
         var target = reference.resolve();
         return switch (target) {
             case null -> null;
-            case PsiField field -> getFieldQn(field, reference.getQualifier());
+            case PsiField field -> getFieldQn(field, reference.getQualifierExpression());
             case PsiLocalVariable localVariable -> getLocalVariableQn(localVariable);
             case PsiParameter parameter -> getParameterQn(parameter);
-            case PsiMethod method -> getMethodQn(method);
-            case PsiClass klass -> getClassQn(klass);
-            case PsiPackage pkg -> getPackageQn(pkg);
             default -> throw new IllegalStateException("Unexpected value: " + target);
         };
     }
 
     private static QualifiedName getPackageQn(PsiPackage pkg) {
         return pkg.getParentPackage() == null || pkg.getParentPackage().getName() == null ?
-                new AtomicQualifiedName(pkg.getName()) :
-                new AttributeQualifiedName(getPackageQn(pkg.getParentPackage()), pkg.getName());
+                new AtomicQualifiedName(pkg.getName(), null) :
+                new AttributeQualifiedName(getPackageQn(pkg.getParentPackage()), pkg.getName(), null);
     }
 
     private static QualifiedName getArrayAccessQn(PsiArrayAccessExpression arrayAccess) {
         var arrayQn = getOrCreateQn(arrayAccess);
         if (arrayQn != null && arrayAccess.getIndexExpression() instanceof PsiLiteral idxLiteral) {
-            return new AttributeQualifiedName(arrayQn, requireNonNull(idxLiteral.getValue()).toString());
+            return new AttributeQualifiedName(arrayQn, requireNonNull(idxLiteral.getValue()).toString(),
+                    arrayAccess.getType());
         } else return null;
     }
 
 
     public static AccessMode getAccessMode(PsiElement element) {
-        if(element instanceof PsiLocalVariable localVariable) {
+        if (element instanceof PsiLocalVariable localVariable) {
             return localVariable.getInitializer() != null ? DEFINE_WRITE : DEFINE;
         }
-        if(element instanceof PsiField || element instanceof PsiMethod
+        if (element instanceof PsiField || element instanceof PsiMethod
                 || element instanceof PsiClass || element instanceof PsiParameter) {
             return DEFINE_WRITE;
         }
         var context = element.getContext();
-        if(context instanceof PsiAssignmentExpression assignment) {
+        if (context instanceof PsiAssignmentExpression assignment) {
             return getAssignmentAccMode(assignment, element);
         }
-        if(context instanceof PsiPostfixExpression) {
+        if (context instanceof PsiPostfixExpression) {
             return READ_WRITE;
         }
-        if(context instanceof PsiPrefixExpression prefixExpr) {
+        if (context instanceof PsiPrefixExpression prefixExpr) {
             var op = prefixExpr.getOperationSign();
-            if(op == JavaTokenType.MINUSMINUS || op == JavaTokenType.PLUSPLUS) return READ_WRITE;
+            if (op == JavaTokenType.MINUSMINUS || op == JavaTokenType.PLUSPLUS) return READ_WRITE;
             else return READ;
-        }
-        else return READ;
+        } else return READ;
     }
 
     public static AccessMode getAssignmentAccMode(PsiAssignmentExpression assignment, PsiElement element) {
-        if(assignment.getLExpression() == element) {
+        if (assignment.getLExpression() == element) {
             return assignment.getOperationSign() == JavaTokenType.EQ ? WRITE : READ_WRITE;
-        }
-        else return READ;
+        } else return READ;
     }
 
     private static QualifiedName getLocalVariableQn(PsiLocalVariable localVariable) {
-        return new AtomicQualifiedName(localVariable.getName());
+        return new AtomicQualifiedName(localVariable.getName(), localVariable.getType());
     }
 
-    private static QualifiedName getFieldQn(PsiField field, PsiElement qualifier) {
+    private static QualifiedName getFieldQn(PsiField field, PsiExpression qualifier) {
         var modifiers = requireNonNull(field.getModifierList());
+
+        var declaringClass = requireNonNull(field.getContainingClass());
+        String className = declaringClass.getQualifiedName();
         if (modifiers.hasModifierProperty(PsiModifier.STATIC)) {
-            return new AttributeQualifiedName(
-                    getClassQn(requireNonNull(field.getContainingClass())), field.getName());
+            return new AtomicQualifiedName(
+                    className + "." + field.getName(), field.getType());
         } else {
             if (qualifier == null) {
+                var selfType = TranspileUtil.getTemplateType(requireNonNull(field.getContainingClass()));
                 return new AttributeQualifiedName(
-                        new AttributeQualifiedName(getClassQn(requireNonNull(field.getContainingClass())),
-                                "this"), field.getName());
+                        new AtomicQualifiedName(className + ".this", selfType),
+                        field.getName(), field.getType());
             } else {
                 var qualifierQn = getOrCreateQn(qualifier);
-                if (qualifierQn != null) return new AttributeQualifiedName(qualifierQn, field.getName());
-                else return null;
+                if (qualifierQn != null) {
+                    return new AttributeQualifiedName(qualifierQn, field.getName(), field.getType());
+                } else return null;
             }
         }
     }
 
     public static QualifiedName getParameterQn(PsiParameter parameter) {
-        return new AtomicQualifiedName(parameter.getName());
+        return new AtomicQualifiedName(parameter.getName(), parameter.getType());
     }
-
-    public static QualifiedName getMethodQn(PsiMethod method) {
-        return new MethodQualifiedName(
-                getClassQn(requireNonNull(method.getContainingClass())),
-                method.getName(),
-                getParameterQns(method.getParameterList())
-        );
-    }
-
-    public static QualifiedName getClassQn(PsiClass psiClass) {
-        if (psiClass.getContainingClass() != null) {
-            return new AttributeQualifiedName(getClassQn(psiClass.getContainingClass()), psiClass.getName());
-        } else {
-            return new AtomicQualifiedName(psiClass.getQualifiedName());
-        }
-    }
-
-    private static List<QualifiedName> getParameterQns(PsiParameterList parameterList) {
-        List<QualifiedName> qualifiedNames = new ArrayList<>();
-        for (PsiParameter parameter : parameterList.getParameters()) {
-            qualifiedNames.add(getTypeQn(parameter.getType()));
-        }
-        return qualifiedNames;
-    }
-
-    public static QualifiedName getTypeQn(PsiType psiType) {
-        return switch (psiType) {
-            case PsiClassType classType -> getClassTypeRefQn(classType);
-            case PsiPrimitiveType primitiveType -> getPrimitiveTypeQn(primitiveType);
-            case PsiArrayType arrayType -> getArrayTypeQn(arrayType);
-            default -> throw new IllegalStateException("Unexpected value: " + psiType);
-        };
-    }
-
-    private static QualifiedName getPrimitiveTypeQn(PsiPrimitiveType primitiveType) {
-        return new AtomicQualifiedName(primitiveType.getName());
-    }
-
-    private static QualifiedName getArrayTypeQn(PsiArrayType arrayType) {
-        return new AttributeQualifiedName(getTypeQn(arrayType.getComponentType()), "[]");
-    }
-
-    private static QualifiedName getClassTypeRefQn(PsiClassType classType) {
-        var psiClass = requireNonNull(classType.resolve());
-        if (classType.getParameterCount() == 0) return getClassQn(psiClass);
-        else {
-            return new PTypeQualifiedName(
-                    getClassQn(psiClass),
-                    NncUtils.map(classType.getParameters(), QnFactory::getTypeQn)
-            );
-        }
-    }
-
 
 }

@@ -1,27 +1,37 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.PsiElement;
+import tech.metavm.util.LinkedList;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class CfgNode {
 
     private final PsiElement element;
     private final List<CfgNode> next = new ArrayList<>();
     private final List<CfgNode> prev = new ArrayList<>();
+    private final Set<CfgNode> backTargets = new LinkedHashSet<>();
 
     public CfgNode(PsiElement statement) {
         this.element = statement;
     }
 
-    void addNext(CfgNode node) {
+    void addNext(CfgNode node, boolean isBackEdge) {
         next.add(node);
         node.prev.add(this);
+        if(isBackEdge) backTargets.add(node);
     }
 
     public List<CfgNode> getNext() {
         return next;
+    }
+
+    public Set<CfgNode> getBackTargets() {
+        return backTargets;
+    }
+
+    public boolean isBackTarget(CfgNode node) {
+        return backTargets.contains(node);
     }
 
     public List<CfgNode> getPrev() {

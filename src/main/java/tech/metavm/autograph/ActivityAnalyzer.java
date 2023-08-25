@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
 import tech.metavm.util.KeyValue;
+import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -10,12 +11,14 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.Keys.*;
+import static tech.metavm.autograph.TranspileUtil.getTemplateType;
 import static tech.metavm.util.NncUtils.invokeIfNotNull;
 
 public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     private Scope scope;
     private final StateStack stateStack = new StateStack();
+    private final LinkedList<PsiClass> classes = new LinkedList<>();
 
     private void processNameElement(PsiElement element) {
         QnAndMode qnAndMode;
@@ -57,15 +60,12 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
             state.setMethod(method);
             enterScope();
             for (PsiAnnotation annotation : method.getAnnotations()) annotation.accept(this);
-            var methodQn = QnFactory.getMethodQn(method);
             if (method.getReturnTypeElement() != null) {
                 method.getReturnTypeElement().accept(this);
             }
             for (PsiParameter parameter : method.getParameterList().getParameters()) {
                 requireNonNull(parameter.getTypeElement()).accept(this);
             }
-            scope.addDefined(methodQn);
-            scope.addModified(methodQn);
             exitAndRecordScope(method);
 
             enterScope(method.getName());
@@ -90,24 +90,31 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     private void defineSelfParameter() {
-        trackSymbol(new QnAndMode(new AtomicQualifiedName("this"), AccessMode.DEFINE_WRITE));
+        trackSymbol(new QnAndMode(
+                new AtomicQualifiedName("this", getTemplateType(currentClass())),
+                AccessMode.DEFINE_WRITE
+        ));
+    }
+
+    private PsiClass currentClass() {
+        return requireNonNull(classes.peek());
     }
 
     @Override
     public void visitClass(PsiClass aClass) {
         try (ClassState clsState = stateStack.create(ClassState.class)){
             clsState.setNode(aClass);
+            classes.push(aClass);
             enterScope(aClass.getName());
             for (PsiAnnotation annotation : aClass.getAnnotations()) {
                 annotation.accept(this);
             }
-            scope.addDefined(QnFactory.getClassQn(aClass));
-            scope.addModified(QnFactory.getClassQn(aClass));
             exitAndRecordScope(aClass);
 
             enterScope(aClass.getName());
             super.visitClass(aClass);
             exitScope();
+            classes.pop();
         }
     }
 

@@ -1,8 +1,11 @@
 package tech.metavm.autograph;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -29,12 +32,21 @@ public class PsiStore {
     }
 
     public PsiJavaFile getPsiFile(Class<?> klass) {
-        var vf = requireNonNull(appEnv.getLocalFileSystem().findFileByPath(getClassFilePath(klass)));
+        return getPsiFile(klass.getName());
+    }
+
+    public PsiJavaFile getPsiFile(String className) {
+        var vf = requireNonNull(appEnv.getLocalFileSystem().findFileByPath(getClassFilePath(className)));
         return (PsiJavaFile) PsiManager.getInstance(project).findFile(vf);
     }
 
-    private String getClassFilePath(Class<?> klass) {
-        return SOURCE_ROOT + "/" + klass.getName().replace('.', '/') + ".java";
+    public PsiDirectory getPsiDirectory(String dir) {
+        var vf = requireNonNull(appEnv.getLocalFileSystem().findFileByPath(dir));
+        return PsiManager.getInstance(project).findDirectory(vf);
+    }
+
+    private String getClassFilePath(String className) {
+        return SOURCE_ROOT + "/" + className.replace('.', '/') + ".java";
     }
 
 

@@ -5,7 +5,7 @@ import tech.metavm.object.instance.rest.FieldValueDTO;
 public record InputFieldDTO (
         Long id,
         String name,
-        long typeId,
+        Long typeId,
         FieldValueDTO defaultValue
 ){
 

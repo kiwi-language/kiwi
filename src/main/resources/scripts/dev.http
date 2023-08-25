@@ -1,0 +1,21 @@
+POST http://metavm.tech:9090/tenant/create
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "TodoList",
+  "rootPassword": "123456"
+}
+
+###
+POST http://metavm.tech:9090/bootstrap
+
+###
+POST http://metavm.tech:9090/bootstrap/region
+
+
+###
+POST http://metavm.tech:9090/bootstrap/scheduler
+
+###
+POST http://metavm.tech:9090/bootstrap/save?saveIds=false

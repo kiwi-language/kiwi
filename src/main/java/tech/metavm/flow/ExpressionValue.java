@@ -16,9 +16,12 @@ public class ExpressionValue extends Value {
     private final Expression expression;
 
     public ExpressionValue(ValueDTO valueDTO, ParsingContext parsingContext) {
+        this(ExpressionParser.parse(((ExpressionFieldValueDTO) valueDTO.value()).getExpression(), parsingContext));
+    }
+
+    public ExpressionValue(Expression expression) {
         super(ValueKind.EXPRESSION);
-        ExpressionFieldValueDTO exprValue = (ExpressionFieldValueDTO) valueDTO.value();
-        expression = ExpressionParser.parse(exprValue.getExpression(), parsingContext);
+        this.expression = expression;
     }
 
     @Override

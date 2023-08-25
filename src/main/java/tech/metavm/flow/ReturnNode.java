@@ -4,6 +4,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceFactory;
+import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.OutputFieldDTO;
 import tech.metavm.flow.rest.ReturnParamDTO;
@@ -49,6 +50,10 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
         super(nodeDTO, scope.getFlow().getOutputType(), scope);
     }
 
+    public ReturnNode(String name, NodeRT<?> prev, ScopeRT scope) {
+        super(name, NodeKind.RETURN, scope.getFlow().getOutputType(), prev, scope);
+    }
+
     @Override
     protected void setParam(ReturnParamDTO param, IEntityContext entityContext) {
         fieldParams.clear();
@@ -76,6 +81,15 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
             ));
         }
         return new ReturnParamDTO(outputFields);
+    }
+
+    public void setField(Field field, Expression value) {
+        var param = fieldParams.get(FieldParam::getField, field);
+        if(param == null) {
+            param = new FieldParam(field, new ExpressionValue(value));
+            fieldParams.add(param);
+        }
+        else param.setValue(new ExpressionValue(value));
     }
 
     private Value fieldValue(Field field) {

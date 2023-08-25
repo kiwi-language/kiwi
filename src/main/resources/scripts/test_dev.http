@@ -1,0 +1,36 @@
+POST http://metavm.tech:9090/bootstrap/save?saveIds=false
+
+
+###
+POST http://metavm.tech:9090/bootstrap/init-root-tenant
+Accept: application/json
+
+
+###
+POST http://metavm.tech:9090/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tenantId": -1,
+  "loginName": "admin",
+  "password": "123456"
+}
+
+<> 2023-01-24T212755.200.json
+
+
+###
+GET http://metavm.tech:9090/type/13054
+
+###
+POST http://metavm.tech:9090/bootstrap/init-root-tenant
+Accept: application/json
+
+###
+POST http://metavm.tech:9090/tenant/repair/1000100003
+Accept: application/json
+
+###
+POST http://metavm.tech:9090/bootstrap/rebuild-index
+Accept: application/json

@@ -42,6 +42,7 @@ public class TableManager {
         IEntityContext context = newContext();
         TypeDTO typeDTO = new TypeDTO(
                 table.id(),
+                null,
                 table.name(),
                 table.code(),
                 TypeCategory.CLASS.code(),
@@ -52,6 +53,7 @@ public class TableManager {
                 new ClassParamDTO(
                         null,
                         null,
+                        List.of(),
                         List.of(),
                         List.of(),
                         null,

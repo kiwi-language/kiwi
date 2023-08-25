@@ -4,11 +4,13 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.AddObjectParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.AbsClassType;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
@@ -33,6 +35,10 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
         super(nodeDTO, type, scope);
     }
 
+    public AddObjectNode(String name, ClassType type, NodeRT<?> prev, ScopeRT scope) {
+        super(name, NodeKind.ADD_OBJECT, type, prev, scope);
+    }
+
     @Override
     public AbsClassType getType() {
         return (AbsClassType) super.getType();
@@ -52,6 +58,10 @@ public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
 
     public void setField(long fieldId, Value value) {
         fields.get(FieldParam::getId, fieldId).setValue(value);
+    }
+
+    public void setField(Field field, Expression value) {
+        // TODO to implement
     }
 
     @Override

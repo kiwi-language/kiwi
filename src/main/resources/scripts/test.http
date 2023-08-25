@@ -1,0 +1,185 @@
+GET http://localhost:8081/api/instance?typeId=13000&searchText=Test&page=1&pageSize=20
+Accept: application/json
+Content-Type: application/json
+
+###
+POST http://localhost:8080/bootstrap
+
+###
+POST http://metavm.tech:9090/bootstrap
+
+###
+POST http://localhost:8080/bootstrap/save
+
+<> 2022-12-13T001921.200.json
+
+###
+POST http://localhost:8080/bootstrap/region
+
+
+###
+POST http://localhost:8080/bootstrap/scheduler
+
+###
+POST http://localhost:8080/bootstrap/init-root-tenant
+Accept: application/json
+
+
+###
+POST http://localhost:8080/tenant/create
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "test",
+  "rootPassword": "123456"
+}
+
+###
+POST http://localhost:8080/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "tenantId": 1004600094,
+  "loginName": "admin",
+  "password": "123456"
+}
+
+###
+GET http://localhost:8080/user
+
+###
+GET http://localhost:8080/role
+
+###
+POST http://localhost:8080/user
+Accept: application/json
+Content-Type: application/json
+
+{
+  "loginName": "leen",
+  "name": "李二狗",
+  "password": "12345678",
+  "roleIds": [
+    1000200005
+  ]
+}
+
+###
+POST http://localhost:8080/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "tenantId": 1000100003,
+  "loginName": "leen",
+  "password": "12345678"
+}
+
+###
+GET http://localhost:8080/type?searchText=Column
+
+###
+GET http://localhost:8080/table
+
+###
+GET http://localhost:8080/table/15005
+
+###
+GET http://localhost:8080/type/13016
+
+<> 2022-12-14T181845.200.json
+
+
+###
+GET http://localhost:8080/table
+
+###
+GET http://localhost:8080/type?searchText=流程
+
+###
+GET http://localhost:8080/instance/13016
+
+###
+POST http://localhost:8080/instance
+Accept: application/json
+Cookie: __token__=Ab1caGJB2kIQupAs20TkjVvbJxNrFKTnQO2JOP7qqR7zplzudAmFtRHwSvEzDir1B3s/ZZlQeR0dde57qxpU/0rYlYQ8mgsmCCs6+DTNF1BE1yMe4JQ4ODXqHatVYzWDgAOW9w+RKzindP+cMalgkvInAJfm08wQ0oTzQp/eRT42/rny4NXo4AjNQ90rQeCpaNlYqQiAsGcYY1S8bllvQFBJ7bFuJ6WTq5yAMwinpRRbmJ6Mck/EfYdKJI4DPzSG/t2oy+vdZ7cblZY9+L75pOtc/toSIyszPe/n7Tt2eKBuWG9nJsKRZ95h/VwPJ2sgy+UFSz8tTSVDRURvqcgt6YhbIDZ6Xbrv5eXqEuTCXTh95d57ANYoJc9NuhQCYiXV5L4wAMwKIut1UxDormN5zY3g9CaVZOzslHRHVwdaQfDFSiX4SAviOM8Qr+meJgeza7CdXCckZ0Ykjz8yFGs3v7aipyoQM3rlELr3KIIwHoh+68ny/+svv8dXKQUXaNwvOuUp8CSZt34E8NIvZerIFNLhjARR+CTRPE6wQbVja+YUfkA0p7yoAGGNG6O8A3FLK5TCQNQKbm6Cgry+sMPhi2ntuYDHA4ymkOttahQCvWaqNnS4cmwbwUUeab/dIDUfkOAxCKD3dykdUyF6hpDQlzmv5hr6XSUfWI24tvUynjI/h2uD7BEicSFqEpq0Wcnh31vbMBVKQiG+hOt7somA3M4o6YxxOrBz2Qan27sXHg3+ewn3auN0zG4hsmfQoad6QqwwpzogKHNUcP0sozZukYc0QEeVwl3+rJumOI4/QtsWFG7krR1uqUq3SrLwtDOVoT7nQZQ0CJhM56gQ9QBRwJZLWhqdGXAO9gAERq8DGF9dlr+4rrqffMFhxemfImPxa2dHsj3muZuyPzQg4VtiI0N2j5d4WHGylKmkCbKuN6P690uDsvmdn9AqenqgLHoqxElhQ8bMU/cGLqd0iGGgdkDzc9tUPRjkTOrRjVpDllukpE8kJ+TjZLEuTPeaLJG6uX0v2TNgDHSm2axf5ck0AnpxWAjKpJM+oLIymbFkNk5tImdc19KUOqyWNYFWxkbcWxZXC2zGiY2v4VwEJngqErCe8CGT0t2HB7PPYJItIDAk0XLujGRnkqHU+i3PnYUgshR1dLyYuH6VB68iJ9oesOJt43pk7yXUBxtMIB0FkYSbGLPwzZ84NnlKMC1JLjr4yUGUU7uvs4Nr8ArUWwDHYKzvneFJ0zPROyEwAhZtrRye9a9eGT1d/znvJn118Y4789BklzDfZo490dQ/vQVTgBi4hNNbvI/R/N8B5D+yBqJ5TrGCKmKJFTxQ
+Content-Type: application/json
+
+{
+  "typeId": 13009,
+  "title": "",
+  "typeName": "",
+  "param": {
+    "type": 1,
+    "fields": [
+      {
+        "fieldId": 14046,
+        "value": {
+          "type": 1,
+          "value": "lyq"
+        },
+        "fieldName": "",
+        "type": 0,
+        "multiValued": false
+      },
+      {
+        "fieldId": 14056,
+        "value": {
+          "type": 1,
+          "value": "123456"
+        },
+        "fieldName": "",
+        "type": 0,
+        "multiValued": false
+      },
+      {
+        "fieldId": 14069,
+        "value": {
+          "type": 1,
+          "value": "leen"
+        },
+        "fieldName": "",
+        "type": 0,
+        "multiValued": false
+      },
+      {
+        "fieldId": 14005,
+        "value": {
+          "type": 3,
+          "elements": [
+            {
+              "type": 2,
+              "id": 1006300127
+            }
+          ]
+        },
+        "fieldName": "",
+        "type": 0,
+        "multiValued": false
+      }
+    ]
+  }
+}
+
+###
+POST http://localhost:8080/bootstrap/rebuild-index
+Accept: application/json
+
+###
+POST http://localhost:8080/tenant/repair/-1
+Accept: application/json
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,7 @@
 package tech.metavm.user;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.IEntityContext;
@@ -11,8 +13,6 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.EncodingUtils;
 import tech.metavm.util.NncUtils;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 

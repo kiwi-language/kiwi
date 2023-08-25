@@ -7,6 +7,7 @@ import java.util.List;
 
 public record TypeDTO(
         Long id,
+        Long tmpId,
         String name,
         @Nullable String code,
         int category,
@@ -23,10 +24,10 @@ public record TypeDTO(
 
     public static TypeDTO createClass(Long id, String name, List<FieldDTO> fieldDTOs) {
         return new TypeDTO(
-                id, name, null, TypeCategory.CLASS.code(), false, false,
+                id, null, name, null, TypeCategory.CLASS.code(), false, false,
                 null, null,
                 new ClassParamDTO(
-                        null, null, fieldDTOs, List.of(), null, null
+                        null, null, fieldDTOs, List.of(), List.of(), null, null
                 )
         );
     }
@@ -40,13 +41,14 @@ public record TypeDTO(
                                       List<ConstraintDTO> constraintDTOs,
                                       String desc) {
         return new TypeDTO(
-                id, name, null, TypeCategory.CLASS.code(),
+                id, null, name, null, TypeCategory.CLASS.code(),
                 ephemeral, anonymous, null, null,
                 new ClassParamDTO(
                         superTypeId,
                         null,
                         fieldDTOs,
                         constraintDTOs,
+                        List.of(),
                         desc,
                         null
                 )

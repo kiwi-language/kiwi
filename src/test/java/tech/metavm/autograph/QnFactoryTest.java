@@ -12,8 +12,6 @@ public class QnFactoryTest extends TestCase {
         var method = klass.getMethods()[0];
         var returnType = method.getReturnType();
         Assert.assertNotNull(returnType);
-        System.out.println(QnFactory.getTypeQn(returnType));
-        System.out.println(QnFactory.getMethodQn(method));
     }
 
 }

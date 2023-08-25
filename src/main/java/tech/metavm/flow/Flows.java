@@ -70,8 +70,8 @@ public class Flows {
     }
 
     private NodeDTO createNodeDTO(NodeKind kind) {
-        return new NodeDTO(null, 0, nextId(),
-                kind.code(), null, null, null, null, 0);
+        return new NodeDTO(null, null, nextId(),
+                kind.code(), null, null, null, null, null);
     }
 
 }

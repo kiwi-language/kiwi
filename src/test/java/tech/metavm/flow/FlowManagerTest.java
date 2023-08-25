@@ -155,7 +155,7 @@ public class FlowManagerTest extends TestCase {
         Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getId(), 1, 20, null);
         Assert.assertEquals(1, dataPage.total());
         FlowSummaryDTO flowSummaryDTO = dataPage.data().get(0);
-        Assert.assertEquals(flowId, flowSummaryDTO.id());
+        Assert.assertEquals(Long.valueOf(flowId), flowSummaryDTO.id());
 
         ClassType roleType = MockRegistry.getClassType(RoleRT.class);
         Page<FlowSummaryDTO> dataPage2 = flowManager.list(roleType.getId(), 1, 20, null);
