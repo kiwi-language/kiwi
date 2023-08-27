@@ -1,20 +1,20 @@
 package tech.metavm.flow;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.rest.FieldValueDTO;
-import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeManager;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,20 +24,19 @@ public class FlowManager {
 
     private final InstanceContextFactory contextFactory;
 
-    private final TypeManager typeManager;
+    private TypeManager typeManager;
 
     private final EntityQueryService entityQueryService;
 
-    public FlowManager(InstanceContextFactory contextFactory, TypeManager typeManager, EntityQueryService entityQueryService) {
+    public FlowManager(InstanceContextFactory contextFactory, EntityQueryService entityQueryService) {
         this.contextFactory = contextFactory;
-        this.typeManager = typeManager;
         this.entityQueryService = entityQueryService;
     }
 
     public FlowDTO get(long flowId) {
         IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, flowId);
-        if(flow == null) {
+        if (flow == null) {
             return null;
         }
         return flow.toDTO();
@@ -46,16 +45,36 @@ public class FlowManager {
     @Transactional
     public long create(FlowDTO flowDTO) {
         IEntityContext context = newContext();
+        long id = create(flowDTO, context.getClassType(flowDTO.typeId()), context);
+        context.finish();
+        return id;
+    }
+
+    public long create(FlowDTO flowDTO, ClassType declaringClass, IEntityContext context) {
         ClassType inputType = saveInputType(null, List.of(), flowDTO.name(), context);
         ClassType outputType = saveOutputType(null, List.of(), flowDTO.name(), context);
-        FlowRT flow = new FlowRT(flowDTO, inputType, outputType, context.getClassType(flowDTO.typeId()));
-        NodeRT<?> selfNode = createSelfNode(flow);
-        NodeRT<?> inputNode = createInputNode(flow, selfNode);
-        createReturnNode(flow, inputNode);
+        FlowRT flow = new FlowRT(flowDTO, inputType, outputType, declaringClass);
         context.bind(flow);
-        context.finish();
-        return flow.getId();
+        if (flowDTO.rootScope() == null || NncUtils.isEmpty(flowDTO.rootScope().nodes())) {
+            NodeRT<?> selfNode = createSelfNode(flow);
+            NodeRT<?> inputNode = createInputNode(flow, selfNode);
+            createReturnNode(flow, inputNode);
+        } else {
+            for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
+                createNode(nodeDTO, flow.getRootScope(), context);
+            }
+        }
+        return flow.getIdRequired();
     }
+
+    private boolean hasSelfNode(FlowDTO flowDTO) {
+        return NncUtils.anyMatch(flowDTO.rootScope().nodes(), node -> node.type() == NodeKind.SELF.code());
+    }
+
+    private boolean hasInputNode(FlowDTO flowDTO) {
+        return NncUtils.anyMatch(flowDTO.rootScope().nodes(), node -> node.type() == NodeKind.INPUT.code());
+    }
+
 
     private SelfNode createSelfNode(FlowRT flow) {
         NodeDTO selfNodeDTO = NodeDTO.newNode(
@@ -91,13 +110,17 @@ public class FlowManager {
     public void update(FlowDTO flowDTO) {
         flowDTO.requiredId();
         IEntityContext context = newContext();
+        update(flowDTO, context);
+        context.finish();
+    }
+
+    public void update(FlowDTO flowDTO, IEntityContext context) {
         FlowRT flow = context.getEntity(FlowRT.class, flowDTO.id());
-        if(flow == null) {
+        if (flow == null) {
             throw BusinessException.flowNotFound(flowDTO.id());
         }
         flow.update(flowDTO);
         flow.getInputType().setName(getInputTypeName(flow.getName()));
-        context.finish();
     }
 
     @Transactional
@@ -117,13 +140,17 @@ public class FlowManager {
     public NodeDTO createNode(NodeDTO nodeDTO) {
         IEntityContext context = newContext();
         FlowRT flow = context.getEntity(FlowRT.class, nodeDTO.flowId());
-        if(flow == null) {
+        if (flow == null) {
             throw BusinessException.flowNotFound(nodeDTO.flowId());
         }
-        nodeDTO = beforeNodeChange(nodeDTO, flow, context);
-        NodeRT<?> node = NodeFactory.getFlowNode(nodeDTO, context);
+        var node = createNode(nodeDTO, context.getScope(nodeDTO.scopeId()), context);
         context.finish();
         return node.toDTO();
+    }
+
+    private NodeRT<?> createNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+        nodeDTO = beforeNodeChange(nodeDTO, scope.getFlow(), context);
+        return NodeFactory.create(nodeDTO, scope, context);
     }
 
     public NodeDTO getNode(long id) {
@@ -137,7 +164,7 @@ public class FlowManager {
         nodeDTO.ensureIdSet();
         IEntityContext context = newContext();
         NodeRT<?> node = context.getEntity(NodeRT.class, nodeDTO.id());
-        if(node == null) {
+        if (node == null) {
             throw BusinessException.nodeNotFound(nodeDTO.id());
         }
         nodeDTO = beforeNodeChange(nodeDTO, node.getFlow(), context);
@@ -147,23 +174,25 @@ public class FlowManager {
     }
 
     private NodeDTO beforeNodeChange(NodeDTO nodeDTO, FlowRT flow, IEntityContext context) {
-        if(nodeDTO.type() == NodeKind.INPUT.code()) {
+        if (nodeDTO.type() == NodeKind.INPUT.code()) {
             return updateInputType(nodeDTO, flow, context);
         }
-        if(nodeDTO.type() == NodeKind.RETURN.code()) {
+        if (nodeDTO.type() == NodeKind.RETURN.code()) {
             return updateOutputType(nodeDTO, flow, context);
+        }
+        if( nodeDTO.type() == NodeKind.BRANCH.code()) {
+            return updateBranchType(nodeDTO, flow, context);
         }
         return nodeDTO;
     }
 
     private NodeDTO updateInputType(NodeDTO nodeDTO, FlowRT flow, IEntityContext context) {
         InputParamDTO inputParam = nodeDTO.getParam();
-        long typeId = flow.getInputType().getId();
         List<FieldDTO> fieldDTOs = NncUtils.map(
                 inputParam.fields(),
                 inputField -> convertToFieldDTO(inputField, flow)
         );
-        ClassType inputType = saveInputType(typeId, fieldDTOs, flow.getName(), context);
+        ClassType inputType = saveInputType(flow.getInputType(), fieldDTOs, flow.getName(), context);
         context.initIds();
         InputParamDTO newParam = new InputParamDTO(
                 inputType.getId(),
@@ -184,10 +213,10 @@ public class FlowManager {
                 f -> f.id() != null,
                 f -> convertToFieldDTO(f, flow)
         );
-        saveOutputType(flow.getOutputType().getId(), existingFields, flow.getName(), context);
+        saveOutputType(flow.getOutputType(), existingFields, flow.getName(), context);
         Map<OutputFieldDTO, Field> newFieldMap = new IdentityHashMap<>();
         for (OutputFieldDTO field : param.fields()) {
-            if(field.id() == null) {
+            if (field.id() == null) {
                 newFieldMap.put(
                         field,
                         typeManager.saveField(convertToFieldDTO(field, flow), context)
@@ -203,6 +232,12 @@ public class FlowManager {
                         )
                 )
         );
+    }
+
+    private NodeDTO updateBranchType(NodeDTO nodeDTO, FlowRT ignored, IEntityContext context) {
+        var savedType = typeManager.saveTypeWithContent(nodeDTO.outputType(), context);
+        context.initIds();
+        return nodeDTO.copyWithOutputType(savedType.toDTO());
     }
 
     private FieldDTO convertToFieldDTO(InputFieldDTO inputFieldDTO, FlowRT flow) {
@@ -222,10 +257,10 @@ public class FlowManager {
                 inputFieldDTO.name(),
                 null,
                 inputFieldDTO.typeId()
-                );
+        );
     }
 
-    private FieldDTO convertToFieldDTO(Long id, long declaringTypeId, String name, FieldValueDTO defaultValue, long typeId) {
+    private FieldDTO convertToFieldDTO(Long id, Long declaringTypeId, String name, FieldValueDTO defaultValue, long typeId) {
         return FieldDTO.createSimple(
                 id,
                 name,
@@ -240,16 +275,16 @@ public class FlowManager {
     public void deleteNode(long nodeId) {
         IEntityContext context = newContext();
         NodeRT<?> node = context.getEntity(NodeRT.class, nodeId);
-        if(node == null) {
+        if (node == null) {
             return;
         }
         context.remove(node);
         context.finish();
     }
 
-    private ClassType saveInputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
+    private ClassType saveInputType(@Nullable ClassType type, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(
-                id,
+                NncUtils.get(type, ClassType::getId),
                 getInputTypeName(flowName),
                 null,
                 true,
@@ -257,13 +292,18 @@ public class FlowManager {
                 fieldDTOs,
                 List.of(),
                 "流程输入"
-                );
-        return typeManager.saveTypeWithContent(typeDTO, context);
+        );
+        if (type != null) {
+            typeManager.saveTypeWithContent(typeDTO, type, context);
+            return type;
+        } else {
+            return typeManager.saveTypeWithContent(typeDTO, context);
+        }
     }
 
-    private ClassType saveOutputType(Long id, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
+    private ClassType saveOutputType(@Nullable ClassType type, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(
-                id,
+                NncUtils.get(type, ClassType::getId),
                 getOutputTypeName(flowName),
                 null,
                 true,
@@ -272,17 +312,21 @@ public class FlowManager {
                 List.of(),
                 "流程输出"
         );
-        return typeManager.saveTypeWithContent(typeDTO, context);
+        if (type != null) {
+            typeManager.saveTypeWithContent(typeDTO, type, context);
+            return type;
+        } else {
+            return typeManager.saveTypeWithContent(typeDTO, context);
+        }
     }
 
     private String getInputTypeName(String flowName) {
-        return "流程输入"  + NncUtils.random();
+        return "流程输入" + NncUtils.random();
     }
 
     private String getOutputTypeName(String flowName) {
         return "流程输出" + NncUtils.random();
     }
-
 
     public Page<FlowSummaryDTO> list(long typeId, int page, int pageSize, String searchText) {
         IEntityContext context = newContext();
@@ -293,7 +337,7 @@ public class FlowManager {
                 page,
                 pageSize,
                 List.of(
-                    new EntityQueryField("type", type)
+                        new EntityQueryField("type", type)
                 )
         );
         Page<FlowRT> flowPage = entityQueryService.query(query, context);
@@ -307,12 +351,11 @@ public class FlowManager {
     public BranchDTO createBranch(BranchDTO branchDTO) {
         IEntityContext context = newContext();
         NodeRT<?> nodeRT = context.getEntity(NodeRT.class, branchDTO.ownerId());
-        if(nodeRT instanceof BranchNode branchNode) {
+        if (nodeRT instanceof BranchNode branchNode) {
             Branch branch = branchNode.addBranch(branchDTO, context);
             context.finish();
             return branch.toDTO(true, false);
-        }
-        else {
+        } else {
             throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
         }
     }
@@ -322,19 +365,18 @@ public class FlowManager {
         NncUtils.requireNonNull(branchDTO.id(), "分支ID必填");
         IEntityContext context = newContext();
         NodeRT<?> owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
-        if(owner == null) {
+        if (owner == null) {
             throw BusinessException.nodeNotFound(branchDTO.ownerId());
         }
-        if(owner instanceof BranchNode branchNode) {
+        if (owner instanceof BranchNode branchNode) {
             Branch branch = branchNode.getBranch(branchDTO.id());
-            if(branch == null) {
+            if (branch == null) {
                 throw BusinessException.branchNotFound(branchDTO.id());
             }
             branch.update(branchDTO, context);
             context.finish();
             return branch.toDTO(true, false);
-        }
-        else {
+        } else {
             throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
         }
     }
@@ -343,15 +385,14 @@ public class FlowManager {
     public void deleteBranch(long ownerId, long branchId) {
         IEntityContext context = newContext();
         NodeRT<?> owner = context.getEntity(NodeRT.class, ownerId);
-        if(owner instanceof BranchNode branchNode) {
+        if (owner instanceof BranchNode branchNode) {
             Branch branch = branchNode.getBranch(branchId);
-            if(branch == null) {
+            if (branch == null) {
                 throw BusinessException.branchNotFound(branchId);
             }
             context.remove(branch);
             context.finish();
-        }
-        else {
+        } else {
             throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
         }
     }
@@ -360,4 +401,8 @@ public class FlowManager {
         return contextFactory.newContext().getEntityContext();
     }
 
+    @Autowired
+    public void setTypeManager(TypeManager typeManager) {
+        this.typeManager = typeManager;
+    }
 }

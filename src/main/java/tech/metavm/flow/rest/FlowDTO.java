@@ -8,6 +8,7 @@ import java.util.List;
 public record FlowDTO (
         Long id,
         String name,
+        String code,
         Long typeId,
         ScopeDTO rootScope,
         TypeDTO type,
@@ -17,7 +18,7 @@ public record FlowDTO (
 
     public static FlowDTO create(String name, long typeId) {
         return new FlowDTO(
-                null, name, typeId, null, null, 0L, 0L
+                null, name, null, typeId, null, null, 0L, 0L
         );
     }
 

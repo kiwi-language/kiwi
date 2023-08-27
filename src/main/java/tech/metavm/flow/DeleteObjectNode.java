@@ -11,8 +11,8 @@ import tech.metavm.flow.rest.ValueDTO;
 @EntityType("删除对象节点")
 public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
 
-    public static DeleteObjectNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
-        DeleteObjectNode node = new DeleteObjectNode(nodeDTO, entityContext.getScope(nodeDTO.scopeId()));
+    public static DeleteObjectNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext entityContext) {
+        DeleteObjectNode node = new DeleteObjectNode(nodeDTO, scope);
         node.setParam(nodeDTO.getParam(), entityContext);
         return node;
     }

@@ -2,16 +2,19 @@ package tech.metavm.object.meta;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
+import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.Var;
+import tech.metavm.flow.FlowManager;
+import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.job.JobManager;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.instance.query.Path;
-import tech.metavm.expression.Var;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.*;
 
@@ -30,6 +33,8 @@ public class TypeManager {
     private final JobManager jobManager;
 
     private final TransactionOperations transactionTemplate;
+
+    private FlowManager flowManager;
 
     public TypeManager(InstanceContextFactory instanceContextFactory,
                        EntityQueryService entityQueryService,
@@ -89,10 +94,9 @@ public class TypeManager {
 
     public TypeDTO getType(long id, boolean includingFields, boolean includingFieldTypes) {
         Type type = newContext().getType(id);
-        if(type instanceof ClassType classType) {
+        if (type instanceof ClassType classType) {
             return NncUtils.get(classType, t -> t.toDTO(includingFields, includingFieldTypes));
-        }
-        else {
+        } else {
             return type.toDTO();
         }
     }
@@ -101,10 +105,9 @@ public class TypeManager {
         IEntityContext context = newContext();
         List<Type> types = NncUtils.map(ids, context::getType);
         return NncUtils.map(types, t -> {
-            if(t instanceof ClassType classType) {
+            if (t instanceof ClassType classType) {
                 return classType.toDTO(includingFields, includingFieldTypes);
-            }
-            else {
+            } else {
                 return t.toDTO();
             }
         });
@@ -126,10 +129,9 @@ public class TypeManager {
         IEntityContext context = newContext();
         Type type = context.getType(id);
         Type compositeType = mapper.apply(type);
-        if(compositeType.getId() != null) {
+        if (compositeType.getId() != null) {
             return compositeType.toDTO();
-        }
-        else {
+        } else {
             return createCompositeType(id, mapper);
         }
     }
@@ -138,7 +140,7 @@ public class TypeManager {
         return transactionTemplate.execute(status -> {
             IEntityContext context = newContext();
             Type compositeType = mapper.apply(context.getType(id));
-            if(!context.containsModel(compositeType)) {
+            if (!context.containsModel(compositeType)) {
                 context.bind(compositeType);
             }
             context.finish();
@@ -155,22 +157,26 @@ public class TypeManager {
     }
 
     public ClassType saveType(TypeDTO typeDTO, IEntityContext context) {
-        if(typeDTO.id() == null) {
+        if (typeDTO.id() == null) {
             return createType(typeDTO, context);
-        }
-        else {
+        } else {
             return updateType(typeDTO, context);
         }
     }
 
     public ClassType saveTypeWithContent(TypeDTO typeDTO, IEntityContext context) {
         ClassType type;
-        ClassParamDTO param = (ClassParamDTO) typeDTO.param();
         if (typeDTO.id() == null || typeDTO.id() == 0L) {
             type = createType(typeDTO, context);
         } else {
             type = updateType(typeDTO, context);
         }
+        saveTypeWithContent(typeDTO, type, context);
+        return type;
+    }
+
+    public void saveTypeWithContent(TypeDTO typeDTO, ClassType type, IEntityContext context) {
+        ClassParamDTO param = (ClassParamDTO) typeDTO.param();
         List<Field> fieldsToRemove = new ArrayList<>();
         Set<Long> fieldIds = NncUtils.mapNonNullUnique(param.fields(), FieldDTO::id);
         for (Field field : type.getFields()) {
@@ -182,13 +188,18 @@ public class TypeManager {
         for (FieldDTO fieldDTO : param.fields()) {
             saveField(fieldDTO, type, context);
         }
-        return type;
     }
 
     public ClassType createType(TypeDTO classDTO, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "名称");
         ensureTypeNameAvailable(classDTO, context);
         ClassType type = TypeUtil.createAndBind(classDTO, context);
+        ClassParamDTO param = (ClassParamDTO) classDTO.param();
+        if (param.flows() != null) {
+            for (FlowDTO flowDTO : param.flows()) {
+                flowManager.create(flowDTO, type, context);
+            }
+        }
         initCompositeTypes(type, context);
         return type;
     }
@@ -197,10 +208,17 @@ public class TypeManager {
         NncUtils.requireNonNull(typeDTO.name(), "名称");
         NncUtils.requireNonNull(typeDTO.id(), "ID");
         ClassType type = context.getClassType(typeDTO.id());
-        if(!type.getName().equals(typeDTO.name())) {
+        if (!type.getName().equals(typeDTO.name())) {
             ensureTypeNameAvailable(typeDTO, context);
         }
         type.update(typeDTO);
+        ClassParamDTO param = (ClassParamDTO) typeDTO.param();
+        if (param.flows() != null) {
+            for (FlowDTO flowDTO : param.flows()) {
+                if (flowDTO.id() != null) flowManager.update(flowDTO, context);
+                else flowManager.create(flowDTO, type, context);
+            }
+        }
         return type;
     }
 
@@ -215,7 +233,7 @@ public class TypeManager {
     public void remove(long id) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(id);
-        if(type == null) {
+        if (type == null) {
             return;
         }
         context.remove(type);
@@ -235,10 +253,9 @@ public class TypeManager {
     }
 
     private Field saveField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
-        if(fieldDTO.id() == null || fieldDTO.id() == 0L) {
+        if (fieldDTO.id() == null || fieldDTO.id() == 0L) {
             return createField(fieldDTO, declaringType, context);
-        }
-        else {
+        } else {
             return updateField(fieldDTO, context);
         }
     }
@@ -255,10 +272,9 @@ public class TypeManager {
         NncUtils.requireNonNull(fieldDTO.id(), "列ID必填");
         Field field = context.getEntity(Field.class, fieldDTO.id());
         field.update(fieldDTO);
-        if(fieldDTO.defaultValue() != null) {
+        if (fieldDTO.defaultValue() != null) {
             field.setDefaultValue(InstanceFactory.resolveValue(fieldDTO.defaultValue(), field.getType(), context));
-        }
-        else {
+        } else {
             field.setDefaultValue(InstanceUtils.nullInstance());
         }
         return field;
@@ -285,7 +301,7 @@ public class TypeManager {
     public void setFieldAsTitle(long fieldId) {
         IEntityContext context = newContext();
         Field field = context.getField(fieldId);
-        if(field.isAsTitle()) {
+        if (field.isAsTitle()) {
             return;
         }
         field.setAsTitle(true);
@@ -299,9 +315,10 @@ public class TypeManager {
     public Page<ConstraintDTO> listConstraints(long typeId, int page, int pageSize) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(typeId);
-        Page<Constraint<?>> dataPage =  entityQueryService.query(
+        Page<Constraint<?>> dataPage = entityQueryService.query(
                 EntityQuery.create(
-                        new TypeReference<>() {},
+                        new TypeReference<>() {
+                        },
                         null,
                         page,
                         pageSize,
@@ -318,7 +335,7 @@ public class TypeManager {
     public ConstraintDTO getConstraint(long id) {
         IEntityContext context = newContext();
         Constraint<?> constraint = context.getEntity(Constraint.class, id);
-        if(constraint == null) {
+        if (constraint == null) {
             throw BusinessException.constraintNotFound(id);
         }
         return constraint.toDTO();
@@ -328,10 +345,9 @@ public class TypeManager {
     public long saveConstraint(ConstraintDTO constraintDTO) {
         IEntityContext context = newContext();
         Constraint<?> constraint;
-        if(constraintDTO.id() == null || constraintDTO.id() == 0L) {
+        if (constraintDTO.id() == null || constraintDTO.id() == 0L) {
             constraint = ConstraintFactory.createFromDTO(constraintDTO, context);
-        }
-        else {
+        } else {
             constraint = context.getEntity(Constraint.class, constraintDTO.id());
             ConstraintFactory.update(constraintDTO, context);
         }
@@ -343,7 +359,7 @@ public class TypeManager {
     public void removeConstraint(long id) {
         IEntityContext context = newContext();
         Constraint<?> constraint = context.getEntity(Constraint.class, id);
-        if(constraint == null) {
+        if (constraint == null) {
             throw BusinessException.constraintNotFound(id);
         }
         context.remove(constraint);
@@ -362,10 +378,9 @@ public class TypeManager {
         for (Path path : pathList) {
             String firstItem = path.firstItem();
             Type type;
-            if(firstItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+            if (firstItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
                 type = context.getType(ExpressionUtil.parseIdFromConstantVar(firstItem));
-            }
-            else {
+            } else {
                 type = context.selectByUniqueKey(Type.UNIQUE_NAME, firstItem);
             }
             path2type.put(firstItem, type);
@@ -374,27 +389,25 @@ public class TypeManager {
 
         for (int i = 1; i < maxLevels; i++) {
             for (Path path : pathList) {
-                if(path.length() <= i) {
+                if (path.length() <= i) {
                     continue;
                 }
                 Var var = Var.parse(path.getItem(i));
                 Path subPath = path.subPath(0, i + 1);
                 Path parentPath = path.subPath(0, i);
                 Type parent = NncUtils.requireNonNull(path2type.get(parentPath.toString()));
-                if(parent.isUnionNullable()) {
+                if (parent.isUnionNullable()) {
                     parent = parent.getUnderlyingType();
                 }
-                if(parent instanceof ClassType classType) {
+                if (parent instanceof ClassType classType) {
                     Field field = NncUtils.requireNonNull(
                             classType.getFieldByVar(var),
                             () -> BusinessException.invalidTypePath(path.toString())
                     );
                     path2type.put(subPath.toString(), field.getType());
-                }
-                else if((parent instanceof ArrayType arrayType) && var.isName() && var.getName().equals("*")) {
+                } else if ((parent instanceof ArrayType arrayType) && var.isName() && var.getName().equals("*")) {
                     path2type.put(subPath.toString(), arrayType.getElementType());
-                }
-                else {
+                } else {
                     throw BusinessException.invalidTypePath(path.toString());
                 }
             }
@@ -405,7 +418,7 @@ public class TypeManager {
         Set<String> pathSet = new HashSet<>(paths);
 
         path2type.forEach((path, type) -> {
-            if(pathSet.contains(path)) {
+            if (pathSet.contains(path)) {
                 path2typeId.put(path, type.getId());
                 if (!visitedTypeIds.contains(type.getId())) {
                     visitedTypeIds.add(type.getId());
@@ -416,6 +429,11 @@ public class TypeManager {
         return new LoadByPathsResponse(path2typeId, typeDTOs);
     }
 
+    @Autowired
+    public void setFlowManager(FlowManager flowManager) {
+        this.flowManager = flowManager;
+    }
+
     @Transactional
     public void initCompositeTypes(long id) {
         IEntityContext context = newContext();
@@ -424,14 +442,19 @@ public class TypeManager {
     }
 
     private void initCompositeTypes(Type type, IEntityContext context) {
-        if(type.getNullableType() == null) {
+        if (type.getNullableType() == null) {
             UnionType nullableType = new UnionType(Set.of(type, context.getType(Null.class)));
             nullableType.getArrayType();
             type.setNullableType(nullableType);
+            context.bind(nullableType);
         }
         ArrayType arrayType = type.getArrayType();
-        if(arrayType.getNullableType() == null) {
+        if(!context.containsModel(arrayType)) {
+            context.bind(arrayType);
+        }
+        if (arrayType.getNullableType() == null) {
             arrayType.setNullableType(new UnionType(Set.of(arrayType, context.getType(Null.class))));
+            context.bind(arrayType.getNullableType());
         }
     }
 

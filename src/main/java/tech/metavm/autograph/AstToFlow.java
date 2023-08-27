@@ -59,11 +59,14 @@ public class AstToFlow extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitMethod(PsiMethod method) {
-        FlowBuilder builder = new FlowBuilder(method.getName(),
+        FlowBuilder builder = new FlowBuilder(TranspileUtil.getFlowName(method),
+                method.getName(),
                 getOutputType(method.getReturnType()), currentClass(), typeResolver);
         builders.push(builder);
         FlowRT flow = builder.getFlow();
         builder.enterScope(flow.getRootScope());
+        var selfNode = builder().createSelf();
+        builder.setVariable("this", new NodeExpression(selfNode));
         processParameters(method.getParameterList());
         requireNonNull(method.getBody()).accept(this);
         builder.exitScope();

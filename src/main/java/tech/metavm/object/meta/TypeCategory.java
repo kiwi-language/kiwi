@@ -2,26 +2,32 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
+import tech.metavm.flow.NodeKind;
 import tech.metavm.infra.RegionInfo;
 import tech.metavm.infra.RegionManager;
 import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.rest.ArrayParamDTO;
+import tech.metavm.object.instance.rest.PrimitiveParamDTO;
+import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
+import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.Objects;
 
 @EntityType("类型分类")
 public enum TypeCategory {
     @EnumConstant("类")
-    CLASS(0, SQLType.REFERENCE),
+    CLASS(0, SQLType.REFERENCE, ClassParamDTO.class),
     @EnumConstant("枚举")
-    ENUM(1, SQLType.REFERENCE),
+    ENUM(1, SQLType.REFERENCE, ClassParamDTO.class),
     @EnumConstant("接口")
-    INTERFACE(2, SQLType.ANY),
+    INTERFACE(2, SQLType.ANY, ClassParamDTO.class),
     @EnumConstant("值")
-    VALUE(3, SQLType.VALUE),
+    VALUE(3, SQLType.VALUE, ClassParamDTO.class),
     @EnumConstant("数组")
-    ARRAY(5, SQLType.MULTI_REFERENCE),
+    ARRAY(5, SQLType.MULTI_REFERENCE, ArrayTypeParamDTO.class),
     @EnumConstant("并集")
     UNION(9, SQLType.UNION),
     @EnumConstant("空")
@@ -50,11 +56,16 @@ public enum TypeCategory {
 
     private final int code;
     private final SQLType sqlType;
-
+    private final Class<?> paramClass;
 
     TypeCategory(int code, SQLType sqlType) {
+        this(code, sqlType, null);
+    }
+
+    TypeCategory(int code, SQLType sqlType, Class<?> paramClass) {
         this.code = code;
         this.sqlType = sqlType;
+        this.paramClass = paramClass;
     }
 
     public static TypeCategory getByCodeRequired(int code) {
@@ -147,6 +158,17 @@ public enum TypeCategory {
 
     public SQLType getSQLType() {
         return sqlType;
+    }
+
+    public Class<?> getParamClass() {
+        return paramClass;
+    }
+
+    public static TypeCategory getByParamClassRequired(Class<?> paramKlass) {
+        return Arrays.stream(values())
+                .filter(type -> Objects.equals(type.getParamClass(), paramKlass))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("FlowNodeType not found for param class: " + paramKlass.getName()));
     }
 
 }

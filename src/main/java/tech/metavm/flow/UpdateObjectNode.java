@@ -19,8 +19,8 @@ import java.util.List;
 @EntityType("更新对象节点")
 public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
-    public static UpdateObjectNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
-        UpdateObjectNode node = new UpdateObjectNode(nodeDTO, entityContext.getScope(nodeDTO.scopeId()));
+    public static UpdateObjectNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext entityContext) {
+        UpdateObjectNode node = new UpdateObjectNode(nodeDTO, scope);
         node.setParam(nodeDTO.getParam(), entityContext);
         return node;
     }

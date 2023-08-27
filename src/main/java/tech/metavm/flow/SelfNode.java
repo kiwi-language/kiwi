@@ -11,6 +11,10 @@ public class SelfNode extends NodeRT<Void> {
         super(nodeDTO, scope.getFlow().getType(), scope);
     }
 
+    public SelfNode(String name, NodeRT<?> prev, ScopeRT scope) {
+        super(name, NodeKind.SELF, scope.getFlow().getType(), prev, scope);
+    }
+
     @Override
     protected void setParam(Void param, IEntityContext entityContext) {
     }

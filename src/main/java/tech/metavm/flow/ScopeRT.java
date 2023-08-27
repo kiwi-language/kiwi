@@ -49,17 +49,26 @@ public class ScopeRT extends Entity {
     }
 
     public void addNode(NodeRT<?> node) {
-        if (node.getPredecessor() != null) {
-            nodes.addAfter(node, node.getPredecessor());
-        } else {
-            if (node.getSuccessor() != null) {
-                throw new RuntimeException("New scope root already having successor");
-            }
-            if (!nodes.isEmpty()) {
-                node.insertAfter(nodes.getFirst());
-            }
-            nodes.addFirst(node);
+        // Changed on Aug 27 2023: new node without predecessor is added as the last node
+        var pred = node.getPredecessor() != null ? node.getPredecessor() : getLastNode();
+        if(pred != null) {
+            pred.insertAfter(node);
+            nodes.addAfter(node, pred);
         }
+        else {
+            nodes.add(node);
+        }
+//        if (node.getPredecessor() != null) {
+//            nodes.addAfter(node, node.getPredecessor());
+//        } else {
+//            if (node.getSuccessor() != null) {
+//                throw new RuntimeException("New scope root already having successor");
+//            }
+//            if (!nodes.isEmpty()) {
+//                node.insertAfter(nodes.getFirst());
+//            }
+//            nodes.addFirst(node);
+//        }
         flow.addNode(node);
     }
 

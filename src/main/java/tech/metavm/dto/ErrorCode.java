@@ -40,6 +40,8 @@ public enum ErrorCode {
     STACK_UNDERFLOW(412, "栈下溢出"),
     ILLEGAL_ACCESS(413, "无权限方案"),
     FLOW_EXECUTION_FAILURE(414, "流程执行失败: {}"),
+    BRANCH_OWNER_MISMATCH(415, "分支所属节点不是当前节点({})"),
+    FLOW_DECLARING_TYPE_MISMATCH(416, "流程所属类型不是当前类型({})"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),

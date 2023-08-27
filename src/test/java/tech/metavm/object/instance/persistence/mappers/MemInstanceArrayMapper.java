@@ -43,7 +43,7 @@ public class MemInstanceArrayMapper implements InstanceArrayMapper {
     @Override
     public void batchUpdate(Collection<InstanceArrayPO> records) {
         for (InstanceArrayPO record : records) {
-            remove(record.getId());
+            remove(record.getIdRequired());
             add(record);
         }
     }

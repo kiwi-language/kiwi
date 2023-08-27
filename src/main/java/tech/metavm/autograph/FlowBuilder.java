@@ -19,9 +19,10 @@ public class FlowBuilder {
     private final TypeResolver typeResolver;
     private final ExpressionResolver expressionResolver;
 
-    public FlowBuilder(String name, ClassType outputType, ClassType declaringClass, TypeResolver typeResolver) {
+    public FlowBuilder(String name, String code, ClassType outputType, ClassType declaringClass, TypeResolver typeResolver) {
         ClassType inputType = new ClassType(name + "Input");
         flow = new FlowRT(name, inputType, outputType, declaringClass);
+        flow.setCode(code);
         this.typeResolver = typeResolver;
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver);
     }
@@ -97,7 +98,10 @@ public class FlowBuilder {
     }
 
     public InputNode createInput() {
-        return new InputNode("Input", getFlow().getInputType(), null, scope());
+        return new InputNode("Input", getFlow().getInputType(), scope().getLastNode(), scope());
     }
 
+    public SelfNode createSelf() {
+        return new SelfNode("Self", scope().getLastNode(), scope());
+    }
 }

@@ -10,14 +10,13 @@ import tech.metavm.util.NncUtils;
 @EntityType("循环节点")
 public class LoopNode extends NodeRT<LoopParam> {
 
-    public static LoopNode create(NodeDTO nodeDTO, IEntityContext context) {
+    public static LoopNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         LoopParam loopParam = nodeDTO.getParam();
         NodeRT<?> firstChild = context.getNode(loopParam.firstChildId());
         NodeRT<?> prev = NncUtils.get(nodeDTO.prevId(), context::getNode);
-        ScopeRT scope = context.getScope(nodeDTO.scopeId());
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         Value condition = ValueFactory.getValue(loopParam.condition(), parsingContext);
-        return new LoopNode(nodeDTO, condition, firstChild, context.getScope(nodeDTO.scopeId()));
+        return new LoopNode(nodeDTO, condition, firstChild, scope);
     }
 
     @ChildEntity("循环条件")

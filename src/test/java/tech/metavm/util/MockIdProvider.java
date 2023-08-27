@@ -23,7 +23,7 @@ public class MockIdProvider implements EntityIdProvider {
         return NncUtils.requireNonNull(
                 id2type.get(id),
                 () -> new InternalException(InternalErrorCode.INVALID_ID, id, "Can not find a type for this id.")
-        ).getId();
+        ).getIdRequired();
     }
 
     public Type getType(long id) {

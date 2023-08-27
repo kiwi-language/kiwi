@@ -4,22 +4,27 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.DoubleInstance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @EntityType("分支节点")
 public class BranchNode extends NodeRT<BranchParamDTO> {
+
+    public static BranchNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+        var outputType = context.getClassType(nodeDTO.outputTypeId());
+        return new BranchNode(nodeDTO, outputType, scope);
+    }
 
     @EntityField("是否包容")
     private boolean inclusive;
@@ -28,12 +33,14 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     @ChildEntity("字段值")
     private final Table<BranchNodeOutputField> fields = new Table<>(BranchNodeOutputField.class);
 
-    public BranchNode(NodeDTO nodeDTO, ScopeRT scope) {
-        super(nodeDTO, null, scope);
+    public BranchNode(NodeDTO nodeDTO, ClassType outputType, ScopeRT scope) {
+        super(nodeDTO, outputType, scope);
         BranchParamDTO param = nodeDTO.getParam();
         inclusive = param.inclusive();
-        branches.add(Branch.create(1L, this));
-        branches.add(Branch.createPreselected(this));
+        if (param.branches() == null) {
+            branches.add(Branch.create(1L, this));
+            branches.add(Branch.createPreselected(this));
+        }
     }
 
     public BranchNode(String name, boolean inclusive, NodeRT<?> prev, ScopeRT scope) {
@@ -44,6 +51,22 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     @Override
     protected void setParam(BranchParamDTO param, IEntityContext entityContext) {
         inclusive = param.inclusive();
+        if (param.branches() != null) {
+            Map<Long, Branch> index2branch = new HashMap<>();
+            for (Branch branch : branches) {
+                index2branch.put(branch.getIndex(), branch);
+            }
+            branches.clear();
+            for (BranchDTO branchDTO : param.branches()) {
+                var existing = index2branch.get(branchDTO.id());
+                if (existing != null) {
+                    existing.update(branchDTO, entityContext);
+                    branches.add(existing);
+                } else {
+                    addBranch(branchDTO, entityContext);
+                }
+            }
+        }
     }
 
     @Override

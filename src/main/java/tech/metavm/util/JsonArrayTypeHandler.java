@@ -14,10 +14,6 @@ import java.util.List;
 
 public class JsonArrayTypeHandler extends BaseTypeHandler<List<Object>> {
 
-    public JsonArrayTypeHandler() {
-        System.out.println("JsonArrayTypeHandler created");
-    }
-
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, List<Object> parameter, JdbcType jdbcType) throws SQLException {
         ps.setString(i, NncUtils.toJSONString(parameter));

@@ -15,10 +15,10 @@ import java.util.List;
 @EntityType("唯一索引节点")
 public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
-    public static GetUniqueNode create(NodeDTO nodeDTO, IEntityContext context) {
+    public static GetUniqueNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         GetUniqueParamDTO param = nodeDTO.getParam();
         Index constraint = context.getEntity(Index.class, param.constraintId());
-        GetUniqueNode node = new GetUniqueNode(nodeDTO, constraint, context.getScope(nodeDTO.scopeId()));
+        GetUniqueNode node = new GetUniqueNode(nodeDTO, constraint, scope);
         node.setParam(param, context);
         return node;
     }

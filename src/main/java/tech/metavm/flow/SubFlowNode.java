@@ -25,10 +25,9 @@ import java.util.Map;
 @EntityType("子流程节点")
 public class SubFlowNode extends NodeRT<SubFlowParam> {
 
-    public static SubFlowNode create(NodeDTO nodeDTO, IEntityContext context) {
+    public static SubFlowNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         SubFlowParam param = nodeDTO.getParam();
         NodeRT<?> prev = NncUtils.get(nodeDTO.prevId(), context::getNode);
-        ScopeRT scope = context.getScope(nodeDTO.scopeId());
         FlowParsingContext flowParsingContext = FlowParsingContext.create(scope, prev, context);
         Value self = ValueFactory.getValue(param.self(), flowParsingContext);
         List<FieldParam> arguments = NncUtils.map(

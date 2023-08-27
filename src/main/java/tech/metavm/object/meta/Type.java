@@ -214,8 +214,8 @@ public abstract class Type extends Entity {
                 category.code(),
                 ephemeral,
                 anonymous,
-                NncUtils.get(nullableType, Entity::getIdRequired),
-                NncUtils.get(arrayType, Entity::getIdRequired),
+                NncUtils.get(nullableType, Entity::getId),
+                NncUtils.get(arrayType, Entity::getId),
                 param
         );
     }
@@ -231,8 +231,8 @@ public abstract class Type extends Entity {
                         getCategory().code(),
                         isEphemeral(),
                         isAnonymous(),
-                        NncUtils.get(nullableType, Entity::getIdRequired),
-                        NncUtils.get(arrayType, Entity::getIdRequired),
+                        NncUtils.get(nullableType, Entity::getId),
+                        NncUtils.get(arrayType, Entity::getId),
                         null
                 );
             } else {

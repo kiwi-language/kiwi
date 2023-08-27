@@ -221,11 +221,566 @@ GET http://localhost:8080/type/constraint/1008300172
 <> 2023-02-21T004714.401.json
 
 
+###
+POST http://localhost:8080/type
+Accept: application/json
+Content-Type: application/json
 
-
-
-
-
+{
+  "id" : null,
+  "tmpId" : 1,
+  "name" : "AST商品",
+  "code" : "AstProduct",
+  "category" : 0,
+  "ephemeral" : false,
+  "anonymous" : false,
+  "nullableTypeId" : null,
+  "arrayTypeId" : null,
+  "param" : {
+    "type" : "0",
+    "superTypeId" : null,
+    "superType" : null,
+    "fields" : [ {
+      "id" : null,
+      "name" : "库存",
+      "access" : 1,
+      "defaultValue" : null,
+      "unique" : false,
+      "asTitle" : false,
+      "declaringTypeId" : null,
+      "typeId" : 10006,
+      "type" : {
+        "id" : 10006,
+        "tmpId" : 2,
+        "name" : "整数",
+        "code" : "INT",
+        "category" : 20,
+        "ephemeral" : true,
+        "anonymous" : false,
+        "nullableTypeId" : null,
+        "arrayTypeId" : null,
+        "param" : null
+      },
+      "isChild" : false
+    }, {
+      "id" : null,
+      "name" : "状态",
+      "access" : 1,
+      "defaultValue" : null,
+      "unique" : false,
+      "asTitle" : false,
+      "declaringTypeId" : null,
+      "typeId" : 10006,
+      "type" : {
+        "id" : 10006,
+        "tmpId" : 2,
+        "name" : "整数",
+        "code" : "INT",
+        "category" : 20,
+        "ephemeral" : true,
+        "anonymous" : false,
+        "nullableTypeId" : null,
+        "arrayTypeId" : null,
+        "param" : null
+      },
+      "isChild" : false
+    } ],
+    "constraints" : [ ],
+    "flows" : [ {
+      "id" : null,
+      "name" : "dec",
+      "code" : "dec",
+      "typeId" : null,
+      "rootScope" : {
+        "id" : null,
+        "nodes" : [ {
+          "id" : null,
+          "flowId" : null,
+          "name" : "Self",
+          "type" : 0,
+          "prevId" : null,
+          "outputTypeId" : null,
+          "param" : null,
+          "outputType" : {
+            "id" : null,
+            "tmpId" : 1,
+            "name" : "AST商品",
+            "code" : "AstProduct",
+            "category" : 0,
+            "ephemeral" : false,
+            "anonymous" : false,
+            "nullableTypeId" : null,
+            "arrayTypeId" : null,
+            "param" : null
+          },
+          "scopeId" : null
+        }, {
+          "id" : null,
+          "flowId" : null,
+          "name" : "Input",
+          "type" : 1,
+          "prevId" : null,
+          "outputTypeId" : null,
+          "param" : {
+            "type" : "1",
+            "typeId" : null,
+            "fields" : [ {
+              "id" : null,
+              "name" : "amount",
+              "typeId" : 10006,
+              "defaultValue" : null
+            } ]
+          },
+          "outputType" : {
+            "id" : null,
+            "tmpId" : 3,
+            "name" : "decInput",
+            "code" : null,
+            "category" : 0,
+            "ephemeral" : false,
+            "anonymous" : false,
+            "nullableTypeId" : null,
+            "arrayTypeId" : null,
+            "param" : {
+              "type" : "0",
+              "superTypeId" : null,
+              "superType" : null,
+              "fields" : [ {
+                "id" : null,
+                "name" : "amount",
+                "access" : 1,
+                "defaultValue" : null,
+                "unique" : false,
+                "asTitle" : false,
+                "declaringTypeId" : null,
+                "typeId" : 10006,
+                "type" : {
+                  "id" : 10006,
+                  "tmpId" : 2,
+                  "name" : "整数",
+                  "code" : "INT",
+                  "category" : 20,
+                  "ephemeral" : true,
+                  "anonymous" : false,
+                  "nullableTypeId" : null,
+                  "arrayTypeId" : null,
+                  "param" : null
+                },
+                "isChild" : false
+              } ],
+              "constraints" : [ ],
+              "flows" : [ ],
+              "desc" : null,
+              "extra" : null
+            }
+          },
+          "scopeId" : null
+        }, {
+          "id" : null,
+          "flowId" : null,
+          "name" : "Branch",
+          "type" : 7,
+          "prevId" : null,
+          "outputTypeId" : null,
+          "param" : {
+            "type" : "7",
+            "inclusive" : false,
+            "branches" : [ {
+              "id" : 2,
+              "ownerId" : null,
+              "condition" : {
+                "kind" : 3,
+                "value" : {
+                  "expression" : "Self.状态 = 0 AND Input.amount <= Self.库存",
+                  "type" : 5,
+                  "displayValue" : ""
+                },
+                "valueType" : {
+                  "id" : 10007,
+                  "tmpId" : 4,
+                  "name" : "布尔",
+                  "code" : "BOOLEAN",
+                  "category" : 16,
+                  "ephemeral" : true,
+                  "anonymous" : false,
+                  "nullableTypeId" : 15092,
+                  "arrayTypeId" : 11058,
+                  "param" : null
+                }
+              },
+              "scope" : {
+                "id" : null,
+                "nodes" : [ ]
+              },
+              "preselected" : false
+            }, {
+              "id" : 10000,
+              "ownerId" : null,
+              "condition" : {
+                "kind" : 1,
+                "value" : {
+                  "displayValue" : "是",
+                  "value" : true,
+                  "type" : 1
+                },
+                "valueType" : {
+                  "id" : null,
+                  "tmpId" : 4,
+                  "name" : "布尔",
+                  "code" : "BOOLEAN",
+                  "category" : 16,
+                  "ephemeral" : true,
+                  "anonymous" : false,
+                  "nullableTypeId" : null,
+                  "arrayTypeId" : null,
+                  "param" : null
+                }
+              },
+              "scope" : {
+                "id" : null,
+                "nodes" : [ ]
+              },
+              "preselected" : true
+            } ]
+          },
+          "outputType" : {
+            "id" : null,
+            "tmpId" : 5,
+            "name" : "Branch_output",
+            "code" : null,
+            "category" : 0,
+            "ephemeral" : false,
+            "anonymous" : false,
+            "nullableTypeId" : null,
+            "arrayTypeId" : null,
+            "param" : {
+              "type" : "0",
+              "superTypeId" : null,
+              "superType" : null,
+              "fields" : [ {
+                "id" : null,
+                "name" : "valid",
+                "access" : 1,
+                "defaultValue" : null,
+                "unique" : false,
+                "asTitle" : false,
+                "declaringTypeId" : null,
+                "typeId" : 10007,
+                "type" : {
+                  "id" : 10007,
+                  "tmpId" : 4,
+                  "name" : "布尔",
+                  "code" : "BOOLEAN",
+                  "category" : 16,
+                  "ephemeral" : true,
+                  "anonymous" : false,
+                  "nullableTypeId" : null,
+                  "arrayTypeId" : null,
+                  "param" : null
+                },
+                "isChild" : false
+              } ],
+              "constraints" : [ ],
+              "flows" : [ ],
+              "desc" : null,
+              "extra" : null
+            }
+          },
+          "scopeId" : null
+        }, {
+          "id" : null,
+          "flowId" : null,
+          "name" : "Branch",
+          "type" : 7,
+          "prevId" : null,
+          "outputTypeId" : null,
+          "param" : {
+            "type" : "7",
+            "inclusive" : false,
+            "branches" : [ {
+              "id" : 2,
+              "ownerId" : null,
+              "condition" : {
+                "kind" : 3,
+                "value" : {
+                  "expression" : "Branch.valid",
+                  "type" : 5,
+                  "displayValue" : ""
+                },
+                "valueType" : {
+                  "id" : 10007,
+                  "tmpId" : 4,
+                  "name" : "布尔",
+                  "code" : "BOOLEAN",
+                  "category" : 16,
+                  "ephemeral" : true,
+                  "anonymous" : false,
+                  "nullableTypeId" : null,
+                  "arrayTypeId" : null,
+                  "param" : null
+                }
+              },
+              "scope" : {
+                "id" : null,
+                "nodes" : [ {
+                  "id" : null,
+                  "flowId" : null,
+                  "name" : "Update",
+                  "type" : 4,
+                  "prevId" : null,
+                  "outputTypeId" : null,
+                  "param" : {
+                    "type" : "4",
+                    "objectId" : {
+                      "kind" : 3,
+                      "value" : {
+                        "expression" : "Self",
+                        "type" : 5,
+                        "displayValue" : ""
+                      },
+                      "valueType" : {
+                        "id" : null,
+                        "tmpId" : 1,
+                        "name" : "AST商品",
+                        "code" : "AstProduct",
+                        "category" : 0,
+                        "ephemeral" : false,
+                        "anonymous" : false,
+                        "nullableTypeId" : null,
+                        "arrayTypeId" : null,
+                        "param" : null
+                      }
+                    },
+                    "fields" : [ {
+                      "fieldId" : null,
+                      "opCode" : 1,
+                      "value" : {
+                        "kind" : 3,
+                        "value" : {
+                          "expression" : "Input.amount",
+                          "type" : 5,
+                          "displayValue" : ""
+                        },
+                        "valueType" : {
+                          "id" : 10006,
+                          "tmpId" : 2,
+                          "name" : "整数",
+                          "code" : "INT",
+                          "category" : 20,
+                          "ephemeral" : true,
+                          "anonymous" : false,
+                          "nullableTypeId" : null,
+                          "arrayTypeId" : null,
+                          "param" : null
+                        }
+                      }
+                    } ]
+                  },
+                  "outputType" : null,
+                  "scopeId" : null
+                }, {
+                  "id" : null,
+                  "flowId" : null,
+                  "name" : "Exit",
+                  "type" : 9,
+                  "prevId" : null,
+                  "outputTypeId" : null,
+                  "param" : {
+                    "type" : "9",
+                    "fields" : [ {
+                      "id" : null,
+                      "name" : "value",
+                      "typeId" : 10007,
+                      "value" : {
+                        "kind" : 3,
+                        "value" : {
+                          "expression" : "true",
+                          "type" : 5,
+                          "displayValue" : ""
+                        },
+                        "valueType" : {
+                          "id" : 10007,
+                          "tmpId" : 4,
+                          "name" : "布尔",
+                          "code" : "BOOLEAN",
+                          "category" : 16,
+                          "ephemeral" : true,
+                          "anonymous" : false,
+                          "nullableTypeId" : null,
+                          "arrayTypeId" : null,
+                          "param" : null
+                        }
+                      }
+                    } ]
+                  },
+                  "outputType" : {
+                    "id" : null,
+                    "tmpId" : 6,
+                    "name" : "Output",
+                    "code" : null,
+                    "category" : 0,
+                    "ephemeral" : true,
+                    "anonymous" : true,
+                    "nullableTypeId" : null,
+                    "arrayTypeId" : null,
+                    "param" : {
+                      "type" : "0",
+                      "superTypeId" : null,
+                      "superType" : null,
+                      "fields" : [ {
+                        "id" : null,
+                        "name" : "value",
+                        "access" : 1,
+                        "defaultValue" : null,
+                        "unique" : false,
+                        "asTitle" : false,
+                        "declaringTypeId" : null,
+                        "typeId" : 10007,
+                        "type" : {
+                          "id" : 10007,
+                          "tmpId" : 4,
+                          "name" : "布尔",
+                          "code" : "BOOLEAN",
+                          "category" : 16,
+                          "ephemeral" : true,
+                          "anonymous" : false,
+                          "nullableTypeId" : null,
+                          "arrayTypeId" : null,
+                          "param" : null
+                        },
+                        "isChild" : false
+                      } ],
+                      "constraints" : [ ],
+                      "flows" : [ ],
+                      "desc" : null,
+                      "extra" : null
+                    }
+                  },
+                  "scopeId" : null
+                } ]
+              },
+              "preselected" : false
+            }, {
+              "id" : 10000,
+              "ownerId" : null,
+              "condition" : {
+                "kind" : 1,
+                "value" : {
+                  "displayValue" : "是",
+                  "value" : true,
+                  "type" : 1
+                },
+                "valueType" : {
+                  "id" : null,
+                  "tmpId" : 4,
+                  "name" : "布尔",
+                  "code" : "BOOLEAN",
+                  "category" : 16,
+                  "ephemeral" : true,
+                  "anonymous" : false,
+                  "nullableTypeId" : null,
+                  "arrayTypeId" : null,
+                  "param" : null
+                }
+              },
+              "scope" : {
+                "id" : null,
+                "nodes" : [ {
+                  "id" : null,
+                  "flowId" : null,
+                  "name" : "Exit",
+                  "type" : 9,
+                  "prevId" : null,
+                  "outputTypeId" : null,
+                  "param" : {
+                    "type" : "9",
+                    "fields" : [ {
+                      "id" : null,
+                      "name" : "value",
+                      "typeId" : 10007,
+                      "value" : {
+                        "kind" : 3,
+                        "value" : {
+                          "expression" : "false",
+                          "type" : 5,
+                          "displayValue" : ""
+                        },
+                        "valueType" : {
+                          "id" : 10007,
+                          "tmpId" : 4,
+                          "name" : "布尔",
+                          "code" : "BOOLEAN",
+                          "category" : 16,
+                          "ephemeral" : true,
+                          "anonymous" : false,
+                          "nullableTypeId" : null,
+                          "arrayTypeId" : null,
+                          "param" : null
+                        }
+                      }
+                    } ]
+                  },
+                  "outputType" : {
+                    "id" : null,
+                    "tmpId" : 6,
+                    "name" : "Output",
+                    "code" : null,
+                    "category" : 0,
+                    "ephemeral" : true,
+                    "anonymous" : true,
+                    "nullableTypeId" : null,
+                    "arrayTypeId" : null,
+                    "param" : null
+                  },
+                  "scopeId" : null
+                } ]
+              },
+              "preselected" : true
+            } ]
+          },
+          "outputType" : {
+            "id" : null,
+            "tmpId" : 7,
+            "name" : "Branch_output",
+            "code" : null,
+            "category" : 0,
+            "ephemeral" : false,
+            "anonymous" : false,
+            "nullableTypeId" : null,
+            "arrayTypeId" : null,
+            "param" : {
+              "type" : "0",
+              "superTypeId" : null,
+              "superType" : null,
+              "fields" : [ ],
+              "constraints" : [ ],
+              "flows" : [ ],
+              "desc" : null,
+              "extra" : null
+            }
+          },
+          "scopeId" : null
+        } ]
+      },
+      "type" : {
+        "id" : null,
+        "tmpId" : 1,
+        "name" : "AST商品",
+        "code" : "AstProduct",
+        "category" : 0,
+        "ephemeral" : false,
+        "anonymous" : false,
+        "nullableTypeId" : null,
+        "arrayTypeId" : null,
+        "param" : null
+      },
+      "inputTypeId" : null,
+      "outputTypeId" : null
+    } ],
+    "desc" : null,
+    "extra" : null
+  }
+}
 
 
 

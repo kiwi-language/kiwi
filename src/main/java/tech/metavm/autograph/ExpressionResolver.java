@@ -92,9 +92,7 @@ public class ExpressionResolver {
             var qualifier = psiReferenceExpression.getQualifierExpression();
             Expression qualifierExpr;
             if (qualifier == null) {
-                qualifierExpr = new ThisExpression(
-                        (ClassType) typeResolver.resolve(TranspileUtil.getTemplateType(psiClass))
-                );
+                qualifierExpr = variableTable.get("this");
             } else {
                 qualifierExpr = resolve(qualifier);
             }
@@ -152,7 +150,7 @@ public class ExpressionResolver {
                         self = resolve(referenceExpression.getQualifierExpression());
                     }
                     else {
-                        self = createThisExpression(field.getContainingClass());
+                        self = variableTable.get("this");
                     }
                     processFieldAssignment(self, field, assignment);
                 } else {

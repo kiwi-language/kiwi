@@ -1,6 +1,10 @@
 package tech.metavm.object.meta.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import tech.metavm.flow.rest.NodeParamTypeIdResolver;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.meta.rest.TypeParamTypeIdResolver;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -15,6 +19,8 @@ public record TypeDTO(
         boolean anonymous,
         @Nullable Long nullableTypeId,
         @Nullable Long arrayTypeId,
+        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+        @JsonTypeIdResolver(TypeParamTypeIdResolver.class)
         Object param
 ) {
 

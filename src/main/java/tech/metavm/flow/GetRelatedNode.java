@@ -15,8 +15,7 @@ import tech.metavm.util.NncUtils;
 @EntityType("查询关联对象节点")
 public class GetRelatedNode extends NodeRT<GetRelatedParamDTO> {
 
-    public static GetRelatedNode create(NodeDTO nodeDTO, IEntityContext context) {
-        ScopeRT scope = context.getScope(nodeDTO.scopeId());
+    public static GetRelatedNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         NodeRT<?> prev = context.getNode(nodeDTO.prevId());
         FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context.getInstanceContext());
         GetRelatedParamDTO param = nodeDTO.getParam();

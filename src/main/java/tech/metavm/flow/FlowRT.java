@@ -32,6 +32,7 @@ public class FlowRT extends Entity {
     @ChildEntity("输出类型")
     private final ClassType outputType;
     @ChildEntity("编号")
+    @Nullable
     private String code;
 
     private transient Table<ScopeRT> scopes;
@@ -42,6 +43,7 @@ public class FlowRT extends Entity {
 
     public FlowRT(FlowDTO flowDTO, ClassType inputType, ClassType outputType, ClassType declaringType) {
         this(flowDTO.name(), inputType, outputType, declaringType);
+        setCode(flowDTO.code());
     }
 
     public FlowRT(String name, ClassType inputType, ClassType outputType, ClassType declaringType) {
@@ -85,6 +87,7 @@ public class FlowRT extends Entity {
         return new FlowDTO(
                 id,
                 name,
+                code,
                 type.getId(),
                 rootScope.toDTO(true),
                 type.toDTO(true, true),
@@ -150,11 +153,12 @@ public class FlowRT extends Entity {
         return scopes;
     }
 
+    @Nullable
     public String getCode() {
         return code;
     }
 
-    public void setCode(String code) {
+    public void setCode(@Nullable String code) {
         this.code = code;
     }
 

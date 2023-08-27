@@ -3,10 +3,9 @@ package tech.metavm.autograph.mocks;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.util.InternalException;
 
 @EntityType("AST商品")
-public class Product extends Entity {
+public class AstProduct extends Entity {
 
     @EntityField("库存")
     private int inventory;

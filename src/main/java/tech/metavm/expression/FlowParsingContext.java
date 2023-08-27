@@ -86,7 +86,9 @@ public class FlowParsingContext implements ParsingContext {
         name2node.clear();
         NodeRT<?> node = this.lastNode;
         do {
-            id2node.put(node.getId(), node);
+            if(node.getId() != null) {
+                id2node.put(node.getId(), node);
+            }
             name2node.put(node.getName(), node);
             node = node.getGlobalPredecessor();
         } while(node != null && !id2node.containsKey(node.getId()));

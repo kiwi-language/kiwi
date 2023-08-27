@@ -1,5 +1,6 @@
 package tech.metavm.util;
 
+import com.alibaba.druid.pool.DruidDataSource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -13,6 +14,7 @@ import tech.metavm.object.instance.persistence.mappers.MemInstanceArrayMapper;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
 
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -86,6 +88,16 @@ public class TestUtils {
                 }
             }
         }
+    }
+
+    public static DataSource createDataSource() {
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUsername("root");
+        dataSource.setPassword("85263670");
+        dataSource.setMaxActive(1);
+        dataSource.setUrl("jdbc:mysql://localhost:3306/object?allowMultiQueries=true");
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        return dataSource;
     }
 
     public static void logJSON(Logger logger, Object object) {

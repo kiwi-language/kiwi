@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.*;
+import tech.metavm.expression.Function;
 import tech.metavm.job.JobSchedulerStatus;
 import tech.metavm.job.JobSignal;
 import tech.metavm.mocks.*;
@@ -49,7 +50,12 @@ public class MockRegistry {
                 ),
                 null
         );
-        DEF_CONTEXT = new DefContext(o -> null, INSTANCE_CONTEXT);
+        java.util.function.Function<Object, Long> getIdFunc;
+        if(idProvider instanceof BootIdProvider bootIdProvider) {
+            getIdFunc = bootIdProvider::getId;
+        }
+        else getIdFunc = o -> null;
+        DEF_CONTEXT = new DefContext(getIdFunc, INSTANCE_CONTEXT);
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
         ReflectUtils.getModelClasses().forEach(DEF_CONTEXT::getDef);
@@ -279,6 +285,10 @@ public class MockRegistry {
         EntityDef<?> entityDef = (EntityDef<?>) getDef(def.getType());
         initIds();
         return entityDef.getIndexConstraintDef(def).getIndexConstraint();
+    }
+
+    public static java.lang.reflect.Type getJavaType(Type type) {
+        return DEF_CONTEXT.getJavaType(type);
     }
 
     public static AnyType getObjectType() {

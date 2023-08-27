@@ -2,17 +2,15 @@ package tech.metavm.autograph;
 
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
+import tech.metavm.entity.ModelIdentity;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
-import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.DOUBLE;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -44,26 +42,63 @@ public class MockTypeResolver implements TypeResolver {
 
     private final Map<String, ClassType> classTypeMap = new HashMap<>();
 
+    private final StdAllocators stdAllocators;
+
+    public MockTypeResolver() {
+        this(null);
+    }
+
+    public MockTypeResolver(StdAllocators stdAllocators) {
+        this.stdAllocators = stdAllocators;
+    }
+
     @Override
     public Type resolve(PsiType psiType) {
+        Type type;
+        String className;
+        boolean primitive;
         if (psiType instanceof PsiPrimitiveType primitiveType) {
             var klass = ReflectUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
             if (CLASS_MAP.containsKey(klass)) {
                 klass = CLASS_MAP.get(klass);
             }
-            return PRIMITIVE_TYPE_MAP.get(klass);
+            className = klass.getName();
+            primitive = true;
+            type = PRIMITIVE_TYPE_MAP.get(klass);
         } else if (psiType instanceof PsiClassType classType) {
             var psiClass = requireNonNull(classType.resolve());
             if (ReflectUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())) {
                 return PRIMITIVE_TYPE_MAP.get(ReflectUtils.classForName(psiClass.getQualifiedName()));
             }
-            return resolvePojoClass(psiClass);
-        }
-        else if(psiType instanceof PsiArrayType arrayType) {
+            className = psiClass.getQualifiedName();
+            primitive = false;
+            type = resolvePojoClass(psiClass);
+        } else if (psiType instanceof PsiArrayType arrayType) {
             var componentType = resolve(arrayType.getComponentType());
-            return componentType.getArrayType();
+            type = componentType.getArrayType();
+            className = null;
+            primitive = false;
+        } else {
+            throw new InternalException("Resolution for " + psiType.getClass().getName() + " is not yet supported");
         }
-        throw new InternalException("Resolution for " + psiType.getClass().getName() + " is not yet supported");
+        if (type.getId() == null && className != null) {
+            Long id = getTypeId(className, primitive);
+            if (id != null) {
+                type.initId(id);
+            }
+        }
+        return type;
+    }
+
+    private Long getTypeId(String className, boolean primitive) {
+        if (stdAllocators == null) {
+            return null;
+        }
+        if (primitive) {
+            return stdAllocators.getId(new ModelIdentity(PrimitiveType.class, className));
+        } else {
+            return stdAllocators.getId(new ModelIdentity(ClassType.class, className));
+        }
     }
 
     @Override
@@ -73,7 +108,7 @@ public class MockTypeResolver implements TypeResolver {
 
     private ClassType resolvePojoClass(PsiClass psiClass) {
         var metaClass = classTypeMap.get(psiClass.getQualifiedName());
-        if(metaClass != null) return metaClass;
+        if (metaClass != null) return metaClass;
         var psiFile = psiClass.getContainingFile();
         AstToFlow astToFlow = new AstToFlow(this);
         psiFile.accept(astToFlow);

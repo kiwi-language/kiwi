@@ -101,7 +101,7 @@ public class UnionType extends Type {
     @Override
     public String toString() {
         List<String> memberNames = NncUtils.mapAndSort(typeMembers, Type::getName, String::compareTo);
-        return "UnionType " + String.join("|", memberNames) + " @" + super.hashCode();
+        return "UnionType " + String.join("|", memberNames);
     }
 
     @Override

@@ -4,7 +4,6 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -16,18 +15,22 @@ import static tech.metavm.util.ReflectUtils.*;
 
 public class NodeFactory {
 
-    public static NodeRT<?> getFlowNode(NodeDTO nodeDTO, IEntityContext context) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public static NodeRT<?> create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         NodeKind nodeType = NodeKind.getByCodeRequired(nodeDTO.type());
         Class<? extends NodeRT<?>> klass = nodeType.getKlass();
-        Method createMethod = tryGetStaticMethod(klass, "create", NodeDTO.class, IEntityContext.class);
+        Method createMethod = tryGetStaticMethod(
+                klass, "create", NodeDTO.class, ScopeRT.class, IEntityContext.class);
         if(createMethod != null) {
-            return (NodeRT<?>) ReflectUtils.invoke(null, createMethod, nodeDTO, context);
+            return (NodeRT<?>) ReflectUtils.invoke(null, createMethod, nodeDTO, scope, context);
         }
         Constructor<?> constructor = getConstructor(klass, NodeDTO.class, ScopeRT.class);
-        return (NodeRT<?>) newInstance(constructor, nodeDTO, context.getScope(nodeDTO.scopeId()));
+        NodeRT node =  (NodeRT) newInstance(constructor, nodeDTO, scope);
+        if(nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
+        return node;
     }
 
-    public static NodeRT<?> getFlowNode(NodePO nodePO, InstanceContext context) {
+    public static NodeRT<?> create(NodePO nodePO, InstanceContext context) {
         NodeKind nodeType = NodeKind.getByCodeRequired(nodePO.getType());
         Class<? extends NodeRT<?>> klass = nodeType.getKlass();
         Class<?> paramClass = getParamClass(klass);

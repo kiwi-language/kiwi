@@ -11,8 +11,8 @@ import tech.metavm.object.instance.StringInstance;
 @EntityType("异常节点")
 public class ExceptionNode extends NodeRT<ExceptionParamDTO> {
 
-    public static ExceptionNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
-        ExceptionNode node = new ExceptionNode(nodeDTO, entityContext.getScope(nodeDTO.scopeId()));
+    public static ExceptionNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext entityContext) {
+        ExceptionNode node = new ExceptionNode(nodeDTO, scope);
         node.setParam(nodeDTO.getParam(), entityContext);
         return node;
     }

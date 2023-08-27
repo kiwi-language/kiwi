@@ -45,4 +45,9 @@ public class BootIdProvider implements EntityIdProvider  {
         );
         return result;
     }
+
+    public Long getId(Object model) {
+        return allocators.getId(model);
+    }
+
 }

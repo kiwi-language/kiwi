@@ -25,9 +25,8 @@ import java.util.Map;
 @EntityType("结束节点")
 public class ReturnNode extends NodeRT<ReturnParamDTO> {
 
-    public static ReturnNode create(NodeDTO nodeDTO, IEntityContext entityContext) {
+    public static ReturnNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext entityContext) {
         NodeRT<?> prev = NncUtils.get(nodeDTO.prevId(), entityContext::getNode);
-        ScopeRT scope = entityContext.getScope(nodeDTO.scopeId());
         ReturnNode node = new ReturnNode(nodeDTO, prev, scope);
         node.setParam(nodeDTO.getParam(), entityContext);
         return node;

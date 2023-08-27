@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.psi.*;
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityFlow;
 import tech.metavm.entity.EntityType;
 import tech.metavm.util.NncUtils;
 
@@ -46,10 +47,9 @@ public class TranspileUtil {
     }
 
     public static PsiElement getTryStatementEntry(PsiTryStatement statement) {
-        if(statement.getResourceList() != null) {
+        if (statement.getResourceList() != null) {
             return statement.getResourceList().iterator().next();
-        }
-        else {
+        } else {
             var body = requireNonNull(statement.getTryBlock()).getStatements();
             return body.length > 0 ? body[0] : null;
         }
@@ -61,14 +61,13 @@ public class TranspileUtil {
     }
 
     public static @Nullable PsiElement getForStatementEntry(PsiForStatement statement) {
-        if(statement.getCondition() != null) return statement.getCondition();
-        if(statement.getBody() != null) {
-            if(statement.getBody() instanceof PsiBlockStatement block) {
-                if(block.getCodeBlock().getStatements().length > 0) {
+        if (statement.getCondition() != null) return statement.getCondition();
+        if (statement.getBody() != null) {
+            if (statement.getBody() instanceof PsiBlockStatement block) {
+                if (block.getCodeBlock().getStatements().length > 0) {
                     return block.getCodeBlock().getStatements()[0];
                 }
-            }
-            else return statement.getBody();
+            } else return statement.getBody();
         }
         return statement.getUpdate();
     }
@@ -84,16 +83,16 @@ public class TranspileUtil {
     }
 
     public static String getFlowName(PsiMethod method) {
-        // TODO add flow annotation and get flow name from annotation value
-        return method.getName();
+        String bizName = tryGetNameFromAnnotation(method, EntityFlow.class);
+        return bizName != null ? bizName : method.getName();
     }
 
     private static String tryGetNameFromAnnotation(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass) {
         var annotation = element.getAnnotation(annotationClass.getName());
-        if(annotation == null) annotation = element.getAnnotation(annotationClass.getSimpleName());
-        if(annotation != null) {
+        if (annotation == null) annotation = element.getAnnotation(annotationClass.getSimpleName());
+        if (annotation != null) {
             var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals("value"));
-            if(attr != null) {
+            if (attr != null) {
                 JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) attr.getAttributeValue();
                 return (String) requireNonNull(value).getConstantValue();
             }

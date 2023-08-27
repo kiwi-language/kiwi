@@ -52,7 +52,7 @@ public class PrimitiveType extends Type {
 
     @Override
     public String toString() {
-        return "PrimitiveType " + kind.getName() + " @" + super.hashCode();
+        return "PrimitiveType " + kind.getName();
     }
 
     @Override

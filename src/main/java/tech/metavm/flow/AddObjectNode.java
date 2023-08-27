@@ -20,10 +20,10 @@ import java.util.List;
 @EntityType("新增记录节点")
 public class AddObjectNode extends NodeRT<AddObjectParamDTO> {
 
-    public static AddObjectNode create(NodeDTO nodeDTO, IEntityContext context) {
+    public static AddObjectNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         AddObjectParamDTO param = nodeDTO.getParam();
         ClassType type = context.getClassType(param.typeId());
-        AddObjectNode node = new AddObjectNode(nodeDTO, type, context.getScope(nodeDTO.scopeId()));
+        AddObjectNode node = new AddObjectNode(nodeDTO, type, scope);
         node.setParam(param, context);
         return node;
     }

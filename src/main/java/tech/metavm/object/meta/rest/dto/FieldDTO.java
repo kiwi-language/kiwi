@@ -37,7 +37,7 @@ public record FieldDTO(
                                         String name,
                                         int access,
                                         FieldValueDTO defaultValue,
-                                        long declaringTypeId,
+                                        Long declaringTypeId,
                                         long typeId) {
         return new FieldDTO(
                 id,

@@ -62,7 +62,8 @@ public class FlowManagerTest extends TestCase {
 
         TypeManager typeManager =
                 new TypeManager(instanceContextFactory, entityQueryService, jobManager,  null);
-        flowManager = new FlowManager(instanceContextFactory, typeManager, entityQueryService);
+        flowManager = new FlowManager(instanceContextFactory, entityQueryService);
+        flowManager.setTypeManager(typeManager);
         flowExecutionService = new FlowExecutionService(instanceContextFactory);
     }
 
@@ -150,7 +151,7 @@ public class FlowManagerTest extends TestCase {
 
     public void testList() {
         ClassType userType = MockRegistry.getClassType(UserRT.class);
-        FlowDTO flowDTO = new FlowDTO(null, "Flow1", userType.getId(), null, null, 0L, 0L);
+        FlowDTO flowDTO = new FlowDTO(null, "Flow1", null, userType.getId(), null, null, 0L, 0L);
         long flowId = flowManager.create(flowDTO);
         Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getId(), 1, 20, null);
         Assert.assertEquals(1, dataPage.total());
