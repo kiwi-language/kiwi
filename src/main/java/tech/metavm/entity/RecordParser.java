@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.meta.ClassBuilder;
+import tech.metavm.object.meta.ClassSource;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.TypeFactory;
 import tech.metavm.util.NncUtils;
@@ -39,7 +41,10 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
 
     @Override
     protected ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType) {
-        return typeFactory.createClass(name, code, superType);
+        return ClassBuilder.newBuilder(name, code)
+                .source(ClassSource.REFLECTION)
+                .superType(superType)
+                .build();
     }
 
 }

@@ -1,4 +1,4 @@
-GET http://localhost:9200/instance/_search?routing=-1
+GET http://localhost:9200/instance/_search?routing=-1,1009700195
 Accept: application/json
 Content-Type: application/json
 Authorization: Basic elastic 85263670
@@ -6,7 +6,7 @@ Authorization: Basic elastic 85263670
 {
   "query": {
     "query_string": {
-      "query": "(tenantId:\\-1) AND (typeId:13011 OR typeId:13021)"
+      "query": "(tenantId:1009700195 OR tenantId:\\-1) AND (typeId:14032 OR typeId:14050 OR typeId:14022 OR typeId:14040 OR typeId:14057 OR typeId:14060 OR typeId:14046 OR typeId:14015) AND ((r0:\"17016\" OR r0:\"17012\" OR r0:\"17007\" OR r0:\"17002\" OR r0:\"17011\" OR r0:\"17003\") AND (b0:false))"
     }
   }
 }

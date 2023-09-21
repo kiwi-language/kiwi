@@ -8,6 +8,7 @@ import tech.metavm.util.Password;
 import tech.metavm.util.Table;
 
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 public class StandardTypes {
@@ -18,8 +19,8 @@ public class StandardTypes {
         return getType.apply(javaType);
     }
 
-    public static AnyType getObjectType() {
-        return (AnyType) ModelDefRegistry.getType(Object.class);
+    public static ObjectType getObjectType() {
+        return (ObjectType) ModelDefRegistry.getType(Object.class);
     }
 
     public static ClassType getEnumType() {
@@ -32,10 +33,6 @@ public class StandardTypes {
 
     public static ClassType getRecordType() {
         return (ClassType) ModelDefRegistry.getType(Record.class);
-    }
-
-    public static PrimitiveType getIntType() {
-        return (PrimitiveType) ModelDefRegistry.getType(Integer.class);
     }
 
     public static PrimitiveType getBoolType() {
@@ -78,5 +75,12 @@ public class StandardTypes {
         return ModelDefRegistry.getField(Enum.class, "ordinal");
     }
 
+
+    public static List<PrimitiveType> getPrimitiveTypes() {
+        return List.of(
+            getLongType(), getStringType(), getTimeType(),
+            getDoubleType(), getPasswordType(), getBoolType(), getBoolType()
+        );
+    }
 
 }

@@ -130,14 +130,18 @@ public class ExpressionService extends EntityContextBean {
         IEntityContext context = newContext();
         if(contextDTO instanceof FlowParsingContextDTO flowContext) {
             NodeRT<?> prev = NncUtils.get(flowContext.getPrevNodeId(), context::getNode);
+            List<NodeRT<?>> predecessors;
             if(prev == null) {
                 ScopeRT scope = context.getScope(flowContext.getScopeId());
-                prev = NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor);
+                predecessors = NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessors);
             }
-            if(prev == null) {
+            else {
+                predecessors = List.of(prev);
+            }
+            if(predecessors == null || predecessors.isEmpty()) {
                 throw BusinessException.invalidParams("请求参数错误");
             }
-            return new FlowParsingContext(prev, instanceContext);
+            return new FlowParsingContext(predecessors, instanceContext);
         }
         else if(contextDTO instanceof TypeParsingContextDTO typeContext) {
             return new TypeParsingContext(

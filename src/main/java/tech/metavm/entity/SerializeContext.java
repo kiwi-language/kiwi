@@ -1,17 +1,19 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.Type;
-import tech.metavm.util.InternalException;
+import tech.metavm.dto.RefDTO;
+import tech.metavm.util.IdentitySet;
 
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class SerializeContext implements Closeable {
 
     public static final ThreadLocal<SerializeContext> THREAD_LOCAL = new ThreadLocal<>();
 
-    private final Map<Type, Long> tmpIdMap = new HashMap<>();
+    private final Map<Object, Long> tmpIdMap = new HashMap<>();
+    private final Set<Object> visited = new IdentitySet<>();
     private long nextTmpId = 1;
     private int level;
 
@@ -28,20 +30,24 @@ public class SerializeContext implements Closeable {
         return context;
     }
 
-    public boolean isVisited(Type type) {
-        return tmpIdMap.containsKey(type);
+    public Long getTmpId(Object model) {
+        if(model instanceof Entity entity) {
+            if(entity.getId() != null) {
+                return null;
+            }
+            else if(entity.getTmpId() != null) {
+                return entity.getTmpId();
+            }
+        }
+        return tmpIdMap.computeIfAbsent(model, k -> nextTmpId++);
     }
 
-    public long visit(Type type) {
-        if(isVisited(type)) throw new InternalException(type + " is already visited");
-        long tmpId = nextTmpId++;
-        tmpIdMap.put(type, tmpId);
-        return tmpId;
-    }
-
-    public long getTmpId(Type type) {
-        if(!isVisited(type)) throw new InternalException(type + " has not been visited");
-        return tmpIdMap.get(type);
+    public RefDTO getRef(Object model) {
+        if (model instanceof Identifiable identifiable && identifiable.getId() != null) {
+            return new RefDTO(identifiable.getId(), null);
+        } else {
+            return new RefDTO(null, getTmpId(model));
+        }
     }
 
     @Override

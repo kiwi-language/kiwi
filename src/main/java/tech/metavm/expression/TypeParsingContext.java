@@ -8,6 +8,7 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +18,7 @@ public class TypeParsingContext implements ParsingContext {
     private final ClassType type;
     private final ThisExpression thisExpression;
     private final java.util.function.Function<Long, Instance> getInstanceFunc;
+    private final IInstanceContext instanceContext;
 
     public TypeParsingContext(ClassType classType) {
         this(classType, id -> {
@@ -25,13 +27,17 @@ public class TypeParsingContext implements ParsingContext {
     }
 
     public TypeParsingContext(ClassType type, IInstanceContext instanceContext) {
-        this(type, instanceContext::get);
+        this.type = type;
+        thisExpression = new ThisExpression(type);
+        this.getInstanceFunc = instanceContext::get;
+        this.instanceContext = instanceContext;
     }
 
     public TypeParsingContext(ClassType type, java.util.function.Function<Long, Instance> getInstanceFunc) {
         this.type = type;
         this.getInstanceFunc = getInstanceFunc;
         thisExpression = new ThisExpression(type);
+        instanceContext = null;
     }
 
     @Override
@@ -69,6 +75,12 @@ public class TypeParsingContext implements ParsingContext {
     @Override
     public Expression getDefaultExpr() {
         return thisExpression;
+    }
+
+    @Override
+    @Nullable
+    public IInstanceContext getInstanceContext() {
+        return instanceContext;
     }
 
     public static List<Field> getFields(ClassType type, List<Var> varPath) {

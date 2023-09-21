@@ -26,11 +26,10 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private final RestHighLevelClient restHighLevelClient;
 
-
     @Override
     public Page<Long> search(SearchQuery query) {
         SearchRequest searchRequest = new SearchRequest(INDEX);
-        searchRequest.routing(query.tenantId() + "");
+        searchRequest.routing(query.tenantId() + (query.includeBuiltin() ? ",-1" : ""));
         searchRequest.source(SearchBuilder.build(query));
         try {
             SearchResponse response = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);

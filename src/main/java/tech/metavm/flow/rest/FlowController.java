@@ -10,6 +10,8 @@ import tech.metavm.flow.FlowManager;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/flow")
 public class FlowController {
@@ -62,6 +64,11 @@ public class FlowController {
         }
     }
 
+    @PostMapping("/branch-node")
+    public Result<List<NodeDTO>> createBranchNode(@RequestBody NodeDTO node) {
+        return Result.success(flowManager.createBranchNode(node));
+    }
+
     @GetMapping("/node/{id:[0-9]+}")
     public Result<NodeDTO> getNode(@PathVariable("id") long nodeId) {
         return Result.success(flowManager.getNode(nodeId));
@@ -75,7 +82,7 @@ public class FlowController {
 
     @PostMapping("/node/branch")
     public Result<BranchDTO> saveBranch(@RequestBody BranchDTO branchDTO) {
-        if(branchDTO.id() == null || branchDTO.id() == 0L) {
+        if(branchDTO.index() == null || branchDTO.index() == 0L) {
             return Result.success(flowManager.createBranch(branchDTO));
         }
         else {

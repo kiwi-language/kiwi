@@ -13,8 +13,12 @@ public class GraphPlotter  {
         Objects.requireNonNull(psiJavaFile).accept(visitor);
         var graphs = visitor.getGraphs().values();
         for (Graph graph : graphs) {
-            new GraphViewer().display(graph);
+            plot(graph);
         }
+    }
+
+    public static void plot(Graph graph) {
+        new GraphViewer().display(graph);
     }
 
 }

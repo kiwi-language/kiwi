@@ -31,6 +31,7 @@ public class InstanceQueryService {
         return query(
                 query.typeId(),
                 buildCondition(query, context),
+                query.includeBuiltin(),
                 query.page(),
                 query.pageSize(),
                 context
@@ -49,13 +50,14 @@ public class InstanceQueryService {
         return query(
                 query.typeId(),
                 buildConditionForSearchText(query.typeId(), query.searchText(), List.of(), context),
+                false,
                 query.page(),
                 query.pageSize(),
                 context
         );
     }
 
-    public Page<Long> query(long typeId, Expression expression, int page, int pageSize, IInstanceContext context) {
+    public Page<Long> query(long typeId, Expression expression, boolean includeBuiltin, int page, int pageSize, IInstanceContext context) {
         Type type = context.getType(typeId);
         Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getTypeIdsInHierarchy() :
                 Set.of(typeId);
@@ -63,6 +65,7 @@ public class InstanceQueryService {
                 context.getTenantId(),
                 typeIds,
                 expression,
+                includeBuiltin,
                 page,
                 pageSize
         );

@@ -13,8 +13,8 @@ public class ClassTypeFactoryTest extends TestCase {
     }
 
     public void testCreateClass() {
-        TypeFactory typeFactory = new TypeFactory(MockRegistry::getType);
-        ClassType type = typeFactory.createClass("Foo", MockRegistry.getEntityType());
+        ClassType type = ClassBuilder.newBuilder("Foo", "Foo")
+                .superType(MockRegistry.getEntityType()).build();
         Assert.assertNotNull(type.getDeclaredFields());
         Assert.assertNotNull(type.getDeclaredConstraints());
         Assert.assertNotNull(type.getDeclaredFlows());

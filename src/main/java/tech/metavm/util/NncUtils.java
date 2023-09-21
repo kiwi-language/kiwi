@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intellij.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -40,6 +41,12 @@ public class NncUtils {
 
     }
 
+    public static <K, V> Map<K, V> zip(List<K> keys, List<V> values) {
+        Map<K, V> map = new HashMap<>();
+        biForEach(keys, values, map::put);
+        return map;
+    }
+
     public static String getGetter(String name) {
         return "get" + firstCharToUpperCase(name);
     }
@@ -69,7 +76,7 @@ public class NncUtils {
 
     public static <T> Set<T> unionSet(Set<T> set1, Set<T> set2) {
         Set<T> union = new HashSet<>(set1);
-        set1.addAll(set2);
+        union.addAll(set2);
         return union;
     }
 
@@ -249,7 +256,7 @@ public class NncUtils {
     }
 
     public static long random() {
-        return new Random().nextLong();
+        return Math.abs(new Random().nextLong());
     }
 
     public static List<Integer> splitIntegers(String str) {
@@ -511,7 +518,7 @@ public class NncUtils {
         return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
     }
 
-    public static <T, R> void biForEach(List<T> list1, List<R> list2, BiConsumer<T, R> action) {
+    public static <T, R> void biForEach(Collection<T> list1, Collection<R> list2, BiConsumer<T, R> action) {
         if (list1.size() != list2.size()) {
             throw new RuntimeException("Both lists must have the same size");
         }
@@ -520,6 +527,18 @@ public class NncUtils {
 
         while (it1.hasNext() && it2.hasNext()) {
             action.accept(it1.next(), it2.next());
+        }
+    }
+
+    public static <T, R> void biForEachWithIndex(Collection<T> list1, Collection<R> list2, TriConsumer<T, R, Integer> action) {
+        if (list1.size() != list2.size()) {
+            throw new RuntimeException("Both lists must have the same size");
+        }
+        Iterator<T> it1 = list1.iterator();
+        Iterator<R> it2 = list2.iterator();
+        int index = 0;
+        while (it1.hasNext() && it2.hasNext()) {
+            action.accept(it1.next(), it2.next(), index++);
         }
     }
 
@@ -1019,6 +1038,14 @@ public class NncUtils {
         return value;
     }
 
+    public static void requireFalse(boolean value) {
+        requireTrue(!value, "表达式必须为false");
+    }
+
+    public static void requireFalse(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        requireTrue(!value, exceptionSupplier);
+    }
+
     public static void requireFalse(boolean value, String message) {
         requireTrue(!value, message);
     }
@@ -1081,6 +1108,20 @@ public class NncUtils {
         if (item != null) {
             list.add(item);
         }
+    }
+
+    public static String escape(String str) {
+        StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '\\') {
+                buf.append("\\\\");
+            } else if (str.charAt(i) == '\"') {
+                buf.append("\"");
+            } else {
+                buf.append(str.charAt(i));
+            }
+        }
+        return buf.toString();
     }
 
     public static <T> List<T> merge(List<T> list, T... elements) {

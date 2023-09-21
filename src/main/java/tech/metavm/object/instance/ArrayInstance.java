@@ -1,18 +1,16 @@
 package tech.metavm.object.instance;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
-import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
 import tech.metavm.object.instance.rest.ArrayParamDTO;
 import tech.metavm.object.instance.rest.InstanceFieldValueDTO;
-import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class ArrayInstance extends Instance implements Collection<Instance> {
 
@@ -22,6 +20,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     private final List<Instance> elements = new ArrayList<>();
     private boolean elementAsChild;
+    private final transient List<ArrayListener> listeners = new ArrayList<>();
 
     protected ArrayInstance(ArrayType type) {
         this(type, false);
@@ -39,7 +38,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     public ArrayInstance(ArrayType type,
                          List<Instance> elements,
                          boolean elementAsChild
-                         ) {
+    ) {
         super(type);
         this.elementAsChild = elementAsChild;
         for (Instance element : elements) {
@@ -74,16 +73,16 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     public Set<Instance> getChildren() {
-        if(elementAsChild) {
+        if (elementAsChild) {
             return NncUtils.filterUnique(elements, Instance::isNotNull);
-        }
-        else {
+        } else {
             return Set.of();
         }
     }
 
-    public Instance get(int i) {
-        return elements.get(i);
+    public Instance get(int index) {
+        checkIndex(index);
+        return elements.get(index);
     }
 
     public Instance getInstance(int i) {
@@ -121,13 +120,13 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @NotNull
     @Override
-    public Object[] toArray() {
+    public Object @NotNull [] toArray() {
         return elements.toArray();
     }
 
     @NotNull
     @Override
-    public <T> T[] toArray(@NotNull T[] a) {
+    public <T> T @NotNull [] toArray(@NotNull T @NotNull [] a) {
         return elements.toArray(a);
     }
 
@@ -136,9 +135,39 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return addInternally(element);
     }
 
+    public Instance remove(int index) {
+        var removed = elements.remove(index);
+        onRemove(removed);
+        return removed;
+    }
+
+    public Instance set(int index, Instance element) {
+        checkIndex(index);
+        checkElement(element);
+        Instance removed = elements.set(index, element);
+        if(removed != null) {
+            onRemove(removed);
+        }
+        onAdd(element);
+        return removed;
+    }
+
+    private void checkElement(Instance element) {
+        if(!getType().getElementType().isAssignableFrom(element.getType())) {
+            throw new BusinessException(ErrorCode.INCORRECT_ELEMENT_TYPE);
+        }
+    }
+
+    private void checkIndex(int index) {
+        if(index < 0 || index >= elements.size()) {
+            throw new BusinessException(ErrorCode.INDEX_OUT_OF_BOUND);
+        }
+    }
+
     private boolean addInternally(Instance element) {
         new ReferenceRT(this, element, null);
         elements.add(element);
+        onAdd(element);
         return true;
     }
 
@@ -156,12 +185,25 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     private boolean removeInternally(Object element) {
         //noinspection SuspiciousMethodCalls
-        if(elements.remove(element)) {
+        if (elements.remove(element)) {
             Instance removed = (Instance) element;
+            onRemove(removed);
             getOutgoingReference(removed, null).clear();
             return true;
         }
         return false;
+    }
+
+    private void onRemove(Instance instance) {
+        for (ArrayListener listener : listeners) {
+            listener.onRemove(instance);
+        }
+    }
+
+    public void onAdd(Instance instance) {
+        for (ArrayListener listener : listeners) {
+            listener.onAdd(instance);
+        }
     }
 
     @Override
@@ -180,7 +222,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     public boolean removeAll(@NotNull Collection<?> c) {
         boolean anyChange = false;
         for (Object o : c) {
-            if(remove(o)) {
+            if (remove(o)) {
                 anyChange = true;
             }
         }
@@ -191,11 +233,11 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     public boolean retainAll(@NotNull Collection<?> c) {
         List<Object> toRemove = new ArrayList<>();
         for (Object o : c) {
-            if(!contains(o)) {
+            if (!contains(o)) {
                 toRemove.add(o);
             }
         }
-        if(toRemove.isEmpty()) {
+        if (toRemove.isEmpty()) {
             return false;
         }
         for (Object o : toRemove) {
@@ -238,7 +280,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     InstanceArrayPO toPO(long tenantId, IdentitySet<Instance> visited) {
         return new InstanceArrayPO(
                 getId(),
-                getType().getId(),
+                getType().getIdRequired(),
                 tenantId,
                 elements.size(),
                 NncUtils.map(elements, e -> elementToPO(tenantId, e, visited)),
@@ -267,20 +309,71 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private static Object elementToPO(long tenantId, Instance element, IdentitySet<Instance> visited) {
-        if(element.isNull()) {
+        if (element.isNull()) {
             return null;
         }
-        if(element instanceof PrimitiveInstance primitiveInstance) {
+        if (element instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue();
-        }
-        else {
-            if(element.isValue()) {
+        } else {
+            if (element.isValue()) {
                 return element.toPO(tenantId, visited);
-            }
-            else {
+            } else {
                 return element.toIdentityPO();
             }
         }
+    }
+
+    @SuppressWarnings("unused")
+    public ArrayInstance __init__(Instance elementAsChild) {
+        if(!(elementAsChild instanceof BooleanInstance bool)) {
+            throw new InternalException("elementAsChild must be a BooleanInstance, actually got: " + elementAsChild);
+        }
+        this.elementAsChild = bool.isTrue();
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public Instance __get__(Instance index) {
+        return get(getIndex(index));
+    }
+
+    @SuppressWarnings("unused")
+    public Instance __set__(Instance index, Instance value) {
+        return set(getIndex(index), value);
+    }
+
+    @SuppressWarnings("unused")
+    public BooleanInstance __remove__(Instance instance) {
+        return InstanceUtils.booleanInstance(remove(instance));
+    }
+
+    @SuppressWarnings("unused")
+    public Instance __removeAt__(Instance index) {
+        return remove(getIndex(index));
+    }
+
+    private int getIndex(Instance instance) {
+        if(instance instanceof LongInstance longInstance) {
+            return longInstance.getValue().intValue();
+        }
+        else {
+            throw new InternalException("Index must be a LongInstance, actually got: " + instance);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void __clear__() {
+        clear();
+    }
+
+    @SuppressWarnings("unused")
+    public void __add__(Instance instance) {
+        add(instance);
+    }
+
+    @SuppressWarnings("unused")
+    public LongInstance __size__() {
+        return InstanceUtils.longInstance(size());
     }
 
     @Override
@@ -298,6 +391,10 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         for (Instance instance : new ArrayList<>(elements)) {
             remove(instance);
         }
+    }
+
+    public void addListener(ArrayListener listener) {
+        listeners.add(listener);
     }
 
     @Override

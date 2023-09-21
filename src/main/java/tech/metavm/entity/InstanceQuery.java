@@ -8,6 +8,7 @@ public record InstanceQuery(
         long typeId,
         String searchText,
         List<Field> searchFields,
+        boolean includeBuiltin,
         int page,
         int pageSize,
         List<InstanceQueryField> fields

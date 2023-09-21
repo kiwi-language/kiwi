@@ -37,7 +37,7 @@ public class DefaultValueUtil {
     }
 
     private static Object convertFromStrOne(String str, Type type) {
-        if(isInt(type) || isLong(type)
+        if(isLong(type)
                 || isTime(type) || type.isClass() || type.isEnum()) {
             return parseLong(str);
         }

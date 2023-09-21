@@ -8,6 +8,7 @@ public record EntityQuery<T extends Entity>(
         Class<T> entityType,
         String searchText,
         List<String> searchFields,
+        boolean includeBuiltin,
         int page,
         int pageSize,
         List<EntityQueryField> fields
@@ -23,6 +24,7 @@ public record EntityQuery<T extends Entity>(
                 entityType,
                 searchText,
                 List.of(),
+                false,
                 page,
                 pageSize,
                 List.of()
@@ -40,6 +42,7 @@ public record EntityQuery<T extends Entity>(
                 entityType,
                 searchText,
                 List.of(),
+                false,
                 page,
                 pageSize,
                 fields
@@ -57,6 +60,7 @@ public record EntityQuery<T extends Entity>(
                 typeReference.getType(),
                 searchText,
                 List.of(),
+                false,
                 page,
                 pageSize,
                 fields

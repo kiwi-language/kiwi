@@ -1,10 +1,10 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
-import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
+import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -46,8 +46,6 @@ public class Branch extends Entity {
     @EntityField("是否默认")
     private final boolean preselected;
 
-    private transient ParsingContext parsingContext;
-
     public Branch(long index, Value condition, boolean preselected, ScopeRT scope, BranchNode owner) {
         this.index = index;
         this.owner = owner;
@@ -73,13 +71,17 @@ public class Branch extends Entity {
     }
 
     public BranchDTO toDTO(boolean withNodes, boolean persisting) {
-        return new BranchDTO(
-                index,
-                owner.getId(),
-                NncUtils.get(condition, v -> v.toDTO(persisting)),
-                scope.toDTO(withNodes),
-                preselected
-        );
+        try(var context = SerializeContext.enter()) {
+            return new BranchDTO(
+                    getId(),
+                    context.getTmpId(this),
+                    index,
+                    owner.getId(),
+                    NncUtils.get(condition, v -> v.toDTO(persisting)),
+                    scope.toDTO(withNodes),
+                    preselected
+            );
+        }
     }
 
     private ParsingContext getParsingContext(IEntityContext entityContext) {
@@ -91,7 +93,9 @@ public class Branch extends Entity {
     }
 
     public void update(BranchDTO branchDTO, IEntityContext entityContext) {
-        condition = ValueFactory.getValue(branchDTO.condition(), getParsingContext(entityContext));
+        if(branchDTO.condition() != null) {
+            condition = ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext));
+        }
     }
 
     public List<Object> beforeRemove() {

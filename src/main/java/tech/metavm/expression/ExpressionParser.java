@@ -16,6 +16,8 @@ public class ExpressionParser {
 
     public static final int FUNC_PRECEDENCE = 0;
 
+    public static final int OPEN_BRACKET_PRECEDENCE = 0;
+
     public static Expression parse(ClassType type, String expression, IInstanceContext instanceContext) {
         return parse(expression, new TypeParsingContext(type, instanceContext));
     }
@@ -57,19 +59,34 @@ public class ExpressionParser {
 
     private Expression preParse() {
         while (tokenizer.hasNext() &&
-                !(tokenizer.peekToken().isRightParenthesis() && numUnpairedLeftParentheses == 0)) {
+                !(tokenizer.peekToken().isClosingParenthesis() && numUnpairedLeftParentheses == 0)) {
             Token token = tokenizer.nextToken();
-            if(token.isLeftParenthesis()) {
+            if(token.isOpenParenthesis()) {
                 numUnpairedLeftParentheses++;
-                opStack.push(Op.op(Operator.LEFT_PARENTHESIS));
+                opStack.push(Op.op(Operator.OPEN_PARENTHESIS));
             }
-            else if(token.isRightParenthesis()) {
-                numUnpairedLeftParentheses--;
-                while (!opStack.isEmpty() && !Op.isLeftParenthesis(opStack.peek())) {
+            else if(token.isClosingBracket()) {
+                while (!opStack.isEmpty() && !Op.isOpenBracket(opStack.peek())) {
                     writeExpression();
                 }
                 if(opStack.isEmpty()) {
-                    throw new RuntimeException("Unpaired right parenthesis");
+                    throw new RuntimeException("Unpaired closing bracket");
+                }
+                opStack.pop();
+                if(exprStack.size() < 2) {
+                    throw new RuntimeException("Invalid array access expression");
+                }
+                var index = exprStack.pop();
+                var array = exprStack.pop();
+                exprStack.push(new ArrayAccessExpression(array, index));
+            }
+            else if(token.isClosingParenthesis()) {
+                numUnpairedLeftParentheses--;
+                while (!opStack.isEmpty() && !Op.isOpenParenthesis(opStack.peek())) {
+                    writeExpression();
+                }
+                if(opStack.isEmpty()) {
+                    throw new RuntimeException("Unpaired closing parenthesis");
                 }
                 opStack.pop();
             }
@@ -85,6 +102,12 @@ public class ExpressionParser {
                     writeExpression();
                 }
                 opStack.push(Op.func(token.getFunction()));
+            }
+            else if(token.isOpenBracket()) {
+                while (hasPrecedentOp(OPEN_BRACKET_PRECEDENCE)) {
+                    writeExpression();
+                }
+                opStack.push(Op.op(Operator.OPEN_BRACKET));
             }
             else if(token.isAllMatch()) {
                 opStack.push(new AllMatchOp());
@@ -219,7 +242,18 @@ public class ExpressionParser {
             exprStack.push(funcExpr);
         }
         else if(op instanceof OperatorOp operatorOp) {
-            if (operatorOp.isComma()) {
+            if(operatorOp.isDot()) {
+                Expression field = popExpr();
+                Expression qualifier = popExpr();
+                if(field instanceof VariableExpression fieldVariableExpr) {
+                    exprStack.push(new VariablePathExpression(qualifier, fieldVariableExpr));
+                }
+                else {
+                    throw new InternalException("Invalid field expression. " +
+                            "Expecting a field name, but got " + field);
+                }
+            }
+            else if (operatorOp.isComma()) {
                 Expression second = popExpr(), first = popExpr();
                 exprStack.push(ArrayExpression.merge(first, second));
             } else if (operatorOp.isUnary()) {
@@ -269,8 +303,12 @@ public class ExpressionParser {
             return new FunctionOp(function);
         }
 
-        static boolean isLeftParenthesis(Op op) {
-            return op instanceof OperatorOp oop && oop.isLeftParenthesis();
+        static boolean isOpenParenthesis(Op op) {
+            return op instanceof OperatorOp oop && oop.isOpenParenthesis();
+        }
+
+        static boolean isOpenBracket(Op op) {
+            return op instanceof OperatorOp oop && oop.isOpenBracket();
         }
 
         default boolean isFunc() {
@@ -290,12 +328,20 @@ public class ExpressionParser {
         Operator op
     ) implements Op {
 
-        boolean isLeftParenthesis() {
-            return op == Operator.LEFT_PARENTHESIS;
+        boolean isOpenParenthesis() {
+            return op == Operator.OPEN_PARENTHESIS;
+        }
+
+        boolean isOpenBracket() {
+            return op == Operator.OPEN_BRACKET;
         }
 
         boolean isComma() {
             return op == Operator.COMMA;
+        }
+
+        boolean isDot() {
+            return op == Operator.DOT;
         }
 
         boolean isUnary() {

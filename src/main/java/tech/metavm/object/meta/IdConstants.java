@@ -14,6 +14,10 @@ public class IdConstants {
 
     public static final long CLASS_REGION_END = MAX_ID / 10 * 5;
 
+    public static final long MAP_REGION_BASE = MAX_ID / 10 * 7;
+
+    public static final long MAP_REGION_END = MAX_ID / 10 * 8 - 1;
+
     public static final long ARRAY_REGION_BASE = MAX_ID / 10 * 8;
 
     public static final long ARRAY_REGION_END = MAX_ID / 10 * 9 - 1;

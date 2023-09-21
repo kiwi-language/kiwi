@@ -5,7 +5,6 @@ import tech.metavm.flow.ExpressionValue;
 import tech.metavm.flow.ReferenceValue;
 import tech.metavm.flow.Value;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.IntInstance;
 import tech.metavm.object.instance.LongInstance;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -100,9 +99,6 @@ public class IndexField extends Entity {
                 key.setColumnXPresent(true);
                 if(fieldValue instanceof LongInstance longInstance) {
                     key.setColumnX(longInstance.getValue());
-                }
-                else if(fieldValue instanceof IntInstance intInstance) {
-                    key.setColumnX(intInstance.getValue().longValue());
                 }
                 else {
                     throw  new InternalException("Can not set column X with " + fieldValue);

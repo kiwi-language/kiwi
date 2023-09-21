@@ -38,8 +38,8 @@ public final class InstanceIndexQuery {
     public IndexQueryPO toPO(long tenantId) {
         return new IndexQueryPO(
                 tenantId,
-                index.getId(),
-                index.createIndexKey(NncUtils.map(items, InstanceIndexQueryItem::value)),
+                index.getIdRequired(),
+                index.createIndexKey(NncUtils.map(items, InstanceIndexQueryItem::value)).toPO(),
                 lastOperator,
                 desc,
                 limit

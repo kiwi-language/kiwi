@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.AnyType;
+import tech.metavm.object.meta.ObjectType;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.Table;
 
@@ -37,7 +37,7 @@ public class InstanceCollectionParser<E extends Instance, C extends Table<E>>
                 java.lang.reflect.Type elementType = parameterizedType.getActualTypeArguments()[0];
                 if(Instance.class.isAssignableFrom(elementClass)
                         && elementType == elementClass
-                        && (type.getElementType() instanceof AnyType)) {
+                        && (type.getElementType() instanceof ObjectType)) {
                     //noinspection unchecked,rawtypes
                     return new InstanceCollectionDef(
                             javaClass, javaType, elementClass, type

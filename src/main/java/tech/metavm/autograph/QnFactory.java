@@ -1,10 +1,6 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
-import tech.metavm.util.NncUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.AccessMode.*;
@@ -44,11 +40,10 @@ public class QnFactory {
     private static QualifiedName getReferenceQn(PsiReferenceExpression reference) {
         var target = reference.resolve();
         return switch (target) {
-            case null -> null;
             case PsiField field -> getFieldQn(field, reference.getQualifierExpression());
             case PsiLocalVariable localVariable -> getLocalVariableQn(localVariable);
             case PsiParameter parameter -> getParameterQn(parameter);
-            default -> throw new IllegalStateException("Unexpected value: " + target);
+            case null, default -> null;
         };
     }
 
@@ -59,7 +54,7 @@ public class QnFactory {
     }
 
     private static QualifiedName getArrayAccessQn(PsiArrayAccessExpression arrayAccess) {
-        var arrayQn = getOrCreateQn(arrayAccess);
+        var arrayQn = getOrCreateQn(arrayAccess.getArrayExpression());
         if (arrayQn != null && arrayAccess.getIndexExpression() instanceof PsiLiteral idxLiteral) {
             return new AttributeQualifiedName(arrayQn, requireNonNull(idxLiteral.getValue()).toString(),
                     arrayAccess.getType());
@@ -109,7 +104,7 @@ public class QnFactory {
                     className + "." + field.getName(), field.getType());
         } else {
             if (qualifier == null) {
-                var selfType = TranspileUtil.getTemplateType(requireNonNull(field.getContainingClass()));
+                var selfType = TranspileUtil.createTemplateType(requireNonNull(field.getContainingClass()));
                 return new AttributeQualifiedName(
                         new AtomicQualifiedName(className + ".this", selfType),
                         field.getName(), field.getType());

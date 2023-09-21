@@ -22,7 +22,13 @@ public interface ReferenceMapper {
             @Param("limit") long limit
     );
 
-    List<ReferencePO> selectFirstStrongReference(
+    List<ReferencePO> selectFirstStrongReferences(
+            @Param("tenantId") long tenantId,
+            @Param("ids") Collection<Long> ids,
+            @Param("excludedSourceIds") Collection<Long> excludedSourceIds
+    );
+
+    List<ReferencePO> selectAllStrongReferences(
             @Param("tenantId") long tenantId,
             @Param("ids") Collection<Long> ids,
             @Param("excludedSourceIds") Collection<Long> excludedSourceIds

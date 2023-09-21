@@ -73,7 +73,7 @@
     </foreach>
   </select>
 
-  <select id="selectFirstStrongReference" resultMap="BaseResultMap">
+  <select id="selectFirstStrongReferences" resultMap="BaseResultMap">
       select
       <include refid="Base_Column_List"/>
       from reference
@@ -96,6 +96,25 @@
      </if>
       group by target_id
       )
+  </select>
+
+  <select id="selectAllStrongReferences" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from reference
+    use index (target_idx)
+    where tenant_id = #{tenantId}
+    and kind = 1
+    and target_id in
+    <foreach collection="ids" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+    <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
+      and source_id not in
+      <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
+        #{id}
+      </foreach>
+    </if>
   </select>
 
   <select id="selectByTargetId" resultMap="BaseResultMap">

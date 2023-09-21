@@ -2,6 +2,8 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.natives.ArrayNative;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
@@ -10,6 +12,7 @@ import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.object.meta.UnionType;
 import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,22 +26,21 @@ public class ArrayType extends Type {
     private final Type elementType;
 
     public ArrayType(Type elementType) {
-        this(elementType, false);
+        this(elementType, true);
     }
 
     public ArrayType(Type elementType, boolean ephemeral) {
         super(getArrayTypeName(elementType), false, ephemeral, TypeCategory.ARRAY);
-        if(elementType.getCode() != null) {
+        if (elementType.getCode() != null) {
             setCode(elementType.getCode() + "[]");
         }
         this.elementType = elementType;
     }
 
     private static String getArrayTypeName(Type elementType) {
-        if(elementType instanceof UnionType) {
+        if (elementType instanceof UnionType) {
             return "(" + elementType.getName() + ")[]";
-        }
-        else {
+        } else {
             return elementType.getName() + "[]";
         }
     }
@@ -50,10 +52,9 @@ public class ArrayType extends Type {
 
     @Override
     public boolean isAssignableFrom(Type that) {
-        if(that instanceof ArrayType arrayType) {
+        if (that instanceof ArrayType arrayType) {
             return elementType.isAssignableFrom(arrayType.elementType);
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -84,15 +85,22 @@ public class ArrayType extends Type {
 
     @Override
     protected ArrayTypeParamDTO getParam() {
-        return new ArrayTypeParamDTO(
-                elementType.getId(),
-                elementType.toDTO()
-        );
+        try (var context = SerializeContext.enter()) {
+            return new ArrayTypeParamDTO(
+                    context.getRef(elementType),
+                    elementType.toDTO()
+            );
+        }
+    }
+
+    @Override
+    public Class<? extends Instance> getInstanceClass() {
+        return ArrayInstance.class;
     }
 
     @Override
     public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return elementType.getCanonicalName(getJavaType) + "[]";
+        return Table.class.getName() + "<" + elementType.getCanonicalName(getJavaType) + ">";
     }
 
     @Override

@@ -1,31 +1,44 @@
 package tech.metavm.flow;
 
+import tech.metavm.util.NncUtils;
+
 import java.util.Arrays;
 import java.util.Objects;
 
 public enum NodeKind {
     SELF(0, SelfNode.class),
-    INPUT(1, InputNode.class),
+    INPUT(1, InputNode.class, true),
 //    GET_OBJECT(2, GetObjectNode.class),
     ADD_OBJECT(3, AddObjectNode.class),
     UPDATE_OBJECT(4, UpdateObjectNode.class),
     DELETE_OBJECT(5, DeleteObjectNode.class),
     GET_RELATED(6, GetRelatedNode.class),
     BRANCH(7, BranchNode.class),
-    LOOP(8, LoopNode.class),
     RETURN(9, ReturnNode.class),
     EXCEPTION(10, ExceptionNode.class),
     SUB_FLOW(12, SubFlowNode.class),
     GET_UNIQUE(13, GetUniqueNode.class),
+    MERGE(14, MergeNode.class, true),
+    NEW(15, NewNode.class),
+    VALUE(16, ValueNode.class),
+    UPDATE_STATIC(17, UpdateStaticNode.class),
+    FOREACH(19, ForEachNode.class, true),
+    WHILE(20, WhileNode.class, true),
 
     ;
 
     private final int code;
     private final Class<? extends NodeRT<?>> klass;
+    private final boolean outputTypeAsChild;
 
     NodeKind(int code, Class<? extends NodeRT<?>> klass) {
+        this(code, klass, false);
+    }
+
+    NodeKind(int code, Class<? extends NodeRT<?>> klass, boolean outputTypeAsChild) {
         this.code = code;
         this.klass = klass;
+        this.outputTypeAsChild = outputTypeAsChild;
     }
 
     public static NodeKind getByCodeRequired(int code) {
@@ -43,12 +56,20 @@ public enum NodeKind {
                 .orElseThrow(() -> new RuntimeException("FlowNodeType not found for param class: " + paramKlass.getName()));
     }
 
+    public static NodeKind getByNodeClass(@SuppressWarnings("rawtypes") Class<? extends NodeRT> klass) {
+        return NncUtils.findRequired(values(), kind -> kind.getKlass().equals(klass));
+    }
+
     public Class<?> getParamKlass() {
         return NodeFactory.getParamClass(klass);
     }
 
     public Class<? extends NodeRT<?>> getKlass() {
         return klass;
+    }
+
+    public boolean isOutputTypeAsChild() {
+        return outputTypeAsChild;
     }
 
     public int code() {

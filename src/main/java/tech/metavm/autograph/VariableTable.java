@@ -17,11 +17,11 @@ public class VariableTable {
     private final LinkedList<Branch> branchStack = new LinkedList<>();
 
     Expression get(String name) {
-        return variableMap.get(name);
+        return variableMap.getVariable(name);
     }
 
     void set(String name, Expression value) {
-        variableMap.put(name, value);
+        variableMap.setVariable(name, value);
     }
 
     void enterCondSection(PsiElement sectionId) {
@@ -48,28 +48,38 @@ public class VariableTable {
             Map<String, Expression> branchOutputs = new HashMap<>();
             result.put(branch, branchOutputs);
             for (String outputVar : outputVars) {
-                branchOutputs.put(outputVar, varMap.get(outputVar));
+                branchOutputs.put(outputVar, varMap.getVariable(outputVar));
             }
         }
         Map<String, Expression> lastBranchOutputs = new HashMap<>();
         var lastBranch = branchStack.pop();
         result.put(lastBranch, lastBranchOutputs);
         for (String outputVar : outputVars) {
-            lastBranchOutputs.put(outputVar, variableMap.get(outputVar));
+            lastBranchOutputs.put(outputVar, variableMap.getVariable(outputVar));
         }
         return result;
     }
 
-    private static class VariableMap extends HashMap<String, Expression> {
+    private static class VariableMap {
+
+        private final Map<String, Expression> variables = new HashMap<>();
 
         public VariableMap() {}
 
         public VariableMap(VariableMap variableMap) {
-            putAll(variableMap);
+            variables.putAll(variableMap.variables);
         }
 
         VariableMap copy() {
             return new VariableMap(this);
+        }
+
+        Expression getVariable(String name) {
+            return variables.get(name);
+        }
+
+        void setVariable(String name, Expression value) {
+            variables.put(name, value);
         }
 
     }

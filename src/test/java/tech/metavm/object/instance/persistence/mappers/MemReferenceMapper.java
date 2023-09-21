@@ -9,14 +9,14 @@ import java.util.*;
 
 public class MemReferenceMapper implements ReferenceMapper {
 
-    private final Map<String, List<ReferencePO>> targetWitKindMap = new HashMap<>();
+    private final Map<String, List<ReferencePO>> targetWithKindMap = new HashMap<>();
     private final Map<String, List<ReferencePO>> targetWithFieldMap = new HashMap<>();
     private final Map<Long, List<ReferencePO>> targetMap = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
 
     @Override
     public List<ReferencePO> selectByTargetsWithKind(Collection<TargetPO> targets) {
-        return NncUtils.flatMap(targets, t -> targetWitKindMap.get(t.keyWithKind()));
+        return NncUtils.flatMap(targets, t -> targetWithKindMap.get(t.keyWithKind()));
     }
 
     @Override
@@ -39,15 +39,29 @@ public class MemReferenceMapper implements ReferenceMapper {
     }
 
     @Override
-    public List<ReferencePO> selectFirstStrongReference(long tenantId,
-                                                        Collection<Long> ids,
-                                                        Collection<Long> excludedSourceIds) {
+    public List<ReferencePO> selectFirstStrongReferences(long tenantId,
+                                                         Collection<Long> ids,
+                                                         Collection<Long> excludedSourceIds) {
         Set<Long> excludedSourceIdSet = new HashSet<>(excludedSourceIds);
         List<String> keys = NncUtils.map(ids, id -> tenantId + "-" + id + "-1");
         return NncUtils.mapAndFilter(
                 keys,
                 key -> NncUtils.find(
-                        targetWitKindMap.get(key),
+                        targetWithKindMap.get(key),
+                        ref -> !excludedSourceIdSet.contains(ref.getSourceId())
+                ),
+                Objects::nonNull
+        );
+    }
+
+    @Override
+    public List<ReferencePO> selectAllStrongReferences(long tenantId, Collection<Long> ids, Collection<Long> excludedSourceIds) {
+        Set<Long> excludedSourceIdSet = new HashSet<>(excludedSourceIds);
+        List<String> keys = NncUtils.map(ids, id -> tenantId + "-" + id + "-1");
+        return NncUtils.flatMapAndFilter(
+                keys,
+                key -> NncUtils.filter(
+                        targetWithKindMap.get(key),
                         ref -> !excludedSourceIdSet.contains(ref.getSourceId())
                 ),
                 Objects::nonNull
@@ -75,7 +89,7 @@ public class MemReferenceMapper implements ReferenceMapper {
         if(!references.add(ref)) {
             throw new RuntimeException(ref + " already exists");
         }
-        targetWitKindMap.computeIfAbsent(ref.targetKeyWithKind(), k -> new ArrayList<>()).add(ref);
+        targetWithKindMap.computeIfAbsent(ref.targetKeyWithKind(), k -> new ArrayList<>()).add(ref);
         targetWithFieldMap.computeIfAbsent(ref.targetKeyWithField(), k -> new ArrayList<>()).add(ref);
         targetMap.computeIfAbsent(ref.getTargetId(), k -> new ArrayList<>()).add(ref);
     }
@@ -84,7 +98,7 @@ public class MemReferenceMapper implements ReferenceMapper {
         if(!references.remove(ref)) {
             throw new RuntimeException(ref + " does not exist");
         }
-        targetWitKindMap.get(ref.targetKeyWithKind()).remove(ref);
+        targetWithKindMap.get(ref.targetKeyWithKind()).remove(ref);
         targetWithFieldMap.get(ref.targetKeyWithField()).remove(ref);
         targetMap.get(ref.getTargetId()).remove(ref);
     }

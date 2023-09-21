@@ -126,7 +126,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
 
     private void parseCheckConstraint(Field constraintField, PojoDef<T> declaringTypeDef) {
         ConstraintDef<?> constraintDef = (ConstraintDef<?>) ReflectUtils.get(null, constraintField);
-        tech.metavm.flow.Value value = ValueFactory.getValue(
+        tech.metavm.flow.Value value = ValueFactory.create(
                 ValueDTO.exprValue(constraintDef.expression()),
                 new TypeParsingContext(declaringTypeDef.getType(), id -> {
                     throw new UnsupportedOperationException();
@@ -159,13 +159,15 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
 
         return new tech.metavm.object.meta.Field(
                 ReflectUtils.getMetaFieldName(reflectField),
+                reflectField.getName(),
                 declaringTypeDef.getType(),
-                Access.GLOBAL,
+                fieldType, Access.GLOBAL,
                 unique,
                 asTitle,
                 new NullInstance(typeFactory.getNullType()),
-                fieldType,
-                isChild
+                isChild,
+                false,
+                new NullInstance(typeFactory.getNullType())
         );
     }
 

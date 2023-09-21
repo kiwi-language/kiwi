@@ -9,6 +9,7 @@ import tech.metavm.util.Table;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("函数表达式")
 public class FunctionExpression extends Expression {
@@ -70,4 +71,15 @@ public class FunctionExpression extends Expression {
         return NncUtils.flatMap(arguments, arg -> arg.extractExpressions(klass));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FunctionExpression that)) return false;
+        return function == that.function && Objects.equals(arguments, that.arguments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(function, arguments);
+    }
 }

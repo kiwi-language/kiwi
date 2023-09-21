@@ -19,31 +19,17 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testAllocateColumn() {
-        ClassType fooType = typeFactory.createClass("Foo", null);
+        ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
+        ClassType barType = ClassBuilder.newBuilder("Bar", null).build();
 
-        ClassType barType = typeFactory.createValueClass("Bar", null);
+        Field nameField = FieldBuilder
+                .newBuilder("name", null, fooType, MockRegistry.getStringType())
+                .asTitle(true)
+                .build();
 
-        Field nameField = new Field(
-                "name",
-                fooType,
-                Access.GLOBAL,
-                false,
-                true,
-                null,
-                MockRegistry.getStringType(),
-                false
-        );
-
-        Field barField = new Field(
-                "bar",
-                fooType,
-                Access.GLOBAL,
-                false,
-                false,
-                null,
-                barType,
-                false
-        );
+        Field barField = FieldBuilder
+                .newBuilder("bar", null, fooType, barType)
+                .build();
 
         Assert.assertNotNull(nameField.getColumn());
         Assert.assertTrue(nameField.getColumnName().startsWith(SQLType.VARCHAR64.prefix()));
@@ -53,27 +39,18 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testAllocateColumnForArray() {
-        ClassType bazType = typeFactory.createClass("Baz", null);
-        ClassType barType = typeFactory.createValueClass("Bar", null);
-
-        Field barsField = new Field(
-                "bars",
-                bazType,
-                Access.GLOBAL,
-                false,
-                false,
-                null,
-                TypeUtil.getArrayType(barType),
-                false
-        );
-
+        ClassType bazType = ClassBuilder.newBuilder("Baz", null).build();
+        ClassType barType = ClassBuilder.newBuilder("Bar", null).build();
+        Field barsField = FieldBuilder
+                .newBuilder("bars", null, bazType, TypeUtil.getArrayType(barType))
+                .build();
         Assert.assertNotNull(barsField.getColumn());
         Assert.assertTrue(barsField.getColumnName().startsWith(SQLType.MULTI_REFERENCE.prefix()));
     }
 
     public void testIsAssignable() {
-        ClassType type1 = typeFactory.createClass("Foo");
-        ClassType type2 = typeFactory.createClass("Foo", type1);
+        ClassType type1 = ClassBuilder.newBuilder("Foo", null).build();
+        ClassType type2 = ClassBuilder.newBuilder("Foo", null).superType(type1).build();
         Assert.assertTrue(type1.isAssignableFrom(type2));
     }
 

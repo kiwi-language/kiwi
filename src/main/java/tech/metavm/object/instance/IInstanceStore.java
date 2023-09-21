@@ -19,7 +19,9 @@ public interface IInstanceStore {
 
     void saveReferences(ChangeList<ReferencePO> refChanges);
 
-    Set<Long> getStronglyReferencedIds(long tenantId, Set<Long> ids, Set<Long> excludedSourceIds);
+    List<ReferencePO> getFirstStrongReferences(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds);
+
+    List<ReferencePO> getAllStrongReferences(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds);
 
     List<Long> selectByKey(IndexKeyPO key, IInstanceContext context);
 

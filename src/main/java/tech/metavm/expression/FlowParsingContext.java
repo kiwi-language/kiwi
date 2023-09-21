@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.flow.NodeRT;
@@ -7,18 +8,16 @@ import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class FlowParsingContext implements ParsingContext {
 
     public static FlowParsingContext create(NodeRT<?> currentNode, IInstanceContext instanceContext) {
-        return new FlowParsingContext(currentNode.getGlobalPredecessor(), instanceContext);
+        return new FlowParsingContext(currentNode.getGlobalPredecessors(), instanceContext);
     }
 
     public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor, IEntityContext entityContext) {
@@ -27,22 +26,24 @@ public class FlowParsingContext implements ParsingContext {
 
     public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor, IInstanceContext instanceContext) {
         return new FlowParsingContext(
-                predecessor != null ?
-                        predecessor
-                        : NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor),
+                predecessor != null ? predecessor : scope.getPredecessor(),
                 instanceContext
         );
     }
 
     private final IInstanceContext instanceContext;
-    private final NodeRT<?> lastNode;
+    private final List<NodeRT<?>> lastNodes;
     private long lastBuiltVersion = 0L;
     private final Map<Long, NodeRT<?>> id2node = new HashMap<>();
     private final Map<String, NodeRT<?>> name2node = new HashMap<>();
     private final Map<NodeRT<?>, NodeExpression> node2expression = new HashMap<>();
 
     public FlowParsingContext(NodeRT<?> lastNode, IInstanceContext instanceContext) {
-        this.lastNode = lastNode;
+        this(lastNode == null ? List.of() : List.of(lastNode), instanceContext);
+    }
+
+    public FlowParsingContext(List<NodeRT<?>> lastNodes, IInstanceContext instanceContext) {
+        this.lastNodes = lastNodes == null ? new ArrayList<>() : new ArrayList<>(lastNodes);
         this.instanceContext = instanceContext;
     }
 
@@ -60,39 +61,52 @@ public class FlowParsingContext implements ParsingContext {
     @Override
     public Expression resolveVar(Var var) {
         NodeRT<?> node = getNode(var);
-        if(node == null) {
-            throw new InternalException(var + " is not a context var of " + this);
+        if (node != null) {
+            return node2expression.computeIfAbsent(node, NodeExpression::new);
         }
-        return node2expression.computeIfAbsent(node, NodeExpression::new);
-    }
+        throw new InternalException(var + " is not a context var of " + this);
 
+    }
 
     @Override
     public Expression getDefaultExpr() {
         throw new InternalException("Flow context has no default context expression");
     }
 
+    @Nullable
+    @Override
+    public IInstanceContext getInstanceContext() {
+        return instanceContext;
+    }
+
     private void rebuildIfOutdated() {
-        if(lastNode == null) {
+        if (lastNodes.isEmpty()) {
             return;
         }
-        if(lastBuiltVersion < lastNode.getFlow().getVersion()) {
+        if (lastBuiltVersion < lastNodes.get(0).getFlow().getVersion()) {
             rebuild();
         }
     }
 
     private void rebuild() {
+        if (lastNodes.isEmpty()) return;
         id2node.clear();
         name2node.clear();
-        NodeRT<?> node = this.lastNode;
-        do {
-            if(node.getId() != null) {
+        Queue<NodeRT<?>> queue = new LinkedList<>(lastNodes);
+        Set<NodeRT<?>> visited = new IdentitySet<>();
+        while (!queue.isEmpty()) {
+            var node = queue.poll();
+            visited.add(node);
+            if (node.getId() != null) {
                 id2node.put(node.getId(), node);
             }
             name2node.put(node.getName(), node);
-            node = node.getGlobalPredecessor();
-        } while(node != null && !id2node.containsKey(node.getId()));
-        lastBuiltVersion = lastNode.getFlow().getVersion();
+            var predecessors = node.getGlobalPredecessors();
+            for (NodeRT<?> pred : predecessors) {
+                if (!visited.contains(pred)) queue.offer(pred);
+            }
+        }
+        lastBuiltVersion = lastNodes.get(0).getFlow().getVersion();
     }
 
     @Override
@@ -101,10 +115,9 @@ public class FlowParsingContext implements ParsingContext {
         NncUtils.requireMinimumSize(varPath, 1);
         NodeRT<?> node = getNode(varPath.get(0));
         Objects.requireNonNull(node);
-        if(varPath.size() == 1) {
+        if (varPath.size() == 1) {
             return new NodeExpression(node);
-        }
-        else {
+        } else {
             List<Var> fieldPath = varPath.subList(1, varPath.size());
             List<Field> fields = TypeParsingContext.getFields((ClassType) node.getType(), fieldPath);
             return new FieldExpression(new NodeExpression(node), fields);

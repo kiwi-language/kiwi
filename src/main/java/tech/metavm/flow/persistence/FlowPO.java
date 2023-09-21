@@ -2,12 +2,12 @@ package tech.metavm.flow.persistence;
 
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.IndexDef;
-import tech.metavm.flow.FlowRT;
+import tech.metavm.flow.Flow;
 
 public class FlowPO extends EntityPO {
 
-    public static final IndexDef<FlowRT> INDEX_DECLARING_TYPE_ID = new IndexDef<>(
-            FlowRT.class, "declaringTypeId"
+    public static final IndexDef<Flow> INDEX_DECLARING_TYPE_ID = new IndexDef<>(
+            Flow.class, "declaringTypeId"
     );
 
     private Long id;

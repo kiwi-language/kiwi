@@ -17,16 +17,20 @@ public class NodeFactory {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static NodeRT<?> create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        NodeKind nodeType = NodeKind.getByCodeRequired(nodeDTO.type());
+        NodeKind nodeType = NodeKind.getByCodeRequired(nodeDTO.kind());
         Class<? extends NodeRT<?>> klass = nodeType.getKlass();
         Method createMethod = tryGetStaticMethod(
-                klass, "create", NodeDTO.class, ScopeRT.class, IEntityContext.class);
-        if(createMethod != null) {
-            return (NodeRT<?>) ReflectUtils.invoke(null, createMethod, nodeDTO, scope, context);
+                klass, "create", NodeDTO.class, NodeRT.class, ScopeRT.class, IEntityContext.class);
+        NodeRT<?> prev = nodeDTO.prevRef() != null ? context.getNode(nodeDTO.prevRef()) : scope.getLastNode();
+        NodeRT node;
+        if (createMethod != null) {
+            node = (NodeRT<?>) ReflectUtils.invoke(null, createMethod, nodeDTO, prev, scope, context);
+        } else {
+            Constructor<?> constructor = getConstructor(klass, NodeDTO.class, ScopeRT.class);
+            node = (NodeRT) newInstance(constructor, nodeDTO, scope);
+            if(nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
         }
-        Constructor<?> constructor = getConstructor(klass, NodeDTO.class, ScopeRT.class);
-        NodeRT node =  (NodeRT) newInstance(constructor, nodeDTO, scope);
-        if(nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
+        context.bind(node);
         return node;
     }
 

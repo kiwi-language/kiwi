@@ -7,9 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
 import java.util.Map;
@@ -66,27 +64,14 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void test_add_not_null_field() {
-        ClassType type = new ClassType("Lab");
-        Field titleField = new Field("title",
-                type,
-                Access.GLOBAL,
-                false,
-                true,
-                InstanceUtils.nullInstance(),
-                InstanceUtils.getStringType(),
-                false
-        );
-        Field statusField = new Field(
-                "status",
-                type,
-                Access.GLOBAL,
-                false,
-                false,
-                InstanceUtils.intInstance(1),
-                InstanceUtils.getIntType(),
-                false
-        );
-
+        ClassType type = ClassBuilder.newBuilder("Lab", null).build();
+        Field titleField = FieldBuilder
+                .newBuilder("title", null, type, InstanceUtils.getStringType())
+                .asTitle(true)
+                .build();
+        Field statusField = FieldBuilder
+                .newBuilder("status", null, type, InstanceUtils.getIntType())
+                .build();
         ClassInstance instance = new ClassInstance(
                 10001L,
                 Map.of(

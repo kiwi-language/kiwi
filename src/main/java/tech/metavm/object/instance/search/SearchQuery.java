@@ -9,6 +9,7 @@ public record SearchQuery (
         long tenantId,
         Set<Long> typeIds,
         Expression condition,
+        boolean includeBuiltin,
         int page,
         int pageSize
 ) {

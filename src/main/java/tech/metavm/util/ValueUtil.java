@@ -3,83 +3,69 @@ package tech.metavm.util;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.IntInstance;
 import tech.metavm.object.instance.LongInstance;
-import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static tech.metavm.object.meta.TypeUtil.isInt;
-
 public class ValueUtil {
 
     public static final Pattern INT_PATTERN = Pattern.compile("-?[0-9]+");
 
     public static Type getValueType(Object value) {
-        if(value instanceof String) {
+        if (value instanceof String) {
             return StandardTypes.getStringType();
         }
-        if(isFloat(value)) {
+        if (isFloat(value)) {
             return StandardTypes.getDoubleType();
         }
-        if(value instanceof Integer) {
-            return StandardTypes.getIntType();
-        }
-        if(value instanceof Long) {
+        if (value instanceof Long || value instanceof Integer) {
             return StandardTypes.getLongType();
         }
-        if(isBoolean(value)) {
+        if (isBoolean(value)) {
             return StandardTypes.getBoolType();
         }
-        if(isTime(value)) {
+        if (isTime(value)) {
             return StandardTypes.getTimeType();
         }
-        if(value instanceof Instance instance) {
+        if (value instanceof Instance instance) {
             return instance.getType();
         }
         throw new InternalException("Unsupported value: " + value);
     }
 
     public static Type getConvertibleType(Type type1, Type type2) {
-        if(type1.equals(type2)) {
+        if (type1.equals(type2)) {
             return type1;
         }
-        if(isAssignable(type1, type2)) {
+        if (isAssignable(type1, type2)) {
             return type2;
         }
-        if(isAssignable(type2, type1)) {
+        if (isAssignable(type2, type1)) {
             return type1;
         }
-        if(isConvertible(type1, type2)) {
+        if (isConvertible(type1, type2)) {
             return type2;
         }
-        if(isConvertible(type2, type1)) {
+        if (isConvertible(type2, type1)) {
             return type1;
         }
         throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
     }
 
     public static boolean isConvertible(Type from, Type to) {
-        if(from.isInt() && to.isLong()) {
+        if (to.isString()) return true;
+        if (from.isInt() && to.isLong()) {
             return true;
         }
         return (from.isInt() || from.isLong()) && to.isDouble();
     }
 
     public static Instance convert(Instance instance, Type type) {
-        if ((instance instanceof IntInstance intInstance)) {
-            if(type.isLong()) {
-                return InstanceUtils.longInstance(intInstance.getValue());
-            }
-            if(type.isDouble()) {
-                return InstanceUtils.doubleInstance(intInstance.getValue());
-            }
-        }
-        if(instance instanceof LongInstance longInstance) {
-            if(type.isDouble()) {
+        if (instance instanceof LongInstance longInstance) {
+            if (type.isDouble()) {
                 return InstanceUtils.doubleInstance(longInstance.getValue());
             }
         }
@@ -93,10 +79,9 @@ public class ValueUtil {
         while (it.hasNext()) {
             Type t = it.next();
             if (!t.equals(compatibleType) && !isAssignable(t, compatibleType)) {
-                if(isAssignable(compatibleType, t)) {
+                if (isAssignable(compatibleType, t)) {
                     compatibleType = t;
-                }
-                else {
+                } else {
                     throw new InternalException("Types are not compatible: " + types);
                 }
             }
@@ -105,7 +90,7 @@ public class ValueUtil {
     }
 
     private static final Set<Class<?>> PRIMITIVE_TYPES = Set.of(
-        int.class, Integer.class, Long.class, long.class, float.class, Float.class,
+            int.class, Integer.class, Long.class, long.class, float.class, Float.class,
             double.class, Double.class, String.class, boolean.class, Boolean.class,
             Password.class, Date.class
     );
@@ -180,22 +165,19 @@ public class ValueUtil {
     }
 
     public static Type getPrimitiveType(Class<?> klass) {
-        if(isBoolean(klass)) {
+        if (isBoolean(klass)) {
             return StandardTypes.getBoolType();
         }
-        if(isString(klass)) {
+        if (isString(klass)) {
             return StandardTypes.getStringType();
         }
-        if(isInteger(klass)) {
-            return StandardTypes.getIntType();
-        }
-        if (isLong(klass)) {
+        if (isLong(klass) || isInteger(klass)) {
             return StandardTypes.getLongType();
         }
-        if(isTime(klass)) {
+        if (isTime(klass)) {
             return StandardTypes.getTimeType();
         }
-        if(isFloat(klass)) {
+        if (isFloat(klass)) {
             return StandardTypes.getDoubleType();
         }
         throw new InternalException("Type " + klass.getName() + " is not a primitive type");
@@ -206,38 +188,38 @@ public class ValueUtil {
     }
 
     public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
-        if(type instanceof Class<?> klass) {
-            if(isInteger(klass)) {
+        if (type instanceof Class<?> klass) {
+            if (isInteger(klass)) {
                 return TypeCategory.INT;
             }
-            if(isLong(klass)) {
+            if (isLong(klass)) {
                 return TypeCategory.LONG;
             }
-            if(isDouble(klass)) {
+            if (isDouble(klass)) {
                 return TypeCategory.DOUBLE;
             }
-            if(isTime(klass)) {
+            if (isTime(klass)) {
                 return TypeCategory.TIME;
             }
-            if(isBoolean(klass)) {
+            if (isBoolean(klass)) {
                 return TypeCategory.BOOLEAN;
             }
-            if(isString(klass)) {
+            if (isString(klass)) {
                 return TypeCategory.STRING;
             }
-            if(isPassword(klass)) {
+            if (isPassword(klass)) {
                 return TypeCategory.PASSWORD;
             }
-            if(Date.class.equals(klass)) {
+            if (Date.class.equals(klass)) {
                 return TypeCategory.TIME;
             }
-            if(Password.class.equals(klass)) {
+            if (Password.class.equals(klass)) {
                 return TypeCategory.PASSWORD;
             }
-            if(Null.class.equals(klass)) {
+            if (Null.class.equals(klass)) {
                 return TypeCategory.NULL;
             }
-            if(Object.class.equals(klass) || Record.class.equals(klass) || isValueType(klass)) {
+            if (Object.class.equals(klass) || Record.class.isAssignableFrom(klass) || isValueType(klass)) {
                 return TypeCategory.VALUE;
             }
             if (isArrayType(klass)) {
@@ -249,22 +231,20 @@ public class ValueUtil {
             if (isEntityType(klass)) {
                 return TypeCategory.CLASS;
             }
-            if(Instance.class.isAssignableFrom(klass)) {
+            if (Instance.class.isAssignableFrom(klass)) {
                 return TypeCategory.INSTANCE;
             }
-            if(Class.class == klass) {
+            if (Class.class == klass) {
                 return TypeCategory.CLASS;
             }
         }
-        if(type instanceof ParameterizedType parameterizedType) {
-            if(parameterizedType.getRawType() instanceof Class<?> rawClass) {
-                if(Collection.class.isAssignableFrom(rawClass)) {
+        if (type instanceof ParameterizedType parameterizedType) {
+            if (parameterizedType.getRawType() instanceof Class<?> rawClass) {
+                if (Collection.class.isAssignableFrom(rawClass)) {
                     return TypeCategory.ARRAY;
-                }
-                else if(Map.class.isAssignableFrom(rawClass)) {
+                } else if (Map.class.isAssignableFrom(rawClass)) {
 
-                }
-                else {
+                } else {
                     return getTypeCategory(rawClass);
                 }
             }
@@ -279,10 +259,10 @@ public class ValueUtil {
         while (it.hasNext()) {
             Type t = it.next();
             while (!commonSuperType.isAssignableFrom(t)) {
-                if(commonSuperType instanceof ClassType type) {
+                if (commonSuperType instanceof ClassType type) {
                     commonSuperType = type.getSuperType();
                 }
-                if(commonSuperType == null) {
+                if (commonSuperType == null) {
                     throw new InternalException("Can not find common super type for types: " + types);
                 }
             }
@@ -291,15 +271,12 @@ public class ValueUtil {
     }
 
     public static boolean isAssignable(Type from, Type to) {
-        if(to.isAssignableFrom(from)) {
+        if (to.isAssignableFrom(from)) {
             return true;
         }
-        if(from.isPrimitive() && to.isPrimitive()) {
-            if(TypeUtil.isDouble(to)) {
-                return isInt(from) || TypeUtil.isLong(from);
-            }
-            if(TypeUtil.isLong(to)) {
-                return isInt(from);
+        if (from.isPrimitive() && to.isPrimitive()) {
+            if (TypeUtil.isDouble(to)) {
+                return TypeUtil.isLong(from);
             }
         }
         return false;
@@ -338,9 +315,9 @@ public class ValueUtil {
     }
 
     public static boolean isLongList(Object value) {
-        if(value instanceof List<?> list) {
+        if (value instanceof List<?> list) {
             for (Object item : list) {
-                if(!(item instanceof Long)) {
+                if (!(item instanceof Long)) {
                     return false;
                 }
             }
@@ -350,21 +327,20 @@ public class ValueUtil {
     }
 
     public static boolean isIntegerColl(Object value) {
-        if(value instanceof Collection) {
+        if (value instanceof Collection) {
             for (Object o : ((Collection) value)) {
-                if(!isInteger(o)) {
+                if (!isInteger(o)) {
                     return false;
                 }
             }
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
 
     public static long getLong(Object columnValue) {
-        if(!isInteger(columnValue)) {
+        if (!isInteger(columnValue)) {
             throw new InternalException("Value '" + columnValue + "' can not be converted to a long value");
         }
         return ((Number) columnValue).longValue();

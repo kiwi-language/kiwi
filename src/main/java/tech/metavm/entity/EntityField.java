@@ -17,4 +17,6 @@ public @interface EntityField {
 
     boolean eager() default false;
 
+    String code() default "";
+
 }

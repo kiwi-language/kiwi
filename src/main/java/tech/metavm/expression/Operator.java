@@ -21,7 +21,7 @@ public enum Operator {
 
     // addition and subtraction
     ADD(5, "+", 3, BINARY, null),
-    SUBTRACT(6, "-", 3, BINARY, null),
+    MINUS(6, "-", 3, BINARY, null),
 
     // SHIFT
     LEFT_SHIFT(23, "<<", 4, BINARY, null),
@@ -53,14 +53,19 @@ public enum Operator {
 
 
     // parenthesis
-    LEFT_PARENTHESIS(23, "(", 1000, PREFIX, null),
+    OPEN_PARENTHESIS(23, "(", 1000, PREFIX, null),
     RIGHT_PARENTHESIS(24, ")", 1000, PREFIX, null),
-    LEFT_BRACKET(25, "[", 1000, PREFIX, null),
+    OPEN_BRACKET(25, "[", 1000, PREFIX, null),
     RIGHT_BRACKET(26, "]", 1000, PREFIX, null),
 
     // POSTFIX
     PLUS_PLUS(31, "++", 1, POSTFIX, null),
-    MINUS_MINUS(32, "--", 1, POSTFIX, null);
+    MINUS_MINUS(32, "--", 1, POSTFIX, null),
+
+    // CONDITIONAL
+    CONDITIONAL(33, "?:", 10, TERNARY,null),
+
+    DOT(34, ".", 0, BINARY, null)
 
     ;
 

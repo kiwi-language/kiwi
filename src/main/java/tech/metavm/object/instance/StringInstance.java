@@ -26,6 +26,10 @@ public class StringInstance extends PrimitiveInstance {
         return InstanceUtils.createBoolean(value.startsWith(that.value));
     }
 
+    public StringInstance concat(StringInstance that) {
+        return new StringInstance(value + that.value, getType());
+    }
+
     public BooleanInstance isBlank() {
         return InstanceUtils.createBoolean(NncUtils.isBlank(value));
     }

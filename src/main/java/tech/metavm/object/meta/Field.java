@@ -1,8 +1,10 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.expression.Expression;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
@@ -16,7 +18,7 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 @EntityType("字段")
-public class Field extends Entity {
+public class Field extends Entity implements UpdateAware {
 
     public static final IndexDef<Field> INDEX_TYPE_ID = new IndexDef<>(Field.class, false,"type");
 
@@ -39,57 +41,45 @@ public class Field extends Entity {
     @EntityField("编号")
     @Nullable
     private String code;
+    @EntityField(value = "是否静态", code = "static")
+    private boolean _static;
+    @EntityField(value = "静态属性值", code = "static")
+    private Instance staticValue;
+    @Nullable
+    private Expression initializer;
+
 //    @EntityField("状态")
 //    private MetadataState state;
 
-    public Field(String name, ClassType declaringType, Type type) {
-        this(name, declaringType, Access.GLOBAL, false, false,
-                InstanceUtils.nullInstance(), type, false);
-    }
-
-    public Field(String name, String code, ClassType declaringType, Type type) {
-        this(name, code, declaringType, Access.GLOBAL, false, false,
-                InstanceUtils.nullInstance(), type, false);
-    }
-
     public Field(
             String name,
+            @Nullable String code,
             ClassType declaringType,
+            Type type,
             Access access,
             Boolean unique,
             boolean asTitle,
             Instance defaultValue,
-            Type type,
-            boolean isChildField
+            boolean isChildField,
+            boolean isStatic,
+            Instance staticValue
     ) {
-        this(name, null, declaringType, access, unique, asTitle, defaultValue, type, isChildField);
-    }
-
-    public Field(
-             String name,
-             String code,
-             ClassType declaringType,
-             Access access,
-             Boolean unique,
-             boolean asTitle,
-             Instance defaultValue,
-             Type type,
-             boolean isChildField
-    ) {
+        setName(name);
         this.code = code;
         this.declaringType = requireNonNull(declaringType, "属性所属类型");
         this.access = requireNonNull(access, "属性访问控制");
         this.type = type;
         this.asTitle = asTitle;
-        setName(name);
         this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
                 "Fail to allocate a column for field " + this);
         setDefaultValue(defaultValue);
-        declaringType.addField(this);
         this.isChildField = isChildField;
         if(unique != null) {
             setUnique(unique);
         }
+        this._static = isStatic;
+        this.staticValue = staticValue;
+        declaringType.addField(this);
     }
 
     public String getName() {
@@ -100,10 +90,11 @@ public class Field extends Entity {
         this.name = NameUtils.checkName(name);
     }
 
-    public void setCode(String code) {
+    public void setCode(@org.jetbrains.annotations.Nullable String code) {
         this.code = code;
     }
 
+    @Nullable
     public String getCode() {
         return code;
     }
@@ -135,7 +126,7 @@ public class Field extends Entity {
 
     public void update(FieldDTO update) {
         if(update.typeId() != null && !Objects.equals(type.getId(), update.typeId())) {
-            throw BusinessException.invalidField(this, "类型不允许修改");
+            throw BusinessException.invalidField(this, "类型不支持修改");
         }
         setName(update.name());
         setAccess(Access.getByCodeRequired(update.access()));
@@ -164,6 +155,11 @@ public class Field extends Entity {
         this.defaultValue = defaultValue;
     }
 
+    public Instance getStaticValue() {
+        if(isStatic()) return staticValue;
+        else throw new InternalException("Can not get static value from an instance field");
+    }
+
     public void setUnique(boolean unique) {
         if(unique && isArray()) {
             throw BusinessException.invalidField(this, "数组不支持唯一性约束");
@@ -187,8 +183,68 @@ public class Field extends Entity {
         if(type.isAnonymous()) {
             cascades.add(type);
         }
+        if(declaringType.isEnumConstantField(this)) {
+            cascades.add(staticValue);
+        }
         declaringType.removeField(this);
         return cascades;
+    }
+
+    public LongInstance getLong(@Nullable ClassInstance instance) {
+        if(isStatic()) {
+            return (LongInstance) getStaticValue();
+        }
+        else {
+            return NncUtils.requireNonNull(instance).getLong(this);
+        }
+    }
+
+    public DoubleInstance getDouble(@Nullable ClassInstance instance) {
+        if(isStatic()) {
+            return (DoubleInstance) getStaticValue();
+        }
+        else {
+            return NncUtils.requireNonNull(instance).getDouble(this);
+        }
+    }
+
+    public StringInstance getString(@Nullable ClassInstance instance) {
+        if(isStatic()) {
+            return (StringInstance) getStaticValue();
+        }
+        else {
+            return NncUtils.requireNonNull((instance)).getString(this);
+        }
+    }
+
+    public Instance get(@Nullable ClassInstance instance) {
+        if(isStatic()) {
+            return getStaticValue();
+        }
+        else {
+            return NncUtils.requireNonNull((instance)).get(this);
+        }
+    }
+
+    public boolean isStatic() {
+        return _static;
+    }
+
+    public void setStatic(boolean _static) {
+        this._static = _static;
+    }
+
+    public void setStaticValue(Instance staticValue) {
+        this.staticValue = staticValue;
+    }
+
+    @Nullable
+    public Expression getInitializer() {
+        return initializer;
+    }
+
+    public void setInitializer(@Nullable Expression initializer) {
+        this.initializer = initializer;
     }
 
     @Override
@@ -196,7 +252,7 @@ public class Field extends Entity {
         if(isNullable() || getDefaultValue().isNotNull()) {
             return;
         }
-        if(context.getInstanceContext().existsInstances(declaringType)) {
+        if(Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType)) {
             throw BusinessException.notNullFieldWithoutDefaultValue(this);
         }
     }
@@ -315,18 +371,23 @@ public class Field extends Entity {
     }
 
     public FieldDTO toDTO(boolean withType) {
-        return new FieldDTO(
-                id,
-                name,
-                access.code(),
-                defaultValue.toFieldValueDTO(),
-                isUnique(),
-                asTitle,
-                declaringType.getId(),
-                type.getId(),
-                withType ? type.toDTO() : null,
-                isChildField
-        );
+        try(var context = SerializeContext.enter()) {
+            return new FieldDTO(
+                    context.getTmpId(this),
+                    id,
+                    name,
+                    code,
+                    access.code(),
+                    defaultValue.toFieldValueDTO(),
+                    isUnique(),
+                    asTitle,
+                    declaringType.getId(),
+                    context.getRef(type),
+                    withType ? type.toDTO() : null,
+                    isChildField,
+                    _static
+            );
+        }
     }
 
     public boolean isTime() {
@@ -335,7 +396,22 @@ public class Field extends Entity {
 
     @Override
     public String toString() {
-        return "Field " + declaringType.getName() + "." + getName() + ":" + type.getName();
+        return "Field " + getDesc();
+    }
+
+    private String getDesc() {
+        return getQualifiedName() + ":" + type.getName();
+    }
+
+    @Override
+    public void onUpdate(ClassInstance instance) {
+        if(isStatic()) {
+            var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
+            var value = instance.get(staticValueField);
+            if(!type.isInstance(value)) {
+                throw new BusinessException(ErrorCode.STATIC_FIELD__CAN_NOT_BE_NULL, getQualifiedName());
+            }
+        }
     }
 
 }

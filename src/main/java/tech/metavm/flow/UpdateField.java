@@ -1,13 +1,17 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
-import tech.metavm.flow.rest.UpdateFieldDTO;
-import tech.metavm.object.instance.*;
 import tech.metavm.expression.EvaluationContext;
-import tech.metavm.expression.ParsingContext;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.flow.rest.UpdateFieldDTO;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.DoubleInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.LongInstance;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
 
 import static tech.metavm.object.meta.TypeUtil.*;
 
@@ -20,21 +24,13 @@ public class UpdateField extends Entity {
     @ChildEntity("值")
     private Value value;
 
-    public UpdateField(ClassType declaringType, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext) {
-        this(
-                declaringType.getField(updateFieldDTO.fieldId()),
-                UpdateOp.getByCode(updateFieldDTO.opCode()),
-                ValueFactory.getValue(updateFieldDTO.value(), parsingContext)
-        );
-    }
-
     public UpdateField(Field field, UpdateOp op, Value value) {
         this.field = field;
         this.op = op;
         this.value = value;
     }
 
-    public void execute(ClassInstance instance, EvaluationContext context, InstanceContext instanceContext) {
+    public void execute(@Nullable ClassInstance instance, EvaluationContext context, boolean inConstructor, IInstanceContext instanceContext) {
         Instance evaluatedValue = value.evaluate(context);
         Instance updateValue;
         if(op == UpdateOp.SET) {
@@ -42,13 +38,10 @@ public class UpdateField extends Entity {
         }
         else if(op == UpdateOp.INCREASE) {
             if(isDouble(field.getType())) {
-                updateValue = instance.getDouble(field.getId()).add((DoubleInstance) evaluatedValue);
-            }
-            else if(isInt(field.getType())) {
-                updateValue = instance.getInt(field.getId()).add((IntInstance) evaluatedValue);
+                updateValue = field.getDouble(instance).add((DoubleInstance) evaluatedValue);
             }
             else if(isLong(field.getType())) {
-                updateValue = instance.getLong(field.getId()).add((LongInstance) evaluatedValue);
+                updateValue = field.getLong(instance).add((LongInstance) evaluatedValue);
             }
             else {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
@@ -56,13 +49,10 @@ public class UpdateField extends Entity {
         }
         else if(op == UpdateOp.DECREASE) {
             if(isDouble(field.getType())) {
-                updateValue = instance.getDouble(field.getId()).subtract((DoubleInstance) evaluatedValue);
-            }
-            else if(isInt(field.getType())) {
-                updateValue = instance.getInt(field.getId()).subtract((IntInstance) evaluatedValue);
+                updateValue = field.getDouble(instance).minus((DoubleInstance) evaluatedValue);
             }
             else if(isLong(field.getType())) {
-                updateValue = instance.getLong(field.getId()).subtract((LongInstance) evaluatedValue);
+                updateValue = field.getLong(instance).minus((LongInstance) evaluatedValue);
             }
             else {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
@@ -71,8 +61,17 @@ public class UpdateField extends Entity {
         else {
             throw new InternalException("Unsupported update operation: " + op);
         }
-
-        instance.set(field, updateValue);
+        if(field.isStatic()) {
+            field.setStaticValue(updateValue);
+        }
+        else {
+            NncUtils.requireNonNull(instance);
+            if (inConstructor && !instance.isFieldInitialized(field)) {
+                instance.initializeField(field, updateValue);
+            } else {
+                instance.set(field, updateValue);
+            }
+        }
     }
 
     public Field getField() {
@@ -88,10 +87,20 @@ public class UpdateField extends Entity {
     }
 
     public UpdateFieldDTO toDTO(boolean persisting) {
-        return new UpdateFieldDTO(
-                field.getId(),
-                op.code(),
-                value.toDTO(persisting)
-        );
+        try(var context = SerializeContext.enter()) {
+            return new UpdateFieldDTO(
+                    context.getRef(field),
+                    op.code(),
+                    value.toDTO(persisting)
+            );
+        }
+    }
+
+    public UpdateOp getOp() {
+        return op;
+    }
+
+    public Value getValue() {
+        return value;
     }
 }

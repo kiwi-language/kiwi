@@ -4,6 +4,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 public class AsExpression extends Expression {
 
@@ -47,5 +48,17 @@ public class AsExpression extends Expression {
 
     public String getAlias() {
         return alias;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AsExpression that)) return false;
+        return Objects.equals(expression, that.expression) && Objects.equals(alias, that.alias);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression, alias);
     }
 }

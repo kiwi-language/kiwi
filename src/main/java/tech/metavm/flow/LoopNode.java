@@ -1,58 +1,174 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.*;
-import tech.metavm.flow.rest.LoopParam;
-import tech.metavm.flow.rest.NodeDTO;
+import org.jetbrains.annotations.Nullable;
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
-import tech.metavm.util.NncUtils;
+import tech.metavm.flow.rest.LoopFieldDTO;
+import tech.metavm.flow.rest.LoopParamDTO;
+import tech.metavm.object.instance.BooleanInstance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
+import tech.metavm.util.Table;
+
+import java.util.*;
 
 @EntityType("循环节点")
-public class LoopNode extends NodeRT<LoopParam> {
+public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
 
-    public static LoopNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        LoopParam loopParam = nodeDTO.getParam();
-        NodeRT<?> firstChild = context.getNode(loopParam.firstChildId());
-        NodeRT<?> prev = NncUtils.get(nodeDTO.prevId(), context::getNode);
-        ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
-        Value condition = ValueFactory.getValue(loopParam.condition(), parsingContext);
-        return new LoopNode(nodeDTO, condition, firstChild, scope);
-    }
-
-    @ChildEntity("循环条件")
+    @ChildEntity("循环体")
+    private final ScopeRT loopScope;
+    @ChildEntity("字段列表")
+    private final Table<LoopField> fields = new Table<>(LoopField.class, true);
+    @ChildEntity("条件")
     private Value condition;
-    @EntityField("首节点")
-    private final NodeRT<?> firstChild;
 
-    public LoopNode(NodeDTO nodeDTO, Value condition, NodeRT<?> firstChild, ScopeRT scope) {
-        super(nodeDTO, null, scope);
-        this.firstChild = firstChild;
+    protected LoopNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous,
+                       ScopeRT scope, Value condition) {
+        super(tmpId, name, outputType, previous, scope);
+        loopScope = new ScopeRT(scope.getFlow(), this, true);
         this.condition = condition;
     }
 
     @Override
-    protected void setParam(LoopParam param, IEntityContext entityContext) {
-        condition = ValueFactory.getValue(param.condition(), getParsingContext(entityContext));
+    protected T getParam(boolean persisting) {
+        return null;
     }
 
-    public NodeRT<?> getFirstChild() {
-        return firstChild;
+    protected void setLoopParam(LoopParamDTO param, IEntityContext context) {
+        if(param.getFields() != null) {
+            updateFields(param.getFields(), context);
+        }
+        var parsingContext = getParsingContext(context);
+        if(param.getCondition() != null) {
+            condition = ValueFactory.create(param.getCondition(), parsingContext);
+        }
+    }
+
+    public void updateFields(List<LoopFieldDTO> loopFieldDTOs, IEntityContext context) {
+        var parsingContext = getParsingContext(context);
+        Set<Field> fields = new HashSet<>();
+        for (LoopFieldDTO loopFieldDTO : loopFieldDTOs) {
+            var field = context.getField(loopFieldDTO.fieldRef());
+            fields.add(field);
+            var loopField = this.fields.get(LoopField::getField, field);
+            if(loopField == null) {
+                this.fields.add(new LoopField(
+                        field,
+                        ValueFactory.create(loopFieldDTO.initialValue(), parsingContext),
+                        ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext)
+                ));
+            }
+            else {
+                loopField.update(loopFieldDTO, context, parsingContext);
+            }
+        }
+        this.fields.removeIf(loopField -> !fields.contains(loopField.getField()));
+    }
+
+    @Override
+    public ParsingContext getParsingContext(IEntityContext entityContext) {
+        return FlowParsingContext.create(
+                loopScope, loopScope.getLastNode(), entityContext.getInstanceContext()
+        );
+    }
+
+    public List<LoopField> getFields() {
+        return Collections.unmodifiableList(fields);
+    }
+
+    public void setField(Field field, Value initialValue, Value updatedValue) {
+        var loopField = fields.get(LoopField::getField, field);
+        if(loopField == null) {
+            fields.add(new LoopField(field, initialValue, updatedValue));
+        }
+        else {
+            loopField.setInitialValue(initialValue);
+            loopField.setUpdatedValue(updatedValue);
+        }
+    }
+
+    @Override
+    public final void execute(FlowFrame frame) {
+        ClassInstance loopObject = (ClassInstance) frame.getResult(this);
+        if (loopObject == null) {
+            loopObject = initLoopObject(frame);
+            frame.setResult(loopObject);
+        } else {
+            updateLoopObject(loopObject, frame);
+        }
+        var extraCondValue = (BooleanInstance) condition.evaluate(frame);
+        if(!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
+            return;
+        }
+        if (loopScope.isEmpty()) {
+            frame.jumpTo(this);
+        } else {
+            frame.jumpTo(loopScope.getFirstNode());
+        }
+    }
+
+    private ClassInstance initLoopObject(FlowFrame frame) {
+        Map<Field, Instance> fieldValues = new HashMap<>(getExtraLoopFields(frame));
+        for (LoopField field : fields) {
+            fieldValues.put(field.getField(), field.getInitialValue().evaluate(frame));
+        }
+        return new ClassInstance(fieldValues, getType());
+    }
+
+    private void updateLoopObject(ClassInstance loopObject, FlowFrame frame) {
+        updateExtraFields(loopObject, frame);
+        for (LoopField field : fields) {
+            loopObject.set(field.getField(), field.getUpdatedValue().evaluate(frame));
+        }
+    }
+
+    protected Map<Field, Instance> getExtraLoopFields(FlowFrame frame) {
+        return Map.of();
+    }
+
+    protected void updateExtraFields(ClassInstance instance, FlowFrame frame) {}
+
+    protected boolean checkExtraCondition(ClassInstance loopObject, FlowFrame frame) {
+        return true;
     }
 
     public Value getCondition() {
         return condition;
     }
 
-    @Override
-    protected LoopParam getParam(boolean persisting) {
-        return new LoopParam(
-                condition.toDTO(persisting),
-                NncUtils.get(firstChild, Entity::getId)
-        );
+    public void setCondition(@Nullable Value condition) {
+        this.condition = condition;
+    }
+
+
+    public ScopeRT getLoopScope() {
+        return loopScope;
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public ClassType getType() {
+        return (ClassType) super.getType();
     }
+
+    @Override
+    public List<NodeRT<?>> getGlobalPredecessors() {
+        var predecessors = new ArrayList<>(super.getGlobalPredecessors());
+        if(!loopScope.isEmpty()) {
+            predecessors.add(loopScope.getLastNode());
+        }
+        return predecessors;
+    }
+
+    @Override
+    protected List<Object> nodeBeforeRemove() {
+        return List.of(getType());
+    }
+
 
 }

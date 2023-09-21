@@ -154,7 +154,7 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
             }
             setIn(node, liveIn);
             setOut(node, liveOut);
-            return prevLiveIn.equals(liveIn);
+            return !prevLiveIn.equals(liveIn);
         }
     }
 

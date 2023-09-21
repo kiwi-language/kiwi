@@ -8,6 +8,7 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("二元表达式")
 public class BinaryExpression extends Expression {
@@ -70,5 +71,17 @@ public class BinaryExpression extends Expression {
     @Override
     public <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return NncUtils.merge(first.extractExpressions(klass), second.extractExpressions(klass));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BinaryExpression that)) return false;
+        return operator == that.operator && Objects.equals(first, that.first) && Objects.equals(second, that.second);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operator, first, second);
     }
 }

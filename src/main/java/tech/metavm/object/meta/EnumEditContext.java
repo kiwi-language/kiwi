@@ -1,12 +1,16 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.InstanceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class EnumEditContext {
 
@@ -16,7 +20,7 @@ public class EnumEditContext {
     private final List<ChoiceOptionDTO> optionDTOs;
     private final List<EnumConstantRT> defaultOptions = new ArrayList<>();
     private final IEntityContext entityContext;
-    private EnumType type;
+    private ClassType type;
 
     public EnumEditContext(Long id,
                            String name,
@@ -42,7 +46,7 @@ public class EnumEditContext {
             type = createType();
         }
         else {
-            type = entityContext.getEntity(EnumType.class, id);
+            type = entityContext.getEntity(ClassType.class, id);
         }
     }
 
@@ -61,8 +65,9 @@ public class EnumEditContext {
                 EnumConstantRT option;
                 if (optionDTO.id() == null) {
                     option = new EnumConstantRT(convertToEnumConstant(optionDTO, ordinal++), type);
-                    entityContext.getInstanceContext().bind(option.getInstance());
-                    type.addEnumConstant(option.getInstance());
+                    Objects.requireNonNull(entityContext.getInstanceContext()).bind(option.getInstance());
+//                    type.addEnumConstant(option.getInstance());
+                    addEnumConstant(option.getName(), option.getInstance());
                 } else {
                     option = type.getEnumConstant(optionDTO.id());
                     option.update(convertToEnumConstant(optionDTO, ordinal++));
@@ -74,6 +79,21 @@ public class EnumEditContext {
         }
     }
 
+    private void addEnumConstant(String name, ClassInstance instance) {
+        new Field(
+                name,
+                null,
+                type,
+                type, Access.GLOBAL,
+                false,
+                false,
+                InstanceUtils.nullInstance(),
+                true,
+                true,
+                instance
+        );
+    }
+
     private EnumConstantDTO convertToEnumConstant(ChoiceOptionDTO choiceOptionDTO, int ordinal) {
         return new EnumConstantDTO(
                 choiceOptionDTO.id(),
@@ -83,8 +103,12 @@ public class EnumEditContext {
         );
     }
 
-    private EnumType createType() {
-        type = TypeUtil.createEnum(name, anonymous);
+    private ClassType createType() {
+        type = ClassBuilder.newBuilder(name, null)
+                .superType(ModelDefRegistry.getClassType(Enum.class))
+                .category(TypeCategory.ENUM)
+                .anonymous(anonymous)
+                .build();
         entityContext.bind(type);
         entityContext.initIds();
         return type;

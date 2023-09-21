@@ -20,6 +20,8 @@ public class IdentityContext {
     private final Predicate<ClassType> isClassTypeInitialized;
     private final Function<tech.metavm.object.meta.Type, Type> getJavaType;
 
+
+
     public IdentityContext(Predicate<ClassType> isClassTypeInitialized,
                            Function<tech.metavm.object.meta.Type, Type> getJavaType) {
         this.isClassTypeInitialized = isClassTypeInitialized;
@@ -56,17 +58,21 @@ public class IdentityContext {
         if(model2identity.containsKey(model) || ValueUtil.isPrimitive(model) || (model instanceof Instance)) {
             return;
         }
-        if((model instanceof ClassType classType) && !isClassTypeInitialized.test(classType)) {
+        if((model instanceof ClassType classType) && classType.isFromReflection()
+                && !classType.isCollection()
+                && !isClassTypeInitialized.test(classType)) {
             return;
         }
-        if(model instanceof tech.metavm.object.meta.Type type) {
+        if(model instanceof tech.metavm.object.meta.Type type
+                && (!(type.getConcreteType() instanceof ClassType klass)
+                || klass.isFromReflection() || klass.isCollection())) {
             putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
         }
-        else if(model instanceof Field field) {
+        else if(model instanceof Field field && field.getDeclaringType().isFromReflection()) {
             putModelId(model, ModelIdentity.field(getJavaField(field)), result);
         }
-        else if(model instanceof Index uniqueConstraint) {
-            putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(uniqueConstraint)), result);
+        else if(model instanceof Index index && index.getDeclaringType().isFromReflection()) {
+            putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(index)), result);
         }
         else {
             Reference ref = getIncomingReference(model);
@@ -80,7 +86,6 @@ public class IdentityContext {
                     result
             );
         }
-
         if(model instanceof Collection<?> collection) {
             int index = 0;
             for (Object item : collection) {

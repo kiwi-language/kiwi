@@ -9,6 +9,7 @@ import tech.metavm.util.Table;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("字段表达式")
 public class FieldExpression extends Expression {
@@ -48,14 +49,6 @@ public class FieldExpression extends Expression {
         return fieldPath;
     }
 
-    public List<Long> getFieldIds() {
-        return NncUtils.map(fieldPath, Entity::getId);
-    }
-
-    public List<String> getFieldIdPath() {
-        return NncUtils.map(fieldPath, field -> idVarName(field.getId()));
-    }
-
     @Override
     public Type getType() {
         return getLastField().getType();
@@ -74,7 +67,7 @@ public class FieldExpression extends Expression {
     @Override
     public String buildSelf(VarType symbolType) {
         String fieldsExpr = switch (symbolType) {
-            case ID -> NncUtils.join(fieldPath, f -> idVarName(f.getId()), ".");
+            case ID -> NncUtils.join(fieldPath, f -> idVarName(f.getIdRequired()), ".");
             case NAME -> NncUtils.join(fieldPath, Field::getName, ".");
         };
         if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {
@@ -114,5 +107,17 @@ public class FieldExpression extends Expression {
     @Override
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return super.extractExpressionsRecursively(klass);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof FieldExpression that)) return false;
+        return Objects.equals(instance, that.instance) && Objects.equals(fieldPath, that.fieldPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(instance, fieldPath);
     }
 }

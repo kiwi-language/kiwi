@@ -4,7 +4,7 @@ import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.AnyType;
+import tech.metavm.object.meta.ObjectType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectUtils;
@@ -28,7 +28,7 @@ public class InstanceCollectionDef<E extends Instance, C extends Table<E>> exten
                 if(Instance.class.isAssignableFrom(elementClass)
                         && elementType == elementClass
                         && (type instanceof ArrayType arrayType)
-                        && (arrayType.getElementType() instanceof AnyType)) {
+                        && (arrayType.getElementType() instanceof ObjectType)) {
                     //noinspection unchecked,rawtypes
                     return new InstanceCollectionDef(
                             javaClass, javaType, elementClass, type

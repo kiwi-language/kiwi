@@ -11,6 +11,7 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("常量表达式")
 public class ConstantExpression extends Expression {
@@ -41,7 +42,7 @@ public class ConstantExpression extends Expression {
 
     @Override
     public Type getType() {
-        return ValueUtil.getValueType(value);
+        return value.getType();
     }
 
     @Override
@@ -63,4 +64,15 @@ public class ConstantExpression extends Expression {
         return 0;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ConstantExpression that)) return false;
+        return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
 }

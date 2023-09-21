@@ -2,8 +2,8 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
-import tech.metavm.autograph.IrCoreApplicationEnvironment;
-import tech.metavm.autograph.IrCoreProjectEnvironment;
+import tech.metavm.autograph.env.IrCoreApplicationEnvironment;
+import tech.metavm.autograph.env.IrCoreProjectEnvironment;
 
 import static java.util.Objects.requireNonNull;
 

@@ -7,6 +7,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("一元表达式")
 public class UnaryExpression extends Expression {
@@ -69,5 +70,17 @@ public class UnaryExpression extends Expression {
     @Override
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return operand.extractExpressions(klass);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UnaryExpression that)) return false;
+        return operator == that.operator && Objects.equals(operand, that.operand);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operator, operand);
     }
 }

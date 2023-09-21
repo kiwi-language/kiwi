@@ -3,17 +3,16 @@ package tech.metavm.object.instance;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.entity.InstanceContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.InstanceFactory;
+import tech.metavm.entity.*;
 import tech.metavm.expression.ConstantExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.instance.query.GraphQueryExecutor;
+import tech.metavm.object.instance.query.InstanceNode;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
-import tech.metavm.object.instance.query.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceQueryDTO;
 import tech.metavm.object.instance.rest.LoadInstancesByPathsRequest;
@@ -54,6 +53,7 @@ public class InstanceManager {
                 ContextUtil.getTenantId(),
                 type.getTypeIdsInHierarchy(),
                 ExpressionParser.parse(type, request.condition(), context),
+                false,
                 request.page(),
                 request.pageSize()
         );
@@ -83,7 +83,7 @@ public class InstanceManager {
     @Transactional
     public void update(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
         InstanceContext context = newContext(asyncLogProcessing);
-        if(instanceDTO.id() == null) {
+        if (instanceDTO.id() == null) {
             throw BusinessException.invalidParams("实例ID为空");
         }
         ValueFormatter.parseInstance(instanceDTO, context);
@@ -102,10 +102,49 @@ public class InstanceManager {
     public void delete(long id, boolean asyncLogProcessing) {
         InstanceContext context = newContext(asyncLogProcessing);
         Instance instance = context.get(id);
-        if(instance != null) {
+        if (instance != null) {
             context.remove(instance);
             context.finish();
         }
+    }
+
+    @Transactional
+    public void deleteByTypes(List<Long> typeIds) {
+        InstanceContext context = newContext();
+        IEntityContext entityContext = context.getEntityContext();
+        var types = NncUtils.mapAndFilter(typeIds, entityContext::getType, type -> !type.isEnum());
+        List<Instance> toRemove = NncUtils.flatMap(
+                types,
+                type -> context.getByType(type, null, 100)
+        );
+        context.batchRemove(toRemove);
+        context.finish();
+    }
+
+    public List<String> getReferenceChain(long id, int rootMode) {
+        InstanceContext context = newContext();
+        ReferenceTree root = new ReferenceTree(context.get(id), rootMode);
+        Set<Long> visited = new HashSet<>();
+        Map<Long, ReferenceTree> trees = new HashMap<>();
+        trees.put(id, root);
+        visited.add(id);
+        Set<Long> ids = new HashSet<>();
+        ids.add(id);
+        while (!ids.isEmpty()) {
+            var refs = instanceStore.getAllStrongReferences(context.getTenantId(), ids, visited);
+            ids.clear();
+            for (ReferencePO ref : refs) {
+                if (visited.contains(ref.getSourceId())) continue;
+                visited.add(ref.getSourceId());
+                ids.add(ref.getSourceId());
+                var parent = trees.get(ref.getTargetId());
+                var tree = new ReferenceTree(context.get(ref.getSourceId()), rootMode);
+                parent.addChild(tree);
+                trees.put(ref.getSourceId(), tree);
+            }
+        }
+        context.batchGet(visited);
+        return root.getPaths();
     }
 
     public Page<InstanceDTO> query(InstanceQueryDTO query) {
@@ -113,7 +152,7 @@ public class InstanceManager {
         InstanceContext context = newContext(tenantId);
         ClassType type = context.getClassType(query.typeId());
         Expression expression = ExpressionParser.parse(type, query.searchText(), context);
-        if((expression instanceof ConstantExpression constExpr) && constExpr.isString()) {
+        if ((expression instanceof ConstantExpression constExpr) && constExpr.isString()) {
             Field titleField = type.getTileField();
             PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(query.searchText());
             expression = ExpressionUtil.or(
@@ -125,6 +164,7 @@ public class InstanceManager {
                 tenantId,
                 type.getTypeIdsInHierarchy(),
                 expression,
+                false,
                 query.page(),
                 query.pageSize()
         );
@@ -149,11 +189,11 @@ public class InstanceManager {
         List<InstanceDTO> result = new ArrayList<>();
         for (Path path : paths) {
             long instanceId = parseIdFromPathItem(path.firstItem());
-            Instance instance =  context.get(instanceId);
+            Instance instance = context.get(instanceId);
             InstanceNode<?> node = instance2node.get(instance);
             List<Instance> values = node.getFetchResults(instance, path.subPath());
             for (Instance value : values) {
-                if(!visited.contains(value)) {
+                if (!visited.contains(value)) {
                     visited.add(value);
                     result.add(value.toDTO());
                 }
@@ -167,7 +207,7 @@ public class InstanceManager {
         for (tech.metavm.object.instance.query.Path path : paths) {
             Instance instance = context.get(parseIdFromPathItem(path.firstItem()));
             PathTree pathTree = pathTreeMap.computeIfAbsent(instance, k -> new PathTree(k + ""));
-            if(path.hasSubPath()) {
+            if (path.hasSubPath()) {
                 pathTree.addPath(path.subPath());
             }
         }
@@ -179,7 +219,7 @@ public class InstanceManager {
     }
 
     private static long parseIdFromPathItem(String pathItem) {
-        if(pathItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+        if (pathItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
             return Long.parseLong(pathItem.substring(Constants.CONSTANT_ID_PREFIX.length()));
         }
         throw new InternalException("Path item '" + pathItem + "' does not represent an identity");

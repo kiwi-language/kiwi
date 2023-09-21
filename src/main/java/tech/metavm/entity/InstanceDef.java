@@ -2,16 +2,16 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.AnyType;
+import tech.metavm.object.meta.ObjectType;
 import tech.metavm.object.meta.Type;
 
 import java.util.Map;
 
 public class InstanceDef<I extends Instance> extends ModelDef<I, I> {
 
-    private final AnyType type;
+    private final ObjectType type;
 
-    protected InstanceDef(Class<I> instanceClass, AnyType type) {
+    protected InstanceDef(Class<I> instanceClass, ObjectType type) {
         super(instanceClass, instanceClass);
         this.type = type;
     }

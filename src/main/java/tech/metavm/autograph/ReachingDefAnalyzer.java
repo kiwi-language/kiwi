@@ -196,7 +196,7 @@ public class ReachingDefAnalyzer extends JavaRecursiveElementVisitor {
             }
             setIn(node, defIn);
             setOut(node, defOut);
-            return prefDevOut.equals(defOut);
+            return !prefDevOut.equals(defOut);
         }
     }
 

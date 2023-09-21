@@ -2,9 +2,11 @@ package tech.metavm.object.meta;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.ModelIdentity;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.Table;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -19,7 +21,7 @@ import static tech.metavm.util.ReflectUtils.getFieldQualifiedName;
 @Component
 public class StdAllocators {
 
-    private static final long NUM_IDS_PER_ALLOCATOR = 1000L;
+    private static final long NUM_IDS_PER_ALLOCATOR = 10000L;
 
     private final Map<java.lang.reflect.Type, StdAllocator> allocatorMap = new HashMap<>();
     private long nextBaseId = 10000L;
@@ -31,45 +33,40 @@ public class StdAllocators {
         for (String fileName : store.getFileNames()) {
             StdAllocator allocator = new StdAllocator(store, fileName);
             allocatorMap.put(allocator.getJavaType(), allocator);
-            if(allocator.isArray()) {
+            if (allocator.isArray()) {
                 nextArrayBaseId = Math.max(nextArrayBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
-            }
-            else {
+            } else {
                 nextBaseId = Math.max(nextBaseId, allocator.getNextId() + NUM_IDS_PER_ALLOCATOR);
             }
         }
     }
 
     public Long getId(Object object) {
-        if(object instanceof java.lang.reflect.Field field) {
+        if (object instanceof java.lang.reflect.Field field) {
             return getId0(Field.class, getFieldQualifiedName(field));
         }
-        if(object instanceof java.lang.reflect.Type type) {
+        if (object instanceof java.lang.reflect.Type type) {
             return getId0(ClassType.class, getTypeCode(type));
         }
-        if(object instanceof Enum<?> enumConstant) {
+        if (object instanceof Enum<?> enumConstant) {
             return getId0(enumConstant.getClass(), enumConstant.name());
         }
-        if(object instanceof ModelIdentity modelIdentity) {
+        if (object instanceof ModelIdentity modelIdentity) {
             return getId0(modelIdentity.type(), modelIdentity.name());
         }
         throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
     }
 
     public void putId(Object object, long id) {
-        if(object instanceof java.lang.reflect.Field field) {
+        if (object instanceof java.lang.reflect.Field field) {
             putId0(Field.class, getFieldQualifiedName(field), id);
-        }
-        else if(object instanceof java.lang.reflect.Type type) {
+        } else if (object instanceof java.lang.reflect.Type type) {
             putId0(ClassType.class, getTypeCode(type), id);
-        }
-        else if(object instanceof Enum<?> enumConstant) {
+        } else if (object instanceof Enum<?> enumConstant) {
             putId0(enumConstant.getClass(), enumConstant.name(), id);
-        }
-        else if(object instanceof ModelIdentity modelIdentity) {
+        } else if (object instanceof ModelIdentity modelIdentity) {
             putId0(modelIdentity.type(), modelIdentity.name(), id);
-        }
-        else {
+        } else {
             throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
         }
     }
@@ -88,13 +85,22 @@ public class StdAllocators {
     }
 
     public long getTypeId(long id) {
-        StdAllocator typeAllocator = getTypeAllocator();
+        StdAllocator classTypeAllocator = allocatorMap.get(ClassType.class);
+        StdAllocator arrayTypeAllocator = allocatorMap.get(ArrayType.class);
         for (StdAllocator allocator : allocatorMap.values()) {
-            if(allocator.contains(id)) {
-                return typeAllocator.getId(allocator.getJavaType().getTypeName());
+            if (allocator.contains(id)) {
+                if (isTable(allocator.getJavaType())) {
+                    return arrayTypeAllocator.getId(allocator.getJavaType().getTypeName());
+                } else {
+                    return classTypeAllocator.getId(allocator.getJavaType().getTypeName());
+                }
             }
         }
         throw new InternalException("Can not found typeId for id: " + id);
+    }
+
+    private boolean isTable(Type javaType) {
+        return ReflectUtils.getRawClass(javaType) == Table.class;
     }
 
     public Map<Type, List<Long>> allocate(Map<? extends Type, Integer> typeId2count) {
@@ -113,10 +119,9 @@ public class StdAllocators {
 
     private StdAllocator createAllocator(Type javaType) {
         String fileName = store.getFileName(javaType.getTypeName());
-        if(store.fileNameExists(fileName)) {
+        if (store.fileNameExists(fileName)) {
             return new StdAllocator(store, fileName);
-        }
-        else {
+        } else {
             return new StdAllocator(
                     store,
                     fileName,
@@ -128,11 +133,10 @@ public class StdAllocators {
 
     private long allocateNextBaseId(Type javaType) {
         long basedId;
-        if(isArrayType(javaType)) {
+        if (isArrayType(javaType)) {
             basedId = nextArrayBaseId;
             nextArrayBaseId += NUM_IDS_PER_ALLOCATOR;
-        }
-        else {
+        } else {
             basedId = nextBaseId;
             nextBaseId += NUM_IDS_PER_ALLOCATOR;
         }
@@ -149,20 +153,20 @@ public class StdAllocators {
 //        }
     }
 
-    private StdAllocator getTypeAllocator() {
-        return allocatorMap.get(ClassType.class);
-    }
+//    private StdAllocator getEnumAllocator() {
+//        return allocatorMap.get(EnumType.class);
+//    }
 
     private String getTypeCode(java.lang.reflect.Type type) {
-        if(type instanceof Class<?> klass) {
+        if (type instanceof Class<?> klass) {
             return klass.getName();
         }
-        if(type instanceof ParameterizedType pType) {
+        if (type instanceof ParameterizedType pType) {
             return getTypeCode(pType.getRawType()) + "<" +
                     NncUtils.join(pType.getActualTypeArguments(), this::getTypeCode) + ">";
         }
-        if(type instanceof WildcardType wildcardType) {
-            if(ReflectUtils.isAllWildCardType(wildcardType)) {
+        if (type instanceof WildcardType wildcardType) {
+            if (ReflectUtils.isAllWildCardType(wildcardType)) {
                 return "?";
             }
         }

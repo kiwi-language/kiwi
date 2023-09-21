@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.flow.FlowRT;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
@@ -18,13 +18,20 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Map<tech.metavm.object.meta.Type, ModelDef<?, ?>> type2Def = new IdentityHashMap<>();
     private final IdentitySet<ModelDef<?,?>> processedDefSet = new IdentitySet<>();
     private final IdentitySet<ClassType> initializedClassTypes = new IdentitySet<>();
-    private final AnyTypeDef<Object> objectDef;
+    private final ObjectTypeDef<Object> objectDef;
     private final ValueDef<Enum<?>> enumDef;
     private final Function<Object, Long> getId;
     private final Set<Object> pendingModels = new IdentitySet<>();
     private final Map<tech.metavm.object.meta.Type, tech.metavm.object.meta.Type> typeInternMap = new HashMap<>();
     private final Map<Object, Instance> instanceMapping = new IdentityHashMap<>();
     private final IdentityContext identityContext = new IdentityContext(this::isClassTypeInitialized, this::getJavaType);
+
+    public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
+            Map.entry(Byte.class, Long.class),
+            Map.entry(Short.class, Long.class),
+            Map.entry(Integer.class, Long.class),
+            Map.entry(Float.class, Double.class)
+    ) ;
 
     public DefContext(Function<Object, Long> getId) {
         this(getId, null);
@@ -50,7 +57,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 //        }
         javaType = ReflectUtils.eraseType(javaType);
         if(javaType instanceof Class<?> klass) {
-            javaType = EntityUtils.getRealType(klass);
+            if(ReflectUtils.isBoxingClass(klass)) {
+                javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
+            }
+            else {
+                javaType = EntityUtils.getRealType(klass);
+            }
         }
         ModelDef<?,?> existing = javaType2Def.get(javaType);
         if(existing != null) {
@@ -124,19 +136,20 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         genericType = ReflectUtils.eraseType(genericType);
         Class<?> rawClass = ReflectUtils.getRawClass(genericType);
         TypeCategory typeCategory = ValueUtil.getTypeCategory(genericType);
-        if(Table.class.isAssignableFrom(rawClass)) {
-            Class<? extends Table<?>> collectionClass = rawClass.asSubclass(
+        if(Table.class.isAssignableFrom(rawClass) || List.class.isAssignableFrom(rawClass)) {
+            Class<? extends Table<?>> collectionClass = Table.class.asSubclass(
                     new TypeReference<Table<?>>(){}.getType()
             );
             if (genericType instanceof ParameterizedType pType) {
                 Type elementJavaType = pType.getActualTypeArguments()[0];
                 if((elementJavaType instanceof Class<?> elementJavaClass) &&
                         Instance.class.isAssignableFrom(elementJavaClass)) {
+                    var typeFactory = new TypeFactory(this::getType);
                     return new InstanceCollectionParser<>(
                             genericType,
                             collectionClass,
                             elementJavaClass,
-                            objectDef.getType().getArrayType()
+                            TypeUtil.getArrayType(objectDef.getType(), typeFactory)
                     );
                 }
             }
@@ -230,7 +243,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if(def.getType() instanceof ClassType classType) {
             initializedClassTypes.add(classType);
         }
-        Map<Object, ModelIdentity> identityMap = identityContext.getIdentityMap(def.getType());
+        Map<Object, ModelIdentity> identityMap = new IdentityHashMap<>(identityContext.getIdentityMap(def.getType()));
+        for (ClassType collectionType : def.getCollectionTypes()) {
+            identityMap.putAll(identityContext.getIdentityMap(collectionType));
+        }
         identityMap.forEach((model, modelId) -> {
             if((model instanceof IdInitializing idInitializing) && idInitializing.getId() == null) {
                 Long id = getId.apply(modelId);
@@ -309,7 +325,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if(model instanceof Table<?> table) {
             Type type = table.getGenericType();
             return type.equals(
-                    new TypeReference<Table<FlowRT>>() {}.getGenericType()
+                    new TypeReference<Table<Flow>>() {}.getGenericType()
             );
         }
         return false;
@@ -401,11 +417,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             if(model instanceof UnionType unionType) {
                 if(unionType.getDeclaredTypeMembers() == table) {
                     return unionType;
-                }
-            }
-            if(model instanceof EnumType enumType) {
-                if(enumType.getDeclaredEnumConstants() == table) {
-                    return enumType;
                 }
             }
         }

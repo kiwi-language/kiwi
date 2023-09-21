@@ -2,10 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.StandardTypes;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Method;
@@ -75,7 +72,9 @@ public class InstanceFactory {
                     data,
                     classType
             );
-            bindInstance.accept(instance);
+            if(!instance.getType().isEphemeral()) {
+                bindInstance.accept(instance);
+            }
             return instance;
         }
         else if(type instanceof ArrayType arrayType){
@@ -137,7 +136,7 @@ public class InstanceFactory {
             }
             else {
                 ArrayType arrayType = (type instanceof ArrayType a) ? a :
-                        ModelDefRegistry.getType(Object.class).getArrayType();
+                        TypeUtil.getArrayType(ModelDefRegistry.getType(Object.class));
                 return new ArrayInstance(
                         arrayType,
                         NncUtils.map(

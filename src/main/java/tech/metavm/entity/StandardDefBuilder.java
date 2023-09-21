@@ -1,29 +1,24 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.NullInstance;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.Null;
-import tech.metavm.util.Password;
-import tech.metavm.util.Table;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
-import java.util.Date;
+import java.util.*;
 
-import static tech.metavm.object.meta.PrimitiveKind.INT;
 import static tech.metavm.util.ReflectUtils.*;
 
 public class StandardDefBuilder {
 
-    private AnyTypeDef<Object> objectDef;
-
-//    private CollectionDef<?, Table<?>> tableDef;
+    private ObjectTypeDef<Object> objectDef;
 
     private ValueDef<Enum<?>> enumDef;
 
     private PrimitiveDef<String> stringDef;
-
-    private PrimitiveDef<Integer> intDef;
 
     private PrimitiveDef<Long> longDef;
 
@@ -43,62 +38,73 @@ public class StandardDefBuilder {
     public void initRootTypes(DefMap defMap) {
         TypeFactory typeFactory = new TypeFactory(defMap::getType);
 
-        AnyType objectType = new AnyType();
-        objectType.setArrayType(new ArrayType(objectType));
+        ObjectType objectType = new ObjectType();
 
-        objectDef = new AnyTypeDef<>(
+        objectDef = new ObjectTypeDef<>(
                 Object.class,
                 objectType
         );
         defMap.addDef(objectDef);
 
-        nullDef = new PrimitiveDef<>(
-                Null.class,
-                typeFactory.createPrimitive(PrimitiveKind.NULL)
+        var nullType = typeFactory.createPrimitive(PrimitiveKind.NULL);
+        var longType = typeFactory.createPrimitive( PrimitiveKind.LONG);
+        var doubleType = typeFactory.createPrimitive( PrimitiveKind.DOUBLE);
+        var stringType = typeFactory.createPrimitive(PrimitiveKind.STRING);
+        var boolType = typeFactory.createPrimitive( PrimitiveKind.BOOLEAN);
+        var timeType = typeFactory.createPrimitive(PrimitiveKind.TIME);
+        var passwordType = typeFactory.createPrimitive(PrimitiveKind.PASSWORD);
+        var voidType = typeFactory.createPrimitive(PrimitiveKind.VOID);
+
+        Map<Class<?>, PrimitiveType> primitiveTypes = Map.of(
+            Null.class, nullType,
+                Long.class, longType,
+                Double.class, doubleType,
+                String.class, stringType,
+                Boolean.class, boolType,
+                Date.class, timeType,
+                Password.class, passwordType,
+                Void.class, voidType
         );
-        defMap.addDef(nullDef);
+        var primTypeFactory = new TypeFactory(primitiveTypes::get);
+        var primTypeSource = new MapTypeSource(primitiveTypes.values());
+        var primDefMap = new HashMap<PrimitiveType, PrimitiveDef<?>>();
+        primDefMap.put(nullType, nullDef = new PrimitiveDef<>(Null.class, nullType));
+        primDefMap.put(longType, longDef = new PrimitiveDef<>(Long.class, longType));
+        primDefMap.put(doubleType, new PrimitiveDef<>(Double.class, doubleType));
+        primDefMap.put(boolType, new PrimitiveDef<>(Boolean.class, boolType));
+        primDefMap.put(stringType, stringDef = new PrimitiveDef<>(String.class, stringType));
+        primDefMap.put(timeType, new PrimitiveDef<>(Date.class, timeType));
+        primDefMap.put(passwordType, new PrimitiveDef<>(Password.class, passwordType));
+        primDefMap.put(voidType, new PrimitiveDef<>(Void.class, voidType));
 
-        PrimitiveType intType = typeFactory.createPrimitiveWithComposition(INT);
-        defMap.addDef(intDef = new PrimitiveDef<>(
-                Integer.class,
-                intType
-        ));
+        for (PrimitiveType primitiveType : primitiveTypes.values()) {
+            if(!primitiveType.isNull()) {
+                var def = primDefMap.get(primitiveType);
+                TypeUtil.fillCompositeTypes(primitiveType, primTypeFactory);
+                def.addCollectionType(TypeUtil.getIteratorType(primitiveType, primTypeSource, primTypeFactory));
+                def.addCollectionType(TypeUtil.getCollectionType(primitiveType, primTypeSource, primTypeFactory));
+                def.addCollectionType(TypeUtil.getListType(primitiveType, primTypeSource, primTypeFactory));
+                def.addCollectionType(TypeUtil.getSetType(primitiveType, primTypeSource, primTypeFactory));
+                def.addCollectionType(TypeUtil.getIteratorImplType(primitiveType, primTypeSource, primTypeFactory));
+            }
+        }
+        primDefMap.values().forEach(defMap::addDef);
 
-        defMap.addDef(longDef = new PrimitiveDef<>(
-                Long.class,
-                typeFactory.createPrimitiveWithComposition( PrimitiveKind.LONG)
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Double.class,
-                typeFactory.createPrimitiveWithComposition( PrimitiveKind.DOUBLE)
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Boolean.class,
-                typeFactory.createPrimitiveWithComposition( PrimitiveKind.BOOLEAN)
-        ));
-
-        PrimitiveType stringType = typeFactory.createPrimitiveWithComposition(PrimitiveKind.STRING);
-        defMap.addDef(stringDef = new PrimitiveDef<>(
-                String.class,
-                stringType
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Date.class,
-                typeFactory.createPrimitiveWithComposition(PrimitiveKind.TIME)
-        ));
-
-        defMap.addDef(new PrimitiveDef<>(
-                Password.class,
-                typeFactory.createPrimitiveWithComposition(PrimitiveKind.PASSWORD)
-        ));
+//        defMap.addDef(nullDef = new PrimitiveDef<>(Null.class, nullType));
+//        defMap.addDef(longDef = new PrimitiveDef<>(Long.class, longType));
+//        defMap.addDef(new PrimitiveDef<>(Double.class, doubleType));
+//        defMap.addDef(new PrimitiveDef<>(Boolean.class, boolType));
+//        defMap.addDef(stringDef = new PrimitiveDef<>(String.class, stringType));
+//        defMap.addDef(new PrimitiveDef<>(Date.class, timeType));
+//        defMap.addDef(new PrimitiveDef<>(Password.class, passwordType));
+//        defMap.addDef(new PrimitiveDef<>(Void.class, voidType));
 
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,
-                typeFactory.createValueClass("记录", Record.class.getSimpleName(), null),
+                ClassBuilder.newBuilder("记录", Record.class.getSimpleName())
+                        .source(ClassSource.REFLECTION)
+                        .category(TypeCategory.VALUE).build(),
                 defMap
         );
         defMap.addDef(recordDef);
@@ -106,12 +112,15 @@ public class StandardDefBuilder {
         EntityDef<Entity> entityDef = createEntityDef(
                 Entity.class,
                 Entity.class,
-                typeFactory.createClass("实体", Entity.class.getSimpleName(),null),
+                ClassBuilder.newBuilder( "实体", Entity.class.getSimpleName())
+                        .source(ClassSource.REFLECTION)
+                        .build(),
                 defMap
         );
 
         defMap.addDef(entityDef);
 
+        objectType.setArrayType(typeFactory.createArrayType(objectType));
         defMap.addDef(
                 CollectionDef.createHelper(
                     Table.class,
@@ -121,7 +130,9 @@ public class StandardDefBuilder {
                 )
         );
 
-        ClassType enumType = typeFactory.createClass("枚举", Enum.class.getSimpleName(), null);
+        ClassType enumType = ClassBuilder.newBuilder("枚举", Enum.class.getSimpleName())
+                .source(ClassSource.REFLECTION)
+                .build();
         enumDef = createValueDef(
                 Enum.class,// Enum is not a RuntimeGeneric, use the raw class
                 new TypeReference<Enum<?>>() {}.getType(),
@@ -137,7 +148,7 @@ public class StandardDefBuilder {
 
         enumOrdinalDef = createFieldDef(
                 ENUM_ORDINAL_FIELD,
-                createField(ENUM_ORDINAL_FIELD, false, intType, enumType),
+                createField(ENUM_ORDINAL_FIELD, false, longType, enumType),
                 enumDef
         );
 
@@ -183,17 +194,19 @@ public class StandardDefBuilder {
                                                       ClassType declaringType) {
         return new tech.metavm.object.meta.Field(
                 getMetaFieldName(javaField),
+                javaField.getName(),
                 declaringType,
-                Access.GLOBAL,
+                type, Access.GLOBAL,
                 false,
                 asTitle,
                 new NullInstance((PrimitiveType) nullDef.getType()),
-                type,
-                false
+                false,
+                false,
+                new NullInstance((PrimitiveType) nullDef.getType())
         );
     }
 
-    public AnyTypeDef<Object> getObjectDef() {
+    public ObjectTypeDef<Object> getObjectDef() {
         return objectDef;
     }
 
@@ -219,13 +232,8 @@ public class StandardDefBuilder {
     }
 
     @SuppressWarnings("unused")
-    public AnyType getObjectType() {
+    public ObjectType getObjectType() {
         return objectDef.getType();
-    }
-
-    @SuppressWarnings("unused")
-    public PrimitiveType getIntType() {
-        return (PrimitiveType) intDef.getType();
     }
 
     @SuppressWarnings("unused")

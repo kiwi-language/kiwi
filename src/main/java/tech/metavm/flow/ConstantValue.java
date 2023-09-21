@@ -49,4 +49,9 @@ public class ConstantValue extends Value {
         return ExpressionEvaluator.evaluate(expression, context);
     }
 
+    @Override
+    public Expression getExpression() {
+        return expression;
+    }
+
 }

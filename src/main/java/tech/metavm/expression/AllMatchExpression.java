@@ -7,6 +7,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class AllMatchExpression extends Expression {
 
@@ -80,5 +81,17 @@ public class AllMatchExpression extends Expression {
     public Expression cloneWithNewChildren(List<Expression> children) {
         NncUtils.requireLength(children, 2);
         return new AllMatchExpression(children.get(0), children.get(1), null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AllMatchExpression that)) return false;
+        return Objects.equals(array, that.array) && Objects.equals(condition, that.condition) && Objects.equals(cursor, that.cursor);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(array, condition, cursor);
     }
 }

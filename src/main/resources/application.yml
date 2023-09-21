@@ -1,19 +1,21 @@
 spring:
   main:
-      allow-circular-references: true
+    allow-circular-references: true
   datasource:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      username: root
-      password: 85263670
-      url: jdbc:mysql://localhost:3306/object?allowMultiQueries=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 85263670
+    url: jdbc:mysql://localhost:3306/object?allowMultiQueries=true
   data:
-      elasticsearch:
-        host: localhost
-        port: 9200
-        user: elastic
-        password: 85263670
+    elasticsearch:
+      host: localhost
+      port: 9200
+      user: elastic
+      password: 85263670
   jackson:
     default-property-inclusion: non_null
+
+management.health.elasticsearch.enabled: false
 
 mybatis:
   mapper-locations: classpath*:/mappers/*.xml

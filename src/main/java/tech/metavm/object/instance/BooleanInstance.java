@@ -20,6 +20,10 @@ public class BooleanInstance extends PrimitiveInstance {
         return value;
     }
 
+    public boolean isFalse() {
+        return !value;
+    }
+
     public BooleanInstance not() {
         return new BooleanInstance(!value, getType());
     }

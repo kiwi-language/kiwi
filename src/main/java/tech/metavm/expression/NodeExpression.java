@@ -6,6 +6,7 @@ import tech.metavm.flow.NodeRT;
 import tech.metavm.object.meta.Type;
 
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("节点表达式")
 public class NodeExpression extends Expression {
@@ -49,4 +50,15 @@ public class NodeExpression extends Expression {
         return new NodeExpression(node);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NodeExpression that)) return false;
+        return Objects.equals(node, that.node);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(node);
+    }
 }

@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 
-import tech.metavm.flow.FlowRT;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.Constraint;
 import tech.metavm.object.meta.Field;
@@ -40,7 +40,7 @@ public record ModelIdentity(
 
     public static ModelIdentity classTypeFlows(Class<?> javaType) {
         return new ModelIdentity(
-                ParameterizedTypeImpl.create(Table.class, FlowRT.class),
+                ParameterizedTypeImpl.create(Table.class, Flow.class),
                 javaType.getName() + ".flows"
         );
     }

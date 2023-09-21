@@ -45,6 +45,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 fooType.getId(),
                 null,
                 List.of(),
+                false,
                 1,
                 20,
                 List.of(
@@ -79,6 +80,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 fooType.getId(),
                 null,
                 List.of(),
+                false,
                 1,
                 20,
                 List.of(

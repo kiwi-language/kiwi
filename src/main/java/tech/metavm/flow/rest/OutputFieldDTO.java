@@ -1,23 +1,60 @@
 package tech.metavm.flow.rest;
 
+import tech.metavm.dto.RefDTO;
+import tech.metavm.object.meta.Access;
+import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.util.NncUtils;
+
 public record OutputFieldDTO(
-        Long id,
+        RefDTO fieldRef,
         String name,
-        Long typeId,
+        RefDTO typeRef,
         ValueDTO value
-) {
+) implements FieldReferringDTO<OutputFieldDTO> {
+
+    public Long id() {
+        return fieldRef.id();
+    }
+
+    public Long typeId() {
+        return typeRef.id();
+    }
 
     public OutputFieldDTO copyWithId(long id) {
         return new OutputFieldDTO(
-                id,
+                RefDTO.ofId(id),
                 name,
-                typeId,
+                typeRef,
                 value
         );
     }
 
     public FieldParamDTO toFieldParamDTO() {
-        return new FieldParamDTO(id, value);
+        return new FieldParamDTO(fieldRef, value);
+    }
+
+    public OutputFieldDTO copyWithFieldRef(RefDTO fieldRef) {
+        return new OutputFieldDTO(
+                fieldRef, name, typeRef, value
+        );
+    }
+
+    public FieldDTO toFieldDTO() {
+        return new FieldDTO(
+                NncUtils.get(fieldRef, RefDTO::tmpId),
+                NncUtils.get(fieldRef, RefDTO::id),
+                name,
+                null,
+                Access.GLOBAL.code(),
+                null,
+                false,
+                false,
+                null,
+                typeRef,
+                null,
+                false,
+                false
+        );
     }
 
 }

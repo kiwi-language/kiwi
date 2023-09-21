@@ -1,9 +1,10 @@
 package tech.metavm.flow.rest;
 
+import tech.metavm.dto.RefDTO;
+
 public record FieldParamDTO (
-        Long fieldId,
+        RefDTO fieldRef,
         ValueDTO value
 ) {
-
 
 }

@@ -11,4 +11,10 @@ public @interface EntityType {
 
     String value();
 
+    boolean compiled() default false;
+
+    boolean anonymous() default false;
+
+    boolean ephemeral() default false;
+
 }

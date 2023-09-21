@@ -64,7 +64,7 @@ public class EntityContextTest extends TestCase {
         ClassInstance fooInst = MockRegistry.getFooInstance();
         instanceContext.replace(fooInst);
 
-        Foo foo = context.get(Foo.class, fooInst.getId());
+        Foo foo = context.get(Foo.class, fooInst.getIdRequired());
         Assert.assertNotNull(foo);
         Assert.assertEquals(fooInst.getId(), foo.getId());
         Assert.assertEquals(fooInst.getString(fooNameField).getValue(), foo.getName());
@@ -84,7 +84,7 @@ public class EntityContextTest extends TestCase {
         fooInst.initId(idProvider.allocateOne(-1L, fooType));
         instanceContext.replace(fooInst);
 
-        Foo foo = context.get(Foo.class, fooInst.getId());
+        Foo foo = context.get(Foo.class, fooInst.getIdRequired());
         Assert.assertNotNull(foo);
         Instance loadedFooInst = context.getInstance(foo);
         Assert.assertSame(fooInst, loadedFooInst);
@@ -128,12 +128,12 @@ public class EntityContextTest extends TestCase {
         Instance inst = MockRegistry.getFooInstance();
         instanceContext.replace(inst);
 
-        Foo foo = context.getEntity(Foo.class, inst.getId());
+        Foo foo = context.getEntity(Foo.class, inst.getIdRequired());
         context.remove(foo);
         Assert.assertFalse(context.containsModel(foo));
         Assert.assertFalse(context.containsInstance(inst));
         Assert.assertFalse(instanceContext.containsInstance(inst));
-        Assert.assertFalse(instanceContext.containsId(inst.getId()));
+        Assert.assertFalse(instanceContext.containsId(inst.getIdRequired()));
     }
 
     public void test_remove() {
@@ -144,18 +144,19 @@ public class EntityContextTest extends TestCase {
         context.finish();
 
         context = newIntegratedContext();
-        context.remove(context.get(Foo.class, foo.getId()));
+        context.remove(context.get(Foo.class, foo.getIdRequired()));
         context.finish();
 
         context = newIntegratedContext();
         List<ReferenceCleanupJob> jobs = context.getByType(ReferenceCleanupJob.class, null, 100);
         Assert.assertFalse(jobs.isEmpty());
-        ReferenceCleanupJob jobForFoo = NncUtils.find(jobs, j -> j.getTargetId() == foo.getId());
+        ReferenceCleanupJob jobForFoo = NncUtils.find(jobs, j -> j.getTargetId() == foo.getIdRequired());
         Assert.assertNotNull(jobForFoo);
         Assert.assertTrue(jobForFoo.isRunnable());
 
         IEntityContext rootContext = newIntegratedRootContext();
         JobSignal signal = rootContext.selectByUniqueKey(JobSignal.IDX_TENANT_ID, TENANT_ID);
+        Assert.assertNotNull(signal);
         Assert.assertEquals(2, signal.getUnfinishedCount());
     }
 
@@ -166,15 +167,14 @@ public class EntityContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        long barId = context.getInstance(bar).getId();
+        long barId = context.getInstance(bar).getIdRequired();
 
         try {
             context = newIntegratedContext();
             context.remove(context.get(Bar.class, barId));
             context.finish();
             Assert.fail("Strongly referenced instance can not be removed");
-        }
-        catch (BusinessException e) {
+        } catch (BusinessException e) {
             Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, e.getErrorCode());
         }
     }
@@ -186,8 +186,8 @@ public class EntityContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        long fooId = foo.getId();
-        long barId = context.getInstance(bar).getId();
+        long fooId = foo.getIdRequired();
+        long barId = context.getInstance(bar).getIdRequired();
 
         context = newIntegratedContext();
         context.remove(context.get(Foo.class, fooId));
@@ -199,22 +199,17 @@ public class EntityContextTest extends TestCase {
 
     public void test_remove_unique_field() {
         EntityContext context = newIntegratedContext();
-        ClassType productType = new ClassType("Product");
-        Field field = new Field(
-                "code",
-                productType,
-                Access.GLOBAL,
-                true,
-                true,
-                MockRegistry.getNullInstance(),
-                MockRegistry.getType(String.class),
-                false
-        );
+        ClassType productType = ClassBuilder.newBuilder("Product", null).build();
+        Field field = FieldBuilder
+                .newBuilder("code", null, productType, StandardTypes.getStringType())
+                .asTitle(true)
+                .unique(true)
+                .build();
         context.bind(productType);
         context.finish();
 
         context = newIntegratedContext();
-        field = context.get(Field.class, field.getId());
+        field = context.get(Field.class, field.getIdRequired());
         context.remove(field);
         context.finish();
     }
@@ -232,7 +227,7 @@ public class EntityContextTest extends TestCase {
         Instance inst = MockRegistry.getFooInstance();
         instanceContext.replace(inst);
 
-        Foo foo = context.getEntity(Foo.class, inst.getId());
+        Foo foo = context.getEntity(Foo.class, inst.getIdRequired());
         Assert.assertNotNull(foo);
         Assert.assertEquals(inst.getId(), foo.getId());
 
@@ -264,7 +259,7 @@ public class EntityContextTest extends TestCase {
 
         instanceStore.addIndex(
                 TENANT_ID,
-                constraint.createIndexKey(List.of(fooInst.getString(fooNameField))),
+                constraint.createIndexKey(List.of(fooInst.getString(fooNameField))).toPO(),
                 fooInst.getId()
         );
 
@@ -285,14 +280,13 @@ public class EntityContextTest extends TestCase {
         Instance fooInst = MockRegistry.getFooInstance();
         instanceContext.replace(fooInst);
 
-        Foo foo = context.getEntity(Foo.class, fooInst.getId());
+        Foo foo = context.getEntity(Foo.class, fooInst.getIdRequired());
         Assert.assertNotNull(foo);
 
         try {
-            context.getEntity(Baz.class, fooInst.getId());
+            context.getEntity(Baz.class, fooInst.getIdRequired());
             Assert.fail("Should throw an exception");
-        }
-        catch (InternalException e) {
+        } catch (InternalException e) {
             Assert.assertEquals(InternalErrorCode.MODEL_TYPE_MISMATCHED, e.getErrorCode());
         }
     }
@@ -301,13 +295,14 @@ public class EntityContextTest extends TestCase {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
 
         Table<Constraint<?>> constraints = new Table<>(
-                new TypeReference<>() {},
+                new TypeReference<>() {
+                },
                 List.of(
                         ConstraintFactory.createFromDTO(
                                 new ConstraintDTO(
                                         null,
                                         ConstraintKind.CHECK.code(),
-                                        fooType.getId(),
+                                        fooType.getIdRequired(),
                                         null,
                                         new CheckConstraintParamDTO(
                                                 ValueDTO.exprValue("名称 = 'Big Foo'")
@@ -319,7 +314,7 @@ public class EntityContextTest extends TestCase {
                                 new ConstraintDTO(
                                         null,
                                         ConstraintKind.UNIQUE.code(),
-                                        fooType.getId(),
+                                        fooType.getIdRequired(),
                                         null,
                                         UniqueConstraintParamDTO.create(
                                                 "名称唯一",
@@ -350,7 +345,7 @@ public class EntityContextTest extends TestCase {
         entityContext1.finish();
 
         EntityContext entityContext2 = newEntityContextWitIntegration();
-        Foo loadedFoo = entityContext2.getEntity(Foo.class, foo.getId());
+        Foo loadedFoo = entityContext2.getEntity(Foo.class, foo.getIdRequired());
 
         TestUtils.logJSON(LOGGER, loadedFoo);
 
@@ -382,12 +377,13 @@ public class EntityContextTest extends TestCase {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
         Foo foo = MockRegistry.getFoo();
         context.bind(foo);
-        Field field = new Field("testNotNull", fooType, InstanceUtils.getStringType());
+        Field field = FieldBuilder
+                .newBuilder("testNotNull", null, fooType, InstanceUtils.getStringType())
+                .build();
         try {
             context.bind(field);
             Assert.fail("Should not succeed");
-        }
-        catch (BusinessException e) {
+        } catch (BusinessException e) {
             Assert.assertEquals(ErrorCode.INVALID_FIELD, e.getErrorCode());
         }
     }
@@ -417,12 +413,8 @@ public class EntityContextTest extends TestCase {
         context.finish();
 
         context = newIntegratedContext();
-        Job loadedJob = context.getEntity(Job.class, job.getId());
+        Job loadedJob = context.getEntity(Job.class, job.getIdRequired());
         Assert.assertTrue(loadedJob instanceof IndexRebuildGlobalJob);
-    }
-
-    private EntityContext newContext() {
-        return newContext(MockRegistry.getDefContext());
     }
 
     public EntityContext newIntegratedContext() {

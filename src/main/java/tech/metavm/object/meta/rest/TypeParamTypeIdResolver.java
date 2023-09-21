@@ -35,7 +35,7 @@ public class TypeParamTypeIdResolver implements TypeIdResolver {
     @Override
     public JavaType typeFromId(DatabindContext context, String id) throws IOException {
         int code = Integer.parseInt(id);
-        TypeCategory type = TypeCategory.getByCodeRequired(code);
+        TypeCategory type = TypeCategory.getByCode(code);
         return context.resolveSubType(baseType, type.getParamClass().getName());
     }
 

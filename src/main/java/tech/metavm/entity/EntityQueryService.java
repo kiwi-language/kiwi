@@ -35,6 +35,7 @@ public class EntityQueryService {
                 type.getId(),
                 entityQuery.searchText(),
                 NncUtils.map(entityQuery.searchFields(), entityDef::getFieldByJavaFieldName),
+                entityQuery.includeBuiltin(),
                 entityQuery.page(),
                 entityQuery.pageSize(),
                 NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef ,f, context))

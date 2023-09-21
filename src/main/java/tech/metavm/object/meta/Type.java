@@ -21,6 +21,8 @@ public abstract class Type extends Entity {
 
     public static IndexDef<Type> UNIQUE_NAME = new IndexDef<>(Type.class, "name");
 
+    public static IndexDef<Type> UNIQUE_CODE = new IndexDef<>(Type.class, "code");
+
     public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
 
     @EntityField(value = "名称", asTitle = true)
@@ -40,6 +42,18 @@ public abstract class Type extends Entity {
     @EntityField("可空类型")
     @Nullable
     private UnionType nullableType;
+    @Nullable
+    private ClassType collectionType;
+    @Nullable
+    private ClassType iteratorType;
+    @Nullable
+    private ClassType setType;
+    @Nullable
+    private ClassType setIteratorType;
+    @Nullable
+    private ClassType listType;
+    @Nullable
+    private ClassType listIteratorType;
 
     public Type(String name, boolean anonymous, boolean ephemeral, TypeCategory category) {
         this.name = name;
@@ -112,7 +126,8 @@ public abstract class Type extends Entity {
     }
 
     public boolean isInt() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.INT;
+//        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.INT;
+        return isLong();
     }
 
     public boolean isLong() {
@@ -160,18 +175,19 @@ public abstract class Type extends Entity {
     }
 
     public boolean isEnum() {
-        return this instanceof EnumType;
+        return category.isEnum();
+    }
+
+    public boolean isVoid() {
+        return category == TypeCategory.VOID;
     }
 
     public boolean isReference() {
         return isClass() || isArray() || isEnum() ||
-                (!(this instanceof AnyType) && isNullable() && getUnderlyingType().isReference());
+                (!(this instanceof ObjectType) && isNullable() && getUnderlyingType().isReference());
     }
 
-    public ArrayType getArrayType() {
-        if (arrayType == null) {
-            arrayType = new ArrayType(this);
-        }
+    public @Nullable ArrayType getArrayType() {
         return arrayType;
     }
 
@@ -205,40 +221,26 @@ public abstract class Type extends Entity {
         return List.of();
     }
 
-    protected TypeDTO toDTO(Object param, long tmpId) {
-        return new TypeDTO(
-                getId(),
-                tmpId,
-                name,
-                code,
-                category.code(),
-                ephemeral,
-                anonymous,
-                NncUtils.get(nullableType, Entity::getId),
-                NncUtils.get(arrayType, Entity::getId),
-                param
-        );
+    protected TypeDTO toDTO(Object param, Long tmpId) {
+        try (var context = SerializeContext.enter()) {
+            return new TypeDTO(
+                    getId(),
+                    tmpId,
+                    name,
+                    code,
+                    category.code(),
+                    ephemeral,
+                    anonymous,
+                    NncUtils.get(nullableType, context::getRef),
+                    NncUtils.get(arrayType, context::getRef),
+                    param
+            );
+        }
     }
 
     public TypeDTO toDTO() {
         try (var context = SerializeContext.enter()) {
-            if (context.isVisited(this)) {
-                return new TypeDTO(
-                        getId(),
-                        context.getTmpId(this),
-                        getName(),
-                        getCode(),
-                        getCategory().code(),
-                        isEphemeral(),
-                        isAnonymous(),
-                        NncUtils.get(nullableType, Entity::getId),
-                        NncUtils.get(arrayType, Entity::getId),
-                        null
-                );
-            } else {
-                long tmpId = context.visit(this);
-                return toDTO(getParam(), tmpId);
-            }
+            return toDTO(getParam(), context.getTmpId(this));
         }
     }
 
@@ -255,11 +257,19 @@ public abstract class Type extends Entity {
 
     protected abstract Object getParam();
 
+    public Class<? extends Instance> getInstanceClass() {
+        return Instance.class;
+    }
+
     @Override
     public List<Object> beforeRemove() {
         Set<Type> compositeTypes = new IdentitySet<>();
         extractCompositeTypesRecursively(compositeTypes);
         return new ArrayList<>(compositeTypes);
+    }
+
+    public @Nullable Class<?> getNativeClass() {
+        return category.getNativeClass();
     }
 
     @Override

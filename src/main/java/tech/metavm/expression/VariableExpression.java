@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.object.meta.Type;
 
 import java.util.List;
+import java.util.Objects;
 
 public class VariableExpression extends Expression {
 
@@ -41,4 +42,15 @@ public class VariableExpression extends Expression {
         return variable;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof VariableExpression that)) return false;
+        return Objects.equals(variable, that.variable);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(variable);
+    }
 }

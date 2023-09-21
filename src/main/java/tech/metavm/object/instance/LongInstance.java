@@ -24,7 +24,7 @@ public class LongInstance extends NumberInstance {
         return new LongInstance(value - dec, getType());
     }
 
-    public LongInstance subtract(LongInstance that) {
+    public LongInstance minus(LongInstance that) {
         return new LongInstance(value - that.value, getType());
     }
 

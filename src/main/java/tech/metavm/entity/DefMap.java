@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.RuntimeGeneric;
 import tech.metavm.util.TypeReference;
 

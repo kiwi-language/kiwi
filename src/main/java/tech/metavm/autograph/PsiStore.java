@@ -4,8 +4,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
-
-import java.util.List;
+import tech.metavm.autograph.env.IrCoreApplicationEnvironment;
+import tech.metavm.autograph.env.IrCoreProjectEnvironment;
 
 import static java.util.Objects.requireNonNull;
 

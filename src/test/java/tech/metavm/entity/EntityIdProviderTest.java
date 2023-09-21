@@ -19,8 +19,8 @@ import java.util.Set;
 public class EntityIdProviderTest extends TestCase {
 
     private void testAllocate(EntityIdProvider entityIdProvider) {
-        ClassType typeType = new ClassType("Type");
-        ClassType fooType = new ClassType("Foo");
+        ClassType typeType = ClassBuilder.newBuilder("Type", null).build();
+        ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(fooType);
         typeType.initId(-1L);
         fooType.initId(entityIdProvider.allocateOne(TestConstants.TENANT_ID, typeType));

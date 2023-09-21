@@ -25,13 +25,14 @@ public class IdentityContextTest extends TestCase {
         IdentityContext context = new IdentityContext( t-> true, type2javaType::get);
 
         PrimitiveType stringType = new PrimitiveType(PrimitiveKind.STRING);
-        ClassType fooType = new ClassType("Foo");
+        ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
         type2javaType.put(stringType, String.class);
         type2javaType.put(fooType, Foo.class);
 
-        Field fooNameField = new Field(
+        Field fooNameField = FieldBuilder.newBuilder(
                 ReflectUtils.getMetaFieldName(Foo.class, "name"),
-                fooType, stringType);
+                null, fooType, stringType)
+                .build();
         Index uniqueConstraint =
                 new Index(fooType, List.of(fooNameField), Foo.IDX_NAME.isUnique(), "name is required");
         uniqueConstraint.setIndexDef(Foo.IDX_NAME);

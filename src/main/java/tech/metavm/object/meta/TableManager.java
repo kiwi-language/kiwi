@@ -3,6 +3,7 @@ package tech.metavm.object.meta;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
+import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
@@ -34,7 +35,7 @@ public class TableManager {
     public TableDTO get(long id) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(id);
-        return NncUtils.get(type, t -> t.toDTO(true, false), t -> convertToTable(t, context));
+        return NncUtils.get(type, t -> t.toDTO(true, false, false), t -> convertToTable(t, context));
     }
 
     @Transactional
@@ -54,10 +55,16 @@ public class TableManager {
                         null,
                         null,
                         List.of(),
+                        ClassSource.RUNTIME.code(),
+                        List.of(),
+                        List.of(),
                         List.of(),
                         List.of(),
                         null,
-                        null
+                        null,
+                        null,
+                        List.of(),
+                        List.of()
                 )
         );
         ClassType type = typeManager.saveType(typeDTO, context);
@@ -80,16 +87,10 @@ public class TableManager {
                         null,
                         context
                 );
-                new Field(
-                        titleFieldDTO.name(),
-                        type,
-                        Access.GLOBAL,
-                        titleFieldDTO.unique(),
-                        true,
-                        InstanceUtils.nullInstance(),
-                        titleFieldType,
-                        false
-                );
+                FieldBuilder.newBuilder(titleFieldDTO.name(), null, type, titleFieldType)
+                        .asTitle(true)
+                        .unique(titleFieldDTO.unique())
+                        .build();
             } else {
                 titleField.setName(titleFieldDTO.name());
                 titleField.setUnique(titleFieldDTO.unique());
@@ -147,15 +148,18 @@ public class TableManager {
         }
         return typeManager.saveField(
                 new FieldDTO(
+                        null,
                         column.id(),
                         column.name(),
+                        null,
                         column.access(),
                         defaultValue,
                         column.unique(),
                         column.asTitle(),
                         declaringType.getId(),
-                        type.getId(),
+                        RefDTO.ofId(type.getId()),
                         null,
+                        false,
                         false
                 ),
                 context
@@ -195,9 +199,9 @@ public class TableManager {
     }
 
     private List<ChoiceOptionDTO> getChoiceOptions(Type type, FieldValueDTO fieldDefaultValue) {
-        if(type instanceof EnumType enumType) {
+        if(type instanceof ClassType classType && type.isEnum()) {
             return getChoiceOptions(
-                    NncUtils.sortByInt(enumType.getEnumConstants(), EnumConstantRT::getOrdinal),
+                    NncUtils.sortByInt(classType.getEnumConstants(), EnumConstantRT::getOrdinal),
                     fieldDefaultValue
             );
         }
@@ -210,9 +214,6 @@ public class TableManager {
         if(isLong(type)) {
             return ColumnType.LONG;
         }
-        if(isInt(type)) {
-            return ColumnType.INT;
-        }
         if(isDouble(type)) {
             return ColumnType.DOUBLE;
         }
@@ -222,16 +223,16 @@ public class TableManager {
         if(isString(type)) {
             return ColumnType.STRING;
         }
-        if(type.isEnum()) {
-            return ColumnType.ENUM;
-        }
-        if(type.isClass() || type.isValue()) {
-            return ColumnType.TABLE;
-        }
         if(isTime(type)) {
             return ColumnType.TIME;
         }
-        if(type instanceof AnyType) {
+        if(type.isEnum()) {
+            return ColumnType.ENUM;
+        }
+        if(type instanceof ClassType) {
+            return ColumnType.TABLE;
+        }
+        if(type instanceof ObjectType) {
             return ColumnType.ANY;
         }
         throw new InternalException("Can not get column type for type: " + type);
@@ -303,6 +304,7 @@ public class TableManager {
         Page<TypeDTO> typePage = typeManager.query(
                 searchText,
                 List.of(TypeCategory.CLASS.code(), TypeCategory.VALUE.code()),
+                false,
                 page,
                 pageSize,
                 context

@@ -8,10 +8,7 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.ValueUtil;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @EntityType("数组表达式")
 public class ArrayExpression extends Expression {
@@ -72,4 +69,15 @@ public class ArrayExpression extends Expression {
         return NncUtils.flatMap(expressions, expr -> expr.extractExpressions(klass));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ArrayExpression that)) return false;
+        return Objects.equals(expressions, that.expressions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expressions);
+    }
 }

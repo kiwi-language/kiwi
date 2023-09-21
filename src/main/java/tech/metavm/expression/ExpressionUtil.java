@@ -8,6 +8,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Objects;
 
 public class ExpressionUtil {
 
@@ -60,6 +61,14 @@ public class ExpressionUtil {
         return new ConstantExpression(value);
     }
 
+    public static Expression constantString(String str) {
+        return new ConstantExpression(InstanceUtils.stringInstance(str));
+    }
+
+    public static Expression constantLong(long value) {
+        return new ConstantExpression(InstanceUtils.longInstance(value));
+    }
+
     public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
@@ -99,7 +108,7 @@ public class ExpressionUtil {
     }
 
     public static Expression subtract(Expression first, Expression second) {
-        return new BinaryExpression(Operator.SUBTRACT, first, second);
+        return new BinaryExpression(Operator.MINUS, first, second);
     }
 
     public static Expression multiply(Expression first, Expression second) {
@@ -146,6 +155,18 @@ public class ExpressionUtil {
         return ValueUtil.isNumber(first) && ValueUtil.isNumber(second);
     }
 
+    public static Expression trueExpression() {
+        return new ConstantExpression(InstanceUtils.trueInstance());
+    }
+
+    public static Expression nullExpression() {
+        return new ConstantExpression(InstanceUtils.nullInstance());
+    }
+
+    public static Expression falseExpression() {
+        return new ConstantExpression(InstanceUtils.falseInstance());
+    }
+
     public static boolean isConstantTrue(Expression expression) {
         if(expression instanceof ConstantExpression constantExpression) {
             return InstanceUtils.isTrue(constantExpression.getValue());
@@ -155,12 +176,27 @@ public class ExpressionUtil {
         }
     }
 
+    public static boolean isConstant(Expression expression) {
+        return expression instanceof ConstantExpression;
+    }
+
+    public static boolean isNotConstant(Expression expression) {
+        return !isConstant(expression);
+    }
+
+    public static boolean isConstantNull(Expression expression) {
+        if(expression instanceof ConstantExpression constantExpression) {
+            return constantExpression.getValue() == null;
+        }
+        else {
+            return false;
+        }
+    }
+
+
     public static LongInstance castInteger(Instance value) {
         if(value instanceof LongInstance longInstance) {
             return longInstance;
-        }
-        else if(value instanceof IntInstance intInstance) {
-            return InstanceUtils.convertToLong(intInstance);
         }
         else {
             throw BusinessException.invalidExpressionValue("整数", value);
@@ -170,9 +206,6 @@ public class ExpressionUtil {
     public static DoubleInstance castFloat(Instance value) {
         if(value instanceof DoubleInstance doubleInstance) {
             return doubleInstance;
-        }
-        if(value instanceof IntInstance intInstance) {
-            return InstanceUtils.doubleInstance(intInstance.getValue());
         }
         if(value instanceof LongInstance longInstance) {
             return InstanceUtils.doubleInstance(longInstance.getValue());
@@ -196,7 +229,7 @@ public class ExpressionUtil {
             return stringInstance;
         }
         else {
-            throw BusinessException.invalidExpressionValue("文本", value);
+            return InstanceUtils.stringInstance(Objects.toString(value.getTitle()));
         }
     }
 

@@ -30,6 +30,8 @@ public abstract class Instance implements IdInitializing {
     private transient final Set<ReferenceRT> outgoingReferences = new HashSet<>();
     private transient final Set<ReferenceRT> incomingReferences = new HashSet<>();
 
+    private transient Object nativeObject;
+
     public Instance(Type type) {
         this(null, type, 0L, 0L);
     }
@@ -38,7 +40,7 @@ public abstract class Instance implements IdInitializing {
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
-        if(id != null) {
+        if (id != null) {
             initId(id);
         }
     }
@@ -111,10 +113,10 @@ public abstract class Instance implements IdInitializing {
     @Override
     @NoProxy
     public void initId(long id) {
-        if(this.id != null) {
+        if (this.id != null) {
             throw new InternalException("id already initialized");
         }
-        if(isArray() && !TypeCategory.ARRAY.idRangeContains(id)) {
+        if (isArray() && !TypeCategory.ARRAY.idRangeContains(id)) {
             throw new InternalException("Invalid id for array instance");
         }
         this.id = id;
@@ -144,28 +146,28 @@ public abstract class Instance implements IdInitializing {
 
     @NoProxy
     public void addOutgoingReference(ReferenceRT reference) {
-        if(!outgoingReferences.add(reference)) {
+        if (!outgoingReferences.add(reference)) {
             throw new InternalException(reference + " already exists");
         }
     }
 
     @NoProxy
     public void removeOutgoingReference(ReferenceRT reference) {
-        if(!outgoingReferences.remove(reference)) {
+        if (!outgoingReferences.remove(reference)) {
             throw new InternalException(reference + " does not exist");
         }
     }
 
     @NoProxy
     public void addIncomingReference(ReferenceRT reference) {
-        if(!incomingReferences.add(reference)) {
+        if (!incomingReferences.add(reference)) {
             throw new InternalException(reference + " already exists");
         }
     }
 
     @NoProxy
     public void removeIncomingReference(ReferenceRT reference) {
-        if(!incomingReferences.remove(reference)) {
+        if (!incomingReferences.remove(reference)) {
             throw new InternalException(reference + " does not exist");
         }
     }
@@ -203,7 +205,15 @@ public abstract class Instance implements IdInitializing {
     public abstract String getTitle();
 
     public String getDescription() {
-        return type.getName() + "/" + getTitle();
+        if (id != null && getTitle().equals(id.toString())) {
+            return type.getName() + "/" + getTitle();
+        } else {
+            if (!getTitle().isEmpty()) {
+                return type.getName() + "/" + getTitle() + "/" + id;
+            } else {
+                return type.getName() + "/" + id;
+            }
+        }
     }
 
     protected abstract InstanceParamDTO getParam();
@@ -218,5 +228,13 @@ public abstract class Instance implements IdInitializing {
 
     public void setSyncVersion(long syncVersion) {
         this.syncVersion = syncVersion;
+    }
+
+    public Object getNativeObject() {
+        return nativeObject;
+    }
+
+    public void setNativeObject(Object nativeObject) {
+        this.nativeObject = nativeObject;
     }
 }

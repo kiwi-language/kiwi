@@ -7,7 +7,7 @@ import tech.metavm.util.InstanceUtils;
 
 public class ValueFactory {
 
-    public static Value getValue(ValueDTO valueDTO, ParsingContext parsingContext) {
+    public static Value create(ValueDTO valueDTO, ParsingContext parsingContext) {
         if(valueDTO == null) {
             return new ConstantValue(ExpressionUtil.constant(InstanceUtils.nullInstance()));
         }

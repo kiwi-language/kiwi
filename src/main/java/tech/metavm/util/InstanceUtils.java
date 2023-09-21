@@ -6,10 +6,7 @@ import tech.metavm.entity.IInstanceContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.TimePO;
-import tech.metavm.object.meta.AnyType;
-import tech.metavm.object.meta.PrimitiveKind;
-import tech.metavm.object.meta.PrimitiveType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.*;
 
 import java.util.*;
 import java.util.function.Function;
@@ -28,7 +25,7 @@ public class InstanceUtils {
 //    }
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
-            Integer.class, new PrimitiveType(PrimitiveKind.INT),
+            Integer.class, new PrimitiveType(PrimitiveKind.LONG),
             Long.class, new PrimitiveType(PrimitiveKind.LONG),
             Double.class, new PrimitiveType(PrimitiveKind.DOUBLE),
             Boolean.class, new PrimitiveType(PrimitiveKind.BOOLEAN),
@@ -36,13 +33,13 @@ public class InstanceUtils {
             Date.class, new PrimitiveType(PrimitiveKind.TIME),
             Password.class, new PrimitiveType(PrimitiveKind.PASSWORD),
             Null.class, new PrimitiveType(PrimitiveKind.NULL),
-            Object.class, new AnyType()
+            Object.class, new ObjectType()
     );
 
     public static final Map<Type, Class<?>> BASIC_TYPE_JAVA_CLASS;
 
     public static final Map<Class<?>, Class<?>> JAVA_CLASS_TO_INSTANCE_CLASS = Map.of(
-            Integer.class, IntInstance.class,
+            Integer.class, LongInstance.class,
             Long.class, LongInstance.class,
             Double.class, DoubleInstance.class,
             Boolean.class, BooleanInstance.class,
@@ -50,7 +47,8 @@ public class InstanceUtils {
             Date.class, TimeInstance.class,
             Password.class, PasswordInstance.class,
             Null.class, NullInstance.class,
-            Object.class, Instance.class
+            Object.class, Instance.class,
+            Table.class, ArrayInstance.class
     );
 
     private static final Map<Class<?>, Class<?>> INSTANCE_CLASS_TO_JAVA_CLASS;
@@ -73,16 +71,20 @@ public class InstanceUtils {
         return createBoolean(!Objects.equals(first, second));
     }
 
-    public static LongInstance convertToLong(IntInstance intInstance) {
-        return createLong((long) intInstance.getValue());
-    }
-
     public static boolean isAllIntegers(Instance instance1, Instance instance2) {
         return isInteger(instance1) && isInteger(instance2);
     }
 
+    public static boolean isAllNumbers(Instance instance1, Instance instance2) {
+        return isNumber(instance1) && isNumber(instance2);
+    }
+
+    public static boolean isNumber(Instance instance) {
+        return isInteger(instance) || instance instanceof DoubleInstance;
+    }
+
     private static boolean isInteger(Instance instance) {
-        return instance instanceof IntInstance || instance instanceof LongInstance;
+        return instance instanceof LongInstance;
     }
 
     public static boolean isAnyNull(Instance...instances) {
@@ -98,9 +100,9 @@ public class InstanceUtils {
         if(columnValue instanceof Instance instance) {
             return instance;
         }
-        NncUtils.requireTrue(fieldType.isPrimitive(),
+        NncUtils.requireTrue(fieldType.getUnderlyingType().isPrimitive(),
                 "Can not resolve value '" + columnValue + "' for type " + fieldType);
-        return resolvePrimitiveValue(fieldType, columnValue);
+        return resolvePrimitiveValue(fieldType.getUnderlyingType(), columnValue);
     }
 
     public static PrimitiveInstance resolvePrimitiveValue(Type fieldType, Object columnValue) {
@@ -117,10 +119,7 @@ public class InstanceUtils {
             return InstanceUtils.timeInstance(timePO.time(), getTypeFunc);
         }
         if(ValueUtil.isInteger(columnValue)) {
-            if(fieldType.isInt()) {
-                return intInstance(((Number) columnValue).intValue(), getTypeFunc);
-            }
-            else if(fieldType.isDouble()) {
+            if(fieldType.isDouble()) {
                 return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
             }
             else if(fieldType.isTime()) {
@@ -153,7 +152,7 @@ public class InstanceUtils {
             return nullInstance();
         }
         if(value instanceof Integer i) {
-            return intInstance(i);
+            return longInstance(i);
         }
         if(value instanceof Long l) {
             return longInstance(l);
@@ -174,14 +173,6 @@ public class InstanceUtils {
             return passwordInstance(password.getPassword());
         }
         throw new InternalException("Value '" + value + "' is not a primitive value");
-    }
-
-    public static PrimitiveInstance intInstance(int value, Function<Class<?>, Type> getTypeFunc) {
-        return new IntInstance(value, getIntType(getTypeFunc));
-    }
-
-    public static PrimitiveInstance intInstance(int value) {
-        return intInstance(value, defaultGetTypeFunc());
     }
 
     public static LongInstance longInstance(long value) {
@@ -292,19 +283,11 @@ public class InstanceUtils {
         return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
     }
 
-    public static IntInstance max(IntInstance a, IntInstance b) {
-        return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
-    }
-
     public static DoubleInstance max(DoubleInstance a, DoubleInstance b) {
         return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
     }
 
     public static LongInstance min(LongInstance a, LongInstance b) {
-        return a.isLessThanOrEqualTo(b).getValue() ? a : b;
-    }
-
-    public static IntInstance min(IntInstance a, IntInstance b) {
         return a.isLessThanOrEqualTo(b).getValue() ? a : b;
     }
 
@@ -324,10 +307,6 @@ public class InstanceUtils {
 
     public static StringInstance createString(String value) {
         return new StringInstance(value, getStringType());
-    }
-
-    public static IntInstance createInt(int value) {
-        return new IntInstance(value, getIntType());
     }
 
     public static LongInstance createLong(long value) {
@@ -410,16 +389,16 @@ public class InstanceUtils {
         return getPrimitiveType(Null.class, getTypeFunc);
     }
 
-    public static AnyType getAnyType() {
-        return new AnyType();
+    public static ObjectType getAnyType() {
+        return new ObjectType();
     }
 
-    public static AnyType getAnyType(Function<Class<?>, Type> getTypeFunc) {
-        return (AnyType) getTypeFunc.apply(Object.class);
+    public static ObjectType getAnyType(Function<Class<?>, Type> getTypeFunc) {
+        return (ObjectType) getTypeFunc.apply(Object.class);
     }
 
     private static ArrayType getAnyArrayType() {
-        return ModelDefRegistry.getType(Object.class).getArrayType();
+        return TypeUtil.getArrayType(ModelDefRegistry.getType(Object.class));
     }
 
     public static ArrayInstance createArray() {
@@ -455,7 +434,8 @@ public class InstanceUtils {
     }
 
     private static Function<Class<?>, Type> defaultGetTypeFunc() {
-        return JAVA_CLASS_TO_BASIC_TYPE::get;
+//        return JAVA_CLASS_TO_BASIC_TYPE::get;
+        return ModelDefRegistry::getType;
     }
 
     public static Class<?> getJavaClassByBasicType(Type type) {
@@ -488,10 +468,6 @@ public class InstanceUtils {
     }
 
     public static DoubleInstance sum(DoubleInstance a, DoubleInstance b) {
-        return a.add(b);
-    }
-
-    public static IntInstance sum(IntInstance a, IntInstance b) {
         return a.add(b);
     }
 

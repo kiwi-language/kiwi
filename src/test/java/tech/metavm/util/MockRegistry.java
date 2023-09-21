@@ -1,12 +1,10 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.*;
-import tech.metavm.expression.Function;
 import tech.metavm.job.JobSchedulerStatus;
 import tech.metavm.job.JobSignal;
 import tech.metavm.mocks.*;
 import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
 
@@ -56,10 +54,10 @@ public class MockRegistry {
         }
         else getIdFunc = o -> null;
         DEF_CONTEXT = new DefContext(getIdFunc, INSTANCE_CONTEXT);
+        ModelDefRegistry.setDefContext(DEF_CONTEXT);
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
         ReflectUtils.getModelClasses().forEach(DEF_CONTEXT::getDef);
-        ModelDefRegistry.setDefContext(DEF_CONTEXT);
         DEF_CONTEXT.finish();
         ContextUtil.setContextInfo(TENANT_ID, TENANT_ID);
         initJobScheduler();
@@ -291,8 +289,8 @@ public class MockRegistry {
         return DEF_CONTEXT.getJavaType(type);
     }
 
-    public static AnyType getObjectType() {
-        return (AnyType) ModelDefRegistry.getType(Object.class);
+    public static ObjectType getObjectType() {
+        return (ObjectType) ModelDefRegistry.getType(Object.class);
     }
 
     public static ClassType getEnumType() {

@@ -2,16 +2,19 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
-import java.util.Map;
+import java.util.*;
 
 public abstract class ModelDef<T, I extends Instance> {
 
     private final Class<T> javaClass;
     private final java.lang.reflect.Type javaType;
     private final Class<I> instanceType;
+
+    private final List<ClassType> collectionTypes = new ArrayList<>();
 
     protected ModelDef(Class<T> javaClass, Class<I> instanceType) {
         this(javaClass, javaClass, instanceType);
@@ -114,6 +117,14 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public T createModelProxyHelper(Class<?> proxyClass) {
         return createModelProxy(proxyClass.asSubclass(javaClass));
+    }
+
+    public void addCollectionType(ClassType type) {
+        collectionTypes.add(type);
+    }
+
+    public List<ClassType> getCollectionTypes() {
+        return Collections.unmodifiableList(collectionTypes);
     }
 
 }

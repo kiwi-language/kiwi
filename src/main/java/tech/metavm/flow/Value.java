@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.expression.Expression;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.expression.EvaluationContext;
@@ -34,5 +35,7 @@ public abstract class Value extends Entity {
     public abstract Type getType();
 
     public abstract Instance evaluate(EvaluationContext evaluationContext);
+
+    public abstract Expression getExpression();
 
 }

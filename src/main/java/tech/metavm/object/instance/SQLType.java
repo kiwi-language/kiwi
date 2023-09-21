@@ -17,7 +17,7 @@ public enum SQLType {
     REFERENCE("json", "long","r", 20),
     MULTI_REFERENCE("json", "long","m", 20),
     UNION("json", null,"u", 10),
-    ANY("json", null,"a", 10),
+    OBJECT("json", null,"a", 10),
     NULL("json", null,"n", 10),
 
     ;

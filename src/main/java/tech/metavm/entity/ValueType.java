@@ -11,4 +11,6 @@ public @interface ValueType {
 
     String value();
 
+    boolean compiled() default false;
+
 }

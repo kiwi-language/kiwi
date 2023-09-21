@@ -1,10 +1,8 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.dto.RefDTO;
+import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
 import tech.metavm.util.ContextUtil;
@@ -20,21 +18,28 @@ import java.util.List;
 public class ScopeRT extends Entity {
 
     @EntityField("所属流程")
-    private final FlowRT flow;
+    private final Flow flow;
     @EntityField("所属节点")
     @Nullable
     private final NodeRT<?> owner;
     @ChildEntity("节点列表")
     private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {
     }, true);
+    @ChildEntity("是否未循环体")
+    private final boolean withBackEdge;
 
-    public ScopeRT(FlowRT flow) {
-        this(flow, null);
+    public ScopeRT(Flow flow) {
+        this(flow, null, false);
     }
 
-    public ScopeRT(FlowRT flow, @Nullable NodeRT<?> owner) {
+    public ScopeRT(Flow flow, @Nullable NodeRT<?> owner) {
+        this(flow, owner, false);
+    }
+
+    public ScopeRT(Flow flow, @Nullable NodeRT<?> owner, boolean withBackEdge) {
         this.flow = flow;
         this.owner = owner;
+        this.withBackEdge = withBackEdge;
     }
 
     public ScopePO toPO() {
@@ -42,42 +47,64 @@ public class ScopeRT extends Entity {
     }
 
     public ScopeDTO toDTO(boolean withNodes) {
-        return new ScopeDTO(
-                getId(),
-                withNodes ? NncUtils.map(getNodes(), NodeRT::toDTO) : List.of()
-        );
+        try (var context = SerializeContext.enter()) {
+            return new ScopeDTO(
+                    context.getTmpId(this), getId(),
+                    withNodes ? NncUtils.map(getNodes(), NodeRT::toDTO) : List.of()
+            );
+        }
     }
 
     public void addNode(NodeRT<?> node) {
-        // Changed on Aug 27 2023: new node without predecessor is added as the last node
         var pred = node.getPredecessor() != null ? node.getPredecessor() : getLastNode();
-        if(pred != null) {
-            pred.insertAfter(node);
+        if (pred != null) {
             nodes.addAfter(node, pred);
-        }
-        else {
+        } else {
             nodes.add(node);
         }
-//        if (node.getPredecessor() != null) {
-//            nodes.addAfter(node, node.getPredecessor());
-//        } else {
-//            if (node.getSuccessor() != null) {
-//                throw new RuntimeException("New scope root already having successor");
-//            }
-//            if (!nodes.isEmpty()) {
-//                node.insertAfter(nodes.getFirst());
-//            }
-//            nodes.addFirst(node);
-//        }
         flow.addNode(node);
     }
+
+    public NodeRT<?> getPredecessor() {
+        return owner;
+//        if (withBackEdge) {
+//            return owner;
+//        }
+//        if (owner != null) {
+//            return owner.getPredecessor();
+//        }
+//        return null;
+    }
+
+    public NodeRT<?> getSuccessor() {
+        if (withBackEdge) {
+            return owner;
+        }
+        if (owner != null) {
+            return owner.getSuccessor();
+        }
+        return null;
+    }
+
 
     public NodeRT<?> getNode(long id) {
         return nodes.get(Entity::getId, id);
     }
 
+    public NodeRT<?> getNode(RefDTO ref) {
+        return nodes.get(Entity::getRef, ref);
+    }
+
     public Collection<NodeRT<?>> getNodes() {
         return nodes;
+    }
+
+    public NodeRT<?> getNodeById(long id) {
+        return nodes.get(Entity::getId, id);
+    }
+
+    public NodeRT<?> getNodeByName(String name) {
+        return nodes.get(NodeRT::getName, name);
     }
 
     public NodeRT<?> getNodeByIndex(int index) {
@@ -98,7 +125,7 @@ public class ScopeRT extends Entity {
     }
 
     @JsonIgnore
-    public FlowRT getFlow() {
+    public Flow getFlow() {
         return flow;
     }
 

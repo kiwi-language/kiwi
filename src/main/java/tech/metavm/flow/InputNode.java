@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -12,22 +13,22 @@ import tech.metavm.util.NncUtils;
 @EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
 
+    public static InputNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext entityContext) {
+        return new InputNode(nodeDTO, prev, scope);
+    }
+
     public InputNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {
         super(
+                nodeDTO.tmpId(),
                 nodeDTO.name(),
-                NodeKind.INPUT,
                 scope.getFlow().getInputType(),
                 prev,
                 scope
         );
     }
 
-    public InputNode(NodeDTO nodeDTO, ScopeRT scope) {
-        super(nodeDTO, scope.getFlow().getInputType(), scope);
-    }
-
-    public InputNode(String name, ClassType type, NodeRT<?> prev, ScopeRT scope) {
-        super(name, NodeKind.INPUT, type, prev, scope);
+    public InputNode(Long tmpId, String name, ClassType type, NodeRT<?> prev, ScopeRT scope) {
+        super(tmpId, name, type, prev, scope);
     }
 
     @Override
@@ -53,9 +54,9 @@ public class InputNode extends NodeRT<InputParamDTO> {
 
     private InputFieldDTO toInputFieldDTO(FieldDTO fieldDTO) {
         return new InputFieldDTO(
-                fieldDTO.id(),
+                fieldDTO.getRef(),
                 fieldDTO.name(),
-                fieldDTO.typeId(),
+                fieldDTO.typeRef(),
                 fieldDTO.defaultValue()
         );
     }

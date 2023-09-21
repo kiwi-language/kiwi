@@ -3,6 +3,7 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.rest.dto.UnionTypeParamDTO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;

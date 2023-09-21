@@ -1,6 +1,8 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import tech.metavm.autograph.mocks.TypeFoo;
@@ -13,6 +15,15 @@ public class TypeLab {
     }
 
     private static class TypeLabVisitor extends JavaRecursiveElementVisitor {
+
+        @Override
+        public void visitField(PsiField field) {
+            var type  = field.getType();
+            if(type instanceof PsiClassType classType) {
+                var resolved = classType.resolve();
+                System.out.println(resolved);
+            }
+        }
 
         @Override
         public void visitMethod(PsiMethod method) {

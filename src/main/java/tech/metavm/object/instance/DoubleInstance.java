@@ -29,7 +29,7 @@ public class DoubleInstance extends NumberInstance {
         return new DoubleInstance(value - dec, getType());
     }
 
-    public DoubleInstance subtract(DoubleInstance that) {
+    public DoubleInstance minus(DoubleInstance that) {
         return new DoubleInstance(value - that.value, getType());
     }
 

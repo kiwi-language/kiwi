@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.dto.Page;
+import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.*;
 import tech.metavm.job.JobManager;
@@ -15,8 +16,8 @@ import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeManager;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.TypeManager;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.*;
@@ -81,13 +82,13 @@ public class FlowManagerTest extends TestCase {
         Field userNameField = MockRegistry.getField(UserRT.class, "name");
 
         NodeDTO updateNode = new NodeDTO(
-                null, flowId, "UpdateUser", NodeKind.UPDATE_OBJECT.code(),
-                selfNodeId, null,
+                null, null, flowId, "UpdateUser", NodeKind.UPDATE_OBJECT.code(),
+                RefDTO.ofId(selfNodeId), null,
                 new UpdateObjectParamDTO(
                     ValueDTO.refValue("当前记录"),
                     List.of(
                             new UpdateFieldDTO(
-                                    userNameField.getId(),
+                                    RefDTO.ofId(userNameField.getId()),
                                     UpdateOp.SET.code(),
                                     ValueDTO.constValue(
                                             InstanceUtils.stringInstance("lyq").toFieldValueDTO()
@@ -120,13 +121,13 @@ public class FlowManagerTest extends TestCase {
 
         NodeDTO selfNode = flowDTO.rootScope().nodes().get(1);
         NodeDTO updateNode = new NodeDTO(
-                null, flowId, "UpdateState", NodeKind.UPDATE_OBJECT.code(),
-                selfNode.id(), null,
+                null, null, flowId, "UpdateState", NodeKind.UPDATE_OBJECT.code(),
+                RefDTO.ofId(selfNode.id()), null,
                 new UpdateObjectParamDTO(
                         ValueDTO.refValue("当前记录"),
                         List.of(
                                 new UpdateFieldDTO(
-                                        couponStateField.getId(),
+                                        RefDTO.ofId(couponStateField.getId()),
                                         UpdateOp.SET.code(),
                                         ValueDTO.constValue(
                                                 usedStateInstance.toFieldValueDTO()
@@ -151,7 +152,9 @@ public class FlowManagerTest extends TestCase {
 
     public void testList() {
         ClassType userType = MockRegistry.getClassType(UserRT.class);
-        FlowDTO flowDTO = new FlowDTO(null, "Flow1", null, userType.getId(), null, null, 0L, 0L);
+        FlowDTO flowDTO = new FlowDTO(null, null, "Flow1", null, false,
+                false, false,
+                RefDTO.ofId(userType.getId()), null, null, null, null, null, null, null);
         long flowId = flowManager.create(flowDTO);
         Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getId(), 1, 20, null);
         Assert.assertEquals(1, dataPage.total());

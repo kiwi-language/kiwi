@@ -1,9 +1,12 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.natives.IteratorImplNative;
+import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Table;
 import tech.metavm.util.ValueUtil;
 
 import java.util.List;
@@ -45,18 +48,6 @@ public class FunctionMethods {
     }
 
     public static DoubleInstance SUM(DoubleInstance a, DoubleInstance b) {
-        return InstanceUtils.sum(a, b);
-    }
-
-    public static IntInstance MAX(IntInstance a, IntInstance b) {
-        return InstanceUtils.max(a, b);
-    }
-
-    public static IntInstance MIN(IntInstance a, IntInstance b) {
-        return InstanceUtils.min(a, b);
-    }
-
-    public static IntInstance SUM(IntInstance a, IntInstance b) {
         return InstanceUtils.sum(a, b);
     }
 
@@ -112,6 +103,15 @@ public class FunctionMethods {
 
     public static boolean isAssignable(Type from, Type to) {
         return from.isAssignableFrom(to);
+    }
+
+    public static LongInstance LEN(ArrayInstance array) {
+        return InstanceUtils.longInstance(array.length());
+    }
+
+    public static BooleanInstance HAS_NEXT(Instance iterator) {
+        var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(iterator, null);
+        return iteratorNative.hasNext();
     }
 
 }

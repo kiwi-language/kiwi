@@ -78,8 +78,8 @@
     </build>
 
     <properties>
-        <maven.compiler.source>18</maven.compiler.source>
-        <maven.compiler.target>18</maven.compiler.target>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
         <java.version.release>20</java.version.release>
         <java.version>${java.version.release}</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -156,7 +156,7 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.17.6</version>
+            <version>7.17.12</version>
         </dependency>
 
         <dependency>
@@ -238,6 +238,10 @@
             <groupId>org.graphstream</groupId>
             <artifactId>gs-ui-swing</artifactId>
             <version>2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
     </dependencies>

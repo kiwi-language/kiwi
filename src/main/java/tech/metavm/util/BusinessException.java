@@ -4,12 +4,14 @@ import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.expression.Function;
+import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 
 import java.util.List;
+import java.util.Map;
 
 public class BusinessException extends RuntimeException {
 
@@ -26,10 +28,20 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_PARAMETERS, detail);
     }
 
-    public static BusinessException strongReferencesPreventRemoval(List<Instance> instances) {
+    public static BusinessException strongReferencesPreventRemoval(Map<Instance, Instance> refMap) {
         return new BusinessException(
                 ErrorCode.STRONG_REFS_PREVENT_REMOVAL,
-                NncUtils.join(instances, Instance::getDescription)
+                NncUtils.join(refMap.entrySet(),
+                        entry -> entry.getKey().getDescription() + "->" + entry.getValue().getDescription())
+        );
+    }
+
+    public static BusinessException strongReferencesPreventRemovalFromPO(Map<InstancePO, Instance> refMap) {
+        return new BusinessException(
+                ErrorCode.STRONG_REFS_PREVENT_REMOVAL,
+                NncUtils.join(refMap.entrySet(),
+                        entry -> entry.getKey().getId() + "/" + entry.getKey().getTitle()
+                                + "->" + entry.getValue().getDescription())
         );
     }
 

@@ -52,20 +52,20 @@ public record Token (
         return type == TokenType.KEYWORD && rawValue.equalsIgnoreCase(AS);
     }
 
-    public boolean isLeftParenthesis() {
-        return type == TokenType.LEFT_PARENTHESIS;
+    public boolean isOpenParenthesis() {
+        return type == TokenType.OPEN_PARENTHESIS;
     }
 
-    public boolean isRightParenthesis() {
-        return type == TokenType.RIGHT_PARENTHESIS;
+    public boolean isClosingParenthesis() {
+        return type == TokenType.CLOSING_PARENTHESIS;
     }
 
-    public boolean isLeftBracket() {
-        return type == TokenType.LEFT_BRACKET;
+    public boolean isOpenBracket() {
+        return type == TokenType.OPEN_BRACKET;
     }
 
-    public boolean isRightBracket() {
-        return type == TokenType.RIGHT_BRACKET;
+    public boolean isClosingBracket() {
+        return type == TokenType.CLOSING_BRACKET;
     }
 
     public boolean isConstant() {

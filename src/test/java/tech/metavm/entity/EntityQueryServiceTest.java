@@ -46,6 +46,7 @@ public class EntityQueryServiceTest extends TestCase {
                         Foo.class,
                         null,
                         List.of(),
+                        false,
                         1,
                         20,
                         List.of(
@@ -66,6 +67,7 @@ public class EntityQueryServiceTest extends TestCase {
                         Foo.class,
                         "Foo001",
                         List.of("code"),
+                        false,
                         1,
                         20,
                         List.of()
@@ -83,6 +85,7 @@ public class EntityQueryServiceTest extends TestCase {
                         ClassType.class,
                         null,
                         List.of(),
+                        false,
                         1,
                         20,
                         List.of(

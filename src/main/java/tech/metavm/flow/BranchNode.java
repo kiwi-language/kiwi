@@ -1,50 +1,36 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.dto.ErrorCode;
+import tech.metavm.dto.RefDTO;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @EntityType("分支节点")
 public class BranchNode extends NodeRT<BranchParamDTO> {
 
-    public static BranchNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        var outputType = context.getClassType(nodeDTO.outputTypeId());
-        return new BranchNode(nodeDTO, outputType, scope);
+    public static BranchNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+        BranchParamDTO param = nodeDTO.getParam();
+        BranchNode node = new BranchNode(nodeDTO.tmpId(), nodeDTO.name(), param.inclusive(), prev, scope);
+        node.setParam(nodeDTO.getParam(), context);
+        return node;
     }
 
     @EntityField("是否包容")
     private boolean inclusive;
     @ChildEntity("分支列表")
     private final Table<Branch> branches = new Table<>(Branch.class, true);
-    @ChildEntity("字段值")
-    private final Table<BranchNodeOutputField> fields = new Table<>(BranchNodeOutputField.class);
 
-    public BranchNode(NodeDTO nodeDTO, ClassType outputType, ScopeRT scope) {
-        super(nodeDTO, outputType, scope);
-        BranchParamDTO param = nodeDTO.getParam();
-        inclusive = param.inclusive();
-        if (param.branches() == null) {
-            branches.add(Branch.create(1L, this));
-            branches.add(Branch.createPreselected(this));
-        }
-    }
-
-    public BranchNode(String name, boolean inclusive, NodeRT<?> prev, ScopeRT scope) {
-        super(name, NodeKind.BRANCH, new ClassType(name + "_output"), prev, scope);
+    public BranchNode(Long tmpId, String name, boolean inclusive, NodeRT<?> prev, ScopeRT scope) {
+        super(tmpId, name,  null, prev, scope);
         this.inclusive = inclusive;
     }
 
@@ -52,18 +38,37 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     protected void setParam(BranchParamDTO param, IEntityContext entityContext) {
         inclusive = param.inclusive();
         if (param.branches() != null) {
-            Map<Long, Branch> index2branch = new HashMap<>();
-            for (Branch branch : branches) {
-                index2branch.put(branch.getIndex(), branch);
+            Set<RefDTO> branchRefs = NncUtils.mapAndFilterUnique(param.branches(), BranchDTO::getRef, Objects::nonNull);
+            if (branchRefs.size() > param.branches().size()) {
+                throw new BusinessException(ErrorCode.BRANCH_INDEX_DUPLICATE);
             }
-            branches.clear();
+            if (branchRefs.size() < param.branches().size()) {
+                throw new BusinessException(ErrorCode.BRANCH_INDEX_REQUIRED);
+            }
+            if (NncUtils.count(param.branches(), BranchDTO::preselected) != 1) {
+                throw new BusinessException(ErrorCode.NUM_PRESELECTED_BRANCH_NOT_EQUAL_TO_ONE);
+            }
+            branches.removeIf(branch -> !branchRefs.contains(branch.getRef()));
             for (BranchDTO branchDTO : param.branches()) {
-                var existing = index2branch.get(branchDTO.id());
-                if (existing != null) {
-                    existing.update(branchDTO, entityContext);
-                    branches.add(existing);
+                var branch = entityContext.getEntity(Branch.class, branchDTO.getRef());
+                if (branch == null) {
+                    branch = new Branch(
+                            branchDTO.index(),
+                            ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext)),
+                            branchDTO.preselected(),
+                            new ScopeRT(getFlow(), this),
+                            this
+                    );
+                    branch.setTmpId(branchDTO.tmpId());
+                    branches.add(branch);
+                    entityContext.bind(branch);
                 } else {
-                    addBranch(branchDTO, entityContext);
+                    if(branch.getOwner() != this) {
+                        throw new BusinessException(ErrorCode.BRANCH_OWNER_MISMATCH,
+                                branch.getOwner().getName() + "/" + branch.getIndex(),
+                                getName());
+                    }
+                    branch.update(branchDTO, entityContext);
                 }
             }
         }
@@ -74,23 +79,24 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         return new BranchParamDTO(
                 inclusive,
                 NncUtils.map(branches, branch -> branch.toDTO(!persisting, persisting))
+//                NncUtils.map(fields, f -> f.toDTO(persisting))
         );
     }
 
     public Branch addBranch(BranchDTO branchDTO, IEntityContext entityContext) {
         return addBranch(
-                ValueFactory.getValue(branchDTO.condition(), getParsingContext(entityContext))
+                ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext))
         );
     }
 
-    public BranchNodeOutputField getOutputField(Field field) {
-        return fields.get(BranchNodeOutputField::getField, field);
-    }
-
-    public void setOutput(Field field, BranchNodeOutputField outputField) {
-        fields.remove(BranchNodeOutputField::getField, field);
-        fields.add(outputField);
-    }
+//    public BranchNodeOutputField getOutputField(Field field) {
+//        return fields.get(BranchNodeOutputField::getField, field);
+//    }
+//
+//    public void setOutput(Field field, BranchNodeOutputField outputField) {
+//        fields.remove(BranchNodeOutputField::getField, field);
+//        fields.add(outputField);
+//    }
 
     public Branch addBranch(Value condition) {
         long branchId;
@@ -120,12 +126,16 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         return new ArrayList<>(branches);
     }
 
+    public Branch getBranchById(long id) {
+        return branches.get(Entity::getId, id);
+    }
+
     public Branch getBranchByIndex(int index) {
         return branches.get(index);
     }
 
-    public Branch getBranch(long index) {
-        return NncUtils.find(branches, branch -> branch.getIndex() == index);
+    public Branch getBranchByIndex(long index) {
+        return branches.get(Branch::getIndex, index);
     }
 
     public void deleteBranch(Branch branch) {
@@ -141,14 +151,33 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     @Override
     public void execute(FlowFrame frame) {
+//        Map<Field, Instance> fieldValues = new HashMap<>();
         for (Branch branch : branches) {
             if (branch.checkCondition(frame)) {
                 if (branch.isNotEmpty()) {
                     frame.jumpTo(branch.getScope().getFirstNode());
                 }
+                frame.setSelectedBranch(this, branch);
+//                for (BranchNodeOutputField field : fields) {
+//                    fieldValues.put(
+//                            field.getField(),
+//                            new ExpressionValue(field.getValue(branch)).evaluate(frame));
+//                }
                 break;
             }
         }
+//        frame.setResult(new ClassInstance(fieldValues, getType()));
     }
+
+    @Override
+    protected List<Object> nodeBeforeRemove() {
+        if(getSuccessor() instanceof MergeNode mergeNode) {
+            return List.of(mergeNode);
+        }
+        else {
+            return List.of();
+        }
+    }
+
 
 }

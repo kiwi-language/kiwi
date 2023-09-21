@@ -1,6 +1,9 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.ClassBuilder;
+import tech.metavm.object.meta.ClassSource;
+import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.object.meta.TypeFactory;
 
 import java.lang.reflect.Type;
@@ -21,7 +24,7 @@ public class EnumParser<T extends Enum<?>> implements DefParser<T, Instance, Enu
         this.enumType = enumType;
         this.superDef = superDef;
         this.defMap = defMap;
-         typeFactory = new TypeFactory(defMap::getType);
+        typeFactory = new TypeFactory(defMap::getType);
     }
 
     private void parseEnumConstant(T value, EnumDef<T> enumDef) {
@@ -30,15 +33,15 @@ public class EnumParser<T extends Enum<?>> implements DefParser<T, Instance, Enu
 
     @Override
     public EnumDef<T> create() {
-        enumDef =  new EnumDef<>(
+        enumDef = new EnumDef<>(
                 enumType,
                 superDef,
-                typeFactory.createEnum(
-                        getMetaTypeName(enumType),
-                        enumType.getSimpleName(),
-                        false,
-                        superDef.getType()
-                )
+                ClassBuilder.newBuilder(getMetaTypeName(enumType), enumType.getSimpleName())
+                        .superType(superDef.getType())
+                        .category(TypeCategory.ENUM)
+                        .source(ClassSource.REFLECTION)
+                        .build(),
+                typeFactory.getNullType()
         );
         return enumDef;
     }

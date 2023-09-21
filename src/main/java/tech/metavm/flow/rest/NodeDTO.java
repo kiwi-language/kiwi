@@ -2,26 +2,29 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import tech.metavm.dto.BaseDTO;
+import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.NodeKind;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 
 public record NodeDTO(
+        Long tmpId,
         Long id,
         Long flowId,
         String name,
-        int type,
-        Long prevId,
-        Long outputTypeId,
-        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+        int kind,
+        RefDTO prevRef,
+        RefDTO outputTypeRef,
+        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
         @JsonTypeIdResolver(NodeParamTypeIdResolver.class)
         Object param,
         TypeDTO outputType,
         Long scopeId
-) {
+) implements BaseDTO {
 
     public static NodeDTO create(String name, NodeKind kind) {
-        return new NodeDTO(null, null, name, kind.code(), null, null, null, null, null);
+        return new NodeDTO(null, null, null, name, kind.code(), null, null, null, null, null);
     }
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId) {
@@ -30,34 +33,51 @@ public record NodeDTO(
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId, Object param, long scopeId) {
         return new NodeDTO(
-                null, flowId, name, type, prevId, null, param, null, scopeId
+                null, null, flowId, name, type, RefDTO.ofId(prevId), null, param, null, scopeId
         );
     }
 
-    public NodeDTO copyWithNewParam(Object newParam) {
+    public NodeDTO copyWithParam(Object newParam) {
         return new NodeDTO(
+                null,
                 id,
                 flowId,
                 name,
-                type,
-                prevId,
-                outputTypeId,
+                kind,
+                prevRef,
+                outputTypeRef,
                 newParam,
                 outputType,
                 scopeId
         );
     }
 
-    public NodeDTO copyWithOutputType(TypeDTO outputType) {
+    public NodeDTO copyWithType(TypeDTO type) {
         return new NodeDTO(
+                null,
                 id,
                 flowId,
                 name,
-                type,
-                prevId,
-                outputType.id(),
+                kind,
+                prevRef,
+                new RefDTO(type.id(), type.tmpId()),
                 param,
-                outputType,
+                type,
+                scopeId
+        );
+    }
+
+    public NodeDTO copyWithParamAndType(Object param, TypeDTO type) {
+        return new NodeDTO(
+                null,
+                id,
+                flowId,
+                name,
+                kind,
+                prevRef,
+                new RefDTO(type.id(), type.tmpId()),
+                param,
+                type,
                 scopeId
         );
     }
@@ -69,6 +89,7 @@ public record NodeDTO(
     }
 
     public <T> T getParam() {
+        //noinspection unchecked
         return (T) param;
     }
 

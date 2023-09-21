@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.query.PathTree;
@@ -11,13 +11,13 @@ import java.util.LinkedList;
 
 public class FlowStack {
 
-    private final InstanceContext context;
+    private final IInstanceContext context;
     private final PathTree root = new PathTree("root");
     private final LinkedList<NodeRT<?>> actionBuffer = new LinkedList<>();
     private final LinkedList<FlowFrame> stack = new LinkedList<>();
     private Instance ret;
 
-    public FlowStack(FlowRT flow, Instance self, InstanceDTO argument, InstanceContext context) {
+    public FlowStack(Flow flow, Instance self, Instance argument, IInstanceContext context) {
         this.context = context;
         stack.push(new FlowFrame(flow, self, argument, this));
     }
@@ -54,7 +54,7 @@ public class FlowStack {
         stack.push(context);
     }
 
-    InstanceContext getContext() {
+    IInstanceContext getContext() {
         return context;
     }
 

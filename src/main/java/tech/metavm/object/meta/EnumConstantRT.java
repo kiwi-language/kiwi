@@ -17,23 +17,23 @@ public class EnumConstantRT {
     private final ClassInstance instance;
 
     public EnumConstantRT(ClassInstance instance) {
-        if(!(instance.getType() instanceof EnumType)) {
+        if(!instance.getType().isEnum()) {
             throw new InternalException("Instance " + instance + " is not an enum instance");
         }
         this.instance = instance;
     }
 
-    public EnumConstantRT(EnumConstantDTO enumConstantDTO, EnumType type) {
+    public EnumConstantRT(EnumConstantDTO enumConstantDTO, ClassType type) {
         this(type, enumConstantDTO.name(), enumConstantDTO.ordinal());
     }
 
-    public EnumConstantRT(EnumType type, String name, int ordinal) {
+    public EnumConstantRT(ClassType type, String name, int ordinal) {
         this(
                 new ClassInstance(
                     Map.of(getEnumNameField(),
                             InstanceUtils.stringInstance(name),
                             getEnumOrdinalField(),
-                            InstanceUtils.intInstance(ordinal)
+                            InstanceUtils.longInstance(ordinal)
                     ),
                     type
                 )
@@ -53,7 +53,7 @@ public class EnumConstantRT {
     }
 
     public int getOrdinal() {
-        return instance.getInt(getEnumOrdinalField()).getValue();
+        return instance.getLong(getEnumOrdinalField()).getValue().intValue();
     }
 
     public void update(EnumConstantDTO update) {
@@ -66,24 +66,15 @@ public class EnumConstantRT {
     }
 
     public void setOrdinal(int ordinal) {
-        instance.set(getEnumOrdinalField(), InstanceUtils.intInstance(ordinal));
+        instance.set(getEnumOrdinalField(), InstanceUtils.longInstance(ordinal));
     }
 
-    public EnumConstantDTO toEnumConstantDTO() {
+    public EnumConstantDTO toDTO() {
         return new EnumConstantDTO(
                 instance.getId(),
                 instance.getType().getId(),
                 getOrdinal(),
                 getName()
-        );
-    }
-
-    public ChoiceOptionDTO toChoiceOptionDTO(boolean defaultSelected) {
-        return new ChoiceOptionDTO(
-                instance.getId(),
-                getName(),
-                getOrdinal(),
-                defaultSelected
         );
     }
 

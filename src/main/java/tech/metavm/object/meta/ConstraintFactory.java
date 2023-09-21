@@ -36,7 +36,7 @@ public class ConstraintFactory {
             new IndexField(
                     index,
                     itemDTO.name(),
-                    ValueFactory.getValue(itemDTO.value(), parsingContext)
+                    ValueFactory.create(itemDTO.value(), parsingContext)
             );
         }
         return index;
@@ -46,7 +46,7 @@ public class ConstraintFactory {
                                                         ClassType type,
                                                         String message,
                                                         ParsingContext parsingContext) {
-        return new CheckConstraint(ValueFactory.getValue(param.value(), parsingContext), type, message);
+        return new CheckConstraint(ValueFactory.create(param.value(), parsingContext), type, message);
     }
 
     public static void update(ConstraintDTO constraintDTO, IEntityContext entityContext) {
@@ -66,7 +66,7 @@ public class ConstraintFactory {
                                              UniqueConstraintParamDTO param,
                                              ParsingContext parsingContext) {
         for (UniqueConstraintItemDTO itemDTO : param.items()) {
-            Value value = ValueFactory.getValue(itemDTO.value(), parsingContext);
+            Value value = ValueFactory.create(itemDTO.value(), parsingContext);
             if(itemDTO.id() == null) {
                 new IndexField(indexConstraint, itemDTO.name(), value);
             }
@@ -81,7 +81,7 @@ public class ConstraintFactory {
     public static void updateCheckConstraint(CheckConstraint checkConstraint,
                                              CheckConstraintParamDTO param,
                                              ParsingContext parsingContext) {
-        checkConstraint.setCondition(ValueFactory.getValue(param.value(), parsingContext));
+        checkConstraint.setCondition(ValueFactory.create(param.value(), parsingContext));
     }
 
     public static Index newUniqueConstraint(List<Field> fields) {

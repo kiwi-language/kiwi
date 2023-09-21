@@ -7,6 +7,11 @@ import com.intellij.psi.PsiType;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.autograph.mocks.PTypeFoo;
+import tech.metavm.autograph.mocks.TypeFoo;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -16,6 +21,13 @@ public class TranspileUtilTest extends TestCase {
         Visitor visitor = new Visitor();
         var foo = TranspileTestTools.getPsiJavaFile(PTypeFoo.class);
         foo.accept(visitor);
+    }
+
+    public void testMatchMethod() {
+        var method = ReflectUtils.getMethod(List.class, "get", int.class);
+        var psiClass = TranspileTestTools.getPsiClass(TypeFoo.class);
+        var psiMethod = NncUtils.findRequired(psiClass.getMethods(), m -> m.getName().equals("get"));
+        NncUtils.requireTrue(TranspileUtil.matchMethod(psiMethod, method));
     }
 
     private static class Visitor extends JavaRecursiveElementVisitor {
@@ -31,7 +43,7 @@ public class TranspileUtilTest extends TestCase {
         @Override
         public void visitField(PsiField field) {
             super.visitField(field);
-            templateType = TranspileUtil.getTemplateType(requireNonNull(field.getContainingClass()));
+            templateType = TranspileUtil.createTemplateType(requireNonNull(field.getContainingClass()));
             super.visitField(field);
         }
     }

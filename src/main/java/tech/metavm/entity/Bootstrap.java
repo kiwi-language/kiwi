@@ -46,6 +46,7 @@ public class Bootstrap implements InitializingBean {
         DefContext defContext = new DefContext(
                 stdAllocators::getId,
                 standardInstanceContext);
+        standardInstanceContext.setDefContext(defContext);
         standardInstanceContext.setEntityContext(defContext);
         ModelDefRegistry.setDefContext(defContext);
 
@@ -65,6 +66,12 @@ public class Bootstrap implements InitializingBean {
         if(defContext.isFinished()) {
             return;
         }
+        IEntityContext tempContext = instanceContextFactory.newContext(-1).getEntityContext();
+        InstanceContext instanceContext = NncUtils.requireNonNull(
+                (InstanceContext) defContext.getInstanceContext()
+        );
+        instanceContext.setCreateJob(tempContext::bind);
+
         NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
         defContext.finish();
 
@@ -86,6 +93,7 @@ public class Bootstrap implements InitializingBean {
             stdAllocators.save();
         }
         check();
+        tempContext.finish();
     }
 
     private void check() {

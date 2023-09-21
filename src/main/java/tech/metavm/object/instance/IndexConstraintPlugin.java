@@ -40,7 +40,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Map<Long, ClassInstance> instanceMap = NncUtils.toMap(currentInstances, Instance::getId);
         List<IndexEntryPO> currentEntries = NncUtils.flatMap(
                 currentInstances,
-                instance -> instance.getUniqueKeys(context.getTenantId())
+                instance -> instance.getIndexEntries(context.getTenantId())
         );
         List<InstancePO> oldInstances = NncUtils.merge(diff.updates(), diff.deletes());
         Set<Long> oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getId);

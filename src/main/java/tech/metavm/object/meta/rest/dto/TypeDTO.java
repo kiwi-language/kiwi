@@ -2,7 +2,9 @@ package tech.metavm.object.meta.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
-import tech.metavm.flow.rest.NodeParamTypeIdResolver;
+import tech.metavm.dto.BaseDTO;
+import tech.metavm.dto.RefDTO;
+import tech.metavm.object.meta.ClassSource;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.object.meta.rest.TypeParamTypeIdResolver;
 
@@ -17,12 +19,12 @@ public record TypeDTO(
         int category,
         boolean ephemeral,
         boolean anonymous,
-        @Nullable Long nullableTypeId,
-        @Nullable Long arrayTypeId,
+        @Nullable RefDTO nullableTypeRef,
+        @Nullable RefDTO arrayTypeRef,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
         @JsonTypeIdResolver(TypeParamTypeIdResolver.class)
         Object param
-) {
+) implements BaseDTO {
 
     public static TypeDTO createClass(String name, List<FieldDTO> fieldDTOs) {
         return createClass(null, name, fieldDTOs);
@@ -30,15 +32,21 @@ public record TypeDTO(
 
     public static TypeDTO createClass(Long id, String name, List<FieldDTO> fieldDTOs) {
         return new TypeDTO(
-                id, null, name, null, TypeCategory.CLASS.code(), false, false,
+                id, null, name, null, TypeCategory.CLASS.code(),
+                false, false,
                 null, null,
                 new ClassParamDTO(
-                        null, null, fieldDTOs, List.of(), List.of(), null, null
+                        null, null,
+                        List.of(),
+                        ClassSource.RUNTIME.code(),
+                        fieldDTOs, List.of(), List.of(), List.of(), null, null, null,
+                        List.of(), List.of()
                 )
         );
     }
 
     public static TypeDTO createClass(Long id,
+                                      Long tmpId,
                                       String name,
                                       Long superTypeId,
                                       boolean anonymous,
@@ -47,17 +55,24 @@ public record TypeDTO(
                                       List<ConstraintDTO> constraintDTOs,
                                       String desc) {
         return new TypeDTO(
-                id, null, name, null, TypeCategory.CLASS.code(),
+                id, tmpId, name, null, TypeCategory.CLASS.code(),
                 ephemeral, anonymous, null, null,
                 new ClassParamDTO(
                         superTypeId,
                         null,
+                        List.of(),
+                        ClassSource.RUNTIME.code(),
                         fieldDTOs,
+                        List.of(),
                         constraintDTOs,
                         List.of(),
+                        null,
                         desc,
-                        null
+                        null,
+                        List.of(),
+                        List.of()
                 )
         );
     }
+
 }

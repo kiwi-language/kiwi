@@ -1,14 +1,16 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.dto.RefDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindingAware {
+public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
 
     private boolean persisted;
+    private transient Long tmpId;
     @Nullable
     protected Long id;
     private long version;
@@ -17,9 +19,17 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public Entity() {
     }
 
+    public Entity(Long tmpId) {
+        this.tmpId = tmpId;
+    }
+
     @Nullable
     public final Long getId() {
         return id;
+    }
+
+    public final RefDTO getRef() {
+        return new RefDTO(id, tmpId);
     }
 
     @NoProxy
@@ -51,6 +61,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         this.id = id;
     }
 
+    public Long getTmpId() {
+        return tmpId;
+    }
+
+    public void setTmpId(Long tmpId) {
+        this.tmpId = tmpId;
+    }
+
     @Override
     public void clearId() {
         this.id = null;
@@ -71,6 +89,8 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public Class<? extends Entity> getEntityType() {
         return EntityUtils.getEntityType(this).asSubclass(Entity.class);
     }
+
+    public void validate() {}
 
     @Override
     public List<Object> beforeRemove() {

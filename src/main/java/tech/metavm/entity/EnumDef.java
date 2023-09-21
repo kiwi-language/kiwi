@@ -1,11 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.EmptyModelInstanceMap;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.EnumType;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -19,15 +15,17 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final ValueDef<Enum<?>> parentDef;
     private final Class<T> enumType;
     private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
-    private final EnumType type;
+    private final ClassType type;
+    private final PrimitiveType nullType;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, EnumType type) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type, PrimitiveType nullType) {
         super(enumType, Instance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
         this.type = type;
+        this.nullType = nullType;
     }
 
     void addEnumConstantDef(EnumConstantDef<T> enumConstantDef) {
@@ -93,17 +91,29 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
         return enumType;
     }
 
-    ClassInstance createInstance(Enum<?> value) {
+    EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField) {
         ClassInstance instance = new ClassInstance(
                 parentDef.getInstanceFields(value, new EmptyModelInstanceMap()),
                 type
         );
-        type.addEnumConstant(instance);
-        return instance;
+        EnumConstantRT enumConstant = new EnumConstantRT(instance);
+        new Field(
+                enumConstant.getName(),
+                javaField.getName(),
+                type,
+                type, Access.GLOBAL,
+                false,
+                false,
+                new NullInstance(nullType),
+                true,
+                true,
+                instance
+        );
+        return enumConstant;
     }
 
     @Override
-    public EnumType getType() {
+    public ClassType getType() {
         return type;
     }
 

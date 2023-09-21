@@ -26,7 +26,7 @@ public class InstanceContext extends BaseInstanceContext {
     private final Executor executor;
     private IEntityContext entityContext;
     private final TypeResolver typeResolver;
-    private final DefContext defContext;
+    private DefContext defContext;
 
     public InstanceContext(long tenantId,
                            IInstanceStore instanceStore,
@@ -94,13 +94,13 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void preload(Collection<Long> ids, LoadingOption...options) {
+    public void preload(Collection<Long> ids, LoadingOption... options) {
         for (Long id : ids) {
             preload(id, options);
         }
     }
 
-    public void preload(long id, LoadingOption...options) {
+    public void preload(long id, LoadingOption... options) {
         loadingBuffer.load(new LoadRequest(id, LoadingOption.of(options)));
     }
 
@@ -108,9 +108,9 @@ public class InstanceContext extends BaseInstanceContext {
         long typeId = idService.getTypeId(id);
         Type type = getType(typeId);
         Class<?> typeClass = EntityUtils.getEntityType(type.getClass());
-        if(typeClass == EnumType.class) {
-            typeClass = ClassType.class;
-        }
+//        if (typeClass == EnumType.class) {
+//            typeClass = ClassType.class;
+//        }
         Constructor<I> constructor = ReflectUtils.getConstructor(klass, typeClass);
         return ReflectUtils.invokeConstructor(constructor, type);
     }
@@ -128,13 +128,13 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private Class<? extends Instance> getInstanceJavaType(Type type) {
-        if(type instanceof ArrayType) {
+        if (type instanceof ArrayType) {
             return ArrayInstance.class;
         }
-        if(type instanceof PrimitiveType) {
+        if (type instanceof PrimitiveType) {
             return PrimitiveInstance.class;
         }
-        if(type instanceof ClassType){
+        if (type instanceof ClassType) {
             return ClassInstance.class;
         }
         throw new InternalException("Can not resolve instance type for type " + type.getName());
@@ -142,7 +142,7 @@ public class InstanceContext extends BaseInstanceContext {
 
     private void initializeInstance(Instance instance) {
         InstancePO instancePO = loadingBuffer.getInstancePO(instance.getId());
-        if(instancePO == null) {
+        if (instancePO == null) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
         }
         headContext.add(EntityUtils.copyPojo(instancePO), instance.getType());
@@ -151,7 +151,7 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void initializeInstance(Instance instance, InstancePO instancePO) {
-        if(instance instanceof ArrayInstance arrayInstance) {
+        if (instance instanceof ArrayInstance arrayInstance) {
             InstanceArrayPO arrayPO = (InstanceArrayPO) instancePO;
             List<Instance> elements = NncUtils.map(
                     arrayPO.getElements(),
@@ -159,8 +159,7 @@ public class InstanceContext extends BaseInstanceContext {
             );
             arrayInstance.setElementAsChild(arrayPO.isElementAsChild());
             arrayInstance.initialize(elements);
-        }
-        else if (instance instanceof ClassInstance classInstance){
+        } else if (instance instanceof ClassInstance classInstance) {
             classInstance.initialize(
                     getInstanceFields(instancePO, classInstance.getType()),
                     instancePO.getVersion(), instancePO.getSyncVersion()
@@ -182,72 +181,139 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private Instance resolveColumnValue(Type fieldType, Object columnValue) {
-        if(columnValue == null) {
+        if (columnValue == null) {
             return InstanceUtils.nullInstance();
-        }
-        else if(columnValue instanceof IdentityPO identityPO) {
+        } else if (columnValue instanceof IdentityPO identityPO) {
             return get(identityPO.id());
-        }
-        else if(fieldType.isReference()) {
+        } else if (fieldType.isReference()) {
             return get(ValueUtil.getLong(columnValue));
-        }
-        else if(columnValue instanceof InstancePO instancePO) {
+        } else if (columnValue instanceof InstancePO instancePO) {
             Class<? extends Instance> instanceType =
                     instancePO instanceof InstanceArrayPO ? ArrayInstance.class : ClassInstance.class;
             Type type = getType(instancePO.getTypeId());
             Instance instance = InstanceFactory.allocate(instanceType, type);
             initializeInstance(instance, instancePO);
             return instance;
-        }
-        else {
+        } else {
             return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue, defContext::getType);
         }
     }
 
-    public Instance selectByUniqueKey(IndexKeyPO key) {
-        return NncUtils.getFirst(selectByKey(key));
+    public void setDefContext(DefContext defContext) {
+        this.defContext = defContext;
     }
 
     public void finish() {
-        if(finished) {
+        if (finished) {
             throw new IllegalStateException("Already finished");
         }
-        finished = true;
         rebind();
         initIds();
-        ContextDifference difference = new ContextDifference();
-        List<InstancePO> bufferedPOs = getBufferedInstancePOs();
-        difference.diff(headContext.getEntities(), bufferedPOs);
-        Set<ReferencePO> headRefs = headContext.getReferences();
-        List<ReferencePO> bufferedRefs = getBufferedReferences(bufferedPOs);
-        difference.diffReferences(headRefs, bufferedRefs);
+        IdentityHashMap<InstancePO, Instance> bufferedPOs = getBufferedInstancePOs();
+        ContextDifference difference = buildDifference(bufferedPOs.keySet());
+        Set<Instance> orphans = getOrphans(difference);
+        if (!orphans.isEmpty()) {
+            batchRemove(orphans);
+            initIds();
+            bufferedPOs = getBufferedInstancePOs();
+            difference = buildDifference(bufferedPOs.keySet());
+        }
+        processUpdate(difference.getEntityChange(), bufferedPOs);
         processRemoval(difference.getEntityChange());
         processEntityChangeHelper(difference.getEntityChange());
         instanceStore.saveReferences(difference.getReferenceChange().toChangeList());
         headContext.clear();
-        for (InstancePO instancePO : bufferedPOs) {
+        for (InstancePO instancePO : bufferedPOs.keySet()) {
             headContext.add(EntityUtils.copyPojo(instancePO), getType(instancePO.getTypeId()));
         }
-        if(TransactionSynchronizationManager.isActualTransactionActive()) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             registerTransactionSynchronization();
-        }
-        else {
+        } else {
             postProcess();
+        }
+        finished = true;
+    }
+
+    private Set<Instance> getInstancesToPersist() {
+        Set<Instance> visited = new IdentitySet<>(), result = new IdentitySet<>();
+        for (Instance instance : instances) {
+            if (!isNewInstance(instance) || !instance.getType().isEphemeral()) {
+                dfs(instance, visited, result);
+            }
+        }
+        return result;
+    }
+
+    private void dfs(Instance instance, Set<Instance> visited, Set<Instance> result) {
+        if (visited.contains(instance) || !instances.contains(instance)) {
+            return;
+        }
+        visited.add(instance);
+        result.add(instance);
+        for (ReferenceRT ref : instance.getOutgoingReferences()) {
+            dfs(ref.target(), visited, result);
+        }
+    }
+
+    private ContextDifference buildDifference(Collection<InstancePO> bufferedPOs) {
+        ContextDifference difference = new ContextDifference();
+        difference.diff(headContext.getEntities(), bufferedPOs);
+        difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedPOs));
+        return difference;
+    }
+
+    private void processUpdate(EntityChange<InstancePO> entityChange,
+                               IdentityHashMap<InstancePO, Instance> bufferedInstancePOs) {
+        List<InstancePO> insertOrUpdate = NncUtils.merge(entityChange.inserts(), entityChange.updates());
+        for (InstancePO instancePO : insertOrUpdate) {
+            Instance instance = bufferedInstancePOs.get(instancePO);
+            if (instance instanceof ClassInstance classInstance) {
+                var model = entityContext.getModel(Object.class, instance);
+                if (model instanceof UpdateAware updateAware) {
+                    updateAware.onUpdate(classInstance);
+                }
+            }
         }
     }
 
     private void processRemoval(EntityChange<InstancePO> entityChange) {
-        if(NncUtils.isEmpty(entityChange.deletes())) {
+        if (NncUtils.isEmpty(entityChange.deletes())) {
             return;
         }
         Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
         Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
-        Set<Long> stronglyReferencedIds = instanceStore.getStronglyReferencedIds(
+        List<ReferencePO> references = instanceStore.getFirstStrongReferences(
                 tenantId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
         );
-        if(NncUtils.isNotEmpty(stronglyReferencedIds)) {
-            List<Instance> srInstances = NncUtils.map(stronglyReferencedIds, this::getRemoved);
-            throw BusinessException.strongReferencesPreventRemoval(srInstances);
+        if (NncUtils.isNotEmpty(references)) {
+            Map<Instance, Instance> refMap = new HashMap<>();
+            for (ReferencePO reference : references) {
+                refMap.put(get(reference.getSourceId()), getRemoved(reference.getTargetId()));
+            }
+            throw BusinessException.strongReferencesPreventRemoval(refMap);
+        }
+    }
+
+    private Set<Instance> getOrphans(ContextDifference difference) {
+        Set<Long> removed = NncUtils.mapUnique(difference.getEntityChange().deletes(), InstancePO::getId);
+        Set<Instance> orphans = new HashSet<>();
+        for (ReferencePO removedRef : difference.getReferenceChange().deletes()) {
+            if (isChildReference(removedRef) && !removed.contains(removedRef.getTargetId())) {
+                orphans.add(get(removedRef.getTargetId()));
+            }
+        }
+        return orphans;
+    }
+
+    private boolean isChildReference(ReferencePO referencePO) {
+        long sourceId = referencePO.getSourceId();
+        Instance source = isRemoved(sourceId) ? getRemoved(sourceId) : get(sourceId);
+        if (source instanceof ArrayInstance array) {
+            return array.isElementAsChild();
+        } else {
+            ClassType type = (ClassType) source.getType();
+            var field = type.getField(referencePO.getFieldId());
+            return field.isChildField();
         }
     }
 
@@ -258,31 +324,31 @@ public class InstanceContext extends BaseInstanceContext {
 
     public static final int MAX_ITERATION = 5;
 
-    private List<InstancePO> getBufferedInstancePOs() {
-        List<InstancePO> instancePOs = new ArrayList<>();
+    private IdentityHashMap<InstancePO, Instance> getBufferedInstancePOs() {
+        IdentityHashMap<InstancePO, Instance> instancePOs = new IdentityHashMap<>();
         Set<Instance> processed = new IdentitySet<>();
         int it = 0;
-        for(;;) {
-            if(it++ >= MAX_ITERATION) {
+        for (; ; ) {
+            if (it++ >= MAX_ITERATION) {
                 throw new InternalException("getBufferedEntityPOs reached max number of iteration " +
                         "(" + MAX_ITERATION + ")");
             }
             boolean added = false;
-            for (Instance instance : new ArrayList<>(instances)) {
+            for (Instance instance : new ArrayList<>(getInstancesToPersist())) {
                 if (InstanceUtils.isInitialized(instance) && !processed.contains(instance)) {
-                    instancePOs.add(instance.toPO(tenantId));
+                    instancePOs.put(instance.toPO(tenantId), instance);
                     processed.add(instance);
                     added = true;
                 }
             }
-            if(!added) {
+            if (!added) {
                 break;
             }
         }
         return instancePOs;
     }
 
-    private List<ReferencePO> getBufferedReferences(List<InstancePO> instancePOs) {
+    private List<ReferencePO> getBufferedReferences(Collection<InstancePO> instancePOs) {
         return NncUtils.flatMap(
                 instancePOs,
                 instancePO -> getType(instancePO.getTypeId()).extractReferences(instancePO)
@@ -301,10 +367,9 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void postProcess() {
-        if(asyncPostProcessing) {
+        if (asyncPostProcessing) {
             executor.execute(this::postProcess0);
-        }
-        else {
+        } else {
             postProcess0();
         }
     }

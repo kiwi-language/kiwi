@@ -35,7 +35,7 @@ public class FunctionDescTest extends TestCase {
         FunctionDesc desc = new FunctionDesc(Function.MAX$_DOUBLE);
         desc.checkArguments(List.of(createDouble(1.0), createDouble(1.1)));
         try {
-            desc.checkArguments(List.of(createInt(1), createDouble(1.1)));
+            desc.checkArguments(List.of(createLong(1L), createDouble(1.1)));
             Assert.fail();
         }
         catch (BusinessException e) {
@@ -46,10 +46,10 @@ public class FunctionDescTest extends TestCase {
     public void test_check_argument_if() {
         FunctionDesc desc = new FunctionDesc(Function.IF);
         desc.checkArguments(List.of(
-                createBoolean(true), createDouble(1.1), createInt(1)
+                createBoolean(true), createDouble(1.1), createLong(1L)
         ));
         try {
-            desc.checkArguments(List.of(createInt(1), createDouble(1.1)));
+            desc.checkArguments(List.of(createLong(1L), createDouble(1.1)));
             Assert.fail();
         }
         catch (BusinessException e) {
@@ -81,10 +81,10 @@ public class FunctionDescTest extends TestCase {
         FunctionDesc desc = new FunctionDesc(Function.SUM$_INT);
         Instance result = desc.evaluate(
                 List.of(
-                        createInt(1), createInt(2)
+                        createLong(1L), createLong(2L)
                 )
         );
-        Assert.assertEquals(createInt(3), result);
+        Assert.assertEquals(createLong(3L), result);
     }
 
     public void test_evaluate_if() {

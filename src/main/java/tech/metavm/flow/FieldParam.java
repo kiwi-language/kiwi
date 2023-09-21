@@ -1,15 +1,12 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.FieldValueDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 
@@ -23,7 +20,7 @@ public class FieldParam extends Entity {
     private Value value;
 
     public FieldParam(Field field, ValueDTO valueDTO, ParsingContext parsingContext) {
-        this(field, ValueFactory.getValue(valueDTO, parsingContext));
+        this(field, ValueFactory.create(valueDTO, parsingContext));
     }
 
     public FieldParam(Field field, Value value) {
@@ -44,14 +41,14 @@ public class FieldParam extends Entity {
     }
 
     public FieldParamDTO toDTO(boolean persisting) {
-        return new FieldParamDTO(field.getId(), NncUtils.get(value, v -> v.toDTO(persisting)));
+        try(var context = SerializeContext.enter()) {
+            return new FieldParamDTO(
+                    context.getRef(field), NncUtils.get(value, v -> v.toDTO(persisting)));
+        }
     }
 
-    public InstanceFieldDTO evaluate(FlowFrame executionContext) {
-        return InstanceFieldDTO.valueOf(
-                field.getId(),
-                NncUtils.get(value, v -> getFieldValue(v, executionContext))
-        );
+    public Instance evaluate(FlowFrame executionContext) {
+        return value.evaluate(executionContext);
     }
 
     private FieldValueDTO getFieldValue(Value value, EvaluationContext evaluationContext) {

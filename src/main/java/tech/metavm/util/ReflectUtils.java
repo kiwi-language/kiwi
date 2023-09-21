@@ -31,7 +31,8 @@ public class ReflectUtils {
             float.class, "F",
             double.class, "D",
             boolean.class, "Z",
-            char.class, "C"
+            char.class, "C",
+            void.class, "V"
     );
 
     static {
@@ -48,7 +49,8 @@ public class ReflectUtils {
             float.class, Float.class,
             double.class, Double.class,
             boolean.class, Boolean.class,
-            char.class, Character.class
+            char.class, Character.class,
+            void.class, Void.class
     );
 
     public static final Map<Class<?>, Class<?>> PRIMITIVE_UNBOXING_MAP = Map.of(
@@ -59,7 +61,8 @@ public class ReflectUtils {
             Float.class, float.class,
             Double.class, double.class,
             Boolean.class, boolean.class,
-            Character.class, char.class
+            Character.class, char.class,
+            Void.class, void.class
     );
 
     private static final Map<Class<?>, Integer> PRIMITIVE_TYPE_ORDERING_MAP = Map.of(
@@ -70,7 +73,8 @@ public class ReflectUtils {
             float.class, 1,
             double.class, 0,
             boolean.class, 6,
-            char.class, 7
+            char.class, 7,
+            void.class, 8
     );
 
     private static final Set<Class<?>> NUMERIC_PRIMITIVE_TYPES = Set.of(
@@ -87,7 +91,19 @@ public class ReflectUtils {
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
         Set<Class<?>> valueTypes = reflections.getTypesAnnotatedWith(ValueType.class);
-        return NncUtils.mergeSets(entitySubTypes, entityTypes, valueTypes);
+        return NncUtils.filterUnique(
+                NncUtils.mergeSets(entitySubTypes, entityTypes, valueTypes),
+                klass -> !isCompiled(klass)
+        );
+    }
+
+    private static boolean isCompiled(Class<?> klass) {
+        var entityType = klass.getAnnotation(EntityType.class);
+        if(entityType != null && entityType.compiled()) {
+            return true;
+        }
+        var valueType = klass.getAnnotation(ValueType.class);
+        return valueType != null && valueType.compiled();
     }
 
     public static Type getBoxedType(Type type) {
@@ -939,7 +955,7 @@ public class ReflectUtils {
         }
         if(type instanceof ParameterizedType parameterizedType) {
             Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
-            if(RuntimeGeneric.class.isAssignableFrom(rawClass)) {
+            if(RuntimeGeneric.class.isAssignableFrom(rawClass) || List.class.isAssignableFrom(rawClass)) {
                 return ParameterizedTypeImpl.create(
                         rawClass,
                         NncUtils.map(
@@ -1052,7 +1068,7 @@ public class ReflectUtils {
             constructor.setAccessible(true);
             return constructor.newInstance(args);
         } catch (Exception e) {
-            throw new InternalException("Fail to create instance by constructor: " + constructor);
+            throw new InternalException("Fail to create instance by constructor: " + constructor, e);
         }
     }
 

@@ -8,6 +8,7 @@ import tech.metavm.flow.NodeKind;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.PojoMatcher;
 import tech.metavm.util.TestUtils;
+import tech.metavm.dto.RefDTO;
 
 import java.util.List;
 
@@ -17,12 +18,13 @@ public class NodeDTOTest extends TestCase {
 
     public void testToJSONString() {
         NodeDTO nodeDTO = new NodeDTO(
+                null,
                 1L,
                 1L,
                 "Test",
                 NodeKind.ADD_OBJECT.code(),
                 null,
-                1L,
+                RefDTO.ofId(1L),
                 new AddObjectParamDTO(
                         1L,
                         List.of()

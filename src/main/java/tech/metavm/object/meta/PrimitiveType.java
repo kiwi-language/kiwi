@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.Instance;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -44,6 +45,11 @@ public class PrimitiveType extends Type {
     @Override
     protected Object getParam() {
         return null;
+    }
+
+    @Override
+    public Class<? extends Instance> getInstanceClass() {
+        return kind.getInstanceClass();
     }
 
     public PrimitiveKind getKind() {

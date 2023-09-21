@@ -11,7 +11,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.Keys.*;
-import static tech.metavm.autograph.TranspileUtil.getTemplateType;
+import static tech.metavm.autograph.TranspileUtil.createTemplateType;
 import static tech.metavm.util.NncUtils.invokeIfNotNull;
 
 public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
@@ -27,11 +27,10 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     private boolean inConstructor() {
-        if(stateStack.has(MethodState.class)) {
+        if (stateStack.has(MethodState.class)) {
             MethodState state = stateStack.get(MethodState.class);
             return state.getMethod().isConstructor();
-        }
-        else return false;
+        } else return false;
     }
 
     @Override
@@ -56,7 +55,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitMethod(PsiMethod method) {
-        try(MethodState state = stateStack.create(MethodState.class)) {
+        try (MethodState state = stateStack.create(MethodState.class)) {
             state.setMethod(method);
             enterScope();
             for (PsiAnnotation annotation : method.getAnnotations()) annotation.accept(this);
@@ -91,7 +90,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     private void defineSelfParameter() {
         trackSymbol(new QnAndMode(
-                new AtomicQualifiedName("this", getTemplateType(currentClass())),
+                new AtomicQualifiedName("this", createTemplateType(currentClass())),
                 AccessMode.DEFINE_WRITE
         ));
     }
@@ -102,7 +101,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitClass(PsiClass aClass) {
-        try (ClassState clsState = stateStack.create(ClassState.class)){
+        try (ClassState clsState = stateStack.create(ClassState.class)) {
             clsState.setNode(aClass);
             classes.push(aClass);
             enterScope(aClass.getName());
@@ -119,9 +118,9 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     private void visitArgumentDeclarations(PsiMethod method) {
-        if(!method.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
+        if (!method.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
             PsiParameter firstParam = method.getParameterList().getParameter(0);
-            if(firstParam == null || !firstParam.getName().equals("this")) {
+            if (firstParam == null || !firstParam.getName().equals("this")) {
                 defineSelfParameter();
             }
         }
@@ -191,7 +190,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
         var beforeParent = Scope.copyOf(scope);
         List<Scope> afterChildren = new ArrayList<>();
         for (var child : children) {
-            if(child == null) continue;
+            if (child == null) continue;
             scope.copyFrom(beforeParent);
             processBlockElement(parent, child.value(), child.key());
             afterChildren.add(scope.copy());
@@ -203,7 +202,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     private void processBlockElement(PsiElement element, PsiElement block, Key<Scope> scopeKey) {
         enterScope();
-        block.accept(this);
+        if (block != null) block.accept(this);
         exitAndRecordScope(element, scopeKey);
     }
 

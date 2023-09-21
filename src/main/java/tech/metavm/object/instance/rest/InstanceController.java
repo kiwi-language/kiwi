@@ -35,10 +35,9 @@ public class InstanceController {
 
     @PostMapping
     public Result<Long> upsert(@RequestBody InstanceDTO instance) {
-        if(instance.id() == null || instance.id() == 0L) {
+        if (instance.id() == null || instance.id() == 0L) {
             return Result.success(instanceManager.create(instance, false));
-        }
-        else {
+        } else {
             instanceManager.update(instance, false);
             return Result.success(instance.id());
         }
@@ -55,6 +54,12 @@ public class InstanceController {
         return Result.success(instanceManager.batchGet(request.ids(), request.depth()));
     }
 
+    @PostMapping("/delete-by-types")
+    public Result<Void> deleteByTypes(@RequestBody List<Long> typeIds) {
+        instanceManager.deleteByTypes(typeIds);
+        return Result.voidSuccess();
+    }
+
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
         instanceManager.delete(id, false);
@@ -64,6 +69,12 @@ public class InstanceController {
     @PostMapping("/load-by-paths")
     public Result<List<InstanceDTO>> loadByPaths(@RequestBody LoadInstancesByPathsRequest request) {
         return Result.success(instanceManager.loadByPaths(request));
+    }
+
+    @GetMapping("/reference-chain/{id:[0-9]+}")
+    public Result<List<String>> getReferenceChain(@PathVariable("id") long id,
+                                                  @RequestParam(defaultValue = "1") int rootMode) {
+        return Result.success(instanceManager.getReferenceChain(id, rootMode));
     }
 
 }

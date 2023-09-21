@@ -40,6 +40,7 @@ public class SearchBuilderTest extends TestCase {
                 -1L,
                 Set.of(100L),
                 condition,
+                false,
                 1,
                 20
         );

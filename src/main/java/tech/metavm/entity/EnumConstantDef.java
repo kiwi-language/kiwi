@@ -16,13 +16,13 @@ public class EnumConstantDef<T extends Enum<?>> {
     public EnumConstantDef(T value, EnumDef<T> enumDef) {
         java.lang.reflect.Field enumField = ReflectUtils.getField(value.getClass(), value.name());
         this.enumDef = enumDef;
-        this.instance = enumDef.createInstance(value);
+        this.enumConstant = enumDef.createEnumConstant(value, enumField);
+        this.instance = enumConstant.getInstance();
         EnumConstant annotation = enumField.getAnnotation(EnumConstant.class);
         this.name = annotation != null ? annotation.value() : value.name();
         ordinal = value.ordinal();
         this.value = value;
         enumDef.addEnumConstantDef(this);
-        this.enumConstant = new EnumConstantRT(instance);
     }
 
     public EnumConstantRT getEnumConstant() {

@@ -30,7 +30,9 @@ public class SearchBuilder {
 
     public static String buildQueryString(SearchQuery query) {
         String tenantIdStr = query.tenantId() > 0 ? query.tenantId() + "" : "\\" + query.tenantId();
-        String queryString = "(" + TENANT_ID +  ":" + tenantIdStr + /*" OR " + TENANT_ID +  ":\\-1*/ ")";
+        String queryString = query.includeBuiltin() ?
+                "(" + TENANT_ID +  ":" + tenantIdStr + " OR " + TENANT_ID +  ":\\-1)" :
+                "(" + TENANT_ID +  ":" + tenantIdStr + ")";
         if(!query.typeIds().isEmpty()) {
             String typeIdCondition = "(" +
                     NncUtils.join(query.typeIds(), id -> TYPE_ID + ":" + id, " OR ") + ")";

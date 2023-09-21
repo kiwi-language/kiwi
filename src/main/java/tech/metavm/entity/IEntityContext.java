@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.flow.FlowRT;
+import tech.metavm.dto.RefDTO;
+import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.Instance;
@@ -34,18 +35,42 @@ public interface IEntityContext extends ModelInstanceMap {
 
     <T> T getEntity(Class<T> entityType, long id);
 
+    <T> T getEntity(Class<T> entityType, RefDTO reference);
+
     Type getType(Class<?> javaType);
 
     default Type getType(long id) {
         return getEntity(Type.class, id);
     }
 
+    default Type getType(RefDTO reference) {
+        return getEntity(Type.class, reference);
+    }
+
     default ClassType getClassType(long id) {
         return getEntity(ClassType.class, id);
     }
 
+    default ClassType getClassType(RefDTO ref) {
+        return getEntity(ClassType.class, ref);
+    }
+
+    default ClassType getClassType(Long id, String code) {
+        NncUtils.requireTrue(id != null || code != null, "id and code can't both be null");
+        if(id != null) {
+            return getClassType(id);
+        }
+        else {
+            return (ClassType) selectByUniqueKey(Type.UNIQUE_CODE, code);
+        }
+    }
+
     default Field getField(long id) {
         return getEntity(Field.class, id);
+    }
+
+    default Field getField(RefDTO reference) {
+        return getEntity(Field.class, reference);
     }
 
     default RoleRT getRole(long id) {
@@ -60,12 +85,20 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(NodeRT.class, id);
     }
 
+    default NodeRT getNode(RefDTO ref) {
+        return getEntity(NodeRT.class, ref);
+    }
+
     default ScopeRT getScope(long id) {
         return getEntity(ScopeRT.class, id);
     }
 
-    default FlowRT getFlow(long id) {
-        return getEntity(FlowRT.class, id);
+    default Flow getFlow(long id) {
+        return getEntity(Flow.class, id);
+    }
+
+    default Flow getFlow(RefDTO ref) {
+        return getEntity(Flow.class, ref);
     }
 
     boolean isFinished();
@@ -79,6 +112,8 @@ public interface IEntityContext extends ModelInstanceMap {
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object...refValues);
 
     boolean remove(Object model);
+
+    void batchRemove(List<?> entities);
 
     @Nullable
     default <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {

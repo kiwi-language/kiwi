@@ -1,12 +1,11 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.expression.ParsingContext;
+import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.meta.Index;
-import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
@@ -15,12 +14,10 @@ import java.util.List;
 @EntityType("唯一索引节点")
 public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
-    public static GetUniqueNode create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+    public static GetUniqueNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         GetUniqueParamDTO param = nodeDTO.getParam();
         Index constraint = context.getEntity(Index.class, param.constraintId());
-        GetUniqueNode node = new GetUniqueNode(nodeDTO, constraint, scope);
-        node.setParam(param, context);
-        return node;
+        return new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), constraint, prev, scope);
     }
 
     @EntityField("索引")
@@ -28,15 +25,15 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     @ChildEntity("字段值列表")
     private final Table<Value> values = new Table<>(Value.class, true);
 
-    public GetUniqueNode(NodeDTO nodeDTO, Index constraint, ScopeRT scope) {
-        super(nodeDTO, TypeUtil.getNullableType(constraint.getDeclaringType()), scope);
-        this.constraint = constraint;
+    public GetUniqueNode(Long tmpId, String name, Index index, NodeRT<?> previous, ScopeRT scope) {
+        super(tmpId, name,  index.getDeclaringType(), previous, scope);
+        this.constraint = index;
     }
 
     @Override
     protected GetUniqueParamDTO getParam(boolean persisting) {
         return new GetUniqueParamDTO(
-                constraint.getId(),
+                constraint.getIdRequired(),
                 NncUtils.map(values, value -> value.toDTO(persisting))
         );
     }
@@ -46,7 +43,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
         ParsingContext parsingContext = getParsingContext(entityContext);
         setValues(
                 NncUtils.map(
-                        param.values(), v -> ValueFactory.getValue(v, parsingContext)
+                        param.values(), v -> ValueFactory.create(v, parsingContext)
                 )
         );
     }
@@ -62,13 +59,13 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
     @Override
     public void execute(FlowFrame frame) {
-        InstanceContext instanceContext = frame.getStack().getContext();
+        IInstanceContext instanceContext = frame.getStack().getContext();
         frame.setResult(
                 instanceContext.selectByUniqueKey(buildIndexKey(frame))
         );
     }
 
-    private IndexKeyPO buildIndexKey(FlowFrame frame) {
+    private IndexKeyRT buildIndexKey(FlowFrame frame) {
         return constraint.createIndexKey(NncUtils.map(values, fp -> fp.evaluate(frame)));
     }
 

@@ -15,9 +15,7 @@ import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
 
 import javax.sql.DataSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.List;
 
@@ -28,6 +26,8 @@ public class TestUtils {
     public static final String TEST_RESOURCE_TARGET_ROOT = "/Users/leen/workspace/object/target/test-classes";
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final char[] buf = new char[64 * 1024 * 1024];
 
     static {
         SimpleModule module = new SimpleModule();
@@ -68,6 +68,32 @@ public class TestUtils {
         } catch (IOException e) {
             throw new InternalException(e);
         }
+    }
+
+    public static <R> R readJson(String path, com.fasterxml.jackson.core.type.TypeReference<R> typeRef) {
+        return NncUtils.readJSONString(readEntireFile(path), typeRef);
+    }
+
+    public static String readEntireFile(String path) {
+        try (FileReader reader = new FileReader(path)) {
+            int n = reader.read(buf);
+            return new String(buf, 0, n);
+        } catch (IOException e) {
+            throw new RuntimeException("Fail to read file '" + path + "'", e);
+        }
+    }
+
+    public static void writeFile(String path, String content) {
+        try(var writer = new FileWriter(path)) {
+            writer.write(content);
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Fail to write file '" + path + "'", e);
+        }
+    }
+
+    public static void writeJson(String path, Object object) {
+        writeFile(path, toJSONString(object));
     }
 
     public static void clearTestResourceDir(String dirName) {

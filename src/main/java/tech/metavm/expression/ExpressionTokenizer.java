@@ -18,7 +18,7 @@ public class ExpressionTokenizer {
     );
 
     private static final Set<Character> OPERATORS = Set.of(
-        '.', '=', '!', '>', '<', ')', '(', '-', '+', '*', '/', '`', '%', ','
+        '.', '=', '!', '>', '<', ')', '(', '-', '+', '*', '/', '`', '%', ',', '[', ']'
     );
 
     private static final Set<Character> DIGITS = Set.of(
@@ -175,7 +175,7 @@ public class ExpressionTokenizer {
         }
         if(token.isVariable()) {
             skipSpaces();
-            if(isDot()) {
+            /*if(isDot()) {
                 List<Token> tokens = new ArrayList<>();
                 tokens.add(token);
                 while (isDot()) {
@@ -190,7 +190,8 @@ public class ExpressionTokenizer {
                 String fieldPath = NncUtils.join(tokens, Token::getName, ".");
                 return new Token(TokenType.VARIABLE, fieldPath, fieldPath);
             }
-            else if(isLeftParenthesis()) {
+            else */
+            if(isOpenParenthesis()) {
                 return new Token(TokenType.FUNCTION, token.rawValue(), Function.getByNameRequired(token.getName()));
             }
             else {
@@ -258,23 +259,23 @@ public class ExpressionTokenizer {
 //                    tokenType = TokenType.OPERATOR;
 //                }
 //            }
-            if(isLeftParenthesis()) {
+            if(isOpenParenthesis()) {
                 position++;
-                tokenType = TokenType.LEFT_PARENTHESIS;
+                tokenType = TokenType.OPEN_PARENTHESIS;
 //                numUnpairedLeftParentheses++;
             }
-            else if(isRightParenthesis()) {
+            else if(isClosingParenthesis()) {
                 position++;
-                tokenType = TokenType.RIGHT_PARENTHESIS;
+                tokenType = TokenType.CLOSING_PARENTHESIS;
 //                numUnpairedLeftParentheses--;
             }
-            else if(isLeftBracket()) {
+            else if(isOpenBracket()) {
                 position++;
-                tokenType = TokenType.LEFT_BRACKET;
+                tokenType = TokenType.OPEN_BRACKET;
             }
-            else if(isRightBracket()) {
+            else if(isClosingBracket()) {
                 position++;
-                tokenType = TokenType.RIGHT_BRACKET;
+                tokenType = TokenType.CLOSING_BRACKET;
             }
             else if(isCombinableOperator()) {
                 position++;
@@ -332,7 +333,7 @@ public class ExpressionTokenizer {
             case OPERATOR ->  Operator.getByOpRequired(rawValue);
             case FUNCTION -> Function.getByNameRequired(rawValue);
             case VARIABLE -> rawValue;
-            case NULL, KEYWORD, LEFT_PARENTHESIS, RIGHT_PARENTHESIS, LEFT_BRACKET, RIGHT_BRACKET ->  null;
+            case NULL, KEYWORD, OPEN_PARENTHESIS, CLOSING_PARENTHESIS, OPEN_BRACKET, CLOSING_BRACKET ->  null;
         };
         return new Token(type, rawValue, value);
     }
@@ -434,19 +435,19 @@ public class ExpressionTokenizer {
         return !isEof() && COMBINABLE_OPERATORS.contains(current());
     }
 
-    private boolean isLeftParenthesis() {
+    private boolean isOpenParenthesis() {
         return !isEof() && current() == '(';
     }
 
-    private boolean isRightParenthesis() {
+    private boolean isClosingParenthesis() {
         return !isEof() && current() == ')';
     }
 
-    private boolean isLeftBracket() {
+    private boolean isOpenBracket() {
         return !isEof() && current() == '[';
     }
 
-    private boolean isRightBracket() {
+    private boolean isClosingBracket() {
         return !isEof() && current() == ']';
     }
 
@@ -479,7 +480,7 @@ public class ExpressionTokenizer {
     }
 
     private boolean isNull(int start) {
-        return NULL.equals(value(start));
+        return NULL.equalsIgnoreCase(value(start));
     }
 
     private boolean isBoolean(int start) {

@@ -3,7 +3,7 @@ package tech.metavm.util;
 public class NameUtils {
 
     public static final String[] SPECIAL_CHARACTERS = new String[] {
-            " ", "\b", "\t", "\n", "\r", "$"
+            " ", "\b", "\t", "\n", "\r"/*, "$"*/
     };
 
     public static String checkName(String name) {

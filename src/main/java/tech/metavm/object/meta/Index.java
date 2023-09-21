@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
@@ -59,14 +60,12 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
         return NncUtils.map(fields, IndexField::getField);
     }
 
-    public IndexEntryPO getKey(long tenantId, ClassInstance instance) {
-        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
-        List<Instance> values = NncUtils.map(fields, item -> item.getValue().evaluate(evaluationContext));
-        IndexKeyPO key = createIndexKey(values);
-        return new IndexEntryPO(tenantId, key, instance.getId());
+    public IndexEntryPO createIndexEntry(long tenantId, ClassInstance instance) {
+        IndexKeyRT key = createIndexKey(instance);
+        return new IndexEntryPO(tenantId, key.toPO(), instance.getIdRequired());
     }
 
-    public IndexKeyPO createIndexKeyByModels(List<Object> values, IEntityContext entityContext) {
+    public IndexKeyRT createIndexKeyByModels(List<Object> values, IEntityContext entityContext) {
         NncUtils.requireEquals(fields.size(), values.size());
         List<Instance> instanceValues = new ArrayList<>();
         NncUtils.biForEach(
@@ -76,15 +75,18 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
         return createIndexKey(instanceValues);
     }
 
-    public IndexKeyPO createIndexKey(List<Instance> values) {
+    public IndexKeyRT createIndexKey(ClassInstance instance) {
+        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
+        List<Instance> values = NncUtils.map(fields, field -> field.getValue().evaluate(evaluationContext));
+        return createIndexKey(values);
+    }
+
+    public IndexKeyRT createIndexKey(List<Instance> values) {
         NncUtils.requireEquals(fields.size(), values.size());
         IndexKeyPO key = new IndexKeyPO();
         key.setConstraintId(NncUtils.requireNonNull(getId()));
-        NncUtils.biForEach(
-                fields, values,
-                (item, fieldValue) -> item.setKeyItem(key, fieldValue)
-        );
-        return key;
+        var fieldValues = NncUtils.zip(fields, values);
+        return new IndexKeyRT(this, fieldValues);
     }
 
     public boolean containsNull(IndexKeyPO key) {

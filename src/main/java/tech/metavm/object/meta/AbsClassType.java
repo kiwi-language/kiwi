@@ -1,6 +1,5 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.flow.FlowRT;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
@@ -47,12 +46,6 @@ public abstract class AbsClassType extends Type {
         String fieldName = ReflectUtils.getMetaFieldName(javaField);
         return NncUtils.requireNonNull(getFieldByName(fieldName),
                 "Can not find indexItem for java indexItem " + javaField);
-    }
-
-    public abstract List<FlowRT> getFlows();
-
-    public FlowRT getFlow(long flowId) {
-        return NncUtils.findRequired(getFlows(), flow -> Objects.equals(flow.getId(), flowId));
     }
 
     public boolean containsField(long fieldId) {

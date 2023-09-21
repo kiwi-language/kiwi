@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
+import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.meta.TypeManager;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.NncUtils;
@@ -25,11 +26,12 @@ public class TypeController {
     public Result<Page<TypeDTO>> list(
             @RequestParam(value = "searchText", required = false) String searchText,
             @RequestParam(value = "categoryCodes", required = false) String categoryCodes,
+            @RequestParam(value = "includeBuiltin", required = false, defaultValue = "false") boolean includeBuiltin,
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize
     ) {
         List<Integer> categoryCodeList = NncUtils.isNotEmpty(categoryCodes) ? NncUtils.splitIntegers(categoryCodes) : null;
-        return Result.success(typeManager.query(searchText, categoryCodeList, page, pageSize));
+        return Result.success(typeManager.query(searchText, categoryCodeList, includeBuiltin, page, pageSize));
     }
 
     @GetMapping("/{id:[0-9]+}")
@@ -55,6 +57,17 @@ public class TypeController {
     @PostMapping
     public Result<Long> save(@RequestBody TypeDTO typeDTO) {
         return Result.success(typeManager.saveType(typeDTO).id());
+    }
+
+    @PostMapping("/batch")
+    public Result<List<Long>> batchSave(@RequestBody List<TypeDTO> typeDTOs) {
+        return Result.success(typeManager.batchSave(typeDTOs));
+    }
+
+    @PostMapping("/batch-delete")
+    public Result<Void> batchRemove(@RequestBody List<Long> typeIds) {
+        typeManager.batchRemove(typeIds);
+        return Result.voidSuccess();
     }
 
     @GetMapping("/{id:[0-9]+}/array")

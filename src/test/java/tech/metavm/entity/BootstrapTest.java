@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.flow.FlowRT;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
@@ -75,14 +74,11 @@ public class BootstrapTest extends TestCase {
         Foo foo = new Foo("大傻", new Bar("巴巴巴巴"));
         entityContext.bind(foo);
 
-        ClassType testType = TypeUtil.createValue("Test Type", null);
-
-        Field titleField = new Field(
-                "title", testType, Access.GLOBAL, false, true,
-                InstanceUtils.nullInstance(),
-                StandardTypes.getStringType(), false
-        );
-
+        ClassType testType = ClassBuilder.newBuilder("Test Type", null).build();
+        Field titleField = FieldBuilder
+                .newBuilder("title", null, testType, StandardTypes.getStringType())
+                .asTitle(true)
+                .build();
         entityContext.bind(testType);
         entityContext.bind(titleField);
 

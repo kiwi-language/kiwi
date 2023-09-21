@@ -44,12 +44,12 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
         }
     }
 
-    private BusinessException extractBusinessException(Exception e) {
-        if(e instanceof BusinessException bizExp) {
-            return bizExp;
-        }
-        if(e.getCause() instanceof BusinessException bizExp) {
-            return bizExp;
+    private BusinessException extractBusinessException(Throwable e) {
+        while (e != null) {
+            if(e instanceof BusinessException businessException) {
+                return businessException;
+            }
+            e = e.getCause();
         }
         return null;
     }

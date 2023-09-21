@@ -1,7 +1,9 @@
 package tech.metavm.entity;
 
+import tech.metavm.entity.natives.NativeInvoker;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
@@ -61,11 +63,11 @@ public interface IInstanceContext extends InstanceSink {
 
     boolean remove(Instance instance);
 
-    List<Instance> selectByKey(IndexKeyPO indexKeyPO);
+    List<Instance> selectByKey(IndexKeyRT indexKey);
 
     List<Instance> query(InstanceIndexQuery query);
 
-    default Instance selectByUniqueKey(IndexKeyPO key) {
+    default Instance selectByUniqueKey(IndexKeyRT key) {
         return NncUtils.getFirst(selectByKey(key));
     }
 
@@ -76,4 +78,6 @@ public interface IInstanceContext extends InstanceSink {
     void initIdManually(Instance instance, long id);
 
     void increaseVersionsForAll();
+
+    void updateMemoryIndex(ClassInstance instance);
 }

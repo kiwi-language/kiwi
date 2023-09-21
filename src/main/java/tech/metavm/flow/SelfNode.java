@@ -7,12 +7,12 @@ import tech.metavm.flow.rest.NodeDTO;
 @EntityType("当前记录节点")
 public class SelfNode extends NodeRT<Void> {
 
-    public SelfNode(NodeDTO nodeDTO, ScopeRT scope) {
-        super(nodeDTO, scope.getFlow().getType(), scope);
+    public static SelfNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+            return new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
     }
 
-    public SelfNode(String name, NodeRT<?> prev, ScopeRT scope) {
-        super(name, NodeKind.SELF, scope.getFlow().getType(), prev, scope);
+    public SelfNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
+        super(tmpId, name, scope.getFlow().getDeclaringType(), prev, scope);
     }
 
     @Override

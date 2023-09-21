@@ -114,7 +114,7 @@ public class PojoDefTest extends TestCase {
 
         private final Map<Type, ModelDef<?,?>> class2def = new HashMap<>();
         private final ModelInstanceMap modelInstanceMap;
-        private final AnyTypeDef<Object> objectDef;
+        private final ObjectTypeDef<Object> objectDef;
         private final ValueDef<Enum<?>> enumDef;
         private final Map<tech.metavm.object.meta.Type, tech.metavm.object.meta.Type> typeInternMap = new HashMap<>();
 

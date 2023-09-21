@@ -20,11 +20,11 @@ public class ClassInstance extends Instance {
     private final ClassType klass;
     private final Table<InstanceField> fields = new Table<>(InstanceField.class, 1);
 
-    public static Instance allocate(ClassType type) {
+    public static ClassInstance allocate(ClassType type) {
         return new ClassInstance(type);
     }
 
-    public ClassInstance(ClassType type) {
+    protected ClassInstance(ClassType type) {
 //        this(Map.of(), type);
         super(null, type,0,0);
         this.klass = type;
@@ -50,15 +50,21 @@ public class ClassInstance extends Instance {
             if(fieldValue == null || fieldValue.isNull()) {
                 fieldValue = field.getDefaultValue();
             }
-            addField(new InstanceField(this, field, fieldValue));
+            initializeField(field, fieldValue);
         }
     }
 
-    public List<IndexEntryPO> getUniqueKeys(long tenantId) {
-        List<Index> uniqueConstraints = klass.getConstraints(Index.class);
+    public List<IndexEntryPO> getIndexEntries(long tenantId) {
         return NncUtils.map(
-                uniqueConstraints,
-                c -> c.getKey(tenantId,this)
+                klass.getConstraints(Index.class),
+                c -> c.createIndexEntry(tenantId,this)
+        );
+    }
+
+    public List<IndexKeyRT> getIndexKeys() {
+        return NncUtils.map(
+                klass.getConstraints(Index.class),
+                c -> c.createIndexKey(this)
         );
     }
 
@@ -82,15 +88,15 @@ public class ClassInstance extends Instance {
         return titleField != null ? field(titleField).getDisplayValue() : getId() + "";
     }
 
-    public Instance getResolved(List<Long> fieldPath) {
-        long fieldId = fieldPath.get(0);
-        InstanceField field = field(fieldId);
+    public Instance getResolved(List<Field> fieldPath) {
+        Field field = fieldPath.get(0);
+        InstanceField instanceField = field(field);
         if(fieldPath.size() > 1) {
-            List<Long> subFieldPath = fieldPath.subList(1, fieldPath.size());
-            return NncUtils.get((ClassInstance) field.getValue(), inst -> inst.getResolved(subFieldPath));
+            List<Field> subFieldPath = fieldPath.subList(1, fieldPath.size());
+            return NncUtils.get((ClassInstance) instanceField.getValue(), inst -> inst.getResolved(subFieldPath));
         }
         else {
-            return field.getValue();
+            return instanceField.getValue();
         }
     }
 
@@ -185,6 +191,16 @@ public class ClassInstance extends Instance {
         field(field).setValue(value);
     }
 
+    public boolean isFieldInitialized(Field field) {
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
+        return fields.get(InstanceField::getField, field) != null;
+    }
+
+    public void initializeField(Field field, Instance value) {
+        NncUtils.requireFalse(isFieldInitialized(field));
+        addField(new InstanceField(this, field, value));
+    }
+
     public StringInstance getString(long fieldId) {
         return (StringInstance) get(field(fieldId).getField());
     }
@@ -196,19 +212,6 @@ public class ClassInstance extends Instance {
     @SuppressWarnings("unused")
     public StringInstance getString(String fieldName) {
         return (StringInstance) field(fieldName).getValue();
-    }
-
-    public IntInstance getInt(Field field) {
-        return (IntInstance) field(field).getValue();
-    }
-
-    public IntInstance getInt(long fieldId) {
-        return (IntInstance) get(fieldId);
-    }
-
-    @SuppressWarnings("unused")
-    public IntInstance getInt(String fieldName) {
-        return (IntInstance) get(fieldName);
     }
 
     public LongInstance getLong(Field field) {
@@ -226,6 +229,10 @@ public class ClassInstance extends Instance {
 
     public DoubleInstance getDouble(long fieldId) {
         return (DoubleInstance) get(fieldId);
+    }
+
+    public DoubleInstance getDouble(Field field) {
+        return (DoubleInstance) get(field);
     }
 
     public Instance get(Field field) {
