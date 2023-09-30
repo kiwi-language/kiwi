@@ -80,18 +80,11 @@ public class EnumEditContext {
     }
 
     private void addEnumConstant(String name, ClassInstance instance) {
-        new Field(
-                name,
-                null,
-                type,
-                type, Access.GLOBAL,
-                false,
-                false,
-                InstanceUtils.nullInstance(),
-                true,
-                true,
-                instance
-        );
+        FieldBuilder.newBuilder(name, null, type, type)
+                .isChild(true)
+                .isStatic(true)
+                .staticValue(instance)
+                .build();
     }
 
     private EnumConstantDTO convertToEnumConstant(ChoiceOptionDTO choiceOptionDTO, int ordinal) {

@@ -74,8 +74,8 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         field.setValue(opAndValue.value());
     }
 
-    public void setObjectId(Expression expression) {
-        this.objectId = new ExpressionValue(expression);
+    public void setObjectId(Value objectId) {
+        this.objectId = objectId;
     }
 
 

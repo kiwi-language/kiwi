@@ -3,14 +3,15 @@ package tech.metavm.flow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.autograph.FlowFactory;
-import tech.metavm.autograph.ParamInfo;
+import tech.metavm.autograph.FlowBuilder;
+import tech.metavm.autograph.Parameter;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.instance.NullInstance;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.*;
@@ -18,14 +19,14 @@ import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
+
+import static tech.metavm.autograph.FlowBuilder.getFieldTmpIds;
 
 @Component
 public class FlowManager {
@@ -47,20 +48,20 @@ public class FlowManager {
         if (flow == null) {
             return null;
         }
-        return flow.toDTO();
+        return flow.toDTO(true);
     }
 
     public Flow saveDeclaration(FlowDTO flowDTO, ClassType declaringType, IEntityContext context) {
         return save(flowDTO, declaringType, true, context);
     }
 
-    public Flow save(FlowDTO flowDTO, ClassType declaringType, boolean declarationOnly, IEntityContext context) {
-        if (flowDTO.id() == null) {
-            return create(flowDTO, declaringType, declarationOnly, context);
-        } else {
-            return update(flowDTO, context);
-        }
-    }
+//    public Flow save(FlowDTO flowDTO, ClassType declaringType, boolean declarationOnly, IEntityContext context) {
+//        if (flowDTO.id() == null) {
+//            return create(flowDTO, declaringType, declarationOnly, context);
+//        } else {
+//            return update(flowDTO, context);
+//        }
+//    }
 
     @Transactional
     public List<NodeDTO> createBranchNode(NodeDTO nodeDTO) {
@@ -80,42 +81,44 @@ public class FlowManager {
     @Transactional
     public long create(FlowDTO flowDTO) {
         IEntityContext context = newContext();
-        var flow = create(flowDTO, context.getClassType(flowDTO.declaringTypeRef()), false, context);
+        var flow = save(flowDTO, context.getClassType(flowDTO.declaringTypeRef()), false, context);
         context.finish();
         return flow.getIdRequired();
     }
 
     public Flow create(FlowDTO flowDTO, ClassType declaringClass, IEntityContext context) {
-        return create(flowDTO, declaringClass, false, context);
+        return save(flowDTO, declaringClass, false, context);
     }
 
-    public Flow create(FlowDTO flowDTO, ClassType declaringClass, boolean declarationOnly, IEntityContext context) {
+    public Flow save(FlowDTO flowDTO, ClassType declaringClass, boolean declarationOnly, IEntityContext context) {
         Flow overriden = flowDTO.overridenRef() != null ? context.getFlow(flowDTO.overridenRef()) : null;
-        List<ParamInfo> params = new ArrayList<>();
-        if(overriden == null) {
-            TypeDTO inputTypeDTO = flowDTO.inputType();
-            if(inputTypeDTO != null) {
-                var param = (ClassParamDTO) inputTypeDTO.param();
-                for (FieldDTO field : param.fields()) {
-                    params.add(
-                            new ParamInfo(field.name(), field.code(), context.getType(field.typeRef()))
-                    );
-                }
+        Type outputType = context.getType(flowDTO.outputTypeRef());
+        Flow flow = context.getFlow(flowDTO.getRef());
+        if (flow == null) {
+            flow = FlowBuilder
+                    .newBuilder(context.getClassType(flowDTO.declaringTypeRef()), flowDTO.name(), flowDTO.code())
+                    .flowDTO(flowDTO)
+                    .tmpId(flowDTO.tmpId()).build();
+            context.bind(flow);
+        }
+        flow.setConstructor(flowDTO.isConstructor());
+        flow.setAbstract(flowDTO.isAbstract());
+        flow.setNative(flowDTO.isNative());
+        flow.setOverridden(overriden);
+        flow.setTypeArguments(NncUtils.map(flowDTO.typeArgumentRefs(), context::getType));
+        flow.setTypeParameters(NncUtils.map(flowDTO.typeParameters(),
+                typeParam -> context.getTypeVariable(typeParam.getRef())));
+        flow.setOutputType(outputType);
+        if (overriden == null && flowDTO.inputType() != null) {
+            for (FieldDTO fieldDTO : flowDTO.inputType().getClassParam().fields()) {
+                TypeUtil.createFieldAndBind(flow.getInputType(), fieldDTO, context);
             }
         }
-        Type outputType = context.getType(flowDTO.outputTypeRef());
-        Flow flow = FlowFactory.create(
-                declaringClass, StandardTypes.getNullType(),
-                flowDTO.name(), flowDTO.code(),
-                flowDTO.isConstructor(),
-                flowDTO.isAbstract(),
-                flowDTO.isNative(),
-                overriden,
-                flowDTO,
-                outputType,
-                params
-        );
-        context.bind(flow);
+        if (flowDTO.templateInstances() != null) {
+            for (FlowDTO templateInstance : flowDTO.templateInstances()) {
+                save(templateInstance, declaringClass, declarationOnly, context);
+            }
+        }
         if (!declarationOnly && !flow.isNative() && !flow.isAbstract()) {
             if (flowDTO.rootScope() == null) {
                 NodeRT<?> selfNode = createSelfNode(flow);
@@ -155,14 +158,19 @@ public class FlowManager {
         }
     }
 
-    public void saveContent(FlowDTO flowDTO, Flow flow, ClassType ignored, IEntityContext context) {
-        if(flow.isNative() || flow.isAbstract()) {
+    public void saveContent(FlowDTO flowDTO, Flow flow, ClassType declaringType, IEntityContext context) {
+        if (flow.isNative() || flow.isAbstract()) {
             return;
         }
         if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {
             initNodes(flow);
         } else {
             saveNodes(flowDTO, flow, context);
+        }
+        if (flowDTO.templateInstances() != null) {
+            for (FlowDTO templateInstance : flowDTO.templateInstances()) {
+                saveContent(templateInstance, context.getFlow(templateInstance.getRef()), declaringType, context);
+            }
         }
     }
 
@@ -205,7 +213,7 @@ public class FlowManager {
     }
 
     public Flow update(FlowDTO flowDTO, IEntityContext context) {
-        Flow flow = context.getEntity(Flow.class, flowDTO.id());
+        Flow flow = context.getFlow(flowDTO.getRef());
         if (flow == null) {
             throw BusinessException.flowNotFound(flowDTO.id());
         }
@@ -363,7 +371,7 @@ public class FlowManager {
     }
 
     private <T extends FieldReferringDTO<T>> List<T> initializeFieldRefs(List<T> fields) {
-        if(NncUtils.isEmpty(fields)) {
+        if (NncUtils.isEmpty(fields)) {
             return List.of();
         }
         return NncUtils.map(
@@ -398,6 +406,7 @@ public class FlowManager {
                         null,
                         null,
                         List.of(),
+                        List.of(),
                         ClassSource.RUNTIME.code(),
                         fields,
                         List.of(),
@@ -405,6 +414,9 @@ public class FlowManager {
                         List.of(),
                         null,
                         null,
+                        null,
+                        List.of(),
+                        List.of(),
                         null,
                         List.of(),
                         List.of()
@@ -470,7 +482,7 @@ public class FlowManager {
         }
         TypeDTO type = createNodeTypeDTO("ForeachOutput", currentType, fields);
         ScopeDTO loopScope;
-        if(param.getLoopScope() == null) {
+        if (param.getLoopScope() == null) {
             var elementType = ((ArrayType) context.getType(arrayValue.getType().getRef())).getElementType();
             NodeDTO elementNode = new NodeDTO(
                     NncUtils.random(),
@@ -493,8 +505,7 @@ public class FlowManager {
                     null
             );
             loopScope = new ScopeDTO(NncUtils.random(), null, List.of(elementNode));
-        }
-        else {
+        } else {
             loopScope = param.getLoopScope();
         }
 
@@ -619,7 +630,6 @@ public class FlowManager {
         }
         return null;
     }
-
 
     private ClassType saveInputType(@SuppressWarnings("SameParameterValue") @Nullable ClassType type, List<FieldDTO> fieldDTOs, String typeName, IEntityContext context) {
         TypeDTO typeDTO = TypeDTO.createClass(

@@ -8,6 +8,7 @@ import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.NncUtils;
 
 @EntityType("表达式值")
 public class ExpressionValue extends Value {
@@ -21,7 +22,7 @@ public class ExpressionValue extends Value {
 
     public ExpressionValue(Expression expression) {
         super(ValueKind.EXPRESSION);
-        this.expression = expression;
+        this.expression = NncUtils.requireNonNull(expression);
     }
 
     @Override

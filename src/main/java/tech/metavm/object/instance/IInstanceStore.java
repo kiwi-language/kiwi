@@ -23,7 +23,7 @@ public interface IInstanceStore {
 
     List<ReferencePO> getAllStrongReferences(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds);
 
-    List<Long> selectByKey(IndexKeyPO key, IInstanceContext context);
+    List<Long> selectByKey(List<Long> tenantIds, IndexKeyPO key, IInstanceContext context);
 
     List<Long> query(InstanceIndexQuery query, IInstanceContext context);
 

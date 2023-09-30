@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.autograph.Parameter;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
@@ -9,6 +10,8 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
+
+import java.util.List;
 
 @EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
@@ -44,6 +47,13 @@ public class InputNode extends NodeRT<InputParamDTO> {
                         getType().getFields(),
                         field -> toInputFieldDTO(field.toDTO())
                 )
+        );
+    }
+
+    public List<Parameter> getParameters() {
+        return NncUtils.map(
+                getType().getFields(),
+                field -> new Parameter(field.getName(), field.getCode(), field.getType())
         );
     }
 

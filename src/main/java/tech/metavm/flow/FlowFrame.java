@@ -28,6 +28,7 @@ public class FlowFrame implements EvaluationContext {
     private final IInstanceContext context;
     private final FlowStack stack;
     private final Map<BranchNode, Branch> selectedBranches = new HashMap<>();
+    private final LinkedList<Branch> branches = new LinkedList<>();
 
     private State state = State.NORMAL;
     private String exceptionMessage;
@@ -143,7 +144,7 @@ public class FlowFrame implements EvaluationContext {
         } else {
             if (!outputType.isInstance(result)) {
                 throw new InternalException("Node " + node + " returned a result '" + result
-                        + "' that does not match the output category: " + outputType);
+                        + "' that is not an instance of the output type: " + outputType);
             }
         }
     }
@@ -202,6 +203,10 @@ public class FlowFrame implements EvaluationContext {
 
     public Branch getSelectedBranch(BranchNode branchNode) {
         return selectedBranches.get(branchNode);
+    }
+
+    public Branch currentBranch() {
+        return NncUtils.requireNonNull(branches.peek());
     }
 
     public void setSelectedBranch(BranchNode branchNode, Branch branch) {

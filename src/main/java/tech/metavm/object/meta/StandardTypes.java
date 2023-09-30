@@ -3,20 +3,21 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.util.Null;
-import tech.metavm.util.Password;
-import tech.metavm.util.Table;
+import tech.metavm.util.*;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 public class StandardTypes {
 
-    private static final Function<Class<?>, Type> getType = ModelDefRegistry::getType;
+    private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
 
-    public static Type getType(Class<?> javaType) {
+    public static Type getType(java.lang.reflect.Type javaType) {
         return getType.apply(javaType);
+    }
+
+    public static ClassType getClassType(java.lang.reflect.Type javaType) {
+        return (ClassType) getType.apply(javaType);
     }
 
     public static ObjectType getObjectType() {
@@ -25,6 +26,13 @@ public class StandardTypes {
 
     public static ClassType getEnumType() {
         return (ClassType) ModelDefRegistry.getType(Enum.class);
+    }
+
+    public static ClassType getParameterizedEnumType() {
+        var pType = ParameterizedTypeImpl.create(
+                Enum.class, Enum.class.getTypeParameters()[0]
+        );
+        return (ClassType) getType(pType);
     }
 
     public static ClassType getEntityType() {
@@ -55,6 +63,10 @@ public class StandardTypes {
         return (PrimitiveType) getType(Null.class);
     }
 
+    public static PrimitiveType getVoidType() {
+        return (PrimitiveType) getType(Void.class);
+    }
+
     public static PrimitiveType getPasswordType() {
         return (PrimitiveType) getType(Password.class);
     }
@@ -67,19 +79,42 @@ public class StandardTypes {
         return (ArrayType) getType(Table.class);
     }
 
-    public static Field getEnumNameField() {
-        return ModelDefRegistry.getField(Enum.class, "name");
+    public static Field getEnumNameField(ClassType classType) {
+        return classType.getFieldByCodeRequired("name");
     }
 
-    public static Field getEnumOrdinalField() {
-        return ModelDefRegistry.getField(Enum.class, "ordinal");
+    public static Field getEnumOrdinalField(ClassType classType) {
+        return classType.getFieldByCodeRequired("ordinal");
     }
 
+    public static ClassType getListType() {
+        return getClassType(List.class);
+    }
+
+    public static ClassType getSetType() {
+        return getClassType(Set.class);
+    }
+
+    public static ClassType getMapType() {
+        return getClassType(Map.class);
+    }
+
+    public static ClassType getCollectionType() {
+        return getClassType(Collection.class);
+    }
+
+    public static ClassType getIteratorType() {
+        return getClassType(Iterator.class);
+    }
+
+    public static ClassType getIteratorImplType() {
+        return getClassType(IteratorImpl.class);
+    }
 
     public static List<PrimitiveType> getPrimitiveTypes() {
         return List.of(
-            getLongType(), getStringType(), getTimeType(),
-            getDoubleType(), getPasswordType(), getBoolType(), getBoolType()
+                getLongType(), getStringType(), getTimeType(),
+                getDoubleType(), getPasswordType(), getBoolType(), getBoolType()
         );
     }
 

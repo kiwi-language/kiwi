@@ -10,15 +10,60 @@ public class ExpressionTokenizer {
     private final String expression;
     private Token next;
     private int position;
+    private final RawToken rawTokenHead = new RawToken(null);
+    private final Map<Token, RawToken> rawTokenMap = new IdentityHashMap<>();
+    private RawToken nextRawToken = rawTokenHead;
+
+    private static class RawToken {
+        Token token;
+        RawToken next;
+        RawToken prev;
+        boolean marked;
+
+        public RawToken(Token token) {
+            this.token = token;
+            next = prev = this;
+        }
+
+        void insertAfter(RawToken node) {
+            if (next != null) {
+                node.next = next;
+                next.prev = node;
+            }
+            next = node;
+            node.prev = this;
+        }
+
+        void insertBefore(RawToken node) {
+            if (prev != null) {
+                node.prev = prev;
+                prev.next = node;
+            }
+            prev = node;
+            node.next = this;
+        }
+
+        void unlink() {
+            if (prev != null) {
+                prev.next = next;
+            }
+            if (next != null) {
+                next.prev = prev;
+            }
+            next = prev = this;
+        }
+    }
+
+
 //    private int numUnpairedLeftParentheses = 0;
 //    private ParsingContext parsingContext;
 
     private static final Set<Character> SPACES = Set.of(
-        ' ', '\t', '\r'
+            ' ', '\t', '\r'
     );
 
     private static final Set<Character> OPERATORS = Set.of(
-        '.', '=', '!', '>', '<', ')', '(', '-', '+', '*', '/', '`', '%', ',', '[', ']'
+            '.', '=', '!', '>', '<', ')', '(', '-', '+', '*', '/', '`', '%', ',', '[', ']'
     );
 
     private static final Set<Character> DIGITS = Set.of(
@@ -76,7 +121,7 @@ public class ExpressionTokenizer {
         Tree tree = ROOT;
         for (String split : splits) {
             split = split.trim();
-            if(split.length() == 0) {
+            if (split.length() == 0) {
                 continue;
             }
             KEYWORDS.add(split);
@@ -104,7 +149,7 @@ public class ExpressionTokenizer {
     }
 
     public Token peekToken() {
-        if(next == null) {
+        if (next == null) {
             throw new InternalException("EOF");
         }
         return next;
@@ -131,16 +176,45 @@ public class ExpressionTokenizer {
 
     public Token nextToken(TokenType expectedTokenType, Operator expectedOperator, String keyword) {
         Token token = nextToken();
-        if(expectedTokenType != null && token.type() != expectedTokenType) {
+        if (expectedTokenType != null && token.type() != expectedTokenType) {
             throw incorrectTokenType(expectedTokenType, token);
         }
-        if(expectedOperator != null && token.getOperator() != expectedOperator) {
+        if (expectedOperator != null && token.getOperator() != expectedOperator) {
             throw incorrectOperator(expectedOperator, token);
         }
-        if(keyword != null && !token.rawValue().equalsIgnoreCase(keyword)) {
+        if (keyword != null && !token.rawValue().equalsIgnoreCase(keyword)) {
             throw incorrectKeyword(keyword, token);
         }
         return token;
+    }
+
+    private void mark(Token token) {
+        var node = rawTokenMap.get(token);
+        node.marked = true;
+    }
+
+    private void reset(Token token) {
+        nextRawToken = rawTokenMap.get(token);
+        nextRawToken.marked = false;
+    }
+
+    private void unmark(Token token) {
+        var node = rawTokenMap.get(token);
+        node.marked = false;
+        clearObsoleteRawTokens();
+    }
+
+    private void clearObsoleteRawTokens() {
+        var node = rawTokenHead.next;
+        while (node != rawTokenHead && node != nextRawToken) {
+            if (node.marked) {
+                break;
+            }
+            RawToken tmp = node;
+            node = node.next;
+            tmp.unlink();
+            rawTokenMap.remove(tmp.token);
+        }
     }
 
     private QueryStringException incorrectTokenType(TokenType expectedTokenType, Token actualToken) {
@@ -168,42 +242,83 @@ public class ExpressionTokenizer {
         return next != null;
     }
 
-    private Token forward() {
-        Token token = forwardOne();
-        if(token == null) {
+    private Token forwardVariable() {
+        var token = nextRawToken();
+        if (token == null) {
             return null;
         }
-        if(token.isVariable()) {
-            skipSpaces();
-            /*if(isDot()) {
-                List<Token> tokens = new ArrayList<>();
-                tokens.add(token);
-                while (isDot()) {
-                    position++;
-                    token = forwardOne();
-                    if (token == null || !token.isVariable()) {
-                        throw new QueryStringException("Variable expected, but got " + token);
-                    }
-                    tokens.add(token);
-                    skipSpaces();
-                }
-                String fieldPath = NncUtils.join(tokens, Token::getName, ".");
-                return new Token(TokenType.VARIABLE, fieldPath, fieldPath);
-            }
-            else */
-            if(isOpenParenthesis()) {
-                return new Token(TokenType.FUNCTION, token.rawValue(), Function.getByNameRequired(token.getName()));
-            }
-            else {
-                return token;
+        if (!token.isVariable()) {
+            return null;
+        }
+        if (isLt()) {
+            nextRawToken();
+            var argsStr = forwardVariableArgs();
+            if (argsStr == null) {
+                return null;
+            } else {
+                token = createToken(TokenType.VARIABLE, token.getName() + argsStr);
             }
         }
-        else if(ROOT.containsChild(token.rawValue())) {
+        return token;
+    }
+
+    private String forwardVariableArgs() {
+        List<Token> args = new ArrayList<>();
+        boolean resolved = true;
+        for (; ; ) {
+            var next = forwardVariable();
+            if (next == null) {
+                resolved = false;
+                break;
+            }
+            args.add(next);
+            if (isComma()) {
+                nextRawToken();
+            } else {
+                if (isGt()) {
+                    nextRawToken();
+                } else {
+                    resolved = false;
+                }
+                break;
+            }
+        }
+        if (resolved) {
+            return "<" + NncUtils.join(args, Token::getName, ",") + ">";
+        } else {
+            return null;
+        }
+    }
+
+    private Token forward() {
+        Token token = nextRawToken();
+        if (token == null) {
+            return null;
+        }
+        if (token.isVariable()) {
+            skipSpaces();
+            if (isLt()) {
+                var start = nextRawToken();
+                mark(start);
+                var argsStr = forwardVariableArgs();
+                if (argsStr != null) {
+                    unmark(start);
+                    token = createToken(TokenType.VARIABLE, token.getName() + argsStr);
+                } else {
+                    reset(start);
+                }
+            }
+            if (isOpenParenthesis()) {
+                return new Token(TokenType.FUNCTION, token.rawValue(), Function.getByNameRequired(token.getName()));
+            } else {
+                return token;
+            }
+        } else if (ROOT.containsChild(token.rawValue())) {
             List<Token> tokens = new ArrayList<>();
             tokens.add(token);
             Tree tree = ROOT.getChild(token.rawValue());
             while (!tree.isLeaf()) {
-                token = forwardOne();
+                token = nextRawToken();
                 if (token == null || !tree.containsChild(token.rawValue())) {
                     throw new QueryStringException("Incomplete token sequence: " + tokenSequenceValue(tokens));
                 }
@@ -211,22 +326,20 @@ public class ExpressionTokenizer {
                 tokens.add(token);
             }
             String tokenSeq = tokenSequenceValue(tokens);
-            if(Operator.isOperator(tokenSeq)) {
+            if (Operator.isOperator(tokenSeq)) {
                 return new Token(
                         TokenType.OPERATOR,
                         tokenSeq,
                         Operator.getByOpRequired(tokenSeq)
                 );
-            }
-            else {
+            } else {
                 return new Token(
                         TokenType.KEYWORD,
                         tokenSeq,
                         null
                 );
             }
-        }
-        else {
+        } else {
             return token;
         }
     }
@@ -239,16 +352,30 @@ public class ExpressionTokenizer {
         return NncUtils.join(tokens, Token::rawValue, " ");
     }
 
-    private Token forwardOne() {
-        skipSpaces();
+    private Token nextRawToken() {
+        if (nextRawToken == rawTokenHead) {
+            var nextToken = readRawToken();
+            if (nextToken == null) {
+                return null;
+            }
+            nextRawToken = new RawToken(nextToken);
+            rawTokenMap.put(nextToken, nextRawToken);
+            rawTokenHead.insertBefore(nextRawToken);
+        }
+        clearObsoleteRawTokens();
+        var token = nextRawToken.token;
+        nextRawToken = nextRawToken.next;
+        return token;
+    }
 
+    private Token readRawToken() {
+        skipSpaces();
         int start = position;
-        if(isEof()) {
+        if (isEof()) {
             return null;
         }
-
         TokenType tokenType;
-        if(isOperator()) {
+        if (isOperator()) {
 //            if(isNegation()) {
 //                position++;
 //                skipSpaces();
@@ -259,64 +386,51 @@ public class ExpressionTokenizer {
 //                    tokenType = TokenType.OPERATOR;
 //                }
 //            }
-            if(isOpenParenthesis()) {
+            if (isOpenParenthesis()) {
                 position++;
                 tokenType = TokenType.OPEN_PARENTHESIS;
 //                numUnpairedLeftParentheses++;
-            }
-            else if(isClosingParenthesis()) {
+            } else if (isClosingParenthesis()) {
                 position++;
                 tokenType = TokenType.CLOSING_PARENTHESIS;
 //                numUnpairedLeftParentheses--;
-            }
-            else if(isOpenBracket()) {
+            } else if (isOpenBracket()) {
                 position++;
                 tokenType = TokenType.OPEN_BRACKET;
-            }
-            else if(isClosingBracket()) {
+            } else if (isClosingBracket()) {
                 position++;
                 tokenType = TokenType.CLOSING_BRACKET;
-            }
-            else if(isCombinableOperator()) {
+            } else if (isCombinableOperator()) {
                 position++;
-                if(isOperatorCombo()) {
-                    position ++;
+                if (isOperatorCombo()) {
+                    position++;
                 }
                 tokenType = TokenType.OPERATOR;
-            }
-            else {
+            } else {
                 position++;
                 tokenType = TokenType.OPERATOR;
             }
-        }
-        else if(isSingleQuotation()) {
+        } else if (isSingleQuotation()) {
             forwardSingleQuoted();
             tokenType = TokenType.SINGLE_QUOTED_STRING;
-        }
-        else if(isDoubleQuotation()) {
+        } else if (isDoubleQuotation()) {
             forwardDoubleQuoted();
             tokenType = TokenType.DOUBLE_QUOTED_STRING;
-        }
-        else if(isDigit()) {
+        } else if (isDigit()) {
             tokenType = forwardNumber();
-        }
-        else {
+        } else {
             while (!isEof() && !isSpace() && !isOperator()) {
                 position++;
             }
-            if(isNull(start)) {
+            if (isNull(start)) {
                 tokenType = TokenType.NULL;
-            }
-            else if(isBoolean(start)) {
+            } else if (isBoolean(start)) {
                 tokenType = TokenType.BOOLEAN;
-            }
-            else if(isOperator(start)) {
+            } else if (isOperator(start)) {
                 tokenType = TokenType.OPERATOR;
-            }
-            else if(isKeyword(start)) {
+            } else if (isKeyword(start)) {
                 tokenType = TokenType.KEYWORD;
-            }
-            else {
+            } else {
                 tokenType = TokenType.VARIABLE;
             }
         }
@@ -324,16 +438,16 @@ public class ExpressionTokenizer {
     }
 
     private Token createToken(TokenType type, String rawValue) {
-        Object value =  switch (type) {
+        Object value = switch (type) {
             case INTEGER -> Long.parseLong(rawValue);
             case FLOAT -> Double.parseDouble(rawValue);
             case BOOLEAN -> Boolean.parseBoolean(rawValue);
             case DOUBLE_QUOTED_STRING -> unquoteDoubleQuoted(rawValue);
             case SINGLE_QUOTED_STRING -> unquoteSingleQuoted(rawValue);
-            case OPERATOR ->  Operator.getByOpRequired(rawValue);
+            case OPERATOR -> Operator.getByOpRequired(rawValue);
             case FUNCTION -> Function.getByNameRequired(rawValue);
             case VARIABLE -> rawValue;
-            case NULL, KEYWORD, OPEN_PARENTHESIS, CLOSING_PARENTHESIS, OPEN_BRACKET, CLOSING_BRACKET ->  null;
+            case NULL, KEYWORD, OPEN_PARENTHESIS, CLOSING_PARENTHESIS, OPEN_BRACKET, CLOSING_BRACKET -> null;
         };
         return new Token(type, rawValue, value);
     }
@@ -344,12 +458,12 @@ public class ExpressionTokenizer {
 
     private String unquoteSingleQuoted(String str) {
         StringBuilder buf = new StringBuilder();
-        for(int i = 1; i < str.length() - 1; i++) {
+        for (int i = 1; i < str.length() - 1; i++) {
             char c = str.charAt(i);
             buf.append(c);
-            if(c == '\'') {
+            if (c == '\'') {
                 i++;
-                if(i >= str.length()) {
+                if (i >= str.length()) {
                     throw new QueryStringException("Malformed single quoted string: " + str);
                 }
             }
@@ -365,18 +479,17 @@ public class ExpressionTokenizer {
 
     private TokenType forwardNumber() {
         forwardInteger();
-        if(isDot()) {
+        if (isDot()) {
             position++;
             forwardInteger();
             return TokenType.FLOAT;
-        }
-        else {
+        } else {
             return TokenType.INTEGER;
         }
     }
 
     private void forwardInteger() {
-        while(isDigit()) {
+        while (isDigit()) {
             position++;
         }
     }
@@ -388,12 +501,11 @@ public class ExpressionTokenizer {
             if (isEof()) {
                 throw new QueryStringException("EOF while parsing string");
             }
-            if(isSingleQuotation()) {
+            if (isSingleQuotation()) {
                 position++;
-                if(isSingleQuotation()) {
+                if (isSingleQuotation()) {
                     position++;
-                }
-                else {
+                } else {
                     ended = true;
                 }
             }
@@ -405,14 +517,15 @@ public class ExpressionTokenizer {
         while (!isDoubleQuotation()) {
             position++;
         }
-        if(isEof()) {
+        if (isEof()) {
             throw new QueryStringException("EOF while parsing string");
         }
         position++;
     }
 
     public char current() {
-        return expression.charAt(position);
+        return nextRawToken != rawTokenHead ? nextRawToken.token.rawValue().charAt(0)
+                : expression.charAt(position);
     }
 
     public boolean isEof(int pos) {
@@ -420,11 +533,11 @@ public class ExpressionTokenizer {
     }
 
     public boolean isEof() {
-        return isEof(position);
+        return nextRawToken == rawTokenHead && isEof(position);
     }
 
     private boolean isNegation() {
-        return !isEof() && expression.charAt(position) == '-';
+        return !isEof() && current() == '-';
     }
 
     private boolean isOperator() {
@@ -437,6 +550,18 @@ public class ExpressionTokenizer {
 
     private boolean isOpenParenthesis() {
         return !isEof() && current() == '(';
+    }
+
+    private boolean isLt() {
+        return !isEof() && current() == '<';
+    }
+
+    private boolean isGt() {
+        return !isEof() && current() == '>';
+    }
+
+    private boolean isComma() {
+        return !isEof() && current() == ',';
     }
 
     private boolean isClosingParenthesis() {
@@ -456,7 +581,7 @@ public class ExpressionTokenizer {
     }
 
     private boolean isOperatorCombo() {
-        if(position > 0 && isEof()) {
+        if (position > 0 && isEof()) {
             return false;
         }
         return OPERATOR_COMBOS.contains(expression.substring(position - 1, position + 1));
@@ -466,7 +591,7 @@ public class ExpressionTokenizer {
         return !isEof() && DIGITS.contains(current());
     }
 
-    private  boolean isSpace() {
+    private boolean isSpace() {
         return !isEof() && SPACES.contains(current());
     }
 

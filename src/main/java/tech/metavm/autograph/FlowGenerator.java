@@ -6,8 +6,8 @@ import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.flow.*;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -23,11 +23,12 @@ public class FlowGenerator {
     private final ExpressionResolver expressionResolver;
     private final Map<String, Integer> name2count = new HashMap<>();
     private final TypeReducer typeReducer = new TypeReducer(this::getExpressionType);
+    private Expression yieldValue;
 
-    public FlowGenerator(Flow flow, TypeResolver typeResolver, IEntityContext entityContext) {
+    public FlowGenerator(Generator visitor, Flow flow, TypeResolver typeResolver, IEntityContext entityContext) {
         this.flow = flow;
         this.typeResolver = typeResolver;
-        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver, entityContext);
+        expressionResolver = new ExpressionResolver(visitor, this, variableTable, typeResolver, entityContext);
     }
 
     Flow getFlow() {
@@ -62,6 +63,14 @@ public class FlowGenerator {
                 new ExpressionValue(expression));
     }
 
+    NewArrayNode createNewArray(ArrayType type, List<Expression> elements) {
+        return new NewArrayNode(
+                null, nextName("NewArray"),
+                type, NncUtils.map(elements, ExpressionValue::new),
+                scope().getLastNode(), scope()
+        );
+    }
+
     void enterCondSection(PsiElement sectionId) {
         variableTable.enterCondSection(sectionId);
     }
@@ -71,6 +80,7 @@ public class FlowGenerator {
     }
 
     Map<Branch, Map<String, Expression>> exitCondSection(PsiElement sectionId, List<String> outputVars) {
+        yieldValue = null;
         return variableTable.exitCondSection(sectionId, outputVars);
     }
 
@@ -84,7 +94,7 @@ public class FlowGenerator {
 
     void enterScope(ScopeRT scope, @Nullable Expression condition) {
         Map<Expression, Type> exprTypes = condition != null ? typeReducer.reduceType(condition) : Map.of();
-        if(!scopes.isEmpty()) {
+        if (!scopes.isEmpty()) {
             exprTypes = typeReducer.mergeResults(exprTypes, scopes.peek().expressionTypes());
         }
         scopes.push(new ScopeInfo(scope, exprTypes));
@@ -94,11 +104,14 @@ public class FlowGenerator {
         scopes.pop();
     }
 
+    Expression getYield() {
+        return yieldValue;
+    }
+
     Type getExpressionType(Expression expression) {
-        if(scopes.isEmpty()) {
+        if (scopes.isEmpty()) {
             return expression.getType();
-        }
-        else {
+        } else {
             return scopes.peek().expressionTypes.getOrDefault(expression, expression.getType());
         }
     }
@@ -113,7 +126,7 @@ public class FlowGenerator {
 
     UpdateObjectNode createUpdate(Expression self, Map<Field, Expression> fields) {
         var node = createUpdateObject();
-        node.setObjectId(self);
+        node.setObjectId(new ExpressionValue(self));
         fields.forEach((field, value) -> node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(value)));
         return node;
     }
@@ -156,18 +169,7 @@ public class FlowGenerator {
     }
 
     public Field newTemproryField(ClassType klass, String name, Type type) {
-        return new Field(
-                name,
-                name,
-                klass,
-                type, Access.GLOBAL,
-                false,
-                false,
-                InstanceUtils.nullInstance(),
-                false,
-                false,
-                InstanceUtils.nullInstance()
-        );
+        return FieldBuilder.newBuilder(name, name, klass, type).build();
     }
 
     public ClassType newTemporaryType(String namePrefix) {
@@ -176,11 +178,6 @@ public class FlowGenerator {
                 .anonymous(true)
                 .ephemeral(true)
                 .build();
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    SubFlowNode createSubFlow(Expression self, Flow flow, Expression...arguments) {
-        return createSubFlow(self, flow, List.of(arguments));
     }
 
     SubFlowNode createSubFlow(Expression self, Flow flow, List<Expression> arguments) {
@@ -201,7 +198,8 @@ public class FlowGenerator {
                 arguments,
                 (f, arg) -> new FieldParam(f, new ExpressionValue(arg))
         );
-        return new NewNode(null, nextName(flow.getName()), flow, fieldParams, scope().getLastNode(), scope());
+        return new NewNode(null, nextName(flow.getName()), flow, fieldParams,
+                scope().getLastNode(), scope());
     }
 
     ExpressionResolver getExpressionResolver() {
@@ -252,6 +250,10 @@ public class FlowGenerator {
                 scope(),
                 new ExpressionValue(condition)
         );
+    }
+
+    public void setYieldValue(Expression expression) {
+        yieldValue = NncUtils.requireNonNull(expression);
     }
 
     private record ScopeInfo(

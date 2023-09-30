@@ -4,8 +4,6 @@ import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.MergeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.ClassInstance;
@@ -28,6 +26,9 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
         node.setParam(nodeDTO.getParam(), context);
         return node;
     }
+
+    @ChildEntity("分支列表")
+    private final Table<Branch> branches = new Table<>(Branch.class);
 
     @ChildEntity("字段列表")
     private final Table<MergeNodeField> fields = new Table<>(MergeNodeField.class, true);
@@ -88,13 +89,13 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
         return (ClassType) super.getType();
     }
 
-    public BranchNode getBranchNode() {
-        return (BranchNode) NncUtils.requireNonNull(getPredecessor());
-    }
+//    public BranchNode getBranchNode() {
+//        return (BranchNode) NncUtils.requireNonNull(getPredecessor());
+//    }
 
     @Override
     public void execute(FlowFrame frame) {
-        Branch branch = frame.getSelectedBranch(getBranchNode());
+        Branch branch = frame.currentBranch();
         Map<Field, Instance> fieldValues = new HashMap<>();
         for (MergeNodeField field : fields) {
             fieldValues.put(
@@ -125,4 +126,11 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
         return !predecessors.isEmpty() ? predecessors : List.of(branchNode);
     }
 
+
+
+
+
+    public List<MergeNodeField> getFields() {
+        return Collections.unmodifiableList(fields);
+    }
 }

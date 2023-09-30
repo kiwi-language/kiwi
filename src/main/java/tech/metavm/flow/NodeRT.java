@@ -72,12 +72,10 @@ public abstract class NodeRT<P> extends Entity {
         return kind;
     }
 
-    @JsonIgnore
     public @Nullable NodeRT<?> getSuccessor() {
         return successor;
     }
 
-    @JsonIgnore
     public List<NodeRT<?>> getGlobalPredecessors() {
         if (predecessor != null) {
             return List.of(predecessor);
@@ -86,8 +84,7 @@ public abstract class NodeRT<P> extends Entity {
         return scope.getPredecessor() != null ? List.of(scope.getPredecessor()) : List.of();
     }
 
-    @JsonIgnore
-    public NodeRT<?> getGlobalSuccessor() {
+    public @Nullable NodeRT<?> getGlobalSuccessor() {
         if (successor != null) {
             return successor;
         }
@@ -95,7 +92,6 @@ public abstract class NodeRT<P> extends Entity {
         return scope.getSuccessor();
     }
 
-    @JsonIgnore
     public @Nullable NodeRT<?> getPredecessor() {
         return predecessor;
     }
@@ -140,7 +136,6 @@ public abstract class NodeRT<P> extends Entity {
         setParam(nodeDTO.getParam(), entityContext);
     }
 
-    @JsonIgnore
     public ParsingContext getParsingContext(IEntityContext entityContext) {
         return FlowParsingContext.create(this, entityContext.getInstanceContext());
     }
@@ -192,7 +187,6 @@ public abstract class NodeRT<P> extends Entity {
         );
     }
 
-    @JsonIgnore
     public ScopeRT getScope() {
         return scope;
     }
@@ -205,7 +199,6 @@ public abstract class NodeRT<P> extends Entity {
 
     protected abstract void setParam(P param, IEntityContext context);
 
-    @JsonIgnore
     public Type getType() {
         return outputType;
     }

@@ -1,41 +1,37 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.CollectionKind;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 public class ListNative extends NativeBase {
 
-    private final ClassInstance list;
+    private final ClassInstance instance;
     private final Field arrayField;
-    private final Type elementType;
     private ArrayInstance array;
 
-    public ListNative(ClassInstance list, IInstanceContext context) {
-        super(context);
-        this.list = list;
-        elementType = list.getType().getTypeArguments().get(0);
-        arrayField = NncUtils.requireNonNull(list.getType().getFieldByCode("array"));
-        if(list.isFieldInitialized(arrayField)) {
-            array = (ArrayInstance) list.get(arrayField);
+    public ListNative(ClassInstance instance) {
+        this.instance = instance;
+        arrayField = NncUtils.requireNonNull(instance.getType().getFieldByCode("array"));
+        if(instance.isFieldInitialized(arrayField)) {
+            array = (ArrayInstance) instance.get(arrayField);
         }
     }
 
-    public ClassInstance init(Instance elementAsChild) {
+    public Instance List(Instance elementAsChild) {
         array = new ArrayInstance((ArrayType) arrayField.getType(), getBool(elementAsChild));
-        list.initializeField(arrayField, array);
-        return list;
+        instance.initializeField(arrayField, array);
+        return instance;
     }
 
     public Instance iterator() {
-        var iteratorImplType = TypeUtil.getIteratorImplType(elementType, context.getEntityContext());
+        var iteratorImplType = (ClassType) instance.getType().getDependency(CollectionKind.ITERATOR_IMPL);
         var it = ClassInstance.allocate(iteratorImplType);
-        var itNative = (IteratorImplNative) NativeInvoker.getNativeObject(it, context);
-        itNative.init(list);
+        var itNative = (IteratorImplNative) NativeInvoker.getNativeObject(it);
+        itNative.IteratorImpl(instance);
         return it;
     }
 

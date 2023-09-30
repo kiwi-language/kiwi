@@ -17,7 +17,7 @@ public class TreeEvaluationContext implements EvaluationContext {
     @Override
     public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
         if(expression instanceof FieldExpression fieldExpression) {
-            return objectNode.getByPath(instance, Path.create(fieldExpression.getPathString()));
+            return objectNode.getByPath(instance, Path.create(fieldExpression.getField().getName()));
         }
         else {
             throw new RuntimeException("Unsupported expression");

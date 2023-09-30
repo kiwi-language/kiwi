@@ -4,7 +4,35 @@ import java.util.List;
 
 public class BreakFoo {
 
-    public long testForeach(List<AstProduct> products, List<DirectAstCoupon> coupons, int maxDiscountPerCoupon) {
+    public String testSwitch(Object value) {
+        String result;
+        switch (value) {
+            case String str -> {
+                if (!str.isEmpty()) {
+                    if (str.equals("noop")) {
+                        result = "empty";
+                        break;
+                    }
+                    if (str.equals("what")) {
+                        result = "?";
+                        break;
+                    }
+                }
+                result = str;
+            }
+            case Long l -> {
+                result = l + "L";
+            }
+            default -> result = value.toString();
+        }
+        return result;
+    }
+
+}
+
+
+/*
+  public long testForeach(List<AstProduct> products, List<DirectAstCoupon> coupons, int maxDiscountPerCoupon) {
         long totalDiscount = 0;
         out:
         for (AstProduct product : products) {
@@ -56,4 +84,4 @@ public class BreakFoo {
         return error ? -1 : totalDiscount;
     }
 
-}
+ */

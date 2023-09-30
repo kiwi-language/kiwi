@@ -9,6 +9,7 @@ import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.generic.GenericContext;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.*;
@@ -27,6 +28,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
     private final Map<Long, Entity> tmpId2Entity = new HashMap<>();
     private final IEntityContext parent;
+    private final GenericContext genericContext = new GenericContext(this);
 
     public BaseEntityContext(@Nullable IInstanceContext instanceContext, IEntityContext parent) {
         this.instanceContext = instanceContext;
@@ -115,7 +117,13 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
     }
 
-    protected void beforeFinish() {
+    @Override
+    public GenericContext getGenericContext() {
+        return genericContext;
+    }
+
+    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+        return genericContext.getParameterizedType(template, typeArguments);
     }
 
     @Override
@@ -153,6 +161,17 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
         addMapping(model, instance);
         return model;
+    }
+
+    @Override
+    public void afterContextIntIds() {
+        for (Object mode : instance2model.values()) {
+            if(mode instanceof Entity entity) {
+                if(entity.afterContextInitIds()) {
+                    updateInstance(mode, getInstance(mode));
+                }
+            }
+        }
     }
 
     private void initializeModel(Object model, Instance instance, ModelDef<?, ?> def) {
@@ -343,6 +362,19 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
+    public long getTenantId(Object model) {
+        if(model2instance.containsKey(model)) {
+            return getTenantId();
+        }
+        else if(parent != null) {
+            return parent.getTenantId(model);
+        }
+        else {
+            throw new InternalException("Model " + model + " is not contained in the context");
+        }
+    }
+
+    @Override
     public <T> List<T> query(EntityIndexQuery<T> query) {
         NncUtils.requireNonNull(instanceContext, "instanceContext required");
         Class<T> javaClass = query.indexDef().getType();
@@ -495,10 +527,10 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public UnionType getUnionType(Set<Type> typeMembers) {
-        boolean allPersisted = NncUtils.allMatch(typeMembers, t -> t.getId() != null);
+    public UnionType getUnionType(Set<Type> members) {
+        boolean allPersisted = NncUtils.allMatch(members, t -> t.getId() != null);
         if (allPersisted) {
-            List<Type> types = new ArrayList<>(typeMembers);
+            List<Type> types = new ArrayList<>(members);
             types.sort(Comparator.comparingLong(Entity::getIdRequired));
             UnionType pType = getByUniqueKey(
                     UnionType.class,
@@ -509,7 +541,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 return pType;
             }
         }
-        return TypeUtil.createUnion(typeMembers);
+        return TypeUtil.createUnion(members);
     }
 
     @Override

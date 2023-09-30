@@ -6,6 +6,7 @@ import com.intellij.openapi.util.Key;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.TypeVariable;
 
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +51,8 @@ public class Keys {
     public static final Key<Boolean> READ_ONLY_EXPR = createKey("ReadOnlyExpression");
 
     public static final Key<ClassType> META_CLASS = createKey("MetaClass");
+
+    public static final Key<TypeVariable> TYPE_VARIABLE = createKey("TypeVariable");
 
     public static final Key<Flow> FLOW = createKey("Flow");
 

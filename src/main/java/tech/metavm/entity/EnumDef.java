@@ -97,18 +97,12 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
                 type
         );
         EnumConstantRT enumConstant = new EnumConstantRT(instance);
-        new Field(
-                enumConstant.getName(),
-                javaField.getName(),
-                type,
-                type, Access.GLOBAL,
-                false,
-                false,
-                new NullInstance(nullType),
-                true,
-                true,
-                instance
-        );
+        FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), type, type)
+                .defaultValue(new NullInstance(nullType))
+                .isChild(true)
+                .isStatic(true)
+                .staticValue(instance)
+                .build();
         return enumConstant;
     }
 

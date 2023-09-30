@@ -6,6 +6,7 @@ import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public record FlowDTO(
         Long tmpId,
@@ -22,7 +23,11 @@ public record FlowDTO(
         RefDTO outputTypeRef,
         TypeDTO inputType,
         TypeDTO outputType,
-        @Nullable RefDTO overridenRef
+        List<TypeDTO> typeParameters,
+        @Nullable RefDTO templateRef,
+        List<RefDTO> typeArgumentRefs,
+        @Nullable RefDTO overridenRef,
+        List<FlowDTO> templateInstances
 ) implements BaseDTO {
 
     public Long inputTypeId() {
@@ -37,7 +42,7 @@ public record FlowDTO(
         return new FlowDTO(
                 null, null, name, null, false, false, false,
                 RefDTO.ofId(declaringTypeId), null, null, null, null,
-                null, null, null
+                null, null, List.of(), null,  List.of(),null, List.of()
         );
     }
 

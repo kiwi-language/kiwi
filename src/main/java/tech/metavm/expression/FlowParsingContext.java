@@ -6,11 +6,8 @@ import tech.metavm.entity.IInstanceContext;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 import java.util.*;
 
@@ -107,21 +104,6 @@ public class FlowParsingContext implements ParsingContext {
             }
         }
         lastBuiltVersion = lastNodes.get(0).getFlow().getVersion();
-    }
-
-    @Override
-    public Expression parse(List<Var> varPath) {
-        rebuildIfOutdated();
-        NncUtils.requireMinimumSize(varPath, 1);
-        NodeRT<?> node = getNode(varPath.get(0));
-        Objects.requireNonNull(node);
-        if (varPath.size() == 1) {
-            return new NodeExpression(node);
-        } else {
-            List<Var> fieldPath = varPath.subList(1, varPath.size());
-            List<Field> fields = TypeParsingContext.getFields((ClassType) node.getType(), fieldPath);
-            return new FieldExpression(new NodeExpression(node), fields);
-        }
     }
 
     private NodeRT<?> getNode(Var var) {

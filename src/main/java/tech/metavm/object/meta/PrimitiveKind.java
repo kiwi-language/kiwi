@@ -1,6 +1,8 @@
 package tech.metavm.object.meta;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.*;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 import tech.metavm.util.Password;
 
@@ -50,4 +52,9 @@ public enum PrimitiveKind {
     public TypeCategory getTypeCategory() {
         return typeCategory;
     }
+
+    public static PrimitiveKind getByJavaClass(Class<?> javaClass) {
+        return NncUtils.findRequired(values(), v -> v.javaClass == javaClass);
+    }
+
 }

@@ -189,6 +189,9 @@ public class ValueUtil {
 
     public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
         if (type instanceof Class<?> klass) {
+            if(klass.isInterface()) {
+                return TypeCategory.INTERFACE;
+            }
             if (isInteger(klass)) {
                 return TypeCategory.INT;
             }

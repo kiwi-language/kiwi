@@ -351,7 +351,7 @@ public abstract class BaseInstanceContext implements IInstanceContext {
     }
 
     private void add(Instance instance) {
-//        NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemoral instance");
+        NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemeral instance");
         NncUtils.requireFalse(instance.isValue(), "Can not add a value instance");
         instances.add(instance);
         if (instance.getId() != null) {
@@ -431,6 +431,9 @@ public abstract class BaseInstanceContext implements IInstanceContext {
     }
 
     private void clearStaleRefIdsForArray(InstanceArrayPO arrayPO, ArrayType arrayType) {
+        if(arrayType.getElementType().isPrimitive()) {
+            return;
+        }
         boolean elementIsRef = arrayType.getElementType().isReference();
         List<Object> elements = arrayPO.getElements();
         List<Object> newElements = new ArrayList<>();
@@ -502,10 +505,11 @@ public abstract class BaseInstanceContext implements IInstanceContext {
             return persistedResult;
         }
         Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, Instance::getId);
-        return NncUtils.merge(
+        var result = NncUtils.merge(
                 persistedResult,
                 getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()), persistedIds)
         );
+        return result;
     }
 
     public List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit, Set<Long> persistedIds) {
@@ -543,7 +547,9 @@ public abstract class BaseInstanceContext implements IInstanceContext {
 
     @Override
     public List<Instance> selectByKey(IndexKeyRT indexKey) {
-        List<Long> instanceIds = instanceStore.selectByKey(indexKey.toPO(), this);
+//        long indexTenantId = getEntityContext().getTenantId(indexKey.getIndex());
+        var tenantIds = NncUtils.deduplicate(List.of(/*indexTenantId,*/ getTenantId()));
+        List<Long> instanceIds = instanceStore.selectByKey(tenantIds, indexKey.toPO(), this);
         return NncUtils.map(instanceIds, this::get);
     }
 

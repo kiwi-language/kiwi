@@ -3,11 +3,14 @@ package tech.metavm.autograph;
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -24,6 +27,75 @@ public class TranspileUtil {
         return elementFactory;
     }
 
+    public static String getCanonicalName(PsiTypeParameter typeParameter) {
+        var owner = NncUtils.requireNonNull(typeParameter.getOwner());
+        return getCanonicalName(owner) + "-" + typeParameter.getName();
+    }
+
+    private static String getCanonicalName(PsiTypeParameterListOwner typeParameterOwner) {
+        return switch (typeParameterOwner) {
+            case PsiClass psiClass -> getClassCanonicalName(psiClass);
+            case PsiMethod method -> getMethodCanonicalName(method);
+            default -> throw new IllegalStateException("Unexpected value: " + typeParameterOwner);
+        };
+    }
+
+    public static String getCanonicalName(PsiType type) {
+        return switch (type) {
+            case PsiClassType classType -> {
+                var klass = NncUtils.requireNonNull(classType.resolve());
+                yield TypeUtil.parameterizedName(
+                        getClassCanonicalName(klass),
+                        NncUtils.map(
+                                classType.getParameters(),
+                                TranspileUtil::getCanonicalName
+                        )
+                );
+            }
+            case PsiArrayType arrayType -> getCanonicalName(arrayType.getComponentType()) + "[]";
+            case PsiPrimitiveType primitiveType -> primitiveType.getBoxedTypeName();
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        };
+    }
+
+    private static String getClassCanonicalName(PsiClass psiClass) {
+        if (psiClass instanceof PsiTypeParameter typeParameter) {
+            return getCanonicalName(typeParameter.getExtendsListTypes()[0]);
+        } else {
+            return psiClass.getQualifiedName();
+        }
+    }
+
+    private static String getMethodCanonicalName(PsiMethod method) {
+        return getClassCanonicalName(NncUtils.requireNonNull(method.getContainingClass())) + "."
+                + method.getName() + "("
+                + NncUtils.join(NncUtils.requireNonNull(method.getParameterList()).getParameters(),
+                param -> getCanonicalName(param.getType()))
+                + ")";
+    }
+
+    public static boolean isObjectClass(PsiClass psiClass) {
+        return Object.class.getName().equals(psiClass.getQualifiedName());
+    }
+
+    public static @Nullable PsiClassType getSuperClassType(PsiClass psiClass) {
+        var superTypes = psiClass.getSuperTypes();
+        if (superTypes.length > 0) {
+            return superTypes[0];
+        } else {
+            return null;
+        }
+    }
+
+    public static List<PsiClassType> getInterfaceTypes(PsiClass psiClass) {
+        var superTypes = psiClass.getSuperTypes();
+        if (superTypes.length > 1) {
+            return List.of(Arrays.copyOfRange(superTypes, 1, superTypes.length));
+        } else {
+            return List.of();
+        }
+    }
+
     public static boolean isVoidType(PsiType type) {
         if (type instanceof PsiPrimitiveType primitiveType) {
             //noinspection UnstableApiUsage
@@ -34,10 +106,9 @@ public class TranspileUtil {
     }
 
     public static PsiClass eraseClass(PsiClass klass) {
-        if(klass instanceof PsiTypeParameter typeParameter) {
+        if (klass instanceof PsiTypeParameter typeParameter) {
             return typeParameter.getSuperClass();
-        }
-        else {
+        } else {
             return klass;
         }
     }
@@ -45,16 +116,16 @@ public class TranspileUtil {
     public static boolean matchMethod(PsiMethod psiMethod, Method method) {
         var psiType = createType(requireNonNull(psiMethod.getContainingClass()));
         var type = createType(method.getDeclaringClass());
-        if(!type.isAssignableFrom(psiType) || !psiMethod.getName().equals(method.getName())) {
+        if (!type.isAssignableFrom(psiType) || !psiMethod.getName().equals(method.getName())) {
             return false;
         }
         var psiParams = psiMethod.getParameterList().getParameters();
         var params = method.getParameters();
-        if(psiParams.length != params.length) {
+        if (psiParams.length != params.length) {
             return false;
         }
         for (int i = 0; i < psiParams.length; i++) {
-            if(!matchType(psiParams[i].getType(), params[i].getType(), true)) {
+            if (!matchType(psiParams[i].getType(), params[i].getType(), true)) {
                 return false;
             }
         }
@@ -69,23 +140,23 @@ public class TranspileUtil {
         visited.add(declaringClass.getQualifiedName());
         while (!queue.isEmpty()) {
             var klass = queue.poll();
-            if(klass != declaringClass) {
+            if (klass != declaringClass) {
                 var superMethods = klass.getMethods();
                 for (PsiMethod superMethod : superMethods) {
-                    if(isOverrideOf(method, superMethod)) {
+                    if (isOverrideOf(method, superMethod)) {
                         return superMethod;
                     }
                 }
             }
             var superClass = klass.getSuperClass();
-            if(superClass != null) {
-                if(!visited.contains(superClass.getQualifiedName())) {
+            if (superClass != null) {
+                if (!visited.contains(superClass.getQualifiedName())) {
                     visited.add(superClass.getQualifiedName());
                     queue.offer(superClass);
                 }
             }
             for (PsiClass it : klass.getInterfaces()) {
-                if(!visited.contains(it.getQualifiedName())) {
+                if (!visited.contains(it.getQualifiedName())) {
                     visited.add(it.getQualifiedName());
                     queue.offer(it);
                 }
@@ -95,22 +166,22 @@ public class TranspileUtil {
     }
 
     public static boolean isOverrideOf(PsiMethod override, PsiMethod overriden) {
-        if(!override.getName().equals(overriden.getName())) {
+        if (!override.getName().equals(overriden.getName())) {
             return false;
         }
         var overrideDeclClass = NncUtils.requireNonNull(override.getContainingClass());
         var overridenDeclClass = NncUtils.requireNonNull(overriden.getContainingClass());
-        if(!overrideDeclClass.isInheritor(overridenDeclClass, true)) {
+        if (!overrideDeclClass.isInheritor(overridenDeclClass, true)) {
             return false;
         }
         int paramCount = override.getParameterList().getParametersCount();
-        if(overriden.getParameterList().getParametersCount() != paramCount) {
+        if (overriden.getParameterList().getParametersCount() != paramCount) {
             return false;
         }
         for (int i = 0; i < paramCount; i++) {
             var overrideParamType = NncUtils.requireNonNull(override.getParameterList().getParameter(i)).getType();
             var overridenParamType = NncUtils.requireNonNull(overriden.getParameterList().getParameter(i)).getType();
-            if(!overrideParamType.equals(overridenParamType)) {
+            if (!overrideParamType.equals(overridenParamType)) {
                 return false;
             }
         }
@@ -121,12 +192,33 @@ public class TranspileUtil {
         return elementFactory.createTypeByFQClassName(klass.getName());
     }
 
+    public static PsiClassType createType(Class<?> rawClass, List<PsiType> typeArguments) {
+        PsiType[] typeArgs = new PsiType[typeArguments.size()];
+        typeArguments.toArray(typeArgs);
+        return createType(rawClass, typeArgs);
+    }
+
+    public static PsiClassType createType(Class<?> rawClass, PsiType...typeArguments) {
+        return elementFactory.createType(
+                requireNonNull(createType(rawClass).resolve()),
+                typeArguments
+        );
+    }
+
     public static PsiClassType getSuperType(PsiType type, Class<?> superClass) {
-        var superTypes = type.getSuperTypes();
-        if(matchType(type, superClass)) {
+        if (matchType(type, superClass)) {
             return (PsiClassType) type;
         }
+        var superTypes = type.getSuperTypes();
         return (PsiClassType) NncUtils.findRequired(superTypes, superType -> matchType(superType, superClass));
+    }
+
+    public static PsiClassType getSuperType(PsiClass psiClass, PsiClass superClass) {
+        if (Objects.equals(psiClass.getQualifiedName(), superClass.getName())) {
+            return createType(psiClass);
+        }
+        var superTypes = psiClass.getSuperTypes();
+        return NncUtils.findRequired(superTypes, superType -> Objects.equals(superType.resolve(), superClass));
     }
 
     public static boolean matchType(PsiType type, Class<?> klass) {
@@ -136,12 +228,12 @@ public class TranspileUtil {
     public static boolean matchType(PsiType type, Class<?> klass, boolean erase) {
         if (type instanceof PsiClassType classType) {
             var resolved = NncUtils.requireNonNull(classType.resolve());
-            if(erase) {
+            if (erase) {
                 resolved = eraseClass(resolved);
             }
             return matchClass(resolved, klass);
         }
-        if(type instanceof PsiPrimitiveType primitiveType) {
+        if (type instanceof PsiPrimitiveType primitiveType) {
             return klass.isPrimitive() && primitiveType.getName().equals(klass.getName());
         }
         return false;
@@ -198,6 +290,72 @@ public class TranspileUtil {
         return elementFactory.createStatementFromText(text, null);
     }
 
+    public static PsiStatement getEnclosingStatement(PsiExpression expression) {
+        PsiElement element = expression;
+        while (element != null && !(element instanceof PsiStatement)) {
+            element = element.getParent();
+        }
+        return NncUtils.requireNonNull((PsiStatement) element,
+                "Can not find a enclosing statement for expression: " + expression);
+    }
+
+    public static @Nullable List<PsiElement> getAncestorPath(PsiElement element, Class<?>...ancestorClasses) {
+        return getAncestorPath(element, Set.of(ancestorClasses));
+    }
+
+    public static <T> List<T> getEnclosingElements(PsiElement element, Class<T> klass, Set<Class<?>> terminalClasses) {
+        var current = element.getParent();
+        List<T> result = new ArrayList<>();
+        while (current != null && !ReflectUtils.isInstance(terminalClasses, current)) {
+            if(klass.isInstance(current)) {
+                result.add(klass.cast(current));
+            }
+            current = current.getParent();
+        }
+        return result;
+    }
+
+    public static @Nullable List<PsiElement> getAncestorPath(PsiElement element, Set<Class<?>> ancestorClasses) {
+        List<PsiElement> path = new ArrayList<>();
+        var current = element.getParent();
+        if(current != null && !ReflectUtils.isInstance(ancestorClasses, current)) {
+            path.add(current);
+        }
+        if(current == null) {
+            return null;
+        }
+        else {
+            path.add(current);
+            Collections.reverse(path);
+            return path;
+        }
+    }
+
+
+    public static @Nullable PsiElement getAncestor(PsiElement element, Class<?>...parentClasses) {
+        return getParent(element, Set.of(parentClasses));
+    }
+
+    public static @Nullable PsiStatement getPrevStatement(PsiStatement statement) {
+        var current = statement.getPrevSibling();
+        while (current != null && !(current instanceof PsiStatement)) {
+            current = current.getPrevSibling();
+        }
+        return (PsiStatement) current;
+    }
+
+    public static boolean isUnderDummyHolder(PsiElement element) {
+        return getAncestor(element, JavaDummyHolder.class) != null;
+    }
+
+    public static @Nullable PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
+        PsiElement current = element;
+        while (current != null && !ReflectUtils.isInstance(parentClasses, current)) {
+            current = current.getParent();
+        }
+        return current;
+    }
+
     public static PsiExpression createExpressionFromText(String text) {
         return elementFactory.createExpressionFromText(text, null);
     }
@@ -218,12 +376,12 @@ public class TranspileUtil {
         return elementFactory.createType(klass);
     }
 
-    public static Flow getFlowByMethod(ClassType klass, PsiMethod psiMethod, TypeResolver typeResolver, IEntityContext context) {
+    public static Flow getFlowByMethod(ClassType klass, PsiMethod psiMethod, TypeResolver typeResolver) {
         return klass.getFlow(
                 psiMethod.getName(),
                 NncUtils.map(
                         psiMethod.getParameterList().getParameters(),
-                        param -> typeResolver.resolveTypeOnly(param.getType(), context)
+                        param -> typeResolver.resolveTypeOnly(param.getType())
                 )
         );
     }
@@ -284,6 +442,16 @@ public class TranspileUtil {
             return childName;
         }
         return psiField.getName();
+    }
+
+    public static boolean isAncestor(PsiElement element, PsiElement ancestor) {
+        var current = element;
+        while (current != null) {
+            if(current == ancestor) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static String getFlowParamName(PsiParameter psiParameter) {

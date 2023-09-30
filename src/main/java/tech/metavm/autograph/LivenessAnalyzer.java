@@ -94,6 +94,20 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
         blockStatementLiveIn(statement, entry);
     }
 
+    @Override
+    public void visitSwitchExpression(PsiSwitchExpression expression) {
+        super.visitSwitchExpression(expression);
+        blockStatementLiveOut(expression);
+        blockStatementLiveIn(expression, expression.getExpression());
+    }
+
+    @Override
+    public void visitSwitchStatement(PsiSwitchStatement statement) {
+        super.visitSwitchStatement(statement);
+        blockStatementLiveOut(statement);
+        blockStatementLiveIn(statement, statement.getExpression());
+    }
+
     private void blockStatementLiveIn(PsiElement statement, PsiElement entry) {
         Set<QualifiedName> liveIn;
         CfgNode entryNode;

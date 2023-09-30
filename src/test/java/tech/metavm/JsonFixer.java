@@ -16,18 +16,19 @@ import java.util.Objects;
 public class JsonFixer {
 
     public static final String FILE = "/Users/leen/workspace/object/input.json";
-        //"/Users/leen/workspace/front/src/type/__mocks__/ClassType.json";
+    //"/Users/leen/workspace/front/src/type/__mocks__/ClassType.json";
 
     public static final String OUTPUT = "/Users/leen/workspace/object/test.json";
 
     private static LinkedList<String> nameStack = new LinkedList<>();
 
     public static void main(String[] args) throws IOException {
-        char[] buffer = new char[1024*1024];
+        char[] buffer = new char[1024 * 1024];
         try (var reader = new FileReader(FILE); var writer = new FileWriter(OUTPUT)) {
             int n = reader.read(buffer);
             String jsonStr = new String(buffer, 0, n);
-            var map = NncUtils.readJSONString(jsonStr, new TypeReference<Map<String, Object>>() {});
+            var map = NncUtils.readJSONString(jsonStr, new TypeReference<Map<String, Object>>() {
+            });
             fixMap(map);
             writer.write(TestUtils.toJSONString(map));
         }
@@ -42,17 +43,16 @@ public class JsonFixer {
             var key = entry.getKey();
             nameStack.push(key);
             var value = entry.getValue();
-            if(/*fixing && */key.equals("elementTypeId")) {
+            if (/*fixing && */key.equals("superTypeId")) {
                 entryIt.remove();
-                add.put("elementTypeRef", Map.of("id", value));
+                add.put("superTypeRef", Map.of("id", value));
             }
-            else if(value instanceof Map<?,?> subMap){
+            if (value instanceof Map<?, ?> subMap) {
                 //noinspection unchecked
                 fixMap((Map<String, Object>) subMap);
-            }
-            else if(value instanceof Collection<?> collection) {
+            } else if (value instanceof Collection<?> collection) {
                 for (Object ele : collection) {
-                    if(ele instanceof Map<?,?> subMap) {
+                    if (ele instanceof Map<?, ?> subMap) {
                         //noinspection unchecked
                         fixMap((Map<String, Object>) subMap);
                     }

@@ -15,7 +15,7 @@ public class ClassTypeTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         MockRegistry.setUp(new MockIdProvider());
-        typeFactory = new TypeFactory(MockRegistry::getType);
+        typeFactory = new DefaultTypeFactory(MockRegistry::getType);
     }
 
     public void testAllocateColumn() {

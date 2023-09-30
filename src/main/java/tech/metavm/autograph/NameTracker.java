@@ -38,9 +38,11 @@ class NameTracker {
 
     void enterMethod() {
         methodInfoStack.push(new MethodInfo());
+        enterBlock();
     }
 
     void exitMethod() {
+        exitBlock();
         methodInfoStack.pop();
     }
 

@@ -167,7 +167,7 @@ public class TypeReducer {
 
     private Set<Type> getTypeSets(Type type) {
         if (type instanceof UnionType unionType) {
-            return unionType.getTypeMembers();
+            return unionType.getMembers();
         } else {
             return Set.of(type);
         }
@@ -180,7 +180,7 @@ public class TypeReducer {
         if (set.size() == 1) {
             return set.iterator().next();
         } else {
-            return new UnionType(set);
+            return new UnionType(null, set);
         }
     }
 

@@ -20,12 +20,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public Type getConcreteType() {
-        return this;
-    }
-
-    @Override
-    public boolean isAssignableFrom(Type that) {
+    protected boolean isAssignableFrom0(Type that) {
         return equals(that);
     }
 

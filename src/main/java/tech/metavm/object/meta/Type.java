@@ -33,7 +33,7 @@ public abstract class Type extends Entity {
     @EntityField("是否匿名")
     protected boolean anonymous;
     @EntityField("是否临时")
-    protected boolean ephemeral;
+    protected final boolean ephemeral;
     @EntityField("类别")
     protected TypeCategory category;
     @EntityField("数组类型")
@@ -42,18 +42,6 @@ public abstract class Type extends Entity {
     @EntityField("可空类型")
     @Nullable
     private UnionType nullableType;
-    @Nullable
-    private ClassType collectionType;
-    @Nullable
-    private ClassType iteratorType;
-    @Nullable
-    private ClassType setType;
-    @Nullable
-    private ClassType setIteratorType;
-    @Nullable
-    private ClassType listType;
-    @Nullable
-    private ClassType listIteratorType;
 
     public Type(String name, boolean anonymous, boolean ephemeral, TypeCategory category) {
         this.name = name;
@@ -75,6 +63,10 @@ public abstract class Type extends Entity {
         return code;
     }
 
+    public String getCodeRequired() {
+        return NncUtils.requireNonNull(code, "Code is not set for type '" + name + "'");
+    }
+
     public void setCode(@Nullable String code) {
         this.code = code;
     }
@@ -85,10 +77,6 @@ public abstract class Type extends Entity {
 
     public boolean isAnonymous() {
         return anonymous;
-    }
-
-    public void setAnonymous(boolean anonymous) {
-        this.anonymous = anonymous;
     }
 
     public boolean isEphemeral() {
@@ -115,7 +103,24 @@ public abstract class Type extends Entity {
         return this;
     }
 
-    public abstract boolean isAssignableFrom(Type that);
+    protected abstract boolean isAssignableFrom0(Type that);
+
+    public boolean isAssignableFrom(Type that) {
+        var bound = that.getUpperBound();
+        if(bound instanceof UnionType unionType) {
+            return NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom0);
+        }
+        else if(bound instanceof TypeIntersection intersection) {
+            return NncUtils.anyMatch(intersection.getTypes(), this::isAssignableFrom0);
+        }
+        else {
+            return isAssignableFrom0(bound);
+        }
+    }
+
+    public Type getUpperBound() {
+        return this;
+    }
 
     public boolean isInstance(Instance value) {
         return isAssignableFrom(value.getType());
@@ -178,12 +183,20 @@ public abstract class Type extends Entity {
         return category.isEnum();
     }
 
+    public boolean isInterface() {
+        return category.isInterface();
+    }
+
+    public boolean isPojo() {
+        return category.isPojo();
+    }
+
     public boolean isVoid() {
         return category == TypeCategory.VOID;
     }
 
     public boolean isReference() {
-        return isClass() || isArray() || isEnum() ||
+        return isArray() || isPojo() ||
                 (!(this instanceof ObjectType) && isNullable() && getUnderlyingType().isReference());
     }
 
@@ -203,7 +216,7 @@ public abstract class Type extends Entity {
     public Type getUnderlyingType() {
         if (this instanceof UnionType unionType) {
             if (isNullable()) {
-                return NncUtils.findRequired(unionType.getTypeMembers(), t -> !t.equals(NULL_TYPE));
+                return NncUtils.findRequired(unionType.getMembers(), t -> !t.equals(NULL_TYPE));
             }
         }
         return this;
@@ -279,4 +292,7 @@ public abstract class Type extends Entity {
 
     public abstract String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType);
 
+    public void setAnonymous(boolean anonymous) {
+        this.anonymous = anonymous;
+    }
 }

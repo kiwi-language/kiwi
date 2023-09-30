@@ -1,9 +1,14 @@
 package tech.metavm.util;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.intellij.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -28,6 +33,12 @@ public class NncUtils {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
 
+    static {
+        OBJECT_MAPPER.registerModule(new Jdk8Module());
+        OBJECT_MAPPER.registerModule(new JavaTimeModule());
+        OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
+        OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    }
 
     public static void requireLength(Collection<?> collection, int expectedSize) {
         if (collection.size() != expectedSize) {
@@ -170,7 +181,8 @@ public class NncUtils {
 
     public static <T> T readJSONString(String jsonStr, TypeReference<T> typeReference) {
         try {
-            return OBJECT_MAPPER.readValue(jsonStr, typeReference);
+            var reader = OBJECT_MAPPER.reader().forType(typeReference);
+            return reader.readValue(jsonStr);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Fail to read JSON string, JSON string: " + jsonStr, e);
         }
@@ -412,8 +424,24 @@ public class NncUtils {
         return source.stream().map(mapping).collect(Collectors.toList());
     }
 
+    public static <T, R> R[] mapArray(T[] source, Function<T, R> mapper, IntFunction<R[]> generator) {
+        return Arrays.stream(source).map(mapper).toArray(generator);
+    }
+
     public static <T extends Identifiable> Set<Long> mapToIds(Collection<T> collection) {
         return NncUtils.mapUnique(collection, Identifiable::getIdRequired);
+    }
+
+    public static String toBase64(long l) {
+        return Base64.getEncoder().encodeToString(toBytes(l));
+    }
+
+    public static byte[] toBytes(long l) {
+        byte[] bytes = new byte[8];
+        for (int i = 0; i < 8; i++) {
+            bytes[i] = (byte) (l >> (i << 3));
+        }
+        return bytes;
     }
 
     public static <T, R> Map<R, Integer> mapAndCount(List<T> list, Function<T, R> keyMapper) {
@@ -516,6 +544,10 @@ public class NncUtils {
 
     public static <T, R> @Nullable R mapFirst(List<T> list, Function<T, R> mapping) {
         return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
+    }
+
+    public static <T, R> void biForEach(T[] list1, R[] list2, BiConsumer<T, R> action) {
+        biForEach(List.of(list1), List.of(list2), action);
     }
 
     public static <T, R> void biForEach(Collection<T> list1, Collection<R> list2, BiConsumer<T, R> action) {

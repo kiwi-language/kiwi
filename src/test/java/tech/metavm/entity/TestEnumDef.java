@@ -102,6 +102,11 @@ public class TestEnumDef extends TestCase {
             type2Def.put(def.getType(), def);
         }
 
+        @Override
+        public void afterDefInitialized(ModelDef<?, ?> def) {
+
+        }
+
     }
 
 }

@@ -3,11 +3,7 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.Field;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-
-import java.util.List;
 
 public class SubParsingContext implements ParsingContext {
     private final ParsingContext parent;
@@ -18,23 +14,6 @@ public class SubParsingContext implements ParsingContext {
         this.parent = parent;
     }
 
-    @Override
-    public Expression parse(List<Var> vars) {
-        NncUtils.requireMinimumSize(vars, 1);
-        Var firstVar = vars.get(0);
-        if (isSelfVar(firstVar)) {
-            NncUtils.requireMinimumSize(vars, 2);
-            return createFieldExpression(vars.subList(1, vars.size()));
-        } else if (parent != null && parent.isContextVar(firstVar)) {
-            return parent.parse(vars);
-        }
-        return createFieldExpression(vars);
-    }
-
-    private FieldExpression createFieldExpression(List<Var> vars) {
-        List<Field> fields = TypeParsingContext.getFields(cursor.getType(), vars, false);
-        return new FieldExpression(cursor, fields);
-    }
 
     @Override
     public Instance getInstance(long id) {

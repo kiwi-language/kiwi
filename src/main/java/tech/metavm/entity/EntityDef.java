@@ -16,13 +16,13 @@ public class EntityDef<T extends Entity> extends PojoDef<T> {
         this(typeReference.getType(), typeReference.getGenericType() , parentDef, type, defMap);
     }
 
-    public EntityDef(Class<T> entityType,
-                     Type genericType,
-                     @Nullable PojoDef<? super T> parentDef,
+    public EntityDef(Class<T> javaClass,
+                     Type javaType,
+                     @Nullable PojoDef<? super T> superDef,
                      ClassType type,
                      DefMap defMap
     ) {
-        super(entityType, genericType, parentDef, type, defMap);
+        super(javaClass, javaType, superDef, type, defMap);
     }
 
     @Override

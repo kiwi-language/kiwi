@@ -1,6 +1,5 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.BooleanInstance;
 import tech.metavm.object.instance.ClassInstance;
@@ -15,15 +14,15 @@ public class IteratorImplNative extends NativeBase {
     private int size;
     private int index;
 
-    public IteratorImplNative(ClassInstance instance, IInstanceContext context) {
-        super(context);
+    public IteratorImplNative(ClassInstance instance) {
         this.instance = instance;
     }
 
-    public void init(ClassInstance collection) {
+    public Instance IteratorImpl(ClassInstance collection) {
         var listArrayField = collection.getType().getFieldByCodeRequired("array");
         array = (ArrayInstance) collection.get(listArrayField);
         size = array.size();
+        return instance;
     }
 
     public BooleanInstance hasNext() {

@@ -15,7 +15,7 @@ public class Natives {
 
     public static Class<?> getNative(String nativeClas) {
         return NncUtils.requireNonNull(nativeClassMap.get(nativeClas),
-                "Can't find native class for template '" + nativeClas + "'");
+                "Can't find native class for templateName '" + nativeClas + "'");
     }
 
 }

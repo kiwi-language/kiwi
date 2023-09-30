@@ -11,6 +11,9 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
+import java.util.Collections;
+import java.util.List;
+
 public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
 
     public static UpdateStaticNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
@@ -78,6 +81,14 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
             updateField.setOp(op);
             updateField.setValue(value);
         }
+    }
+
+    public ClassType getUpdateType() {
+        return type;
+    }
+
+    public List<UpdateField> getFields() {
+        return Collections.unmodifiableList(fields);
     }
 
     @Override

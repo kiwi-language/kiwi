@@ -33,42 +33,23 @@ public class Generator extends VisitorBase {
     }
 
     @Override
+    public void visitTypeParameter(PsiTypeParameter classParameter) {
+    }
+
+    @Override
     public void visitClass(PsiClass psiClass) {
         psiClass.putUserData(Keys.RESOLVE_STAGE, 2);
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.META_CLASS));
         klass.setCode(psiClass.getName());
 
-        var initFlow = new Flow(
-                null,
-                klass,
-                "实例初始化",
-                "<init>",
-                true,
-                false,
-                false,
-                createEmptyType("init_input"),
-                ModelDefRegistry.getType(Void.class),
-                null
-        );
-        var initFlowBuilder = new FlowGenerator(initFlow, typeResolver, entityContext);
+        var initFlow = klass.getFlow("<init>", List.of());
+        var initFlowBuilder = new FlowGenerator(this, initFlow, typeResolver, entityContext);
         initFlowBuilder.enterScope(initFlowBuilder.getFlow().getRootScope(), null);
         initFlowBuilder.createSelf();
         initFlowBuilder.createInput();
 
-        var classInit = new Flow(
-                null,
-                klass,
-                "类型初始化",
-                "<cinit>",
-                false,
-                false,
-                false,
-                createEmptyType("cinit_input"),
-                ModelDefRegistry.getType(Void.class),
-                null
-        );
-
-        var classInitFlowBuilder = new FlowGenerator(classInit, typeResolver, entityContext);
+        var classInit = klass.getFlow("<cinit>", List.of());
+        var classInitFlowBuilder = new FlowGenerator(this, classInit, typeResolver, entityContext);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getFlow().getRootScope(), null);
         classInitFlowBuilder.createInput();
 
@@ -83,10 +64,8 @@ public class Generator extends VisitorBase {
         classInitFlowBuilder.exitScope();
 
         exitClass();
-    }
 
-    private ClassType createEmptyType(String namePrefix) {
-        return ClassBuilder.newBuilder(namePrefix, null).temporary().build();
+        klass.stage = ResolutionStage.GENERATED;
     }
 
     @Override
@@ -100,7 +79,7 @@ public class Generator extends VisitorBase {
         paramTypes.addAll(
                 NncUtils.map(
                         requireNonNull(constructor).getParameterList().getParameters(),
-                        param -> typeResolver.resolveTypeOnly(param.getType(), entityContext)
+                        param -> typeResolver.resolveTypeOnly(param.getType())
                 )
         );
         List<Expression> args = new ArrayList<>();
@@ -110,7 +89,9 @@ public class Generator extends VisitorBase {
                 requireNonNull(enumConstant.getArgumentList()).getExpressions(),
                 expr -> builder.getExpressionResolver().resolve(expr)
         ));
-        var expr = builder.getExpressionResolver().newInstance(currentClass(), paramTypes, args);
+        var expr = builder.getExpressionResolver().newInstance(currentClass(), args,
+                List.of(TranspileUtil.createType(String.class), TranspileUtil.createType(Long.class)),
+                enumConstant);
         builder.createUpdateStatic(currentClass(), Map.of(field, expr));
     }
 
@@ -136,7 +117,7 @@ public class Generator extends VisitorBase {
     @Override
     public void visitMethod(PsiMethod method) {
         var flow = NncUtils.requireNonNull(method.getUserData(Keys.FLOW));
-        FlowGenerator builder = new FlowGenerator(flow, typeResolver, entityContext);
+        FlowGenerator builder = new FlowGenerator(this, flow, typeResolver, entityContext);
         builders.push(builder);
         builder.enterScope(flow.getRootScope(), null);
         var selfNode = builder().createSelf();
@@ -149,16 +130,17 @@ public class Generator extends VisitorBase {
                     List.of()
             );
             if (currentClass().isEnum()) {
+                var klass = currentClass();
                 var inputNode = flow.getInputNode();
                 builder.createUpdate(
                         new NodeExpression(selfNode),
                         Map.of(
-                                ModelDefRegistry.getField(Enum.class, "name"),
+                                klass.getFieldByCode("name"),
                                 new FieldExpression(
                                         new NodeExpression(inputNode),
                                         inputNode.getType().getFieldByCode("name")
                                 ),
-                                ModelDefRegistry.getField(Enum.class, "ordinal"),
+                                klass.getFieldByCode("ordinal"),
                                 new FieldExpression(
                                         new NodeExpression(inputNode),
                                         inputNode.getType().getFieldByCode("ordinal")
@@ -176,6 +158,111 @@ public class Generator extends VisitorBase {
         builder.exitScope();
         builders.pop();
     }
+
+
+    @Override
+    public void visitSwitchStatement(PsiSwitchStatement statement) {
+        if (statement.getBody() != null && statement.getBody().getStatementCount() > 0) {
+            var fistStmt = statement.getBody().getStatements()[0];
+            if (fistStmt instanceof PsiSwitchLabeledRuleStatement) {
+                processLabeledRuleSwitch(statement);
+            } else {
+                processClassicSwitch(statement);
+            }
+        }
+    }
+
+    private void processLabeledRuleSwitch(PsiSwitchStatement statement) {
+        var switchExpr = new NodeExpression(
+                builder().createValue("switchValue", resolveExpression(statement.getExpression()))
+        );
+        var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
+        var branchNode = builder().createBranch(false);
+        builder().enterCondSection(statement);
+//        boolean hasResult = statement.getType() != null;
+//        Map<Branch, Value> yieldMap = new HashMap<>();
+        var modified = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE)).getModified();
+        var liveVarOut = NncUtils.requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
+        var outputVars = NncUtils.intersect(modified, liveVarOut);
+
+        for (PsiStatement stmt : stmts) {
+            var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
+            var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
+            Branch branch;
+            if (caseLabelElementList != null && caseLabelElementList.getElementCount() > 0) {
+                Expression cond;
+                if (isTypePatternCase(caseLabelElementList)) {
+                    PsiTypeTestPattern typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
+                    var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
+                    builder().setVariable(
+                            requireNonNull(typeTestPattern.getPatternVariable()).getName(),
+                            switchExpr
+                    );
+                    cond = new InstanceOfExpression(
+                            switchExpr,
+                            typeResolver.resolveDeclaration(checkType)
+                    );
+                } else {
+                    var expressions = NncUtils.map(caseLabelElementList.getElements(),
+                            e -> resolveExpression((PsiExpression) e));
+                    cond = new BinaryExpression(
+                            Operator.IN,
+                            resolveExpression(statement.getExpression()),
+                            new ArrayExpression(expressions)
+                    );
+                }
+                branch = branchNode.addBranch(new ExpressionValue(cond));
+            }
+            else {
+                branch = branchNode.addDefaultBranch();
+            }
+            builder().newCondBranch(stmt, branch);
+            builder().enterScope(branch.getScope(), branch.getCondition().getExpression());
+            if(labeledRuleStmt.getBody() != null) {
+                labeledRuleStmt.getBody().accept(this);
+                if(labeledRuleStmt.getBody() instanceof PsiExpression bodyExpression) {
+                    builder().setYieldValue(resolveExpression(bodyExpression));
+                }
+            }
+//            if(hasResult) {
+//                yieldMap.put(branch, new ExpressionValue(NncUtils.requireNonNull(builder().getYield())));
+//            }
+            builder().exitScope();
+        }
+        var condOutputs = builder().exitCondSection(statement, NncUtils.map(outputVars, Objects::toString));
+        var mergeNode = builder().createMerge();
+//        Expression result;
+//        if(hasResult) {
+//            var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getType(),
+//                            typeResolver.resolveDeclaration(statement.getType()))
+//                    .build();
+//            new MergeNodeField(yieldField, mergeNode, yieldMap);
+//            result = new FieldExpression(new NodeExpression(mergeNode), yieldField);
+//        }
+//        else {
+//            result = null;
+//        }
+        for (QualifiedName outputVar : outputVars) {
+            var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(), mergeNode.getType(),
+                            typeResolver.resolveDeclaration(outputVar.type()))
+                    .build();
+            var mergeField = new MergeNodeField(field, mergeNode);
+            condOutputs.forEach((branch, values) ->
+                    mergeField.setValue(branch, new ExpressionValue(values.get(outputVar.toString())))
+            );
+        }
+//        return result;
+    }
+
+    private Expression processClassicSwitch(PsiSwitchStatement statement) {
+        throw new UnsupportedOperationException();
+    }
+
+    private boolean isTypePatternCase(PsiCaseLabelElementList caseLabelElementList) {
+        return caseLabelElementList.getElementCount() == 1 &&
+                caseLabelElementList.getElements()[0] instanceof PsiTypeTestPattern;
+    }
+
 
     private void processParameters(PsiParameterList parameterList) {
         var inputNode = builder().createInput();
@@ -201,7 +288,7 @@ public class Generator extends VisitorBase {
     }
 
     private Type resolveType(PsiType type) {
-        return typeResolver.resolveDeclaration(type, entityContext);
+        return typeResolver.resolveDeclaration(type);
     }
 
     @Override
@@ -348,14 +435,16 @@ public class Generator extends VisitorBase {
                             )
                     )
             );
-            processLoop(statement, whileNode, loopVar2Field -> {
-                builder().setVariable(statement.getIterationParameter().getName(),
-                        new ArrayAccessExpression(iteratedExpr,
-                                new FieldExpression(new NodeExpression(whileNode), indexField)));
-            });
+            processLoop(statement, whileNode,
+                    loopVar2Field -> builder().setVariable(statement.getIterationParameter().getName(),
+                    new ArrayAccessExpression(iteratedExpr,
+                            new FieldExpression(new NodeExpression(whileNode), indexField))));
         } else {
             var collType = (ClassType) iteratedExpr.getType();
-            var itNode = builder().createSubFlow(iteratedExpr, collType.getFlowByCode("iterator"));
+            var itNode = builder().createSubFlow(
+                    iteratedExpr, collType.getFlowByCode("iterator"),
+                    List.of()
+            );
             var whileNode = builder().createWhile(
                     new FunctionExpression(Function.HAS_NEXT, new NodeExpression(itNode))
             );
@@ -363,36 +452,12 @@ public class Generator extends VisitorBase {
             processLoop(statement, whileNode, loopVar2Field -> {
                 var elementNode = builder().createSubFlow(
                         new NodeExpression(itNode),
-                        itType.getFlowByCode("next")
+                        itType.getFlowByCode("next"),
+                        List.of()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
             });
         }
-//        var node = builder().createForEach(resolveExpression(statement.getIteratedValue()));
-//        processLoop(statement, node, loopVar2Field -> {
-//            var next = builder().createSubFlow(
-//                    new FieldExpression(
-//                            new NodeExpression(node),
-//                            node.getType().getFieldByCodeRequired("iterator")
-//                    ),
-//                    TypeUtil.getIteratorType(elementType, entityContext).getFlowByCode("next")
-//            );
-//            builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(next));
-////            builder().setVariable(
-////                    statement.getIterationParameter().getName(),
-////                    new ArrayAccessExpression(
-////                            new FieldExpression(
-////                                    new NodeExpression(node),
-////                                    node.getType().getFieldByCode("array")
-////                            ),
-////                            new FieldExpression(
-////                                    new NodeExpression(node),
-////                                    node.getType().getFieldByCode("index")
-////                            )
-////                    )
-////            );
-//            node.setCondition(new ExpressionValue(getExtraLoopTest(statement)));
-//        });
     }
 
     private Expression getExtraLoopTest(PsiForeachStatement statement) {
@@ -428,6 +493,11 @@ public class Generator extends VisitorBase {
     @Override
     public void visitThrowStatement(PsiThrowStatement statement) {
         builder().createException(new ConstantExpression(InstanceUtils.stringInstance("Error")));
+    }
+
+    @Override
+    public void visitYieldStatement(PsiYieldStatement statement) {
+        builder().setYieldValue(resolveExpression(statement.getExpression()));
     }
 
     @Override

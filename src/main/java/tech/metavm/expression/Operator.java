@@ -34,8 +34,9 @@ public enum Operator {
     GE(8, ">=", 5, BINARY, Boolean.class),
     LT(9, "<", 5, BINARY, Boolean.class),
     LE(10, "<=", 5, BINARY, Boolean.class),
+    INSTANCEOF(35, "instanceof", 5, BINARY, Boolean.class),
 
-    // euqality
+    // equality
     EQ(11, "=", 6, BINARY, Boolean.class),
     NE(12, "!=", 6, BINARY, Boolean.class),
     STARTS_WITH(13, "STARTS WITH", 6, BINARY, Boolean.class),

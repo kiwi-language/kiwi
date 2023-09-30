@@ -248,6 +248,11 @@ public class PojoDefTest extends TestCase {
             class2def.put(def.getJavaClass(), def);
         }
 
+        @Override
+        public void afterDefInitialized(ModelDef<?, ?> def) {
+
+        }
+
         @SuppressWarnings("unused")
         public ModelInstanceMap getModelMap() {
             return modelInstanceMap;

@@ -9,6 +9,7 @@ import tech.metavm.entity.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -42,7 +43,7 @@ public class ReflectUtils {
     }
 
     public static final Map<Class<?>, Class<?>> PRIMITIVE_BOXING_MAP = Map.of(
-            byte.class,  Byte.class,
+            byte.class, Byte.class,
             short.class, Short.class,
             int.class, Integer.class,
             long.class, Long.class,
@@ -66,7 +67,7 @@ public class ReflectUtils {
     );
 
     private static final Map<Class<?>, Integer> PRIMITIVE_TYPE_ORDERING_MAP = Map.of(
-            byte.class,  5,
+            byte.class, 5,
             short.class, 4,
             int.class, 3,
             long.class, 2,
@@ -80,6 +81,10 @@ public class ReflectUtils {
     private static final Set<Class<?>> NUMERIC_PRIMITIVE_TYPES = Set.of(
             byte.class, short.class, int.class, long.class, float.class, double.class
     );
+
+    public static boolean isInstance(Collection<? extends Class<?>> classes, Object object) {
+        return NncUtils.anyMatch(classes, k -> k.isInstance(object));
+    }
 
     public static Unsafe getUnsafe() {
         return UNSAFE;
@@ -99,7 +104,7 @@ public class ReflectUtils {
 
     private static boolean isCompiled(Class<?> klass) {
         var entityType = klass.getAnnotation(EntityType.class);
-        if(entityType != null && entityType.compiled()) {
+        if (entityType != null && entityType.compiled()) {
             return true;
         }
         var valueType = klass.getAnnotation(ValueType.class);
@@ -107,24 +112,24 @@ public class ReflectUtils {
     }
 
     public static Type getBoxedType(Type type) {
-        if(type instanceof Class<?> klass) {
+        if (type instanceof Class<?> klass) {
             return getBoxedClass(klass);
         }
         return type;
     }
 
     public static Class<?> getBoxedClass(Class<?> klass) {
-        if(PRIMITIVE_BOXING_MAP.containsKey(klass)) {
+        if (PRIMITIVE_BOXING_MAP.containsKey(klass)) {
             return PRIMITIVE_BOXING_MAP.get(klass);
         }
         return klass;
     }
 
-    public static String getMethodQualifiedSignature(Class<?> klass, String name, Class<?>...parameterClasses) {
+    public static String getMethodQualifiedSignature(Class<?> klass, String name, Class<?>... parameterClasses) {
         return getMethodQualifiedSignature(getMethod(klass, name, parameterClasses));
     }
 
-    public static String getConstructorQualifiedSignature(Class<?> klass, Class<?>...parameterClasses) {
+    public static String getConstructorQualifiedSignature(Class<?> klass, Class<?>... parameterClasses) {
         return getConstructorQualifiedSignature(getConstructor(klass, parameterClasses));
     }
 
@@ -143,10 +148,10 @@ public class ReflectUtils {
     public static String getConstructorSignature(Constructor<?> constructor) {
         return CONSTRUCTOR_NAME + "("
                 + NncUtils.join(
-                        Arrays.asList(constructor.getParameterTypes()),
-                        Class::getName,
-                        ","
-                )
+                Arrays.asList(constructor.getParameterTypes()),
+                Class::getName,
+                ","
+        )
                 + ")";
     }
 
@@ -168,16 +173,15 @@ public class ReflectUtils {
 
 
     public static boolean methodSignatureEquals(Method method1, Method method2) {
-        if(method1.getName().equals(method2.getName())
+        if (method1.getName().equals(method2.getName())
                 && method1.getParameterTypes().length == method2.getParameterTypes().length) {
             for (int i = 0; i < method1.getParameterTypes().length; i++) {
-                if(!method1.getParameterTypes()[i].equals(method2.getParameterTypes()[i])) {
+                if (!method1.getParameterTypes()[i].equals(method2.getParameterTypes()[i])) {
                     return false;
                 }
             }
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -202,35 +206,34 @@ public class ReflectUtils {
         var innerClassName = klass.getName() + "&&" + name;
         var innerClass =
                 NncUtils.find(klass.getDeclaredClasses(), c -> c.getName().equals(innerClassName));
-        if(innerClass != null) {
+        if (innerClass != null) {
             return innerClass;
         }
-        if(klass.getSuperclass() != null && klass.getSuperclass() != Object.class) {
+        if (klass.getSuperclass() != null && klass.getSuperclass() != Object.class) {
             return getInnerClassRecursively(klass.getSuperclass(), name);
-        }
-        else {
+        } else {
             throw new InternalException("Can not find inner class '" + name + "' in class '" + klass.getSimpleName() + "'");
         }
     }
 
-    public static Method getMethod(@NotNull Class<?> klass, String methodName, Class<?>...paramTypes) {
+    public static Method getMethod(@NotNull Class<?> klass, String methodName, Class<?>... paramTypes) {
         try {
             return klass.getMethod(methodName, paramTypes);
         } catch (NoSuchMethodException e) {
             throw new InternalException(
                     "Can not find method " + klass.getName() + "." + methodName + "("
-                    + NncUtils.join(paramTypes, Class::getSimpleName) + ")"
+                            + NncUtils.join(paramTypes, Class::getSimpleName) + ")"
             );
         }
     }
 
     public static void shallowCopy(Object source, Object target) {
-        if(!isAncestorClass(source.getClass(), target.getClass())) {
+        if (!isAncestorClass(source.getClass(), target.getClass())) {
             throw new InternalException("Source class must be ancestor of target class");
         }
         var fields = getDeclaredFieldsRecursively(source.getClass());
         for (Field field : fields) {
-            if(!Modifier.isStatic(field.getModifiers())) {
+            if (!Modifier.isStatic(field.getModifiers())) {
                 set(target, field, get(source, field));
             }
         }
@@ -239,7 +242,7 @@ public class ReflectUtils {
     public static boolean isAncestorClass(Class<?> klass1, Class<?> klass2) {
         var t = klass2;
         while (t != null) {
-            if(t == klass1) {
+            if (t == klass1) {
                 return true;
             }
             t = t.getSuperclass();
@@ -251,10 +254,9 @@ public class ReflectUtils {
         NncUtils.requireNotEmpty(classes);
         Class<?> result = null;
         for (Class<?> klass : classes) {
-            if(result == null) {
+            if (result == null) {
                 result = klass;
-            }
-            else {
+            } else {
                 result = getCompatibleType(result, klass);
             }
         }
@@ -262,16 +264,13 @@ public class ReflectUtils {
     }
 
     public static Class<?> getCompatibleType(Class<?> class1, Class<?> class2) {
-        if(isPrimitiveType(class1) && isPrimitiveType(class2)) {
+        if (isPrimitiveType(class1) && isPrimitiveType(class2)) {
             return getCompatiblePrimitiveType(class1, class2);
-        }
-        else if(class1.isAssignableFrom(class2)){
+        } else if (class1.isAssignableFrom(class2)) {
             return class1;
-        }
-        else if(class2.isAssignableFrom(class1)) {
+        } else if (class2.isAssignableFrom(class1)) {
             return class2;
-        }
-        else {
+        } else {
             return Object.class;
         }
     }
@@ -279,31 +278,28 @@ public class ReflectUtils {
     public static Class<?> getCompatiblePrimitiveType(Class<?> klass1, Class<?> klass2) {
         klass1 = unbox(klass1);
         klass2 = unbox(klass2);
-        if(primitiveTypeOrder(klass1) > primitiveTypeOrder(klass2)) {
+        if (primitiveTypeOrder(klass1) > primitiveTypeOrder(klass2)) {
             var temp = klass2;
             klass2 = klass1;
             klass1 = temp;
         }
-        if(isNumericPrimitiveType(klass1)) {
-            if(klass2 == char.class || klass2 == boolean.class) {
+        if (isNumericPrimitiveType(klass1)) {
+            if (klass2 == char.class || klass2 == boolean.class) {
                 return Object.class;
-            }
-            else {
+            } else {
                 return klass1;
             }
-        }
-        else {
+        } else {
             return Object.class;
         }
     }
 
     public static Class<?> getArrayClass(Class<?> klass) {
         String name;
-        if(klass.isPrimitive()) {
+        if (klass.isPrimitive()) {
             name = "[" + PRIMITIVE_CLASS_INTERNAL_NAME_MAP.get(klass);
-        }
-        else {
-            name = "[L" + klass.getName() +";";
+        } else {
+            name = "[L" + klass.getName() + ";";
         }
         return ReflectUtils.classForName(name);
     }
@@ -324,7 +320,7 @@ public class ReflectUtils {
     }
 
     public static Class<?> unbox(Class<?> klass) {
-        if(klass.isPrimitive()) {
+        if (klass.isPrimitive()) {
             return klass;
         }
         return NncUtils.requireNonNull(
@@ -346,10 +342,10 @@ public class ReflectUtils {
     }
 
     public static String getMetaFieldName(Field javaField) {
-        if(ENUM_NAME_FIELD.equals(javaField)) {
+        if (ENUM_NAME_FIELD.equals(javaField)) {
             return "名称";
         }
-        if(ENUM_ORDINAL_FIELD.equals(javaField)) {
+        if (ENUM_ORDINAL_FIELD.equals(javaField)) {
             return "序号";
         }
         EntityField entityField = javaField.getAnnotation(EntityField.class);
@@ -359,6 +355,11 @@ public class ReflectUtils {
                 NncUtils.get(childEntity, ChildEntity::value),
                 javaField.getName()
         );
+    }
+
+    public static String getMetaFlowName(Method method) {
+        var anno = method.getAnnotation(EntityFlow.class);
+        return anno != null ? anno.value() : method.getName();
     }
 
     public static String getMetaTypeName(Class<?> javaType) {
@@ -371,20 +372,25 @@ public class ReflectUtils {
         );
     }
 
+    public static String getMetaTypeVariableName(TypeVariable<?> typeVariable) {
+        var anno = typeVariable.getAnnotation(TemplateVariable.class);
+        return anno != null ? anno.value() : typeVariable.getName();
+    }
+
     public static Method tryGetMethodByName(Class<?> klass, String methodName) {
         return getMethodByName(klass, methodName, false);
     }
 
     public static Class<?> getActualReturnType(Method method, List<Class<?>> argumentClasses) {
         Type returnType = method.getGenericReturnType();
-        if(returnType instanceof Class<?> klass) {
+        if (returnType instanceof Class<?> klass) {
             return klass;
         }
         Type[] argumentTypes = method.getGenericParameterTypes();
-        if(returnType instanceof TypeVariable<?> typeVariable) {
+        if (returnType instanceof TypeVariable<?> typeVariable) {
             int i = 0;
             for (Class<?> argumentClass : argumentClasses) {
-                if(argumentTypes[i] == typeVariable) {
+                if (argumentTypes[i] == typeVariable) {
                     return argumentClass;
                 }
                 i++;
@@ -399,9 +405,9 @@ public class ReflectUtils {
         return getMethodByName(klass, methodName, true);
     }
 
-    public static Method tryGetStaticMethod(Class<?> klass, String name, Class<?>...paramTypes) {
+    public static Method tryGetStaticMethod(Class<?> klass, String name, Class<?>... paramTypes) {
         try {
-            Method method =  klass.getMethod(name, paramTypes);
+            Method method = klass.getMethod(name, paramTypes);
             return Modifier.isStatic(method.getModifiers()) ? method : null;
         } catch (NoSuchMethodException e) {
             return null;
@@ -412,7 +418,7 @@ public class ReflectUtils {
         Class<?>[] paramClasses = new Class<?>[parameterClasses.size()];
         parameterClasses.toArray(paramClasses);
         Class<?> k = klass;
-        while(k != null && k != Object.class) {
+        while (k != null && k != Object.class) {
             Method[] methods = k.getDeclaredMethods();
             for (Method method : methods) {
                 if (method.getName().equals(name) &&
@@ -426,7 +432,7 @@ public class ReflectUtils {
         throw new RuntimeException(
                 "Method " + klass.getName() + "." + name + "(" +
                         NncUtils.join(paramClasses, Class::getName)
-                        +") not found"
+                        + ") not found"
         );
     }
 
@@ -436,7 +442,7 @@ public class ReflectUtils {
 
     public static Method getMethodByName(@NotNull Class<?> klass, String methodName, boolean failIfNotFound) {
         Class<?> k = klass;
-        while(k != null && k != Object.class) {
+        while (k != null && k != Object.class) {
             Method[] methods = k.getDeclaredMethods();
             for (Method method : methods) {
                 if (method.getName().equals(methodName)) {
@@ -446,7 +452,7 @@ public class ReflectUtils {
             }
             k = k.getSuperclass();
         }
-        if(failIfNotFound) {
+        if (failIfNotFound) {
             throw new RuntimeException("Method " + klass.getName() + "." + methodName + " not found");
         }
         return null;
@@ -462,16 +468,14 @@ public class ReflectUtils {
     }
 
     public static boolean isCollectionOf(Type type, Class<?> elementType) {
-        if(type instanceof ParameterizedType pType) {
+        if (type instanceof ParameterizedType pType) {
             Type rawType = pType.getRawType();
-            if(rawType instanceof Class<?> rawClass) {
+            if (rawType instanceof Class<?> rawClass) {
                 return Collection.class.isAssignableFrom(rawClass) && checkTypeArguments(pType, elementType);
-            }
-            else {
+            } else {
                 return false;
             }
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -496,20 +500,19 @@ public class ReflectUtils {
         return Arrays.equals(new Type[]{Object.class}, wildcardType.getUpperBounds());
     }
 
-    public static boolean checkTypeArguments(ParameterizedType parameterizedType, Class<?>...args) {
-        if(parameterizedType.getActualTypeArguments().length == args.length) {
-            for(int i = 0; i < args.length; i++) {
+    public static boolean checkTypeArguments(ParameterizedType parameterizedType, Class<?>... args) {
+        if (parameterizedType.getActualTypeArguments().length == args.length) {
+            for (int i = 0; i < args.length; i++) {
                 Type typeArg = parameterizedType.getActualTypeArguments()[i];
-                if(! (typeArg instanceof Class<?>)) {
+                if (!(typeArg instanceof Class<?>)) {
                     return false;
                 }
-                if(!args[i].isAssignableFrom((Class<?>)typeArg)) {
+                if (!args[i].isAssignableFrom((Class<?>) typeArg)) {
                     return false;
                 }
             }
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -555,7 +558,7 @@ public class ReflectUtils {
         walkClassHierarchyUpwards(klass, k -> {
             var methods = k.getDeclaredMethods();
             for (Method method : methods) {
-                if(filter.test(method)) {
+                if (filter.test(method)) {
                     holder.set(method);
                     return true;
                 }
@@ -572,7 +575,7 @@ public class ReflectUtils {
             return klass.getDeclaredMethod(name, paramClassArray);
         } catch (NoSuchMethodException e) {
             throw new InternalException("Can not find method " + klass.getName() + "." + name + "("
-                + NncUtils.join(parameterClasses, Class::getName, ",") + ")"
+                    + NncUtils.join(parameterClasses, Class::getName, ",") + ")"
             );
         }
     }
@@ -587,10 +590,10 @@ public class ReflectUtils {
     }
 
     private static void walkClassHierarchyUpwards(Class<?> klass, Predicate<Class<?>> action) {
-        if(action.test(klass)) {
+        if (action.test(klass)) {
             return;
         }
-        if(hasNonObjectSuper(klass)) {
+        if (hasNonObjectSuper(klass)) {
             walkClassHierarchyUpwards(klass.getSuperclass(), action);
         }
     }
@@ -602,10 +605,9 @@ public class ReflectUtils {
             return field;
         } catch (NoSuchFieldException ignored) {
         }
-        if(hasNonObjectSuper(klass)) {
+        if (hasNonObjectSuper(klass)) {
             return getDeclaredFieldRecursively(klass.getSuperclass(), name);
-        }
-        else {
+        } else {
             throw new InternalException("Can not find field '" + name + "' in class '" + klass.getSimpleName() + "'");
         }
     }
@@ -613,16 +615,16 @@ public class ReflectUtils {
     public static void set(Object object, Field field, Object value) {
         try {
             field.set(object, value);
-        } catch (IllegalAccessException|IllegalArgumentException e) {
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new RuntimeException("Fail to set field " + field, e);
         }
     }
 
     public static Object get(Object object, Field field) {
-        if(field.equals(getDeclaredField(Enum.class, "name"))) {
+        if (field.equals(getDeclaredField(Enum.class, "name"))) {
             return ((Enum<?>) object).name();
         }
-        if(field.equals(getDeclaredField(Enum.class, "ordinal"))) {
+        if (field.equals(getDeclaredField(Enum.class, "ordinal"))) {
             return ((Enum<?>) object).ordinal();
         }
         try {
@@ -633,7 +635,7 @@ public class ReflectUtils {
         }
     }
 
-    public static <T> Constructor<T> getDeclaredConstructor(Class<T> klass, Class<?>...paramTypes) {
+    public static <T> Constructor<T> getDeclaredConstructor(Class<T> klass, Class<?>... paramTypes) {
         try {
             return klass.getDeclaredConstructor(paramTypes);
         } catch (NoSuchMethodException e) {
@@ -643,10 +645,9 @@ public class ReflectUtils {
     }
 
     public static Type getType(Object object) {
-        if(object instanceof RuntimeGeneric runtimeGeneric) {
+        if (object instanceof RuntimeGeneric runtimeGeneric) {
             return runtimeGeneric.getGenericType();
-        }
-        else {
+        } else {
             return object.getClass();
         }
     }
@@ -661,7 +662,7 @@ public class ReflectUtils {
     public static List<Field> getDeclaredStaticFields(Class<?> klass, Predicate<Field> filter) {
         List<Field> results = new ArrayList<>();
         for (Field declaredField : klass.getDeclaredFields()) {
-            if(Modifier.isStatic(declaredField.getModifiers()) && filter.test(declaredField)) {
+            if (Modifier.isStatic(declaredField.getModifiers()) && filter.test(declaredField)) {
                 results.add(declaredField);
             }
         }
@@ -680,7 +681,7 @@ public class ReflectUtils {
     public static Field getStaticField(Class<?> klass, String name) {
         try {
             var field = klass.getField(name);
-            if(Modifier.isStatic(field.getModifiers())) {
+            if (Modifier.isStatic(field.getModifiers())) {
                 return field;
             }
         } catch (NoSuchFieldException ignore) {
@@ -697,16 +698,15 @@ public class ReflectUtils {
 
     public static List<Method> getStaticMethodsRecursively(Class<?> klass, Class<?> currentClass) {
         IntPredicate modifierFilter = mod -> {
-            if(!Modifier.isStatic(mod)) {
+            if (!Modifier.isStatic(mod)) {
                 return false;
             }
-            if(klass.getPackage().equals(currentClass.getPackage())) {
+            if (klass.getPackage().equals(currentClass.getPackage())) {
                 return !Modifier.isPrivate(mod);
             }
-            if(klass.isAssignableFrom(currentClass)) {
+            if (klass.isAssignableFrom(currentClass)) {
                 return Modifier.isPublic(mod) || Modifier.isProtected(mod);
-            }
-            else {
+            } else {
                 return Modifier.isPublic(mod);
             }
         };
@@ -714,7 +714,7 @@ public class ReflectUtils {
     }
 
     public static List<Method> getMethodsRecursively(Class<?> klass, IntPredicate modifierFilter) {
-        List<Method> result= new ArrayList<>();
+        List<Method> result = new ArrayList<>();
         getMethodsRecursively0(klass, modifierFilter, result);
         return result;
     }
@@ -726,7 +726,7 @@ public class ReflectUtils {
                         m -> modifierFilter.test(m.getModifiers())
                 )
         );
-        if(hasNonObjectSuper(klass)) {
+        if (hasNonObjectSuper(klass)) {
             getMethodsRecursively0(klass.getSuperclass(), modifierFilter, result);
         }
     }
@@ -746,7 +746,7 @@ public class ReflectUtils {
                         f -> Modifier.isStatic(f.getModifiers())
                 )
         );
-        if(klass.getSuperclass() != null && klass.getSuperclass() != Object.class) {
+        if (klass.getSuperclass() != null && klass.getSuperclass() != Object.class) {
             getAllDeclaredStaticFields(klass.getSuperclass(), result);
         }
     }
@@ -754,23 +754,21 @@ public class ReflectUtils {
     public static Field tryGetInstanceField(Class<?> klass, String name) {
         try {
             Field field = klass.getDeclaredField(name);
-            if(!Modifier.isStatic(field.getModifiers())) {
+            if (!Modifier.isStatic(field.getModifiers())) {
                 return field;
             }
-            if(klass.getSuperclass() != null && klass.getSuperclass() != Object.class) {
+            if (klass.getSuperclass() != null && klass.getSuperclass() != Object.class) {
                 return tryGetInstanceField(klass.getSuperclass(), name);
-            }
-            else {
+            } else {
                 return null;
             }
-        }
-        catch (NoSuchFieldException e) {
+        } catch (NoSuchFieldException e) {
             return null;
         }
     }
 
     private static Field trySetAccessible(Field field) {
-        if(field.getDeclaringClass().getName().startsWith(Constants.META_VM_PKG)) {
+        if (field.getDeclaringClass().getName().startsWith(Constants.META_VM_PKG)) {
             field.setAccessible(true);
         }
         return field;
@@ -778,17 +776,17 @@ public class ReflectUtils {
 
     public static Field getDeclaredFieldByMetaFieldName(Class<?> klass, String metaFieldName) {
         for (Field declaredField : klass.getDeclaredFields()) {
-            if(getMetaFieldName(declaredField).equals(metaFieldName)) {
+            if (getMetaFieldName(declaredField).equals(metaFieldName)) {
                 return declaredField;
             }
         }
         throw new InternalException("Can not find a declared field for meta field name '" + metaFieldName + "' " +
-                        "in class '" + klass.getName() + "'");
+                "in class '" + klass.getName() + "'");
     }
 
     public static Set<ModelAndPath> getReachableObjects(Collection<Object> objects,
-                                                  Predicate<Object> filter,
-                                                  boolean ignoreTransientFields) {
+                                                        Predicate<Object> filter,
+                                                        boolean ignoreTransientFields) {
         Set<ModelAndPath> result = new IdentitySet<>();
         Set<Object> visited = new IdentitySet<>();
         for (Object object : objects) {
@@ -803,12 +801,12 @@ public class ReflectUtils {
                                              LinkedList<String> path,
                                              Set<Object> visited,
                                              Set<ModelAndPath> result) {
-        if(object == null || ValueUtil.isPrimitive(object) || visited.contains(object) || !filter.test(object)) {
+        if (object == null || ValueUtil.isPrimitive(object) || visited.contains(object) || !filter.test(object)) {
             return;
         }
         result.add(new ModelAndPath(object, NncUtils.join(path, Objects::toString, ".")));
         visited.add(object);
-        if(object instanceof Collection<?> collection) {
+        if (object instanceof Collection<?> collection) {
             int index = 0;
             for (Object item : collection) {
                 path.addLast(index + "");
@@ -816,8 +814,7 @@ public class ReflectUtils {
                 path.removeLast();
                 index++;
             }
-        }
-        else {
+        } else {
             for (EntityProp prop : DescStore.get(object.getClass()).getProps()) {
                 if (prop.isAccessible() && !(ignoreTransientFields && prop.isTransient())) {
                     path.addLast(prop.getName());
@@ -847,7 +844,7 @@ public class ReflectUtils {
     }
 
     private static void extractReferences0(Object object, Set<Object> visited, Predicate<Object> filter, List<Reference> result) {
-        if(object == null || ValueUtil.isPrimitive(object) || ValueUtil.isJavaType(object)
+        if (object == null || ValueUtil.isPrimitive(object) || ValueUtil.isJavaType(object)
                 || !filter.test(object) || visited.contains(object)) {
             return;
         }
@@ -869,10 +866,10 @@ public class ReflectUtils {
     }
 
     public static Object getFieldValue(Object object, Field field) {
-        if(field.equals(getField(Enum.class, "name"))) {
+        if (field.equals(getField(Enum.class, "name"))) {
             return ((Enum<?>) object).name();
         }
-        if(field.equals(getField(Enum.class, "ordinal"))) {
+        if (field.equals(getField(Enum.class, "ordinal"))) {
             return ((Enum<?>) object).ordinal();
         }
         try {
@@ -898,7 +895,7 @@ public class ReflectUtils {
     public static List<Field> getDeclaredInstanceFields(Class<?> klass, Predicate<Field> filter) {
         List<Field> allFields = new ArrayList<>();
         for (Field declaredField : klass.getDeclaredFields()) {
-            if(!Modifier.isStatic(declaredField.getModifiers()) && filter.test(declaredField)) {
+            if (!Modifier.isStatic(declaredField.getModifiers()) && filter.test(declaredField)) {
                 declaredField.setAccessible(true);
                 allFields.add(declaredField);
             }
@@ -911,31 +908,30 @@ public class ReflectUtils {
     }
 
     private static String getSimpleTypeName0(Type type, IdentitySet<Type> visited) {
-        if(visited.contains(type)) {
+        if (visited.contains(type)) {
             throw new InternalException("Circular reference");
         }
         visited.add(type);
-        if(type instanceof Class<?> klass) {
+        if (type instanceof Class<?> klass) {
             return klass.getSimpleName();
         }
-        if(type instanceof ParameterizedType parameterizedType) {
+        if (type instanceof ParameterizedType parameterizedType) {
             Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
-                return rawClass.getSimpleName() + "<" +
-                        NncUtils.join(
-                                parameterizedType.getActualTypeArguments(),
-                                t -> getSimpleTypeName0(t, visited)
-                        ) + ">";
-        }
-        else {
+            return rawClass.getSimpleName() + "<" +
+                    NncUtils.join(
+                            parameterizedType.getActualTypeArguments(),
+                            t -> getSimpleTypeName0(t, visited)
+                    ) + ">";
+        } else {
             throw new InternalException("Can not erase type " + type);
         }
     }
 
     public static Class<?> eraseToClass(Type type) {
-        if(type instanceof Class<?> klass) {
+        if (type instanceof Class<?> klass) {
             return klass;
         }
-        if(type instanceof ParameterizedType parameterizedType) {
+        if (type instanceof ParameterizedType parameterizedType) {
             return (Class<?>) parameterizedType.getRawType();
         }
         return Object.class;
@@ -946,16 +942,19 @@ public class ReflectUtils {
     }
 
     private static Type eraseType0(Type type, IdentitySet<Type> visited) {
-        if(visited.contains(type)) {
+        if (visited.contains(type)) {
             throw new InternalException("Circular reference");
         }
         visited.add(type);
-        if(type instanceof Class<?>) {
+        if (type instanceof Class<?>) {
             return type;
         }
-        if(type instanceof ParameterizedType parameterizedType) {
+        if(type instanceof TypeVariable<?>) {
+            return type;
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
             Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
-            if(RuntimeGeneric.class.isAssignableFrom(rawClass) || List.class.isAssignableFrom(rawClass)) {
+            if (RuntimeGeneric.class.isAssignableFrom(rawClass) || List.class.isAssignableFrom(rawClass)) {
                 return ParameterizedTypeImpl.create(
                         rawClass,
                         NncUtils.map(
@@ -963,8 +962,7 @@ public class ReflectUtils {
                                 t -> eraseType0(t, visited)
                         )
                 );
-            }
-            else {
+            } else {
                 return rawClass;
             }
         }
@@ -973,14 +971,52 @@ public class ReflectUtils {
         }
     }
 
+    public static JavaSubstitutor resolveGenerics(Type type) {
+        ResolveVisitor visitor = new ResolveVisitor();
+        visitor.visitType(type);
+        return visitor.getSubstitutor();
+    }
+
+    private static class ResolveVisitor extends JavaTypeVisitor {
+
+        private JavaSubstitutor substitutor = JavaSubstitutorImpl.EMPTY;
+
+        @Override
+        public void visitClass(Class<?> klass) {
+            if (klass.getGenericSuperclass() != null) {
+                visitType(substitutor.substitute(klass.getGenericSuperclass()));
+            }
+            for (Type genericInterface : klass.getGenericInterfaces()) {
+                visitType(substitutor.substitute(genericInterface));
+            }
+        }
+
+        @Override
+        public void visitParameterizedType(ParameterizedType pType) {
+            var klass = (Class<?>) pType.getRawType();
+            Map<TypeVariable<?>, Type> map = new HashMap<>();
+            NncUtils.biForEach(
+                    klass.getTypeParameters(),
+                    pType.getActualTypeArguments(),
+                    map::put
+            );
+            substitutor = substitutor.merge(map);
+            visitType(pType.getRawType());
+        }
+
+        public JavaSubstitutor getSubstitutor() {
+            return substitutor;
+        }
+    }
+
     public static Type evaluateFieldType(Type declaringType, Type fieldType) {
-        if(fieldType instanceof Class<?> klass) {
+        if (fieldType instanceof Class<?> klass) {
             return klass;
         }
-        if(fieldType instanceof WildcardType wildcardType) {
+        if (fieldType instanceof WildcardType wildcardType) {
             return wildcardType;
         }
-        if(fieldType instanceof ParameterizedType pType) {
+        if (fieldType instanceof ParameterizedType pType) {
             return ParameterizedTypeImpl.create(
                     (Class<?>) pType.getRawType(),
                     NncUtils.map(
@@ -989,19 +1025,22 @@ public class ReflectUtils {
                     )
             );
         }
-        if(fieldType instanceof TypeVariable<?> typeVariable) {
-            if(declaringType instanceof ParameterizedType pType) {
+        if (fieldType instanceof TypeVariable<?> typeVariable) {
+            if (declaringType instanceof ParameterizedType pType) {
                 return evaluateTypeVariable(pType, typeVariable);
+            }
+            else {
+                return typeVariable;
             }
         }
         throw new InternalException("Can not evaluate member type " + fieldType + " defined in type " + declaringType);
     }
 
     public static List<Field> getDeclaredRawFields(Type type) {
-        if(type instanceof Class<?> klass) {
+        if (type instanceof Class<?> klass) {
             return Arrays.asList(klass.getDeclaredFields());
         }
-        if(type instanceof ParameterizedType pType) {
+        if (type instanceof ParameterizedType pType) {
             return getDeclaredRawFields(pType.getRawType());
         }
         return List.of();
@@ -1011,17 +1050,17 @@ public class ReflectUtils {
         Class<?> rawClass = (Class<?>) declaringType.getRawType();
         List<TypeVariable<?>> typeParams = Arrays.asList(rawClass.getTypeParameters());
         int idx = typeParams.indexOf(typeVariable);
-        if(idx >= 0) {
+        if (idx >= 0) {
             return declaringType.getActualTypeArguments()[idx];
         }
         throw new RuntimeException(typeVariable + " is not defined in " + declaringType);
     }
 
     public static Class<?> getRawClass(Type type) {
-        if(type instanceof Class<?> klass) {
+        if (type instanceof Class<?> klass) {
             return klass;
         }
-        if(type instanceof ParameterizedType parameterizedType) {
+        if (type instanceof ParameterizedType parameterizedType) {
             return getRawClass(parameterizedType.getRawType());
         }
         throw new InternalException("Can not get raw type for: " + type);
@@ -1029,9 +1068,9 @@ public class ReflectUtils {
 
     public static List<Field> getInstanceFields(Class<?> klass, Class<? extends Annotation> annotationClass) {
         List<Field> allFields = new ArrayList<>();
-        while(klass != Object.class && klass != null) {
+        while (klass != Object.class && klass != null) {
             for (Field declaredField : klass.getDeclaredFields()) {
-                if(!Modifier.isStatic(declaredField.getModifiers())
+                if (!Modifier.isStatic(declaredField.getModifiers())
                         && (annotationClass == null || declaredField.isAnnotationPresent(annotationClass))) {
                     declaredField.trySetAccessible();
                     allFields.add(declaredField);
@@ -1054,7 +1093,7 @@ public class ReflectUtils {
         }
     }
 
-    public static <T> Constructor<T> getConstructorIfPresent(Class<T> klass, Class<?>...paramTypes) {
+    public static <T> Constructor<T> getConstructorIfPresent(Class<T> klass, Class<?>... paramTypes) {
         try {
             return klass.getConstructor(paramTypes);
         } catch (Exception e) {
@@ -1063,7 +1102,7 @@ public class ReflectUtils {
     }
 
     @SuppressWarnings("unused")
-    public static <T> T invokeConstructor(Constructor<T> constructor, Object...args) {
+    public static <T> T invokeConstructor(Constructor<T> constructor, Object... args) {
         try {
             constructor.setAccessible(true);
             return constructor.newInstance(args);
@@ -1072,7 +1111,7 @@ public class ReflectUtils {
         }
     }
 
-    public static <T> T newInstance(Constructor<T> constructor, Object...arguments) {
+    public static <T> T newInstance(Constructor<T> constructor, Object... arguments) {
         try {
             return constructor.newInstance(arguments);
         } catch (Exception e) {
@@ -1080,7 +1119,7 @@ public class ReflectUtils {
         }
     }
 
-    public static Object invoke(Object object, Method method, Object...argiments) {
+    public static Object invoke(Object object, Method method, Object... argiments) {
         try {
             return method.invoke(object, argiments);
         } catch (Exception e) {

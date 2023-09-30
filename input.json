@@ -1,842 +1,174 @@
 {
-  "id": 1006200126,
-  "name": "start",
-  "typeId": 1004700100,
-  "isConstructor": false,
-  "rootScope": {
-    "id": 1006300128,
-    "nodes": [
+  "id": 15000,
+  "name": "类型分类",
+  "code": "TypeCategory",
+  "category": 1,
+  "ephemeral": false,
+  "anonymous": false,
+  "param": {
+    "superTypeId": 13050,
+    "superType": {
+      "id": 13050,
+      "name": "枚举",
+      "category": 0,
+      "ephemeral": false,
+      "anonymous": false,
+      "param": {
+        "fields": [],
+        "constraints": []
+      }
+    },
+    "fields": [
       {
-        "id": 1006000122,
-        "flowId": 1006200126,
-        "name": "当前记录",
-        "kind": 0,
-        "outputTypeId": 1004700100,
-        "outputType": {
-          "id": 1004700100,
-          "name": "Lab",
-          "code": "Lab",
-          "category": 0,
-          "ephemeral": false,
+        "id": 14044,
+        "name": "名称",
+        "access": 1,
+        "defaultValue": null,
+        "unique": false,
+        "asTitle": true,
+        "declaringTypeId": 13050,
+        "type": {
+          "id": 10000,
+          "name": "字符串",
+          "category": 11,
+          "ephemeral": true,
           "anonymous": false,
-          "param": {
-            "fields": [
-              {
-                "id": 1004800111,
-                "name": "code",
-                "access": 1,
-                "unique": true,
-                "asTitle": true,
-                "declaringTypeId": 1004700100,
-                "typeId": 10001,
-                "type": {
-                  "id": 10001,
-                  "name": "字符串",
-                  "code": "STRING",
-                  "category": 11,
-                  "ephemeral": true,
-                  "anonymous": false,
-                  "nullableTypeId": 15015,
-                  "arrayTypeId": 11059
-                },
-                "isChild": false
-              },
-              {
-                "id": 1004800113,
-                "name": "startedAt",
-                "access": 1,
-                "unique": false,
-                "asTitle": false,
-                "declaringTypeId": 1004700100,
-                "typeId": 15070,
-                "type": {
-                  "id": 15070,
-                  "name": "空|时间",
-                  "category": 9,
-                  "ephemeral": false,
-                  "anonymous": false,
-                  "param": {
-                    "typeMembers": [
-                      {
-                        "id": 10004,
-                        "name": "空",
-                        "code": "NULL",
-                        "category": 10,
-                        "ephemeral": true,
-                        "anonymous": false
-                      },
-                      {
-                        "id": 10000,
-                        "name": "时间",
-                        "code": "TIME",
-                        "category": 18,
-                        "ephemeral": true,
-                        "anonymous": false,
-                        "nullableTypeId": 15070,
-                        "arrayTypeId": 11062
-                      }
-                    ]
-                  }
-                },
-                "isChild": false
-              },
-              {
-                "id": 1004800117,
-                "name": "started",
-                "access": 1,
-                "unique": false,
-                "asTitle": false,
-                "declaringTypeId": 1004700100,
-                "typeId": 15092,
-                "type": {
-                  "id": 15092,
-                  "name": "空|布尔",
-                  "category": 9,
-                  "ephemeral": false,
-                  "anonymous": false,
-                  "param": {
-                    "typeMembers": [
-                      {
-                        "id": 10004,
-                        "name": "空",
-                        "code": "NULL",
-                        "category": 10,
-                        "ephemeral": true,
-                        "anonymous": false
-                      },
-                      {
-                        "id": 10007,
-                        "name": "布尔",
-                        "code": "BOOLEAN",
-                        "category": 16,
-                        "ephemeral": true,
-                        "anonymous": false,
-                        "nullableTypeId": 15092,
-                        "arrayTypeId": 11058
-                      }
-                    ]
-                  }
-                },
-                "isChild": false
-              },
-              {
-                "id": 1004800123,
-                "name": "coupon",
-                "access": 1,
-                "unique": false,
-                "asTitle": false,
-                "declaringTypeId": 1004700100,
-                "typeId": 1004700108,
-                "type": {
-                  "id": 1004700108,
-                  "name": "Coupon",
-                  "code": "Coupon",
-                  "category": 0,
-                  "ephemeral": false,
-                  "anonymous": false,
-                  "nullableTypeId": 1006700136,
-                  "param": {
-                    "fields": [
-                      {
-                        "id": 1004800121,
-                        "name": "discount",
-                        "access": 1,
-                        "unique": false,
-                        "asTitle": true,
-                        "declaringTypeId": 1004700108,
-                        "typeId": 10002,
-                        "isChild": false
-                      },
-                      {
-                        "id": 1004800122,
-                        "name": "product",
-                        "access": 1,
-                        "unique": false,
-                        "asTitle": false,
-                        "declaringTypeId": 1004700108,
-                        "typeId": 1004700107,
-                        "isChild": false
-                      }
-                    ],
-                    "constraints": []
-                  }
-                },
-                "isChild": false
-              },
-              {
-                "id": 1004800127,
-                "name": "order",
-                "access": 1,
-                "unique": false,
-                "asTitle": false,
-                "declaringTypeId": 1004700100,
-                "typeId": 1004700109,
-                "type": {
-                  "id": 1004700109,
-                  "name": "Order",
-                  "code": "Order",
-                  "category": 0,
-                  "ephemeral": false,
-                  "anonymous": false,
-                  "param": {
-                    "fields": [
-                      {
-                        "id": 1004800124,
-                        "name": "code",
-                        "access": 1,
-                        "unique": true,
-                        "asTitle": true,
-                        "declaringTypeId": 1004700109,
-                        "typeId": 10001,
-                        "isChild": false
-                      },
-                      {
-                        "id": 1004800125,
-                        "name": "product",
-                        "access": 1,
-                        "unique": false,
-                        "asTitle": false,
-                        "declaringTypeId": 1004700109,
-                        "typeId": 1004700107,
-                        "isChild": false
-                      },
-                      {
-                        "id": 1004800126,
-                        "name": "coupon",
-                        "access": 1,
-                        "unique": false,
-                        "asTitle": false,
-                        "declaringTypeId": 1004700109,
-                        "typeId": 1006700136,
-                        "isChild": false
-                      }
-                    ],
-                    "constraints": [
-                      {
-                        "id": 1005600118,
-                        "kind": 1,
-                        "typeId": 1004700109,
-                        "message": "属性值'code'重复",
-                        "param": {
-                          "kind": 1,
-                          "items": [
-                            {
-                              "id": 1005700120,
-                              "name": "code",
-                              "value": {
-                                "kind": 2,
-                                "value": {
-                                  "expression": "this.code",
-                                  "type": 5,
-                                  "displayValue": ""
-                                },
-                                "valueType": {
-                                  "id": 10001,
-                                  "name": "字符串",
-                                  "code": "STRING",
-                                  "category": 11,
-                                  "ephemeral": true,
-                                  "anonymous": false,
-                                  "nullableTypeId": 15015,
-                                  "arrayTypeId": 11059
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "isChild": false
-              },
-              {
-                "id": 1004800129,
-                "name": "products",
-                "access": 1,
-                "unique": false,
-                "asTitle": false,
-                "declaringTypeId": 1004700100,
-                "typeId": 1006700137,
-                "type": {
-                  "id": 1006700137,
-                  "name": "Product[]|空",
-                  "category": 9,
-                  "ephemeral": false,
-                  "anonymous": false,
-                  "param": {
-                    "typeMembers": [
-                      {
-                        "id": 1008400169,
-                        "name": "Product[]",
-                        "code": "Product[]",
-                        "category": 5,
-                        "ephemeral": false,
-                        "anonymous": false,
-                        "nullableTypeId": 1006700137,
-                        "param": {
-                          "elementTypeId": 1004700107,
-                          "elementType": {
-                            "id": 1004700107,
-                            "name": "Product",
-                            "code": "Product",
-                            "category": 0,
-                            "ephemeral": false,
-                            "anonymous": false,
-                            "arrayTypeId": 1008400169,
-                            "param": {
-                              "fields": [
-                                {
-                                  "id": 1004800120,
-                                  "name": "title",
-                                  "access": 1,
-                                  "unique": false,
-                                  "asTitle": true,
-                                  "declaringTypeId": 1004700107,
-                                  "typeId": 10001,
-                                  "isChild": false
-                                }
-                              ],
-                              "constraints": []
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "id": 10004,
-                        "name": "空",
-                        "code": "NULL",
-                        "category": 10,
-                        "ephemeral": true,
-                        "anonymous": false
-                      }
-                    ]
-                  }
-                },
-                "isChild": false
-              }
-            ],
-            "constraints": [
-              {
-                "id": 1005600115,
-                "kind": 1,
-                "typeId": 1004700100,
-                "message": "属性值'code'重复",
-                "param": {
-                  "kind": 1,
-                  "items": [
-                    {
-                      "id": 1005700117,
-                      "name": "code",
-                      "value": {
-                        "kind": 2,
-                        "value": {
-                          "expression": "this.code",
-                          "type": 5,
-                          "displayValue": ""
-                        },
-                        "valueType": {
-                          "id": 10001,
-                          "name": "字符串",
-                          "code": "STRING",
-                          "category": 11,
-                          "ephemeral": true,
-                          "anonymous": false,
-                          "nullableTypeId": 15015,
-                          "arrayTypeId": 11059
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "id": 1008300167,
-                "kind": 2,
-                "typeId": 1004700100,
-                "param": {
-                  "kind": 2,
-                  "value": {
-                    "kind": 3,
-                    "value": {
-                      "expression": "this.coupon.product = $$1007900160",
-                      "type": 5,
-                      "displayValue": ""
-                    },
-                    "valueType": {
-                      "id": 10007,
-                      "name": "布尔",
-                      "code": "BOOLEAN",
-                      "category": 16,
-                      "ephemeral": true,
-                      "anonymous": false,
-                      "nullableTypeId": 15092,
-                      "arrayTypeId": 11058
-                    }
-                  }
-                }
-              },
-              {
-                "id": 1008300168,
-                "kind": 2,
-                "typeId": 1004700100,
-                "param": {
-                  "kind": 2,
-                  "value": {
-                    "kind": 3,
-                    "value": {
-                      "expression": "AllMatch(this.products, title = '001')",
-                      "type": 5,
-                      "displayValue": ""
-                    },
-                    "valueType": {
-                      "id": 10007,
-                      "name": "布尔",
-                      "code": "BOOLEAN",
-                      "category": 16,
-                      "ephemeral": true,
-                      "anonymous": false,
-                      "nullableTypeId": 15092,
-                      "arrayTypeId": 11058
-                    }
-                  }
-                }
-              }
-            ]
+          "param": null,
+          "nullableTypeRef": {
+            "id": 18016
           }
         },
-        "scopeId": 1006300128
+        "isChild": false,
+        "typeRef": {
+          "id": 10000
+        }
       },
       {
-        "id": 1006400130,
-        "flowId": 1006200126,
-        "name": "流程输入",
-        "kind": 1,
-        "prevId": 1006000122,
-        "outputTypeId": 1004700101,
-        "param": {
-          "type": "1",
-          "typeId": 1004700101,
-          "fields": []
-        },
-        "outputType": {
-          "id": 1004700101,
-          "name": "流程输入-4926225998770958270",
-          "category": 0,
+        "id": 14077,
+        "name": "序号",
+        "access": 1,
+        "defaultValue": null,
+        "unique": false,
+        "asTitle": false,
+        "declaringTypeId": 13050,
+        "type": {
+          "id": 10004,
+          "name": "整数",
+          "category": 20,
           "ephemeral": true,
-          "anonymous": true,
-          "param": {
-            "fields": [],
-            "constraints": [],
-            "desc": "流程输入"
-          }
+          "anonymous": false,
+          "param": null
         },
-        "scopeId": 1006300128
+        "isChild": false,
+        "typeRef": {
+          "id": 10004
+        }
+      }
+    ],
+    "constraints": [],
+    "extra": [
+      {
+        "id": 17000,
+        "ownerId": 15000,
+        "ordinal": 0,
+        "name": "CLASS"
       },
       {
-        "id": 1007300148,
-        "flowId": 1006200126,
-        "name": "更新记录",
-        "kind": 4,
-        "prevId": 1006400130,
-        "param": {
-          "kind": "4",
-          "objectId": {
-            "kind": 2,
-            "value": {
-              "expression": "当前记录",
-              "type": 5,
-              "displayValue": ""
-            },
-            "valueType": {
-              "id": 1004700100,
-              "name": "Lab",
-              "code": "Lab",
-              "category": 0,
-              "ephemeral": false,
-              "anonymous": false,
-              "param": {
-                "fields": [
-                  {
-                    "id": 1004800111,
-                    "name": "code",
-                    "access": 1,
-                    "unique": true,
-                    "asTitle": true,
-                    "declaringTypeId": 1004700100,
-                    "typeId": 10001,
-                    "isChild": false
-                  },
-                  {
-                    "id": 1004800113,
-                    "name": "startedAt",
-                    "access": 1,
-                    "unique": false,
-                    "asTitle": false,
-                    "declaringTypeId": 1004700100,
-                    "typeId": 15070,
-                    "isChild": false
-                  },
-                  {
-                    "id": 1004800117,
-                    "name": "started",
-                    "access": 1,
-                    "unique": false,
-                    "asTitle": false,
-                    "declaringTypeId": 1004700100,
-                    "typeId": 15092,
-                    "isChild": false
-                  },
-                  {
-                    "id": 1004800123,
-                    "name": "coupon",
-                    "access": 1,
-                    "unique": false,
-                    "asTitle": false,
-                    "declaringTypeId": 1004700100,
-                    "typeId": 1004700108,
-                    "isChild": false
-                  },
-                  {
-                    "id": 1004800127,
-                    "name": "order",
-                    "access": 1,
-                    "unique": false,
-                    "asTitle": false,
-                    "declaringTypeId": 1004700100,
-                    "typeId": 1004700109,
-                    "isChild": false
-                  },
-                  {
-                    "id": 1004800129,
-                    "name": "products",
-                    "access": 1,
-                    "unique": false,
-                    "asTitle": false,
-                    "declaringTypeId": 1004700100,
-                    "typeId": 1006700137,
-                    "isChild": false
-                  }
-                ],
-                "constraints": [
-                  {
-                    "id": 1005600115,
-                    "kind": 1,
-                    "typeId": 1004700100,
-                    "message": "属性值'code'重复",
-                    "param": {
-                      "kind": 1,
-                      "items": [
-                        {
-                          "id": 1005700117,
-                          "name": "code",
-                          "value": {
-                            "kind": 2,
-                            "value": {
-                              "expression": "this.code",
-                              "type": 5,
-                              "displayValue": ""
-                            },
-                            "valueType": {
-                              "id": 10001,
-                              "name": "字符串",
-                              "code": "STRING",
-                              "category": 11,
-                              "ephemeral": true,
-                              "anonymous": false,
-                              "nullableTypeId": 15015,
-                              "arrayTypeId": 11059
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "id": 1008300167,
-                    "kind": 2,
-                    "typeId": 1004700100,
-                    "param": {
-                      "kind": 2,
-                      "value": {
-                        "kind": 3,
-                        "value": {
-                          "expression": "this.coupon.product = $$1007900160",
-                          "type": 5,
-                          "displayValue": ""
-                        },
-                        "valueType": {
-                          "id": 10007,
-                          "name": "布尔",
-                          "code": "BOOLEAN",
-                          "category": 16,
-                          "ephemeral": true,
-                          "anonymous": false,
-                          "nullableTypeId": 15092,
-                          "arrayTypeId": 11058
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "id": 1008300168,
-                    "kind": 2,
-                    "typeId": 1004700100,
-                    "param": {
-                      "kind": 2,
-                      "value": {
-                        "kind": 3,
-                        "value": {
-                          "expression": "AllMatch(this.products, title = '001')",
-                          "type": 5,
-                          "displayValue": ""
-                        },
-                        "valueType": {
-                          "id": 10007,
-                          "name": "布尔",
-                          "code": "BOOLEAN",
-                          "category": 16,
-                          "ephemeral": true,
-                          "anonymous": false,
-                          "nullableTypeId": 15092,
-                          "arrayTypeId": 11058
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          "fields": [
-            {
-              "fieldId": 1004800117,
-              "opCode": 1,
-              "value": {
-                "kind": 1,
-                "value": {
-                  "displayValue": "是",
-                  "value": true,
-                  "type": 1
-                },
-                "valueType": {
-                  "name": "布尔",
-                  "code": "BOOLEAN",
-                  "category": 16,
-                  "ephemeral": true,
-                  "anonymous": false
-                }
-              }
-            },
-            {
-              "fieldId": 1004800113,
-              "opCode": 1,
-              "value": {
-                "kind": 3,
-                "value": {
-                  "expression": "NOW()",
-                  "type": 5,
-                  "displayValue": ""
-                },
-                "valueType": {
-                  "name": "时间",
-                  "code": "TIME",
-                  "category": 18,
-                  "ephemeral": true,
-                  "anonymous": false
-                }
-              }
-            }
-          ]
-        },
-        "scopeId": 1006300128
+        "id": 17013,
+        "ownerId": 15000,
+        "ordinal": 1,
+        "name": "ENUM"
       },
       {
-        "id": 1006100124,
-        "flowId": 1006200126,
-        "name": "结束",
-        "kind": 9,
-        "prevId": 1007300148,
-        "outputTypeId": 1004700102,
-        "param": {
-          "kind": "9",
-          "fields": []
-        },
-        "outputType": {
-          "id": 1004700102,
-          "name": "流程输出-3077806727064863419",
-          "category": 0,
-          "ephemeral": true,
-          "anonymous": true,
-          "param": {
-            "fields": [],
-            "constraints": [],
-            "desc": "流程输出"
-          }
-        },
-        "scopeId": 1006300128
+        "id": 17001,
+        "ownerId": 15000,
+        "ordinal": 2,
+        "name": "INTERFACE"
+      },
+      {
+        "id": 17010,
+        "ownerId": 15000,
+        "ordinal": 3,
+        "name": "VALUE"
+      },
+      {
+        "id": 17012,
+        "ownerId": 15000,
+        "ordinal": 4,
+        "name": "ARRAY"
+      },
+      {
+        "id": 17005,
+        "ownerId": 15000,
+        "ordinal": 5,
+        "name": "UNION"
+      },
+      {
+        "id": 17009,
+        "ownerId": 15000,
+        "ordinal": 6,
+        "name": "NULL"
+      },
+      {
+        "id": 17004,
+        "ownerId": 15000,
+        "ordinal": 7,
+        "name": "STRING"
+      },
+      {
+        "id": 17007,
+        "ownerId": 15000,
+        "ordinal": 8,
+        "name": "DOUBLE"
+      },
+      {
+        "id": 17006,
+        "ownerId": 15000,
+        "ordinal": 9,
+        "name": "LONG"
+      },
+      {
+        "id": 17015,
+        "ownerId": 15000,
+        "ordinal": 10,
+        "name": "BOOLEAN"
+      },
+      {
+        "id": 17002,
+        "ownerId": 15000,
+        "ordinal": 11,
+        "name": "TIME"
+      },
+      {
+        "id": 17008,
+        "ownerId": 15000,
+        "ordinal": 12,
+        "name": "DATE"
+      },
+      {
+        "id": 17011,
+        "ownerId": 15000,
+        "ordinal": 13,
+        "name": "INT"
+      },
+      {
+        "id": 17003,
+        "ownerId": 15000,
+        "ordinal": 14,
+        "name": "PASSWORD"
+      },
+      {
+        "id": 17016,
+        "ownerId": 15000,
+        "ordinal": 15,
+        "name": "ANY"
+      },
+      {
+        "id": 17014,
+        "ownerId": 15000,
+        "ordinal": 16,
+        "name": "INSTANCE"
       }
     ]
-  },
-  "type": {
-    "id": 1004700100,
-    "name": "Lab",
-    "code": "Lab",
-    "category": 0,
-    "ephemeral": false,
-    "anonymous": false,
-    "param": {
-      "fields": [
-        {
-          "id": 1004800111,
-          "name": "code",
-          "access": 1,
-          "unique": true,
-          "asTitle": true,
-          "declaringTypeId": 1004700100,
-          "typeId": 10001,
-          "isChild": false
-        },
-        {
-          "id": 1004800113,
-          "name": "startedAt",
-          "access": 1,
-          "unique": false,
-          "asTitle": false,
-          "declaringTypeId": 1004700100,
-          "typeId": 15070,
-          "isChild": false
-        },
-        {
-          "id": 1004800117,
-          "name": "started",
-          "access": 1,
-          "unique": false,
-          "asTitle": false,
-          "declaringTypeId": 1004700100,
-          "typeId": 15092,
-          "isChild": false
-        },
-        {
-          "id": 1004800123,
-          "name": "coupon",
-          "access": 1,
-          "unique": false,
-          "asTitle": false,
-          "declaringTypeId": 1004700100,
-          "typeId": 1004700108,
-          "isChild": false
-        },
-        {
-          "id": 1004800127,
-          "name": "order",
-          "access": 1,
-          "unique": false,
-          "asTitle": false,
-          "declaringTypeId": 1004700100,
-          "typeId": 1004700109,
-          "isChild": false
-        },
-        {
-          "id": 1004800129,
-          "name": "products",
-          "access": 1,
-          "unique": false,
-          "asTitle": false,
-          "declaringTypeId": 1004700100,
-          "typeId": 1006700137,
-          "isChild": false
-        }
-      ],
-      "constraints": [
-        {
-          "id": 1005600115,
-          "kind": 1,
-          "typeId": 1004700100,
-          "message": "属性值'code'重复",
-          "param": {
-            "kind": 1,
-            "items": [
-              {
-                "id": 1005700117,
-                "name": "code",
-                "value": {
-                  "kind": 2,
-                  "value": {
-                    "expression": "this.code",
-                    "type": 5,
-                    "displayValue": ""
-                  },
-                  "valueType": {
-                    "id": 10001,
-                    "name": "字符串",
-                    "code": "STRING",
-                    "category": 11,
-                    "ephemeral": true,
-                    "anonymous": false,
-                    "nullableTypeId": 15015,
-                    "arrayTypeId": 11059
-                  }
-                }
-              }
-            ]
-          }
-        },
-        {
-          "id": 1008300167,
-          "kind": 2,
-          "typeId": 1004700100,
-          "param": {
-            "kind": 2,
-            "value": {
-              "kind": 3,
-              "value": {
-                "expression": "this.coupon.product = $$1007900160",
-                "type": 5,
-                "displayValue": ""
-              },
-              "valueType": {
-                "id": 10007,
-                "name": "布尔",
-                "code": "BOOLEAN",
-                "category": 16,
-                "ephemeral": true,
-                "anonymous": false,
-                "nullableTypeId": 15092,
-                "arrayTypeId": 11058
-              }
-            }
-          }
-        },
-        {
-          "id": 1008300168,
-          "kind": 2,
-          "typeId": 1004700100,
-          "param": {
-            "kind": 2,
-            "value": {
-              "kind": 3,
-              "value": {
-                "expression": "AllMatch(this.products, title = '001')",
-                "type": 5,
-                "displayValue": ""
-              },
-              "valueType": {
-                "id": 10007,
-                "name": "布尔",
-                "code": "BOOLEAN",
-                "category": 16,
-                "ephemeral": true,
-                "anonymous": false,
-                "nullableTypeId": 15092,
-                "arrayTypeId": 11058
-              }
-            }
-          }
-        }
-      ]
-    }
-  },
-  "inputTypeRef": {"id": 1004700101},
-  "outputTypeRef": {"id": 1004700102}
+  }
 }

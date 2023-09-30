@@ -4,6 +4,6 @@ import java.util.Set;
 
 public interface CompositeTypeFactory {
 
-    UnionType getUnionType(Set<Type> typeMembers);
+    UnionType getUnionType(Set<Type> members);
 
 }

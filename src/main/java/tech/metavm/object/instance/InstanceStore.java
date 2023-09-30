@@ -46,8 +46,6 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public List<ReferencePO> getFirstStrongReferences(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds) {
-        System.out.println("getFirstStrongReferences. tenantId: "+ tenantId +
-                ", targetIds: " + targetIds + ", excludedSourceIds: " + excludedSourceIds);
         return referenceMapper.selectFirstStrongReferences(tenantId, targetIds, excludedSourceIds);
     }
 
@@ -59,8 +57,11 @@ public class InstanceStore extends BaseInstanceStore {
 
 
     @Override
-    public List<Long> selectByKey(IndexKeyPO key, IInstanceContext context) {
-        List<IndexEntryPO> indexItems = indexEntryMapper.selectByKeys(context.getTenantId(), List.of(key));
+    public List<Long> selectByKey(List<Long> tenantIds, IndexKeyPO key, IInstanceContext context) {
+        List<IndexEntryPO> indexItems = new ArrayList<>();
+        for (Long tenantId : tenantIds) {
+            indexItems.addAll(indexEntryMapper.selectByKeys(tenantId, List.of(key)));
+        }
         return NncUtils.map(indexItems, IndexEntryPO::getInstanceId);
     }
 

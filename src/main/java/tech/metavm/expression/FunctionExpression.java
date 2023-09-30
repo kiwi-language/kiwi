@@ -22,6 +22,12 @@ public class FunctionExpression extends Expression {
         this(function, new ArrayExpression(List.of()));
     }
 
+    public FunctionExpression(Function function, List<Expression> arguments) {
+        this.function = function;
+        this.arguments.addAll(arguments);
+    }
+
+
     public FunctionExpression(Function function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {

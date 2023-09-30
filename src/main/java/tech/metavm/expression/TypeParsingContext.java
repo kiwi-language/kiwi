@@ -40,16 +40,6 @@ public class TypeParsingContext implements ParsingContext {
         instanceContext = null;
     }
 
-    @Override
-    public FieldExpression parse(List<Var> varPath) {
-        NncUtils.requireMinimumSize(varPath, 1);
-        Var var = varPath.get(0);
-        if(var.isName() && var.getName().equals("this")) {
-            varPath = varPath.subList(1, varPath.size());
-        }
-        return new FieldExpression(ExpressionUtil.thisObject(type), getFields(type, varPath));
-    }
-
     public ClassType getType() {
         return type;
     }

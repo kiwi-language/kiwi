@@ -59,8 +59,9 @@ public class GeneratorTest extends TestCase {
             var stdAllocators = new StdAllocators(allocatorStore);
             Bootstrap bootstrap = new Bootstrap(instanceContextFactory, stdAllocators);
             bootstrap.boot();
-            typeResolver = new MockTypeResolver(stdAllocators);
-            return action.apply(instanceContextFactory.newContext().getEntityContext());
+            var context = instanceContextFactory.newContext().getEntityContext();
+            typeResolver = new MockTypeResolver(context, stdAllocators);
+            return action.apply(context);
         }
     }
 
@@ -92,12 +93,10 @@ public class GeneratorTest extends TestCase {
     public void testInterface() {
         doInSession(entityContext -> {
             var sub = (ClassType) typeResolver.resolve(
-                    TranspileUtil.createType(TranspileTestTools.getPsiClass(SubFoo.class)),
-                    entityContext
+                    TranspileUtil.createType(TranspileTestTools.getPsiClass(SubFoo.class))
             );
             var it = (ClassType) typeResolver.resolve(
-                    TranspileUtil.createType(TranspileTestTools.getPsiClass(InterfaceFoo.class)),
-                    entityContext
+                    TranspileUtil.createType(TranspileTestTools.getPsiClass(InterfaceFoo.class))
             );
             assertTrue(it.isAssignableFrom(sub));
             var itTest = it.getFlowByCode("test");
@@ -114,6 +113,12 @@ public class GeneratorTest extends TestCase {
         clean();
         var typeDTOs = compile(classes);
         deploy(typeDTOs);
+    }
+
+    public void test_switch() {
+        var file = TranspileTestTools.getPsiJavaFile(AstSwitchFoo.class);
+        transform(List.of(AstSwitchFoo.class));
+        System.out.println(file.getText());
     }
 
     public void test_clean() {
@@ -143,6 +148,16 @@ public class GeneratorTest extends TestCase {
         }
     }
 
+    public void test_deploy() {
+        deploy();
+    }
+
+    private void deploy() {
+        List<TypeDTO> typeDTOs = TestUtils.readJson(OUTPUT_FILE, new TypeReference<>() {
+        });
+        deploy(typeDTOs);
+    }
+
     private void deploy(List<TypeDTO> typeDTOs) {
         var resp = HttpUtils.post("/type/batch", typeDTOs, new TypeReference<Result<List<Long>>>() {
         });
@@ -155,14 +170,28 @@ public class GeneratorTest extends TestCase {
         System.out.println("Deployed type ids: " + ids);
     }
 
+    private void transform(List<Class<?>> classes) {
+        doInSession(entityContext -> {
+            List<PsiClassType> psiTypes = NncUtils.map(classes, TranspileTestTools::getPsiClassType);
+            NncUtils.forEach(psiTypes, k -> typeResolver.resolveTypeOnly(k));
+            return null;
+        });
+    }
+
     private List<TypeDTO> compile(List<Class<?>> classes) {
         return doInSession(entityContext -> {
             List<PsiClassType> psiTypes = NncUtils.map(classes, TranspileTestTools::getPsiClassType);
-            List<ClassType> metaTypes = NncUtils.map(psiTypes, k -> (ClassType) typeResolver.resolve(k, entityContext));
+            NncUtils.map(psiTypes, k -> (ClassType) typeResolver.resolve(k));
             try (SerializeContext ignored = SerializeContext.enter()) {
                 List<TypeDTO> result = new ArrayList<>();
-                for (ClassType metaType : metaTypes) {
-                    result.add(metaType.toDTO(true, true, true));
+                var generatedTypes = typeResolver.getGeneratedTypes();
+                for (Type metaType : generatedTypes) {
+                    if (metaType instanceof ClassType classType) {
+                        typeResolver.ensureCodeGenerated(classType);
+                        result.add(classType.toDTO(true, true, true, true));
+                    } else {
+                        result.add(metaType.toDTO());
+                    }
                     if (metaType.getArrayType() != null) {
                         result.add(metaType.getArrayType().toDTO());
                     }
@@ -173,7 +202,7 @@ public class GeneratorTest extends TestCase {
                     for (String collTypeName : collTypeNames) {
                         var collType = (ClassType) entityContext.selectByUniqueKey(Type.UNIQUE_NAME, collTypeName);
                         if (collType != null) {
-                            result.add(collType.toDTO(true, true, true));
+                            result.add(collType.toDTO(true, true, true, true));
                         }
                     }
                 }

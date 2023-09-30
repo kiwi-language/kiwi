@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.meta.*;
 
 import java.lang.reflect.Type;
+import java.util.List;
 
 public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
 
@@ -22,11 +23,8 @@ public class ValueParser<T> extends PojoParser<T, ValueDef<T>> {
     }
 
     @Override
-    protected ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType) {
-        return ClassBuilder.newBuilder(name, code)
-                .source(ClassSource.REFLECTION)
-                .superType(superType)
-                .category(TypeCategory.VALUE)
-                .build();
+    protected TypeCategory getTypeCategory() {
+        return TypeCategory.VALUE;
     }
+
 }

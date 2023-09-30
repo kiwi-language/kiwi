@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
@@ -11,6 +12,7 @@ import tech.metavm.util.NncUtils;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 public class ExpressionParser {
 
@@ -57,7 +59,7 @@ public class ExpressionParser {
         return ExpressionResolver.resolve(expression, context);
     }
 
-    private Expression preParse() {
+    public Expression preParse() {
         while (tokenizer.hasNext() &&
                 !(tokenizer.peekToken().isClosingParenthesis() && numUnpairedLeftParentheses == 0)) {
             Token token = tokenizer.nextToken();
@@ -201,30 +203,6 @@ public class ExpressionParser {
         return new VariableExpression(variable);
     }
 
-    private Expression parseField(String fieldPath) {
-        if(fieldPath.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-            try {
-                long id = Long.parseLong(fieldPath.substring(Constants.CONSTANT_ID_PREFIX.length()));
-                return new ConstantExpression(context.getInstance(id));
-            }
-            catch (NumberFormatException e) {
-                throw new InternalException("Invalid id constant '" + fieldPath + "'");
-            }
-        }
-        else {
-            String[] splits = fieldPath.split("\\.");
-            List<Var> vars = new ArrayList<>();
-            for (String split : splits) {
-                if (split.startsWith("$")) {
-                    vars.add(new Var(VarType.ID, Long.parseLong(split.substring(1))));
-                } else {
-                    vars.add(new Var(VarType.NAME, split));
-                }
-            }
-            return context.parse(vars);
-        }
-    }
-
     private boolean hasPrecedentOp(int precedence) {
         return !opStack.isEmpty() && opStack.peek().precedence() <= precedence;
     }
@@ -256,7 +234,15 @@ public class ExpressionParser {
             else if (operatorOp.isComma()) {
                 Expression second = popExpr(), first = popExpr();
                 exprStack.push(ArrayExpression.merge(first, second));
-            } else if (operatorOp.isUnary()) {
+            }
+            else if(operatorOp.isInstanceOf()) {
+                var typeExpr = (VariableExpression) popExpr();
+                var operand = popExpr();
+                var entityContext = Objects.requireNonNull(context.getInstanceContext()).getEntityContext();;
+                var type = entityContext.selectByUniqueKey(Type.UNIQUE_NAME, typeExpr.getVariable());
+                exprStack.push(new InstanceOfExpression(operand, type));
+            }
+            else if (operatorOp.isUnary()) {
                 Expression expression = popExpr();
                 exprStack.push(new UnaryExpression(operatorOp.op(), expression));
             } else {
@@ -338,6 +324,10 @@ public class ExpressionParser {
 
         boolean isComma() {
             return op == Operator.COMMA;
+        }
+
+        boolean isInstanceOf() {
+            return op == Operator.INSTANCEOF;
         }
 
         boolean isDot() {

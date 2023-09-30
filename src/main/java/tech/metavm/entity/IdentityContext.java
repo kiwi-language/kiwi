@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
@@ -7,6 +8,7 @@ import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
@@ -19,8 +21,6 @@ public class IdentityContext {
     private final Map<Object, List<Reference>> invertedIndex = new IdentityHashMap<>();
     private final Predicate<ClassType> isClassTypeInitialized;
     private final Function<tech.metavm.object.meta.Type, Type> getJavaType;
-
-
 
     public IdentityContext(Predicate<ClassType> isClassTypeInitialized,
                            Function<tech.metavm.object.meta.Type, Type> getJavaType) {
@@ -70,6 +70,9 @@ public class IdentityContext {
         }
         else if(model instanceof Field field && field.getDeclaringType().isFromReflection()) {
             putModelId(model, ModelIdentity.field(getJavaField(field)), result);
+        }
+        else if(model instanceof Flow flow && flow.getDeclaringType().isCollection()) {
+            putModelId(model, new ModelIdentity(Flow.class, flow.getCanonicalName(getJavaType)), result);
         }
         else if(model instanceof Index index && index.getDeclaringType().isFromReflection()) {
             putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(index)), result);
@@ -146,11 +149,15 @@ public class IdentityContext {
     }
 
     private java.lang.reflect.Field getJavaField(Field field) {
-        Class<?> javaClass = NncUtils.requireNonNull(
-                ReflectUtils.getRawClass(getJavaType(field.getDeclaringType())),
-                "Fail to get java type for type '" + field.getDeclaringType() + "'"
-        );
+        var javaClass = getRawClass(field.getDeclaringType());
         return ReflectUtils.getDeclaredFieldByMetaFieldName(javaClass, field.getName());
+    }
+
+    private Class<?> getRawClass(ClassType classType) {
+        return NncUtils.requireNonNull(
+                ReflectUtils.getRawClass(getJavaType(classType)),
+                "Fail to get java type for type '" + classType + "'"
+        );
     }
 
     private Type getJavaType(tech.metavm.object.meta.Type type) {

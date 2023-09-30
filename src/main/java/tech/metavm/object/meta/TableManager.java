@@ -35,7 +35,7 @@ public class TableManager {
     public TableDTO get(long id) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(id);
-        return NncUtils.get(type, t -> t.toDTO(true, false, false), t -> convertToTable(t, context));
+        return NncUtils.get(type, t -> t.toDTO(true, false), t -> convertToTable(t, context));
     }
 
     @Transactional
@@ -55,6 +55,7 @@ public class TableManager {
                         null,
                         null,
                         List.of(),
+                        List.of(),
                         ClassSource.RUNTIME.code(),
                         List.of(),
                         List.of(),
@@ -62,6 +63,9 @@ public class TableManager {
                         List.of(),
                         null,
                         null,
+                        null,
+                        List.of(),
+                        List.of(),
                         null,
                         List.of(),
                         List.of()
@@ -232,7 +236,7 @@ public class TableManager {
         if(type instanceof ClassType) {
             return ColumnType.TABLE;
         }
-        if(type instanceof ObjectType) {
+        if(type instanceof ObjectType || type instanceof TypeVariable) {
             return ColumnType.ANY;
         }
         throw new InternalException("Can not get column type for type: " + type);

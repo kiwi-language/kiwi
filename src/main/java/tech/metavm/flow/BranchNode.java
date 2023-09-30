@@ -179,5 +179,7 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
         }
     }
 
-
+    public boolean isInclusive() {
+        return inclusive;
+    }
 }

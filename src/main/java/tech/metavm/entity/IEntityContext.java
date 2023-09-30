@@ -9,6 +9,8 @@ import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.TypeVariable;
+import tech.metavm.object.meta.generic.GenericContext;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.NncUtils;
@@ -32,6 +34,10 @@ public interface IEntityContext extends ModelInstanceMap {
     boolean existsInstances(Class<?> type);
 
     boolean containsEntity(Class<?> entityType, long id);
+
+    ClassType getParameterizedType(ClassType template, List<Type> typeArguments);
+
+    GenericContext getGenericContext();
 
     <T> T getEntity(Class<T> entityType, long id);
 
@@ -65,6 +71,8 @@ public interface IEntityContext extends ModelInstanceMap {
         }
     }
 
+    long getTenantId(Object model);
+
     default Field getField(long id) {
         return getEntity(Field.class, id);
     }
@@ -72,6 +80,12 @@ public interface IEntityContext extends ModelInstanceMap {
     default Field getField(RefDTO reference) {
         return getEntity(Field.class, reference);
     }
+
+    default TypeVariable getTypeVariable(RefDTO reference) {
+        return getEntity(TypeVariable.class, reference);
+    }
+
+    void afterContextIntIds();
 
     default RoleRT getRole(long id) {
         return getEntity(RoleRT.class, id);

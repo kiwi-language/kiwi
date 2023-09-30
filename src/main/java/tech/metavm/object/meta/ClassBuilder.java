@@ -1,5 +1,6 @@
 package tech.metavm.object.meta;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -9,7 +10,7 @@ import java.util.List;
 public class ClassBuilder {
 
     public static ClassBuilder newBuilder(String name, @Nullable String code) {
-        return new ClassBuilder( name, code);
+        return new ClassBuilder(name, code);
     }
 
     private Long tmpId;
@@ -25,7 +26,10 @@ public class ClassBuilder {
     private List<Type> typeArguments = new ArrayList<>();
     private boolean done;
     private Long suffix;
-    private String template;
+    private String templateName;
+    private ClassType template;
+    private List<ClassType> dependencies;
+    private List<TypeVariable> typeParameters = List.of();
 
     private ClassBuilder(String name, @Nullable String code) {
         this.name = name;
@@ -63,6 +67,21 @@ public class ClassBuilder {
         return randomSuffix();
     }
 
+    public ClassBuilder template(ClassType template) {
+        this.template = template;
+        return this;
+    }
+
+    public ClassBuilder dependencies(List<ClassType> dependencies) {
+        this.dependencies = dependencies;
+        return this;
+    }
+
+    public ClassBuilder typeParameters(List<TypeVariable> typeParameters) {
+        this.typeParameters = typeParameters;
+        return this;
+    }
+
     public ClassBuilder category(TypeCategory category) {
         this.category = category;
         return this;
@@ -71,6 +90,10 @@ public class ClassBuilder {
     public ClassBuilder desc(String desc) {
         this.desc = desc;
         return this;
+    }
+
+    public ClassBuilder interfaces(ClassType... interfaces) {
+        return interfaces(List.of(interfaces));
     }
 
     public ClassBuilder interfaces(List<ClassType> interfaces) {
@@ -87,8 +110,12 @@ public class ClassBuilder {
         return this;
     }
 
-    public ClassBuilder template(String template) {
-        this.template = template;
+    public ClassBuilder typeParameters(TypeVariable... typeParameters) {
+        return typeParameters(List.of(typeParameters));
+    }
+
+    public ClassBuilder templateName(String templateName) {
+        this.templateName = templateName;
         return this;
     }
 
@@ -100,7 +127,16 @@ public class ClassBuilder {
     public ClassType build() {
         NncUtils.requireFalse(done, "Build has already been invoked");
         done = true;
-        return new ClassType(
+        var classType = create();
+        for (TypeVariable typeParameter : typeParameters) {
+            typeParameter.setGenericDeclaration(classType);
+        }
+        return classType;
+    }
+
+    @NotNull
+    private ClassType create() {
+        var classType = new ClassType(
                 tmpId,
                 suffix != null ? name + "_" + suffix : name,
                 code != null ? (suffix != null ? code + "_" + suffix : code) : null,
@@ -111,8 +147,13 @@ public class ClassBuilder {
                 anonymous,
                 ephemeral,
                 desc,
+                templateName,
                 template,
                 typeArguments
         );
+        if(dependencies != null) {
+            classType.setDependencies(dependencies);
+        }
+        return classType;
     }
 }

@@ -1,9 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.ClassBuilder;
-import tech.metavm.object.meta.ClassSource;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeFactory;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -12,12 +9,6 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
-
-//    public static <T extends Record> RecordDef<T> parse(Class<T> entityType,
-//                                                        Type genericType,
-//                                                        DefMap defMap) {
-//        return new RecordParser<>(entityType, genericType, defMap).parse();
-//    }
 
     public RecordParser(Class<T> entityType, Type genericType, DefMap defMap) {
         super(entityType, genericType, defMap);
@@ -40,11 +31,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
     }
 
     @Override
-    protected ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType) {
-        return ClassBuilder.newBuilder(name, code)
-                .source(ClassSource.REFLECTION)
-                .superType(superType)
-                .build();
+    protected TypeCategory getTypeCategory() {
+        return TypeCategory.CLASS;
     }
-
 }

@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.autograph.Parameter;
 import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.rest.FlowDTO;
@@ -7,18 +8,19 @@ import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.TypeVariable;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("流程")
-public class Flow extends Entity {
+public class Flow extends Entity implements GenericDeclaration {
 
     @EntityField("所属类型")
     private final ClassType declaringType;
@@ -27,24 +29,33 @@ public class Flow extends Entity {
     @ChildEntity("编号")
     private @Nullable String code;
     @ChildEntity("是否构造函数")
-    private final boolean isConstructor;
+    private boolean isConstructor;
     @ChildEntity("是否抽象")
-    private final boolean isAbstract;
+    private boolean isAbstract;
     @ChildEntity("是否原生")
-    private final boolean isNative;
+    private boolean isNative;
     @ChildEntity("输入类型")
     @Nullable
     private final ClassType inputType;
     @EntityField("输出类型")
-    private final Type outputType;
+    private Type outputType;
     @ChildEntity("被复写流程")
-    private final @Nullable Flow overridden;
+    private @Nullable Flow overridden;
     @ChildEntity("根流程范围")
-    private final ScopeRT rootScope;
-    private transient Table<ScopeRT> scopes;
-    private transient Table<NodeRT<?>> nodes;
+    private ScopeRT rootScope;
     @EntityField("版本")
     private Long version = 1L;
+    @ChildEntity("类型参数")
+    private final Table<TypeVariable> typeParameters = new Table<>(TypeVariable.class, true);
+    @Nullable
+    @ChildEntity("模板")
+    private final Flow template;
+    @ChildEntity("TypeArguments")
+    private final Table<Type> typeArguments = new Table<>(Type.class);
+    @ChildEntity("模板实例")
+    private final Table<Flow> templateInstances = new Table<>(Flow.class, true);
+    private transient Table<ScopeRT> scopes;
+    private transient Table<NodeRT<?>> nodes;
 
     public Flow(Long tmpId,
                 ClassType declaringType,
@@ -55,13 +66,15 @@ public class Flow extends Entity {
                 boolean isNative,
                 @Nullable ClassType inputType,
                 Type outputType,
-                @Nullable Flow overridden
-                ) {
+                @Nullable Flow overridden,
+                List<TypeVariable> typeParameters,
+                @Nullable Flow template,
+                List<Type> typeArguments
+    ) {
         super(tmpId);
-        if(overridden == null) {
+        if (overridden == null) {
             NncUtils.requireTrue(inputType != null && outputType != null);
-        }
-        else {
+        } else {
             NncUtils.requireTrue(inputType == null);
             NncUtils.requireTrue(overridden.getOutputType().isAssignableFrom(outputType));
         }
@@ -75,9 +88,18 @@ public class Flow extends Entity {
         this.outputType = outputType;
         this.overridden = overridden;
         this.scopes = new Table<>(ScopeRT.class);
-        this.nodes = new Table<>(new TypeReference<>() {});
+        this.nodes = new Table<>(new TypeReference<>() {
+        });
         rootScope = new ScopeRT(this);
-        declaringType.addFlow(this);
+        this.template = template;
+        this.typeParameters.addAll(typeParameters);
+        this.typeArguments.addAll(typeArguments);
+        if (template != null) {
+            template.addTemplateInstance(this);
+        }
+        if (template == null || template.getDeclaringType() != declaringType) {
+            declaringType.addFlow(this);
+        }
     }
 
     public List<Type> getInputTypes() {
@@ -99,6 +121,22 @@ public class Flow extends Entity {
     @Nullable
     public String getCode() {
         return code;
+    }
+
+    public String getCodeRequired() {
+        return NncUtils.requireNonNull(code, "code is set for type " + getName());
+    }
+
+    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return declaringType.getCanonicalName(getJavaType) + "."
+                + getCodeRequired() + "("
+                + NncUtils.join(getParameterTypes(), type -> type.getCanonicalName(getJavaType))
+                + ")";
+    }
+
+    public List<Type> getParameterTypes() {
+        return inputType != null ? NncUtils.map(inputType.getFields(), Field::getType)
+                : NncUtils.requireNonNull(overridden).getParameterTypes();
     }
 
     public boolean isConstructor() {
@@ -140,8 +178,8 @@ public class Flow extends Entity {
         this.scopes().add(scope);
     }
 
-    public FlowDTO toDTO() {
-        try(var context = SerializeContext.enter()) {
+    public FlowDTO toDTO(boolean withCode) {
+        try (var context = SerializeContext.enter()) {
             return new FlowDTO(
                     context.getTmpId(this),
                     id,
@@ -151,13 +189,17 @@ public class Flow extends Entity {
                     isAbstract,
                     isNative,
                     context.getRef(getDeclaringType()),
-                    rootScope.toDTO(true),
+                    rootScope.toDTO(withCode),
                     getDeclaringType().toDTO(true, true),
                     context.getRef(getInputType()),
                     context.getRef(getOutputType()),
                     getInputType().toDTO(),
                     getOutputType().toDTO(),
-                    NncUtils.get(getOverridden(), context::getRef)
+                    NncUtils.map(typeParameters, TypeVariable::toDTO),
+                    NncUtils.get(template, context::getRef),
+                    NncUtils.map(typeArguments, context::getRef),
+                    NncUtils.get(getOverridden(), context::getRef),
+                    NncUtils.map(templateInstances, tmpInst -> tmpInst.toDTO(withCode))
             );
         }
     }
@@ -198,14 +240,15 @@ public class Flow extends Entity {
     }
 
     private Table<NodeRT<?>> nodes() {
-        if(nodes == null) {
-            nodes = new Table<>(new TypeReference<>() {});
+        if (nodes == null) {
+            nodes = new Table<>(new TypeReference<>() {
+            });
         }
         return nodes;
     }
 
     private Table<ScopeRT> scopes() {
-        if(scopes == null) {
+        if (scopes == null) {
             scopes = new Table<>(ScopeRT.class);
         }
         return scopes;
@@ -261,5 +304,101 @@ public class Flow extends Entity {
 
     public boolean isNative() {
         return isNative;
+    }
+
+    public List<TypeVariable> getTypeParameters() {
+        return Collections.unmodifiableList(typeParameters);
+    }
+
+    public List<Type> getEffectiveTypeArguments() {
+        return template == null ? Collections.unmodifiableList(typeParameters)
+                : Collections.unmodifiableList(typeArguments);
+    }
+
+    @Override
+    public void addTypeParameter(TypeVariable typeParameter) {
+        typeParameters.add(typeParameter);
+    }
+
+    public List<Parameter> getParameters() {
+        return NncUtils.map(
+                inputType.getFields(),
+                field -> new Parameter(field.getName(), field.getCode(), field.getType())
+        );
+    }
+
+    public void setRootScope(ScopeRT rootScope) {
+        this.rootScope = rootScope;
+    }
+
+    public Flow getTemplateInstance(ClassType declaringType, List<Type> typeArguments) {
+        return NncUtils.find(templateInstances, ti ->
+                ti.getDeclaringType() == declaringType
+                        && Objects.equals(ti.getTypeArguments(), typeArguments)
+        );
+    }
+
+    public Flow getTemplateInstance(List<Type> typeArguments) {
+        return NncUtils.find(templateInstances, ti -> Objects.equals(ti.getTypeArguments(), typeArguments));
+    }
+
+    public List<Flow> getTemplateInstances() {
+        return Collections.unmodifiableList(templateInstances);
+    }
+
+    public void setOutputType(Type outputType) {
+        this.outputType = outputType;
+    }
+
+    @Nullable
+    public Flow getTemplate() {
+        return template;
+    }
+
+    public List<Type> getTypeArguments() {
+        return typeArguments;
+    }
+
+    public void setConstructor(boolean constructor) {
+        isConstructor = constructor;
+    }
+
+    public void setAbstract(boolean anAbstract) {
+        isAbstract = anAbstract;
+    }
+
+    public void setNative(boolean aNative) {
+        isNative = aNative;
+    }
+
+    public void setOverridden(@Nullable Flow overridden) {
+        this.overridden = overridden;
+    }
+
+    public void addTemplateInstance(Flow templateInstance) {
+        templateInstances.add(templateInstance);
+    }
+
+    public void removeTemplateInstance(Flow templateInstance) {
+        this.templateInstances.remove(templateInstance);
+    }
+
+    public void setTypeArguments(List<Type> typeArguments) {
+        this.typeArguments.clear();
+        this.typeArguments.addAll(typeArguments);
+    }
+
+    public void setTypeParameters(List<TypeVariable> typeArguments) {
+        this.typeParameters.clear();
+        this.typeParameters.addAll(typeArguments);
+    }
+
+    public Flow getEffectiveTemplate() {
+        return template != null ? template : this;
+    }
+
+    @Override
+    public String toString() {
+        return declaringType.getName() + "." + name;
     }
 }

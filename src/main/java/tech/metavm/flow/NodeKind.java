@@ -12,7 +12,6 @@ public enum NodeKind {
     ADD_OBJECT(3, AddObjectNode.class),
     UPDATE_OBJECT(4, UpdateObjectNode.class),
     DELETE_OBJECT(5, DeleteObjectNode.class),
-    GET_RELATED(6, GetRelatedNode.class),
     BRANCH(7, BranchNode.class),
     RETURN(9, ReturnNode.class),
     EXCEPTION(10, ExceptionNode.class),
@@ -24,6 +23,7 @@ public enum NodeKind {
     UPDATE_STATIC(17, UpdateStaticNode.class),
     FOREACH(19, ForEachNode.class, true),
     WHILE(20, WhileNode.class, true),
+    NEW_ARRAY(21, NewArrayNode.class)
 
     ;
 

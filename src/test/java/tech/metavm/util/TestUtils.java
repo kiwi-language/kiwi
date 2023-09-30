@@ -1,10 +1,15 @@
 package tech.metavm.util;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.slf4j.Logger;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.*;
@@ -34,6 +39,9 @@ public class TestUtils {
         module.addSerializer(new TypeReference<Class<?>>(){}.getType(), new ReflectClassSerializer());
         module.addSerializer(Field.class, new ReflectFieldSerializer());
         OBJECT_MAPPER.registerModule(module);
+        OBJECT_MAPPER.registerModule(new Jdk8Module());
+        OBJECT_MAPPER.registerModule(new JavaTimeModule());
+        OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
         OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
         OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
@@ -71,7 +79,11 @@ public class TestUtils {
     }
 
     public static <R> R readJson(String path, com.fasterxml.jackson.core.type.TypeReference<R> typeRef) {
-        return NncUtils.readJSONString(readEntireFile(path), typeRef);
+        try {
+            return OBJECT_MAPPER.readValue(readEntireFile(path), typeRef);
+        } catch (JsonProcessingException e) {
+            throw new InternalException("JSON deserialization failed", e);
+        }
     }
 
     public static String readEntireFile(String path) {

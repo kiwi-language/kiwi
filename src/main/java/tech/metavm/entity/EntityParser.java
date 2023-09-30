@@ -1,19 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.ClassBuilder;
-import tech.metavm.object.meta.ClassSource;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeFactory;
+import tech.metavm.object.meta.*;
 
 import java.lang.reflect.Type;
+import java.util.List;
 
 public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> {
-
-//    public static <T extends Entity> EntityDef<T> parse(Class<T> entityType,
-//                                                        Type genericType,
-//                                                        DefMap defMap) {
-//        return new EntityParser<>(entityType, genericType, defMap).parse();
-//    }
 
     public EntityParser(Class<T> entityType, Type genericType, DefMap defMap) {
         super(entityType, genericType, defMap);
@@ -31,11 +23,7 @@ public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> 
     }
 
     @Override
-    protected ClassType createType(TypeFactory typeFactory, String name, String code, ClassType superType) {
-        return ClassBuilder.newBuilder(name, code)
-                .superType(superType)
-                .source(ClassSource.REFLECTION)
-                .build();
+    protected TypeCategory getTypeCategory() {
+        return TypeCategory.CLASS;
     }
-
 }

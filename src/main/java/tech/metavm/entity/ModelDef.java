@@ -2,10 +2,10 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
+import java.lang.reflect.TypeVariable;
 import java.util.*;
 
 public abstract class ModelDef<T, I extends Instance> {
@@ -13,8 +13,6 @@ public abstract class ModelDef<T, I extends Instance> {
     private final Class<T> javaClass;
     private final java.lang.reflect.Type javaType;
     private final Class<I> instanceType;
-
-    private final List<ClassType> collectionTypes = new ArrayList<>();
 
     protected ModelDef(Class<T> javaClass, Class<I> instanceType) {
         this(javaClass, javaClass, instanceType);
@@ -25,14 +23,14 @@ public abstract class ModelDef<T, I extends Instance> {
     }
 
     ModelDef(Class<T> javaClass, java.lang.reflect.Type javaType, Class<I> instanceType) {
-        if(!RuntimeGeneric.class.isAssignableFrom(javaClass)) {
-            NncUtils.requireEquals(
-                    javaClass, javaType,
-                    () -> new InternalException(
-                            "class '" + javaClass.getName() + "' is not a RuntimeGeneric, generic type is not allowed."
-                    )
-            );
-        }
+//        if(!RuntimeGeneric.class.isAssignableFrom(javaClass) && !(javaType instanceof TypeVariable<?>)) {
+//            NncUtils.requireEquals(
+//                    javaClass, javaType,
+//                    () -> new InternalException(
+//                            "class '" + javaClass.getName() + "' is not a RuntimeGeneric, generic type is not allowed."
+//                    )
+//            );
+//        }
         this.javaClass = javaClass;
         this.javaType = javaType;
         this.instanceType = instanceType;
@@ -117,14 +115,6 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public T createModelProxyHelper(Class<?> proxyClass) {
         return createModelProxy(proxyClass.asSubclass(javaClass));
-    }
-
-    public void addCollectionType(ClassType type) {
-        collectionTypes.add(type);
-    }
-
-    public List<ClassType> getCollectionTypes() {
-        return Collections.unmodifiableList(collectionTypes);
     }
 
 }

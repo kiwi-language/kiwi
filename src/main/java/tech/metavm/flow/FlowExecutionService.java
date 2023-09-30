@@ -42,7 +42,7 @@ public class FlowExecutionService {
             flow = self.getType().getOverrideFlowRequired(flow);
         }
         if(flow.isNative()) {
-            return NativeInvoker.invoke(flow, self, (ClassInstance) argument, context);
+            return NativeInvoker.invoke(flow, self, (ClassInstance) argument);
         }
         else {
             FlowStack stack = new FlowStack(flow, self, argument, context);

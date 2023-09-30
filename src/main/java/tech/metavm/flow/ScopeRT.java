@@ -76,7 +76,7 @@ public class ScopeRT extends Entity {
 //        return null;
     }
 
-    public NodeRT<?> getSuccessor() {
+    public @Nullable NodeRT<?> getSuccessor() {
         if (withBackEdge) {
             return owner;
         }
@@ -131,6 +131,10 @@ public class ScopeRT extends Entity {
 
     public boolean isEmpty() {
         return nodes.isEmpty();
+    }
+
+    public boolean isWithBackEdge() {
+        return withBackEdge;
     }
 
     @Nullable

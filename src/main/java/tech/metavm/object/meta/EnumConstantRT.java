@@ -30,9 +30,9 @@ public class EnumConstantRT {
     public EnumConstantRT(ClassType type, String name, int ordinal) {
         this(
                 new ClassInstance(
-                    Map.of(getEnumNameField(),
+                    Map.of(getEnumNameField(type),
                             InstanceUtils.stringInstance(name),
-                            getEnumOrdinalField(),
+                            getEnumOrdinalField(type),
                             InstanceUtils.longInstance(ordinal)
                     ),
                     type
@@ -49,11 +49,11 @@ public class EnumConstantRT {
     }
 
     public String getName() {
-        return instance.getString(getEnumNameField()).getValue();
+        return instance.getString(getEnumNameField(instance.getType())).getValue();
     }
 
     public int getOrdinal() {
-        return instance.getLong(getEnumOrdinalField()).getValue().intValue();
+        return instance.getLong(getEnumOrdinalField(instance.getType())).getValue().intValue();
     }
 
     public void update(EnumConstantDTO update) {
@@ -62,11 +62,11 @@ public class EnumConstantRT {
     }
 
     public void setName(String name) {
-        instance.set(getEnumNameField(), InstanceUtils.stringInstance(name));
+        instance.set(getEnumNameField(instance.getType()), InstanceUtils.stringInstance(name));
     }
 
     public void setOrdinal(int ordinal) {
-        instance.set(getEnumOrdinalField(), InstanceUtils.longInstance(ordinal));
+        instance.set(getEnumOrdinalField(instance.getType()), InstanceUtils.longInstance(ordinal));
     }
 
     public EnumConstantDTO toDTO() {

@@ -57,6 +57,10 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
         this.constraint = constraint;
     }
 
+    public Index getConstraint() {
+        return constraint;
+    }
+
     @Override
     public void execute(FlowFrame frame) {
         IInstanceContext instanceContext = frame.getStack().getContext();

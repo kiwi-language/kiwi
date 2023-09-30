@@ -1,6 +1,6 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.CollectionKind;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
@@ -24,8 +24,7 @@ public class MapNative extends NativeBase {
     private ArrayInstance keyArray;
     private ArrayInstance valueArray;
 
-    public MapNative(ClassInstance instance, IInstanceContext context) {
-        super(context);
+    public MapNative(ClassInstance instance) {
         this.instance = instance;
         ClassType type = instance.getType();
         keyArrayField = type.getFieldByCode("keyArray");
@@ -44,7 +43,7 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance init(Instance keyAsChild, Instance valueAsChild) {
+    public Instance Map(Instance keyAsChild, Instance valueAsChild) {
         instance.initialize(
                 Map.of(
                         keyArrayField,
@@ -62,6 +61,17 @@ public class MapNative extends NativeBase {
                 0L
         );
         return instance;
+    }
+
+    public Instance keySet() {
+        var keySetType = (ClassType) instance.getType().getDependency(CollectionKind.SET);
+        ClassInstance keySet = ClassInstance.allocate(keySetType);
+        var setNative = (SetNative) NativeInvoker.getNativeObject(keySet);
+        setNative.Set(keySet);
+        for (Instance key : keyArray) {
+            setNative.add(key);
+        }
+        return keySet;
     }
 
     public Instance get(Instance key) {
@@ -119,6 +129,10 @@ public class MapNative extends NativeBase {
         } else {
             return InstanceUtils.nullInstance();
         }
+    }
+
+    public Instance size() {
+        return InstanceUtils.longInstance(keyArray.size());
     }
 
     public void clear() {

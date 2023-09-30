@@ -17,6 +17,7 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Table;
 
+import java.util.Collections;
 import java.util.List;
 
 @EntityType("Call节点")
@@ -31,7 +32,8 @@ public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
     @EntityField("子流程")
     protected Flow subFlow;
 
-    public CallNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, List<FieldParam> arguments, Flow subFlow) {
+    public CallNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, List<FieldParam> arguments,
+                    Flow subFlow) {
         super(tmpId, name, subFlow.getOutputType(), prev, scope);
         this.arguments.addAll(arguments);
         this.subFlow = subFlow;
@@ -71,6 +73,10 @@ public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
         this.arguments.addAll(arguments);
     }
 
+    public List<FieldParam> getArguments() {
+        return Collections.unmodifiableList(arguments);
+    }
+
     protected abstract Instance getSelf(FlowFrame frame);
 
     @Override
@@ -83,7 +89,7 @@ public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
             flow = ((ClassType) self.getType()).getOverrideFlowRequired(flow);
         }
         if (flow.isNative()) {
-            var result = NativeInvoker.invoke(flow, self, argument, frame.getStack().getContext());
+            var result = NativeInvoker.invoke(flow, self, argument);
             if (result != null) {
                 frame.setResult(result);
             }

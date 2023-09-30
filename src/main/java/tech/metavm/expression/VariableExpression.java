@@ -30,7 +30,7 @@ public class VariableExpression extends Expression {
 
     @Override
     protected List<Expression> getChildren() {
-        return null;
+        return List.of();
     }
 
     @Override

@@ -5,6 +5,8 @@ import org.junit.Assert;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.util.NncUtils;
 
+import java.util.List;
+
 public class FlowDTOTest extends TestCase {
 
     public void testSerialize() {
@@ -22,7 +24,11 @@ public class FlowDTOTest extends TestCase {
                 null,
                 null,
                 null,
-                null
+                List.of(),
+                null,
+                List.of(),
+                null,
+                List.of()
         );
         String jsonStr = NncUtils.toJSONString(flowDTO);
         FlowDTO deserialized = NncUtils.readJSONString(jsonStr, FlowDTO.class);

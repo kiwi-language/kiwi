@@ -28,7 +28,7 @@ public class Branch extends Entity {
     public static Branch createPreselected(BranchNode owner) {
         return new Branch(
                 PRESELECTED_BRANCH_ID,
-                new ConstantValue(ExpressionUtil.constant(InstanceUtils.trueInstance())),
+                new ConstantValue(ExpressionUtil.trueExpression()),
                 true,
                 new ScopeRT(owner.getFlow(), owner),
                 owner

@@ -30,9 +30,17 @@ public interface DefMap {
 
     void addDef(ModelDef<?, ?> def);
 
+    void afterDefInitialized(ModelDef<?,?> def);
+
     default <T> PojoDef<T> getPojoDef(TypeReference<T> typeRef) {
         return new TypeReference<PojoDef<T>>() {}.cast(
                 getDef(typeRef.getGenericType())
+        );
+    }
+
+    default <T> PojoDef<T> getPojoDef(Type type) {
+        return new TypeReference<PojoDef<T>>() {}.cast(
+                getDef(type)
         );
     }
 

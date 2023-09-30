@@ -209,6 +209,7 @@ public class InstanceContext extends BaseInstanceContext {
         }
         rebind();
         initIds();
+        entityContext.afterContextIntIds();
         IdentityHashMap<InstancePO, Instance> bufferedPOs = getBufferedInstancePOs();
         ContextDifference difference = buildDifference(bufferedPOs.keySet());
         Set<Instance> orphans = getOrphans(difference);
@@ -334,7 +335,7 @@ public class InstanceContext extends BaseInstanceContext {
                         "(" + MAX_ITERATION + ")");
             }
             boolean added = false;
-            for (Instance instance : new ArrayList<>(getInstancesToPersist())) {
+            for (Instance instance : new ArrayList<>(instances)) {
                 if (InstanceUtils.isInitialized(instance) && !processed.contains(instance)) {
                     instancePOs.put(instance.toPO(tenantId), instance);
                     processed.add(instance);

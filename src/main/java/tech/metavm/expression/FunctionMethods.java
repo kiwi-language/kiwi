@@ -110,7 +110,7 @@ public class FunctionMethods {
     }
 
     public static BooleanInstance HAS_NEXT(Instance iterator) {
-        var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(iterator, null);
+        var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(iterator);
         return iteratorNative.hasNext();
     }
 

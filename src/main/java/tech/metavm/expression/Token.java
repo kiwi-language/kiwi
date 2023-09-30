@@ -40,6 +40,14 @@ public record Token (
         return type == TokenType.OPERATOR;
     }
 
+    public boolean isLt() {
+        return type == TokenType.OPERATOR && getOperator() == Operator.LT;
+    }
+
+    public boolean isGt() {
+        return type == TokenType.OPERATOR && getOperator() == Operator.GT;
+    }
+
     public boolean isFunction() {
         return type == TokenType.FUNCTION;
     }

@@ -15,6 +15,7 @@ public class FieldBuilder {
     private final @Nullable String code;
     private final ClassType declaringType;
     private final Type type;
+    private Long tmpId;
     private Access access = Access.GLOBAL;
     private boolean unique = false;
     private boolean asTitle = false;
@@ -23,12 +24,18 @@ public class FieldBuilder {
     private boolean isChild;
     private boolean isStatic = false;
     private Instance staticValue;
+    private Field template;
 
     private FieldBuilder(String name, @Nullable String code, ClassType declaringType, Type type) {
         this.name = name;
         this.code = code;
         this.declaringType = declaringType;
         this.type = type;
+    }
+
+    public FieldBuilder tmpId(Long tmpId) {
+        this.tmpId = tmpId;
+        return this;
     }
 
     public FieldBuilder nullType(PrimitiveType nullType) {
@@ -71,8 +78,13 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder template(Field template) {
+        this.template = template;
+        return this;
+    }
+
     public Field build() {
-        return new Field(
+        var field = new Field(
                 name,
                 code,
                 declaringType,
@@ -82,8 +94,11 @@ public class FieldBuilder {
                 defaultValue != null ? defaultValue : new NullInstance(nullType()),
                 isChild,
                 isStatic,
-                staticValue != null ? staticValue : new NullInstance(nullType())
+                staticValue != null ? staticValue : new NullInstance(nullType()),
+                template
         );
+        field.setTmpId(tmpId);
+        return field;
     }
 
     private PrimitiveType nullType() {

@@ -2,16 +2,10 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.*;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.meta.ClassBuilder;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.FieldBuilder;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
@@ -31,12 +25,29 @@ public class Declarator extends JavaRecursiveElementVisitor {
     }
 
     @Override
+    public void visitTypeParameter(PsiTypeParameter classParameter) {
+    }
+
+    @Override
     public void visitClass(PsiClass psiClass) {
-        var metaClass = psiClass.getUserData(Keys.META_CLASS);
+        var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.META_CLASS));
         psiClass.putUserData(Keys.RESOLVE_STAGE, 1);
+        if(!metaClass.isInterface()) {
+            FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>")
+                    .isConstructor(true)
+                    .inputType(createEmptyType("init_input"))
+                    .build();
+            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>")
+                    .inputType(createEmptyType("cinit_input")).build();
+        }
         classStack.push(metaClass);
         super.visitClass(psiClass);
         classStack.pop();
+        metaClass.stage = ResolutionStage.DECLARED;
+    }
+
+    private ClassType createEmptyType(String namePrefix) {
+        return ClassBuilder.newBuilder(namePrefix, null).temporary().build();
     }
 
     @Override
@@ -47,8 +58,8 @@ public class Declarator extends JavaRecursiveElementVisitor {
             var overridenMethodCls = NncUtils.requireNonNull(overridenMethod.getContainingClass());
             var overridenMethodType = TranspileUtil.createTemplateType(overridenMethodCls);
             overridenFlow = TranspileUtil.getFlowByMethod(
-                    (ClassType) typeResolver.resolveDeclaration(overridenMethodType, context),
-                    overridenMethod, typeResolver, context
+                    (ClassType) typeResolver.resolveDeclaration(overridenMethodType),
+                    overridenMethod, typeResolver
             );
         } else {
             overridenFlow = null;
@@ -65,17 +76,16 @@ public class Declarator extends JavaRecursiveElementVisitor {
             }
             processParameters(method.getParameterList(), inputType);
         }
-        var flow = new Flow(null,
-                currentClass(),
-                getFlowName(method),
-                method.getName(),
-                method.isConstructor(),
-                method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT),
-                false,
-                inputType,
-                getOutputType(method, overridenFlow),
-                overridenFlow
-        );
+        var flow = FlowBuilder.newBuilder(currentClass(), getFlowName(method), method.getName())
+                .isConstructor(method.isConstructor())
+                .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
+                .inputType(inputType)
+                .outputType(getOutputType(method))
+                .overriden(overridenFlow)
+                .build();
+        for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
+            typeResolver.resolveTypeVariable(typeParameter).setGenericDeclaration(flow);
+        }
         method.putUserData(Keys.FLOW, flow);
     }
 
@@ -123,28 +133,15 @@ public class Declarator extends JavaRecursiveElementVisitor {
         return NncUtils.requireNonNull(classStack.peek());
     }
 
-    //    @SuppressWarnings("UnstableApiUsage")
-    private Type getOutputType(PsiMethod method, @Nullable Flow overridenFlow) {
-//        ClassType outputType = ClassBuilder
-//                .newBuilder(getFlowName(method) + "输出", method.getName() + "Output")
-//                .temporary()
-//                .interfaces(overridenFlow != null ? List.of(overridenFlow.getOutputType()) : List.of())
-//                .build();
+    private Type getOutputType(PsiMethod method) {
         var type = method.isConstructor() ?
-                TranspileUtil.getPsiElementFactory().createType(requireNonNull(method.getContainingClass())) :
+                TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())) :
                 method.getReturnType();
-//        if (type instanceof PsiPrimitiveType primitiveType
-//                && primitiveType.getKind() == JvmPrimitiveTypeKind.VOID) {
-//            return outputType;
-//        }
-        /*Type valueType =*/
         return resolveType(type);
-//        FieldBuilder.newBuilder("值", "value", outputType, valueType).build();
-//        return outputType;
     }
 
     private Type resolveType(PsiType psiType) {
-        return typeResolver.resolveTypeOnly(psiType, context);
+        return typeResolver.resolveTypeOnly(psiType);
     }
 
 }

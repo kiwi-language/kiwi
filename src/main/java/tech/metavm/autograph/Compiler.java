@@ -10,23 +10,30 @@ import tech.metavm.entity.IEntityContext;
 public class Compiler {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(Compiler.class);
+    
+    private final IEntityContext context;
+
+    public Compiler(IEntityContext context) {
+        this.context = context;
+    }
 
     void transform(PsiClass psiClass) {
         executeCommand(() -> {
+            psiClass.accept(new SwitchExpressionTransformer());
+            psiClass.accept(new ForTransformer());
             psiClass.accept(new BreakTransformer());
             psiClass.accept(new ContinueTransformer());
-            psiClass.accept(new ForTransformer());
         });
     }
 
-    void generateDecl(PsiFile file, TypeResolver typeResolver, IEntityContext context) {
-        file.accept(new QnResolver());
-        file.accept(new ActivityAnalyzer());
+    void generateDecl(PsiClass psiClass, TypeResolver typeResolver) {
+        psiClass.accept(new QnResolver());
+        psiClass.accept(new ActivityAnalyzer());
         var astToCfg = new AstToCfg();
-        file.accept(astToCfg);
-        file.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
-        file.accept(new LivenessAnalyzer(astToCfg.getGraphs()));
-        file.accept(new Declarator(typeResolver, context));
+        psiClass.accept(astToCfg);
+        psiClass.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
+        psiClass.accept(new LivenessAnalyzer(astToCfg.getGraphs()));
+        psiClass.accept(new Declarator(typeResolver, context));
     }
 
     private void executeCommand(Runnable command) {
@@ -44,8 +51,8 @@ public class Compiler {
         );
     }
 
-    void generateCode(PsiFile file, TypeResolver typeResolver, IEntityContext context) {
-        file.accept(new Generator(typeResolver, context));
+    void generateCode(PsiClass psiClass, TypeResolver typeResolver) {
+        psiClass.accept(new Generator(typeResolver, context));
     }
 
 }

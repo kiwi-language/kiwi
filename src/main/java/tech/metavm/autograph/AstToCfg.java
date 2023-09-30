@@ -35,22 +35,8 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
     }
 
     @Override
-    public void visitSwitchExpression(PsiSwitchExpression expression) {
-        builder.enterSection(expression);
-        enterLexicalScope(expression);
-        builder.beginBlockStatement(expression);
-        builder.enterCondSection(expression);
-        processBasicElement(requireNonNull(expression.getExpression()));
-        requireNonNull(expression.getBody()).accept(this);
-        builder.exitCondSection(expression);
-        builder.endBlockStatement(expression);
-        exitLexicalScope();
-        builder.exitSection(expression);
-    }
-
-    @Override
     public void visitSwitchLabeledRuleStatement(PsiSwitchLabeledRuleStatement statement) {
-        var switchExpr = getEnclosingScope(PsiSwitchExpression.class);
+        var switchExpr = getEnclosingScope(PsiSwitchStatement.class);
         builder.newCondBranch(switchExpr);
         if (statement.getCaseLabelElementList() != null) {
             statement.getCaseLabelElementList().accept(this);
@@ -99,17 +85,30 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
-        builder.beginBlockStatement(statement);
         builder.enterSection(statement);
         enterLexicalScope(statement);
+        builder.beginBlockStatement(statement);
         builder.enterCondSection(statement);
-        requireNonNull(statement.getExpression()).accept(this);
+        processBasicElement(requireNonNull(statement.getExpression()));
         requireNonNull(statement.getBody()).accept(this);
-        if (!builder.getDefaultCaseFlag(statement)) builder.newCondBranch(statement);
         builder.exitCondSection(statement);
+        builder.endBlockStatement(statement);
         exitLexicalScope();
         builder.exitSection(statement);
-        builder.endBlockStatement(statement);
+    }
+
+    @Override
+    public void visitSwitchExpression(PsiSwitchExpression expression) {
+        builder.enterSection(expression);
+        enterLexicalScope(expression);
+        builder.beginBlockStatement(expression);
+        builder.enterCondSection(expression);
+        processBasicElement(requireNonNull(expression.getExpression()));
+        requireNonNull(expression.getBody()).accept(this);
+        builder.exitCondSection(expression);
+        builder.endBlockStatement(expression);
+        exitLexicalScope();
+        builder.exitSection(expression);
     }
 
     @Override

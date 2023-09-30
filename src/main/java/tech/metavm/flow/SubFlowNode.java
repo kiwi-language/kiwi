@@ -23,13 +23,15 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
         List<FieldParam> arguments = NncUtils.map(
                 param.getFields(), p -> new FieldParam(context.getField(p.fieldRef()), p.value(), flowParsingContext)
         );
-        return new SubFlowNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, self, arguments, getFlow(param, context));
+        return new SubFlowNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, self, arguments,
+                getFlow(param, context));
     }
 
     @ChildEntity("目标对象")
     private Value selfId;
 
-    public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value selfId, List<FieldParam> arguments, Flow subFlow) {
+    public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value selfId, List<FieldParam> arguments,
+                       Flow subFlow) {
         super(tmpId, name,  prev, scope, arguments, subFlow);
         this.selfId = selfId;
     }

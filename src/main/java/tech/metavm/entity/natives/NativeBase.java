@@ -8,12 +8,6 @@ import tech.metavm.util.InternalException;
 
 public class NativeBase {
 
-    protected final IInstanceContext context;
-
-    public NativeBase(IInstanceContext context) {
-        this.context = context;
-    }
-
     protected int getInt(Instance instance) {
         if(instance instanceof LongInstance longInstance) {
             return longInstance.getValue().intValue();

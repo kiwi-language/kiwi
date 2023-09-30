@@ -2,25 +2,27 @@ package tech.metavm.object.meta.rest.dto;
 
 import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
-import java.util.Objects;
 
 public record ClassParamDTO(
-        Long superTypeId,
+        RefDTO superTypeRef,
         TypeDTO superType,
+        List<TypeDTO> interfaces,
         List<RefDTO> interfaceRefs,
         int source,
         List<FieldDTO> fields,
         List<FieldDTO> staticFields,
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
-        String template,
+        String templateName,
         String desc,
         Object extra,
         List<EnumConstantDTO> enumConstants,
-        List<RefDTO> typeArgumentRefs
+        List<TypeDTO> typeParameters,
+        RefDTO templateRef,
+        List<RefDTO> typeArgumentRefs,
+        List<RefDTO> dependencyRefs
 ) {
 
 }

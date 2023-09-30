@@ -3,12 +3,12 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EnumConstant;
 import tech.metavm.entity.natives.ArrayNative;
-import tech.metavm.entity.natives.MapNative;
 import tech.metavm.infra.RegionInfo;
 import tech.metavm.infra.RegionManager;
 import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
+import tech.metavm.object.meta.rest.dto.TypeVariableParamDTO;
 import tech.metavm.object.meta.rest.dto.UnionTypeParamDTO;
 import tech.metavm.util.NncUtils;
 
@@ -54,6 +54,13 @@ public enum TypeCategory {
     INSTANCE(21, SQLType.REFERENCE),
     @EnumConstant("Void")
     VOID(23, SQLType.VALUE),
+    @EnumConstant("类型变量")
+    VARIABLE(24, SQLType.OBJECT, TypeVariableParamDTO.class),
+    @EnumConstant("参数化类型")
+    PARAMETERIZED(25, SQLType.OBJECT),
+    @EnumConstant("类型交集")
+    INTERSECTION(26, SQLType.OBJECT)
+
     ;
 
     private final int code;
@@ -172,15 +179,23 @@ public enum TypeCategory {
         return paramClass;
     }
 
+    public boolean isInterface() {
+        return this == INTERFACE;
+    }
+
     public @Nullable Class<?> getNativeClass() {
         return nativeClass;
+    }
+
+    public boolean isPojo() {
+        return this == INTERFACE || this == CLASS || this == ENUM;
     }
 
     public static TypeCategory getByParamClassRequired(Class<?> paramKlass) {
         return Arrays.stream(values())
                 .filter(type -> Objects.equals(type.getParamClass(), paramKlass))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("FlowNodeType not found for param class: " + paramKlass.getName()));
+                .orElseThrow(() -> new RuntimeException("TypeCategory not found for param class: " + paramKlass.getName()));
     }
 
 }

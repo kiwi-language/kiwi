@@ -1,5 +1,7 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.Type;
@@ -10,7 +12,9 @@ import java.util.Objects;
 @EntityType("类型检查表达式")
 public class InstanceOfExpression extends Expression {
 
+    @ChildEntity("值")
     private final Expression operand;
+    @EntityField("目标类型")
     private final Type targetType;
 
     public InstanceOfExpression(Expression operand, Type targetType) {
@@ -20,7 +24,11 @@ public class InstanceOfExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        return null;
+        return operand.build(symbolType, false) + " instanceof "
+                + switch (symbolType) {
+            case ID -> idVarName(targetType.getIdRequired());
+            case NAME -> targetType.getName();
+        };
     }
 
     @Override
@@ -35,12 +43,12 @@ public class InstanceOfExpression extends Expression {
 
     @Override
     protected List<Expression> getChildren() {
-        return null;
+        return List.of(operand);
     }
 
     @Override
     public Expression cloneWithNewChildren(List<Expression> children) {
-        return null;
+        return new InstanceOfExpression(children.get(0), targetType);
     }
 
     public Expression getOperand() {

@@ -22,7 +22,9 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     private void processNameElement(PsiElement element) {
         QnAndMode qnAndMode;
-        if ((qnAndMode = QnFactory.getQnAndMode(element)) != null) trackSymbol(qnAndMode);
+        if ((qnAndMode = QnFactory.getQnAndMode(element)) != null) {
+            trackSymbol(qnAndMode);
+        }
         super.visitElement(element);
     }
 
@@ -149,6 +151,14 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     @Override
+    public void visitSwitchExpression(PsiSwitchExpression expression) {
+        enterScope();
+        requireNonNull(expression.getExpression()).accept(this);
+        exitAndRecordScope(expression.getExpression());
+        processParallelBlocks(expression, List.of(new KeyValue<>(BODY_SCOPE, expression.getBody())));
+    }
+
+    @Override
     public void visitForStatement(PsiForStatement statement) {
         enterScope();
         invokeIfNotNull(statement.getInitialization(), init -> init.accept(this));
@@ -163,9 +173,11 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitCallExpression(PsiCallExpression callExpression) {
-        enterScope();
-        requireNonNull(callExpression.getArgumentList()).accept(this);
-        exitAndRecordScope(callExpression, ARGS_SCOPE);
+        if(callExpression.getArgumentList() != null) {
+            enterScope();
+            requireNonNull(callExpression.getArgumentList()).accept(this);
+            exitAndRecordScope(callExpression, ARGS_SCOPE);
+        }
         super.visitCallExpression(callExpression);
     }
 
@@ -190,7 +202,9 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
         var beforeParent = Scope.copyOf(scope);
         List<Scope> afterChildren = new ArrayList<>();
         for (var child : children) {
-            if (child == null) continue;
+            if (child == null) {
+                continue;
+            }
             scope.copyFrom(beforeParent);
             processBlockElement(parent, child.value(), child.key());
             afterChildren.add(scope.copy());
@@ -244,6 +258,19 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitReturnStatement(PsiReturnStatement statement) {
+        processStatement(statement);
+    }
+
+    @Override
+    public void visitSwitchStatement(PsiSwitchStatement statement) {
+        enterScope();
+        requireNonNull(statement.getExpression()).accept(this);
+        exitAndRecordScope(statement.getExpression());
+        processParallelBlocks(statement, List.of(new KeyValue<>(BODY_SCOPE, statement.getBody())));
+    }
+
+    @Override
+    public void visitYieldStatement(PsiYieldStatement statement) {
         processStatement(statement);
     }
 

@@ -21,15 +21,16 @@ package tech.metavm.autograph;
  */
 
 import com.intellij.psi.*;
+import com.intellij.util.Consumer;
 import com.intellij.util.containers.Stack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.util.InternalException;
+import tech.metavm.util.KeyValue;
+import tech.metavm.util.NncUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * a JavaElementVisitor which also visits all children elements
@@ -44,6 +45,8 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
     private final Stack<PsiReferenceExpression> myRefExprsInVisit = new Stack<>();
 
     private final Map<PsiElement, PsiElement> replaceMap = new HashMap<>();
+
+    private final Map<PsiElement, List<PsiElement>> insertsBefore = new HashMap<>();
 
     public static final String EXTRA_LOOP_TEST = "__extraLoopTest__";
 
@@ -78,12 +81,18 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
             anchor = labeledStatement;
         }
         if (anchor.getParent() instanceof PsiCodeBlock cb) {
-            return (PsiStatement) cb.addBefore(statement, anchor);
+            return (PsiStatement) addBefore0(cb, statement, anchor);
         } else {
             PsiBlockStatement blockStmt = convertToBlockStatement(anchor);
             anchor = blockStmt.getCodeBlock().getStatements()[0];
-            return (PsiStatement) blockStmt.getCodeBlock().addBefore(statement, anchor);
+            return (PsiStatement) addBefore0(blockStmt.getCodeBlock(), statement, anchor);
         }
+    }
+
+    private PsiElement addBefore0(PsiElement parent, PsiElement element, PsiElement anchor) {
+        var inserted = parent.addBefore(element, anchor);
+        insertsBefore.computeIfAbsent(element, k -> new ArrayList<>()).add(inserted);
+        return inserted;
     }
 
     protected boolean isExtraLoopTest(PsiStatement statement) {
@@ -104,14 +113,72 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
         return false;
     }
 
+    protected @Nullable String getLabel(PsiElement element) {
+        if (element.getParent() instanceof PsiLabeledStatement labeledStmt) {
+            return labeledStmt.getLabelIdentifier().getText();
+        }
+        return null;
+    }
 
     @SuppressWarnings("UnusedReturnValue")
     protected PsiStatement prependBody(PsiStatement body, PsiStatement toInsert) {
         var blockStmt = convertToBlockStatement(body);
         var block = blockStmt.getCodeBlock();
         var firstStmt = block.getStatementCount() > 0 ? block.getStatements()[0] : null;
-        blockStmt.getCodeBlock().addBefore(toInsert, firstStmt);
+        addBefore0(blockStmt.getCodeBlock(), toInsert, firstStmt);
         return blockStmt;
+    }
+
+    protected void visitBlock(PsiElement body,
+                              @Nullable Consumer<PsiStatement> beforeVisit,
+                              @Nullable Function<PsiStatement, KeyValue<PsiStatement, PsiCodeBlock>> afterVisit) {
+        NncUtils.requireTrue(body instanceof PsiCodeBlock || body instanceof PsiStatement);
+        PsiCodeBlock block;
+        if (body instanceof PsiCodeBlock codeBlock) {
+            block = codeBlock;
+        } else {
+            var blockStmt = convertToBlockStatement((PsiStatement) body);
+            block = blockStmt.getCodeBlock();
+        }
+        List<PsiStatement> statements = extractBody(block);
+        List<PsiCodeBlock> copyBlocks = new ArrayList<>();
+        for (PsiStatement stmt : statements) {
+            if (beforeVisit != null) {
+                beforeVisit.consume(stmt);
+            }
+            for (PsiCodeBlock copyBlock : copyBlocks) {
+                copyBlock.add(stmt);
+            }
+            stmt.accept(this);
+            stmt = (PsiStatement) getReplacement(stmt);
+            PsiCodeBlock newDest = null;
+            if (afterVisit != null) {
+                var afterVisitRs = afterVisit.apply(stmt);
+                newDest = afterVisitRs.value();
+            }
+            if (newDest != null) {
+                copyBlocks.add(newDest);
+            }
+        }
+    }
+
+    protected void simplifyBlock(PsiCodeBlock block) {
+        if (block.getParent() instanceof PsiBlockStatement blockStmt
+                && blockStmt.getParent() instanceof PsiIfStatement) {
+            if (block.getStatementCount() == 1 && block.getStatements()[0] instanceof PsiIfStatement childIf) {
+                replace(blockStmt, childIf);
+            }
+        }
+    }
+
+    private List<PsiStatement> extractBody(@Nullable PsiElement body) {
+        return switch (body) {
+            case PsiCodeBlock block -> List.of(block.getStatements());
+            case PsiBlockStatement blockStmt -> List.of(blockStmt.getCodeBlock().getStatements());
+            case PsiStatement stmt -> List.of(stmt);
+            case null -> List.of();
+            default -> throw new InternalException("Invalid body: " + body);
+        };
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -140,13 +207,7 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
             myRefExprsInVisit.pop();
             myRefExprsInVisit.push(null);
         } else {
-            PsiElement child = element.getFirstChild();
-            while (child != null) {
-                child.accept(this);
-                child = replaceMap.getOrDefault(child, child);
-                child = child.getNextSibling();
-            }
-            replaceMap.clear();
+            visitChain(element.getFirstChild());
         }
     }
 
@@ -161,6 +222,12 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
         }
     }
 
+    protected PsiElement add(PsiElement parent, PsiElement child) {
+        var newChild = parent.add(child);
+        replaceMap.put(child, newChild);
+        return newChild;
+    }
+
     protected PsiElement replace(PsiElement replaced, PsiElement replacement) {
         replacement = replaced.replace(replacement);
         replaceMap.put(replaced, replacement);
@@ -169,6 +236,19 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
 
     protected PsiElement getReplacement(PsiElement element) {
         return replaceMap.getOrDefault(element, element);
+    }
+
+    protected List<PsiElement> getInsertsBefore(PsiElement element) {
+        return insertsBefore.getOrDefault(element, List.of());
+    }
+
+    protected void visitChain(PsiElement start) {
+        PsiElement element = start;
+        while (element != null) {
+            element.accept(this);
+            element = replaceMap.getOrDefault(element, element);
+            element = element.getNextSibling();
+        }
     }
 
 }

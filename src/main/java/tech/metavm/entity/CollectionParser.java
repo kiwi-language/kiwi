@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.DefaultTypeFactory;
 import tech.metavm.object.meta.TypeFactory;
 import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.Table;
@@ -28,7 +29,7 @@ public class CollectionParser<C extends Table<?>>
     public CollectionDef<?, C> create() {
         Type elementType = getElementType();
         ModelDef elementDef = defMap.getDef(elementType);
-        var typeFactory = new TypeFactory(defMap::getType);
+        var typeFactory = new DefaultTypeFactory(defMap::getType);
         ArrayType type = TypeUtil.getArrayType(elementDef.getType(), typeFactory);
         CollectionDef<?, C> def;
         return new CollectionDef<>((Class)javaClass, javaType, type, elementDef);

@@ -20,20 +20,28 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 import static tech.metavm.util.NncUtils.*;
 
 @EntityType("Class类型")
-public class ClassType extends AbsClassType {
+public class ClassType extends Type implements GenericDeclaration {
+
+    public static final IndexDef<ClassType> IDX_PARAMETERIZED_TYPE_KEY =
+            new IndexDef<>(ClassType.class, "parameterizedTypeKey");
 
     @EntityField("超类")
     @Nullable
-    private final ClassType superType;
+    private ClassType superType;
+    //    @EntityField("范型超类")
+//    private final GenericClass genericSuperType;
+//    @ChildEntity("范型接口")
+//    private final Table<GenericClass> genericInterfaces = new Table<>(GenericClass.class);
     @ChildEntity("接口")
     private final Table<ClassType> interfaces = new Table<>(ClassType.class, false);
     @EntityField("来源")
-    private final ClassSource source;
+    private ClassSource source;
     @ChildEntity("子类列表")
     private final Table<ClassType> subTypes = new Table<>(ClassType.class);
     @EntityField("描述")
@@ -47,12 +55,23 @@ public class ClassType extends AbsClassType {
     @ChildEntity("约束列表")
     private final Table<Constraint<?>> constraints = new Table<>(new TypeReference<>() {
     }, true);
-    @EntityField("模板名称")
+    @EntityField("集合名称")
     @Nullable
-    private final String template;
+    private final String collectionName;
+    @Nullable
+    @EntityField("模板")
+    private final ClassType template;
+    @ChildEntity("类型参数")
+    private final Table<TypeVariable> typeParameters = new Table<>(TypeVariable.class, true);
     @ChildEntity("类型实参")
     private final Table<Type> typeArguments = new Table<>(Type.class);
+    // TODO (Important!) not scalable, must be optimized before going to production
+    @ChildEntity("依赖")
+    private final Table<ClassType> dependencies = new Table<>(ClassType.class);
+    @Nullable
+    private String parameterizedTypeKey;
 
+    public transient ResolutionStage stage = ResolutionStage.CREATED;
 
     public ClassType(
             Long tmpId,
@@ -65,24 +84,25 @@ public class ClassType extends AbsClassType {
             boolean anonymous,
             boolean ephemeral,
             @Nullable String desc,
-            @Nullable String nativeClass,
+            @Nullable String templateName,
+            @Nullable ClassType template,
             List<Type> typeArguments
-            ) {
+//            @Nullable
+//            GenericClass genericSuperType,
+//            List<GenericClass> genericInterfaces
+    ) {
         super(name, anonymous, ephemeral, category);
         setTmpId(tmpId);
         this.setCode(code);
-        this.interfaces.addAll(interfaces);
-        for (ClassType it : interfaces) {
-            it.addSubType(this);
-        }
+        setSuperType(superType);
+        setInterfaces(interfaces);
         this.source = source;
-        this.superType = superType;
-        if (superType != null) {
-            superType.addSubType(this);
-        }
         this.desc = desc;
-        this.template = nativeClass;
+        this.collectionName = templateName;
         this.typeArguments.addAll(typeArguments);
+//        this.genericSuperType = genericSuperType;
+//        this.genericInterfaces.addAll(genericInterfaces);
+        this.template = template;
     }
 
     public void update(TypeDTO typeDTO) {
@@ -102,13 +122,16 @@ public class ClassType extends AbsClassType {
         subTypes.add(subType);
     }
 
+    void removeSubType(ClassType subType) {
+        subTypes.remove(subType);
+    }
+
     @Nullable
     @SuppressWarnings("unused")
     public String getDesc() {
         return desc;
     }
 
-    @Override
     public List<Field> getFields() {
         if (superType != null) {
             return merge(superType.getFields(), readyFields());
@@ -145,7 +168,6 @@ public class ClassType extends AbsClassType {
             }
         }
     }
-
 
     @SuppressWarnings("unused")
     public Table<Flow> getFlows() {
@@ -257,7 +279,6 @@ public class ClassType extends AbsClassType {
         return isEnum() || isClass() || isArray();
     }
 
-    @Override
     public Field getField(long fieldId) {
         if (superType != null && superType.containsField(fieldId)) {
             return superType.getField(fieldId);
@@ -307,6 +328,10 @@ public class ClassType extends AbsClassType {
         } else {
             return getStaticFieldByName(var.getName());
         }
+    }
+
+    public void setSource(ClassSource source) {
+        this.source = source;
     }
 
     public Field getStaticField(long id) {
@@ -367,7 +392,6 @@ public class ClassType extends AbsClassType {
                 "Can not find field for java indexItem " + javaField);
     }
 
-    @Override
     Column allocateColumn(Field field) {
         Type fieldType = field.getType();
         if (fieldType.isNullable()) {
@@ -411,7 +435,6 @@ public class ClassType extends AbsClassType {
         );
     }
 
-    @Override
     public void removeField(Field field) {
         fields.remove(field);
     }
@@ -433,7 +456,7 @@ public class ClassType extends AbsClassType {
     }
 
     @Override
-    public boolean isAssignableFrom(Type that) {
+    protected boolean isAssignableFrom0(Type that) {
         if (equals(that)) {
             return true;
         }
@@ -457,9 +480,21 @@ public class ClassType extends AbsClassType {
         return superType;
     }
 
+    public List<ClassType> getInterfaces() {
+        return Collections.unmodifiableList(interfaces);
+    }
+
+    public List<ClassType> getSupers() {
+        if (superType != null) {
+            return NncUtils.append(interfaces, superType);
+        } else {
+            return interfaces;
+        }
+    }
+
     @Override
     protected ClassParamDTO getParam() {
-        return getParam(true, false, false);
+        return getParam(true, false, false, false);
     }
 
     @Override
@@ -469,43 +504,61 @@ public class ClassType extends AbsClassType {
 
     @Override
     public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        if(isCollection()) {
-            String collName = COLLECTION_TEMPLATE_MAP.get(template).getName();
-            return collName + "<" +
-                    NncUtils.join(typeArguments, typeArg -> typeArg.getCanonicalName(getJavaType), ",")
+//        if(isCollection()) {
+//            var collName = NncUtils.requireNonNull(getCollectionName());
+//            String collClassName = COLLECTION_TEMPLATE_MAP.get(collName).getName();
+//            if(templateName == null) {
+//                return collClassName;
+//            }
+//            else {
+//                return collClassName + "<" +
+//                        NncUtils.join(typeArguments, typeArg -> typeArg.getCanonicalName(getJavaType), ",")
+//                        + ">";
+//            }
+//        }
+        if (template == null) {
+            java.lang.reflect.Type javaType = NncUtils.requireNonNull(
+                    getJavaType.apply(this), "Can not get java type for type '" + this + "'");
+            return javaType.getTypeName();
+        } else {
+            java.lang.reflect.Type javaType = NncUtils.requireNonNull(
+                    getJavaType.apply(template), "Can not get java type for type '" + this + "'");
+            return javaType.getTypeName() + "<"
+                    + NncUtils.join(typeArguments, arg -> arg.getCanonicalName(getJavaType))
                     + ">";
         }
-        java.lang.reflect.Type javaType = NncUtils.requireNonNull(
-                getJavaType.apply(this), "Can not get java type for type '" + this + "'");
-        return javaType.getTypeName();
     }
 
     public TypeDTO toDTO(boolean withFields, boolean withFieldTypes) {
-        return toDTO(withFields, withFieldTypes, false);
+        return toDTO(withFields, withFieldTypes, false, false);
     }
 
-    public TypeDTO toDTO(boolean withFields, boolean withFieldTypes, boolean withFlows) {
+    public TypeDTO toDTO(boolean withFields, boolean withFieldTypes, boolean withFlows, boolean withCode) {
         try (var context = SerializeContext.enter()) {
-            return super.toDTO(getParam(withFields, withFieldTypes, withFlows), context.getTmpId(this));
+            return super.toDTO(getParam(withFields, withFieldTypes, withFlows, withCode), context.getTmpId(this));
         }
     }
 
-    protected ClassParamDTO getParam(boolean withFields, boolean withFieldTypes, boolean withFlows) {
-        try(var context = SerializeContext.enter()) {
+    protected ClassParamDTO getParam(boolean withFields, boolean withFieldTypes, boolean withFlows, boolean withCode) {
+        try (var context = SerializeContext.enter()) {
             return new ClassParamDTO(
-                    NncUtils.get(superType, Type::getId),
+                    NncUtils.get(superType, context::getRef),
                     NncUtils.get(superType, Type::toDTO),
+                    NncUtils.map(interfaces, Type::toDTO),
                     NncUtils.map(interfaces, context::getRef),
                     source.code(),
                     withFields ? NncUtils.map(fields, f -> f.toDTO(withFieldTypes)) : List.of(),
                     withFields ? NncUtils.map(staticFields, f -> f.toDTO(withFieldTypes)) : List.of(),
                     NncUtils.map(constraints, Constraint::toDTO),
-                    withFlows ? NncUtils.map(flows, Flow::toDTO) : List.of(),
-                    template,
+                    withFlows ? NncUtils.map(flows, flow -> flow.toDTO(withCode)) : List.of(),
+                    collectionName,
                     desc,
                     getExtra(),
                     isEnum() ? NncUtils.map(getEnumConstants(), EnumConstantRT::toDTO) : List.of(),
-                    NncUtils.map(typeArguments, context::getRef)
+                    NncUtils.map(typeParameters, Type::toDTO),
+                    NncUtils.get(template, context::getRef),
+                    NncUtils.map(typeArguments, context::getRef),
+                    NncUtils.map(dependencies, context::getRef)
             );
         }
     }
@@ -532,6 +585,10 @@ public class ClassType extends AbsClassType {
             );
         }
         return result;
+    }
+
+    public List<Constraint<?>> getConstraints() {
+        return Collections.unmodifiableList(constraints);
     }
 
     public <T extends Constraint<?>> T getConstraint(Class<T> constraintType, long id) {
@@ -614,32 +671,30 @@ public class ClassType extends AbsClassType {
     @Nullable
     public Flow getOverrideFlow(Flow overriden) {
         var override = flows.get(Flow::getOverridden, overriden);
-        if(override != null) {
+        if (override != null) {
             return override;
         }
-        if(superType != null) {
+        if (superType != null) {
             return superType.getOverrideFlow(overriden);
-        }
-        else {
+        } else {
             return null;
         }
     }
 
     public Class<?> getNativeClass() {
-        return Natives.getNative(
-                NncUtils.requireNonNull(template, "类型'" + getName() + "'没有配置原生类名")
-        );
-    }
-
-    @Nullable
-    public String getTemplate() {
-        return template;
+        if (template == null) {
+            return Natives.getNative(
+                    NncUtils.requireNonNull(collectionName, "类型'" + getName() + "'没有配置原生类名")
+            );
+        } else {
+            return template.getNativeClass();
+        }
     }
 
     @Override
     public void validate() {
         super.validate();
-        if(!isInterface()) {
+        if (!isInterface()) {
             for (ClassType it : interfaces) {
                 for (Flow flow : it.getFlows()) {
                     if (getOverrideFlow(flow) == null) {
@@ -651,13 +706,62 @@ public class ClassType extends AbsClassType {
         }
     }
 
+    @Nullable
+    public ClassType getTemplate() {
+        return template;
+    }
+
+    public ClassType getEffectiveTemplate() {
+        return template != null ? template : this;
+    }
+
+    public boolean templateEquals(ClassType that) {
+        return this == that || this.getTemplate() == that;
+    }
+
+    public List<TypeVariable> getTypeParameters() {
+        return Collections.unmodifiableList(typeParameters);
+    }
+
+    @Override
+    public void addTypeParameter(TypeVariable typeParameter) {
+        typeParameters.add(typeParameter);
+    }
+
     public boolean isCollection() {
-        return template != null && COLLECTION_TEMPLATE_MAP.containsKey(template);
+        return collectionName != null && COLLECTION_TEMPLATE_MAP.containsKey(collectionName)
+                || template != null && template.isCollection();
     }
 
     public List<Type> getTypeArguments() {
         return Collections.unmodifiableList(typeArguments);
     }
+
+    public List<Type> getEffectiveTypeArguments() {
+        return template == null ? Collections.unmodifiableList(typeParameters) : getTypeArguments();
+    }
+
+//    @Override
+//    public ClassType getRawClass() {
+//        return this;
+//    }
+
+//    public GenericClass getGenericSuperType() {
+//        return genericSuperType;
+//    }
+
+//    public List<GenericClass> getGenericInterfaces() {
+//        return Collections.unmodifiableList(genericInterfaces);
+//    }
+
+    public Index getUniqueConstraint(List<Field> fields) {
+        return find(getUniqueConstraints(), c -> c.getTypeFields().equals(fields));
+    }
+
+    public List<Index> getUniqueConstraints() {
+        return getConstraints(Index.class);
+    }
+
 
     @Override
     public String toString() {
@@ -672,6 +776,108 @@ public class ClassType extends AbsClassType {
             "Iterator", Iterator.class,
             "IteratorImpl", IteratorImpl.class
     );
+
+    public void setTypeArguments(List<Type> typeArguments) {
+        this.typeArguments.clear();
+        this.typeArguments.addAll(typeArguments);
+    }
+
+    public ClassType findSuperTypeRequired(Predicate<ClassType> test) {
+        return NncUtils.requireNonNull(findSuperType(test),
+                "Can not find the required super type");
+    }
+
+    public ClassType findSuperType(Predicate<ClassType> test) {
+        if (test.test(this)) {
+            return this;
+        }
+        ClassType result;
+        if (superType != null && (result = superType.findSuperType(test)) != null) {
+            return result;
+        }
+        for (ClassType anInterface : interfaces) {
+            if ((result = anInterface.findSuperType(test)) != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    public void setSuperType(@Nullable ClassType superType) {
+        if (this.superType != null) {
+            this.superType.removeSubType(this);
+        }
+        this.superType = superType;
+        if (superType != null) {
+            superType.addSubType(this);
+        }
+    }
+
+    public void setInterfaces(List<ClassType> interfaces) {
+        for (ClassType anInterface : this.interfaces) {
+            anInterface.removeSubType(this);
+        }
+        this.interfaces.clear();
+        this.interfaces.addAll(interfaces);
+        for (ClassType anInterface : interfaces) {
+            anInterface.addSubType(this);
+        }
+    }
+
+    @Nullable
+    public String getCollectionName() {
+        return template != null ? template.collectionName : collectionName;
+    }
+
+    public void addDependency(ClassType dependency) {
+        NncUtils.requireFalse(dependencies.contains(dependency),
+                "Dependency " + dependency + " already exists in type " + getName());
+        dependencies.add(dependency);
+    }
+
+    public void setDependencies(List<ClassType> dependencies) {
+        this.dependencies.clear();
+        this.dependencies.addAll(dependencies);
+    }
+
+    public List<Type> getDependencies() {
+        return Collections.unmodifiableList(dependencies);
+    }
+
+    public Type getDependency(CollectionKind collectionKind) {
+        return NncUtils.findRequired(dependencies, dep -> Objects.equals(dep.getCollectionName(),
+                collectionKind.getCollectionName()));
+    }
+
+    public void setTypeParameters(List<TypeVariable> typeParameters) {
+        this.typeParameters.clear();
+        this.typeParameters.addAll(typeParameters);
+    }
+
+    @Nullable
+    public String getParameterizedTypeKey() {
+        return parameterizedTypeKey;
+    }
+
+    public void setParameterizedTypeKey(@Nullable String parameterizedTypeKey) {
+        this.parameterizedTypeKey = parameterizedTypeKey;
+    }
+
+    @Override
+    public boolean afterContextInitIds() {
+        if (template != null && parameterizedTypeKey == null) {
+            parameterizedTypeKey = pTypeKey(template, typeArguments);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    public static String pTypeKey(ClassType template, List<Type> typeArguments) {
+        return toBase64(template.getIdRequired()) + "-"
+                + NncUtils.join(typeArguments, typeArg -> toBase64(typeArg.getIdRequired()), "-");
+    }
 
 }
 

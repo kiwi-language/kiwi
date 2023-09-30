@@ -1,15 +1,16 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.*;
-import tech.metavm.object.meta.Type;
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static tech.metavm.util.NncUtils.requireNonNull;
 
 @EntityType("字段表达式")
 public class FieldExpression extends Expression {
@@ -17,41 +18,21 @@ public class FieldExpression extends Expression {
     @ChildEntity("对象")
     private final Expression instance;
 
-    @ChildEntity("字段路径")
-    private final Table<Field> fieldPath = new Table<>(Field.class);
+    @EntityField("字段")
+    private final Field field;
 
     public FieldExpression(Expression instance, Field field) {
-        this(instance, List.of(field));
+        this.instance = requireNonNull(instance);
+        this.field = requireNonNull(field);
     }
 
-    public FieldExpression(Expression instance, ClassType type, List<Long> fieldPath) {
-        this.instance = instance;
-        ClassType tmp = type;
-        List<Field> fields = new ArrayList<>();
-        for (Long fieldId : fieldPath) {
-            Field field = tmp.getField(fieldId);
-            fields.add(field);
-            tmp = (ClassType) field.getType();
-        }
-        this.fieldPath.addAll(fields);
-    }
-
-    public FieldExpression(Expression instance, List<Field> fieldPath) {
-        this.instance = instance;
-        this.fieldPath.addAll(fieldPath);
-    }
-
-    public Field getLastField() {
-        return fieldPath.get(fieldPath.size() - 1);
-    }
-
-    public List<Field> getFieldPath() {
-        return fieldPath;
+    public Field getField() {
+        return field;
     }
 
     @Override
     public Type getType() {
-        return getLastField().getType();
+        return field.getType();
     }
 
     @Override
@@ -61,14 +42,14 @@ public class FieldExpression extends Expression {
 
     @Override
     public Expression cloneWithNewChildren(List<Expression> children) {
-        return new FieldExpression(instance, fieldPath);
+        return new FieldExpression(instance, field);
     }
 
     @Override
     public String buildSelf(VarType symbolType) {
         String fieldsExpr = switch (symbolType) {
-            case ID -> NncUtils.join(fieldPath, f -> idVarName(f.getIdRequired()), ".");
-            case NAME -> NncUtils.join(fieldPath, Field::getName, ".");
+            case ID -> idVarName(field.getIdRequired());
+            case NAME -> field.getName();
         };
         if((instance instanceof CursorExpression cursorExpression) && cursorExpression.getAlias() == null) {
             return fieldsExpr;
@@ -84,24 +65,8 @@ public class FieldExpression extends Expression {
         return 0;
     }
 
-    public String getPathString() {
-        return NncUtils.join(fieldPath, Field::getName, ".");
-    }
-
     public Expression getInstance() {
         return instance;
-    }
-
-    public FieldExpression simply() {
-        if(instance instanceof FieldExpression instanceExpr) {
-            instanceExpr = instanceExpr.simply();
-            List<Field> fields = new ArrayList<>(instanceExpr.getFieldPath());
-            fields.addAll(this.fieldPath);
-            return new FieldExpression(instanceExpr.getInstance(), fields);
-        }
-        else {
-            return this;
-        }
     }
 
     @Override
@@ -113,11 +78,11 @@ public class FieldExpression extends Expression {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof FieldExpression that)) return false;
-        return Objects.equals(instance, that.instance) && Objects.equals(fieldPath, that.fieldPath);
+        return Objects.equals(instance, that.instance) && Objects.equals(field, that.field);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(instance, fieldPath);
+        return Objects.hash(instance, field);
     }
 }

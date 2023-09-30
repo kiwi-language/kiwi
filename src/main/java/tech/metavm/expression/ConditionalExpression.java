@@ -39,6 +39,18 @@ public class ConditionalExpression extends Expression {
         return List.of(condition, trueValue, falseValue);
     }
 
+    public Expression getCondition() {
+        return condition;
+    }
+
+    public Expression getTrueValue() {
+        return trueValue;
+    }
+
+    public Expression getFalseValue() {
+        return falseValue;
+    }
+
     @Override
     public Expression cloneWithNewChildren(List<Expression> children) {
         return new ConditionalExpression(children.get(0), children.get(1), children.get(2));

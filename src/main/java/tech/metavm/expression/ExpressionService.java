@@ -92,7 +92,6 @@ public class ExpressionService extends EntityContextBean {
         Operator operator = binaryExpression.getOperator();
         if(!SEARCH_EXPR_OPERATORS.contains(operator)
                 || !(first instanceof FieldExpression fieldExpr)
-                || fieldExpr.getFieldPath().size() > 1
                 || !(second instanceof ConstantExpression constExpr)) {
             throw BusinessException.invalidExpression(binaryExpression.buildSelf(VarType.NAME));
         }
@@ -103,7 +102,7 @@ public class ExpressionService extends EntityContextBean {
         else {
             searchValue = NncUtils.requireNonNull(constExpr.getValue().getId());
         }
-        return new InstanceSearchItemDTO(fieldExpr.getLastField().getId(), searchValue);
+        return new InstanceSearchItemDTO(fieldExpr.getField().getId(), searchValue);
     }
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {
@@ -207,7 +206,7 @@ public class ExpressionService extends EntityContextBean {
             else if(!(instance instanceof ThisExpression)) {
                 throw new ExpressionParsingException();
             }
-            buf.append(NncUtils.join(fieldExpression.getFieldPath(), Field::getName, "."));
+            buf.append(fieldExpression.getField().getName());
             return ValueDTO.refValue(buf.toString());
         }
         else if(expression instanceof NodeExpression nodeExpression) {

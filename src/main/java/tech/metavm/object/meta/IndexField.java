@@ -73,9 +73,8 @@ public class IndexField extends Entity {
 
     private Field extractField(Expression expression) {
         if(expression instanceof FieldExpression fieldExpression) {
-            if((fieldExpression.getInstance() instanceof ThisExpression) &&
-                    fieldExpression.getFieldPath().size() == 1) {
-                return fieldExpression.getFieldPath().get(0);
+            if((fieldExpression.getInstance() instanceof ThisExpression)) {
+                return fieldExpression.getField();
             }
         }
         return null;

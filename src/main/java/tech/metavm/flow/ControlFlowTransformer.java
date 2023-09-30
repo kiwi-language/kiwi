@@ -135,14 +135,14 @@ public class ControlFlowTransformer extends JavaRecursiveElementVisitor {
       def _create_state_functions(
       self, block_vars, nonlocal_declarations, getter_name, setter_name):
     if not block_vars:
-      template = """
+      templateName = """
         def getter_name():
           return ()
         def setter_name(block_vars):
           pass
       """
       return templates.replace(
-          template, getter_name=getter_name, setter_name=setter_name)
+          templateName, getter_name=getter_name, setter_name=setter_name)
 
     guarded_block_vars = []
     for v in block_vars:
@@ -155,7 +155,7 @@ public class ControlFlowTransformer extends JavaRecursiveElementVisitor {
                 var_=v,
                 name=gast.Constant(str(v), kind=None)))
 
-    template = """
+    templateName = """
       def getter_name():
         return guarded_state_vars,
       def setter_name(vars_):
@@ -163,7 +163,7 @@ public class ControlFlowTransformer extends JavaRecursiveElementVisitor {
         state_vars, = vars_
     """
     return templates.replace(
-        template,
+        templateName,
         nonlocal_declarations=nonlocal_declarations,
         getter_name=getter_name,
         guarded_state_vars=guarded_block_vars,

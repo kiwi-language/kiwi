@@ -19,8 +19,8 @@ public class ArrayTypeTest extends TestCase {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
         Assert.assertTrue(objectType.isAssignableFrom(fooType));
 
-        ArrayType objectArrayType = new ArrayType(objectType, true);
-        ArrayType fooArrayType = new ArrayType(fooType, true);
+        ArrayType objectArrayType = new ArrayType(null, objectType, false);
+        ArrayType fooArrayType = new ArrayType(null, fooType, false);
 
         Assert.assertTrue(objectArrayType.isAssignableFrom(fooArrayType));
         Assert.assertTrue(objectType.isAssignableFrom(objectArrayType));

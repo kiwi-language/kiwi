@@ -7,8 +7,13 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.meta.Constraint;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.sql.Ref;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ReflectUtilsTest extends TestCase {
 
@@ -21,8 +26,10 @@ public class ReflectUtilsTest extends TestCase {
 
     public void testEraseType() {
         //noinspection rawtypes
-        Type rawType = new TypeReference<Table<Table<Constraint>>>() {}.getGenericType();
-        Type type = new TypeReference<Table<Table<Constraint<?>>>>() {}.getGenericType();
+        Type rawType = new TypeReference<Table<Table<Constraint>>>() {
+        }.getGenericType();
+        Type type = new TypeReference<Table<Table<Constraint<?>>>>() {
+        }.getGenericType();
         Type erasedType = ReflectUtils.eraseType(type);
         Assert.assertEquals(rawType, erasedType);
     }
@@ -31,6 +38,48 @@ public class ReflectUtilsTest extends TestCase {
         Foo foo = MockRegistry.getFoo();
         List<Reference> references = ReflectUtils.extractReferences(List.of(foo), t -> true);
         LOGGER.info(references.toString());
+    }
+
+    public void testResolveGenerics() {
+        var substitutor = ReflectUtils.resolveGenerics(
+                new TypeReference<GenericsFoo<Map<String, Object>>>() {
+                }.getGenericType()
+        );
+
+        Field field = ReflectUtils.getField(GenericsBase.class, "value");
+        var resolvedFieldValue = substitutor.substitute(field.getGenericType());
+        var listStrType = new TypeReference<Set<Map<String, Object>>>() {
+        }.getGenericType();
+        assertEquals(listStrType, resolvedFieldValue);
+
+        var barMethod = ReflectUtils.getMethod(GenericInterface.class, "bar");
+        var expectedBarType = new TypeReference<List<Collection<Set<Map<String, Object>>>>>() {
+        }.getGenericType();
+        var actualBarType = substitutor.substitute(barMethod.getGenericReturnType());
+        assertEquals(expectedBarType, actualBarType);
+    }
+
+
+    interface GenericInterface<V> {
+
+        List<V> bar();
+
+    }
+
+    static abstract class GenericsBase<E> implements GenericInterface<Collection<E>>{
+
+        @SuppressWarnings("unused")
+        E value;
+
+    }
+
+
+    static class GenericsFoo<T> extends GenericsBase<Set<T>>  {
+
+        @Override
+        public List<Collection<Set<T>>> bar() {
+            return null;
+        }
     }
 
 }

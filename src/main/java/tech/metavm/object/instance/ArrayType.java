@@ -3,7 +3,6 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
-import tech.metavm.entity.natives.ArrayNative;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
@@ -25,12 +24,13 @@ public class ArrayType extends Type {
     @EntityField("元素类型")
     private final Type elementType;
 
-    public ArrayType(Type elementType) {
-        this(elementType, true);
+    public ArrayType(Long tmpId, Type elementType) {
+        this(tmpId, elementType, false);
     }
 
-    public ArrayType(Type elementType, boolean ephemeral) {
+    public ArrayType(Long tmpId, Type elementType, boolean ephemeral) {
         super(getArrayTypeName(elementType), false, ephemeral, TypeCategory.ARRAY);
+        setTmpId(tmpId);
         if (elementType.getCode() != null) {
             setCode(elementType.getCode() + "[]");
         }
@@ -51,7 +51,7 @@ public class ArrayType extends Type {
     }
 
     @Override
-    public boolean isAssignableFrom(Type that) {
+    protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ArrayType arrayType) {
             return elementType.isAssignableFrom(arrayType.elementType);
         } else {
@@ -61,6 +61,20 @@ public class ArrayType extends Type {
 
     public Type getElementType() {
         return elementType;
+    }
+
+    public Type getInnerMostElementType() {
+        return elementType instanceof ArrayType arrayType ? arrayType.getInnerMostElementType() : elementType;
+    }
+
+    public int getDimensions() {
+        int dim = 1;
+        Type type = elementType;
+        while (type instanceof ArrayType arrayType) {
+            type = arrayType.getElementType();
+            dim++;
+        }
+        return dim;
     }
 
     @Override

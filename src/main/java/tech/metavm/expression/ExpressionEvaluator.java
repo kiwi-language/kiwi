@@ -94,7 +94,7 @@ public class ExpressionEvaluator {
 
     private Instance evaluateField(FieldExpression fieldExpression) {
         ClassInstance instance = (ClassInstance) evaluate(fieldExpression.getInstance());
-        return NncUtils.get(instance, inst -> inst.getResolved(fieldExpression.getFieldPath()));
+        return NncUtils.get(instance, inst -> inst.get(fieldExpression.getField()));
     }
 
     private Instance evaluateFunction(FunctionExpression functionExpression) {

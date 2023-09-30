@@ -44,6 +44,10 @@ public class ExceptionNode extends NodeRT<ExceptionParamDTO> {
         frame.exception(messageStr);
     }
 
+    public Value getMessage() {
+        return message;
+    }
+
     @Override
     public boolean isExit() {
         return true;

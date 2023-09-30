@@ -2,9 +2,7 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -118,17 +116,6 @@ public class ExpressionResolver {
         SubParsingContext subContext = new SubParsingContext(cursor, context);
         Expression resolvedCondition = ExpressionResolver.resolve(expression.getCondition(), subContext);
         return new AllMatchExpression(resolvedArray, resolvedCondition, cursor);
-    }
-
-    @SuppressWarnings("unused")
-    private FieldExpression createFieldExpression(Expression instance, List<String> fieldPath) {
-        Type type = instance.getType();
-        if (type instanceof ClassType classType) {
-            List<Field> fields = classType.getFieldsByPath(fieldPath);
-            return new FieldExpression(instance, fields);
-        } else {
-            throw new InternalException("Instance type must be ClassType");
-        }
     }
 
 }

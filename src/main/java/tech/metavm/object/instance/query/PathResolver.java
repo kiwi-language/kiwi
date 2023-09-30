@@ -37,7 +37,7 @@ public class PathResolver {
             }
         }
         else if(expression instanceof FieldExpression fieldExpression) {
-            root.fillPath(fieldExpression.getPathString());
+            root.fillPath(fieldExpression.getField().getName());
         }
     }
 

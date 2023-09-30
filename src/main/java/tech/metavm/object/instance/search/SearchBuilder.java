@@ -119,7 +119,7 @@ public class SearchBuilder {
             return Column.ID;
         }
         else if(expression instanceof FieldExpression fieldExpression) {
-            return fieldExpression.getLastField().getColumn();
+            return fieldExpression.getField().getColumn();
         }
         else {
             throw new InternalException("Can not get es field for " + expression);

@@ -1,6 +1,8 @@
 package tech.metavm.autograph.mocks;
 
-public class AutographFoo {
+import java.util.List;
+
+public class AutographFoo<E extends List<E>> {
 
     public String test(Object object) {
         return switch (object) {

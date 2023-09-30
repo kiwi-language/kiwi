@@ -47,6 +47,8 @@ public class Field extends Entity implements UpdateAware {
     private Instance staticValue;
     @Nullable
     private Expression initializer;
+    @Nullable
+    private Field template;
 
 //    @EntityField("状态")
 //    private MetadataState state;
@@ -62,7 +64,8 @@ public class Field extends Entity implements UpdateAware {
             Instance defaultValue,
             boolean isChildField,
             boolean isStatic,
-            Instance staticValue
+            Instance staticValue,
+            @Nullable Field template
     ) {
         setName(name);
         this.code = code;
@@ -79,6 +82,7 @@ public class Field extends Entity implements UpdateAware {
         }
         this._static = isStatic;
         this.staticValue = staticValue;
+        this.template = template;
         declaringType.addField(this);
     }
 
@@ -401,6 +405,11 @@ public class Field extends Entity implements UpdateAware {
 
     private String getDesc() {
         return getQualifiedName() + ":" + type.getName();
+    }
+
+    @Nullable
+    public Field getTemplate() {
+        return template;
     }
 
     @Override

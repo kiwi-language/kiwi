@@ -5,7 +5,6 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.flow.GetRelatedNode;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
@@ -36,7 +35,7 @@ public class DefContextTest extends TestCase {
         idProvider = new MockIdProvider();
         defContext = new DefContext(o -> null);
         modelInstanceMap = new MockModelInstanceMap(defContext);
-        typeFactory = new TypeFactory(defContext::getType);
+        typeFactory = new DefaultTypeFactory(defContext::getType);
     }
 
     public void testGetDef() {
@@ -88,9 +87,7 @@ public class DefContextTest extends TestCase {
     }
 
     public void testInheritance() {
-        EntityDef<GetRelatedNode> def = defContext.getEntityDef(GetRelatedNode.class);
         EntityDef<NodeRT<?>> superDef = defContext.getEntityDef(new TypeReference<>(){});
-        Assert.assertSame(superDef.getType(), def.getType().getSuperType());
         Assert.assertSame(superDef.getType().getSuperType(), typeFactory.getEntityType());
     }
 

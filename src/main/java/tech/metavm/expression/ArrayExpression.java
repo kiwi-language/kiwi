@@ -2,6 +2,7 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeUtil;
 import tech.metavm.util.NncUtils;
@@ -13,7 +14,6 @@ import java.util.*;
 @EntityType("数组表达式")
 public class ArrayExpression extends Expression {
 
-    @ChildEntity("表达式列表")
     private final Table<Expression> expressions = new Table<>(Expression.class, true);
 
     public ArrayExpression(Collection<Expression> expressions) {
@@ -21,14 +21,13 @@ public class ArrayExpression extends Expression {
     }
 
     public static ArrayExpression merge(Expression first, Expression second) {
-        if(first instanceof ArrayExpression listExpression) {
+        if (first instanceof ArrayExpression listExpression) {
             List<Expression> rest = listExpression.expressions;
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
             expressions.addAll(rest);
             expressions.add(second);
             return new ArrayExpression(expressions/*, first.context*/);
-        }
-        else {
+        } else {
             return new ArrayExpression(List.of(first, second)/*, first.context*/);
         }
     }

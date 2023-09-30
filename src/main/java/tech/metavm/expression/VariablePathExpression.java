@@ -25,7 +25,7 @@ public class VariablePathExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        return null;
+        return qualifier.build(symbolType, false) + "." + field.buildSelf(symbolType);
     }
 
     @Override
@@ -40,12 +40,12 @@ public class VariablePathExpression extends Expression {
 
     @Override
     protected List<Expression> getChildren() {
-        return null;
+        return List.of(qualifier, field);
     }
 
     @Override
     public Expression cloneWithNewChildren(List<Expression> children) {
-        return null;
+        return new VariablePathExpression(children.get(0), (VariableExpression) children.get(1));
     }
 
     @Override

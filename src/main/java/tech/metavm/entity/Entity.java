@@ -100,4 +100,8 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     @Override
     public void onBind(IEntityContext context) {}
 
+    public boolean afterContextInitIds() {
+        return false;
+    }
+
 }

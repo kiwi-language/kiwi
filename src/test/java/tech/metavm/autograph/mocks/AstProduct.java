@@ -1,5 +1,6 @@
 package tech.metavm.autograph.mocks;
 
+import org.apache.el.parser.AstOr;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -28,22 +29,22 @@ public class AstProduct extends Entity {
     public AstProductState state;
 
     public void dec(int amount) {
-        if(state != AstProductState.NORMAL || inventory < amount) {
+        if (state != AstProductState.NORMAL || inventory < amount) {
             throw new RuntimeException("商品库存不足或未上架");
         }
         inventory -= amount;
     }
 
-    public <C extends AstCoupon> long calcDiscount(List<C> coupons) {
+    public <CouponType extends AstCoupon> long calcDiscount(List<CouponType> coupons) {
         long discount = 0L;
-        for (C coupon : coupons) {
+        for (CouponType coupon : coupons) {
             discount += coupon.calc(1);
         }
         return discount;
     }
 
     public long calcDirectDiscount(DirectAstCoupon[] directCoupons) {
-        List<DirectAstCoupon> list = new ArrayList<>();
+        List<AstCoupon> list = new ArrayList<>();
         //noinspection ManualArrayToCollectionCopy
         for (DirectAstCoupon directCoupon : directCoupons) {
             //noinspection UseBulkOperation
@@ -62,7 +63,7 @@ public class AstProduct extends Entity {
         List<AstCoupon> selectedCoupons = new ArrayList<>();
         for (Long discount : allowedDiscounts) {
             var coupon = couponMap.get(discount);
-            if(coupon != null) {
+            if (coupon != null) {
                 orderPrice -= coupon.use(amount);
                 selectedCoupons.add(coupon);
             }
@@ -74,6 +75,17 @@ public class AstProduct extends Entity {
                 amount,
                 selectedCoupons
         );
+    }
+
+    public List<AstOrder> buy(AstPair<AstProduct, AstCoupon>[] productCouponPairs) {
+        var orders = new ArrayList<AstOrder>();
+        for (AstPair<AstProduct, AstCoupon> productCouponPair : productCouponPairs) {
+            orders.add(productCouponPair.first.buy(
+                    1, new AstCoupon[]{productCouponPair.second},
+                    new Long[]{productCouponPair.second.calc(1)}
+            ));
+        }
+        return orders;
     }
 
 }

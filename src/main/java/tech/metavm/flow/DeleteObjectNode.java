@@ -41,6 +41,10 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
         this.objectId = ValueFactory.create(objectId, getParsingContext(entityContext));
     }
 
+    public void setObjectId(Value objectId) {
+        this.objectId = objectId;
+    }
+
     @Override
     public void execute(FlowFrame frame) {
         frame.deleteInstance(objectId.evaluate(frame));

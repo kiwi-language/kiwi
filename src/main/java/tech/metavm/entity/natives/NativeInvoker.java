@@ -1,6 +1,5 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.IInstanceContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
@@ -11,8 +10,8 @@ import java.lang.reflect.Constructor;
 
 public class NativeInvoker {
 
-    public static Instance invoke(Flow flow, Instance instance, ClassInstance argument, IInstanceContext context) {
-        Object nativeObject = getNativeObject(instance, context);
+    public static Instance invoke(Flow flow, Instance instance, ClassInstance argument) {
+        Object nativeObject = getNativeObject(instance);
         var instanceClass = nativeObject.getClass();
         var method = ReflectUtils.getMethod(
                 instanceClass, flow.getCode(),
@@ -33,21 +32,21 @@ public class NativeInvoker {
         }
     }
 
-    public static Object getNativeObject(Instance instance, IInstanceContext context) {
+    public static Object getNativeObject(Instance instance) {
         var nativeObject = instance.getNativeObject();
         if(nativeObject == null) {
-            nativeObject = createNativeObject(instance, context);
+            nativeObject = createNativeObject(instance);
             instance.setNativeObject(nativeObject);
         }
         return nativeObject;
     }
 
-    private static Object createNativeObject(Instance instance, IInstanceContext context) {
+    private static Object createNativeObject(Instance instance) {
         Class<?> nativeClass = NncUtils.requireNonNull(instance.getType().getNativeClass(),
                 "类型" + instance.getType() + "不支持原生调用");
         Constructor<?> constructor = ReflectUtils.getConstructor(nativeClass,
-                ClassInstance.class, IInstanceContext.class);
-        return ReflectUtils.invokeConstructor(constructor, instance, context);
+                ClassInstance.class);
+        return ReflectUtils.invokeConstructor(constructor, instance);
     }
 
 

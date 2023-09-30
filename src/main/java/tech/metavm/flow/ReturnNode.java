@@ -59,6 +59,11 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
 //        }
     }
 
+    @Nullable
+    public Value getValue() {
+        return value;
+    }
+
     @Override
     protected ReturnParamDTO getParam(boolean persisting) {
         return new ReturnParamDTO(
