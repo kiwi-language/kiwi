@@ -67,11 +67,11 @@ public record ModelIdentity(
         );
     }
 
-    public static ModelIdentity field(java.lang.reflect.Field javaField) {
-        return new ModelIdentity(
-                Field.class,
-                ReflectUtils.getFieldQualifiedName(javaField)
-        );
+    public static ModelIdentity field(Field field, Function<tech.metavm.object.meta.Type, Type> getJavaType,
+                                      Function<Field, java.lang.reflect.Field> getJavaField) {
+        String name = field.getDeclaringType().getCanonicalName(getJavaType) + "."
+                + getJavaField.apply(field).getName();
+        return new ModelIdentity(Field.class, name);
     }
 
     public static ModelIdentity table(Table<?> table,

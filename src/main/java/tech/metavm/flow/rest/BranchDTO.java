@@ -1,7 +1,6 @@
 package tech.metavm.flow.rest;
 
 import tech.metavm.dto.BaseDTO;
-import tech.metavm.dto.RefDTO;
 
 public record BranchDTO(
         Long id,

@@ -23,9 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @EntityType("Foreach节点")
-public class ForEachNode extends LoopNode<ForEachParamDTO> {
+public class ForeachNode extends LoopNode<ForEachParamDTO> {
 
-    public static ForEachNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+    public static ForeachNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         var outputType = context.getClassType(nodeDTO.outputTypeRef());
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         ForEachParamDTO param = nodeDTO.getParam();
@@ -40,7 +40,7 @@ public class ForEachNode extends LoopNode<ForEachParamDTO> {
         // IMPORTANT COMMENT DON"T REMOVE:
         // DO NOT call setParam here. setParam should be called after the loop body has been constructed.
         // See FlowManager.saveLoopNodeContent
-        var node = new ForEachNode(nodeDTO.tmpId(), nodeDTO.name(), outputType, prev, scope, array, extraCond);
+        var node = new ForeachNode(nodeDTO.tmpId(), nodeDTO.name(), outputType, prev, scope, array, extraCond);
         parsingContext = FlowParsingContext.create(scope, node, context);
         extraCond = ValueFactory.create(param.getCondition(), parsingContext);
         node.setCondition(extraCond);
@@ -50,7 +50,7 @@ public class ForEachNode extends LoopNode<ForEachParamDTO> {
     @ChildEntity("数组")
     private Value array;
 
-    public ForEachNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous, ScopeRT scope,
+    public ForeachNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous, ScopeRT scope,
                        Value array, Value condition) {
         super(tmpId, name, outputType, previous, scope, condition);
         this.array = array;
@@ -62,7 +62,7 @@ public class ForEachNode extends LoopNode<ForEachParamDTO> {
                 array.toDTO(persisting),
                 NncUtils.get(getCondition(), cond -> cond.toDTO(persisting)),
                 NncUtils.map(getFields(), field -> field.toDTO(persisting)),
-                getLoopScope().toDTO(!persisting)
+                getBodyScope().toDTO(!persisting)
         );
     }
 

@@ -18,7 +18,7 @@ import java.util.Map;
 import static tech.metavm.object.meta.TypeUtil.getParameterizedCode;
 import static tech.metavm.object.meta.TypeUtil.getParameterizedName;
 
-public abstract class ElementTransformer {
+public class ElementTransformer {
 
     private final Map<NodeRT<?>, NodeRT<?>> nodeMap = new HashMap<>();
     private final LinkedList<ClassType> classes = new LinkedList<>();
@@ -240,16 +240,33 @@ public abstract class ElementTransformer {
             case UpdateObjectNode updateObjectNode -> transformUpdateObjectNode(updateObjectNode);
             case NewNode newNode -> transformNewNode(newNode);
             case SubFlowNode subFlowNode -> transformSubFlowNode(subFlowNode);
-            case ExceptionNode exceptionNode -> transformExceptionNode(exceptionNode);
+            case RaiseNode exceptionNode -> transformExceptionNode(exceptionNode);
             case ValueNode valueNode -> transformValueNode(valueNode);
             case UpdateStaticNode updateStaticNode -> transformUpdateStaticNode(updateStaticNode);
             case GetUniqueNode getUniqueNode -> transformGetUniqueNode(getUniqueNode);
             case DeleteObjectNode deleteObjectNode -> transformDeleteObjectNode(deleteObjectNode);
             case MergeNode mergeNode -> transformMergeNode(mergeNode);
+            case AddObjectNode addObjectNode -> transformAddObjectNode(addObjectNode);
+            case CheckNode checkNode -> transformCheckNode(checkNode);
             default -> throw new IllegalStateException("Unexpected node: " + node);
         };
         nodeMap.put(node, transformed);
         return transformed;
+    }
+
+    private CheckNode transformCheckNode(CheckNode checkNode) {
+        return new CheckNode(
+                null, checkNode.getName(), getTransformedNode(checkNode.getPredecessor()),
+                scope(), transformValue(checkNode.getCondition())
+        );
+    }
+
+    private AddObjectNode transformAddObjectNode(AddObjectNode addObjectNode) {
+        return new AddObjectNode(null, addObjectNode.getName(),
+                (ClassType) transformType(addObjectNode.getType()),
+                getTransformedNode(addObjectNode.getPredecessor()),
+                scope()
+        );
     }
 
     private SelfNode transformSelfNode(SelfNode selfNode) {
@@ -314,8 +331,8 @@ public abstract class ElementTransformer {
                 new ExpressionValue(ExpressionUtil.trueExpression())
         );
         nodeMap.put(node, transformed);
-        enterScope(transformed.getLoopScope());
-        node.getLoopScope().getNodes().forEach(this::transformNode);
+        enterScope(transformed.getBodyScope());
+        node.getBodyScope().getNodes().forEach(this::transformNode);
         exitScope();
         transformed.setCondition(transformValue(node.getCondition()));
         for (LoopField field : node.getFields()) {
@@ -397,10 +414,10 @@ public abstract class ElementTransformer {
         return copy;
     }
 
-    private ExceptionNode transformExceptionNode(ExceptionNode node) {
-        return new ExceptionNode(
+    private RaiseNode transformExceptionNode(RaiseNode node) {
+        return new RaiseNode(
                 null, node.getName(),
-                transformValue(node.getMessage()),
+                transformValue(node.getException()),
                 getTransformedNode(node.getPredecessor()),
                 scope()
         );
@@ -439,7 +456,9 @@ public abstract class ElementTransformer {
 
     private ValueNode transformValueNode(ValueNode valueNode) {
         return new ValueNode(
-                null, valueNode.getName(), getTransformedNode(valueNode.getPredecessor()),
+                null, valueNode.getName(),
+                transformType(valueNode.getType()),
+                getTransformedNode(valueNode.getPredecessor()),
                 scope(), transformValue(valueNode.getValue())
         );
     }

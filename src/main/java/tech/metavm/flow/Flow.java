@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.autograph.Parameter;
 import tech.metavm.entity.*;
+import tech.metavm.expression.ElementVisitor;
 import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
@@ -241,8 +242,13 @@ public class Flow extends Entity implements GenericDeclaration {
 
     private Table<NodeRT<?>> nodes() {
         if (nodes == null) {
-            nodes = new Table<>(new TypeReference<>() {
-            });
+            nodes = new Table<>(new TypeReference<>() {});
+            new ElementVisitor() {
+                @Override
+                public void visitNode(NodeRT<?> node) {
+                    nodes.add(node);
+                }
+            }.visitFlow(this);
         }
         return nodes;
     }

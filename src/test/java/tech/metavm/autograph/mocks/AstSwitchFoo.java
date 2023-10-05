@@ -6,22 +6,26 @@ import tech.metavm.entity.EntityType;
 @EntityType(value = "AstSwitchFoo", compiled = true)
 public class AstSwitchFoo {
 
+    private String title;
+
     public String test(Object value) {
         return switch (value) {
             case String str -> {
-                if (!str.isEmpty()) {
-                    yield str;
-                }
-                yield "empty";
+                yield str;
             }
             case Long l -> {
-                yield l + "L";
+                if(l == 0L) {
+                    yield "zero";
+                }
+                else {
+                    yield l + "L";
+                }
             }
             case Integer i -> {
                 yield i + "";
             }
-            case Boolean b -> {
-                yield b + "";
+            case AstSwitchFoo s -> {
+                yield s.title;
             }
             default -> {
                 yield "default";

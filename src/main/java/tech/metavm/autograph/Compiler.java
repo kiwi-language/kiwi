@@ -2,7 +2,6 @@ package tech.metavm.autograph;
 
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.IEntityContext;
@@ -20,6 +19,7 @@ public class Compiler {
     void transform(PsiClass psiClass) {
         executeCommand(() -> {
             psiClass.accept(new SwitchExpressionTransformer());
+            psiClass.accept(new SwitchLabelStatementTransformer());
             psiClass.accept(new ForTransformer());
             psiClass.accept(new BreakTransformer());
             psiClass.accept(new ContinueTransformer());

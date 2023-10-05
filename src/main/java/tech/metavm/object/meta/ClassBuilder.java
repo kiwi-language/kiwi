@@ -26,7 +26,7 @@ public class ClassBuilder {
     private List<Type> typeArguments = new ArrayList<>();
     private boolean done;
     private Long suffix;
-    private String templateName;
+    private String collectName;
     private ClassType template;
     private List<ClassType> dependencies;
     private List<TypeVariable> typeParameters = List.of();
@@ -114,8 +114,8 @@ public class ClassBuilder {
         return typeParameters(List.of(typeParameters));
     }
 
-    public ClassBuilder templateName(String templateName) {
-        this.templateName = templateName;
+    public ClassBuilder collectionName(String collectionName) {
+        this.collectName = collectionName;
         return this;
     }
 
@@ -147,7 +147,7 @@ public class ClassBuilder {
                 anonymous,
                 ephemeral,
                 desc,
-                templateName,
+                collectName,
                 template,
                 typeArguments
         );

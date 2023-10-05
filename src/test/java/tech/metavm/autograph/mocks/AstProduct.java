@@ -1,6 +1,5 @@
 package tech.metavm.autograph.mocks;
 
-import org.apache.el.parser.AstOr;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;

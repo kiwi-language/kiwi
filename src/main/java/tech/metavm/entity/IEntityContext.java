@@ -29,6 +29,10 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(typeReference.getType(), id);
     }
 
+    default <T extends Entity> T getEntity(TypeReference<T> typeReference, RefDTO ref) {
+        return getEntity(typeReference.getType(), ref);
+    }
+
     <T> List<T> getByType(Class<T> type, T startExclusive, long limit);
 
     boolean existsInstances(Class<?> type);
@@ -44,6 +48,8 @@ public interface IEntityContext extends ModelInstanceMap {
     <T> T getEntity(Class<T> entityType, RefDTO reference);
 
     Type getType(Class<?> javaType);
+
+    boolean isNewEntity(Object entity);
 
     default Type getType(long id) {
         return getEntity(Type.class, id);

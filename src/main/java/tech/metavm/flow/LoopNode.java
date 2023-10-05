@@ -19,10 +19,8 @@ import tech.metavm.util.Table;
 import java.util.*;
 
 @EntityType("循环节点")
-public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
+public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
 
-    @ChildEntity("循环体")
-    private final ScopeRT loopScope;
     @ChildEntity("字段列表")
     private final Table<LoopField> fields = new Table<>(LoopField.class, true);
     @ChildEntity("条件")
@@ -30,8 +28,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
 
     protected LoopNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous,
                        ScopeRT scope, Value condition) {
-        super(tmpId, name, outputType, previous, scope);
-        loopScope = new ScopeRT(scope.getFlow(), this, true);
+        super(tmpId, name, outputType, previous, scope, true);
         this.condition = condition;
     }
 
@@ -41,11 +38,11 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
     }
 
     protected void setLoopParam(LoopParamDTO param, IEntityContext context) {
-        if(param.getFields() != null) {
+        if (param.getFields() != null) {
             updateFields(param.getFields(), context);
         }
         var parsingContext = getParsingContext(context);
-        if(param.getCondition() != null) {
+        if (param.getCondition() != null) {
             condition = ValueFactory.create(param.getCondition(), parsingContext);
         }
     }
@@ -57,14 +54,13 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
             var field = context.getField(loopFieldDTO.fieldRef());
             fields.add(field);
             var loopField = this.fields.get(LoopField::getField, field);
-            if(loopField == null) {
+            if (loopField == null) {
                 this.fields.add(new LoopField(
                         field,
                         ValueFactory.create(loopFieldDTO.initialValue(), parsingContext),
                         ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext)
                 ));
-            }
-            else {
+            } else {
                 loopField.update(loopFieldDTO, context, parsingContext);
             }
         }
@@ -74,7 +70,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
     @Override
     public ParsingContext getParsingContext(IEntityContext entityContext) {
         return FlowParsingContext.create(
-                loopScope, loopScope.getLastNode(), entityContext.getInstanceContext()
+                bodyScope, bodyScope.getLastNode(), entityContext.getInstanceContext()
         );
     }
 
@@ -84,10 +80,9 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
 
     public void setField(Field field, Value initialValue, Value updatedValue) {
         var loopField = fields.get(LoopField::getField, field);
-        if(loopField == null) {
+        if (loopField == null) {
             fields.add(new LoopField(field, initialValue, updatedValue));
-        }
-        else {
+        } else {
             loopField.setInitialValue(initialValue);
             loopField.setUpdatedValue(updatedValue);
         }
@@ -103,13 +98,13 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
             updateLoopObject(loopObject, frame);
         }
         var extraCondValue = (BooleanInstance) condition.evaluate(frame);
-        if(!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
+        if (!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
             return;
         }
-        if (loopScope.isEmpty()) {
+        if (bodyScope.isEmpty()) {
             frame.jumpTo(this);
         } else {
-            frame.jumpTo(loopScope.getFirstNode());
+            frame.jumpTo(bodyScope.getFirstNode());
         }
     }
 
@@ -132,7 +127,8 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
         return Map.of();
     }
 
-    protected void updateExtraFields(ClassInstance instance, FlowFrame frame) {}
+    protected void updateExtraFields(ClassInstance instance, FlowFrame frame) {
+    }
 
     protected boolean checkExtraCondition(ClassInstance loopObject, FlowFrame frame) {
         return true;
@@ -147,22 +143,13 @@ public abstract class LoopNode<T extends LoopParamDTO> extends NodeRT<T>  {
     }
 
 
-    public ScopeRT getLoopScope() {
-        return loopScope;
+    public ScopeRT getBodyScope() {
+        return bodyScope;
     }
 
     @Override
     public ClassType getType() {
         return (ClassType) super.getType();
-    }
-
-    @Override
-    public List<NodeRT<?>> getGlobalPredecessors() {
-        var predecessors = new ArrayList<>(super.getGlobalPredecessors());
-        if(!loopScope.isEmpty()) {
-            predecessors.add(loopScope.getLastNode());
-        }
-        return predecessors;
     }
 
     @Override

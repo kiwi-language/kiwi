@@ -1,6 +1,8 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.autograph.ExpressionTypeMap;
+import tech.metavm.autograph.TypeNarrower;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.ScopePO;
@@ -27,6 +29,12 @@ public class ScopeRT extends Entity {
     }, true);
     @ChildEntity("是否未循环体")
     private final boolean withBackEdge;
+
+    @EntityField("所属分支")
+    @Nullable
+    private Branch branch;
+
+    private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
 
     public ScopeRT(Flow flow) {
         this(flow, null, false);
@@ -56,13 +64,26 @@ public class ScopeRT extends Entity {
     }
 
     public void addNode(NodeRT<?> node) {
-        var pred = node.getPredecessor() != null ? node.getPredecessor() : getLastNode();
+        var pred = node.getPredecessor() != null ? node.getPredecessor() : null;
         if (pred != null) {
             nodes.addAfter(node, pred);
         } else {
-            nodes.add(node);
+            if(!isEmpty()) {
+                getFirstNode().insertBefore(node);
+            }
+            nodes.addFirst(node);
         }
         flow.addNode(node);
+    }
+
+    public void setBranch(@Nullable Branch branch) {
+        this.branch = branch;
+        if(branch != null) {
+            var typeNarrower = new TypeNarrower(
+                    expr -> owner != null ? owner.getExpressionTypes().getType(expr) : expr.getType()
+            );
+            expressionTypes = expressionTypes.merge(typeNarrower.narrowType(branch.getCondition().getExpression()));
+        }
     }
 
     public NodeRT<?> getPredecessor() {
@@ -74,6 +95,11 @@ public class ScopeRT extends Entity {
 //            return owner.getPredecessor();
 //        }
 //        return null;
+    }
+
+    @Nullable
+    public Branch getBranch() {
+        return branch;
     }
 
     public @Nullable NodeRT<?> getSuccessor() {
@@ -119,6 +145,10 @@ public class ScopeRT extends Entity {
         return owner;
     }
 
+    public @Nullable ScopeRT getParent() {
+        return NncUtils.get(owner, NodeRT::getScope);
+    }
+
     public void removeNode(NodeRT<?> node) {
         nodes.remove(node);
         flow.removeNode(node);
@@ -141,4 +171,17 @@ public class ScopeRT extends Entity {
     public NodeRT<?> getLastNode() {
         return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
     }
+
+    public ExpressionTypeMap getExpressionTypes() {
+        return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
+    }
+
+    public void setExpressionTypes(ExpressionTypeMap expressionTypes) {
+        this.expressionTypes = expressionTypes;
+    }
+
+    public void mergeExpressionTypes(ExpressionTypeMap expressionTypes) {
+        this.expressionTypes = getExpressionTypes().merge(expressionTypes);
+    }
+
 }

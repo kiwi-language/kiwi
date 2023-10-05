@@ -1,6 +1,5 @@
 package tech.metavm.flow;
 
-import tech.metavm.autograph.env.LightVirtualFileBase;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.MergeFieldDTO;
 import tech.metavm.object.meta.Field;

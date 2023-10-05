@@ -91,7 +91,7 @@ public class ExpressionResolver {
             }
         }
         var qualifier = resolve(expression.getQualifier());
-        var qualifierType = (ClassType) qualifier.getType();
+        var qualifierType = (ClassType) context.getExpressionType(qualifier);
         var field = qualifierType.getFieldByVar(Var.parse(expression.getField().getVariable()));
         return new FieldExpression(qualifier, field);
     }

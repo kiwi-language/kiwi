@@ -51,7 +51,9 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         if(param.fields() != null) {
             for (UpdateFieldDTO field : param.fields()) {
                 NncUtils.requireTrue(
-                        entityContext.getField(field.fieldRef()).getDeclaringType().isAssignableFrom(objectId.getType())
+                        entityContext.getField(field.fieldRef()).getDeclaringType().isAssignableFrom(
+                                getExpressionTypes().getType(objectId.getExpression())
+                        )
                 );
             }
             fieldParams.clear();

@@ -37,7 +37,7 @@ public class WhileNode extends LoopNode<WhileParamDTO> {
     protected WhileParamDTO getParam(boolean persisting) {
         return new WhileParamDTO(
                 getCondition().toDTO(persisting),
-                getLoopScope().toDTO(!persisting),
+                getBodyScope().toDTO(!persisting),
                 NncUtils.map(getFields(), field -> field.toDTO(persisting))
         );
     }

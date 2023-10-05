@@ -32,7 +32,11 @@ public class Keys {
 
     public static final Key<Scope> COND_SCOPE = createKey("ConditionScope");
 
+    public static final Key<Scope> RESOURCE_SCOPE = createKey("ResouceScope");
+
     public static final Key<Scope> BODY_SCOPE = createKey("BodyScope");
+
+    public static final Key<Scope> FINALLY_SCOPE = createKey("FinallyBlock");
 
     public static final Key<Scope> ARGS_SCOPE = createKey("ArgsScope");
 

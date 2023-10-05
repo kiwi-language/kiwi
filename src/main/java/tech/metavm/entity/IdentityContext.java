@@ -69,7 +69,7 @@ public class IdentityContext {
             putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
         }
         else if(model instanceof Field field && field.getDeclaringType().isFromReflection()) {
-            putModelId(model, ModelIdentity.field(getJavaField(field)), result);
+            putModelId(model, ModelIdentity.field(field, this::getJavaType, this::getJavaField), result);
         }
         else if(model instanceof Flow flow && flow.getDeclaringType().isCollection()) {
             putModelId(model, new ModelIdentity(Flow.class, flow.getCanonicalName(getJavaType)), result);

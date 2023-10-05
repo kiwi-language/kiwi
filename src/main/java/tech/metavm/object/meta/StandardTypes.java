@@ -111,6 +111,22 @@ public class StandardTypes {
         return getClassType(IteratorImpl.class);
     }
 
+    public static ClassType getThrowableType() {
+        return getClassType(Throwable.class);
+    }
+
+    public static ClassType getExceptionType() {
+        return getClassType(Exception.class);
+    }
+
+    public static ClassType getRuntimeExceptionType() {
+        return getClassType(RuntimeException.class);
+    }
+
+    public static UnionType getNullableThrowableType() {
+        return NncUtils.requireNonNull(getThrowableType().getNullableType());
+    }
+
     public static List<PrimitiveType> getPrimitiveTypes() {
         return List.of(
                 getLongType(), getStringType(), getTimeType(),

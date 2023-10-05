@@ -8,22 +8,25 @@ import java.util.Objects;
 public enum NodeKind {
     SELF(0, SelfNode.class),
     INPUT(1, InputNode.class, true),
-//    GET_OBJECT(2, GetObjectNode.class),
+    //    GET_OBJECT(2, GetObjectNode.class),
     ADD_OBJECT(3, AddObjectNode.class),
     UPDATE_OBJECT(4, UpdateObjectNode.class),
     DELETE_OBJECT(5, DeleteObjectNode.class),
     BRANCH(7, BranchNode.class),
     RETURN(9, ReturnNode.class),
-    EXCEPTION(10, ExceptionNode.class),
+    EXCEPTION(10, RaiseNode.class),
     SUB_FLOW(12, SubFlowNode.class),
     GET_UNIQUE(13, GetUniqueNode.class),
     MERGE(14, MergeNode.class, true),
     NEW(15, NewNode.class),
     VALUE(16, ValueNode.class),
     UPDATE_STATIC(17, UpdateStaticNode.class),
-    FOREACH(19, ForEachNode.class, true),
+    FOREACH(19, ForeachNode.class, true),
     WHILE(20, WhileNode.class, true),
-    NEW_ARRAY(21, NewArrayNode.class)
+    NEW_ARRAY(21, NewArrayNode.class),
+    EXIT_BRANCH(22, CheckNode.class),
+    TRY(23, TryNode.class),
+    TRY_END(24, TryEndNode.class, true),
 
     ;
 

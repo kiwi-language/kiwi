@@ -86,6 +86,10 @@ public class GeneratorTest extends TestCase {
         compile(List.of(AstSimpleProduct.class, AstProductState.class, AstSimpleCoupon.class));
     }
 
+    public void test_exception() {
+        build(List.of(AstExceptionFoo.class, AstException.class));
+    }
+
     public void test_enum() {
         build(List.of(AstProductState.class));
     }
@@ -116,9 +120,17 @@ public class GeneratorTest extends TestCase {
     }
 
     public void test_switch() {
+        build(List.of(AstSwitchFoo.class));
+    }
+
+    public void test_switch_transform_only() {
         var file = TranspileTestTools.getPsiJavaFile(AstSwitchFoo.class);
         transform(List.of(AstSwitchFoo.class));
         System.out.println(file.getText());
+    }
+
+    public void test_branch() {
+        build(List.of(AstBranchFoo.class));
     }
 
     public void test_clean() {

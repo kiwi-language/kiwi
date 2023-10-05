@@ -27,6 +27,8 @@ public abstract class Instance implements IdInitializing {
     private long version;
     private long syncVersion;
 
+    private transient Long tmpId;
+
     private transient final Set<ReferenceRT> outgoingReferences = new HashSet<>();
     private transient final Set<ReferenceRT> incomingReferences = new HashSet<>();
 
@@ -73,6 +75,16 @@ public abstract class Instance implements IdInitializing {
     @NoProxy
     public boolean isArray() {
         return this instanceof ArrayInstance;
+    }
+
+    @NoProxy
+    public Long getTmpId() {
+        return tmpId;
+    }
+
+    @NoProxy
+    public void setTmpId(Long tmpId) {
+        this.tmpId = tmpId;
     }
 
     @NoProxy

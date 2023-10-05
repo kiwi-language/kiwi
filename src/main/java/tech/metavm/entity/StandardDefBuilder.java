@@ -34,6 +34,8 @@ public class StandardDefBuilder {
 
     private PrimitiveType nullType;
 
+    private PrimitiveType stringType;
+
     private PrimitiveType boolType;
 
     private PrimitiveType voidType;
@@ -45,6 +47,8 @@ public class StandardDefBuilder {
     private ClassType collectionType;
 
     private ClassType setType;
+
+    private ClassType throwableType;
 
     private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
@@ -73,7 +77,7 @@ public class StandardDefBuilder {
         nullType = primTypeFactory.createPrimitive(PrimitiveKind.NULL);
         longType = primTypeFactory.createPrimitive(PrimitiveKind.LONG);
         var doubleType = primTypeFactory.createPrimitive(PrimitiveKind.DOUBLE);
-        var stringType = primTypeFactory.createPrimitive(PrimitiveKind.STRING);
+        stringType = primTypeFactory.createPrimitive(PrimitiveKind.STRING);
         boolType = primTypeFactory.createPrimitive(PrimitiveKind.BOOLEAN);
         var timeType = primTypeFactory.createPrimitive(PrimitiveKind.TIME);
         var passwordType = primTypeFactory.createPrimitive(PrimitiveKind.PASSWORD);
@@ -145,7 +149,7 @@ public class StandardDefBuilder {
 
         var enumTypeParam = new TypeVariable(null, "枚举类型", "Enum-E");
         primTypeFactory.addAuxType(Enum.class.getTypeParameters()[0], enumTypeParam);
-        var enumType =  ClassBuilder.newBuilder("枚举", Enum.class.getSimpleName())
+        var enumType = ClassBuilder.newBuilder("枚举", Enum.class.getSimpleName())
                 .source(ClassSource.REFLECTION)
                 .typeParameters(enumTypeParam)
                 .build();
@@ -193,10 +197,11 @@ public class StandardDefBuilder {
         defMap.addDef(new InstanceDef<>(ArrayInstance.class, objectType));
 
         primTypeFactory.getMap().forEach((javaType, type) -> {
-            if(!defMap.containsDef(javaType)) {
+            if (!defMap.containsDef(javaType)) {
                 switch (type) {
                     case ClassType classType -> defMap.preAddDef(new DirectDef<>(javaType, classType));
-                    case TypeVariable typeVariable -> defMap.preAddDef(new TypeVariableDef((java.lang.reflect.TypeVariable<?>) javaType, typeVariable));
+                    case TypeVariable typeVariable ->
+                            defMap.preAddDef(new TypeVariableDef((java.lang.reflect.TypeVariable<?>) javaType, typeVariable));
                     default -> {
                     }
                 }
@@ -207,8 +212,48 @@ public class StandardDefBuilder {
                 defMap.afterDefInitialized(defMap.getDef(javaType))
         );
 
-    }
+        throwableType = ClassBuilder.newBuilder("中断", Throwable.class.getSimpleName())
+                .collectionName("Throwable")
+                .source(ClassSource.REFLECTION).build();
+        createThrowableFlows(throwableType);
+        var throwableDef = createValueDef(
+                Throwable.class,
+                Throwable.class,
+                throwableType,
+                defMap
+        );
+        var javaMessageField = ReflectUtils.getField(Throwable.class, "detailMessage");
+        TypeUtil.fillCompositeTypes(throwableType, primTypeFactory);
+        createFieldDef(
+                javaMessageField,
+                createField(javaMessageField, true, stringType.getNullableType(), throwableType),
+                throwableDef
+        );
 
+        var javaCauseField = ReflectUtils.getField(Throwable.class, "cause");
+        createFieldDef(
+                javaCauseField,
+                createField(javaCauseField, false, throwableType.getNullableType(), throwableType),
+                throwableDef
+        );
+
+        defMap.addDef(throwableDef);
+
+        var exceptionType = ClassBuilder.newBuilder("异常", Exception.class.getSimpleName())
+                .collectionName("Exception")
+                .superType(throwableType)
+                .source(ClassSource.REFLECTION).build();
+
+        createExceptionFlows(exceptionType);
+        defMap.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defMap));
+
+        var runtimeExceptionType = ClassBuilder.newBuilder("运行时异常", RuntimeException.class.getSimpleName())
+                .collectionName("RuntimeException")
+                .superType(exceptionType)
+                .source(ClassSource.REFLECTION).build();
+        createRuntimeExceptionFlows(runtimeExceptionType);
+        defMap.addDef(createValueDef(RuntimeException.class, RuntimeException.class, runtimeExceptionType, defMap));
+    }
 
     @SuppressWarnings("SameParameterValue")
     private <T extends Entity> EntityDef<T> createEntityDef(java.lang.reflect.Type javaType,
@@ -311,7 +356,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(Iterator.class.getTypeParameters()[0], elementType);
         ClassType iteratorType = ClassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
-                .templateName("Iterator")
+                .collectionName("Iterator")
                 .category(TypeCategory.INTERFACE).build();
         primTypeFactory.putType(Iterator.class, iteratorType);
         createIteratorFlows(iteratorType, elementType);
@@ -347,7 +392,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
         ClassType collectionType = ClassBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
-                .templateName("Collection")
+                .collectionName("Collection")
                 .category(TypeCategory.INTERFACE)
                 .build();
         primTypeFactory.putType(Collection.class, collectionType);
@@ -419,7 +464,7 @@ public class StandardDefBuilder {
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .dependencies(List.of(pIteratorImplType))
-                .templateName("Set")
+                .collectionName("Set")
                 .build();
         var pSetType = genericContext.getParameterizedType(setType, elementType);
         primTypeFactory.putType(Set.class, setType);
@@ -455,7 +500,7 @@ public class StandardDefBuilder {
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .dependencies(List.of(pIteratorImplType))
-                .templateName("List")
+                .collectionName("List")
                 .build();
         primTypeFactory.putType(List.class, listType);
         var pListType = genericContext.getParameterizedType(listType, elementType);
@@ -489,7 +534,7 @@ public class StandardDefBuilder {
         ClassType iteratorImplType = ClassBuilder.newBuilder(name, code)
                 .interfaces(List.of(pIteratorType))
                 .typeParameters(elementType)
-                .templateName("IteratorImpl")
+                .collectionName("IteratorImpl")
                 .build();
         primTypeFactory.putType(IteratorImpl.class, iteratorImplType);
         var pCollectionType = genericContext.getParameterizedType(collectionType, elementType);
@@ -536,7 +581,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(Map.class.getTypeParameters()[1], valueType);
         var pSetType = genericContext.getParameterizedType(setType, keyType);
         ClassType mapType = ClassBuilder.newBuilder(name, code)
-                .templateName("Map")
+                .collectionName("Map")
                 .dependencies(List.of(pSetType))
                 .typeParameters(keyType, valueType)
                 .build();
@@ -602,6 +647,120 @@ public class StandardDefBuilder {
                 .build();
         mapType.stage = ResolutionStage.GENERATED;
         genericContext.generateCode(pMapType, mapType);
+    }
+
+    private void createThrowableFlows(ClassType throwableType) {
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(throwableType)
+                .build();
+
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(throwableType)
+                .parameters(new Parameter("错误详情", "message", stringType))
+                .build();
+
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(throwableType)
+                .parameters(new Parameter("原因", "cause", throwableType))
+                .build();
+
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(throwableType)
+                .parameters(
+                        new Parameter("错误详情", "message", stringType),
+                        new Parameter("原因", "cause", throwableType)
+                )
+                .build();
+
+        FlowBuilder.newBuilder(throwableType, "获取详情", "getMessage")
+                .nullType(nullType)
+                .isNative(true)
+                .outputType(stringType.getNullableType())
+                .build();
+    }
+
+    private void createExceptionFlows(ClassType exceptionType) {
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(exceptionType)
+                .build();
+
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(exceptionType)
+                .parameters(new Parameter("错误详情", "message", stringType))
+                .build();
+
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(exceptionType)
+                .parameters(new Parameter("原因", "cause", throwableType))
+                .build();
+
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(exceptionType)
+                .parameters(
+                        new Parameter("错误详情", "message", stringType),
+                        new Parameter("原因", "cause", throwableType)
+                )
+                .build();
+    }
+
+    private void createRuntimeExceptionFlows(ClassType runtimeExceptionType) {
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(runtimeExceptionType)
+                .build();
+
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(runtimeExceptionType)
+                .parameters(new Parameter("错误详情", "message", stringType))
+                .build();
+
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(runtimeExceptionType)
+                .parameters(new Parameter("原因", "cause", throwableType))
+                .build();
+
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+                .nullType(nullType)
+                .isConstructor(true)
+                .isNative(true)
+                .outputType(runtimeExceptionType)
+                .parameters(
+                        new Parameter("错误详情", "message", stringType),
+                        new Parameter("原因", "cause", throwableType)
+                )
+                .build();
     }
 
     private static class PrimTypeFactory extends TypeFactory {

@@ -1,6 +1,5 @@
 package tech.metavm.object.meta;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
@@ -9,8 +8,7 @@ import tech.metavm.util.Password;
 import java.util.Date;
 
 public enum PrimitiveKind {
-//    INT("整数", Integer.class, IntInstance.class, TypeCategory.INT),
-    LONG("长整数", Long.class, LongInstance.class, TypeCategory.LONG),
+    LONG("整数", Long.class, LongInstance.class, TypeCategory.LONG),
     DOUBLE("浮点数", Double.class, DoubleInstance.class, TypeCategory.DOUBLE),
     BOOLEAN("布尔", Boolean.class, BooleanInstance.class, TypeCategory.BOOLEAN),
     STRING("字符串", String.class, StringInstance.class, TypeCategory.STRING),

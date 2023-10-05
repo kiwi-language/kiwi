@@ -23,13 +23,22 @@ public class TranspileUtil {
 
     private static PsiElementFactory elementFactory;
 
-    public static PsiElementFactory getPsiElementFactory() {
+    public static PsiElementFactory getElementFactory() {
         return elementFactory;
+    }
+
+    public static PsiCodeBlock createCodeBlock() {
+        return elementFactory.createCodeBlockFromText("{}", null);
     }
 
     public static String getCanonicalName(PsiTypeParameter typeParameter) {
         var owner = NncUtils.requireNonNull(typeParameter.getOwner());
         return getCanonicalName(owner) + "-" + typeParameter.getName();
+    }
+
+    public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {
+        NncUtils.requireFalse(codeBlock.isEmpty(), "Code block is empty");
+        return codeBlock.getStatements()[codeBlock.getStatementCount() - 1];
     }
 
     private static String getCanonicalName(PsiTypeParameterListOwner typeParameterOwner) {
@@ -56,6 +65,18 @@ public class TranspileUtil {
             case PsiPrimitiveType primitiveType -> primitiveType.getBoxedTypeName();
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
+    }
+
+    public static <T> @Nullable T getNextElement(PsiElement element, Class<T> klass) {
+        PsiElement next = element.getNextSibling();
+        while (next != null && !klass.isInstance(next)) {
+            next = next.getNextSibling();
+        }
+        return klass.cast(next);
+    }
+
+    public static @Nullable PsiStatement getNextStatement(PsiElement element) {
+        return getNextElement(element, PsiStatement.class);
     }
 
     private static String getClassCanonicalName(PsiClass psiClass) {
@@ -492,13 +513,13 @@ public class TranspileUtil {
         return (String) getAnnotationAttr(element, annotationClass, "value");
     }
 
-    private static PsiAnnotation getAnnotation(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass) {
+    public static PsiAnnotation getAnnotation(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass) {
         var annotation = element.getAnnotation(annotationClass.getName());
         if (annotation == null) annotation = element.getAnnotation(annotationClass.getSimpleName());
         return annotation;
     }
 
-    private static Object getAnnotationAttr(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
+    public static Object getAnnotationAttr(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
         var annotation = getAnnotation(element, annotationClass);
         if (annotation != null) {
             var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));

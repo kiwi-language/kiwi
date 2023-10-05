@@ -53,6 +53,9 @@ public enum ErrorCode {
     INCORRECT_INDEX_VALUE(419, "索引必须是整数类型"),
     INDEX_OUT_OF_BOUND(420, "数组索引超出范围"),
     INTERFACE_FLOW_NOT_IMPLEMENTED(421, "'{}'未实现接口'{}'定义的'{}'流程"),
+    DEST_NODE_FIELD_MISSING_SOURCE_CONFIG(422, "目标节点字段必须配置所有来源节点值"),
+    ILLEGAL_TARGET_BRANCH(423, "跳转目标分支不合法"),
+    NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH(423, "节点'{}'的字段值与字段定义不匹配"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),

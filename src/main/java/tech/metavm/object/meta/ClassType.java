@@ -183,8 +183,17 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public Flow getFlow(String code, List<Type> parameterTypes) {
-        return NncUtils.find(flows,
-                flow -> Objects.equals(flow.getCode(), code) && flow.getInputTypes().equals(parameterTypes));
+        var flow = NncUtils.find(flows,
+                f -> Objects.equals(f.getCode(), code) && f.getInputTypes().equals(parameterTypes));
+        if (flow != null) {
+            return flow;
+        }
+        if (superType != null) {
+            return superType.getFlow(code, parameterTypes);
+        }
+        throw new InternalException("Can not find flow '" + code + "(" +
+                NncUtils.join(parameterTypes, Type::getName, ",")
+                + ")' in type '" + getName() + "'");
     }
 
     public Flow getFlowByCode(String code) {
@@ -543,7 +552,7 @@ public class ClassType extends Type implements GenericDeclaration {
         try (var context = SerializeContext.enter()) {
             return new ClassParamDTO(
                     NncUtils.get(superType, context::getRef),
-                    NncUtils.get(superType, Type::toDTO),
+                    NncUtils.get(superType, s -> s.toDTO(withFields, withFieldTypes, false, false)),
                     NncUtils.map(interfaces, Type::toDTO),
                     NncUtils.map(interfaces, context::getRef),
                     source.code(),
@@ -682,12 +691,24 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public Class<?> getNativeClass() {
+        var nativeClass = getNativeClass0();
+        if (nativeClass != null) {
+            return nativeClass;
+        }
+        if (superType != null) {
+            nativeClass = superType.getNativeClass0();
+        }
+        if (nativeClass != null) {
+            return nativeClass;
+        }
+        throw new InternalException("类型'" + getName() + "'未配置原生类型");
+    }
+
+    private Class<?> getNativeClass0() {
         if (template == null) {
-            return Natives.getNative(
-                    NncUtils.requireNonNull(collectionName, "类型'" + getName() + "'没有配置原生类名")
-            );
+            return collectionName != null ? Natives.getNative(collectionName) : null;
         } else {
-            return template.getNativeClass();
+            return template.getNativeClass0();
         }
     }
 
@@ -774,7 +795,10 @@ public class ClassType extends Type implements GenericDeclaration {
             "Set", Set.class,
             "List", List.class,
             "Iterator", Iterator.class,
-            "IteratorImpl", IteratorImpl.class
+            "IteratorImpl", IteratorImpl.class,
+            "Throwable", Throwable.class,
+            "Exception", Exception.class,
+            "RuntimeException", RuntimeException.class
     );
 
     public void setTypeArguments(List<Type> typeArguments) {
@@ -868,8 +892,7 @@ public class ClassType extends Type implements GenericDeclaration {
         if (template != null && parameterizedTypeKey == null) {
             parameterizedTypeKey = pTypeKey(template, typeArguments);
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }

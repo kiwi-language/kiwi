@@ -1,8 +1,12 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.natives.ThrowableNative;
+import tech.metavm.entity.natives.NativeInvoker;
+import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.expression.Expression;
+import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
@@ -36,10 +40,23 @@ public class FlowStack {
                 }
             }
             else if(frame.getState() == FlowFrame.State.EXCEPTION) {
-                throw new FlowExecutionException("未知错误");
+                stack.pop();
+                var exception = frame.getThrow();
+                if(stack.isEmpty()) {
+                    exception(exception);
+                }
+                else {
+                    stack.peek().resumeWithException(exception);
+                }
             }
         }
         return ret;
+    }
+
+    private void exception(ClassInstance exception) {
+        ThrowableNative nativeObject = (ThrowableNative) NativeInvoker.getNativeObject(exception);
+        String message = nativeObject.getMessage() instanceof StringInstance str ? str.getValue() : "执行失败";
+        throw new FlowExecutionException(message);
     }
 
     FlowFrame pop() {

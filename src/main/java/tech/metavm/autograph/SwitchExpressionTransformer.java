@@ -62,9 +62,20 @@ public class SwitchExpressionTransformer extends VisitorBase {
     @Override
     public void visitYieldStatement(PsiYieldStatement statement) {
         var expr = NncUtils.requireNonNull(statement.getExpression());
-        var replacement = (PsiStatement) replace(statement,
+        replace(statement,
                 createStatementFromText(currentSwitchExpr().resultVar + " = " + expr.getText() + ";"));
-        insertAfter(createStatementFromText("break;"), replacement);
+    }
+
+    @Override
+    public void visitSwitchLabeledRuleStatement(PsiSwitchLabeledRuleStatement statement) {
+        if (statement.getParent().getParent() instanceof PsiSwitchExpression
+                && statement.getBody() instanceof PsiExpressionStatement exprStmt) {
+            var expr = exprStmt.getExpression();
+            var assignment = createStatementFromText(currentSwitchExpr().resultVar + " = " + expr.getText() + ";");
+            replace(exprStmt, assignment);
+        } else {
+            super.visitSwitchLabeledRuleStatement(statement);
+        }
     }
 
     @Override

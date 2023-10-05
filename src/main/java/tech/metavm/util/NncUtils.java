@@ -48,8 +48,8 @@ public class NncUtils {
     }
 
 
-    public static void noop() {
-
+    public static Runnable noop() {
+        return () -> {};
     }
 
     public static <K, V> Map<K, V> zip(List<K> keys, List<V> values) {
@@ -104,7 +104,7 @@ public class NncUtils {
         }
     }
 
-    public static <T> List<T> prepend(T element, List<T> list) {
+    public static <T> List<T> prepend(T element, List<? extends T> list) {
         List<T> newList = new ArrayList<>();
         newList.add(element);
         newList.addAll(list);
@@ -1061,6 +1061,13 @@ public class NncUtils {
 
     public static <T> T requireNonNull(@Nullable T value, String message) {
         return requireNonNull(value, () -> new InternalException(message));
+    }
+
+    public static <T> boolean equalsIgnoreOrder(Collection<T> coll1, Collection<T> coll2) {
+        if(coll1.size() != coll2.size()) {
+            return false;
+        }
+        return new HashSet<>(coll1).equals(new HashSet<>(coll2));
     }
 
     public static <T> T requireNonNull(@Nullable T value, Supplier<RuntimeException> exceptionSupplier) {

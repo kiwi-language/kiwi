@@ -90,19 +90,25 @@ public class MockTypeResolver implements TypeResolver {
                         return StandardTypes.getObjectType();
                     } else if (TranspileUtil.createType(List.class).isAssignableFrom(psiType)) {
                         var listType = TranspileUtil.getSuperType(psiType, List.class);
-                        return TypeUtil.getListType(resolve(listType.getParameters()[0]), context);
+                        return TypeUtil.getListType(resolve(listType.getParameters()[0], stage), context);
                     } else if (TranspileUtil.createType(Set.class).isAssignableFrom(psiType)) {
                         var setType = TranspileUtil.getSuperType(psiType, Set.class);
-                        return TypeUtil.getSetType(resolve(setType.getParameters()[0]), context);
+                        return TypeUtil.getSetType(resolve(setType.getParameters()[0], stage), context);
                     } else if (TranspileUtil.createType(Map.class).isAssignableFrom(psiType)) {
                         var mapType = TranspileUtil.getSuperType(psiType, Map.class);
                         return TypeUtil.getMapType(
-                                resolve(mapType.getParameters()[0]),
-                                resolve(mapType.getParameters()[1]),
+                                resolve(mapType.getParameters()[0], stage),
+                                resolve(mapType.getParameters()[1], stage),
                                 context
                         );
                     } else if (TranspileUtil.createType(Enum.class).equals(psiType)) {
                         return StandardTypes.getEnumType();
+                    } else if (TranspileUtil.createType(Throwable.class).equals(psiType)) {
+                        return StandardTypes.getThrowableType();
+                    } else if (TranspileUtil.createType(Exception.class).equals(psiType)) {
+                        return StandardTypes.getExceptionType();
+                    } else if (TranspileUtil.createType(RuntimeException.class).equals(psiType)) {
+                        return StandardTypes.getRuntimeExceptionType();
                     } else if (createParameterizedEnumType().equals(psiType)) {
                         return StandardTypes.getParameterizedEnumType();
                     } else {
@@ -167,7 +173,7 @@ public class MockTypeResolver implements TypeResolver {
 
     @Override
     public Field resolveField(PsiField field) {
-        PsiType declaringType = TranspileUtil.getPsiElementFactory().createType(
+        PsiType declaringType = TranspileUtil.getElementFactory().createType(
                 requireNonNull(field.getContainingClass()));
         ClassType type = (ClassType) resolve(declaringType);
         return type.getFieldByCode(field.getName());
@@ -260,7 +266,7 @@ public class MockTypeResolver implements TypeResolver {
 
     private void procesClassType(ClassType metaClass, final int stage) {
         var template = metaClass.getEffectiveTemplate();
-        if(template.getId() == null) {
+        if (template.getId() == null) {
             var psiClass = NncUtils.requireNonNull(psiClassMap.get(template));
             procesClassType(template, psiClass, stage);
         }

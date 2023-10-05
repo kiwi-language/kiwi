@@ -1,6 +1,8 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.autograph.ExpressionTypeMap;
+import tech.metavm.autograph.TypeNarrower;
 import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -28,7 +30,7 @@ public abstract class NodeRT<P> extends Entity {
     @EntityField("输出类型")
     @Nullable
     private Type outputType;
-    @EntityField("范围")
+    @EntityField("所属范围")
     private final ScopeRT scope;
     @EntityField("前驱")
     @Nullable
@@ -36,6 +38,8 @@ public abstract class NodeRT<P> extends Entity {
     @EntityField("后继")
     @Nullable
     private NodeRT<?> successor;
+
+    private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
 
     protected NodeRT(
             Long tmpId,
@@ -51,6 +55,10 @@ public abstract class NodeRT<P> extends Entity {
         this.kind = NodeKind.getByNodeClass(this.getClass());
         if (previous != null) {
             previous.insertAfter(this);
+            setExpressionTypes(previous.getExpressionTypes());
+        }
+        else {
+            setExpressionTypes(scope.getExpressionTypes());
         }
         this.scope.addNode(this);
     }
@@ -76,20 +84,12 @@ public abstract class NodeRT<P> extends Entity {
         return successor;
     }
 
-    public List<NodeRT<?>> getGlobalPredecessors() {
-        if (predecessor != null) {
-            return List.of(predecessor);
-        }
-//        return NncUtils.get(scope.getOwner(), NodeRT::getGlobalPredecessor);
-        return scope.getPredecessor() != null ? List.of(scope.getPredecessor()) : List.of();
+    public NodeRT<?> getDominator() {
+        return predecessor != null ? predecessor : scope.getPredecessor();
     }
 
-    public @Nullable NodeRT<?> getGlobalSuccessor() {
-        if (successor != null) {
-            return successor;
-        }
-//        return NncUtils.get(scope.getOwner(), NodeRT::getGlobalSuccessor);
-        return scope.getSuccessor();
+    public NodeRT<?> getNext() {
+        return successor != null ? successor : scope.getSuccessor();
     }
 
     public @Nullable NodeRT<?> getPredecessor() {
@@ -113,8 +113,18 @@ public abstract class NodeRT<P> extends Entity {
         next.setPredecessor(this);
     }
 
+    public void insertBefore(NodeRT<?> prev) {
+        if(this.predecessor != null) {
+            prev.setPredecessor(this.predecessor);
+            this.predecessor.setSuccessor(prev);
+        }
+        this.predecessor = prev;
+        prev.setSuccessor(this);
+    }
+
     @Override
     public final List<Object> beforeRemove() {
+        var cascade = nodeBeforeRemove();
         if (this.predecessor != null) {
             this.predecessor.setSuccessor(this.successor);
         }
@@ -124,7 +134,7 @@ public abstract class NodeRT<P> extends Entity {
         this.predecessor = null;
         this.successor = null;
         scope.removeNode(this);
-        return nodeBeforeRemove();
+        return cascade;
     }
 
     protected List<Object> nodeBeforeRemove() {
@@ -204,5 +214,17 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     public abstract void execute(FlowFrame frame);
+
+    public ExpressionTypeMap getExpressionTypes() {
+        return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
+    }
+
+    public void setExpressionTypes(ExpressionTypeMap expressionTypes) {
+        this.expressionTypes = expressionTypes;
+    }
+
+    public void mergeExpressionTypes(ExpressionTypeMap expressionTypes) {
+        this.expressionTypes = getExpressionTypes().merge(expressionTypes);
+    }
 
 }

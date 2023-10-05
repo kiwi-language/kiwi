@@ -3,9 +3,11 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
+import tech.metavm.flow.LoopNode;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 
@@ -14,34 +16,43 @@ import java.util.*;
 public class FlowParsingContext implements ParsingContext {
 
     public static FlowParsingContext create(NodeRT<?> currentNode, IInstanceContext instanceContext) {
-        return new FlowParsingContext(currentNode.getGlobalPredecessors(), instanceContext);
+        return new FlowParsingContext(currentNode.getScope(), currentNode.getPredecessor(), instanceContext);
     }
 
-    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor, IEntityContext entityContext) {
-        return create(scope, predecessor, entityContext.getInstanceContext());
+    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> prev, IEntityContext entityContext) {
+        return create(scope, prev, entityContext.getInstanceContext());
     }
 
-    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> predecessor, IInstanceContext instanceContext) {
-        return new FlowParsingContext(
-                predecessor != null ? predecessor : scope.getPredecessor(),
-                instanceContext
-        );
+    public static FlowParsingContext create(ScopeRT scope, NodeRT<?> prev, IInstanceContext instanceContext) {
+        return new FlowParsingContext(scope, prev, instanceContext);
     }
 
     private final IInstanceContext instanceContext;
-    private final List<NodeRT<?>> lastNodes;
+    private final ScopeRT scope;
+    private final NodeRT<?> prev;
+    private final NodeRT<?> lastNode;
     private long lastBuiltVersion = 0L;
     private final Map<Long, NodeRT<?>> id2node = new HashMap<>();
     private final Map<String, NodeRT<?>> name2node = new HashMap<>();
     private final Map<NodeRT<?>, NodeExpression> node2expression = new HashMap<>();
 
-    public FlowParsingContext(NodeRT<?> lastNode, IInstanceContext instanceContext) {
-        this(lastNode == null ? List.of() : List.of(lastNode), instanceContext);
+    public FlowParsingContext(ScopeRT scope, NodeRT<?> prev, IInstanceContext instanceContext) {
+        this.scope = scope;
+        this.prev = prev;
+        this.lastNode = prev != null ? prev : scope.getOwner();
+        this.instanceContext = instanceContext;
     }
 
-    public FlowParsingContext(List<NodeRT<?>> lastNodes, IInstanceContext instanceContext) {
-        this.lastNodes = lastNodes == null ? new ArrayList<>() : new ArrayList<>(lastNodes);
-        this.instanceContext = instanceContext;
+    private @javax.annotation.Nullable Expression getScopeCondition(ScopeRT scope) {
+        if(scope.getBranch() != null) {
+            return scope.getBranch().getCondition().getExpression();
+        }
+        else if(scope.getOwner() instanceof LoopNode<?> loopNode) {
+            return loopNode.getCondition().getExpression();
+        }
+        else {
+            return null;
+        }
     }
 
     @Override
@@ -62,7 +73,12 @@ public class FlowParsingContext implements ParsingContext {
             return node2expression.computeIfAbsent(node, NodeExpression::new);
         }
         throw new InternalException(var + " is not a context var of " + this);
+    }
 
+    @Override
+    public Type getExpressionType(Expression expression) {
+        return prev != null ? prev.getExpressionTypes().getType(expression) :
+                scope.getExpressionTypes().getType(expression);
     }
 
     @Override
@@ -77,19 +93,20 @@ public class FlowParsingContext implements ParsingContext {
     }
 
     private void rebuildIfOutdated() {
-        if (lastNodes.isEmpty()) {
+        if (lastNode == null) {
             return;
         }
-        if (lastBuiltVersion < lastNodes.get(0).getFlow().getVersion()) {
+        if (lastBuiltVersion < lastNode.getFlow().getVersion()) {
             rebuild();
         }
     }
 
     private void rebuild() {
-        if (lastNodes.isEmpty()) return;
+        if (lastNode == null) return;
         id2node.clear();
         name2node.clear();
-        Queue<NodeRT<?>> queue = new LinkedList<>(lastNodes);
+        Queue<NodeRT<?>> queue = new LinkedList<>();
+        queue.offer(lastNode);
         Set<NodeRT<?>> visited = new IdentitySet<>();
         while (!queue.isEmpty()) {
             var node = queue.poll();
@@ -98,12 +115,12 @@ public class FlowParsingContext implements ParsingContext {
                 id2node.put(node.getId(), node);
             }
             name2node.put(node.getName(), node);
-            var predecessors = node.getGlobalPredecessors();
-            for (NodeRT<?> pred : predecessors) {
-                if (!visited.contains(pred)) queue.offer(pred);
+            var dom = node.getDominator();
+            if (dom != null && !visited.contains(dom)) {
+                queue.offer(dom);
             }
         }
-        lastBuiltVersion = lastNodes.get(0).getFlow().getVersion();
+        lastBuiltVersion = lastNode.getFlow().getVersion();
     }
 
     private NodeRT<?> getNode(Var var) {

@@ -107,6 +107,91 @@ public class ExpressionUtil {
         );
     }
 
+    public static Expression negate(Expression expression) {
+        return new NegateTransformer().transformExpression(expression);
+    }
+
+    private static class NegateTransformer extends ElementTransformer {
+
+        @Override
+        public Expression transformFieldExpression(FieldExpression expression) {
+            return defaultNegate(expression);
+        }
+
+        @Override
+        public Expression transformStaticFieldExpression(StaticFieldExpression expression) {
+            return defaultNegate(expression);
+        }
+
+        @Override
+        public Expression transformArrayAccessExpression(ArrayAccessExpression expression) {
+            return defaultNegate(expression);
+        }
+
+        private Expression defaultNegate(Expression expression) {
+            return new UnaryExpression(Operator.NOT, copyExpression(expression));
+        }
+
+        @Override
+        public Expression transformBinaryExpression(BinaryExpression expression) {
+            var op = expression.getOperator();
+            if(op == Operator.AND) {
+                return new BinaryExpression(
+                        Operator.OR,
+                        transformExpression(expression.getFirst()),
+                        transformExpression(expression.getSecond())
+                );
+            }
+            if(op == Operator.OR) {
+                return new BinaryExpression(
+                        Operator.AND,
+                        transformExpression(expression.getFirst()),
+                        transformExpression(expression.getSecond())
+                );
+            }
+            else {
+                return new BinaryExpression(
+                        op.negate(),
+                        copyExpression(expression.getFirst()),
+                        copyExpression(expression.getSecond())
+                );
+            }
+        }
+
+        @Override
+        public Expression transformUnaryExpression(UnaryExpression expression) {
+            var op = expression.getOperator();
+            if(op == Operator.NOT) {
+                return copyExpression(expression.getOperand());
+            }
+            else {
+                return new UnaryExpression(op.negate(), copyExpression(expression.getOperand()));
+            }
+        }
+
+        @Override
+        public Expression transformConstantExpression(ConstantExpression expression) {
+            if(ExpressionUtil.isConstantTrue(expression)) {
+                return ExpressionUtil.falseExpression();
+            }
+            else if(ExpressionUtil.isConstantFalse(expression)) {
+                return ExpressionUtil.trueExpression();
+            }
+            else {
+                throw new InternalException("Can not negate non-boolean constant expression: " + expression);
+            }
+        }
+    }
+
+    private static final ElementTransformer ELEMENT_TRANSFORMER = new ElementTransformer();
+
+    public static Expression copyExpression(Expression expression) {
+        return ELEMENT_TRANSFORMER.transformExpression(expression);
+    }
+
+
+
+
     public static Expression subtract(Expression first, Expression second) {
         return new BinaryExpression(Operator.MINUS, first, second);
     }
@@ -170,6 +255,16 @@ public class ExpressionUtil {
     public static boolean isConstantTrue(Expression expression) {
         if(expression instanceof ConstantExpression constantExpression) {
             return InstanceUtils.isTrue(constantExpression.getValue());
+        }
+        else {
+            return false;
+        }
+    }
+
+
+    public static boolean isConstantFalse(Expression expression) {
+        if(expression instanceof ConstantExpression constantExpression) {
+            return InstanceUtils.isFalse(constantExpression.getValue());
         }
         else {
             return false;

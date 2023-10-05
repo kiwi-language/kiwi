@@ -4,6 +4,7 @@ import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -60,6 +61,11 @@ public class TypeParsingContext implements ParsingContext {
             return thisExpression;
         }
         throw new InternalException(var + " is not the context var of " + this);
+    }
+
+    @Override
+    public Type getExpressionType(Expression expression) {
+        return expression.getType();
     }
 
     @Override

@@ -1,0 +1,41 @@
+package tech.metavm.flow;
+
+import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.flow.rest.TryEndValueDTO;
+
+public class TryEndValue extends Entity {
+
+    @ChildEntity("中断节点")
+    private NodeRT<?> raiseNode;
+    @ChildEntity("值")
+    private Value value;
+
+    public TryEndValue(NodeRT<?> raiseNode, Value value) {
+        this.raiseNode = raiseNode;
+        this.value = value;
+    }
+
+    public NodeRT<?> getRaiseNode() {
+        return raiseNode;
+    }
+
+    public void setRaiseNode(NodeRT<?> raiseNode) {
+        this.raiseNode = raiseNode;
+    }
+
+    public Value getValue() {
+        return value;
+    }
+
+    public void setValue(Value value) {
+        this.value = value;
+    }
+
+    public TryEndValueDTO toDTO() {
+        try(var context = SerializeContext.enter()) {
+            return new TryEndValueDTO(context.getRef(raiseNode), value.toDTO(false));
+        }
+    }
+}

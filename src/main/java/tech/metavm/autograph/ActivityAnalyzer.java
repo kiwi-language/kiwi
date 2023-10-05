@@ -151,6 +151,29 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     }
 
     @Override
+    public void visitTryStatement(PsiTryStatement statement) {
+        if(statement.getResourceList() != null) {
+            enterScope();
+            statement.getResourceList().accept(this);
+            exitAndRecordScope(statement, RESOURCE_SCOPE);
+        }
+        var tryBlock = NncUtils.requireNonNull(statement.getTryBlock());
+        enterScope();
+        tryBlock.accept(this);
+        exitAndRecordScope(statement, BODY_SCOPE);
+        for (PsiCatchSection catchSection : statement.getCatchSections()) {
+            enterScope();
+            catchSection.accept(this);
+            exitAndRecordScope(catchSection, BODY_SCOPE);
+        }
+        if(statement.getFinallyBlock() != null) {
+            enterScope();
+            statement.getFinallyBlock().accept(this);
+            exitAndRecordScope(statement, FINALLY_SCOPE);
+        }
+    }
+
+    @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {
         enterScope();
         requireNonNull(expression.getExpression()).accept(this);

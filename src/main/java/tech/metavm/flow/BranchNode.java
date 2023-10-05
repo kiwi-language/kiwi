@@ -151,22 +151,22 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     @Override
     public void execute(FlowFrame frame) {
-//        Map<Field, Instance> fieldValues = new HashMap<>();
+        var exitBranch = frame.getExitBranch(this);
         for (Branch branch : branches) {
+            if(exitBranch != null) {
+                if(branch == exitBranch) {
+                    exitBranch = null;
+                }
+                continue;
+            }
             if (branch.checkCondition(frame)) {
                 if (branch.isNotEmpty()) {
                     frame.jumpTo(branch.getScope().getFirstNode());
                 }
                 frame.setSelectedBranch(this, branch);
-//                for (BranchNodeOutputField field : fields) {
-//                    fieldValues.put(
-//                            field.getField(),
-//                            new ExpressionValue(field.getValue(branch)).evaluate(frame));
-//                }
                 break;
             }
         }
-//        frame.setResult(new ClassInstance(fieldValues, getType()));
     }
 
     @Override

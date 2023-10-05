@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.IndexKeyRT;
@@ -24,6 +25,8 @@ public interface IInstanceContext extends InstanceSink {
     default Instance get(long id) {
         return NncUtils.getFirst(batchGet(List.of(id)));
     }
+
+    Instance get(RefDTO ref);
 
     List<Instance> batchGet(Collection<Long> ids);
 
@@ -74,6 +77,8 @@ public interface IInstanceContext extends InstanceSink {
     void bind(Instance instance);
 
     <E> E getAttribute(ContextAttributeKey<E> key);
+
+    boolean isNewInstance(Instance instance);
 
     void initIdManually(Instance instance, long id);
 

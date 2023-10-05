@@ -467,6 +467,10 @@ public class InstanceUtils {
         return (instance instanceof BooleanInstance booleanInstance) && booleanInstance.isTrue();
     }
 
+    public static boolean isFalse(Instance instance) {
+        return (instance instanceof BooleanInstance booleanInstance) && booleanInstance.isFalse();
+    }
+
     public static DoubleInstance sum(DoubleInstance a, DoubleInstance b) {
         return a.add(b);
     }

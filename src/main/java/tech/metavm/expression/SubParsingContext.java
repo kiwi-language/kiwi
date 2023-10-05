@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 
 public class SubParsingContext implements ParsingContext {
@@ -43,6 +44,11 @@ public class SubParsingContext implements ParsingContext {
     @Override
     public Expression getDefaultExpr() {
         return cursor;
+    }
+
+    @Override
+    public Type getExpressionType(Expression expression) {
+        return parent.getExpressionType(expression);
     }
 
     @Nullable

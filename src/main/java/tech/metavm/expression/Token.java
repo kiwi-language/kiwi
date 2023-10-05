@@ -104,6 +104,10 @@ public record Token (
         return type == TokenType.VARIABLE && rawValue.startsWith(Constants.CONSTANT_ID_PREFIX);
     }
 
+    public boolean isTmpIdConstant() {
+        return type == TokenType.VARIABLE && rawValue.startsWith(Constants.CONSTANT_TMP_ID_PREFIX);
+    }
+
     public boolean isVariable() {
         return type == TokenType.VARIABLE;
     }

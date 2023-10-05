@@ -13,16 +13,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-public class TypeReducer {
+public class TypeNarrower {
 
     private final Function<Expression,Type> getTypeFunc;
 
-    public TypeReducer(Function<Expression, Type> getTypeFunc) {
+    public TypeNarrower(Function<Expression, Type> getTypeFunc) {
         this.getTypeFunc = getTypeFunc;
     }
 
-    public Map<Expression, Type> reduceType(Expression expression) {
-        return process(expression, false);
+    public ExpressionTypeMap narrowType(Expression expression) {
+        return new ExpressionTypeMap(process(expression, false));
     }
 
     private Map<Expression, Type> process(Expression expression, boolean negated) {
@@ -37,8 +37,8 @@ public class TypeReducer {
     }
 
     private Map<Expression, Type> processInstanceOf(InstanceOfExpression expression, boolean negated) {
-        var type = negated ? typeDiff(getType(expression), expression.getTargetType()) :
-                typeIntersection(getType(expression), expression.getTargetType());
+        var type = negated ? typeDiff(getType(expression.getOperand()), expression.getTargetType()) :
+                typeIntersection(getType(expression.getOperand()), expression.getTargetType());
         return type != null ? Map.of(expression.getOperand(), type) : Map.of();
     }
 
@@ -89,7 +89,7 @@ public class TypeReducer {
         return result;
     }
 
-    public Map<Expression, Type> mergeResults(Map<Expression, Type> firstResult, Map<Expression, Type> secondResult) {
+    public static Map<Expression, Type> mergeResults(Map<Expression, Type> firstResult, Map<Expression, Type> secondResult) {
         var result = new HashMap<Expression, Type>();
         firstResult.forEach((expr, type) -> {
             var secondType = secondResult.get(expr);
@@ -102,6 +102,17 @@ public class TypeReducer {
         secondResult.forEach((expr, type) -> {
             if (!firstResult.containsKey(expr)) {
                 result.put(expr, type);
+            }
+        });
+        return result;
+    }
+
+    public static Map<Expression, Type> unionResults(Map<Expression, Type> firstResult, Map<Expression, Type> secondResult) {
+        var result = new HashMap<Expression, Type>();
+        firstResult.forEach((expr, type) -> {
+            var secondType = secondResult.get(expr);
+            if (secondType != null) {
+                result.put(expr, typeUnion(type, secondType));
             }
         });
         return result;
@@ -129,7 +140,7 @@ public class TypeReducer {
         }
     }
 
-    private Type typeIntersection(Type type1, Type type2) {
+    private static Type typeIntersection(Type type1, Type type2) {
         Set<Type> set1 = getTypeSets(type1), set2 = getTypeSets(type2);
         Set<Type> intersection = new HashSet<>();
         for (Type t1 : set1) {
@@ -152,7 +163,7 @@ public class TypeReducer {
         return createTypeFromSet(NncUtils.diffSet(getTypeSets(type1), getTypeSets(type2)));
     }
 
-    private Type typeUnion(Type type1, Type type2) {
+    private static Type typeUnion(Type type1, Type type2) {
         var set = NncUtils.unionSet(getTypeSets(type1), getTypeSets(type2));
         var toRemove = new HashSet<Type>();
         for (Type t1 : set) {
@@ -165,7 +176,7 @@ public class TypeReducer {
         return createTypeFromSet(NncUtils.diffSet(set, toRemove));
     }
 
-    private Set<Type> getTypeSets(Type type) {
+    private static Set<Type> getTypeSets(Type type) {
         if (type instanceof UnionType unionType) {
             return unionType.getMembers();
         } else {
@@ -173,7 +184,7 @@ public class TypeReducer {
         }
     }
 
-    private Type createTypeFromSet(Set<Type> set) {
+    private static Type createTypeFromSet(Set<Type> set) {
         if (set.isEmpty()) {
             return null;
         }

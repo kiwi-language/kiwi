@@ -1,18 +1,18 @@
 package tech.metavm.expression;
 
+import tech.metavm.dto.RefDTO;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 public class ExpressionParser {
 
@@ -191,6 +191,10 @@ public class ExpressionParser {
             long id = Long.parseLong(token.rawValue().substring(Constants.CONSTANT_ID_PREFIX.length()));
             return new ConstantExpression(context.getInstance(id));
         }
+        else if(token.isTmpIdConstant()) {
+            long tmpId = Long.parseLong(token.rawValue().substring(Constants.CONSTANT_TMP_ID_PREFIX.length()));
+            return new ConstantExpression(context.getInstanceContext().get(RefDTO.ofTmpId(tmpId)));
+        }
         else if(token.isVariable()){
             return parseVariable(token.getName());
         }
@@ -236,10 +240,9 @@ public class ExpressionParser {
                 exprStack.push(ArrayExpression.merge(first, second));
             }
             else if(operatorOp.isInstanceOf()) {
-                var typeExpr = (VariableExpression) popExpr();
+                var typeExpr = (ConstantExpression) popExpr();
+                var type = getEntityContext().getType(typeExpr.getValue());
                 var operand = popExpr();
-                var entityContext = Objects.requireNonNull(context.getInstanceContext()).getEntityContext();;
-                var type = entityContext.selectByUniqueKey(Type.UNIQUE_NAME, typeExpr.getVariable());
                 exprStack.push(new InstanceOfExpression(operand, type));
             }
             else if (operatorOp.isUnary()) {
@@ -270,6 +273,10 @@ public class ExpressionParser {
         else {
             throw new InternalException("Unrecognized op " + op);
         }
+    }
+
+    private IEntityContext getEntityContext() {
+        return requireNonNull(context.getInstanceContext()).getEntityContext();
     }
 
     public Expression popExpr() {

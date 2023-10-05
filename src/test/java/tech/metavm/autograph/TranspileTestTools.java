@@ -66,7 +66,7 @@ public class TranspileTestTools {
     }
 
     public static PsiClassType getPsiClassType(Class<?> klass) {
-        return TranspileUtil.getPsiElementFactory().createType(getPsiClass(klass));
+        return TranspileUtil.getElementFactory().createType(getPsiClass(klass));
     }
 
     public static PsiJavaFile getPsiJavaFile(Class<?> klass, boolean writable) {

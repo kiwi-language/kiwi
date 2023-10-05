@@ -10,12 +10,15 @@ public class ContinueFoo {
         out:
         for (AstProduct product : products) {
             for (DirectAstCoupon coupon : coupons) {
+                String result;
                 if (coupon.discount > maxDiscountPerCoupon) {
                     continue out;
                 }
+                result = "pass";
                 if (coupon.product == product) {
                     discount += coupon.discount;
                 }
+                System.out.println(result);
             }
             numAllMatchProducts++;
         }

@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.dto.RefDTO;
 import tech.metavm.job.Job;
 import tech.metavm.job.ReferenceCleanupJob;
 import tech.metavm.object.instance.*;
@@ -35,6 +36,7 @@ public abstract class BaseInstanceContext implements IInstanceContext {
     private Consumer<Job> createJob;
     private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
     private final Map<ClassInstance, List<IndexKeyRT>> indexKeys = new HashMap<>();
+    private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
 
     public BaseInstanceContext(long tenantId,
                                EntityIdProvider idService,
@@ -110,6 +112,16 @@ public abstract class BaseInstanceContext implements IInstanceContext {
 
     @Override
     public void preload(Collection<Long> ids, LoadingOption... options) {
+    }
+
+    @Override
+    public Instance get(RefDTO ref) {
+        if(ref.id() != null) {
+            return get(ref.id());
+        }
+        else {
+            return tmpId2Instance.get(ref.tmpId());
+        }
     }
 
     @Override
@@ -265,6 +277,9 @@ public abstract class BaseInstanceContext implements IInstanceContext {
             return;
         }
         removed.add(instance);
+        if(instance.getTmpId() != null) {
+            tmpId2Instance.remove(instance.getTmpId());
+        }
         if (instance.getId() != null) {
             instanceMap.remove(instance.getId());
             removedInstanceMap.put(instance.getId(), instance);
@@ -354,6 +369,9 @@ public abstract class BaseInstanceContext implements IInstanceContext {
         NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemeral instance");
         NncUtils.requireFalse(instance.isValue(), "Can not add a value instance");
         instances.add(instance);
+        if(instance.getTmpId() != null) {
+            tmpId2Instance.put(instance.getTmpId(), instance);
+        }
         if (instance.getId() != null) {
             instanceMap.put(instance.getId(), instance);
         }
@@ -362,7 +380,7 @@ public abstract class BaseInstanceContext implements IInstanceContext {
         }
     }
 
-    protected boolean isNewInstance(Instance instance) {
+    public boolean isNewInstance(Instance instance) {
         return newInstances.contains(instance);
     }
 

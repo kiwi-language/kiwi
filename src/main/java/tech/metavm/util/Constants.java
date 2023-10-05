@@ -10,6 +10,7 @@ public class Constants {
 
     public static final String INITIAL_ROOT_PASSWORD = "123456";
     public static final String CONSTANT_ID_PREFIX = "$$";
+    public static final String CONSTANT_TMP_ID_PREFIX = "$_$";
 
     private Constants() {}
 

@@ -4,29 +4,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.autograph.FlowBuilder;
-import tech.metavm.autograph.Parameter;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.NullInstance;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
-
-import static tech.metavm.autograph.FlowBuilder.getFieldTmpIds;
 
 @Component
 public class FlowManager {
@@ -64,11 +60,29 @@ public class FlowManager {
 //    }
 
     @Transactional
+    public List<NodeDTO> createTryNode(NodeDTO nodeDTO) {
+        IEntityContext context = newContext();
+        var scope = context.getScope(nodeDTO.scopeId());
+        TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
+        TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束",
+                ClassBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
+                tryNode, scope);
+        FieldBuilder.newBuilder("异常", "exception",
+                        tryEndNode.getType(), TypeUtil.getNullableType(StandardTypes.getThrowableType()))
+                .build();
+        context.bind(tryEndNode);
+        context.finish();
+        try (var ignored = SerializeContext.enter()) {
+            return List.of(tryNode.toDTO(), tryEndNode.toDTO());
+        }
+    }
+
+    @Transactional
     public List<NodeDTO> createBranchNode(NodeDTO nodeDTO) {
         IEntityContext context = newContext();
         var scope = context.getScope(nodeDTO.scopeId());
         BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
-        MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "-合并",
+        MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并",
                 branchNode, ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                 scope);
         context.bind(mergeNode);
@@ -217,6 +231,14 @@ public class FlowManager {
         if (flow == null) {
             throw BusinessException.flowNotFound(flowDTO.id());
         }
+        if(flowDTO.outputTypeRef() != null) {
+            var outputType = context.getType(flowDTO.outputTypeRef());
+            flow.setOutputType(outputType);
+            var returnNodes = NncUtils.filterByType(flow.getNodes(), ReturnNode.class);
+            for (ReturnNode returnNode : returnNodes) {
+                returnNode.setOutputType(outputType);
+            }
+        }
         flow.update(flowDTO);
         flow.getInputType().setName(getInputTypeName(flow.getName()));
         return flow;
@@ -248,6 +270,7 @@ public class FlowManager {
 
     private NodeRT<?> createNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         nodeDTO = beforeNodeChange(nodeDTO, null, scope, context);
+        new FlowAnalyzer().visitFlow(scope.getFlow());
         var node = NodeFactory.create(nodeDTO, scope, context);
         afterNodeChange(nodeDTO, node, context);
         return node;
@@ -321,13 +344,54 @@ public class FlowManager {
         if (nodeDTO.kind() == NodeKind.FOREACH.code()) {
             return preprocessForeachNode(nodeDTO, node, scope, context);
         }
+        if (nodeDTO.kind() == NodeKind.BRANCH.code()) {
+            return preprocessBranchNode(nodeDTO, node);
+        }
         if (nodeDTO.kind() == NodeKind.WHILE.code()) {
             return preprocessWhile(nodeDTO, node);
         }
         if (nodeDTO.kind() == NodeKind.MERGE.code()) {
             return preprocessMerge(nodeDTO, node);
         }
+        if (nodeDTO.kind() == NodeKind.TRY_END.code()) {
+            return preprocessTryEnd(nodeDTO, (TryEndNode) node);
+        }
         return nodeDTO;
+    }
+
+    private NodeDTO preprocessBranchNode(NodeDTO nodeDTO, NodeRT<?> node) {
+        BranchParamDTO param = nodeDTO.getParam();
+        if (node == null && NncUtils.isEmpty(param.branches())) {
+            List<BranchDTO> branches = List.of(
+                    new BranchDTO(
+                            null, NncUtils.random(), 1L, null,
+                            new ValueDTO(
+                                    ValueKind.CONSTANT.code(),
+                                    new PrimitiveFieldValueDTO(
+                                            null,
+                                            true
+                                    ),
+                                    null
+                            ),
+                            null, false
+                    ),
+                    new BranchDTO(
+                            null, NncUtils.random(), 10000L, null,
+                            new ValueDTO(
+                                    ValueKind.CONSTANT.code(),
+                                    new PrimitiveFieldValueDTO(
+                                            null,
+                                            true
+                                    ),
+                                    null
+                            ),
+                            null, true
+                    )
+            );
+            return nodeDTO.copyWithParam(new BranchParamDTO(param.inclusive(), branches));
+        } else {
+            return nodeDTO;
+        }
     }
 
     private NodeDTO preprocessInput(NodeDTO nodeDTO, Flow flow) {
@@ -359,6 +423,28 @@ public class FlowManager {
         return nodeDTO.copyWithParamAndType(new MergeParamDTO(mergeFields), outputType);
     }
 
+    private NodeDTO preprocessTryEnd(NodeDTO nodeDTO, TryEndNode node) {
+        TryEndParamDTO param = nodeDTO.getParam();
+        var tryEndFields = initializeFieldRefs(param.fields());
+        List<FieldDTO> fieldDTOs = NncUtils.map(tryEndFields, TryEndFieldDTO::toFieldDTO);
+        FieldDTO excetpionFieldDTO;
+        if(node != null) {
+            var outputType = node.getType();
+            excetpionFieldDTO = outputType.getFieldByCodeRequired("exception").toDTO();
+        }
+        else {
+            excetpionFieldDTO = new FieldDTO(
+                    null, null, "异常", "exception", Access.GLOBAL.code(),
+                    null, false, false, null,
+                    StandardTypes.getNullableThrowableType().getRef(), null, false, false
+            );
+        }
+        fieldDTOs = NncUtils.prepend(excetpionFieldDTO, fieldDTOs);
+        var outputTypeDTO = createNodeTypeDTO("TryEndOutput",
+                NncUtils.get(node, NodeRT::getType), fieldDTOs);
+        return nodeDTO.copyWithParamAndType(new TryEndParamDTO(tryEndFields), outputTypeDTO);
+    }
+
     private NodeDTO preprocessWhile(NodeDTO nodeDTO, NodeRT<?> node) {
         WhileParamDTO param = nodeDTO.getParam();
         var loopFields = initializeFieldRefs(param.getFields());
@@ -366,7 +452,7 @@ public class FlowManager {
         var outputType = createNodeTypeDTO("WhileOutput",
                 NncUtils.get(node, NodeRT::getType), fields);
         return nodeDTO.copyWithParamAndType(
-                new WhileParamDTO(param.getCondition(), param.getLoopScope(), loopFields),
+                new WhileParamDTO(param.getCondition(), param.getBodyScope(), loopFields),
                 outputType);
     }
 
@@ -482,7 +568,7 @@ public class FlowManager {
         }
         TypeDTO type = createNodeTypeDTO("ForeachOutput", currentType, fields);
         ScopeDTO loopScope;
-        if (param.getLoopScope() == null) {
+        if (param.getBodyScope() == null) {
             var elementType = ((ArrayType) context.getType(arrayValue.getType().getRef())).getElementType();
             NodeDTO elementNode = new NodeDTO(
                     NncUtils.random(),
@@ -506,7 +592,7 @@ public class FlowManager {
             );
             loopScope = new ScopeDTO(NncUtils.random(), null, List.of(elementNode));
         } else {
-            loopScope = param.getLoopScope();
+            loopScope = param.getBodyScope();
         }
 
         return nodeDTO.copyWithParamAndType(
@@ -519,33 +605,50 @@ public class FlowManager {
         if (node instanceof BranchNode branchNode) {
             saveBranchNodeContent(nodeDTO, branchNode, context);
         }
+        if (node instanceof ScopeNode<?> scopeNode) {
+            saveScopeNodeContent(nodeDTO, scopeNode, context);
+        }
         if (node instanceof LoopNode<?> loopNode) {
-            saveLoopNodeContent(nodeDTO, loopNode, context);
+            updateLoopFields(nodeDTO, loopNode, context);
         }
     }
 
-    private void saveLoopNodeContent(NodeDTO nodeDTO, LoopNode<?> loopNode, IEntityContext context) {
-        LoopParamDTO param = nodeDTO.getParam();
-        if (param.getLoopScope() != null && param.getLoopScope().nodes() != null) {
+    private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode<?> tryNode, IEntityContext context) {
+        ScopeNodeParamDTO param = nodeDTO.getParam();
+        if (param.getBodyScope() != null && param.getBodyScope().nodes() != null) {
             Set<RefDTO> refs = new HashSet<>();
-            for (NodeDTO node : param.getLoopScope().nodes()) {
+            for (NodeDTO node : param.getBodyScope().nodes()) {
                 if (!node.getRef().isEmpty()) {
                     refs.add(node.getRef());
                 }
             }
             List<NodeRT<?>> toRemove = new ArrayList<>();
-            for (NodeRT<?> node : loopNode.getLoopScope().getNodes()) {
+            for (NodeRT<?> node : tryNode.getBodyScope().getNodes()) {
                 if (!refs.contains(node.getRef())) {
                     toRemove.add(node);
                 }
             }
             for (NodeRT<?> node : toRemove) {
-                loopNode.getLoopScope().removeNode(node);
+                tryNode.getBodyScope().removeNode(node);
             }
-            for (NodeDTO node : param.getLoopScope().nodes()) {
-                saveNode(node, loopNode.getLoopScope(), context);
+            for (NodeDTO node : param.getBodyScope().nodes()) {
+                saveNode(node, tryNode.getBodyScope(), context);
             }
         }
+    }
+
+    private void createTryEndNode(TryNode tryNode, IEntityContext context) {
+        var tryEndNode = new TryEndNode(
+                null, "守护结束节点",
+                ClassBuilder.newBuilder("守护结束节点类型", "TryEndNodeOutput")
+                        .temporary().build(),
+                tryNode, tryNode.getScope()
+        );
+        context.bind(tryEndNode);
+    }
+
+    private void updateLoopFields(NodeDTO nodeDTO, LoopNode<?> loopNode, IEntityContext context) {
+        LoopParamDTO param = nodeDTO.getParam();
         loopNode.updateFields(param.getFields(), context);
     }
 

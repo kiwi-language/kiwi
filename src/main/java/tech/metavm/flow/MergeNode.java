@@ -1,9 +1,12 @@
 package tech.metavm.flow;
 
+import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.MergeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.ClassInstance;
@@ -22,13 +25,34 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
 
     public static MergeNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         var outputType = context.getEntity(ClassType.class, nodeDTO.outputTypeRef());
-        var node = new MergeNode(nodeDTO.tmpId(), nodeDTO.name(), (BranchNode) prev, outputType, scope);
+        var branchNode = (BranchNode) prev;
+        var node = new MergeNode(nodeDTO.tmpId(), nodeDTO.name(), branchNode, outputType, scope);
         node.setParam(nodeDTO.getParam(), context);
+//        ExpressionTypeMap expressionTypes = getExpressionTypeMap(branchNode);
+//        node.mergeExpressionTypes(expressionTypes);
         return node;
     }
 
+//    public static ExpressionTypeMap getExpressionTypeMap(BranchNode branchNode) {
+//        ExpressionTypeMap expressionTypes = null;
+//        for (Branch branch : branchNode.getBranches()) {
+//            var lastNode = branch.getScope().getLastNode();
+//            if(lastNode == null || !lastNode.isExit()) {
+//                var newExprTypes = lastNode == null ?
+//                        branch.getScope().getExpressionTypes() : lastNode.getExpressionTypes();
+//                if(expressionTypes == null) {
+//                    expressionTypes = newExprTypes;
+//                }
+//                else {
+//                    expressionTypes = expressionTypes.union(newExprTypes);
+//                }
+//            }
+//        }
+//        return expressionTypes != null ? expressionTypes : ExpressionTypeMap.EMPTY;
+//    }
+
     @ChildEntity("分支列表")
-    private final Table<Branch> branches = new Table<>(Branch.class);
+    private final Table<Branch> branches = new Table<>(Branch.class, false);
 
     @ChildEntity("字段列表")
     private final Table<MergeNodeField> fields = new Table<>(MergeNodeField.class, true);
@@ -51,6 +75,11 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
         );
     }
 
+    public void addBranch(Branch branch) {
+        NncUtils.requireFalse(branches.contains(branch));
+        branches.add(branch);
+    }
+
     @Override
     protected void setParam(MergeParamDTO param, IEntityContext context) {
         if (param.fields() != null) {
@@ -58,7 +87,8 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
                 throw new BusinessException(ErrorCode.MISSING_MERGE_NODE_FIELD_VALUE);
             }
             fields.clear();
-            var branchNode = getBranchNode();
+            var branchNode = getPredecessor();
+            Map<Branch, ParsingContext> branchParsingContexts = new HashMap<>();
             for (var fieldDTO : param.fields()) {
                 MergeNodeField field = new MergeNodeField(context.getField(fieldDTO.fieldRef()), this);
                 for (var value : fieldDTO.values()) {
@@ -67,35 +97,30 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
                         throw new InternalException("Branch " + branch + " doesn't belong to the branch node of this merge node");
                     }
                     field.setValue(branch,
-                            ValueFactory.create(value.value(), getParsingContext(context)));
+                            ValueFactory.create(value.value(),
+                                    branchParsingContexts.computeIfAbsent(branch,
+                                            k -> new FlowParsingContext(
+                                                    branch.getScope(), branch.getScope().getLastNode(),
+                                                    context.getInstanceContext())
+                                            )
+                                    ));
                 }
             }
         }
     }
-
-//    @Override
-//    public ParsingContext getParsingContext(IEntityContext entityContext) {
-//        var branchNode = getBranchNode();
-//        List<NodeRT<?>> lastNodes = NncUtils.mapAndFilter(
-//                branchNode.getBranches(),
-//                branch -> branch.getScope().getLastNode(),
-//                node -> node != null && !node.isExit()
-//        );
-//        return new FlowParsingContext(lastNodes, entityContext.getInstanceContext());
-//    }
 
     @Override
     public ClassType getType() {
         return (ClassType) super.getType();
     }
 
-//    public BranchNode getBranchNode() {
-//        return (BranchNode) NncUtils.requireNonNull(getPredecessor());
-//    }
+    public BranchNode getBranchNode() {
+        return (BranchNode) getPredecessor();
+    }
 
     @Override
     public void execute(FlowFrame frame) {
-        Branch branch = frame.currentBranch();
+        Branch branch = frame.getSelectedBranch(getBranchNode());
         Map<Field, Instance> fieldValues = new HashMap<>();
         for (MergeNodeField field : fields) {
             fieldValues.put(
@@ -125,10 +150,6 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
         );
         return !predecessors.isEmpty() ? predecessors : List.of(branchNode);
     }
-
-
-
-
 
     public List<MergeNodeField> getFields() {
         return Collections.unmodifiableList(fields);

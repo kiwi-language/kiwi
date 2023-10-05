@@ -52,6 +52,7 @@ public class Branch extends Entity {
         this.scope = scope;
         this.preselected = preselected;
         this.condition = condition;
+        scope.setBranch(this);
     }
 
     public long getIndex() {
@@ -62,7 +63,7 @@ public class Branch extends Entity {
         return condition;
     }
 
-    public NodeRT<?> getOwner() {
+    public BranchNode getOwner() {
         return owner;
     }
 
@@ -101,6 +102,11 @@ public class Branch extends Entity {
     public List<Object> beforeRemove() {
         owner.deleteBranch(this);
         return List.of();
+    }
+
+
+    public void setCondition(Value condition) {
+        this.condition = condition;
     }
 
     public boolean checkCondition(FlowFrame frame) {

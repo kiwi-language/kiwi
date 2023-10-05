@@ -1,11 +1,14 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueParamDTO;
+import tech.metavm.object.meta.Type;
+import tech.metavm.util.NncUtils;
 
 @EntityType("计算节点")
 public class ValueNode extends NodeRT<ValueParamDTO>  {
@@ -14,14 +17,15 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
         ValueParamDTO param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context.getInstanceContext());
         var value = ValueFactory.create(param.value(), parsingContext);
-        return new ValueNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, value);
+        var outputType = parsingContext.getExpressionType(value.getExpression());
+        return new ValueNode(nodeDTO.tmpId(), nodeDTO.name(), outputType, prev, scope, value);
     }
 
     @ChildEntity("值")
     private Value value;
 
-    public ValueNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value value) {
-        super(tmpId, name, value.getType(), previous, scope);
+    public ValueNode(Long tmpId, String name, Type outputType, NodeRT<?> previous, ScopeRT scope, Value value) {
+        super(tmpId, name, outputType, previous, scope);
         this.value = value;
     }
 
@@ -44,6 +48,12 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
             value = ValueFactory.create(param.value(), getParsingContext(context));
             setOutputType(value.getType());
         }
+    }
+
+    @Override
+    @NotNull
+    public Type getType() {
+        return NncUtils.requireNonNull(super.getType());
     }
 
     @Override

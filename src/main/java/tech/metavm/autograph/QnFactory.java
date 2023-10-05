@@ -40,7 +40,7 @@ public class QnFactory {
     private static QualifiedName getReferenceQn(PsiReferenceExpression reference) {
         var target = reference.resolve();
         return switch (target) {
-            case PsiField field -> getFieldQn(field, reference.getQualifierExpression());
+//            case PsiField field -> getFieldQn(field, reference.getQualifierExpression());
             case PsiLocalVariable localVariable -> getLocalVariableQn(localVariable);
             case PsiParameter parameter -> getParameterQn(parameter);
             case null, default -> null;

@@ -26,7 +26,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private final @Nullable IInstanceContext instanceContext;
     private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
-    private final Map<Long, Entity> tmpId2Entity = new HashMap<>();
+//    private final Map<Long, Entity> tmpId2Entity = new HashMap<>();
     private final IEntityContext parent;
     private final GenericContext genericContext = new GenericContext(this);
 
@@ -106,12 +106,12 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             if (instance.getId() != null) {
                 entityMap.remove(new EntityKey(EntityUtils.getEntityType(model), instance.getIdRequired()));
             }
-            if(model instanceof Entity entity) {
-                if(entity.getTmpId() != null) {
-                    tmpId2Entity.remove(entity.getTmpId());
-                }
-            }
         }
+    }
+
+    @Override
+    public boolean isNewEntity(Object entity) {
+        return Objects.requireNonNull(getInstanceContext()).isNewInstance(getInstance(entity));
     }
 
     protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
@@ -263,11 +263,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public <T> T getEntity(Class<T> entityType, RefDTO reference) {
-        if (reference.id() != null) {
-            return getEntity(entityType, reference.id());
-        } else {
-            return entityType.cast(tmpId2Entity.get(reference.tmpId()));
-        }
+        var instance = Objects.requireNonNull(instanceContext).get(reference);
+        return instance != null ? getModel(entityType, instance) : null;
     }
 
     public <T extends Enum<?>> T getEnum(Class<T> klass, long id) {
@@ -584,7 +581,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         instance2model.put(instance, model);
         model2instance.put(model, instance);
         if (model instanceof Entity entity && entity.getTmpId() != null) {
-            tmpId2Entity.put(entity.getTmpId(), entity);
+            instance.setTmpId(entity.getTmpId());
         }
 //        if((model instanceof Entity entity) && entity.getId() != null) {
         if (instance.getId() != null) {

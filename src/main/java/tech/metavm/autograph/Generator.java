@@ -7,7 +7,6 @@ import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
@@ -18,6 +17,7 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.getEnumConstantName;
+import static tech.metavm.expression.ExpressionUtil.trueExpression;
 
 public class Generator extends VisitorBase {
 
@@ -26,6 +26,7 @@ public class Generator extends VisitorBase {
     private final LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
     private final TypeResolver typeResolver;
     private final IEntityContext entityContext;
+
 
     public Generator(TypeResolver typeResolver, IEntityContext entityContext) {
         this.typeResolver = typeResolver;
@@ -43,13 +44,13 @@ public class Generator extends VisitorBase {
         klass.setCode(psiClass.getName());
 
         var initFlow = klass.getFlow("<init>", List.of());
-        var initFlowBuilder = new FlowGenerator(this, initFlow, typeResolver, entityContext);
+        var initFlowBuilder = new FlowGenerator(initFlow, typeResolver, entityContext);
         initFlowBuilder.enterScope(initFlowBuilder.getFlow().getRootScope(), null);
-        initFlowBuilder.createSelf();
+        initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
         initFlowBuilder.createInput();
 
         var classInit = klass.getFlow("<cinit>", List.of());
-        var classInitFlowBuilder = new FlowGenerator(this, classInit, typeResolver, entityContext);
+        var classInitFlowBuilder = new FlowGenerator(classInit, typeResolver, entityContext);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getFlow().getRootScope(), null);
         classInitFlowBuilder.createInput();
 
@@ -99,9 +100,15 @@ public class Generator extends VisitorBase {
     public void visitField(PsiField psiField) {
         var field = NncUtils.requireNonNull(psiField.getUserData(Keys.FIELD));
         if (psiField.getInitializer() != null) {
-            var builder = field.isStatic() ? currentClassInfo().staticBuilder : currentClassInfo().fieldBuilder;
-            var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
-            builder.createUpdate(selfExpression(), Map.of(field, initializer));
+            if (field.isStatic()) {
+                var builder = currentClassInfo().staticBuilder;
+                var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
+                builder.createUpdateStatic(currentClass(), Map.of(field, initializer));
+            } else {
+                var builder = currentClassInfo().fieldBuilder;
+                var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
+                builder.createUpdate(selfExpression(), Map.of(field, initializer));
+            }
         }
     }
 
@@ -115,15 +122,145 @@ public class Generator extends VisitorBase {
     }
 
     @Override
+    public void visitTryStatement(PsiTryStatement statement) {
+        var tryBlock = NncUtils.requireNonNull(statement.getTryBlock());
+        var tryScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
+        Set<QualifiedName> liveOut = getBlockLiveOut(tryBlock);
+        Set<QualifiedName> outputVars = liveOut == null ? Set.of() : NncUtils.intersect(tryScope.getModified(), liveOut);
+        var tryNode = builder().createTry();
+        builder().enterTrySection(tryNode);
+        tryBlock.accept(this);
+        var trySectionOutput = builder().exitTrySection(tryNode, NncUtils.map(outputVars, Objects::toString));
+        var tryEndNode = builder().createTryEnd();
+        for (QualifiedName outputVar : outputVars) {
+            var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(),
+                            tryEndNode.getType(), resolveType(outputVar.type()))
+                    .build();
+            new TryEndField(
+                    field,
+                    NncUtils.map(
+                            trySectionOutput.keySet(),
+                            raiseNode -> new TryEndValue(
+                                    raiseNode,
+                                    new ExpressionValue(trySectionOutput.get(raiseNode).get(outputVar.toString()))
+                            )
+                    ),
+                    new ExpressionValue(builder().getVariable(outputVar.toString())),
+                    tryEndNode
+            );
+        }
+
+        var exceptionExpr = new FieldExpression(
+                new NodeExpression(tryEndNode),
+                tryEndNode.getType().getFieldByCodeRequired("exception")
+        );
+
+        if (statement.getCatchSections().length > 0) {
+            Set<QualifiedName> catchModified = new HashSet<>();
+            Set<QualifiedName> catchLiveOut = null;
+            var branchNode = builder().createBranchNode(false);
+            builder().enterCondSection(branchNode);
+            for (PsiCatchSection catchSection : statement.getCatchSections()) {
+                var catchBlock = NncUtils.requireNonNull(catchSection.getCatchBlock());
+                catchModified.addAll(requireNonNull(catchSection.getUserData(Keys.BODY_SCOPE)).getModified());
+                if (catchLiveOut == null) {
+                    catchLiveOut = getBlockLiveOut(catchBlock);
+                }
+                var branch = branchNode.addBranch(
+                        new ExpressionValue(
+                                createExceptionCheck(exceptionExpr, catchSection.getPreciseCatchTypes())
+                        )
+                );
+                builder().setVariable(requireNonNull(catchSection.getParameter()).getName(), exceptionExpr);
+                builder().enterBranch(branch);
+                catchBlock.accept(this);
+                builder().exitBranch();
+            }
+            var defaultBranch = branchNode.addDefaultBranch();
+            builder().enterBranch(defaultBranch);
+            builder().exitBranch();
+            List<QualifiedName> catchOutputVars = catchLiveOut == null ? List.of()
+                    : new ArrayList<>(NncUtils.intersect(catchModified, catchLiveOut));
+            var mergeNode = builder().createMerge();
+            for (QualifiedName catchOutputVar : catchOutputVars) {
+                FieldBuilder.newBuilder(catchOutputVar.toString(), catchOutputVar.toString(),
+                        mergeNode.getType(), resolveType(catchOutputVar.type())).build();
+            }
+            exitCondSection(mergeNode, catchOutputVars);
+
+            var exceptionField = FieldBuilder.newBuilder("异常", "exception",
+                    mergeNode.getType(), StandardTypes.getNullableThrowableType()).build();
+
+            final var exceptionExprFinal = exceptionExpr;
+            new MergeNodeField(
+                    exceptionField,
+                    mergeNode,
+                    NncUtils.toMap(
+                            branchNode.getBranches(),
+                            java.util.function.Function.identity(),
+                            branch ->
+                                    new ExpressionValue(
+                                            branch.isPreselected() ? exceptionExprFinal : ExpressionUtil.nullExpression()
+                                    )
+                    )
+            );
+            exceptionExpr = new FieldExpression(new NodeExpression(mergeNode), exceptionField);
+        }
+        if (statement.getFinallyBlock() != null) {
+            statement.getFinallyBlock().accept(this);
+        }
+        var exceptBranchNode = builder().createBranchNode(false);
+        var exceptionBranch = exceptBranchNode.addBranch(
+                new ExpressionValue(new UnaryExpression(Operator.IS_NOT_NULL, exceptionExpr))
+        );
+        exceptBranchNode.addDefaultBranch();
+        builder().enterCondSection(exceptBranchNode);
+        builder().enterBranch(exceptionBranch);
+        builder().createRaise(exceptionExpr);
+        builder().exitBranch();
+        builder().createMerge();
+    }
+
+    private @Nullable Set<QualifiedName> getBlockLiveOut(PsiCodeBlock block) {
+        if (block.isEmpty()) {
+            return null;
+        }
+        var lastStmt = block.getStatements()[block.getStatementCount() - 1];
+        return NncUtils.requireNonNull(lastStmt.getUserData(Keys.LIVE_VARS_OUT));
+    }
+
+    private Expression createExceptionCheck(Expression exceptionExpr, List<PsiType> catchTypes) {
+        NncUtils.requireNotEmpty(catchTypes);
+        Expression expression = null;
+        for (PsiType catchType : catchTypes) {
+            var checkExpr = new InstanceOfExpression(exceptionExpr, resolveType(catchType));
+            if (expression == null) {
+                expression = checkExpr;
+            } else {
+                expression = new BinaryExpression(Operator.OR, expression, checkExpr);
+            }
+        }
+        return NncUtils.requireNonNull(expression);
+    }
+
+    @Override
     public void visitMethod(PsiMethod method) {
         var flow = NncUtils.requireNonNull(method.getUserData(Keys.FLOW));
-        FlowGenerator builder = new FlowGenerator(this, flow, typeResolver, entityContext);
+        FlowGenerator builder = new FlowGenerator(flow, typeResolver, entityContext);
         builders.push(builder);
         builder.enterScope(flow.getRootScope(), null);
         var selfNode = builder().createSelf();
         builder.setVariable("this", new NodeExpression(selfNode));
         processParameters(method.getParameterList());
         if (method.isConstructor()) {
+            var superType = currentClass().getSuperType();
+            if (superType != null && !isSuperCallPresent(method)) {
+                builder().createSubFlow(
+                        builder().getVariable("this"),
+                        superType.getFlow(superType.getCodeRequired(), List.of()),
+                        List.of()
+                );
+            }
             builder.createSubFlow(
                     new NodeExpression(selfNode),
                     currentClassInfo().fieldBuilder.getFlow(),
@@ -159,6 +296,19 @@ public class Generator extends VisitorBase {
         builders.pop();
     }
 
+    private static boolean isSuperCallPresent(PsiMethod method) {
+        var stmts = requireNonNull(method.getBody()).getStatements();
+        boolean requireSuperCall = false;
+        if (stmts.length > 0) {
+            if (stmts[0] instanceof PsiExpressionStatement exprStmt &&
+                    exprStmt.getExpression() instanceof PsiMethodCallExpression methodCallExpr) {
+                if (Objects.equals(methodCallExpr.getMethodExpression().getReferenceName(), "super")) {
+                    requireSuperCall = true;
+                }
+            }
+        }
+        return requireSuperCall;
+    }
 
     @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
@@ -177,8 +327,8 @@ public class Generator extends VisitorBase {
                 builder().createValue("switchValue", resolveExpression(statement.getExpression()))
         );
         var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
-        var branchNode = builder().createBranch(false);
-        builder().enterCondSection(statement);
+        var branchNode = builder().createBranchNode(false);
+        builder().enterCondSection(branchNode);
 //        boolean hasResult = statement.getType() != null;
 //        Map<Branch, Value> yieldMap = new HashMap<>();
         var modified = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE)).getModified();
@@ -212,36 +362,20 @@ public class Generator extends VisitorBase {
                     );
                 }
                 branch = branchNode.addBranch(new ExpressionValue(cond));
-            }
-            else {
+            } else {
                 branch = branchNode.addDefaultBranch();
             }
-            builder().newCondBranch(stmt, branch);
-            builder().enterScope(branch.getScope(), branch.getCondition().getExpression());
-            if(labeledRuleStmt.getBody() != null) {
+            builder().enterBranch(branch);
+            if (labeledRuleStmt.getBody() != null) {
                 labeledRuleStmt.getBody().accept(this);
-                if(labeledRuleStmt.getBody() instanceof PsiExpression bodyExpression) {
+                if (labeledRuleStmt.getBody() instanceof PsiExpression bodyExpression) {
                     builder().setYieldValue(resolveExpression(bodyExpression));
                 }
             }
-//            if(hasResult) {
-//                yieldMap.put(branch, new ExpressionValue(NncUtils.requireNonNull(builder().getYield())));
-//            }
-            builder().exitScope();
+            builder().exitBranch();
         }
-        var condOutputs = builder().exitCondSection(statement, NncUtils.map(outputVars, Objects::toString));
         var mergeNode = builder().createMerge();
-//        Expression result;
-//        if(hasResult) {
-//            var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getType(),
-//                            typeResolver.resolveDeclaration(statement.getType()))
-//                    .build();
-//            new MergeNodeField(yieldField, mergeNode, yieldMap);
-//            result = new FieldExpression(new NodeExpression(mergeNode), yieldField);
-//        }
-//        else {
-//            result = null;
-//        }
+        var condOutputs = builder().exitCondSection(mergeNode, NncUtils.map(outputVars, Objects::toString));
         for (QualifiedName outputVar : outputVars) {
             var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(), mergeNode.getType(),
                             typeResolver.resolveDeclaration(outputVar.type()))
@@ -251,7 +385,6 @@ public class Generator extends VisitorBase {
                     mergeField.setValue(branch, new ExpressionValue(values.get(outputVar.toString())))
             );
         }
-//        return result;
     }
 
     private Expression processClassicSwitch(PsiSwitchStatement statement) {
@@ -293,9 +426,26 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitIfStatement(PsiIfStatement statement) {
-//        super.visitIfStatement(statement);
-        Expression cond = resolveExpression(requireNonNull(statement.getCondition()));
-        BranchNode branchNode = builder().createBranch(false);
+        BranchNode branchNode = builder().createBranchNode(false);
+
+        var thenBranch = branchNode.addBranch(new ExpressionValue(trueExpression()));
+        var elseBranch = branchNode.addDefaultBranch();
+
+        enterCondSection(branchNode);
+
+        builder().enterBranch(thenBranch);
+        builder().getExpressionResolver().constructBool(requireNonNull(statement.getCondition()));
+        if (statement.getThenBranch() != null) {
+            statement.getThenBranch().accept(this);
+        }
+        builder().exitBranch();
+
+        builder().enterBranch(elseBranch);
+        if (statement.getElseBranch() != null) {
+            statement.getElseBranch().accept(this);
+        }
+        builder().exitBranch();
+
         var mergeNode = builder().createMerge();
         Scope bodyScope = requireNonNull(statement.getUserData(Keys.BODY_SCOPE)),
                 elseScope = requireNonNull(statement.getUserData(Keys.ELSE_SCOPE));
@@ -306,29 +456,25 @@ public class Generator extends VisitorBase {
             FieldBuilder.newBuilder(var.toString(), var.toString(), mergeNode.getType(), resolveType(var.type())).build();
             outputVariables.add(var);
         }
-        enterCondSection(statement);
-        newCondBranch(statement, branchNode.addBranch(new ExpressionValue(cond)), statement.getThenBranch());
-        newCondBranch(statement, branchNode.addDefaultBranch(), statement.getElseBranch());
 
-        exitCondSection(statement, mergeNode, outputVariables);
+        exitCondSection(mergeNode, outputVariables);
     }
 
-    private void enterCondSection(PsiElement node) {
-        builder().enterCondSection(node);
+    private void enterCondSection(BranchNode branchNode) {
+        builder().enterCondSection(branchNode);
     }
 
     private void newCondBranch(PsiElement sectionId, Branch branch, @Nullable PsiStatement body) {
-        builder().newCondBranch(sectionId, branch);
-        builder().enterScope(branch.getScope(), branch.getCondition().getExpression());
+        builder().enterBranch(branch);
         if (body != null) body.accept(this);
-        builder().exitScope();
+        builder().exitBranch();
     }
 
-    private void exitCondSection(PsiElement element, MergeNode mergeNode, List<QualifiedName> outputVariables) {
+    private void exitCondSection(MergeNode mergeNode, List<QualifiedName> outputVariables) {
         List<String> outputVars = NncUtils.map(outputVariables, Objects::toString);
-        var condOutputs = builder().exitCondSection(element, outputVars);
+        var condOutputs = builder().exitCondSection(mergeNode, outputVars);
         for (var qn : outputVariables) {
-            var field = mergeNode.getType().getFieldByCode(qn.toString());
+            var field = mergeNode.getType().getFieldByCodeRequired(qn.toString());
             var mergeField = new MergeNodeField(field, mergeNode);
             for (var entry2 : condOutputs.entrySet()) {
                 var branch = entry2.getKey();
@@ -370,7 +516,7 @@ public class Generator extends VisitorBase {
             var field = loopVar2Field.get(loopVar);
             builder().setVariable(loopVar.toString(), new FieldExpression(new NodeExpression(node), field));
         }
-        builder().enterScope(node.getLoopScope(), node.getCondition().getExpression());
+        builder().enterScope(node.getBodyScope(), node.getCondition().getExpression());
         if (preprocessor != null) {
             preprocessor.accept(loopVar2Field);
         }
@@ -437,8 +583,8 @@ public class Generator extends VisitorBase {
             );
             processLoop(statement, whileNode,
                     loopVar2Field -> builder().setVariable(statement.getIterationParameter().getName(),
-                    new ArrayAccessExpression(iteratedExpr,
-                            new FieldExpression(new NodeExpression(whileNode), indexField))));
+                            new ArrayAccessExpression(iteratedExpr,
+                                    new FieldExpression(new NodeExpression(whileNode), indexField))));
         } else {
             var collType = (ClassType) iteratedExpr.getType();
             var itNode = builder().createSubFlow(
@@ -467,7 +613,7 @@ public class Generator extends VisitorBase {
                     .getArgumentList().getExpressions()[0];
             return resolveExpression(cond);
         }
-        return ExpressionUtil.trueExpression();
+        return trueExpression();
     }
 
     private Set<QualifiedName> getBlockOutputVariables(PsiStatement statement, Set<QualifiedName> modified) {
@@ -492,7 +638,7 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitThrowStatement(PsiThrowStatement statement) {
-        builder().createException(new ConstantExpression(InstanceUtils.stringInstance("Error")));
+        builder().createRaise(resolveExpression(statement.getException()));
     }
 
     @Override

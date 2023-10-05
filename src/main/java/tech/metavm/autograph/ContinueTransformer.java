@@ -1,16 +1,10 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
-import tech.metavm.util.KeyValue;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-import static tech.metavm.util.NncUtils.requireNonNull;
+import java.util.*;
 
 public class ContinueTransformer extends VisitorBase {
 
@@ -37,17 +31,11 @@ public class ContinueTransformer extends VisitorBase {
             }
             NncUtils.requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
         }
-        var parent = TranspileUtil.getAncestor(statement,
-                PsiIfStatement.class, PsiForeachStatement.class,
-                PsiWhileStatement.class, PsiSwitchStatement.class);
         loop.continueUsed = true;
         var block = currentBlockInfo();
-        if(parent instanceof PsiIfStatement) {
-            requireNonNull(block.parent).shouldWrapNext = true;
-        }
         block.useContinue(loop.continueVar, label);
         String text = loop.continueVar + " = true;";
-        var assignment = TranspileUtil.getPsiElementFactory().createStatementFromText(text, null);
+        var assignment = TranspileUtil.getElementFactory().createStatementFromText(text, null);
         replace(statement, assignment);
     }
 
@@ -138,12 +126,11 @@ public class ContinueTransformer extends VisitorBase {
     }
 
     private void visitLoopBody(PsiStatement body, @Nullable String label) {
-        if (body instanceof PsiCodeBlock) {
+        if(body instanceof PsiCodeBlock) {
             nameTracker.enterBlock();
         }
         enterBlock(true, label);
-        visitBlock(body);
-        var replacement = getReplacement(body);
+        var replacement = replace(body, visitBlock(body));
         if (loopInfo.continueUsed) {
             String code = "boolean " + loopInfo.continueVar + " = false;";
             var toInsert = TranspileUtil.createStatementFromText(code);
@@ -156,99 +143,47 @@ public class ContinueTransformer extends VisitorBase {
             }
         }
         exitBlock();
-        if (body instanceof PsiCodeBlock) {
+        if(body instanceof PsiCodeBlock) {
             nameTracker.exitBlock();
         }
     }
 
     private void visitNonLoopBody(PsiStatement body) {
-        if (body instanceof PsiCodeBlock) {
+        if(body instanceof PsiCodeBlock) {
             nameTracker.enterBlock();
         }
         enterBlock(false, null);
-        visitBlock(body);
+        replace(body, visitBlock(body));
         exitBlock();
-        if (body instanceof PsiCodeBlock) {
+        if(body instanceof PsiCodeBlock) {
             nameTracker.exitBlock();
         }
     }
 
-    protected void visitBlock(PsiStatement body) {
-        var ref = new Object() {
-            boolean continueUsed;
-            String cond;
-        };
-        visitBlock(body,
-                stmt -> {
-                    var block = currentBlockInfo();
-                    ref.continueUsed = block.continueUsed();
-                    ref.cond = block.getConditionText();
-                    block.shouldWrapCurrent = block.shouldWrapNext;
-                    block.shouldWrapNext = false;
-                    block.clearUsedContinues();
-                },
-                stmt -> {
-                    var block = currentBlockInfo();
-                    if (block.shouldWrapCurrent) {
-                        block.shouldWrapCurrent = false;
-                        var ifStmt = (PsiIfStatement) getReplacement(
-                                requireNonNull(TranspileUtil.getPrevStatement(stmt))
-                        );
-                        PsiStatement elseBranch = ifStmt.getElseBranch();
-                        PsiCodeBlock elseBlock;
-                        if (!(elseBranch instanceof PsiBlockStatement)) {
-                            PsiStatement oldElseBranch = elseBranch;
-                            elseBranch = TranspileUtil.createStatementFromText("{}");
-                            ifStmt.setElseBranch(elseBranch);
-                            elseBranch = requireNonNull(ifStmt.getElseBranch());
-                            elseBlock = ((PsiBlockStatement) elseBranch).getCodeBlock();
-                            if (oldElseBranch != null) {
-                                elseBlock.add(oldElseBranch.copy());
-                            }
-                        } else {
-                            elseBlock = ((PsiBlockStatement) elseBranch).getCodeBlock();
-                        }
-                        elseBlock.add(stmt);
-                        stmt.delete();
-                        return new KeyValue<>(null, elseBlock);
-                    } else if (ref.continueUsed) {
-                        String text = "if (" + ref.cond + ") {}";
-                        PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtil.createStatementFromText(text);
-                        ifStmt = (PsiIfStatement) replace(stmt, ifStmt);
-                        var newDest = ((PsiBlockStatement) NncUtils.requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
-                        newDest.add(stmt.copy());
-                        return new KeyValue<>(ifStmt, newDest);
-                    } else {
-                        return new KeyValue<>(stmt, null);
-                    }
-                }
-        );
+    private PsiElement visitBlock(PsiStatement body) {
+        List<PsiStatement> statements = extractBody(body);
+        PsiBlockStatement result = (PsiBlockStatement) TranspileUtil.createStatementFromText("{}");
+        PsiCodeBlock dest = result.getCodeBlock();
+        for (PsiStatement stmt : statements) {
+            var block = currentBlockInfo();
+            boolean continueUsed = block.continueUsed();
+            String cond = block.getConditionText();
+            block.clearUsedContinues();
+            stmt.accept(this);
+            stmt = (PsiStatement) getReplacement(stmt);
+            if (continueUsed) {
+                String text = "if (" + cond + ") {}";
+                PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtil.createStatementFromText(text);
+                ifStmt = (PsiIfStatement) replace(stmt, ifStmt);
+                ifStmt = (PsiIfStatement) dest.add(ifStmt);
+                dest = ((PsiBlockStatement) NncUtils.requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
+                dest.add(stmt.copy());
+            } else {
+                dest.add(stmt);
+            }
+        }
+        return result;
     }
-
-//    protected PsiElement visitBlock(PsiStatement body) {
-//        List<PsiStatement> statements = extractBody(body);
-//        PsiBlockStatement result = (PsiBlockStatement) TranspileUtil.createStatementFromText("{}");
-//        PsiCodeBlock dest = result.getCodeBlock();
-//        for (PsiStatement stmt : statements) {
-//            var block = currentBlockInfo();
-//            boolean continueUsed = block.continueUsed();
-//            String cond = block.getConditionText();
-//            block.clearUsedContinues();
-//            stmt.accept(this);
-//            stmt = (PsiStatement) getReplacement(stmt);
-//            if (continueUsed) {
-//                String text = "if (" + cond + ") {}";
-//                PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtil.createStatementFromText(text);
-//                ifStmt = (PsiIfStatement) replace(stmt, ifStmt);
-//                ifStmt = (PsiIfStatement) dest.add(ifStmt);
-//                dest = ((PsiBlockStatement) NncUtils.requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
-//                dest.add(stmt.copy());
-//            } else {
-//                dest.add(stmt);
-//            }
-//        }
-//        return result;
-//    }
 
     @Override
     public void visitCodeBlock(PsiCodeBlock block) {
@@ -262,8 +197,6 @@ public class ContinueTransformer extends VisitorBase {
         private final @Nullable String label;
         private final @Nullable BlockInfo parent;
         private final Set<String> usedContinues = new HashSet<>();
-        private boolean shouldWrapNext;
-        private boolean shouldWrapCurrent;
 
         private BlockInfo(boolean isLoop, @Nullable String label, @Nullable BlockInfo parent) {
             this.isLoop = isLoop;

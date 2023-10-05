@@ -7,6 +7,8 @@ import tech.metavm.object.meta.*;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
+
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
 import static tech.metavm.entity.ModelDefRegistry.getType;
@@ -109,8 +111,12 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitField(PsiField psiField) {
+        var type = resolveType(psiField.getType());
+        if(TranspileUtil.getAnnotation(psiField, Nullable.class) != null) {
+            type = TypeUtil.getNullableType(type);
+        }
         var field = FieldBuilder
-                .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), resolveType(psiField.getType()))
+                .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), type)
                 .unique(TranspileUtil.isUnique(psiField))
                 .asTitle(TranspileUtil.isTitleField(psiField))
                 .isChild(TranspileUtil.isChild(psiField))

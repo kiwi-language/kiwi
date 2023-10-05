@@ -1,9 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.*;
 import tech.metavm.object.meta.Type;
 
 import java.util.List;
@@ -24,11 +21,10 @@ public class InstanceOfExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        return operand.build(symbolType, false) + " instanceof "
-                + switch (symbolType) {
-            case ID -> idVarName(targetType.getIdRequired());
-            case NAME -> targetType.getName();
-        };
+        try(var context = SerializeContext.enter()) {
+            return operand.build(symbolType, false) + " instanceof "
+                    + context.getRef(targetType).getIdString();
+        }
     }
 
     @Override

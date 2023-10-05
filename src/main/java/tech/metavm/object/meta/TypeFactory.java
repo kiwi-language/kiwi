@@ -1,24 +1,18 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.autograph.FlowBuilder;
-import tech.metavm.autograph.Parameter;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.GenericDeclaration;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceFactory;
-import tech.metavm.flow.Flow;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.IteratorImpl;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
 import javax.annotation.Nullable;
 import java.util.*;
-
-import static tech.metavm.object.meta.TypeUtil.*;
 
 public abstract class TypeFactory {
 
@@ -43,7 +37,7 @@ public abstract class TypeFactory {
                 .ephemeral(typeDTO.ephemeral())
                 .anonymous(typeDTO.anonymous())
                 .template(param.templateRef() != null ? context.getClassType(param.templateRef()) : null)
-                .templateName(param.templateName())
+                .collectionName(param.templateName())
                 .source(ClassSource.getByCode(param.source()))
                 .tmpId(typeDTO.tmpId()).build();
         context.bind(type);

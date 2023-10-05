@@ -53,7 +53,11 @@ public class ForTransformer extends VisitorBase {
                     expr -> TranspileUtil.createStatementFromText(expr.getText() + ";")
             );
         } else {
-            return List.of(statement);
+            if (!statement.getText().trim().endsWith(";")) {
+                return List.of(TranspileUtil.createStatementFromText(statement.getText() + ";"));
+            } else {
+                return List.of(statement);
+            }
         }
     }
 

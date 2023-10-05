@@ -1,10 +1,15 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static tech.metavm.object.instance.query.OperatorTypes.*;
 
@@ -71,6 +76,25 @@ public enum Operator {
     ;
 
 
+    private static final Map<Operator, Operator> NEGATION_MAP = Map.ofEntries(
+            Map.entry(EQ, NE),
+            Map.entry(GT, LE),
+            Map.entry(LT, GE),
+            Map.entry(IS_NULL, IS_NOT_NULL),
+            Map.entry(EXISTS, NOT_EXISTS)
+    );
+
+    private static final Map<Operator, Operator> ALL_NEGATION_MAP;
+
+    static {
+        Map<Operator, Operator> negationMap = new HashMap<>();
+        for (var entry : NEGATION_MAP.entrySet()) {
+            negationMap.put(entry.getKey(), entry.getValue());
+            negationMap.put(entry.getValue(), entry.getKey());
+        }
+        ALL_NEGATION_MAP = Collections.unmodifiableMap(negationMap);
+    }
+
     private final int code;
     private final String op;
     private final int precedence;
@@ -126,6 +150,15 @@ public enum Operator {
 
     public int code() {
         return this.code;
+    }
+
+    public Operator negate() {
+        return NncUtils.requireNonNull(ALL_NEGATION_MAP.get(this),
+                "Can not negate operator " + this);
+    }
+
+    public boolean hasNegation() {
+        return ALL_NEGATION_MAP.containsKey(this);
     }
 
     @Override

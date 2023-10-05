@@ -79,7 +79,15 @@ public class ExpressionEvaluator {
         if(expression instanceof ArrayAccessExpression arrayAccExpression) {
             return evaluateArrayAccess(arrayAccExpression);
         }
+        if (expression instanceof InstanceOfExpression instanceOfExpression) {
+            return evaluateInstanceOf(instanceOfExpression);
+        }
         throw new RuntimeException("Unsupported expression: " + expression);
+    }
+
+    private Instance evaluateInstanceOf(InstanceOfExpression instanceOfExpression) {
+        var instance = evaluate(instanceOfExpression.getOperand());
+        return InstanceUtils.booleanInstance(instanceOfExpression.getTargetType().isInstance(instance));
     }
 
     private Instance evaluateArrayAccess(ArrayAccessExpression expression) {

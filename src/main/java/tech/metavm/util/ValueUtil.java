@@ -192,10 +192,7 @@ public class ValueUtil {
             if(klass.isInterface()) {
                 return TypeCategory.INTERFACE;
             }
-            if (isInteger(klass)) {
-                return TypeCategory.INT;
-            }
-            if (isLong(klass)) {
+            if (isLong(klass) || isInteger(klass)) {
                 return TypeCategory.LONG;
             }
             if (isDouble(klass)) {

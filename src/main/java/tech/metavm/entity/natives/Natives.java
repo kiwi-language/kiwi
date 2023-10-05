@@ -10,12 +10,15 @@ public class Natives {
             "Map", MapNative.class,
             "List", ListNative.class,
             "Set", SetNative.class,
-            "IteratorImpl", IteratorImplNative.class
+            "IteratorImpl", IteratorImplNative.class,
+            "Throwable", ThrowableNative.class,
+            "Exception", ExceptionNative.class,
+            "RuntimeException", RuntimeExceptionNative.class
     );
 
-    public static Class<?> getNative(String nativeClas) {
-        return NncUtils.requireNonNull(nativeClassMap.get(nativeClas),
-                "Can't find native class for templateName '" + nativeClas + "'");
+    public static Class<?> getNative(String nativeClass) {
+        return NncUtils.requireNonNull(nativeClassMap.get(nativeClass),
+                "Can't find native class for templateName '" + nativeClass + "'");
     }
 
 }

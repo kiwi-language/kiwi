@@ -1,6 +1,6 @@
 package tech.metavm.autograph;
 
-import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiMethod;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.Expression;
@@ -22,66 +22,134 @@ public class FlowGenerator {
     private final TypeResolver typeResolver;
     private final ExpressionResolver expressionResolver;
     private final Map<String, Integer> name2count = new HashMap<>();
-    private final TypeReducer typeReducer = new TypeReducer(this::getExpressionType);
+    private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
     private Expression yieldValue;
+    private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
+    private final Map<String, Integer> varNames = new HashMap<>();
 
-    public FlowGenerator(Generator visitor, Flow flow, TypeResolver typeResolver, IEntityContext entityContext) {
+
+    public FlowGenerator(Flow flow, TypeResolver typeResolver, IEntityContext entityContext) {
         this.flow = flow;
         this.typeResolver = typeResolver;
-        expressionResolver = new ExpressionResolver(visitor, this, variableTable, typeResolver, entityContext);
+        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver, entityContext);
     }
 
     Flow getFlow() {
         return flow;
     }
 
-    BranchNode createBranch(boolean inclusive) {
-        return new BranchNode(null, nextName("Branch"), inclusive, scope().getLastNode(), scope());
+    BranchNode createBranchNode(boolean inclusive) {
+        return setNodeExprTypes(new BranchNode(null, nextName("Branch"), inclusive, scope().getLastNode(), scope()));
     }
 
     MergeNode createMerge() {
         scope().getLastNode();
         if ((scope().getLastNode() instanceof BranchNode branchNode)) {
-            return new MergeNode(
+            return setNodeExprTypes(new MergeNode(
                     null,
                     nextName("Merge"),
                     branchNode,
                     ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                     scope()
-            );
+            ));
         } else {
             throw new InternalException("MergeNode must directly follow a BranchNode");
         }
     }
 
-    ValueNode createValue(String name, Expression expression) {
-        return new ValueNode(
-                null,
-                nextName(name),
-                scope().getLastNode(),
-                scope(),
-                new ExpressionValue(expression));
+    TryNode createTry() {
+        return new TryNode(null, nextName("Try"), scope().getLastNode(), scope());
     }
 
-    NewArrayNode createNewArray(ArrayType type, List<Expression> elements) {
-        return new NewArrayNode(
-                null, nextName("NewArray"),
-                type, NncUtils.map(elements, ExpressionValue::new),
-                scope().getLastNode(), scope()
+    String nextVarName(String name) {
+        String varName = "__" + name + "__";
+        var count = varNames.compute(varName, (k,v) -> v == null ? 1 : v + 1);
+        return varName + count;
+    }
+
+    TryEndNode createTryEnd() {
+        var node = new TryEndNode(
+                null, nextName("TryEnd"),
+                ClassBuilder.newBuilder("TryEndOutput", "TryEndOutput")
+                        .temporary().build(),
+                (TryNode) scope().getLastNode(),
+                scope()
+        );
+        FieldBuilder.newBuilder("异常", "exception", node.getType(),
+                StandardTypes.getNullableThrowableType())
+                .build();
+        return node;
+    }
+
+
+    ValueNode createValue(String name, Expression expression) {
+        return setNodeExprTypes(new ValueNode(
+                        null,
+                        nextName(name),
+                        getExpressionType(expression),
+                        scope().getLastNode(),
+                        scope(),
+                        new ExpressionValue(expression)
+                )
         );
     }
 
-    void enterCondSection(PsiElement sectionId) {
+    NewArrayNode createNewArray(ArrayType type, List<Expression> elements) {
+        return setNodeExprTypes(new NewArrayNode(
+                null, nextName("NewArray"),
+                type, NncUtils.map(elements, ExpressionValue::new),
+                scope().getLastNode(), scope()
+        ));
+    }
+
+    void enterTrySection(TryNode tryNode) {
+        variableTable.enterTrySection(tryNode);
+        enterScope(tryNode.getBodyScope(), null);
+    }
+
+    Map<NodeRT<?>, Map<String, Expression>> exitTrySection(TryNode tryNode, List<String> outputVars) {
+        exitScope();
+        return variableTable.exitTrySection(tryNode, outputVars);
+    }
+
+    void enterCondSection(BranchNode sectionId) {
         variableTable.enterCondSection(sectionId);
+        condScopes.put(sectionId, new LinkedList<>());
     }
 
-    void newCondBranch(PsiElement sectionId, Branch branch) {
-        variableTable.newCondBranch(sectionId, branch);
+    void enterBranch(Branch branch) {
+        variableTable.newCondBranch(branch.getOwner(), branch);
+        var scope = enterScope(branch.getScope(), branch.getCondition().getExpression());
+        condScopes.get(branch.getOwner()).add(scope);
     }
 
-    Map<Branch, Map<String, Expression>> exitCondSection(PsiElement sectionId, List<String> outputVars) {
+    void exitBranch() {
+        exitScope();
+    }
+
+    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, List<String> outputVars) {
+        var branchNode = mergeNode.getBranchNode();
         yieldValue = null;
-        return variableTable.exitCondSection(sectionId, outputVars);
+        ExpressionTypeMap exprTypes = null;
+        for (ScopeInfo scope : condScopes.remove(branchNode)) {
+            var lastNode = scope.scope.getLastNode();
+            if (lastNode == null || !lastNode.isExit()) {
+                var newExprTypes = lastNode == null ? scope.scope.getExpressionTypes() : lastNode.getExpressionTypes();
+                if (exprTypes == null) {
+                    exprTypes = newExprTypes;
+                } else {
+                    exprTypes = exprTypes.union(newExprTypes);
+                }
+            }
+        }
+        if (exprTypes != null) {
+            mergeNode.mergeExpressionTypes(exprTypes);
+        }
+        return variableTable.exitCondSection(branchNode, outputVars);
+    }
+
+    private ScopeInfo currentScope() {
+        return NncUtils.requireNonNull(scopes.peek());
     }
 
     void setVariable(String name, Expression value) {
@@ -92,16 +160,19 @@ public class FlowGenerator {
         return variableTable.get(name);
     }
 
-    void enterScope(ScopeRT scope, @Nullable Expression condition) {
-        Map<Expression, Type> exprTypes = condition != null ? typeReducer.reduceType(condition) : Map.of();
-        if (!scopes.isEmpty()) {
-            exprTypes = typeReducer.mergeResults(exprTypes, scopes.peek().expressionTypes());
+    ScopeInfo enterScope(ScopeRT scope, @Nullable Expression condition) {
+        if (scope.getOwner() != null) {
+            scope.setExpressionTypes(scope.getOwner().getExpressionTypes());
         }
-        scopes.push(new ScopeInfo(scope, exprTypes));
+        var exprTypeMap = condition != null ? typeNarrower.narrowType(condition) : ExpressionTypeMap.EMPTY;
+        scope.mergeExpressionTypes(exprTypeMap);
+        var scopeInfo = new ScopeInfo(scope);
+        scopes.push(scopeInfo);
+        return scopeInfo;
     }
 
-    void exitScope() {
-        scopes.pop();
+    ScopeInfo exitScope() {
+        return scopes.pop();
     }
 
     Expression getYield() {
@@ -112,23 +183,38 @@ public class FlowGenerator {
         if (scopes.isEmpty()) {
             return expression.getType();
         } else {
-            return scopes.peek().expressionTypes.getOrDefault(expression, expression.getType());
+            var lastNode = scope().getLastNode();
+            if (lastNode == null) {
+                return scope().getExpressionTypes().getType(expression);
+            } else {
+                return lastNode.getExpressionTypes().getType(expression);
+            }
         }
     }
 
+    CheckNode createCheck(Expression condition) {
+        var checkNode = setNodeExprTypes(
+                new CheckNode(null, nextName("Check"), scope().getLastNode(), scope(),
+                        new ExpressionValue(condition))
+                );
+        var narrower = new TypeNarrower(checkNode.getExpressionTypes()::getType);
+        checkNode.mergeExpressionTypes(narrower.narrowType(condition));
+        return checkNode;
+    }
+
     private ScopeRT scope() {
-        return Objects.requireNonNull(scopes.peek()).scope();
+        return currentScope().scope;
     }
 
     UpdateObjectNode createUpdateObject() {
-        return new UpdateObjectNode(null, nextName("Update"), scope().getLastNode(), scope());
+        return setNodeExprTypes(new UpdateObjectNode(null, nextName("Update"), scope().getLastNode(), scope()));
     }
 
     UpdateObjectNode createUpdate(Expression self, Map<Field, Expression> fields) {
         var node = createUpdateObject();
         node.setObjectId(new ExpressionValue(self));
         fields.forEach((field, value) -> node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(value)));
-        return node;
+        return setNodeExprTypes(node);
     }
 
     UpdateStaticNode createUpdateStatic(ClassType klass, Map<Field, Expression> fields) {
@@ -137,11 +223,11 @@ public class FlowGenerator {
                 scope().getLastNode(), scope(), klass
         );
         fields.forEach((field, expr) -> node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(expr)));
-        return node;
+        return setNodeExprTypes(node);
     }
 
     AddObjectNode createAddObject(ClassType klass) {
-        return new AddObjectNode(null, nextName("Add"), klass, scope().getLastNode(), scope());
+        return setNodeExprTypes(new AddObjectNode(null, nextName("Add"), klass, scope().getLastNode(), scope()));
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -154,18 +240,18 @@ public class FlowGenerator {
         if (value != null) {
             node.setValue(new ExpressionValue(value));
         }
-        return node;
+        return setNodeExprTypes(node);
     }
 
-    ForEachNode createForEach(Expression array) {
+    ForeachNode createForEach(Expression array) {
         var loopType = newTemporaryType("ForeachOutput");
         newTemproryField(loopType, "array", array.getType());
         newTemproryField(loopType, "index", ModelDefRegistry.getType(Long.class));
-        return new ForEachNode(
+        return setNodeExprTypes(new ForeachNode(
                 null, nextName("Foreach"), loopType,
                 scope().getLastNode(), scope(), new ExpressionValue(array),
                 new ExpressionValue(ExpressionUtil.trueExpression())
-        );
+        ));
     }
 
     public Field newTemproryField(ClassType klass, String name, Type type) {
@@ -187,8 +273,8 @@ public class FlowGenerator {
                 arguments,
                 (f, arg) -> new FieldParam(f, new ExpressionValue(arg))
         );
-        return new SubFlowNode(null, nextName(flow.getName()), scope().getLastNode(), scope(),
-                new ExpressionValue(self), fieldParams, flow);
+        return setNodeExprTypes(new SubFlowNode(null, nextName(flow.getName()), scope().getLastNode(), scope(),
+                new ExpressionValue(self), fieldParams, flow));
     }
 
     NewNode createNew(Flow flow, List<Expression> arguments) {
@@ -198,8 +284,8 @@ public class FlowGenerator {
                 arguments,
                 (f, arg) -> new FieldParam(f, new ExpressionValue(arg))
         );
-        return new NewNode(null, nextName(flow.getName()), flow, fieldParams,
-                scope().getLastNode(), scope());
+        return setNodeExprTypes(new NewNode(null, nextName(flow.getName()), flow, fieldParams,
+                scope().getLastNode(), scope()));
     }
 
     ExpressionResolver getExpressionResolver() {
@@ -211,11 +297,22 @@ public class FlowGenerator {
     }
 
     public InputNode createInput() {
-        return new InputNode(null, "Input", getFlow().getInputType(), scope().getLastNode(), scope());
+        return setNodeExprTypes(new InputNode(null, "Input", getFlow().getInputType(), scope().getLastNode(), scope()));
     }
 
     public SelfNode createSelf() {
-        return new SelfNode(null, "Self", scope().getLastNode(), scope());
+        return setNodeExprTypes(new SelfNode(null, "Self", scope().getLastNode(), scope()));
+    }
+
+    private <T extends NodeRT<?>> T setNodeExprTypes(T node) {
+        var scope = scope();
+        var lastNode = scope.getLastNode();
+        if (lastNode == null) {
+            node.mergeExpressionTypes(scope.getExpressionTypes());
+        } else {
+            node.mergeExpressionTypes(lastNode.getExpressionTypes());
+        }
+        return node;
     }
 
     private String nextName(String prefix) {
@@ -223,19 +320,17 @@ public class FlowGenerator {
         return cnt > 1 ? prefix + "_" + (cnt - 1) : prefix;
     }
 
-    private String randomName(String prefix) {
-        return prefix + "_" + NncUtils.random();
-    }
-
     @SuppressWarnings("UnusedReturnValue")
-    public ExceptionNode createException(Expression message) {
-        return new ExceptionNode(
+    public RaiseNode createRaise(Expression exception) {
+        var node = setNodeExprTypes(new RaiseNode(
                 null,
                 nextName("Error"),
-                new ExpressionValue(message),
+                new ExpressionValue(exception),
                 scope().getLastNode(),
                 scope()
-        );
+        ));
+        variableTable.processRaiseNode(node);
+        return node;
     }
 
     public WhileNode createWhile() {
@@ -243,24 +338,33 @@ public class FlowGenerator {
     }
 
     public WhileNode createWhile(Expression condition) {
-        return new WhileNode(
+        return setNodeExprTypes(new WhileNode(
                 null, nextName("While"),
                 newTemporaryType("WhileOutput"),
                 scope().getLastNode(),
                 scope(),
                 new ExpressionValue(condition)
-        );
+        ));
     }
 
     public void setYieldValue(Expression expression) {
         yieldValue = NncUtils.requireNonNull(expression);
     }
 
-    private record ScopeInfo(
-            ScopeRT scope,
-            Map<Expression, Type> expressionTypes
-    ) {
+    public PsiMethod getMethod() {
+        return null;
+    }
+
+    private static final class ScopeInfo {
+        private final ScopeRT scope;
+//        private Map<Expression, Type> expressionTypes;
+
+        private ScopeInfo(ScopeRT scope/*, Map<Expression, Type> expressionTypes*/) {
+            this.scope = scope;
+//            this.expressionTypes = expressionTypes;
+        }
 
     }
+
 
 }

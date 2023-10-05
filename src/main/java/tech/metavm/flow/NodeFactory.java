@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContext;
 import tech.metavm.flow.persistence.NodePO;
@@ -30,6 +31,8 @@ public class NodeFactory {
             node = (NodeRT) newInstance(constructor, nodeDTO, scope);
             if(nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
         }
+        var prevExprTypes = prev != null ? prev.getExpressionTypes() : ExpressionTypeMap.EMPTY;
+        node.mergeExpressionTypes(prevExprTypes);
         context.bind(node);
         return node;
     }

@@ -1,19 +1,24 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.IInstanceContext;
+import tech.metavm.entity.natives.ThrowableNative;
+import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 public class FlowFrame implements EvaluationContext {
@@ -27,11 +32,16 @@ public class FlowFrame implements EvaluationContext {
     private boolean jumped;
     private final IInstanceContext context;
     private final FlowStack stack;
-    private final Map<BranchNode, Branch> selectedBranches = new HashMap<>();
+    private final Map<BranchNode, Branch> selectedBranches = new IdentityHashMap<>();
+    private final Map<BranchNode, Branch> exitBranches = new IdentityHashMap<>();
     private final LinkedList<Branch> branches = new LinkedList<>();
-
     private State state = State.NORMAL;
     private String exceptionMessage;
+    private NodeRT<?> lastNode;
+    private final LinkedList<TryNode> tryNodes = new LinkedList<>();
+    private ClassInstance exception;
+
+    private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
     public enum State {
         NORMAL,
@@ -76,9 +86,50 @@ public class FlowFrame implements EvaluationContext {
         state = State.RETURN;
     }
 
+    public void enterTrySection(TryNode tryNode) {
+        tryNodes.push(tryNode);
+    }
+
+    public TryNode exitTrySection() {
+        return tryNodes.pop();
+    }
+
+    public boolean inTrySection() {
+        return !tryNodes.isEmpty();
+    }
+
+    public TryNode currentTrySection() {
+        return NncUtils.requireNonNull(tryNodes.peek());
+    }
+
     public void exception(String message) {
         this.exceptionMessage = message;
         state = State.EXCEPTION;
+    }
+
+    public void exception(ClassInstance exception) {
+        exception(exception, false);
+    }
+
+    private void exception(ClassInstance exception, boolean fromResume) {
+        if(!tryNodes.isEmpty()) {
+            var tryNode = tryNodes.peek();
+            exceptions.put(tryNode, new ExceptionInfo(pc, exception));
+            if(fromResume) {
+                pc = tryNode.getSuccessor();
+            }
+            else {
+                jumpTo(tryNode.getSuccessor());
+            }
+        }
+        else {
+            state = State.EXCEPTION;
+            this.exception = exception;
+        }
+    }
+
+    public @Nullable ExceptionInfo getExceptionInfo(TryNode tryNode) {
+        return exceptions.get(tryNode);
     }
 
     public void deleteInstance(long id) {
@@ -118,7 +169,7 @@ public class FlowFrame implements EvaluationContext {
                 return;
             }
             if (state == State.EXCEPTION) {
-                throw new FlowExecutionException(exceptionMessage);
+                return;
             }
             if (stack.peek() != this) {
                 return;
@@ -126,13 +177,17 @@ public class FlowFrame implements EvaluationContext {
             if (jumped) {
                 jumped = false;
             } else {
-                pc = node.getGlobalSuccessor();
+                pc = node.getNext();
             }
             if (pc == null) {
                 state = State.RETURN;
                 return;
             }
         }
+    }
+
+    public @Nullable NodeRT<?> getLastNode() {
+        return lastNode;
     }
 
     private void checkResult(Instance result, NodeRT<?> node) {
@@ -165,7 +220,11 @@ public class FlowFrame implements EvaluationContext {
 
     public void resume(Instance result) {
         setResult(result);
-        pc = pc.getGlobalSuccessor();
+        pc = pc.getNext();
+    }
+
+    public void resumeWithException(ClassInstance exception) {
+        exception(exception, true);
     }
 
     public Instance getSelf() {
@@ -197,6 +256,10 @@ public class FlowFrame implements EvaluationContext {
         this.pc = node;
     }
 
+    public void catchException() {
+        exception = null;
+    }
+
     public Flow getFlow() {
         return flow;
     }
@@ -213,6 +276,14 @@ public class FlowFrame implements EvaluationContext {
         selectedBranches.put(branchNode, branch);
     }
 
+    public void setExitBranch(BranchNode branchNode, Branch branch) {
+        exitBranches.put(branchNode, branch);
+    }
+
+    public @Nullable Branch getExitBranch(BranchNode branchNode) {
+        return exitBranches.get(branchNode);
+    }
+
     public State getState() {
         return state;
     }
@@ -220,4 +291,9 @@ public class FlowFrame implements EvaluationContext {
     public Instance getRet() {
         return pc != null ? results.get(pc) : InstanceUtils.nullInstance();
     }
+
+    public ClassInstance getThrow() {
+        return NncUtils.requireNonNull(exception);
+    }
+
 }

@@ -11,6 +11,7 @@ import com.intellij.psi.JavaModuleSystem;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import com.intellij.psi.impl.JavaClassSupersImpl;
 import com.intellij.psi.impl.RecordAugmentProvider;
+import com.intellij.psi.impl.compiled.ClsCustomNavigationPolicy;
 import com.intellij.psi.impl.smartPointers.PsiClassReferenceTypePointerFactory;
 import com.intellij.psi.impl.source.JShellPsiAugmentProvider;
 import com.intellij.psi.impl.source.codeStyle.IndentHelper;
@@ -44,11 +45,13 @@ public class IrCoreApplicationEnvironment extends JavaCoreApplicationEnvironment
         registerApplicationExtensionPoint(FormattingService.EP_NAME, FormattingService.class);
         registerApplicationExtensionPoint(DocumentWriteAccessGuard.EP_NAME, DocumentWriteAccessGuard.class);
         registerApplicationExtensionPoint(TreeGenerator.EP_NAME, TreeGenerator.class);
+        registerApplicationExtensionPoint(ClsCustomNavigationPolicy.EP_NAME, ClsCustomNavigationPolicy.class);
 
         addExtension(PsiAugmentProvider.EP_NAME, new RecordAugmentProvider());
         addExtension(PsiAugmentProvider.EP_NAME, new JShellPsiAugmentProvider());
         addExtension(ClassTypePointerFactory.EP_NAME, new PsiClassReferenceTypePointerFactory());
         addExtension(TreeGenerator.EP_NAME, new JavaTreeGenerator());
+//        addExtension(FormattingService.EP_NAME, new CoreFormattingService());
     }
 
     private TransactionGuard createTransactionGuard() {

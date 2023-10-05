@@ -66,6 +66,7 @@ public class TypeManager {
         primitiveTypes.put("void", ModelDefRegistry.getType(Void.class).toDTO());
         primitiveTypes.put("object", ModelDefRegistry.getType(Object.class).toDTO());
         primitiveTypes.put("array", ModelDefRegistry.getType(Table.class).toDTO());
+        primitiveTypes.put("throwable", ModelDefRegistry.getType(Throwable.class).toDTO());
         return primitiveTypes;
     }
 
@@ -470,6 +471,9 @@ public class TypeManager {
         NncUtils.requireNonNull(typeDTO.name(), "类型名称不能为空");
         if (!type.getName().equals(typeDTO.name())) {
             ensureTypeNameAvailable(typeDTO, context);
+        }
+        if(typeDTO.code() != null) {
+            type.setCode(typeDTO.code());
         }
         type.update(typeDTO);
         ClassParamDTO param = (ClassParamDTO) typeDTO.param();

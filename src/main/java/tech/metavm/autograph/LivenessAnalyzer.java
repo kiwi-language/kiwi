@@ -25,8 +25,9 @@ public class LivenessAnalyzer extends JavaRecursiveElementVisitor {
     public void visitElement(@NotNull PsiElement element) {
         super.visitElement(element);
         if (currentAnalyzer != null && element instanceof PsiStatement) {
-            element.putUserData(Keys.LIVE_VARS_IN,
-                    currentAnalyzer.getIn(currentAnalyzer.getGraph().nodeIndex().get(element)));
+            var cfgNode = currentAnalyzer.getGraph().nodeIndex().get(element);
+            element.putUserData(Keys.LIVE_VARS_IN, currentAnalyzer.getIn(cfgNode));
+            element.putUserData(Keys.LIVE_VARS_OUT, currentAnalyzer.getOut(cfgNode));
         }
     }
 

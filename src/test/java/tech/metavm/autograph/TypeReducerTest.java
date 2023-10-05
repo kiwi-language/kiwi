@@ -51,9 +51,9 @@ public class TypeReducerTest extends TestCase {
                         )
                 )
         );
-        TypeReducer typeReducer = new TypeReducer(Expression::getType);
-        var reduceResult = typeReducer.reduceType(expression);
-        var reducedType = reduceResult.get(nameFieldExpr);
+        TypeNarrower typeReducer = new TypeNarrower(Expression::getType);
+        var reduceResult = typeReducer.narrowType(expression);
+        var reducedType = reduceResult.getType(nameFieldExpr);
         assertNotNull(reducedType);
         assertEquals(nameField.getType().getUnderlyingType(), reducedType);
     }

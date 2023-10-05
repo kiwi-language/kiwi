@@ -36,7 +36,7 @@ public enum TypeCategory {
     STRING(11, SQLType.VARCHAR64),
     @EnumConstant("浮点数")
     DOUBLE(12, SQLType.FLOAT),
-    @EnumConstant("长整数")
+    @EnumConstant("整数")
     LONG(13, SQLType.INT64),
     @EnumConstant("布尔")
     BOOLEAN(16, SQLType.BOOL),
@@ -44,8 +44,6 @@ public enum TypeCategory {
     TIME(18, SQLType.INT64),
     @EnumConstant("日期")
     DATE(19, SQLType.INT64),
-    @EnumConstant("整数")
-    INT(20, SQLType.INT32),
     @EnumConstant("密码")
     PASSWORD(22, SQLType.TEXT),
     @EnumConstant("任意类型")
@@ -59,7 +57,8 @@ public enum TypeCategory {
     @EnumConstant("参数化类型")
     PARAMETERIZED(25, SQLType.OBJECT),
     @EnumConstant("类型交集")
-    INTERSECTION(26, SQLType.OBJECT)
+    INTERSECTION(26, SQLType.OBJECT),
+    FUNCTION(27, SQLType.OBJECT),
 
     ;
 
@@ -119,7 +118,7 @@ public enum TypeCategory {
 
     public boolean isPrimitive() {
         return isString() || isDate() || isTime() || isDouble()
-                || isInt() || isLong() || isBool() || isPassword() || isNull();
+                || isLong() || isBool() || isPassword() || isNull();
     }
 
     public boolean idRangeContains(long id) {
@@ -140,10 +139,6 @@ public enum TypeCategory {
 
     public boolean isDouble() {
         return this == DOUBLE;
-    }
-
-    public boolean isInt() {
-        return this == INT;
     }
 
     public boolean isLong() {

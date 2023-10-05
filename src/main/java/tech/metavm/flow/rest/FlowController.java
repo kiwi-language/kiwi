@@ -64,6 +64,11 @@ public class FlowController {
         }
     }
 
+    @PostMapping("/try-node")
+    public Result<List<NodeDTO>> createGuardNode(@RequestBody NodeDTO node) {
+        return Result.success(flowManager.createTryNode(node));
+    }
+
     @PostMapping("/branch-node")
     public Result<List<NodeDTO>> createBranchNode(@RequestBody NodeDTO node) {
         return Result.success(flowManager.createBranchNode(node));
