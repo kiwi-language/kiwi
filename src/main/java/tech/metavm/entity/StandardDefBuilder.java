@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.autograph.FlowBuilder;
-import tech.metavm.autograph.Parameter;
+import tech.metavm.flow.FlowBuilder;
+import tech.metavm.flow.Parameter;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ClassInstance;
@@ -425,21 +425,21 @@ public class StandardDefBuilder {
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(boolType)
-                .parameters(new Parameter("元素", "element", elementType))
+                .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
         FlowBuilder.newBuilder(collectionType, "添加", "add")
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(boolType)
-                .parameters(new Parameter("元素", "element", elementType))
+                .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
         FlowBuilder.newBuilder(collectionType, "删除", "remove")
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(boolType)
-                .parameters(new Parameter("元素", "element", elementType))
+                .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
         FlowBuilder.newBuilder(collectionType, "清空", "clear")
@@ -481,7 +481,7 @@ public class StandardDefBuilder {
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(pSetType)
-                .parameters(List.of(new Parameter("元素作为从对象", "elementAsChild", boolType)))
+                .parameters(List.of(new Parameter(null, "元素作为从对象", "elementAsChild", boolType)))
                 .build();
         createOverridingFlows(setType, collectionType);
         setType.stage = ResolutionStage.GENERATED;
@@ -517,7 +517,7 @@ public class StandardDefBuilder {
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(pListType)
-                .parameters(List.of(new Parameter("元素作为从对象", "elementAsChild", boolType)))
+                .parameters(List.of(new Parameter(null, "元素作为从对象", "elementAsChild", boolType)))
                 .build();
         createOverridingFlows(listType, collectionType);
         listType.stage = ResolutionStage.GENERATED;
@@ -544,7 +544,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(pIteratorImplType)
-                .parameters(new Parameter("集合", "collection", pCollectionType))
+                .parameters(new Parameter(null, "集合", "collection", pCollectionType))
                 .build();
         createOverridingFlows(iteratorImplType, pIteratorType);
         iteratorImplType.stage = ResolutionStage.GENERATED;
@@ -558,14 +558,8 @@ public class StandardDefBuilder {
                     .nullType(getNullType())
                     .isNative(true)
                     .overriden(flow)
-                    .outputType(flow.getOutputType())
-                    .parameters(NncUtils.map(
-                            flow.getInputType().getFields(),
-                            field -> new Parameter(
-                                    field.getName(), field.getCode(),
-                                    field.getType()
-                            )
-                    ))
+                    .outputType(flow.getReturnType())
+//                    .parameters(NncUtils.map(flow.getParameters(), Parameter::copy))
                     .build();
         }
     }
@@ -608,8 +602,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .outputType(pMapType)
                 .parameters(
-                        new Parameter("键作为子对象", "keyAsChild", boolType),
-                        new Parameter("值作为子对象", "valueAsChild", boolType)
+                        new Parameter(null, "键作为子对象", "keyAsChild", boolType),
+                        new Parameter(null, "值作为子对象", "valueAsChild", boolType)
                 )
                 .build();
 
@@ -617,22 +611,22 @@ public class StandardDefBuilder {
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(primTypeFactory.getNullableType(valueType))
-                .parameters(new Parameter("键", "key", keyType),
-                        new Parameter("值", "value", valueType))
+                .parameters(new Parameter(null, "键", "key", keyType),
+                        new Parameter(null, "值", "value", valueType))
                 .build();
 
         FlowBuilder.newBuilder(mapType, "查询", "get")
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(primTypeFactory.getNullableType(valueType))
-                .parameters(new Parameter("键", "key", keyType))
+                .parameters(new Parameter(null, "键", "key", keyType))
                 .build();
 
         FlowBuilder.newBuilder(mapType, "删除", "remove")
                 .nullType(getNullType())
                 .isNative(true)
                 .outputType(primTypeFactory.getNullableType(valueType))
-                .parameters(new Parameter("键", "key", keyType))
+                .parameters(new Parameter(null, "键", "key", keyType))
                 .build();
 
         FlowBuilder.newBuilder(mapType, "计数", "size")
@@ -662,7 +656,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(throwableType)
-                .parameters(new Parameter("错误详情", "message", stringType))
+                .parameters(new Parameter(null, "错误详情", "message", stringType))
                 .build();
 
         FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
@@ -670,7 +664,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(throwableType)
-                .parameters(new Parameter("原因", "cause", throwableType))
+                .parameters(new Parameter(null, "原因", "cause", throwableType))
                 .build();
 
         FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
@@ -679,8 +673,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .outputType(throwableType)
                 .parameters(
-                        new Parameter("错误详情", "message", stringType),
-                        new Parameter("原因", "cause", throwableType)
+                        new Parameter(null, "错误详情", "message", stringType),
+                        new Parameter(null, "原因", "cause", throwableType)
                 )
                 .build();
 
@@ -704,7 +698,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(exceptionType)
-                .parameters(new Parameter("错误详情", "message", stringType))
+                .parameters(new Parameter(null, "错误详情", "message", stringType))
                 .build();
 
         FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
@@ -712,7 +706,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(exceptionType)
-                .parameters(new Parameter("原因", "cause", throwableType))
+                .parameters(new Parameter(null, "原因", "cause", throwableType))
                 .build();
 
         FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
@@ -721,8 +715,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .outputType(exceptionType)
                 .parameters(
-                        new Parameter("错误详情", "message", stringType),
-                        new Parameter("原因", "cause", throwableType)
+                        new Parameter(null, "错误详情", "message", stringType),
+                        new Parameter(null, "原因", "cause", throwableType)
                 )
                 .build();
     }
@@ -740,7 +734,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(runtimeExceptionType)
-                .parameters(new Parameter("错误详情", "message", stringType))
+                .parameters(new Parameter(null, "错误详情", "message", stringType))
                 .build();
 
         FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
@@ -748,7 +742,7 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .outputType(runtimeExceptionType)
-                .parameters(new Parameter("原因", "cause", throwableType))
+                .parameters(new Parameter(null, "原因", "cause", throwableType))
                 .build();
 
         FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
@@ -757,8 +751,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .outputType(runtimeExceptionType)
                 .parameters(
-                        new Parameter("错误详情", "message", stringType),
-                        new Parameter("原因", "cause", throwableType)
+                        new Parameter(null, "错误详情", "message", stringType),
+                        new Parameter(null, "原因", "cause", throwableType)
                 )
                 .build();
     }

@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.autograph.FlowBuilder;
-import tech.metavm.autograph.Parameter;
+import tech.metavm.flow.FlowBuilder;
+import tech.metavm.flow.Parameter;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.ArrayType;
@@ -10,10 +10,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static tech.metavm.object.meta.TypeUtil.getParameterizedCode;
 import static tech.metavm.object.meta.TypeUtil.getParameterizedName;
@@ -152,9 +149,9 @@ public class ElementTransformer {
                 .isConstructor(flow.isConstructor())
                 .parameters(
                         concreteOverriden == null ?
-                                NncUtils.map(flow.getParameters(), this::transformParameter) : List.of()
+                                NncUtils.map(flow.getParameters(), this::transformParameter) : null
                 )
-                .outputType(transformType(flow.getOutputType()))
+                .outputType(transformType(flow.getReturnType()))
                 .build();
 
         enterFlow(transformed);
@@ -167,9 +164,10 @@ public class ElementTransformer {
 
     public Parameter transformParameter(Parameter parameter) {
         return new Parameter(
-                parameter.name(),
-                parameter.code(),
-                transformType(parameter.type())
+                null,
+                parameter.getName(),
+                parameter.getCode(),
+                transformType(parameter.getType())
         );
     }
 
@@ -276,10 +274,16 @@ public class ElementTransformer {
     }
 
     private InputNode transformInputNode(InputNode inputNode) {
+        var inputType = ClassBuilder.newBuilder("输入类型", "InputType")
+                .temporary().build();
+        for (Parameter parameter : flow().getParameters()) {
+            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
+                    .build();
+        }
         return new InputNode(
                 null,
                 inputNode.getName(),
-                flow().getInputType(),
+                inputType,
                 getTransformedNode(inputNode.getPredecessor()),
                 scope()
         );
@@ -355,19 +359,19 @@ public class ElementTransformer {
                 subFlow.getDeclaringType().getFlows().indexOf(subFlow)
         );
         var transformedSubFlow = transformFlowReference(subFlow);
+        List<Argument> arguments = new ArrayList<>();
+        NncUtils.biForEach(
+                subFlowNode.getArguments(),
+                subFlow.getParameters(),
+                (arg, param) -> arguments.add(new Argument(null, param, transformValue(arg.getValue())))
+        );
         return new SubFlowNode(
                 null,
                 subFlowNode.getName(),
                 getTransformedNode(subFlowNode.getPredecessor()),
                 scope(),
                 concreteSelf,
-                NncUtils.map(
-                        subFlowNode.getArguments(),
-                        arg -> new FieldParam(
-                                transformedSubFlow.getInputType().getFieldByName(arg.getField().getName()),
-                                transformValue(arg.getValue())
-                        )
-                ),
+                arguments,
                 transformedSubFlow
         );
     }
@@ -378,17 +382,17 @@ public class ElementTransformer {
                 node.getSubFlow().getDeclaringType().getFlows().indexOf(node.getSubFlow())
         );
         var transformedSubFlow = transformFlowReference(subFlow);
+        List<Argument> arguments = new ArrayList<>();
+        NncUtils.biForEach(
+                node.getArguments(),
+                flow().getParameters(),
+                (arg, param) -> arguments.add(new Argument(null, param, transformValue(arg.getValue())))
+        );
         return new NewNode(
                 null,
                 node.getName(),
                 transformedSubFlow,
-                NncUtils.map(
-                        node.getArguments(),
-                        arg -> new FieldParam(
-                                transformedSubFlow.getInputType().getFieldByName(arg.getField().getName()),
-                                transformValue(arg.getValue())
-                        )
-                ),
+                arguments,
                 getTransformedNode(node.getPredecessor()),
                 scope()
         );

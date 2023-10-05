@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
-import tech.metavm.autograph.FlowBuilder;
+import tech.metavm.flow.FlowBuilder;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
@@ -211,7 +211,7 @@ public class TypeManager {
         if (classInit != null) {
             flowExecutionService.executeInternal(
                     classInit, null,
-                    new ClassInstance(Map.of(), classInit.getInputType()),
+                    List.of(),
                     context.getInstanceContext()
             );
         }

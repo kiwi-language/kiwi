@@ -247,10 +247,10 @@ GET http://localhost:8080/type/12004
 GET http://localhost:8080/instance/1175503532
 
 ###
-GET http://localhost:8080/instance/reference-chain/1175503531?rootMode=1
+GET http://localhost:8080/instance/reference-chain/1179303642?rootMode=1
 
 ###
-GET http://localhost:8080/instance/reference-chain/1170703730?rootMode=2
+GET http://localhost:8080/instance/reference-chain/1179303642?rootMode=2
 
 ###
 GET http://localhost:8080/type/primitives

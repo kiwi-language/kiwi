@@ -10,7 +10,7 @@ public class NewParamDTO extends CallParamDTO{
 
     public NewParamDTO(@JsonProperty("flowRef") RefDTO flowRef,
                        @JsonProperty("typeRef") @Nullable RefDTO typeRef,
-                       @JsonProperty("fields") List<FieldParamDTO> fields) {
-        super(flowRef, typeRef, fields);
+                       @JsonProperty("arguments") List<ArgumentDTO> arguments) {
+        super(flowRef, typeRef, arguments);
     }
 }

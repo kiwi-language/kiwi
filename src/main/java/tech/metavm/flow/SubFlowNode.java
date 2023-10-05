@@ -18,19 +18,21 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
 
     public static SubFlowNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         SubFlowParam param = nodeDTO.getParam();
-        FlowParsingContext flowParsingContext = FlowParsingContext.create(scope, prev, context);
-        Value self = ValueFactory.create(param.getSelf(), flowParsingContext);
-        List<FieldParam> arguments = NncUtils.map(
-                param.getFields(), p -> new FieldParam(context.getField(p.fieldRef()), p.value(), flowParsingContext)
+        FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
+        Value self = ValueFactory.create(param.getSelf(), parsingContext);
+        var subFlow = context.getFlow(param.getFlowRef());
+        List<Argument> arguments = NncUtils.biMap(
+                subFlow.getParameters(),
+                param.getArguments(),
+                (p, a) -> new Argument(a.tmpId(), p, ValueFactory.create(a.value(), parsingContext))
         );
-        return new SubFlowNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, self, arguments,
-                getFlow(param, context));
+        return new SubFlowNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, self, arguments, subFlow);
     }
 
     @ChildEntity("目标对象")
     private Value selfId;
 
-    public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value selfId, List<FieldParam> arguments,
+    public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value selfId, List<Argument> arguments,
                        Flow subFlow) {
         super(tmpId, name,  prev, scope, arguments, subFlow);
         this.selfId = selfId;
@@ -50,7 +52,7 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
                     selfId.toDTO(persisting),
                     context.getRef(subFlow),
                     context.getRef(subFlow.getDeclaringType()),
-                    NncUtils.map(arguments, fp -> fp.toDTO(persisting))
+                    NncUtils.map(arguments, Argument::toDTO)
             );
         }
     }
@@ -59,21 +61,8 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
         return selfId;
     }
 
-    public Flow getSubFlow() {
-        return subFlow;
-    }
-
     public void setSelfId(Value selfId) {
         this.selfId = selfId;
-    }
-
-    public void setSubFlow(Flow flow) {
-        this.subFlow = flow;
-    }
-
-    public void setArguments(List<FieldParam> arguments) {
-        this.arguments.clear();
-        this.arguments.addAll(arguments);
     }
 
     protected Instance getSelf(FlowFrame frame) {

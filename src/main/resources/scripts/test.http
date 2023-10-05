@@ -41,7 +41,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "tenantId": 1169903399,
+  "tenantId": 1176003521,
   "loginName": "admin",
   "password": "123456"
 }

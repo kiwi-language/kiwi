@@ -184,7 +184,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
     public Flow getFlow(String code, List<Type> parameterTypes) {
         var flow = NncUtils.find(flows,
-                f -> Objects.equals(f.getCode(), code) && f.getInputTypes().equals(parameterTypes));
+                f -> Objects.equals(f.getCode(), code) && f.getParameterTypes().equals(parameterTypes));
         if (flow != null) {
             return flow;
         }

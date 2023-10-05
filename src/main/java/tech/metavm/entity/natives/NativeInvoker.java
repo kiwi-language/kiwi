@@ -1,30 +1,27 @@
 package tech.metavm.entity.natives;
 
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.Parameter;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NativeInvoker {
 
-    public static Instance invoke(Flow flow, Instance instance, ClassInstance argument) {
+    public static Instance invoke(Flow flow, Instance instance, List<Instance> arguments) {
         Object nativeObject = getNativeObject(instance);
         var instanceClass = nativeObject.getClass();
-        var method = ReflectUtils.getMethod(
-                instanceClass, flow.getCode(),
-                NncUtils.map(
-                        flow.getInputType().getFields(),
-                        field -> Instance.class
-                )
-        );
-        var arguments = NncUtils.map(flow.getInputType().getFields(), argument::get);
-        Object[] args = new Object[arguments.size()];
+        List<Class<?>> paramTypes = NncUtils.multipleOf(Instance.class, flow.getParameters().size());
+        Instance[] args = new Instance[arguments.size()];
         arguments.toArray(args);
+        var method = ReflectUtils.getMethod(instanceClass, flow.getCode(), paramTypes);
         var result =  (Instance) ReflectUtils.invoke(nativeObject, method, args);
-        if(flow.getOutputType().isVoid()) {
+        if(flow.getReturnType().isVoid()) {
             return null;
         }
         else {

@@ -1119,9 +1119,9 @@ public class ReflectUtils {
         }
     }
 
-    public static Object invoke(Object object, Method method, Object... argiments) {
+    public static Object invoke(Object object, Method method, Object... arguments) {
         try {
-            return method.invoke(object, argiments);
+            return method.invoke(object, arguments);
         } catch (Exception e) {
             throw new RuntimeException("Fail to invoke method", e);
         }

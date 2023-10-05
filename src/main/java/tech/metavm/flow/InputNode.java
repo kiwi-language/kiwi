@@ -1,30 +1,33 @@
 package tech.metavm.flow;
 
-import tech.metavm.autograph.Parameter;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @EntityType("输入节点")
 public class InputNode extends NodeRT<InputParamDTO> {
 
-    public static InputNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext entityContext) {
-        return new InputNode(nodeDTO, prev, scope);
+    public static InputNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+        return new InputNode(nodeDTO, context.getClassType(nodeDTO.outputTypeRef()), prev, scope);
     }
 
-    public InputNode(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope) {
+    public InputNode(NodeDTO nodeDTO, ClassType type, NodeRT<?> prev, ScopeRT scope) {
         super(
                 nodeDTO.tmpId(),
                 nodeDTO.name(),
-                scope.getFlow().getInputType(),
+                type,
                 prev,
                 scope
         );
@@ -50,13 +53,6 @@ public class InputNode extends NodeRT<InputParamDTO> {
         );
     }
 
-    public List<Parameter> getParameters() {
-        return NncUtils.map(
-                getType().getFields(),
-                field -> new Parameter(field.getName(), field.getCode(), field.getType())
-        );
-    }
-
     @Override
     public ClassType getType() {
         return (ClassType) super.getType();
@@ -72,7 +68,15 @@ public class InputNode extends NodeRT<InputParamDTO> {
     }
 
     @Override
+    protected List<Object> nodeBeforeRemove() {
+        return List.of(getType());
+    }
+
+    @Override
     public void execute(FlowFrame frame) {
-        frame.setResult(frame.getArgument());
+        Map<Field, Instance> fieldValues = new HashMap<>();
+        NncUtils.biForEach(getType().getFields(), frame.getArguments(), fieldValues::put);
+        var instance = new ClassInstance(fieldValues, getType());
+        frame.setResult(instance);
     }
 }

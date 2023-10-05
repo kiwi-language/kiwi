@@ -15,16 +15,15 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
+import tech.metavm.util.LinkedList;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class FlowFrame implements EvaluationContext {
 
     private final Instance self;
-    private final Instance argument;
+    private final List<Instance> arguments;
     private final ClassType owner;
     private final Flow flow;
     private final Map<NodeRT<?>, Instance> results = new HashMap<>();
@@ -49,12 +48,12 @@ public class FlowFrame implements EvaluationContext {
         EXCEPTION
     }
 
-    public FlowFrame(Flow flow, Instance self, Instance argument, FlowStack stack) {
+    public FlowFrame(Flow flow, Instance self, List<Instance> arguments, FlowStack stack) {
         this.flow = flow;
         this.stack = stack;
         this.context = stack.getContext();
         this.self = self;
-        this.argument = argument;
+        this.arguments = arguments;
         owner = flow.getDeclaringType();
         pc = flow.getRootNode();
     }
@@ -231,8 +230,8 @@ public class FlowFrame implements EvaluationContext {
         return self;
     }
 
-    public Instance getArgument() {
-        return argument;
+    public List<Instance> getArguments() {
+        return Collections.unmodifiableList(arguments);
     }
 
     public void finish() {

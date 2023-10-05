@@ -3,7 +3,6 @@ package tech.metavm.flow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.autograph.FlowBuilder;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
@@ -106,7 +105,7 @@ public class FlowManager {
 
     public Flow save(FlowDTO flowDTO, ClassType declaringClass, boolean declarationOnly, IEntityContext context) {
         Flow overriden = flowDTO.overridenRef() != null ? context.getFlow(flowDTO.overridenRef()) : null;
-        Type outputType = context.getType(flowDTO.outputTypeRef());
+        Type outputType = context.getType(flowDTO.returnTypeRef());
         Flow flow = context.getFlow(flowDTO.getRef());
         if (flow == null) {
             flow = FlowBuilder
@@ -122,11 +121,14 @@ public class FlowManager {
         flow.setTypeArguments(NncUtils.map(flowDTO.typeArgumentRefs(), context::getType));
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameters(),
                 typeParam -> context.getTypeVariable(typeParam.getRef())));
-        flow.setOutputType(outputType);
-        if (overriden == null && flowDTO.inputType() != null) {
-            for (FieldDTO fieldDTO : flowDTO.inputType().getClassParam().fields()) {
-                TypeUtil.createFieldAndBind(flow.getInputType(), fieldDTO, context);
-            }
+        flow.setReturnType(outputType);
+        if (overriden == null && flowDTO.parameters() != null) {
+            flow.setParameters(NncUtils.map(
+                    flowDTO.parameters(),
+                    paramDTO -> new Parameter(
+                            paramDTO.tmpId(), paramDTO.name(), paramDTO.code(), context.getType(paramDTO.typeRef())
+                    )
+            ));
         }
         if (flowDTO.templateInstances() != null) {
             for (FlowDTO templateInstance : flowDTO.templateInstances()) {
@@ -205,7 +207,12 @@ public class FlowManager {
                 NodeKind.INPUT.code(),
                 null
         );
-        return new InputNode(inputNodeDTO, prev, flow.getRootScope());
+        var type = ClassBuilder.newBuilder("输入类型", "InputType").temporary().build();
+        for (Parameter parameter : flow.getParameters()) {
+            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
+                    .build();
+        }
+        return new InputNode(inputNodeDTO, type, prev, flow.getRootScope());
     }
 
     private void createReturnNode(Flow flow, NodeRT<?> prev) {
@@ -231,16 +238,16 @@ public class FlowManager {
         if (flow == null) {
             throw BusinessException.flowNotFound(flowDTO.id());
         }
-        if(flowDTO.outputTypeRef() != null) {
-            var outputType = context.getType(flowDTO.outputTypeRef());
-            flow.setOutputType(outputType);
+        if (flowDTO.returnTypeRef() != null) {
+            var outputType = context.getType(flowDTO.returnTypeRef());
+            flow.setReturnType(outputType);
             var returnNodes = NncUtils.filterByType(flow.getNodes(), ReturnNode.class);
             for (ReturnNode returnNode : returnNodes) {
                 returnNode.setOutputType(outputType);
             }
         }
         flow.update(flowDTO);
-        flow.getInputType().setName(getInputTypeName(flow.getName()));
+//        flow.getInputType().setName(getInputTypeName(flow.getName()));
         return flow;
     }
 
@@ -339,7 +346,7 @@ public class FlowManager {
 
     private NodeDTO preprocess(NodeDTO nodeDTO, NodeRT<?> node, ScopeRT scope, IEntityContext context) {
         if (nodeDTO.kind() == NodeKind.INPUT.code()) {
-            return preprocessInput(nodeDTO, scope.getFlow());
+            return preprocessInputNode(nodeDTO, (InputNode) node);
         }
         if (nodeDTO.kind() == NodeKind.FOREACH.code()) {
             return preprocessForeachNode(nodeDTO, node, scope, context);
@@ -348,13 +355,13 @@ public class FlowManager {
             return preprocessBranchNode(nodeDTO, node);
         }
         if (nodeDTO.kind() == NodeKind.WHILE.code()) {
-            return preprocessWhile(nodeDTO, node);
+            return preprocessWhileNode(nodeDTO, node);
         }
         if (nodeDTO.kind() == NodeKind.MERGE.code()) {
-            return preprocessMerge(nodeDTO, node);
+            return preprocessMergeNode(nodeDTO, node);
         }
         if (nodeDTO.kind() == NodeKind.TRY_END.code()) {
-            return preprocessTryEnd(nodeDTO, (TryEndNode) node);
+            return preprocessTryEndNode(nodeDTO, (TryEndNode) node);
         }
         return nodeDTO;
     }
@@ -394,14 +401,14 @@ public class FlowManager {
         }
     }
 
-    private NodeDTO preprocessInput(NodeDTO nodeDTO, Flow flow) {
+    private NodeDTO preprocessInputNode(NodeDTO nodeDTO, @Nullable InputNode node) {
         InputParamDTO inputParam = nodeDTO.getParam();
         var inputFields = initializeFieldRefs(inputParam.fields());
-        List<FieldDTO> fields = NncUtils.map(inputFields, inputField -> convertToFieldDTO(inputField, flow));
+        List<FieldDTO> fields = NncUtils.map(inputFields, inputField -> convertToFieldDTO(inputField, node));
         TypeDTO typeDTO = TypeDTO.createClass(
-                NncUtils.get(flow.getInputType(), ClassType::getId),
-                NncUtils.random(),
-                flow.getInputType().getName(),
+                NncUtils.get(node, n -> n.getType().getId()),
+                NncUtils.get(nodeDTO.outputTypeRef(), RefDTO::tmpId),
+                node != null ? node.getType().getName() : "输入类型" + NncUtils.random(),
                 null,
                 true,
                 true,
@@ -410,11 +417,11 @@ public class FlowManager {
                 null
         );
         return nodeDTO.copyWithParamAndType(
-                new InputParamDTO(flow.getInputType().getId(), inputFields),
+                new InputParamDTO(NncUtils.get(node, n -> n.getType().getId()), inputFields),
                 typeDTO);
     }
 
-    private NodeDTO preprocessMerge(NodeDTO nodeDTO, NodeRT<?> node) {
+    private NodeDTO preprocessMergeNode(NodeDTO nodeDTO, NodeRT<?> node) {
         MergeParamDTO param = nodeDTO.getParam();
         var mergeFields = initializeFieldRefs(param.fields());
         List<FieldDTO> fields = NncUtils.map(mergeFields, MergeFieldDTO::toFieldDTO);
@@ -423,16 +430,15 @@ public class FlowManager {
         return nodeDTO.copyWithParamAndType(new MergeParamDTO(mergeFields), outputType);
     }
 
-    private NodeDTO preprocessTryEnd(NodeDTO nodeDTO, TryEndNode node) {
+    private NodeDTO preprocessTryEndNode(NodeDTO nodeDTO, TryEndNode node) {
         TryEndParamDTO param = nodeDTO.getParam();
         var tryEndFields = initializeFieldRefs(param.fields());
         List<FieldDTO> fieldDTOs = NncUtils.map(tryEndFields, TryEndFieldDTO::toFieldDTO);
         FieldDTO excetpionFieldDTO;
-        if(node != null) {
+        if (node != null) {
             var outputType = node.getType();
             excetpionFieldDTO = outputType.getFieldByCodeRequired("exception").toDTO();
-        }
-        else {
+        } else {
             excetpionFieldDTO = new FieldDTO(
                     null, null, "异常", "exception", Access.GLOBAL.code(),
                     null, false, false, null,
@@ -445,7 +451,7 @@ public class FlowManager {
         return nodeDTO.copyWithParamAndType(new TryEndParamDTO(tryEndFields), outputTypeDTO);
     }
 
-    private NodeDTO preprocessWhile(NodeDTO nodeDTO, NodeRT<?> node) {
+    private NodeDTO preprocessWhileNode(NodeDTO nodeDTO, NodeRT<?> node) {
         WhileParamDTO param = nodeDTO.getParam();
         var loopFields = initializeFieldRefs(param.getFields());
         List<FieldDTO> fields = new ArrayList<>(NncUtils.map(loopFields, LoopFieldDTO::toFieldDTO));
@@ -509,15 +515,6 @@ public class FlowManager {
                 )
         );
     }
-
-//    private NodeDTO preprocessOutput(NodeDTO nodeDTO, @Nullable NodeRT<?> node, Flow flow) {
-//        ReturnParamDTO param = nodeDTO.getParam();
-//        var outputFields = initializeFieldRefs(param.fields());
-//        List<FieldDTO> fields = NncUtils.map(outputFields, f -> convertToFieldDTO(f, flow));
-//        var outputType = createNodeTypeDTO("ReturnOutput",
-//                NncUtils.get(node, NodeRT::getType), fields);
-//        return nodeDTO.copyWithParamAndType(new ReturnParamDTO(outputFields), outputType);
-//    }
 
     private NodeDTO preprocessForeachNode(NodeDTO nodeDTO, @Nullable NodeRT<?> node, ScopeRT scope, IEntityContext context) {
         ForEachParamDTO param = nodeDTO.getParam();
@@ -602,6 +599,9 @@ public class FlowManager {
     }
 
     private void afterNodeChange(NodeDTO nodeDTO, NodeRT<?> node, IEntityContext context) {
+        if(node instanceof InputNode inputNode) {
+            updateFlowParameters(inputNode);
+        }
         if (node instanceof BranchNode branchNode) {
             saveBranchNodeContent(nodeDTO, branchNode, context);
         }
@@ -611,6 +611,23 @@ public class FlowManager {
         if (node instanceof LoopNode<?> loopNode) {
             updateLoopFields(nodeDTO, loopNode, context);
         }
+    }
+
+    private void updateFlowParameters(InputNode inputNode) {
+        var flow = inputNode.getFlow();
+        List<Parameter> parameters = new ArrayList<>();
+        for (var field : inputNode.getType().getFields()) {
+            var parameter = flow.getParameterByName(field.getName());
+            if(parameter == null) {
+                parameters.add(new Parameter(null, field.getName(), field.getCode(), field.getType()));
+            }
+            else {
+                parameters.add(parameter);
+                parameter.setName(field.getName());
+                parameter.setType(field.getType());
+            }
+        }
+        flow.setParameters(parameters);
     }
 
     private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode<?> tryNode, IEntityContext context) {
@@ -652,10 +669,10 @@ public class FlowManager {
         loopNode.updateFields(param.getFields(), context);
     }
 
-    private FieldDTO convertToFieldDTO(InputFieldDTO inputFieldDTO, Flow flow) {
+    private FieldDTO convertToFieldDTO(InputFieldDTO inputFieldDTO, @Nullable InputNode node) {
         return convertToFieldDTO(
                 inputFieldDTO.fieldRef(),
-                flow.getInputType().getId(),
+                node != null ? node.getType().getId() : null,
                 inputFieldDTO.name(),
                 inputFieldDTO.defaultValue(),
                 inputFieldDTO.typeRef()
@@ -665,7 +682,7 @@ public class FlowManager {
     private FieldDTO convertToFieldDTO(OutputFieldDTO inputFieldDTO, Flow flow) {
         return convertToFieldDTO(
                 inputFieldDTO.fieldRef(),
-                flow.getOutputType().getId(),
+                flow.getReturnType().getId(),
                 inputFieldDTO.name(),
                 null,
                 inputFieldDTO.typeRef()

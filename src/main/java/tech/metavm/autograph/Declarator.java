@@ -3,15 +3,18 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.FlowBuilder;
+import tech.metavm.flow.Parameter;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
-import static tech.metavm.entity.ModelDefRegistry.getType;
 
 public class Declarator extends JavaRecursiveElementVisitor {
 
@@ -37,10 +40,8 @@ public class Declarator extends JavaRecursiveElementVisitor {
         if(!metaClass.isInterface()) {
             FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>")
                     .isConstructor(true)
-                    .inputType(createEmptyType("init_input"))
                     .build();
-            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>")
-                    .inputType(createEmptyType("cinit_input")).build();
+            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>").build();
         }
         classStack.push(metaClass);
         super.visitClass(psiClass);
@@ -66,22 +67,20 @@ public class Declarator extends JavaRecursiveElementVisitor {
         } else {
             overridenFlow = null;
         }
-        ClassType inputType;
+        List<Parameter> parameters;
         if (overridenFlow != null) {
-            inputType = null;
+            parameters = null;
         } else {
-            inputType = ClassBuilder
-                    .newBuilder(getFlowName(method) + "输入", method.getName() + "Input")
-                    .temporary().build();
+            parameters = new ArrayList<>();
             if (method.isConstructor() && currentClass().isEnum()) {
-                addEnumConstructorParams(inputType);
+                parameters.addAll(getEnumConstructorParams());
             }
-            processParameters(method.getParameterList(), inputType);
+            parameters.addAll(processParameters(method.getParameterList()));
         }
         var flow = FlowBuilder.newBuilder(currentClass(), getFlowName(method), method.getName())
                 .isConstructor(method.isConstructor())
                 .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
-                .inputType(inputType)
+                .parameters(parameters)
                 .outputType(getOutputType(method))
                 .overriden(overridenFlow)
                 .build();
@@ -91,22 +90,18 @@ public class Declarator extends JavaRecursiveElementVisitor {
         method.putUserData(Keys.FLOW, flow);
     }
 
-    private void addEnumConstructorParams(ClassType inputType) {
-        FieldBuilder.newBuilder("名称", "name", inputType, getType(String.class)).build();
-        FieldBuilder.newBuilder("序号", "ordinal", inputType, getType(long.class)).build();
+    private List<Parameter> getEnumConstructorParams() {
+        return List.of(
+                new Parameter(null, "名称", "name", StandardTypes.getStringType()),
+                new Parameter(null, "序号", "ordinal", StandardTypes.getLongType())
+        );
     }
 
-    private void processParameters(PsiParameterList parameterList, ClassType inputType) {
-        for (PsiParameter parameter : parameterList.getParameters()) {
-            processParameter(parameter, inputType);
-        }
-    }
-
-    private void processParameter(PsiParameter parameter, ClassType inputType) {
-        FieldBuilder
-                .newBuilder(getFlowParamName(parameter), parameter.getName(),
-                        inputType, resolveType(parameter.getType()))
-                .build();
+    private List<Parameter> processParameters(PsiParameterList parameterList) {
+        return NncUtils.map(
+                parameterList.getParameters(),
+                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveType(param.getType()))
+        );
     }
 
     @Override

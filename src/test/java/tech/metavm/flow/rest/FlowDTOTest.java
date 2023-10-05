@@ -24,7 +24,6 @@ public class FlowDTOTest extends TestCase {
                 null,
                 null,
                 null,
-                List.of(),
                 null,
                 List.of(),
                 null,

@@ -11,6 +11,7 @@ import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -28,24 +29,38 @@ public class FlowExecutionService {
         IEntityContext entityContext = context.getEntityContext();
         Flow flow = entityContext.getEntity(Flow.class, request.flowId());
         ClassInstance self = (ClassInstance) context.get(request.instanceId());
-        var argument =
-                InstanceFactory.create(
-                createArgument(flow.getInputType().getIdRequired(), request.fields()),
-                context);
-        Instance result = executeInternal(flow, self, argument, context);
+
+//        DON'T REMOVE!!!!!!
+//        var argument =
+//                InstanceFactory.create(
+//                createArgument(flow.getInputType().getIdRequired(), request.fields()),
+//                context);
+//        DON'T REMOVE!!!!!!
+
+
+        List<Instance> arguments = new ArrayList<>();
+        NncUtils.biForEach(
+                request.arguments(),
+                flow.getParameterTypes(),
+                (arg, paramType) -> arguments.add(
+                        InstanceFactory.resolveValue(arg, paramType, entityContext)
+                )
+        );
+
+        Instance result = executeInternal(flow, self, arguments, context);
         context.finish();
         return NncUtils.get(result, Instance::toDTO);
     }
 
-    public Instance executeInternal(Flow flow, ClassInstance self, Instance argument, IInstanceContext context) {
+    public Instance executeInternal(Flow flow, ClassInstance self, List<Instance> arguments, IInstanceContext context) {
         if(flow.isAbstract()) {
             flow = self.getType().getOverrideFlowRequired(flow);
         }
         if(flow.isNative()) {
-            return NativeInvoker.invoke(flow, self, (ClassInstance) argument);
+            return NativeInvoker.invoke(flow, self, arguments);
         }
         else {
-            FlowStack stack = new FlowStack(flow, self, argument, context);
+            FlowStack stack = new FlowStack(flow, self, arguments, context);
             return stack.execute();
         }
     }

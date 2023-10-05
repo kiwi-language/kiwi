@@ -29,14 +29,14 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
         super(
                 nodeDTO.tmpId(),
                 nodeDTO.name(),
-                scope.getFlow().getOutputType(),
+                scope.getFlow().getReturnType(),
                 prev,
                 scope
         );
     }
 
     public ReturnNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name,  scope.getFlow().getOutputType(), prev, scope);
+        super(tmpId, name,  scope.getFlow().getReturnType(), prev, scope);
     }
 
     public void setValue(@Nullable Value value) {

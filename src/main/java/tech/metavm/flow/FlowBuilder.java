@@ -1,7 +1,5 @@
-package tech.metavm.autograph;
+package tech.metavm.flow;
 
-import tech.metavm.dto.RefDTO;
-import tech.metavm.flow.Flow;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.NullInstance;
 import tech.metavm.object.meta.*;
@@ -32,13 +30,13 @@ public class FlowBuilder {
     private Flow overriden;
     private FlowDTO flowDTO;
     private Type outputType;
-    private List<Parameter> parameters = List.of();
+    private List<Parameter> parameters;
     private PrimitiveType nullType;
     private List<TypeVariable> typeParameters = List.of();
     private Flow template;
     private List<Type> typeArguments = List.of();
 
-    private ClassType inputType;
+//    private ClassType inputType;
 
     private FlowBuilder(ClassType declaringType, String name, @Nullable String code) {
         this.declaringType = declaringType;
@@ -110,29 +108,32 @@ public class FlowBuilder {
         return this;
     }
 
-    public FlowBuilder inputType(ClassType inputType) {
-        this.inputType = inputType;
-        return this;
-    }
+//    public FlowBuilder inputType(ClassType inputType) {
+//        this.inputType = inputType;
+//        return this;
+//    }
 
     public Flow build() {
-        if (this.inputType == null) {
-            if (overriden == null) {
-                inputType = ClassBuilder
-                        .newBuilder("原生流程输入", "NativeFlowInput")
-                        .tmpId(NncUtils.get(flowDTO, f -> NncUtils.get(f.inputTypeRef(), RefDTO::tmpId)))
-                        .temporary().build();
-                Map<String, Long> inputFieldTmpIds = getFieldTmpIds(NncUtils.get(flowDTO, FlowDTO::inputType));
-                for (Parameter param : parameters) {
-                    createTemporaryField(
-                            inputFieldTmpIds.get(param.code()),
-                            param.name(),
-                            param.code(),
-                            inputType,
-                            param.type()
-                    );
-                }
-            }
+//        if (this.parameters == null) {
+//            if (overriden == null) {
+//                inputType = ClassBuilder
+//                        .newBuilder("原生流程输入", "NativeFlowInput")
+//                        .tmpId(NncUtils.get(flowDTO, f -> NncUtils.get(f.inputTypeRef(), RefDTO::tmpId)))
+//                        .temporary().build();
+//                Map<String, Long> inputFieldTmpIds = getFieldTmpIds(NncUtils.get(flowDTO, FlowDTO::inputType));
+//                for (Parameter param : parameters) {
+//                    createTemporaryField(
+//                            inputFieldTmpIds.get(param.getCode()),
+//                            param.getName(),
+//                            param.getCode(),
+//                            inputType,
+//                            param.getType()
+//                    );
+//                }
+//            }
+//        }
+        if(overriden == null && parameters == null) {
+            parameters = List.of();
         }
         return new Flow(
                 tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId),
@@ -142,7 +143,7 @@ public class FlowBuilder {
                 isConstructor,
                 isAbstract,
                 isNative,
-                inputType,
+                parameters,
                 outputType != null ? outputType : StandardTypes.getVoidType(),
                 overriden,
                 typeParameters,

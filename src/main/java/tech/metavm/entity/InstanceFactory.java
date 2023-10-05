@@ -8,6 +8,7 @@ import tech.metavm.util.*;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -95,7 +96,8 @@ public class InstanceFactory {
     }
 
     public static Instance resolveValue(FieldValueDTO rawValue, Type type, IEntityContext context) {
-        return resolveValue(rawValue, type, context::getType, context.getInstanceContext()::get);
+        return resolveValue(rawValue, type, context::getType,
+                Objects.requireNonNull(context.getInstanceContext())::get);
     }
 
     public static Instance resolveValue(FieldValueDTO rawValue, Type type,

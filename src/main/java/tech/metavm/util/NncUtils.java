@@ -562,6 +562,14 @@ public class NncUtils {
         }
     }
 
+    public static <T> List<T> multipleOf(T value, int size) {
+        List<T> list = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            list.add(value);
+        }
+        return list;
+    }
+
     public static <T, R> void biForEachWithIndex(Collection<T> list1, Collection<R> list2, TriConsumer<T, R, Integer> action) {
         if (list1.size() != list2.size()) {
             throw new RuntimeException("Both lists must have the same size");

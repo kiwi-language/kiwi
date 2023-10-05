@@ -251,10 +251,10 @@ public class Generator extends VisitorBase {
         builder.enterScope(flow.getRootScope(), null);
         var selfNode = builder().createSelf();
         builder.setVariable("this", new NodeExpression(selfNode));
-        processParameters(method.getParameterList());
+        processParameters(method.getParameterList(), flow);
         if (method.isConstructor()) {
             var superType = currentClass().getSuperType();
-            if (superType != null && !isSuperCallPresent(method)) {
+            if (superType != null && !isEnumType(superType) && !isSuperCallPresent(method)) {
                 builder().createSubFlow(
                         builder().getVariable("this"),
                         superType.getFlow(superType.getCodeRequired(), List.of()),
@@ -294,6 +294,10 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
+    }
+
+    private boolean isEnumType(ClassType classType) {
+        return classType.getTemplate() != null && classType.getTemplate() == StandardTypes.getEnumType();
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {
@@ -397,8 +401,12 @@ public class Generator extends VisitorBase {
     }
 
 
-    private void processParameters(PsiParameterList parameterList) {
+    private void processParameters(PsiParameterList parameterList, Flow flow) {
         var inputNode = builder().createInput();
+        for (Parameter parameter : flow.getParameters()) {
+            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(), parameter.getType())
+                    .build();
+        }
         for (PsiParameter parameter : parameterList.getParameters()) {
             processParameter(parameter, inputNode);
         }

@@ -13,8 +13,8 @@ public class SubFlowParam extends CallParamDTO {
     public SubFlowParam(@JsonProperty("self") ValueDTO self,
                         @JsonProperty("flowRef") RefDTO flowRef,
                         @JsonProperty("typeRef") @Nullable RefDTO typeRef,
-                        @JsonProperty("fields") List<FieldParamDTO> fields) {
-        super(flowRef, typeRef, fields);
+                        @JsonProperty("arguments") List<ArgumentDTO> arguments) {
+        super(flowRef, typeRef, arguments);
         this.self = self;
     }
 

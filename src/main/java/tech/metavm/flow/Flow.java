@@ -1,13 +1,10 @@
 package tech.metavm.flow;
 
-import tech.metavm.autograph.Parameter;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ElementVisitor;
-import tech.metavm.flow.persistence.FlowPO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeVariable;
 import tech.metavm.util.NncUtils;
@@ -17,8 +14,6 @@ import tech.metavm.util.TypeReference;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
-
-import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("流程")
 public class Flow extends Entity implements GenericDeclaration {
@@ -35,11 +30,10 @@ public class Flow extends Entity implements GenericDeclaration {
     private boolean isAbstract;
     @ChildEntity("是否原生")
     private boolean isNative;
-    @ChildEntity("输入类型")
-    @Nullable
-    private final ClassType inputType;
-    @EntityField("输出类型")
-    private Type outputType;
+    @ChildEntity("参数列表")
+    private final Table<Parameter> parameters = new Table<>(Parameter.class, true);
+    @EntityField("返回类型")
+    private Type returnType;
     @ChildEntity("被复写流程")
     private @Nullable Flow overridden;
     @ChildEntity("根流程范围")
@@ -65,8 +59,8 @@ public class Flow extends Entity implements GenericDeclaration {
                 boolean isConstructor,
                 boolean isAbstract,
                 boolean isNative,
-                @Nullable ClassType inputType,
-                Type outputType,
+                @Nullable List<Parameter> parameters,
+                Type returnType,
                 @Nullable Flow overridden,
                 List<TypeVariable> typeParameters,
                 @Nullable Flow template,
@@ -74,10 +68,10 @@ public class Flow extends Entity implements GenericDeclaration {
     ) {
         super(tmpId);
         if (overridden == null) {
-            NncUtils.requireTrue(inputType != null && outputType != null);
+            NncUtils.requireTrue(parameters != null && returnType != null);
         } else {
-            NncUtils.requireTrue(inputType == null);
-            NncUtils.requireTrue(overridden.getOutputType().isAssignableFrom(outputType));
+            NncUtils.requireTrue(parameters == null);
+            NncUtils.requireTrue(overridden.getReturnType().isAssignableFrom(returnType));
         }
         this.declaringType = declaringType;
         this.name = name;
@@ -85,8 +79,10 @@ public class Flow extends Entity implements GenericDeclaration {
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         this.isNative = isNative;
-        this.inputType = inputType;
-        this.outputType = outputType;
+        if(parameters != null) {
+            this.parameters.addAll(parameters);
+        }
+        this.returnType = returnType;
         this.overridden = overridden;
         this.scopes = new Table<>(ScopeRT.class);
         this.nodes = new Table<>(new TypeReference<>() {
@@ -101,10 +97,6 @@ public class Flow extends Entity implements GenericDeclaration {
         if (template == null || template.getDeclaringType() != declaringType) {
             declaringType.addFlow(this);
         }
-    }
-
-    public List<Type> getInputTypes() {
-        return NncUtils.map(getInputType().getFields(), Field::getType);
     }
 
     public void setName(String name) {
@@ -136,8 +128,8 @@ public class Flow extends Entity implements GenericDeclaration {
     }
 
     public List<Type> getParameterTypes() {
-        return inputType != null ? NncUtils.map(inputType.getFields(), Field::getType)
-                : NncUtils.requireNonNull(overridden).getParameterTypes();
+        return overridden != null ? overridden.getParameterTypes() :
+                NncUtils.map(parameters, Parameter::getType);
     }
 
     public boolean isConstructor() {
@@ -153,12 +145,12 @@ public class Flow extends Entity implements GenericDeclaration {
         return overridden;
     }
 
-    public ClassType getInputType() {
-        return overridden != null ? overridden.getInputType() : NncUtils.requireNonNull(inputType);
-    }
+//    public ClassType getInputType() {
+//        return overridden != null ? overridden.getInputType() : NncUtils.requireNonNull(inputType);
+//    }
 
-    public Type getOutputType() {
-        return outputType;
+    public Type getReturnType() {
+        return returnType;
     }
 
     public ScopeRT getRootScope() {
@@ -192,10 +184,9 @@ public class Flow extends Entity implements GenericDeclaration {
                     context.getRef(getDeclaringType()),
                     rootScope.toDTO(withCode),
                     getDeclaringType().toDTO(true, true),
-                    context.getRef(getInputType()),
-                    context.getRef(getOutputType()),
-                    getInputType().toDTO(),
-                    getOutputType().toDTO(),
+                    context.getRef(getReturnType()),
+                    NncUtils.map(parameters, Parameter::toDTO),
+                    getReturnType().toDTO(),
                     NncUtils.map(typeParameters, TypeVariable::toDTO),
                     NncUtils.get(template, context::getRef),
                     NncUtils.map(typeArguments, context::getRef),
@@ -210,26 +201,16 @@ public class Flow extends Entity implements GenericDeclaration {
     }
 
     public FlowSummaryDTO toSummaryDTO() {
-        return new FlowSummaryDTO(
-                id,
-                getName(),
-                getDeclaringType().getId(),
-                NncUtils.get(getInputType(), Entity::getId),
-                NncUtils.get(getOutputType(), Entity::getId),
-                !getInputType().getFields().isEmpty()
-        );
-    }
-
-    public FlowPO toPO() {
-        return new FlowPO(
-                id,
-                getTenantId(),
-                getName(),
-                getDeclaringType().getId(),
-                rootScope.getId(),
-                getInputType().getId(),
-                getOutputType().getId()
-        );
+        try(var context = SerializeContext.enter()) {
+            return new FlowSummaryDTO(
+                    id,
+                    getName(),
+                    getDeclaringType().getId(),
+                    NncUtils.map(parameters, Parameter::toDTO),
+                    context.getRef(getReturnType()),
+                    !getParameterTypes().isEmpty()
+            );
+        }
     }
 
     public void update(FlowDTO flowDTO) {
@@ -279,6 +260,14 @@ public class Flow extends Entity implements GenericDeclaration {
         version++;
     }
 
+    public Parameter getParameterByCode(String code) {
+        return parameters.get(Parameter::getCode, code);
+    }
+
+    public Parameter getParameterByName(String name) {
+        return parameters.get(Parameter::getName, name);
+    }
+
     public NodeRT<?> getRootNode() {
         return rootScope.getFirstNode();
     }
@@ -321,16 +310,23 @@ public class Flow extends Entity implements GenericDeclaration {
                 : Collections.unmodifiableList(typeArguments);
     }
 
+    public void setParameters(List<Parameter> parameters) {
+        this.parameters.clear();
+        this.parameters.addAll(parameters);
+    }
+
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
         typeParameters.add(typeParameter);
     }
 
     public List<Parameter> getParameters() {
-        return NncUtils.map(
-                inputType.getFields(),
-                field -> new Parameter(field.getName(), field.getCode(), field.getType())
-        );
+        if(overridden != null) {
+            return overridden.getParameters();
+        }
+        else {
+            return Collections.unmodifiableList(parameters);
+        }
     }
 
     public void setRootScope(ScopeRT rootScope) {
@@ -352,8 +348,8 @@ public class Flow extends Entity implements GenericDeclaration {
         return Collections.unmodifiableList(templateInstances);
     }
 
-    public void setOutputType(Type outputType) {
-        this.outputType = outputType;
+    public void setReturnType(Type returnType) {
+        this.returnType = returnType;
     }
 
     @Nullable

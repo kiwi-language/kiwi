@@ -267,24 +267,20 @@ public class FlowGenerator {
     }
 
     SubFlowNode createSubFlow(Expression self, Flow flow, List<Expression> arguments) {
-        ClassType inputType = flow.getInputType();
-        List<FieldParam> fieldParams = NncUtils.biMap(
-                inputType.getFields(),
-                arguments,
-                (f, arg) -> new FieldParam(f, new ExpressionValue(arg))
+        List<Argument> args = NncUtils.biMap(
+                flow.getParameters(), arguments,
+                (param, arg) -> new Argument(null, param, new ExpressionValue(arg))
         );
         return setNodeExprTypes(new SubFlowNode(null, nextName(flow.getName()), scope().getLastNode(), scope(),
-                new ExpressionValue(self), fieldParams, flow));
+                new ExpressionValue(self), args, flow));
     }
 
     NewNode createNew(Flow flow, List<Expression> arguments) {
-        ClassType inputType = flow.getInputType();
-        List<FieldParam> fieldParams = NncUtils.biMap(
-                inputType.getFields(),
-                arguments,
-                (f, arg) -> new FieldParam(f, new ExpressionValue(arg))
+        List<Argument> args = NncUtils.biMap(
+                flow.getParameters(), arguments,
+                (param, arg) -> new Argument(null, param, new ExpressionValue(arg))
         );
-        return setNodeExprTypes(new NewNode(null, nextName(flow.getName()), flow, fieldParams,
+        return setNodeExprTypes(new NewNode(null, nextName(flow.getName()), flow, args,
                 scope().getLastNode(), scope()));
     }
 
@@ -297,7 +293,8 @@ public class FlowGenerator {
     }
 
     public InputNode createInput() {
-        return setNodeExprTypes(new InputNode(null, "Input", getFlow().getInputType(), scope().getLastNode(), scope()));
+        var type = ClassBuilder.newBuilder("输入类型", "InputType").temporary().build();
+        return setNodeExprTypes(new InputNode(null, "Input", type, scope().getLastNode(), scope()));
     }
 
     public SelfNode createSelf() {

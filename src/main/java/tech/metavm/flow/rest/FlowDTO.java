@@ -19,10 +19,12 @@ public record FlowDTO(
         RefDTO declaringTypeRef,
         ScopeDTO rootScope,
         TypeDTO type,
-        RefDTO inputTypeRef,
-        RefDTO outputTypeRef,
-        TypeDTO inputType,
-        TypeDTO outputType,
+//        RefDTO inputTypeRef,
+//        List<RefDTO> parameterTypeRefs,
+        RefDTO returnTypeRef,
+//        TypeDTO inputType,
+        List<ParameterDTO> parameters,
+        TypeDTO returnType,
         List<TypeDTO> typeParameters,
         @Nullable RefDTO templateRef,
         List<RefDTO> typeArgumentRefs,
@@ -30,19 +32,15 @@ public record FlowDTO(
         List<FlowDTO> templateInstances
 ) implements BaseDTO {
 
-    public Long inputTypeId() {
-        return inputTypeRef.id();
-    }
-
-    public Long outputTypeId() {
-        return outputTypeRef.id();
-    }
+//    public Long inputTypeId() {
+//        return inputTypeRef.id();
+//    }
 
     public static FlowDTO create(String name, long declaringTypeId) {
         return new FlowDTO(
                 null, null, name, null, false, false, false,
                 RefDTO.ofId(declaringTypeId), null, null, null, null,
-                null, null, List.of(), null,  List.of(),null, List.of()
+                null, null,  null,  List.of(),null, List.of()
         );
     }
 

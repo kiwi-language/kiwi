@@ -40,7 +40,7 @@ public class TypeUtil {
     public static String getFlowCanonicalName(Flow flow, Function<Type, java.lang.reflect.Type> getJavaType) {
         return getCanonicalName(flow.getDeclaringType(), getJavaType) + "-" + flow.getName()
                 + "("
-                + NncUtils.map(flow.getParameters(), param -> getCanonicalName(param.type(), getJavaType))
+                + NncUtils.map(flow.getParameters(), param -> getCanonicalName(param.getType(), getJavaType))
                 + ")";
     }
 

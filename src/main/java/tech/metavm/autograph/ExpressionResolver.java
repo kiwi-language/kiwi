@@ -393,7 +393,7 @@ public class ExpressionResolver {
                 expr -> resolve(expr, context)
         );
         var node = flowBuilder.createSubFlow(self, flow, args);
-        if (flow.getOutputType().isVoid()) {
+        if (flow.getReturnType().isVoid()) {
             return null;
         } else {
             return getSingleValue(node);

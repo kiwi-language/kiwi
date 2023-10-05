@@ -12,6 +12,7 @@ import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
 
 import java.util.LinkedList;
+import java.util.List;
 
 public class FlowStack {
 
@@ -21,9 +22,9 @@ public class FlowStack {
     private final LinkedList<FlowFrame> stack = new LinkedList<>();
     private Instance ret;
 
-    public FlowStack(Flow flow, Instance self, Instance argument, IInstanceContext context) {
+    public FlowStack(Flow flow, Instance self, List<Instance> arguments, IInstanceContext context) {
         this.context = context;
-        stack.push(new FlowFrame(flow, self, argument, this));
+        stack.push(new FlowFrame(flow, self, arguments, this));
     }
 
     public Instance execute() {

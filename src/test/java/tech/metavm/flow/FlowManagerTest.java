@@ -155,7 +155,7 @@ public class FlowManagerTest extends TestCase {
         FlowDTO flowDTO = new FlowDTO(null, null, "Flow1", null, false,
                 false, false,
                 RefDTO.ofId(userType.getId()), null, null, null, null, null, null,
-                List.of(), null, List.of(),
+                 null, List.of(),
                 null, List.of());
         long flowId = flowManager.create(flowDTO);
         Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getId(), 1, 20, null);

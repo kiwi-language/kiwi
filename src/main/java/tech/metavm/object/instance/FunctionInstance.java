@@ -1,6 +1,5 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -24,11 +23,6 @@ public class FunctionInstance extends Instance {
         this.flow = flow;
         this.boundSelf = boundSelf;
     }
-
-//    public Instance invoke(List<Instance> arguments, FlowExecutionService executionService) {
-//        ClassInstance self = boundSelf != null ? boundSelf : (ClassInstance) arguments.get(0);
-//        List<Instance> args = boundSelf != null ? arguments : arguments.subList(1, arguments.size());
-//    }
 
     @Override
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {

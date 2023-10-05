@@ -9,12 +9,12 @@ public abstract class CallParamDTO{
     private final RefDTO flowRef;
     @Nullable
     private final RefDTO typeRef;
-    private final List<FieldParamDTO> fields;
+    private final List<ArgumentDTO> arguments;
 
-    public CallParamDTO(RefDTO flowRef, @Nullable RefDTO typeRef, List<FieldParamDTO> fields) {
+    public CallParamDTO(RefDTO flowRef, @Nullable RefDTO typeRef, List<ArgumentDTO> arguments) {
         this.flowRef = flowRef;
         this.typeRef = typeRef;
-        this.fields = fields;
+        this.arguments = arguments;
     }
 
 
@@ -27,7 +27,7 @@ public abstract class CallParamDTO{
         return typeRef;
     }
 
-    public List<FieldParamDTO> getFields() {
-        return fields;
+    public List<ArgumentDTO> getArguments() {
+        return arguments;
     }
 }
