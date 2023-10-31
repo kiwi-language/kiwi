@@ -3,7 +3,10 @@ Accept: application/json
 Content-Type: application/json
 
 ###
-POST https://www.metavm.tech/api/bootstrap
+POST https://www.metavm.tech/api/bootstrap/region
+
+###
+POST https://www.metavm.tech/api/bootstrap?saveIds=false
 
 ###
 POST http://localhost:8080/bootstrap

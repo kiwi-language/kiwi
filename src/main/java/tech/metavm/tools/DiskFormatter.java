@@ -19,6 +19,7 @@ import tech.metavm.util.InternalException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -29,7 +30,7 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 public class DiskFormatter {
 
     private static final String CONFIG_HOST = "host";
-    private static final String CONFIG_ES_PORT ="es_port";
+    private static final String CONFIG_ES_PORT = "es_port";
     private static final String CONFIG_DELETE_ID_FILES = "delete_id_files";
 
     public static final Map<String, Object> DEV_CONFIG = Map.of(
@@ -41,10 +42,10 @@ public class DiskFormatter {
     public static final Map<String, Object> LOCAL_CONFIG = Map.of(
             CONFIG_HOST, "localhost",
             CONFIG_ES_PORT, 9200,
-            CONFIG_DELETE_ID_FILES, true
+            CONFIG_DELETE_ID_FILES, false
     );
 
-    public static final Map<String, Object> CONFIG = DEV_CONFIG;
+    public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
 
 //    public static final String HOST = "localhost";
 
@@ -61,15 +62,15 @@ public class DiskFormatter {
     }
 
     private static void clearDataBases() {
-        try(DruidDataSource dataSource = new DruidDataSource()) {
+        try (DruidDataSource dataSource = new DruidDataSource()) {
             dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
             dataSource.setUsername("root");
             dataSource.setPassword("85263670");
             dataSource.setMaxActive(1);
             dataSource.setUrl("jdbc:mysql://" + host() + ":3306/object?allowMultiQueries=true");
 
-            try(Connection connection = dataSource.getConnection();
-                Statement statement = connection.createStatement()) {
+            try (Connection connection = dataSource.getConnection();
+                 Statement statement = connection.createStatement()) {
                 statement.execute("delete from id_block");
 //                statement.execute("delete from id_region");
                 statement.execute("delete from tenant");
@@ -78,8 +79,7 @@ public class DiskFormatter {
                 statement.execute("delete from reference");
                 statement.execute("delete from index_entry");
                 statement.execute("delete from relation");
-            }
-            catch (SQLException e) {
+            } catch (SQLException e) {
                 throw new InternalException("SQL Error", e);
             }
         }
@@ -93,7 +93,7 @@ public class DiskFormatter {
         RestClientBuilder builder = RestClient.builder(new HttpHost(host(), esPort()))
                 .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
         //noinspection deprecation
-        try(RestHighLevelClient client = new RestHighLevelClient(builder)) {
+        try (RestHighLevelClient client = new RestHighLevelClient(builder)) {
             DeleteByQueryRequest request = new DeleteByQueryRequest("instance");
             request.setQuery(new MatchAllQueryBuilder());
             BulkByScrollResponse response = client.deleteByQuery(request, RequestOptions.DEFAULT);
@@ -107,17 +107,27 @@ public class DiskFormatter {
         String idDirPath = Constants.RESOURCE_CP_ROOT + "/id";
         File idDir = new File(idDirPath);
         for (String idFile : requireNonNull(idDir.list())) {
-            if(!new File(idDirPath+ "/" + idFile).delete()) {
+            if (!new File(idDirPath + "/" + idFile).delete()) {
                 System.err.println("Fail to delete id file '" + idFile + "'");
             }
+        }
+    }
+
+    private static void clearColumnFile() {
+        String columnFile = Constants.RESOURCE_CP_ROOT + "/column/columns.properties";
+        try {
+            new PrintWriter(columnFile).close();
+        } catch (IOException e) {
+            throw new RuntimeException("Fail to clear column file", e);
         }
     }
 
     public static void main(String[] args) {
         clearEs();
         clearDataBases();
-        if(shouldDeleteIdFiles()) {
+        if (shouldDeleteIdFiles()) {
             deleteIdFiles();
+            clearColumnFile();
         }
     }
 
