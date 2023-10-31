@@ -8,10 +8,10 @@ public record FlowSummaryDTO(
     Long id,
     String name,
     Long typeId,
-//    Long inputTypeId,
     List<ParameterDTO> parameters,
     RefDTO returnTypeRef,
-    boolean inputRequired
+    boolean inputRequired,
+    boolean isConstructor
 ) {
 
 }

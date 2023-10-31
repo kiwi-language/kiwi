@@ -70,7 +70,7 @@ public class BinaryExpression extends Expression {
 
     @Override
     public <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
-        return NncUtils.merge(first.extractExpressions(klass), second.extractExpressions(klass));
+        return NncUtils.union(first.extractExpressions(klass), second.extractExpressions(klass));
     }
 
     @Override

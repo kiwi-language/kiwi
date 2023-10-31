@@ -205,13 +205,13 @@ public class InstanceContextTest extends TestCase {
         Field bazBarsField = MockRegistry.getField(Baz.class, "bars");
         Field barCodeField = MockRegistry.getField(Bar.class, "code");
 
-        loadedFoo.set(fooNameField, stringInstance("Not a foo"));
+        loadedFoo.setField(fooNameField, stringInstance("Not a foo"));
         ClassInstance loadedQux = loadedFoo.getClassInstance(fooQuxField);
-        loadedQux.set(quxAmountField, loadedQux.getLong(quxAmountField).inc(1L));
+        loadedQux.setField(quxAmountField, loadedQux.getLongField(quxAmountField).inc(1L));
         ArrayInstance loadedBazList = loadedFoo.getInstanceArray(fooBazListField);
         ClassInstance loadedBaz = (ClassInstance) loadedBazList.getInstance(0);
         ClassInstance loadedBar = (ClassInstance) loadedBaz.getInstanceArray(bazBarsField).getInstance(0);
-        loadedBar.set(barCodeField, stringInstance("Bar1001"));
+        loadedBar.setField(barCodeField, stringInstance("Bar1001"));
         context2.finish();
 
         InstanceContext context3 = newContext();
@@ -248,7 +248,7 @@ public class InstanceContextTest extends TestCase {
             ClassInstance foo = MockRegistry.getNewFooInstance();
             context1.bind(foo);
             try {
-                context1.remove(foo.get(fooBarField));
+                context1.remove(foo.getField(fooBarField));
                 Assert.fail("Can not remove a strongly referenced instance");
             }
             catch (BusinessException e) {
@@ -261,12 +261,12 @@ public class InstanceContextTest extends TestCase {
             InstanceContext context1 = newContext();
             ClassInstance foo = MockRegistry.getNewFooInstance();
             context1.bind(foo);
-            context1.remove(foo.get(fooQuxField));
+            context1.remove(foo.getField(fooQuxField));
             context1.finish();
 
             InstanceContext context2 = newContext();
             foo = (ClassInstance) context2.get(foo.getId());
-            Assert.assertTrue(foo.get(fooQuxField).isNull());
+            Assert.assertTrue(foo.getField(fooQuxField).isNull());
         }
 
         // new instance with a strong reference from an array
@@ -297,9 +297,9 @@ public class InstanceContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        Long barId = foo.getInstance(fooBarField).getId();
+        Long barId = foo.getInstanceField(fooBarField).getId();
         Assert.assertNotNull(barId);
-        Long quxId = foo.getInstance(fooQuxField).getId();
+        Long quxId = foo.getInstanceField(fooQuxField).getId();
         Assert.assertNotNull(quxId);
 
         // old instance with strong references
@@ -320,7 +320,7 @@ public class InstanceContextTest extends TestCase {
             context3.finish();
             InstanceContext context4 = newContext();
             foo = (ClassInstance) context4.get(foo.getId());
-            Assert.assertTrue(foo.get(fooQuxField).isNull());
+            Assert.assertTrue(foo.getField(fooQuxField).isNull());
         }
     }
 
@@ -345,7 +345,7 @@ public class InstanceContextTest extends TestCase {
 
         context.finish();
 
-        String fooName = fooInstance.getString(getField(Foo.class, "name")).getValue();
+        String fooName = fooInstance.getStringField(getField(Foo.class, "name")).getValue();
         List<Instance> selectedInstances = context.selectByKey(
                 uniqueConstraint.createIndexKeyByModels(List.of(fooName), context.getEntityContext())
         );
@@ -398,10 +398,10 @@ public class InstanceContextTest extends TestCase {
 
         InstancePO bazInstancePO = instanceStore.get(bazInst.getId());
         Assert.assertFalse(EntityUtils.isPojoDifferent(bazInst.toPO(TENANT_ID), bazInstancePO));
-        Long barsArrayId = bazInst.getInstance(bazBarsField).getId();
+        Long barsArrayId = bazInst.getInstanceField(bazBarsField).getId();
         NncUtils.requireNonNull(barsArrayId);
         InstanceArrayPO barsArrayPO = (InstanceArrayPO) instanceStore.get(barsArrayId);
-        MatcherAssert.assertThat(bazInst.getInstance(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArrayPO));
+        MatcherAssert.assertThat(bazInst.getInstanceField(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArrayPO));
 
         InstanceContext context2 = newContext();
 
@@ -409,7 +409,7 @@ public class InstanceContextTest extends TestCase {
         ArrayInstance barsArray = (ArrayInstance) context2.get(barsArrayId);
 
         MatcherAssert.assertThat(bazInst.toPO(TENANT_ID), PojoMatcher.of(loadedBazInst.toPO(TENANT_ID)));
-        MatcherAssert.assertThat(bazInst.getInstance(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArray.toPO(TENANT_ID)));
+        MatcherAssert.assertThat(bazInst.getInstanceField(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArray.toPO(TENANT_ID)));
     }
 
     public void testQuery() {

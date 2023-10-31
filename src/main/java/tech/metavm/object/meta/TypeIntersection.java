@@ -2,10 +2,10 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.meta.rest.dto.TypeParam;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -13,14 +13,14 @@ import java.util.function.Function;
 public class TypeIntersection extends Type {
 
     @ChildEntity("类型列表")
-    private final Table<Type> types = new Table<>(Type.class);
+    private final ReadWriteArray<Type> types = new ReadWriteArray<>(Type.class);
 
-    public TypeIntersection(List<Type> types) {
+    public TypeIntersection(Iterable<Type> types) {
         super(makeName(types), false, false, TypeCategory.INTERSECTION);
         this.types.addAll(types);
     }
 
-    private static String makeName(List<Type> types) {
+    private static String makeName(Iterable<Type> types) {
         return NncUtils.join(types, Type::getName, "&");
     }
 
@@ -30,8 +30,8 @@ public class TypeIntersection extends Type {
     }
 
     @Override
-    protected Object getParam() {
-        throw new UnsupportedOperationException();
+    protected TypeParam getParam() {
+        return null;
     }
 
     @Override
@@ -40,6 +40,6 @@ public class TypeIntersection extends Type {
     }
 
     public List<Type> getTypes() {
-        return Collections.unmodifiableList(types);
+        return types.toList();
     }
 }

@@ -25,9 +25,10 @@ public class NodeDTOTest extends TestCase {
                 NodeKind.ADD_OBJECT.code(),
                 null,
                 RefDTO.ofId(1L),
-                new AddObjectParamDTO(
-                        1L,
-                        List.of()
+                new AddObjectParam(
+                        RefDTO.ofId(1L),
+                        List.of(),
+                        null
                 ),
                 null,
                 1L

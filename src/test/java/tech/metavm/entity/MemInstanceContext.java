@@ -53,7 +53,7 @@ public class MemInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void finish() {
+    protected void finishInternal() {
         NncUtils.requireFalse(finished, "already finished");
         initIds();
         ChangeList<InstancePO> changeList = ChangeList.inserts(

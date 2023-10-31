@@ -1,0 +1,27 @@
+package tech.metavm.task;
+
+import tech.metavm.entity.EntityType;
+import tech.metavm.util.NncUtils;
+
+@EntityType("任务状态")
+public enum TaskState {
+
+    RUNNABLE(1),
+    RUNNING(2),
+    FINISHED(9);
+
+    private final int code;
+
+    TaskState(int code) {
+        this.code = code;
+    }
+
+    public int code() {
+        return code;
+    }
+
+    public static TaskState getByCode(int code) {
+        return NncUtils.findRequired(values(), e -> e.code == code);
+    }
+
+}

@@ -2,16 +2,15 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.flow.Flow;
+import tech.metavm.expression.NodeExpression;
+import tech.metavm.expression.PropertyExpression;
+import tech.metavm.flow.*;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.meta.generic.MetaSubstitutor;
+import tech.metavm.object.meta.generic.TypeArgumentMap;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.*;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -73,6 +72,57 @@ public class TypeUtil {
         }
     }
 
+    public static ClassType createFunctionalClass(ClassType functionalInterface, IEntityContext context) {
+        var functionTypeContext = context.getFunctionTypeContext();
+        var klass = ClassBuilder.newBuilder(functionalInterface.getName() + "实现",
+                        NncUtils.get(functionalInterface.getCode(), k -> k + "Impl"))
+                .interfaces(functionalInterface)
+                .ephemeral(true)
+                .build();
+        var sam = getSAM(functionalInterface);
+        var funcType = functionTypeContext.get(sam.getParameterTypes(), sam.getReturnType());
+        var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
+
+        var flow = FlowBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeContext)
+                .overriden(List.of(sam))
+                .build();
+
+        var selfNode = new SelfNode(null, "当前记录",SelfNode.getSelfType(flow, context), null, flow.getRootScope());
+        var inputType = ClassBuilder.newBuilder("流程输入", "InputType").temporary().build();
+        for (Parameter parameter : flow.getParameters()) {
+            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
+                    .build();
+        }
+
+        var inputNode = new InputNode(null, "输入", inputType, selfNode, flow.getRootScope());
+        var funcNode = new FunctionNode(null, "函数", inputNode, flow.getRootScope(),
+                new ExpressionValue(
+                        new PropertyExpression(new NodeExpression(selfNode), funcField)
+                ),
+                NncUtils.map(inputType.getFields(),
+                        inputField ->
+                                new ExpressionValue(new PropertyExpression(new NodeExpression(inputNode), inputField))
+                )
+        );
+        var returnNode = new ReturnNode(null, "结束", funcNode, flow.getRootScope());
+        if (!returnNode.getType().isVoid()) {
+            returnNode.setValue(new ExpressionValue(new NodeExpression(funcNode)));
+        }
+        return klass;
+    }
+
+    public static Flow getSAM(ClassType functionalInterface) {
+        var abstractFlows = NncUtils.filter(
+                functionalInterface.getFlows(),
+                Flow::isAbstract
+        );
+        if (abstractFlows.size() != 1) {
+            throw new InternalException(functionalInterface + " is not a functional interface");
+        }
+        return abstractFlows.get(0);
+    }
+
+
     public static boolean isArray(Type type) {
         return type.isArray();
     }
@@ -84,55 +134,9 @@ public class TypeUtil {
         throw new InternalException("type " + type + " is not an array type");
     }
 
-    public static UnionType getNullableType(Type type) {
-        return TYPE_FACTORY.getNullableType(type);
-    }
-
-    public static UnionType createNullableType(Type type, @Nullable TypeDTO typeDTO) {
-        return TYPE_FACTORY.createNullableType(type, typeDTO);
-    }
-
-    public static ArrayType getArrayNullableType(Type type) {
-        return getArrayType(getNullableType(type));
-    }
-
-    public static ArrayType getArrayType(Type type) {
-        return getArrayType(type, TYPE_FACTORY);
-    }
-
-    public static ArrayType getArrayType(Type type, int dim) {
-        return getArrayType(type, dim, TYPE_FACTORY);
-    }
-
-    public static ArrayType getArrayType(Type type, int dim, TypeFactory typeFactory) {
-        NncUtils.requireTrue(dim > 0);
-        var resultType = getArrayType(type, typeFactory);
-        while (--dim > 0) {
-            resultType = getArrayType(resultType, typeFactory);
-        }
-        return resultType;
-    }
-
-    public static ArrayType getArrayType(Type type, TypeFactory typeFactory) {
-        ArrayType arrayType = type.getArrayType();
-        if (arrayType == null) {
-            arrayType = typeFactory.createArrayType(type);
-            type.setArrayType(arrayType);
-        }
-        return arrayType;
-    }
-
     public static TypeVariable createTypeVariable(TypeDTO typeDTO,
                                                   boolean withBounds, IEntityContext context) {
         return TYPE_FACTORY.createTypeVariable(typeDTO, withBounds, context);
-    }
-
-    public static ArrayType createArrayType(Type elementType, @Nullable TypeDTO typeDTO) {
-        return TYPE_FACTORY.createArrayType(elementType, typeDTO);
-    }
-
-    public static UnionType createUnion(Set<Type> members) {
-        return TYPE_FACTORY.createUnion(members);
     }
 
     public static ClassType createClassType(TypeDTO typeDTO, IEntityContext context) {
@@ -145,20 +149,12 @@ public class TypeUtil {
     }
 
     public static Field createFieldAndBind(ClassType type, FieldDTO fieldDTO, IEntityContext context) {
-        return TYPE_FACTORY.createField(type, fieldDTO, context);
+        return TYPE_FACTORY.saveField(type, fieldDTO, context);
     }
 
     public static Type getUnderlyingType(UnionType type) {
         NncUtils.requireTrue(type.isNullable());
         return NncUtils.findRequired(type.getMembers(), t -> !t.equals(StandardTypes.getNullType()));
-    }
-
-    public static void fillCompositeTypes(Type type, TypeFactory typeFactory) {
-        Type nullType = typeFactory.getNullType();
-        type.setNullableType(new UnionType(null, Set.of(type, nullType)));
-        ArrayType arrayType = typeFactory.createArrayType(type);
-        arrayType.setNullableType(new UnionType(null, Set.of(arrayType, nullType)));
-        type.setArrayType(arrayType);
     }
 
     public static boolean isNullable(Type type) {
@@ -223,6 +219,18 @@ public class TypeUtil {
         return context.getParameterizedType(StandardTypes.getListType(), List.of(type));
     }
 
+    public static ClassType getCollectionType(Type type, IEntityContext context) {
+        return context.getParameterizedType(StandardTypes.getCollectionType(), List.of(type));
+    }
+
+    public static ClassType getIteratorType(Type type, IEntityContext context) {
+        return context.getParameterizedType(StandardTypes.getIteratorType(), List.of(type));
+    }
+
+    public static ClassType getIteratorImplType(Type type, IEntityContext context) {
+        return context.getParameterizedType(StandardTypes.getIteratorImplType(), List.of(type));
+    }
+
     public static ClassType getMapType(Type keyType, Type valueType, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getMapType(), List.of(keyType, valueType));
     }
@@ -273,13 +281,12 @@ public class TypeUtil {
         if (typeArguments.isEmpty()) {
             return templateName;
         }
-        return parameterizedName(templateName, NncUtils.map(typeArguments, Type::getName));
+        return parameterizedName(templateName, NncUtils.map(typeArguments, TypeUtil::getTypeArgumentName));
     }
 
     public static String getParameterizedCode(String templateCode, Type... typeArguments) {
         return getParameterizedCode(templateCode, List.of(typeArguments));
     }
-
 
     public static String getParameterizedCode(String templateCode, List<Type> typeArguments) {
         if (typeArguments.isEmpty()) {
@@ -287,7 +294,28 @@ public class TypeUtil {
         }
         boolean allTypeArgCodeNotNull = NncUtils.allMatch(typeArguments, arg -> arg.getCode() != null);
         return allTypeArgCodeNotNull ?
-                parameterizedName(templateCode, NncUtils.map(typeArguments, Type::getCode)) : null;
+                parameterizedName(templateCode, NncUtils.map(typeArguments, TypeUtil::getTypeArgumentCode)) : null;
+    }
+
+    private static String getTypeArgumentName(Type typeArgument) {
+        if (typeArgument instanceof TypeVariable typeVariable) {
+            return typeVariable.getGenericDeclaration().getName() + "_" + typeVariable.getName();
+        } else {
+            return typeArgument.getName();
+        }
+    }
+
+    private static String getTypeArgumentCode(Type typeArgument) {
+        if (typeArgument instanceof TypeVariable typeVariable) {
+            var genericDeclCode = typeVariable.getGenericDeclaration().getCode();
+            if (genericDeclCode != null) {
+                return genericDeclCode + "_" + typeVariable.getCode();
+            } else {
+                return null;
+            }
+        } else {
+            return typeArgument.getCode();
+        }
     }
 
     public static String parameterizedName(String templateName, List<String> typeArgumentNames) {
@@ -362,7 +390,15 @@ public class TypeUtil {
         };
     }
 
-    public static MetaSubstitutor resolveGenerics(Type type) {
+    public static ClassType getClassType(Type type) {
+        return switch (type) {
+            case ClassType classType -> classType;
+            case TypeVariable typeVariable -> (ClassType) typeVariable.getUpperBound();
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        };
+    }
+
+    public static TypeArgumentMap resolveGenerics(Type type) {
         var visitor = new GenericResolutionVisitor();
         visitor.visitType(type);
         return visitor.getSubstitutor();
@@ -370,7 +406,7 @@ public class TypeUtil {
 
     private static class GenericResolutionVisitor extends MetaTypeVisitor {
 
-        private MetaSubstitutor substitutor = MetaSubstitutor.EMPTY;
+        private TypeArgumentMap substitutor = TypeArgumentMap.EMPTY;
 
         @Override
         public void visitClassType(ClassType classType) {
@@ -386,7 +422,7 @@ public class TypeUtil {
             super.visitClassType(classType);
         }
 
-        public MetaSubstitutor getSubstitutor() {
+        public TypeArgumentMap getSubstitutor() {
             return substitutor;
         }
     }

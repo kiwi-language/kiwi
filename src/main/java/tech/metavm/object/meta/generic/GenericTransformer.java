@@ -1,10 +1,12 @@
 package tech.metavm.object.meta.generic;
 
 import tech.metavm.entity.GenericDeclaration;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.ElementTransformer;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.ScopeRT;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.task.FieldData;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -15,25 +17,44 @@ import java.util.function.Consumer;
 
 import static tech.metavm.object.meta.TypeUtil.getParameterizedCode;
 import static tech.metavm.object.meta.TypeUtil.getParameterizedName;
-import static tech.metavm.util.NncUtils.allMatch;
 import static tech.metavm.util.NncUtils.zip;
 
 public class GenericTransformer extends ElementTransformer {
 
-    private MetaSubstitutor substitutor;
+    private TypeArgumentMap typeArgumentMap;
     private final GenericContext context;
     private final Consumer<ClassType> classTransformCallback;
     private final ResolutionStage stage;
+    @Nullable
+    private final ClassType existing;
 
-    public GenericTransformer(MetaSubstitutor substitutor,
+    public GenericTransformer(TypeArgumentMap typeArgumentMap, ResolutionStage stage,
+                              IEntityContext entityContext,
+                              @Nullable ClassType existing
+    ) {
+        this(
+                typeArgumentMap,
+                stage,
+                new DefaultTypeFactory(ModelDefRegistry::getType),
+                null,
+                entityContext,
+                existing,
+                null
+        );
+    }
+
+    public GenericTransformer(TypeArgumentMap typeArgumentMap,
                               ResolutionStage stage,
                               TypeFactory typeFactory,
                               GenericContext context,
+                              IEntityContext entityContext,
+                              @Nullable ClassType existing,
                               @Nullable Consumer<ClassType> classTransformCallback) {
-        super(typeFactory);
+        super(typeFactory, entityContext);
         this.context = context;
-        this.substitutor = substitutor;
+        this.typeArgumentMap = typeArgumentMap;
         this.stage = stage;
+        this.existing = existing;
         this.classTransformCallback = classTransformCallback;
     }
 
@@ -48,7 +69,7 @@ public class GenericTransformer extends ElementTransformer {
     @Override
     public ClassType transformClassType(ClassType classType) {
         var template = classType.getEffectiveTemplate();
-        var typeArgs = NncUtils.map(classType.getEffectiveTypeArguments(), this::transformType);
+        var typeArgs = NncUtils.map(classType.getEffectiveTypeArguments(), this::transformTypeReference);
         var templateInst = context.getExisting(template, typeArgs);
         if (templateInst != null) {
             return templateInst;
@@ -65,13 +86,13 @@ public class GenericTransformer extends ElementTransformer {
 
     @Override
     protected void transformClassBody(ClassType classType) {
-        if(stage.isAfterOrAt(ResolutionStage.DECLARED)) {
+        if (stage.isAfterOrAt(ResolutionStage.DECLARED)) {
             super.transformClassBody(classType);
         }
     }
 
     public void substitute(GenericDeclaration genericDeclaration, List<Type> typeArguments) {
-        substitutor = substitutor.merge(zip(genericDeclaration.getTypeParameters(), typeArguments));
+        typeArgumentMap = typeArgumentMap.merge(zip(genericDeclaration.getTypeParameters(), typeArguments));
     }
 
     @Override
@@ -81,76 +102,90 @@ public class GenericTransformer extends ElementTransformer {
         }
     }
 
+    public FieldData transformFieldData(FieldData fieldData) {
+        return new FieldData(
+                null,
+                fieldData.getName(),
+                fieldData.getCode(),
+                fieldData.getColumn(),
+                fieldData.isUnique(),
+                fieldData.isAsTitle(),
+                currentClass(),
+                fieldData.getAccess(),
+                transformTypeReference(fieldData.getType()),
+                fieldData.isChild(),
+                fieldData.isStatic(),
+                fieldData.getStaticValue(),
+                fieldData.getDefaultValue()
+        );
+    }
+
     @Override
-    public Type transformUnionType(UnionType unionType) {
-        if (unionType.isNullable()) {
-            return TypeUtil.getNullableType(transformType(unionType.getUnderlyingType()));
-        } else {
-            throw new InternalException("General union types not supported yet");
+    @Nullable
+    protected ClassType getExistingClass() {
+        return existing;
+    }
+
+    @Override
+    public Type transformTypeReference(Type typeReference) {
+        var transformed = getTransformedType(typeReference);
+        if (transformed != null) {
+            return transformed;
         }
-    }
-
-    @Override
-    public ArrayType transformArrayType(ArrayType arrayType) {
-        return TypeUtil.getArrayType(transformType(arrayType.getElementType()), arrayType.getDimensions());
-    }
-
-    @Override
-    public Type transformTypeVariable(TypeVariable typeVariable) {
-        return substitutor.substitute(typeVariable);
+        if (typeReference instanceof TypeVariable typeVariable) {
+            return typeArgumentMap.get(typeVariable);
+        }
+        var variables = typeReference.getVariables();
+        if (NncUtils.anyMatch(variables, v -> typeArgumentMap.get(v) != v)) {
+            return transformType(typeReference);
+        } else {
+            return typeReference;
+        }
     }
 
     @Override
     public Flow transformFlow(Flow flow) {
-        substitute(flow, NncUtils.map(flow.getTypeParameters(), substitutor::substitute));
-        return super.transformFlow(flow);
+        var typeArgs = NncUtils.map(flow.getTypeArguments(), this::transformTypeReference);
+        List<TypeVariable> typeParams = NncUtils.map(
+                flow.getTypeParameters(), this::transformTypeVariable
+        );
+        return super.transformFlow(flow, flow, flow.getName(), flow.getCode(), typeParams, typeArgs);
     }
 
     @Override
-    protected Flow transformFlowReference(Flow flow) {
-        if(flow.getTemplate() == null) {
-            return flow;
+    public Flow transformFlowReference(ClassType declaringType, Flow flow) {
+        if (flow.getTemplate() == null || flow.getTemplate().getDeclaringType() != flow.getDeclaringType()) {
+            return super.transformFlowReference(declaringType, flow);
         }
-        var typeArgs = NncUtils.map(flow.getTypeArguments(), this::transformType);
-        if(typeArgs.equals(flow.getTypeArguments())) {
-            return flow;
-        }
+        var typeArgs = NncUtils.map(flow.getTypeArguments(), this::transformTypeReference);
         return context.getParameterizedFlow(flow.getTemplate(), typeArgs);
     }
 
     @Override
     public ScopeRT transformScope(ScopeRT scope) {
-        if(stage.isAfterOrAt(ResolutionStage.GENERATED)) {
+        if (stage.isAfterOrAt(ResolutionStage.GENERATED)) {
             return super.transformScope(scope);
-        }
-        else {
+        } else {
             return new ScopeRT(flow(), NncUtils.get(scope.getOwner(), this::getTransformedNode));
         }
     }
 
     private boolean isResolved(Type type) {
-        switch (type) {
-            case PrimitiveType primitiveType -> {
-                return true;
-            }
-            case TypeVariable typeVariable -> {
-                return substitutor.substitute(typeVariable) == typeVariable;
-            }
+        return switch (type) {
+            case PrimitiveType primitiveType -> true;
+            case ObjectType objectType -> true;
+            case NothingType nothingType -> true;
+            case TypeVariable typeVariable -> typeArgumentMap.get(typeVariable) == typeVariable;
             case ClassType classType -> {
                 if (classType.getTemplate() == null) {
-                    return classType.getTypeParameters().isEmpty();
+                    yield classType.getTypeParameters().isEmpty();
                 } else {
-                    return NncUtils.allMatch(classType.getTypeArguments(), this::isResolved);
+                    yield NncUtils.allMatch(classType.getTypeArguments(), this::isResolved);
                 }
             }
-            case ArrayType arrayType -> {
-                return isResolved(arrayType.getInnerMostElementType());
-            }
-            case UnionType unionType -> {
-                return allMatch(unionType.getMembers(), this::isResolved);
-            }
+            case CompositeType compositeType -> NncUtils.allMatch(compositeType.getComponentTypes(), this::isResolved);
             case null, default -> throw new InternalException("Invalid type: " + type);
-        }
+        };
     }
 
 }

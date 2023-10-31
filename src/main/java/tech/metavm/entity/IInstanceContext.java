@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.dto.RefDTO;
-import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.Instance;
@@ -15,6 +14,10 @@ import java.util.function.Consumer;
 public interface IInstanceContext extends InstanceSink {
 
     IInstanceContext newContext(long tenantId);
+
+    void setLockMode(LockMode mode);
+
+    LockMode getLockMode();
 
     default void replace(Instance instance) {
         replace(List.of(instance));

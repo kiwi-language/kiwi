@@ -3,10 +3,10 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.*;
+import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.TypeReference;
 
-import java.lang.reflect.TypeVariable;
-import java.util.*;
+import java.util.Map;
 
 public abstract class ModelDef<T, I extends Instance> {
 

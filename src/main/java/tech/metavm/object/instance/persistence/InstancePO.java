@@ -3,6 +3,7 @@ package tech.metavm.object.instance.persistence;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.metavm.entity.Identifiable;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ public class InstancePO implements Identifiable {
     private Long id;
     private Long typeId;
     private @Nullable String title;
-    private Map<String, @org.jetbrains.annotations.Nullable Object> data;
+    private Map<String, Map<String, @org.jetbrains.annotations.Nullable Object>> data;
     private Long version;
     private Long syncVersion;
 
@@ -33,7 +34,7 @@ public class InstancePO implements Identifiable {
                       Long id,
                       Long typeId,
                       @Nullable String title,
-                      Map<String, @org.jetbrains.annotations.Nullable Object> data,
+                      Map<String, Map<String, @org.jetbrains.annotations.Nullable Object>> data,
                       Long version,
                       Long syncVersion) {
         this.tenantId = tenantId;
@@ -62,16 +63,20 @@ public class InstancePO implements Identifiable {
     }
 
     @Nullable
-    public Object get(String column) {
-        return data.get(column);
+    public Object get(long typeId, String column) {
+        return getSubMap(typeId).get(column);
     }
 
-    public void set(String column, @Nullable Object value) {
-        data.put(column, value);
+    private Map<String, @org.jetbrains.annotations.Nullable Object> getSubMap(long typeId) {
+        return data.computeIfAbsent(NncUtils.toBase64(typeId), k -> new HashMap<>());
     }
 
-    public void put(String columnName, @Nullable Object object) {
-        data.put(columnName, object);
+    public void set(long typeId, String column, @Nullable Object value) {
+        getSubMap(typeId).put(column, value);
+    }
+
+    public void put(long typeId, String columnName, @Nullable Object object) {
+        getSubMap(typeId).put(columnName, object);
     }
 
     public Long getId() {
@@ -82,7 +87,7 @@ public class InstancePO implements Identifiable {
         return title;
     }
 
-    public Map<String, @org.jetbrains.annotations.Nullable Object> getData() {
+    public Map<String, Map<String ,@org.jetbrains.annotations.Nullable Object>> getData() {
         return data;
     }
 
@@ -98,7 +103,7 @@ public class InstancePO implements Identifiable {
         this.title = title;
     }
 
-    public void setData(Map<String, Object> data) {
+    public void setData(Map<String, Map<String ,@org.jetbrains.annotations.Nullable Object>> data) {
         this.data = data;
     }
 

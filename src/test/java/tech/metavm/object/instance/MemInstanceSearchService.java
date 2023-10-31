@@ -58,7 +58,7 @@ public class MemInstanceSearchService implements InstanceSearchService {
             return false;
         }
         ExpressionEvaluator evaluator = new ExpressionEvaluator(
-                query.condition(), new InstanceEvaluationContext(instance), true
+                query.condition(), new InstanceEvaluationContext(instance, null), true
         );
         return InstanceUtils.isTrue(evaluator.evaluate());
     }

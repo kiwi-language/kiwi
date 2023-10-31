@@ -69,7 +69,7 @@ public class UpdateField extends Entity {
             if (inConstructor && !instance.isFieldInitialized(field)) {
                 instance.initializeField(field, updateValue);
             } else {
-                instance.set(field, updateValue);
+                instance.setField(field, updateValue);
             }
         }
     }

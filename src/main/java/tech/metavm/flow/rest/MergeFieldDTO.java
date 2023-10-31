@@ -30,7 +30,6 @@ public record MergeFieldDTO(
                 false,
                 null,
                 typeRef,
-                null,
                 false,
                 false
         );

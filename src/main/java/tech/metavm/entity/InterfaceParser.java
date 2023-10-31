@@ -1,19 +1,20 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.meta.ColumnStore;
 import tech.metavm.object.meta.TypeCategory;
 
 import java.lang.reflect.Type;
 
 public class InterfaceParser<T> extends PojoParser<T, InterfaceDef<T>> {
 
-    public InterfaceParser(Class<T> javaClass, Type javaType, DefMap defMap) {
-        super(javaClass, javaType, defMap);
+    public InterfaceParser(Class<T> javaClass, Type javaType, DefContext defContext, ColumnStore columnStore) {
+        super(javaClass, javaType, defContext, columnStore);
     }
 
     @Override
     protected InterfaceDef<T> createDef(PojoDef<? super T> superDef) {
         return new InterfaceDef<>(
-                javaClass, javaType, superDef, createType(), defMap
+                javaClass, javaType, superDef, createType(), defContext
         );
     }
 

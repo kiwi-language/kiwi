@@ -1,32 +1,26 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
-import tech.metavm.object.meta.rest.dto.UnionTypeParamDTO;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.entity.*;
+import tech.metavm.object.meta.rest.dto.UnionTypeParam;
+import tech.metavm.util.*;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 @EntityType("联合类型")
-public class UnionType extends Type {
+public class UnionType extends CompositeType {
 
-    public static final IndexDef<UnionType> UNIQUE_TYPE_ELEMENTS = new IndexDef<>(
-            UnionType.class, "members"
-    );
+    public static final IndexDef<UnionType> KEY_IDX = IndexDef.uniqueKey(UnionType.class, "key");
+
+    public static final IndexDef<UnionType> MEMBER_IDX = IndexDef.normalKey(UnionType.class, "members");
 
     @ChildEntity("成员集合")
-    private final Table<Type> members;
+    private final ReadWriteArray<Type> members;
 
     public UnionType(Long tmpId, Set<Type> members) {
         super(getTypeName(members), false, false, TypeCategory.UNION);
         setTmpId(tmpId);
-        this.members = new Table<>(Type.class, members);
+        this.members = new ReadWriteArray<>(Type.class, members);
     }
 
     private static String getTypeName(Set<Type> members) {
@@ -44,34 +38,33 @@ public class UnionType extends Type {
 
     @Override
     public Type getConcreteType() {
-        if(isNullable()) {
+        if (isNullable()) {
             return NncUtils.findRequired(members, t -> !t.isNull()).getConcreteType();
         }
         return this;
     }
 
-    public Table<Type> getDeclaredMembers() {
+    public ReadonlyArray<Type> getDeclaredMembers() {
         return members;
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        List<Type> thatTypes;
-        if(that instanceof UnionType thatUnionType) {
+        Iterable<Type> thatTypes;
+        if (that instanceof UnionType thatUnionType) {
             thatTypes = thatUnionType.members;
-        }
-        else {
+        } else {
             thatTypes = List.of(that);
         }
         for (Type thatType : thatTypes) {
             boolean anyMatch = false;
             for (Type typeMember : members) {
-                if(typeMember.isAssignableFrom(thatType)) {
+                if (typeMember.isAssignableFrom(thatType)) {
                     anyMatch = true;
                     break;
                 }
             }
-            if(!anyMatch) {
+            if (!anyMatch) {
                 return false;
             }
         }
@@ -80,10 +73,12 @@ public class UnionType extends Type {
 
 
     @Override
-    protected UnionTypeParamDTO getParam() {
-        return new UnionTypeParamDTO(
-                NncUtils.map(members, Type::toDTO)
-        );
+    protected UnionTypeParam getParamInternal() {
+        try (var context = SerializeContext.enter()) {
+            return new UnionTypeParam(
+                    NncUtils.map(members, context::getRef)
+            );
+        }
     }
 
     @Override
@@ -113,5 +108,19 @@ public class UnionType extends Type {
                 String::compareTo
         );
         return String.join("|", memberCanonicalNames);
+    }
+
+    @Override
+    protected String getKey() {
+        return getKey(members);
+    }
+
+    public static String getKey(Iterable<Type> componentTypes) {
+        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparingLong(Entity::getIdRequired)));
+    }
+
+    @Override
+    public List<Type> getComponentTypes() {
+        return members.toList();
     }
 }

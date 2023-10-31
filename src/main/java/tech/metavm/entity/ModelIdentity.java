@@ -7,9 +7,9 @@ import tech.metavm.object.meta.Constraint;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.UnionType;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.Table;
 
 import java.lang.reflect.Type;
 import java.util.function.Function;
@@ -26,21 +26,21 @@ public record ModelIdentity(
 
     public static ModelIdentity classTypeFields(Class<?> javaType) {
         return new ModelIdentity(
-                ParameterizedTypeImpl.create(Table.class, Field.class),
+                ParameterizedTypeImpl.create(ChildArray.class, Field.class),
                 javaType.getName() + ".fields"
         );
     }
 
     public static ModelIdentity classTypeConstraints(Class<?> javaType) {
         return new ModelIdentity(
-                ParameterizedTypeImpl.create(Table.class, Constraint.class),
+                ParameterizedTypeImpl.create(ChildArray.class, Constraint.class),
                 javaType.getName() + ".constraints"
         );
     }
 
     public static ModelIdentity classTypeFlows(Class<?> javaType) {
         return new ModelIdentity(
-                ParameterizedTypeImpl.create(Table.class, Flow.class),
+                ParameterizedTypeImpl.create(ChildArray.class, Flow.class),
                 javaType.getName() + ".flows"
         );
     }
@@ -72,16 +72,6 @@ public record ModelIdentity(
         String name = field.getDeclaringType().getCanonicalName(getJavaType) + "."
                 + getJavaField.apply(field).getName();
         return new ModelIdentity(Field.class, name);
-    }
-
-    public static ModelIdentity table(Table<?> table,
-                                      tech.metavm.object.meta.Type type,
-                                      Function<tech.metavm.object.meta.Type, Type> getJavaType,
-                                      String javaFieldName) {
-        return new ModelIdentity(
-                table.getGenericType(),
-                type.getCanonicalName(getJavaType) + "." + javaFieldName
-        );
     }
 
     public static ModelIdentity uniqueConstraint(java.lang.reflect.Field javaField) {

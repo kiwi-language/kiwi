@@ -1,10 +1,9 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.ModelIdentity;
 import tech.metavm.entity.IdInitializing;
+import tech.metavm.entity.ModelIdentity;
 import tech.metavm.entity.NoProxy;
 
-import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -13,7 +12,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGeneric {
+class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGeneric {
 
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
@@ -30,7 +29,6 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     private final int buildIndexThreshold;
     private final Map<IndexDesc<T>, Integer> counterMap = new HashMap<>();
     private final Map<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> indexes = new HashMap<>();
-    private boolean elementAsChild;
     private ModelIdentity identifier;
 
     public Table(Class<T> klass, Collection<T> data) {
@@ -51,50 +49,41 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     public Table(Class<T> klass) {
-        this(TypeReference.of(klass), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
-    }
-
-    public Table(Class<T> klass, boolean elementAsChild) {
-        this(TypeReference.of(klass).getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD, elementAsChild);
+        this(TypeReference.of(klass).getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
     public Table(TypeReference<T> typeRef) {
-        this(typeRef, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
-    }
-
-    public Table(TypeReference<T> typeRef, boolean elementAsChild) {
-        this(typeRef.getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD, elementAsChild);
+        this(typeRef.getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
     public Table(TypeReference<T> typeRef, Collection<T> data, int buildIndexThreshold) {
-        this(typeRef.getGenericType(), data, buildIndexThreshold, false);
+        this(typeRef.getGenericType(), data, buildIndexThreshold);
     }
 
     public Table(Type elementType) {
-        this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD, false);
+        this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
-    private Table(Type elementType, Collection<T> data, int buildIndexThreshold, boolean elementAsChild) {
+    Table(Type elementType, Collection<T> data, int buildIndexThreshold) {
         this.elementType = elementType;
         this.genericType = new ParameterizedTypeImpl(
                 null,
-                Table.class,
+                getRawClass(),
                 new Type[]{ReflectUtils.eraseType(elementType)}
         );
         this.buildIndexThreshold = buildIndexThreshold;
-        this.elementAsChild = elementAsChild;
         addAll(data);
     }
 
+    protected Class<?> getRawClass() {
+        return Table.class;
+    }
+
     @NoProxy
-    public void initialize(Collection<T> data) {
+    public void initialize(Collection<? extends T> data) {
         for (T datum : data) {
             addLast0(datum);
         }
-    }
-
-    public void setElementAsChild(boolean elementAsChild) {
-        this.elementAsChild = elementAsChild;
     }
 
     public void initId(long id) {
@@ -102,11 +91,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         this.id = id;
     }
 
-    public boolean isElementAsChild() {
-        return elementAsChild;
-    }
-
-    public <K> T get(IndexMapper<T, K> keyMapper, K key) {
+    public <K> T get(IndexMapper<? super T, K> keyMapper, K key) {
         beforeAccess();
         return NncUtils.get(getNode(keyMapper, key), Node::getValue);
     }
@@ -120,7 +105,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         return null;
     }
 
-    protected  <K> Node<T> getNode(IndexMapper<T, K> keyMapper, K key) {
+    protected  <K> Node<T> getNode(IndexMapper<? super T, K> keyMapper, K key) {
         Map<?, LinkedList<Node<T>>> index = tryGetIndex(keyMapper);
         if(index != null) {
             return NncUtils.getFirst(index.get(key));
@@ -145,7 +130,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         return id;
     }
 
-    private <K> Map<?, LinkedList<Node<T>>> tryGetIndex(IndexMapper<T, K> keyMapper) {
+    private <K> Map<?, LinkedList<Node<T>>> tryGetIndex(IndexMapper<? super T, K> keyMapper) {
         IndexDesc<T> indexDesc = IndexDesc.create(keyMapper);
         Map<?, LinkedList<Node<T>>> index = indexes.get(indexDesc);
         if(index != null) {
@@ -165,7 +150,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         buildIndex(indexDesc);
     }
 
-    public void buildIndex(IndexDesc<T> indexDesc) {
+    private void buildIndex(IndexDesc<T> indexDesc) {
         if(!indexes.containsKey(indexDesc)) {
             buildIndex0(indexDesc);
         }
@@ -233,7 +218,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     public Table<T> merge(Table<T> that) {
-        Table<T> merged = new Table<>(genericType, List.of(), buildIndexThreshold, elementAsChild);
+        Table<T> merged = new Table<>(genericType, List.of(), buildIndexThreshold);
         indexes.keySet().forEach(merged::buildIndex);
         merged.addAll(this);
         merged.addAll(that);
@@ -246,7 +231,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     public <R> Table<R> mapAndFilter(Function<T, R> mapper, Predicate<R> filter) {
         beforeAccess();
-        Table<R> that = new Table<>(genericType, List.of(), buildIndexThreshold, elementAsChild);
+        Table<R> that = new Table<>(genericType, List.of(), buildIndexThreshold);
         for (T t : this) {
             R r = mapper.apply(t);
             if(filter.test(r)) {
@@ -258,7 +243,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     @SuppressWarnings("unused")
     private Table<T> createSame() {
-        Table<T> that = new Table<>(genericType, List.of(), buildIndexThreshold, elementAsChild);
+        Table<T> that = new Table<>(genericType, List.of(), buildIndexThreshold);
         for (IndexDesc<T> indexDesc : indexes.keySet()) {
             that.buildIndex(indexDesc);
         }
@@ -269,10 +254,10 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
             String implClass,
             String implMethodName,
             List<Object> capturedArgs,
-            IndexMapper<T, ?> indexMapper
+            IndexMapper<? super T, ?> indexMapper
     ) {
 
-        public static <T> IndexDesc<T> create(IndexMapper<T, ?> mapper) {
+        public static <T> IndexDesc<T> create(IndexMapper<? super T, ?> mapper) {
             Method writeReplaceMethod = ReflectUtils.getMethodByName(mapper.getClass(), "writeReplace");
             SerializedLambda serializedLambda = (SerializedLambda) ReflectUtils.invoke(mapper, writeReplaceMethod);
             List<Object> capturedArgs = new ArrayList<>();
@@ -321,10 +306,6 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     @SuppressWarnings("unused")
     public String getIdentifierName() {
         return NncUtils.get(identifier, ModelIdentity::name);
-    }
-
-    public interface IndexMapper<T, K> extends Function<T, K>, Serializable {
-
     }
 
     @Override

@@ -2,7 +2,7 @@ package tech.metavm.object.meta.rest.dto;
 
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
-import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Access;
 
 public record FieldDTO(
@@ -11,12 +11,11 @@ public record FieldDTO(
         String name,
         String code,
         int access,
-        FieldValueDTO defaultValue,
+        FieldValue defaultValue,
         boolean unique,
         boolean asTitle,
         Long declaringTypeId,
         RefDTO typeRef,
-        TypeDTO type,
         boolean isChild,
         boolean isStatic
 ) implements BaseDTO {
@@ -36,16 +35,16 @@ public record FieldDTO(
 
     public static FieldDTO create(Long id, String name, Long declaringTypeId, long typeId) {
         return new FieldDTO(
-                null, id, name, null, Access.GLOBAL.code(),
+                null, id, name, null,  Access.GLOBAL.code(),
                 null, false, false, declaringTypeId,
-                RefDTO.ofId(typeId), null, false, false
+                RefDTO.ofId(typeId), false, false
         );
     }
 
     public static FieldDTO createSimple(Long id,
                                         String name,
                                         int access,
-                                        FieldValueDTO defaultValue,
+                                        FieldValue defaultValue,
                                         Long declaringTypeId,
                                         long typeId) {
         return new FieldDTO(
@@ -59,7 +58,6 @@ public record FieldDTO(
                 false,
                 declaringTypeId,
                 RefDTO.ofId(typeId),
-                null,
                 false,
                 false
         );

@@ -32,7 +32,7 @@ public record ReferenceRT(Instance source, Instance target, @Nullable Field fiel
 
     public void remove() {
         if (source instanceof ClassInstance classInstance) {
-            classInstance.set(NncUtils.requireNonNull(field), InstanceUtils.nullInstance());
+            classInstance.setField(NncUtils.requireNonNull(field), InstanceUtils.nullInstance());
         } else if (source instanceof ArrayInstance arrayInstance) {
             arrayInstance.remove(target);
         } else {

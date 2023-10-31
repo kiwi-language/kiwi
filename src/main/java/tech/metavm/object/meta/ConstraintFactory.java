@@ -11,12 +11,25 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ConstraintFactory {
 
+    public static Constraint<?> save(ConstraintDTO constraintDTO, IEntityContext context) {
+        var constraint = context.getEntity(Constraint.class, constraintDTO.getRef());
+        if(constraint != null) {
+            constraint.update(constraintDTO);
+            return constraint;
+        }
+        else {
+            return createFromDTO(constraintDTO, context);
+        }
+    }
+
     public static Constraint<?> createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
         ClassType type = entityContext.getClassType(constraintDTO.typeId());
-        ParsingContext parsingContext = new TypeParsingContext(type, entityContext.getInstanceContext());
+        ParsingContext parsingContext = new TypeParsingContext(type,
+                Objects.requireNonNull(entityContext.getInstanceContext()));
         String message = constraintDTO.message();
         if(constraintDTO.kind() == ConstraintKind.UNIQUE.code()) {
             return createIndexConstraint(constraintDTO.getParam(), type, message, parsingContext);

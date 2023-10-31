@@ -11,6 +11,7 @@ import tech.metavm.user.VerificationFilter;
 import tech.metavm.user.LoginService;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.user.rest.dto.LoginResponse;
+import tech.metavm.util.BusinessException;
 
 
 @RestController
@@ -24,7 +25,10 @@ public class LoginController {
     public Result<Void> login(HttpServletResponse servletResponse, @RequestBody LoginRequest request) {
          LoginResponse response = loginService.login(request);
          if(response.successful()) {
-             servletResponse.addCookie(new Cookie(LoginService.TOKEN_COOKIE_NAME, response.token()));
+             var cookie = new Cookie(LoginService.TOKEN_COOKIE_NAME, response.token());
+             cookie.setMaxAge(7 * 60 * 60 * 24);
+             cookie.setPath("/");
+             servletResponse.addCookie(cookie);
              return Result.success(null);
          }
          else {
@@ -34,7 +38,13 @@ public class LoginController {
 
     @GetMapping("/check")
     public Result<Boolean> check(HttpServletRequest httpServletRequest) {
-        return Result.success(loginService.verify(httpServletRequest) != null);
+        try {
+            loginService.verify(httpServletRequest);
+            return Result.success(true);
+        }
+        catch (BusinessException e) {
+            return Result.success(false);
+        }
     }
 
 }

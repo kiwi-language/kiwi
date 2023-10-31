@@ -46,7 +46,7 @@ public class ReferenceTree {
                     var anonymousField = classInstance.getType().getFieldByJavaField(
                             ReflectUtils.getField(Type.class, "anonymous")
                     );
-                    return ((BooleanInstance) classInstance.get(anonymousField)).isFalse();
+                    return ((BooleanInstance) classInstance.getField(anonymousField)).isFalse();
                 }
             }
             return false;

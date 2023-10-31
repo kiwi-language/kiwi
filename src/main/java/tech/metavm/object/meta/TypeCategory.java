@@ -6,59 +6,62 @@ import tech.metavm.entity.natives.ArrayNative;
 import tech.metavm.infra.RegionInfo;
 import tech.metavm.infra.RegionManager;
 import tech.metavm.object.instance.SQLType;
-import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
-import tech.metavm.object.meta.rest.dto.ClassParamDTO;
-import tech.metavm.object.meta.rest.dto.TypeVariableParamDTO;
-import tech.metavm.object.meta.rest.dto.UnionTypeParamDTO;
+import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 @EntityType("类型分类")
 public enum TypeCategory {
     @EnumConstant("类")
-    CLASS(0, SQLType.REFERENCE, ClassParamDTO.class),
+    CLASS(0, SQLType.REFERENCE, ClassTypeParam.class),
     @EnumConstant("枚举")
-    ENUM(1, SQLType.REFERENCE, ClassParamDTO.class),
+    ENUM(1, SQLType.REFERENCE, ClassTypeParam.class),
     @EnumConstant("接口")
-    INTERFACE(2, SQLType.OBJECT, ClassParamDTO.class),
+    INTERFACE(2, SQLType.OBJECT, ClassTypeParam.class),
     @EnumConstant("值")
-    VALUE(3, SQLType.VALUE, ClassParamDTO.class),
-    @EnumConstant("数组")
-    ARRAY(5, SQLType.MULTI_REFERENCE, ArrayTypeParamDTO.class, ArrayNative.class),
+    VALUE(3, SQLType.VALUE, ClassTypeParam.class),
+    @EnumConstant("读写数组")
+    READ_WRITE_ARRAY(6, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class),
+    @EnumConstant("只读数组")
+    READ_ONLY_ARRAY(7, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class),
+    @EnumConstant("从对象数组")
+    CHILD_ARRAY(8, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class),
     @EnumConstant("并集")
-    UNION(9, SQLType.UNION, UnionTypeParamDTO.class),
+    UNION(9, SQLType.UNION, UnionTypeParam.class),
     @EnumConstant("空")
-    NULL(10, SQLType.NULL),
+    NULL(10, SQLType.NULL, PrimitiveTypeParam.class),
     @EnumConstant("字符串")
-    STRING(11, SQLType.VARCHAR64),
+    STRING(11, SQLType.VARCHAR64, PrimitiveTypeParam.class),
     @EnumConstant("浮点数")
-    DOUBLE(12, SQLType.FLOAT),
+    DOUBLE(12, SQLType.FLOAT, PrimitiveTypeParam.class),
     @EnumConstant("整数")
-    LONG(13, SQLType.INT64),
+    LONG(13, SQLType.INT64, PrimitiveTypeParam.class),
     @EnumConstant("布尔")
-    BOOLEAN(16, SQLType.BOOL),
+    BOOLEAN(16, SQLType.BOOL, PrimitiveTypeParam.class),
     @EnumConstant("时间")
-    TIME(18, SQLType.INT64),
+    TIME(18, SQLType.INT64, PrimitiveTypeParam.class),
     @EnumConstant("日期")
-    DATE(19, SQLType.INT64),
-    @EnumConstant("密码")
-    PASSWORD(22, SQLType.TEXT),
+    DATE(19, SQLType.INT64, PrimitiveTypeParam.class),
     @EnumConstant("任意类型")
     OBJECT(21, SQLType.OBJECT),
-    @EnumConstant("实例")
-    INSTANCE(21, SQLType.REFERENCE),
+    @EnumConstant("密码")
+    PASSWORD(22, SQLType.TEXT, PrimitiveTypeParam.class),
     @EnumConstant("Void")
-    VOID(23, SQLType.VALUE),
+    VOID(23, SQLType.VALUE, PrimitiveTypeParam.class),
     @EnumConstant("类型变量")
-    VARIABLE(24, SQLType.OBJECT, TypeVariableParamDTO.class),
-    @EnumConstant("参数化类型")
-    PARAMETERIZED(25, SQLType.OBJECT),
+    VARIABLE(24, SQLType.OBJECT, TypeVariableParam.class),
     @EnumConstant("类型交集")
     INTERSECTION(26, SQLType.OBJECT),
-    FUNCTION(27, SQLType.OBJECT),
+    @EnumConstant("函数")
+    FUNCTION(27, SQLType.OBJECT, FunctionTypeParam.class),
+    @EnumConstant("不确定")
+    UNCERTAIN(28, SQLType.OBJECT, UncertainTypeParam.class),
+    @EnumConstant("不可能")
+    NOTHING(29, SQLType.OBJECT),
 
     ;
 
@@ -88,6 +91,10 @@ public enum TypeCategory {
                 .orElseThrow(() -> new RuntimeException("模型类型不存在： " + code));
     }
 
+    public static List<TypeCategory> arrayCategories() {
+        return List.of(READ_WRITE_ARRAY, READ_ONLY_ARRAY, CHILD_ARRAY);
+    }
+
     public int code() {
         return code;
     }
@@ -109,7 +116,7 @@ public enum TypeCategory {
     }
 
     public boolean isArray() {
-        return this == ARRAY;
+        return this == READ_ONLY_ARRAY || this == READ_WRITE_ARRAY || this == CHILD_ARRAY;
     }
 
     public boolean isObject() {

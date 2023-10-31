@@ -9,7 +9,7 @@ import tech.metavm.entity.IndexDef;
 public class Coupon extends Entity {
 
     public static final IndexDef<Coupon> IDX_DISCOUNT_TYPE_DISCOUNT = new IndexDef<>(
-        Coupon.class, "discountType", "discount"
+        Coupon.class, false, "discountType", "discount"
     );
 
     @EntityField("面额")

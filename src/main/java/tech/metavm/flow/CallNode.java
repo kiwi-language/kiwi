@@ -6,34 +6,33 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.natives.NativeInvoker;
-import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.ArgumentDTO;
-import tech.metavm.flow.rest.CallParamDTO;
+import tech.metavm.flow.rest.CallParam;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadonlyArray;
 
-import java.util.Collections;
 import java.util.List;
 
 @EntityType("调用节点")
-public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
+public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
 
-    public static Flow getFlow(CallParamDTO param, IEntityContext context) {
+    public static Flow getFlow(CallParam param, IEntityContext context) {
         return context.getEntity(Flow.class, param.getFlowRef());
     }
 
     @ChildEntity("参数列表")
-    protected final Table<Argument> arguments = new Table<>(Argument.class, true);
+    protected final ChildArray<Argument> arguments = new ChildArray<>(Argument.class);
     @EntityField("子流程")
     protected Flow subFlow;
 
     public CallNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, List<Argument> arguments,
                     Flow subFlow) {
         super(tmpId, name, subFlow.getReturnType(), prev, scope);
-        this.arguments.addAll(arguments);
+        this.arguments.addChildren(arguments);
         this.subFlow = subFlow;
     }
 
@@ -42,18 +41,23 @@ public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
         setCallParam(param, context);
     }
 
-    protected void setCallParam(CallParamDTO param, IEntityContext context) {
-        ParsingContext parsingContext = getParsingContext(context);
+    protected void setCallParam(CallParam param, IEntityContext context) {
         subFlow = context.getFlow(param.getFlowRef());
-//        ClassType inputType = subFlow.getInputType();
         if (param.getArguments() != null) {
+            arguments.clear();
             for (ArgumentDTO(Long tmpId, RefDTO paramRef, ValueDTO value) : param.getArguments()) {
                 Parameter parameter = context.getEntity(Parameter.class, paramRef);
-//                NncUtils.requireTrue(param.getDeclaringType() == subFlow);
-                arguments.add(new Argument(tmpId, parameter,
+                arguments.addChild(new Argument(tmpId, parameter,
                         ValueFactory.create(value, getParsingContext(context))));
             }
         }
+        setExtraParam(param, context);
+    }
+
+    public void onReturn(Instance returnValue, MetaFrame frame) {
+    }
+
+    protected void setExtraParam(CallParam paramDTO, IEntityContext context) {
     }
 
     @Override
@@ -68,18 +72,17 @@ public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
     }
 
     public void setArguments(List<Argument> arguments) {
-        this.arguments.clear();
-        this.arguments.addAll(arguments);
+        this.arguments.resetChildren(arguments);
     }
 
-    public List<Argument> getArguments() {
-        return Collections.unmodifiableList(arguments);
+    public ReadonlyArray<Argument> getArguments() {
+        return arguments;
     }
 
-    protected abstract Instance getSelf(FlowFrame frame);
+    protected abstract Instance getSelf(MetaFrame frame);
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         FlowStack stack = frame.getStack();
         var self = getSelf(frame);
         var args = NncUtils.map(arguments,arg -> arg.evaluate(frame));
@@ -89,12 +92,12 @@ public abstract class CallNode<T extends CallParamDTO> extends NodeRT<T> {
         }
         if (flow.isNative()) {
             var result = NativeInvoker.invoke(flow, self, args);
+            onReturn(result, frame);
             if (result != null) {
                 frame.setResult(result);
             }
         } else {
-            FlowFrame newFrame = new FlowFrame(flow, self, args, stack);
-            stack.push(newFrame);
+            stack.push(new MetaFrame(flow, self, args, stack));
         }
     }
 

@@ -1,5 +1,8 @@
 package tech.metavm.expression;
 
+import tech.metavm.autograph.ExpressionTypeMap;
+import tech.metavm.entity.DummyGenericDeclaration;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.FlowBuilder;
 import tech.metavm.flow.Parameter;
 import tech.metavm.entity.ModelDefRegistry;
@@ -12,23 +15,29 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 
-import static tech.metavm.object.meta.TypeUtil.getParameterizedCode;
-import static tech.metavm.object.meta.TypeUtil.getParameterizedName;
-
 public class ElementTransformer {
 
-    private final Map<NodeRT<?>, NodeRT<?>> nodeMap = new HashMap<>();
+    private final Map<NodeRT<?>, NodeRT<?>> transformedNodes = new IdentityHashMap<>();
+    private final Map<Type, Type> transformedTypes = new IdentityHashMap<>();
+
     private final LinkedList<ClassType> classes = new LinkedList<>();
     private final LinkedList<Flow> flows = new LinkedList<>();
     private final LinkedList<ScopeRT> scopes = new LinkedList<>();
     protected final TypeFactory typeFactory;
+    @Nullable
+    private final IEntityContext entityContext;
 
     public ElementTransformer() {
-        this(new DefaultTypeFactory(ModelDefRegistry::getType));
+        this(null);
     }
 
-    public ElementTransformer(TypeFactory typeFactory) {
+    public ElementTransformer(IEntityContext entityContext) {
+        this(new DefaultTypeFactory(ModelDefRegistry::getType), entityContext);
+    }
+
+    public ElementTransformer(TypeFactory typeFactory, @Nullable IEntityContext entityContext) {
         this.typeFactory = typeFactory;
+        this.entityContext = entityContext;
     }
 
     public Type transformType(Type type) {
@@ -38,41 +47,120 @@ public class ElementTransformer {
             case UnionType unionType -> transformUnionType(unionType);
             case TypeVariable typeVariable -> transformTypeVariable(typeVariable);
             case PrimitiveType primitiveType -> transformPrimitiveType(primitiveType);
+            case FunctionType functionType -> transformFunctionType(functionType);
+            case UncertainType uncertainType -> transformUncertainType(uncertainType);
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }
 
+    public Type transformTypeReference(Type typeReference) {
+        var transformed = getTransformedType(typeReference);
+        if (transformed != null) {
+            return transformed;
+        }
+        return switch (typeReference) {
+            case ClassType classTypeRef -> transformClassTypeReference(classTypeRef);
+            case ArrayType arrayTypeRef -> transformArrayTypeReference(arrayTypeRef);
+            case UnionType unionTypeRef -> transformUnionTypeReference(unionTypeRef);
+            case TypeVariable typeVariableRef -> transformTypeVariableReference(typeVariableRef);
+            case PrimitiveType primitiveTypeRef -> transformPrimitiveTypeReference(primitiveTypeRef);
+            case FunctionType funcTypeRef -> transformFunctionTypeReference(funcTypeRef);
+            case UncertainType uncertainTypeRef -> transformUncertainTypeReference(uncertainTypeRef);
+            default -> throw new IllegalStateException("Unexpected value: " + typeReference);
+        };
+    }
+
+    public Type transformUncertainTypeReference(UncertainType uncertainTypeRef) {
+        return transformedTypes.getOrDefault(uncertainTypeRef, uncertainTypeRef);
+    }
+
+    public Type transformFunctionTypeReference(FunctionType funcTypeRef) {
+        return transformedTypes.getOrDefault(funcTypeRef, funcTypeRef);
+    }
+
+    public Type transformPrimitiveTypeReference(PrimitiveType primitiveTypeRef) {
+        return transformedTypes.getOrDefault(primitiveTypeRef, primitiveTypeRef);
+    }
+
+    public Type transformTypeVariableReference(TypeVariable typeVariableRef) {
+        return transformedTypes.getOrDefault(typeVariableRef, typeVariableRef);
+    }
+
+    public Type transformUnionTypeReference(UnionType unionTypeRef) {
+        return transformedTypes.getOrDefault(unionTypeRef, unionTypeRef);
+    }
+
+    public Type transformArrayTypeReference(ArrayType arrayTypeRef) {
+        return transformedTypes.getOrDefault(arrayTypeRef, arrayTypeRef);
+    }
+
+    public Type transformClassTypeReference(ClassType classTypeReference) {
+        return transformedTypes.getOrDefault(classTypeReference, classTypeReference);
+    }
+
+    private Type transformUncertainType(UncertainType uncertainType) {
+        if (entityContext == null) {
+            throw new InternalException("Can not transform UncertainType because UncertainTypeContext is not available");
+        }
+        return entityContext.getUncertainType(
+                transformTypeReference(uncertainType.getLowerBound()),
+                transformTypeReference(uncertainType.getUpperBound())
+        );
+    }
+
+    private FunctionType transformFunctionType(FunctionType functionType) {
+        if (entityContext == null) {
+            throw new InternalException(
+                    "Unable to transform function types because FunctionTypeContext is not available");
+        }
+        return entityContext.getFunctionType(
+                NncUtils.map(functionType.getParameterTypes(), this::transformTypeReference),
+                transformTypeReference(functionType.getReturnType())
+        );
+    }
+
     public ClassType transformClassType(ClassType classType) {
         return transformClassType(classType, classType.getName(), classType.getCode(),
-                classType.getTemplate(), classType.getTypeArguments());
+                classType.getTemplate(),
+                classType.getTypeArguments()
+        );
     }
 
     public ClassType transformClassType(ClassType classType,
                                         String name,
                                         @Nullable String code,
                                         @Nullable ClassType template,
-                                        List<Type> typeArgs) {
+                                        List<Type> typeArgs
+    ) {
         var transformed = ClassBuilder.newBuilder(name, code)
                 .desc(classType.getDesc())
+                .existing(getExistingClass())
                 .source(classType.getSource())
                 .category(classType.getCategory())
                 .anonymous(classType.isAnonymous())
                 .template(template)
                 .dependencies(NncUtils.map(classType.getDependencies(),
-                        dep -> (ClassType) transformType(dep)))
+                        dep -> (ClassType) transformTypeReference(dep)))
                 .typeArguments(typeArgs)
                 .interfaces(NncUtils.map(
-                        classType.getInterfaces(), it -> (ClassType) transformType(it)
+                        classType.getInterfaces(), it -> (ClassType) transformTypeReference(it)
                 ))
                 .superType(classType.getSuperType() != null ?
-                        (ClassType) transformType(classType.getSuperType()) : null)
+                        (ClassType) transformTypeReference(classType.getSuperType()) : null)
                 .ephemeral(classType.isEphemeral())
                 .build();
+        transformed.setStage(classType.getStage());
+        setTransformedType(classType, transformed);
         onClassTypeTransformed(transformed);
         enterClass(transformed);
         transformClassBody(classType);
         exitClass();
         return transformed;
+    }
+
+    @Nullable
+    protected ClassType getExistingClass() {
+        return null;
     }
 
     protected void transformClassBody(ClassType classType) {
@@ -84,22 +172,34 @@ public class ElementTransformer {
 
     }
 
-    public Type transformTypeVariable(TypeVariable typeVariable) {
-        return typeVariable;
+    public TypeVariable transformTypeVariable(TypeVariable typeVariable) {
+        var transformed = new TypeVariable(null, typeVariable.getName(), typeVariable.getCode(),
+                DummyGenericDeclaration.INSTANCE);
+        typeFactory.addType(transformed);
+        setTransformedType(typeVariable, transformed);
+        transformed.setBounds(NncUtils.map(typeVariable.getBounds(), this::transformTypeReference));
+        return transformed;
+    }
+
+    private void setTransformedType(Type original, Type transformed) {
+        transformedTypes.put(original, transformed);
     }
 
     public Type transformArrayType(ArrayType arrayType) {
-        return new ArrayType(
-                null,
-                transformType(arrayType.getElementType()),
-                arrayType.isEphemeral()
+        if (entityContext == null) {
+            throw new InternalException("Can not transform array type because ArrayTypeContext is not available");
+        }
+        return entityContext.getArrayType(
+                transformTypeReference(arrayType.getElementType()),
+                arrayType.kind()
         );
     }
 
     public Type transformUnionType(UnionType unionType) {
-        return new UnionType(
-                null, NncUtils.mapUnique(unionType.getMembers(), this::transformType)
-        );
+        if (entityContext == null) {
+            throw new InternalException("Can not transform union type because UnionTypeContext is not available");
+        }
+        return entityContext.getUnionType(NncUtils.mapUnique(unionType.getMembers(), this::transformTypeReference));
     }
 
     public Type transformPrimitiveType(PrimitiveType primitiveType) {
@@ -108,7 +208,8 @@ public class ElementTransformer {
 
     public Field transformField(Field field) {
         var transformed = FieldBuilder.newBuilder(
-                        field.getName(), field.getCode(), currentClass(), transformType(field.getType()))
+                        field.getName(), field.getCode(), currentClass(), transformTypeReference(field.getType()))
+                .existing(getExistingField(field))
                 .asTitle(field.isAsTitle())
                 .nullType(typeFactory.getNullType())
                 .isChild(field.isChildField())
@@ -120,38 +221,57 @@ public class ElementTransformer {
         return transformed;
     }
 
-    public Flow transformFlow(Flow flow) {
-        var typeArguments = NncUtils.map(flow.getTypeArguments(), this::transformType);
-        return transformFlow(flow, flow.getTemplate(), typeArguments);
+    protected Field getExistingField(Field templateField) {
+        if (!classes.isEmpty()) {
+            var klass = currentClass();
+            return klass.tryGetFieldByName(templateField.getName());
+        } else {
+            return null;
+        }
     }
 
-    public Flow transformFlow(Flow flow, Flow template, List<Type> typeArguments) {
-        String name = template == null ? flow.getName() : getParameterizedName(flow.getName(), typeArguments);
-        String code = template == null ? flow.getCode() : getParameterizedCode(flow.getCode(), typeArguments);
-        Flow concreteOverriden;
-        if (flow.getOverridden() != null) {
-            var overridenType = flow.getOverridden().getDeclaringType();
-            var concreteOverridenType = (ClassType) transformType(getSuperType(flow.getDeclaringType(), overridenType));
-            concreteOverriden = concreteOverridenType.getFlows().get(
-                    overridenType.getFlows().indexOf(flow.getOverridden())
-            );
-        } else {
-            concreteOverriden = null;
+    private Flow getExistingFlow(Flow templateFlow) {
+        return currentClass().getFlowByTemplate(templateFlow);
+    }
+
+    public Flow transformFlow(Flow flow) {
+        var typeArguments = NncUtils.map(flow.getTypeArguments(), this::transformTypeReference);
+        List<TypeVariable> typeParams = NncUtils.map(
+                flow.getTypeParameters(), this::transformTypeVariable
+        );
+        return transformFlow(flow, flow.getTemplate(), flow.getName(), flow.getCode(),
+                typeParams, typeArguments);
+    }
+
+    public Flow transformFlow(Flow flow, Flow template, String name, String code,
+                              List<TypeVariable> typeParameters, List<Type> typeArguments) {
+        if (entityContext == null) {
+            throw new InternalException(
+                    "Unable to transform flow, because functionTypeContext is not provided");
+        }
+        new FlowAnalyzer().visitFlow(flow);
+
+        List<Flow> concreteOverriden = new ArrayList<>();
+        for (Flow overridden : flow.getOverridden()) {
+            var overridenType = overridden.getDeclaringType();
+            var concreteOverridenType = (ClassType) transformTypeReference(getSuperType(flow.getDeclaringType(), overridenType));
+            concreteOverriden.add(concreteOverridenType.getFlows().get(
+                    overridenType.getFlows().indexOf(overridden)
+            ));
         }
         var declaringType = hasCurrentClass() ? currentClass() : flow.getDeclaringType();
-        var transformed = FlowBuilder.newBuilder(declaringType, name, code)
+        var transformed = FlowBuilder.newBuilder(declaringType, name, code, entityContext.getFunctionTypeContext())
                 .template(template)
                 .nullType(typeFactory.getNullType())
+                .existing(getExistingFlow(flow))
                 .typeArguments(typeArguments)
                 .overriden(concreteOverriden)
                 .isAbstract(flow.isAbstract())
+                .typeParameters(typeParameters)
                 .isNative(flow.isNative())
                 .isConstructor(flow.isConstructor())
-                .parameters(
-                        concreteOverriden == null ?
-                                NncUtils.map(flow.getParameters(), this::transformParameter) : null
-                )
-                .outputType(transformType(flow.getReturnType()))
+                .parameters(NncUtils.map(flow.getParameters(), param -> transformFlowParameter(flow, param)))
+                .returnType(transformTypeReference(flow.getReturnType()))
                 .build();
 
         enterFlow(transformed);
@@ -162,18 +282,40 @@ public class ElementTransformer {
         return transformed;
     }
 
+    public Parameter transformFlowParameter(Flow flow, Parameter parameter) {
+        var existingParam = getExistingParameter(flow, parameter);
+        if (existingParam != null) {
+            existingParam.setName(parameter.getName());
+            existingParam.setCode(parameter.getCode());
+            existingParam.setType(transformTypeReference(parameter.getType()));
+            return existingParam;
+        } else {
+            return transformParameter(parameter);
+        }
+    }
+
     public Parameter transformParameter(Parameter parameter) {
         return new Parameter(
                 null,
                 parameter.getName(),
                 parameter.getCode(),
-                transformType(parameter.getType())
+                transformTypeReference(parameter.getType())
         );
+    }
+
+    protected Parameter getExistingParameter(Flow flow, Parameter parameter) {
+        var existingFlow = getExistingFlow(flow);
+        if (existingFlow != null) {
+            return existingFlow.getParameterByName(parameter.getName());
+        } else {
+            return null;
+        }
     }
 
     public ScopeRT transformScope(ScopeRT scope) {
         var transformed = new ScopeRT(flow(),
                 NncUtils.get(scope.getOwner(), this::getTransformedNode), scope.isWithBackEdge());
+        transformed.setExpressionTypes(transformExpressionTypeMap(scope.getExpressionTypes()));
         enterScope(transformed);
         scope.getNodes().forEach(this::transformNode);
         exitScope();
@@ -246,29 +388,72 @@ public class ElementTransformer {
             case MergeNode mergeNode -> transformMergeNode(mergeNode);
             case AddObjectNode addObjectNode -> transformAddObjectNode(addObjectNode);
             case CheckNode checkNode -> transformCheckNode(checkNode);
+            case LambdaNode lambdaNode -> transformLambdaNode(lambdaNode);
             default -> throw new IllegalStateException("Unexpected node: " + node);
         };
-        nodeMap.put(node, transformed);
+        if (node.getExpressionTypes() != ExpressionTypeMap.EMPTY) {
+            transformed.setExpressionTypes(transformExpressionTypeMap(node.getExpressionTypes()));
+        }
+        setTransformedNode(node, transformed);
+        return transformed;
+    }
+
+    private ExpressionTypeMap transformExpressionTypeMap(ExpressionTypeMap expressionTypeMap) {
+        Map<Expression, Type> transformedMap = new IdentityHashMap<>();
+        expressionTypeMap.toMap().forEach((expr, type) ->
+                transformedMap.put(transformExpression(expr), transformTypeReference(type))
+        );
+        return new ExpressionTypeMap(transformedMap);
+    }
+
+    private LambdaNode transformLambdaNode(LambdaNode node) {
+        var transformed = new LambdaNode(
+                null,
+                node.getName(),
+//                transformType(node.getType()),
+                getTransformedNode(node.getPredecessor()),
+                scope(),
+                NncUtils.map(node.getParameters(), this::transformParameter),
+                transformTypeReference(node.getReturnType()),
+                (FunctionType) transformTypeReference(node.getFunctionType()),
+                NncUtils.get(node.getFunctionalInterface(), funcInterface -> (ClassType) transformTypeReference(funcInterface))
+        );
+        transformed.setExpressionTypes(transformExpressionTypeMap(node.getExpressionTypes()));
+        setTransformedNode(node, transformed);
+        enterScope(transformed.getBodyScope());
+        node.getBodyScope().getNodes().forEach(this::transformNode);
+        exitScope();
         return transformed;
     }
 
     private CheckNode transformCheckNode(CheckNode checkNode) {
         return new CheckNode(
                 null, checkNode.getName(), getTransformedNode(checkNode.getPredecessor()),
-                scope(), transformValue(checkNode.getCondition())
+                scope(), transformValue(checkNode.getCondition()),
+                (BranchNode) getTransformedNode(checkNode.getExit()
+                )
         );
     }
 
     private AddObjectNode transformAddObjectNode(AddObjectNode addObjectNode) {
-        return new AddObjectNode(null, addObjectNode.getName(),
-                (ClassType) transformType(addObjectNode.getType()),
+        var type = (ClassType) transformTypeReference(addObjectNode.getType());
+        var transformed = new AddObjectNode(null, addObjectNode.getName(),
+                type,
                 getTransformedNode(addObjectNode.getPredecessor()),
                 scope()
         );
+        for (FieldParam field : addObjectNode.getFields()) {
+            transformed.addField(
+                    new FieldParam(transformFieldReference(type, field.getField()),
+                            transformValue(field.getValue()))
+            );
+        }
+        return transformed;
     }
 
     private SelfNode transformSelfNode(SelfNode selfNode) {
         return new SelfNode(null, selfNode.getName(),
+                (ClassType) transformTypeReference(selfNode.getType()),
                 getTransformedNode(selfNode.getPredecessor()),
                 scope());
     }
@@ -310,14 +495,19 @@ public class ElementTransformer {
                 getTransformedNode(branchNode.getPredecessor()),
                 scope()
         );
+        transformed.setExpressionTypes(transformExpressionTypeMap(branchNode.getExpressionTypes()));
+        setTransformedNode(branchNode, transformed);
         for (Branch branch : branchNode.getBranches()) {
             var branchCopy = new Branch(
                     branch.getIndex(),
                     transformValue(branch.getCondition()),
                     branch.isPreselected(),
+                    branch.isExit(),
                     new ScopeRT(flow(), transformed),
                     transformed
             );
+            transformed.addBranch(branchCopy);
+            branchCopy.getScope().setExpressionTypes(transformExpressionTypeMap(branch.getScope().getExpressionTypes()));
             enterScope(branchCopy.getScope());
             branch.getScope().getNodes().forEach(this::transformNode);
             exitScope();
@@ -329,19 +519,20 @@ public class ElementTransformer {
         var transformed = new WhileNode(
                 null,
                 node.getName(),
-                transformType(node.getType()),
+                transformTypeReference(node.getType()),
                 getTransformedNode(node.getPredecessor()),
                 scope(),
                 new ExpressionValue(ExpressionUtil.trueExpression())
         );
-        nodeMap.put(node, transformed);
+        transformed.setExpressionTypes(transformExpressionTypeMap(node.getExpressionTypes()));
+        setTransformedNode(node, transformed);
         enterScope(transformed.getBodyScope());
         node.getBodyScope().getNodes().forEach(this::transformNode);
         exitScope();
         transformed.setCondition(transformValue(node.getCondition()));
         for (LoopField field : node.getFields()) {
             transformed.setField(
-                    transformed.getType().getFieldByName(field.getField().getName()),
+                    transformed.getType().tryGetFieldByName(field.getField().getName()),
                     transformValue(field.getInitialValue()),
                     transformValue(field.getUpdatedValue())
             );
@@ -350,19 +541,19 @@ public class ElementTransformer {
     }
 
     private SubFlowNode transformSubFlowNode(SubFlowNode subFlowNode) {
-        var concreteSelf = transformValue(subFlowNode.getSelfId());
-        var selfType = (ClassType) concreteSelf.getType();
-        var subFlow = selfType.getFlows().get(
-                subFlowNode.getSubFlow().getDeclaringType().getFlows().indexOf(subFlowNode.getSubFlow())
-        );
-        subFlow = selfType.getFlows().get(
-                subFlow.getDeclaringType().getFlows().indexOf(subFlow)
-        );
-        var transformedSubFlow = transformFlowReference(subFlow);
+        var transformedSelf = transformValue(subFlowNode.getSelfId());
+        var selfType = getConcreteClassType(getExpressionType(transformedSelf.getExpression()));
+//        var subFlow = selfType.getFlows().get(
+//                subFlowNode.getSubFlow().getDeclaringType().getFlows().indexOf(subFlowNode.getSubFlow())
+//        );
+//        subFlow = selfType.getFlows().get(
+//                subFlow.getDeclaringType().getFlows().indexOf(subFlow)
+//        );
+        var transformedSubFlow = transformFlowReference(selfType, subFlowNode.getSubFlow());
         List<Argument> arguments = new ArrayList<>();
         NncUtils.biForEach(
                 subFlowNode.getArguments(),
-                subFlow.getParameters(),
+                transformedSubFlow.getParameters(),
                 (arg, param) -> arguments.add(new Argument(null, param, transformValue(arg.getValue())))
         );
         return new SubFlowNode(
@@ -370,22 +561,22 @@ public class ElementTransformer {
                 subFlowNode.getName(),
                 getTransformedNode(subFlowNode.getPredecessor()),
                 scope(),
-                concreteSelf,
+                transformedSelf,
                 arguments,
                 transformedSubFlow
         );
     }
 
     private NewNode transformNewNode(NewNode node) {
-        var concreteType = (ClassType) transformType(node.getType());
-        var subFlow = concreteType.getFlows().get(
-                node.getSubFlow().getDeclaringType().getFlows().indexOf(node.getSubFlow())
-        );
-        var transformedSubFlow = transformFlowReference(subFlow);
+        var type = (ClassType) transformTypeReference(node.getType());
+//        var subFlow = type.getFlows().get(
+//                node.getSubFlow().getDeclaringType().getFlows().indexOf(node.getSubFlow())
+//        );
+        var transformedSubFlow = transformFlowReference(type, node.getSubFlow());
         List<Argument> arguments = new ArrayList<>();
         NncUtils.biForEach(
                 node.getArguments(),
-                flow().getParameters(),
+                transformedSubFlow.getParameters(),
                 (arg, param) -> arguments.add(new Argument(null, param, transformValue(arg.getValue())))
         );
         return new NewNode(
@@ -400,7 +591,7 @@ public class ElementTransformer {
 
     private UpdateObjectNode transformUpdateObjectNode(UpdateObjectNode node) {
         var self = transformValue(node.getObjectId());
-        var type = (ClassType) self.getType();
+        var type = (ClassType) getExpressionType(self.getExpression());
         var copy = new UpdateObjectNode(
                 null,
                 node.getName(),
@@ -410,7 +601,7 @@ public class ElementTransformer {
         copy.setObjectId(self);
         for (UpdateField updateField : node.getUpdateFields()) {
             copy.setUpdateField(
-                    type.getFieldByName(updateField.getField().getName()),
+                    type.tryGetFieldByName(updateField.getField().getName()),
                     updateField.getOp(),
                     transformValue(updateField.getValue())
             );
@@ -421,7 +612,9 @@ public class ElementTransformer {
     private RaiseNode transformExceptionNode(RaiseNode node) {
         return new RaiseNode(
                 null, node.getName(),
-                transformValue(node.getException()),
+                node.getParameterKind(),
+                NncUtils.get(node.getException(), this::transformValue),
+                NncUtils.get(node.getMessage(), this::transformValue),
                 getTransformedNode(node.getPredecessor()),
                 scope()
         );
@@ -429,7 +622,7 @@ public class ElementTransformer {
 
     private DeleteObjectNode transformDeleteObjectNode(DeleteObjectNode node) {
         var copy = new DeleteObjectNode(
-                null, node.getName(), getTransformedNode(node), scope()
+                null, node.getName(), getTransformedNode(node.getPredecessor()), scope()
         );
         copy.setObjectId(transformValue(node.getObjectId()));
         return copy;
@@ -437,7 +630,7 @@ public class ElementTransformer {
 
     private MergeNode transformMergeNode(MergeNode node) {
         var type = (ClassType) transformType(node.getType());
-        var branchNode = (BranchNode) getTransformedNode(node.getPredecessor());
+        var branchNode = (BranchNode) NncUtils.requireNonNull(getTransformedNode(node.getPredecessor()));
         var copy = new MergeNode(
                 null, node.getName(),
                 branchNode,
@@ -446,14 +639,13 @@ public class ElementTransformer {
         );
         for (MergeNodeField field : node.getFields()) {
             var fieldCopy = new MergeNodeField(
-                    type.getFieldByName(field.getField().getName()),
+                    type.tryGetFieldByName(field.getField().getName()),
                     copy
             );
             for (ConditionalValue value : field.getValues()) {
                 var branch = branchNode.getBranchByIndex(value.getBranch().getIndex());
                 fieldCopy.setValue(branch, transformValue(value.getValue()));
             }
-            copy.addField(fieldCopy);
         }
         return copy;
     }
@@ -461,14 +653,14 @@ public class ElementTransformer {
     private ValueNode transformValueNode(ValueNode valueNode) {
         return new ValueNode(
                 null, valueNode.getName(),
-                transformType(valueNode.getType()),
+                transformTypeReference(valueNode.getType()),
                 getTransformedNode(valueNode.getPredecessor()),
                 scope(), transformValue(valueNode.getValue())
         );
     }
 
     private GetUniqueNode transformGetUniqueNode(GetUniqueNode node) {
-        var type = (ClassType) transformType(node.getConstraint().getDeclaringType());
+        var type = (ClassType) transformTypeReference(node.getConstraint().getDeclaringType());
         var index = (Index) type.getConstraints().get(
                 node.getConstraint().getDeclaringType().getConstraints().indexOf(node.getConstraint())
         );
@@ -533,7 +725,7 @@ public class ElementTransformer {
         return switch (expression) {
             case BinaryExpression binaryExpression -> transformBinaryExpression(binaryExpression);
             case UnaryExpression unaryExpression -> transformUnaryExpression(unaryExpression);
-            case FieldExpression fieldExpression -> transformFieldExpression(fieldExpression);
+            case PropertyExpression fieldExpression -> transformPropertyExpression(fieldExpression);
             case ArrayAccessExpression arrayAccExpression -> transformArrayAccessExpression(arrayAccExpression);
             case FunctionExpression functionExpression -> transformFunctionExpression(functionExpression);
             case AsExpression asExpression -> transformAsExpression(asExpression);
@@ -568,15 +760,29 @@ public class ElementTransformer {
         );
     }
 
-    public Expression transformFieldExpression(FieldExpression expression) {
+    private ClassType getConcreteClassType(Type type) {
+        var bound = type.getUltimateUpperBound();
+        if (bound instanceof ClassType classType) {
+            return classType;
+        } else {
+            throw new IllegalStateException("type " + type + " doesn't have a class upper bound");
+        }
+    }
+
+    public Expression transformPropertyExpression(PropertyExpression expression) {
         var transformedSelf = transformExpression(expression.getInstance());
-        ClassType selfType = switch (transformedSelf.getType()) {
-            case ClassType classType -> classType;
-            case TypeVariable typeVariable -> (ClassType) typeVariable.getBounds().get(0);
-            default -> throw new IllegalStateException("Unexpected value: " + transformedSelf.getType());
-        };
-        var field = selfType.getFieldByCode(expression.getField().getCode());
-        return new FieldExpression(transformedSelf, field);
+        ClassType selfType = getConcreteClassType(getExpressionType(transformedSelf));
+        var property = transformPropertyReference(selfType, expression.getProperty());
+        return new PropertyExpression(transformedSelf, property);
+    }
+
+    private Type getExpressionType(Expression expression) {
+        var lastNode = scope().getLastNode();
+        if (lastNode == null) {
+            return scope().getExpressionTypes().getType(expression);
+        } else {
+            return lastNode.getExpressionTypes().getType(expression);
+        }
     }
 
     public Expression transformArrayAccessExpression(ArrayAccessExpression expression) {
@@ -655,7 +861,8 @@ public class ElementTransformer {
 
     public Expression transformArrayExpression(ArrayExpression expression) {
         return new ArrayExpression(
-                NncUtils.map(expression.getExpressions(), this::transformExpression)
+                NncUtils.map(expression.getExpressions(), this::transformExpression),
+                (ArrayType) transformTypeReference(expression.getType())
         );
     }
 
@@ -665,15 +872,37 @@ public class ElementTransformer {
         );
     }
 
+    private void setTransformedNode(NodeRT<?> original, NodeRT<?> transformed) {
+        transformedNodes.put(original, transformed);
+    }
+
     protected final NodeRT<?> getTransformedNode(NodeRT<?> node) {
         if (node == null) {
             return null;
         }
-        return NncUtils.requireNonNull(nodeMap.get(node));
+        return NncUtils.requireNonNull(transformedNodes.get(node));
     }
 
-    protected Flow transformFlowReference(Flow flow) {
-        return flow;
+    protected final Type getTransformedType(Type type) {
+        return transformedTypes.get(type);
     }
+
+    public Property transformPropertyReference(ClassType declaringType, Property property) {
+        return switch (property) {
+            case Field field -> transformFieldReference(declaringType, field);
+            case Flow flow -> transformFlowReference(declaringType, flow);
+            default -> throw new IllegalStateException("Unexpected value: " + property);
+        };
+    }
+
+    public final Field transformFieldReference(ClassType declaringType, Field field) {
+        return declaringType.tryGetFieldByName(field.getName());
+    }
+
+    public Flow transformFlowReference(ClassType declaringType, Flow flow) {
+        return declaringType.getFlow(flow.getName(),
+                NncUtils.map(flow.getParameterTypes(), this::transformTypeReference));
+    }
+
 
 }

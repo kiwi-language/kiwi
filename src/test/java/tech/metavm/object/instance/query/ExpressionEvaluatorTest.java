@@ -4,6 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.MockEntityContext;
 import tech.metavm.expression.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
@@ -22,9 +24,11 @@ public class ExpressionEvaluatorTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionEvaluatorTest.class);
 
+    private MockIdProvider idProvider;
+
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockRegistry.setUp(idProvider = new MockIdProvider());
     }
 
     public void testAllMatch() {
@@ -53,9 +57,17 @@ public class ExpressionEvaluatorTest extends TestCase {
         ));
         foo.setCode("002");
 
+        IEntityContext context = newContext();
+
         ClassInstance fooInst = (ClassInstance) MockRegistry.getInstance(foo);
-        Instance result = ExpressionEvaluator.evaluate(expression, fooInst);
+        Instance result = ExpressionEvaluator.evaluate(expression, fooInst, context);
         Assert.assertTrue(InstanceUtils.isTrue(result));
+    }
+
+    private IEntityContext newContext() {
+        return new MockEntityContext(
+                MockRegistry.getInstanceContext().getEntityContext(), idProvider, MockRegistry.getDefContext()
+        );
     }
 
     public void testAllMatchListView() {
@@ -71,8 +83,10 @@ public class ExpressionEvaluatorTest extends TestCase {
             MockRegistry.getField(Foo.class, "name")
         ));
 
+        IEntityContext context = newContext();
+
         ClassInstance listViewInst = (ClassInstance) MockRegistry.getInstance(listView);
-        Instance result = ExpressionEvaluator.evaluate(expression, listViewInst);
+        Instance result = ExpressionEvaluator.evaluate(expression, listViewInst, context);
         Assert.assertTrue(InstanceUtils.isTrue(result));
     }
 

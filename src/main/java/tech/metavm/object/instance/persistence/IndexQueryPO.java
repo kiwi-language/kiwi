@@ -14,19 +14,22 @@ public class IndexQueryPO {
     private IndexQueryOperator columnXOperator;
     private boolean desc;
     private long limit;
+    private int lockMode;
 
     public IndexQueryPO(long tenantId,
                         long constraintId,
                         IndexKeyPO key,
                         IndexQueryOperator columnXOperator,
                         boolean desc,
-                        long limit) {
+                        long limit,
+                        int lockMode) {
         this.tenantId = tenantId;
         this.constraintId = constraintId;
         this.key = key;
         this.columnXOperator = columnXOperator;
         this.desc = desc;
         this.limit = limit;
+        this.lockMode = lockMode;
     }
 
     public IndexQueryPO() {
@@ -82,6 +85,10 @@ public class IndexQueryPO {
 //    public void setItems(List<IndexQueryItemPO> items) {
 //        this.items = items;
 //    }
+
+    public int getLockMode() {
+        return lockMode;
+    }
 
     public boolean isDesc() {
         return desc;

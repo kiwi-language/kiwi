@@ -36,8 +36,8 @@ public class PathResolver {
                 fillPath0(expr, visited);
             }
         }
-        else if(expression instanceof FieldExpression fieldExpression) {
-            root.fillPath(fieldExpression.getField().getName());
+        else if(expression instanceof PropertyExpression fieldExpression) {
+            root.fillPath(fieldExpression.getProperty().getName());
         }
     }
 

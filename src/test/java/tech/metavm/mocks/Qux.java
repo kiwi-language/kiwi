@@ -8,7 +8,7 @@ import tech.metavm.entity.IndexDef;
 @EntityType("量子X")
 public class Qux extends Entity {
 
-    public static final IndexDef<Qux> IDX_AMOUNT = new IndexDef<>(Qux.class, "amount");
+    public static final IndexDef<Qux> IDX_AMOUNT = new IndexDef<>(Qux.class,false, "amount");
 
     @EntityField("数量")
     private final long amount;

@@ -1,26 +1,16 @@
 package tech.metavm;
 
-import java.io.Serializable;
+import tech.metavm.util.NncUtils;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 public abstract class Lab {
 
-    public static void main(String[] args) {
-        try {
-            throw new Throwable();
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Rethrown", e);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        } finally {
-            System.out.println("finally done");
-        }
-
+    public static void main(String[] args) throws Throwable {
+        System.out.println(NncUtils.decodeBase64("q+o="));
     }
 
-    public static void test(Object value) {
-        if(value instanceof CharSequence charSeq || value instanceof Serializable ser) {
 
-        }
-    }
 }

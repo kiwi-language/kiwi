@@ -14,6 +14,7 @@ import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -46,6 +47,15 @@ public class EntityUtils {
                 idInitializing.clearId();
             }
         });
+    }
+
+    public static Type getEntityRuntimeType(Object entity) {
+        if(entity instanceof RuntimeGeneric runtimeGeneric) {
+            return runtimeGeneric.getGenericType();
+        }
+        else {
+            return entity.getClass();
+        }
     }
 
     public static void traverseModelGraph(Object model, BiConsumer<List<String>, Object> action) {

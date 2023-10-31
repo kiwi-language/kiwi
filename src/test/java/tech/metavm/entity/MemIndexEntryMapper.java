@@ -49,7 +49,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     public List<IndexEntryPO> selectByInstanceIdsOrKeys(long tenantId,
                                                         Collection<Long> instanceIds,
                                                         Collection<IndexKeyPO> keys) {
-        return NncUtils.merge(
+        return NncUtils.union(
                 NncUtils.flatMap(instanceIds, this::getItemsByInstanceId),
                 NncUtils.flatMap(keys, this::getItems)
         );
@@ -58,9 +58,9 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     @Override
     public void batchInsert(Collection<IndexEntryPO> items) {
         for (IndexEntryPO item : items) {
-            if(!this.items.add(item)) {
-                throw new InternalException(item + " already exists");
-            }
+//            if(!this.items.add(item)) {
+//                throw new InternalException(item + " already exists");
+//            }
             getItems(item.getKey()).add(item);
             getItemsByInstanceId(item.getInstanceId()).add(item);
         }

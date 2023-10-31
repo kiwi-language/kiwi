@@ -71,6 +71,10 @@ public class InstanceUtils {
         return createBoolean(!Objects.equals(first, second));
     }
 
+    public static boolean isAllTime(Instance instance1, Instance instance2) {
+        return instance1 instanceof TimeInstance || instance2 instanceof TimeInstance;
+    }
+
     public static boolean isAllIntegers(Instance instance1, Instance instance2) {
         return isInteger(instance1) && isInteger(instance2);
     }
@@ -87,9 +91,9 @@ public class InstanceUtils {
         return instance instanceof LongInstance;
     }
 
-    public static boolean isAnyNull(Instance...instances) {
+    public static boolean isAnyNull(Instance... instances) {
         for (Instance instance : instances) {
-            if(instance instanceof NullInstance) {
+            if (instance instanceof NullInstance) {
                 return true;
             }
         }
@@ -97,7 +101,7 @@ public class InstanceUtils {
     }
 
     public static Instance resolveValue(Type fieldType, Object columnValue) {
-        if(columnValue instanceof Instance instance) {
+        if (columnValue instanceof Instance instance) {
             return instance;
         }
         NncUtils.requireTrue(fieldType.getUnderlyingType().isPrimitive(),
@@ -112,64 +116,58 @@ public class InstanceUtils {
     public static PrimitiveInstance resolvePrimitiveValue(Type fieldType,
                                                           Object columnValue,
                                                           Function<Class<?>, Type> getTypeFunc) {
-        if(columnValue == null) {
+        if (columnValue == null) {
             return InstanceUtils.nullInstance(getTypeFunc);
         }
-        if(columnValue instanceof TimePO timePO) {
+        if (columnValue instanceof TimePO timePO) {
             return InstanceUtils.timeInstance(timePO.time(), getTypeFunc);
         }
-        if(ValueUtil.isInteger(columnValue)) {
-            if(fieldType.isDouble()) {
+        if (ValueUtil.isInteger(columnValue)) {
+            if (fieldType.isDouble()) {
                 return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
-            }
-            else if(fieldType.isTime()) {
+            } else if (fieldType.isTime()) {
                 return timeInstance(((Number) columnValue).longValue(), getTypeFunc);
-            }
-            else {
+            } else {
                 return longInstance(((Number) columnValue).longValue(), getTypeFunc);
             }
-        }
-        else if(ValueUtil.isFloat(columnValue)) {
+        } else if (ValueUtil.isFloat(columnValue)) {
             return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
-        }
-        else if(columnValue instanceof Boolean bool) {
+        } else if (columnValue instanceof Boolean bool) {
             return booleanInstance(bool, getTypeFunc);
-        }
-        else if(columnValue instanceof String str) {
-            if(fieldType.isPassword()) {
+        } else if (columnValue instanceof String str) {
+            if (fieldType.isPassword()) {
                 return passwordInstance(str, getTypeFunc);
             }
             return stringInstance(str, getTypeFunc);
-        }
-        else if(columnValue instanceof Password password) {
+        } else if (columnValue instanceof Password password) {
             return passwordInstance(password.getPassword(), getTypeFunc);
         }
         throw new InternalException("Can not resolve column value '" + columnValue + "' for type " + fieldType);
     }
 
     public static PrimitiveInstance primitiveInstance(Object value) {
-        if(value == null) {
+        if (value == null) {
             return nullInstance();
         }
-        if(value instanceof Integer i) {
+        if (value instanceof Integer i) {
             return longInstance(i);
         }
-        if(value instanceof Long l) {
+        if (value instanceof Long l) {
             return longInstance(l);
         }
-        if(value instanceof Double d) {
+        if (value instanceof Double d) {
             return doubleInstance(d);
         }
-        if(value instanceof Boolean b) {
+        if (value instanceof Boolean b) {
             return booleanInstance(b);
         }
-        if(value instanceof String s) {
+        if (value instanceof String s) {
             return stringInstance(s);
         }
-        if(value instanceof Date date) {
+        if (value instanceof Date date) {
             return timeInstance(date.getTime());
         }
-        if(value instanceof Password password) {
+        if (value instanceof Password password) {
             return passwordInstance(password.getPassword());
         }
         throw new InternalException("Value '" + value + "' is not a primitive value");
@@ -268,7 +266,7 @@ public class InstanceUtils {
         List<Instance> newInstances = NncUtils.filter(
                 instances, instance -> filter.test(instance) && !results.contains(instance)
         );
-        if(newInstances.isEmpty()) {
+        if (newInstances.isEmpty()) {
             return;
         }
         results.addAll(newInstances);
@@ -296,11 +294,10 @@ public class InstanceUtils {
     }
 
     public static boolean isInitialized(Instance instance) {
-        if(instance instanceof ProxyObject proxyObject) {
+        if (instance instanceof ProxyObject proxyObject) {
             EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
             return handler.isInitialized();
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -397,8 +394,8 @@ public class InstanceUtils {
         return (ObjectType) getTypeFunc.apply(Object.class);
     }
 
-    private static ArrayType getAnyArrayType() {
-        return TypeUtil.getArrayType(ModelDefRegistry.getType(Object.class));
+    private static ArrayType getObjectArrayType() {
+        return ModelDefRegistry.getDefContext().getArrayType(StandardTypes.getObjectType(), ArrayKind.READ_WRITE);
     }
 
     public static ArrayInstance createArray() {
@@ -406,7 +403,7 @@ public class InstanceUtils {
     }
 
     public static ArrayInstance createArray(List<Instance> instances) {
-        return new ArrayInstance(getAnyArrayType(), instances);
+        return new ArrayInstance(getObjectArrayType(), instances);
     }
 
     public static PrimitiveType getPrimitiveType(Class<?> javaClass) {

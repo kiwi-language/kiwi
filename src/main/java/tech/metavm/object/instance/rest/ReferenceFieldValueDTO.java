@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-public class ReferenceFieldValueDTO extends FieldValueDTO {
+public class ReferenceFieldValueDTO extends FieldValue {
 
     private final long id;
 

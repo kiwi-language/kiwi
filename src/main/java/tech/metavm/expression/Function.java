@@ -1,9 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.EnumConstant;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.Table;
 import tech.metavm.util.ValueUtil;
 
 import java.util.Arrays;
@@ -31,7 +29,7 @@ public enum Function {
 
     NOW(Date.class),
 
-    LEN(Boolean.class, Table.class),
+    LEN(Boolean.class, Object.class),
 
     HAS_NEXT(Boolean.class, Object.class),
 

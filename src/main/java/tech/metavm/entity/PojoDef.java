@@ -36,7 +36,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         this.type = type;
         this.defMap = defMap;
         this.superDef = superDef;
-        if(superDef != null) {
+        if (superDef != null) {
             superDef.addSubTypeDef(this);
         }
     }
@@ -57,8 +57,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     public void initModel(T model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
         if (type == instance.getType()) {
             setPojoFields(model, instance, modelInstanceMap);
-        }
-        else {
+        } else {
             PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType());
             subTypeDef.initModelHelper(model, instance, modelInstanceMap);
         }
@@ -89,8 +88,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         ClassType instanceType = instance.getType();
         if (type == instance.getType()) {
             instance.initialize(getInstanceFields(model, instanceMap), 0L, 0L);
-        }
-        else {
+        } else {
             getSubTypeDef(instanceType).initInstanceHelper(instance, model, instanceMap);
         }
     }
@@ -102,34 +100,34 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     @Override
     public void updateInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
         if (type == instance.getType()) {
-            getInstanceFields(model, instanceMap).forEach(instance::set);
-        }
-        else {
+            getInstanceFields(model, instanceMap).forEach(instance::setField);
+        } else {
             PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType());
             subTypeDef.updateInstanceHelper(model, instance, instanceMap);
         }
     }
 
     private PojoDef<? extends T> getSubTypeDef(ClassType subType) {
-        if(subType == type ||
+        if (subType == type ||
                 !type.isAssignableFrom(subType)) {
             throw new InternalException("type: " + subType + " is not a sub type of current type: " + getJavaClass());
         }
         ClassType t = subType;
-        while(t != null && t.getSuperType() != type) {
+        while (t != null && t.getSuperType() != type) {
             t = t.getSuperType();
         }
         ClassType directSubType = NncUtils.requireNonNull(t);
         PojoDef<? extends T> subDef = subTypeDefList.get(directSubType);
-        if(subDef == null) {
-            subDef = new TypeReference<PojoDef<? extends T>>() {}.getType().cast(defMap.getDef(directSubType));
+        if (subDef == null) {
+            subDef = new TypeReference<PojoDef<? extends T>>() {
+            }.getType().cast(defMap.getDef(directSubType));
         }
         return subDef;
     }
 
     protected Map<Field, Instance> getInstanceFields(Object object, ModelInstanceMap instanceMap) {
         Map<Field, Instance> fieldData = new HashMap<>();
-        if(superDef != null) {
+        if (superDef != null) {
             fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
         }
         for (IFieldDef fieldDef : fieldDefList) {
@@ -143,7 +141,16 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     public IFieldDef getFieldDef(java.lang.reflect.Field javaField) {
-        return NncUtils.findRequired(fieldDefList, fieldDef -> fieldDef.getJavaField().equals(javaField));
+        var fieldDef = NncUtils.find(fieldDefList, fd -> fd.getJavaField().equals(javaField));
+        if (fieldDef != null) {
+            return fieldDef;
+        }
+        if (superDef != null) {
+            return superDef.getFieldDef(javaField);
+        } else {
+            throw new InternalException("Can not find FieldDef for java field '" +
+                    javaField.getDeclaringClass().getName() + "." + javaField.getName() + "'");
+        }
     }
 
     public IndexConstraintDef getIndexConstraintDef(IndexDef<?> indexDef) {
@@ -160,12 +167,12 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         mapping.put(ModelIdentity.classTypeFields(getJavaClass()), type.getDeclaredFields());
         mapping.put(ModelIdentity.classTypeConstraints(getJavaClass()), type.getDeclaredConstraints());
         mapping.put(ModelIdentity.classTypeFlows(getJavaClass()), type.getDeclaredFlows());
-        if(type.getNullableType() != null) {
-            mapping.put(ModelIdentity.typeNullableType(getJavaClass()), type.getNullableType());
-        }
-        if(type.getArrayType() != null) {
-            mapping.put(ModelIdentity.typeArrayType(getJavaClass()), type.getArrayType());
-        }
+//        if (type.getNullableType() != null) {
+//            mapping.put(ModelIdentity.typeNullableType(getJavaClass()), type.getNullableType());
+//        }
+//        if (type.getArrayType() != null) {
+//            mapping.put(ModelIdentity.typeArrayType(getJavaClass()), type.getArrayType());
+//        }
 
         for (IFieldDef fieldDef : fieldDefList) {
             mapping.put(fieldDef.getJavaField(), fieldDef.getField());
@@ -192,7 +199,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
                 fieldDefList,
                 field -> field.getJavaField().getName().equals(javaFieldName)
         );
-        if(fieldDef != null) {
+        if (fieldDef != null) {
             return fieldDef.getField();
         }
         return NncUtils.get(superDef, p -> p.getFieldByJavaFieldName0(javaFieldName));

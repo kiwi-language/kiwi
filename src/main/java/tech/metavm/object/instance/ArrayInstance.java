@@ -10,7 +10,6 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.*;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class ArrayInstance extends Instance implements Collection<Instance> {
 
@@ -19,28 +18,16 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private final List<Instance> elements = new ArrayList<>();
-    private boolean elementAsChild;
     private final transient List<ArrayListener> listeners = new ArrayList<>();
 
-    protected ArrayInstance(ArrayType type) {
-        this(type, false);
-    }
-
-    public ArrayInstance(ArrayType type, boolean elementAsChild) {
-        this(type, List.of(), elementAsChild);
+    public ArrayInstance(ArrayType type) {
+        this(type, List.of());
     }
 
     public ArrayInstance(ArrayType type,
-                         List<Instance> elements) {
-        this(type, elements, false);
-    }
-
-    public ArrayInstance(ArrayType type,
-                         List<Instance> elements,
-                         boolean elementAsChild
+                         List<Instance> elements
     ) {
         super(type);
-        this.elementAsChild = elementAsChild;
         for (Instance element : elements) {
             addInternally(element);
         }
@@ -50,11 +37,9 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
                          ClassType type,
                          long version,
                          long syncVersion,
-                         List<Instance> elements,
-                         boolean elementAsChild
+                         List<Instance> elements
     ) {
         super(id, type, version, syncVersion);
-        this.elementAsChild = elementAsChild;
         for (Instance element : elements) {
             addInternally(element);
         }
@@ -67,13 +52,17 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         }
     }
 
+    public boolean isChildArray() {
+        return getType().kind() == ArrayKind.CHILD;
+    }
+
     @Override
     public boolean isChild(Instance instance) {
-        return elementAsChild && elements.contains(instance);
+        return isChildArray() && elements.contains(instance);
     }
 
     public Set<Instance> getChildren() {
-        if (elementAsChild) {
+        if (getType().kind() == ArrayKind.CHILD) {
             return NncUtils.filterUnique(elements, Instance::isNotNull);
         } else {
             return Set.of();
@@ -106,10 +95,6 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     public BooleanInstance instanceContains(Instance instance) {
         return InstanceUtils.createBoolean(contains(instance));
-    }
-
-    public void setElementAsChild(boolean elementAsChild) {
-        this.elementAsChild = elementAsChild;
     }
 
     @NotNull
@@ -145,7 +130,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         checkIndex(index);
         checkElement(element);
         Instance removed = elements.set(index, element);
-        if(removed != null) {
+        if (removed != null) {
             onRemove(removed);
         }
         onAdd(element);
@@ -153,13 +138,13 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private void checkElement(Instance element) {
-        if(!getType().getElementType().isAssignableFrom(element.getType())) {
+        if (!getType().getElementType().isAssignableFrom(element.getType())) {
             throw new BusinessException(ErrorCode.INCORRECT_ELEMENT_TYPE);
         }
     }
 
     private void checkIndex(int index) {
-        if(index < 0 || index >= elements.size()) {
+        if (index < 0 || index >= elements.size()) {
             throw new BusinessException(ErrorCode.INDEX_OUT_OF_BOUND);
         }
     }
@@ -214,6 +199,10 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends Instance> c) {
+        return addAll((Iterable<? extends Instance>) c);
+    }
+
+    public boolean addAll(Iterable<? extends Instance> c) {
         c.forEach(this::add);
         return true;
     }
@@ -254,10 +243,6 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return elements;
     }
 
-    public boolean isElementAsChild() {
-        return elementAsChild;
-    }
-
     @Override
     public Set<Instance> getRefInstances() {
         return new IdentitySet<>(
@@ -284,7 +269,6 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
                 tenantId,
                 elements.size(),
                 NncUtils.map(elements, e -> elementToPO(tenantId, e, visited)),
-                elementAsChild,
                 getVersion(),
                 getSyncVersion()
         );
@@ -303,9 +287,21 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @Override
     protected ArrayParamDTO getParam() {
-        return new ArrayParamDTO(
-                NncUtils.map(elements, Instance::toFieldValueDTO)
-        );
+        if (isChildArray()) {
+            return new ArrayParamDTO(
+                    true,
+                    NncUtils.map(elements, e ->
+                            new InstanceFieldValueDTO(
+                                    e.getTitle(), e.toDTO()
+                            )
+                    )
+            );
+        } else {
+            return new ArrayParamDTO(
+                    false,
+                    NncUtils.map(elements, Instance::toFieldValueDTO)
+            );
+        }
     }
 
     private static Object elementToPO(long tenantId, Instance element, IdentitySet<Instance> visited) {
@@ -324,11 +320,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     @SuppressWarnings("unused")
-    public ArrayInstance __init__(Instance elementAsChild) {
-        if(!(elementAsChild instanceof BooleanInstance bool)) {
-            throw new InternalException("elementAsChild must be a BooleanInstance, actually got: " + elementAsChild);
-        }
-        this.elementAsChild = bool.isTrue();
+    public ArrayInstance __init__() {
         return this;
     }
 
@@ -353,10 +345,9 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private int getIndex(Instance instance) {
-        if(instance instanceof LongInstance longInstance) {
+        if (instance instanceof LongInstance longInstance) {
             return longInstance.getValue().intValue();
-        }
-        else {
+        } else {
             throw new InternalException("Index must be a LongInstance, actually got: " + instance);
         }
     }
@@ -401,7 +392,6 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     public String toString() {
         return "InstanceArray{" +
                 "elements=" + elements +
-                ", elementAsChild=" + elementAsChild +
                 '}';
     }
 

@@ -38,7 +38,7 @@ public class InstanceQueryServiceTest extends TestCase {
         Field fooBazListField = getField(Foo.class, "bazList");
 
         ClassInstance foo = addInstance(MockRegistry.getNewFooInstance());
-        Instance qux = foo.getInstance(fooQuxField);
+        Instance qux = foo.getInstanceField(fooQuxField);
         Instance baz = foo.getInstanceArray(fooBazListField).getInstance(0);
 
         InstanceQuery query = new InstanceQuery(
@@ -51,7 +51,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 List.of(
                         new InstanceQueryField(
                                 fooNameField,
-                                foo.getString(fooNameField)
+                                foo.getStringField(fooNameField)
                         ),
                         new InstanceQueryField(fooQuxField, qux),
                         new InstanceQueryField(fooBazListField, baz)
@@ -87,7 +87,7 @@ public class InstanceQueryServiceTest extends TestCase {
                         new InstanceQueryField(
                                 fooNameField,
                                 List.of(
-                                        foo.getString(fooNameField)
+                                        foo.getStringField(fooNameField)
                                 )
                         )
                 )

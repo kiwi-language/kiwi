@@ -4,7 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 import tech.metavm.view.rest.dto.ListViewDTO;
 
 import java.util.Collection;
@@ -30,9 +30,9 @@ public class ListView extends Entity {
     @EntityField("优先级")
     private int priority;
     @EntityField("可见字段")
-    private final Table<Field> visibleFields = new Table<>(Field.class);
+    private final ReadWriteArray<Field> visibleFields = new ReadWriteArray<>(Field.class);
     @EntityField("搜索字段")
-    private final Table<Field> searchableFields = new Table<>(Field.class);
+    private final ReadWriteArray<Field> searchableFields = new ReadWriteArray<>(Field.class);
 
     public ListView(String code, ClassType type) {
         this.code = code;

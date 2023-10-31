@@ -1,13 +1,10 @@
 package tech.metavm.user;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
+import tech.metavm.entity.*;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Password;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
 import java.util.List;
 
@@ -25,8 +22,8 @@ public class UserRT extends Entity {
     @EntityField(value = "名称", asTitle = true)
     private String name;
 
-    @EntityField("角色列表")
-    private Table<RoleRT> roles;
+    @ChildEntity("角色列表")
+    private final ReadWriteArray<RoleRT> roles = new ReadWriteArray<>(RoleRT.class);
 
     public UserRT(String loginName, String password, String name, List<RoleRT> roles) {
         this.loginName = loginName;
@@ -60,7 +57,7 @@ public class UserRT extends Entity {
     }
 
     public void setRoles(List<RoleRT> roles) {
-        this.roles = new Table<>(RoleRT.class, roles);
+        this.roles.reset(roles);
     }
 
     public UserDTO toUserDTO() {

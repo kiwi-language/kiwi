@@ -5,14 +5,14 @@ import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ObjectType;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 
-public class InstanceCollectionParser<E extends Instance, C extends Table<E>>
+public class InstanceCollectionParser<E extends Instance, C extends ReadWriteArray<E>>
     implements DefParser<C, ArrayInstance, InstanceCollectionDef<E,C>> {
 
     private final Type javaType;

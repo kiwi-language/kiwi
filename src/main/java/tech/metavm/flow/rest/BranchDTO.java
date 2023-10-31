@@ -9,6 +9,7 @@ public record BranchDTO(
         Long ownerId,
         ValueDTO condition,
         ScopeDTO scope,
-        boolean preselected
+        boolean preselected,
+        boolean isExit
 )  implements BaseDTO {
 }

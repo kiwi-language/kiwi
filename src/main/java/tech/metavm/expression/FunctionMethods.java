@@ -1,13 +1,11 @@
 package tech.metavm.expression;
 
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.natives.IteratorImplNative;
 import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
-import tech.metavm.util.ValueUtil;
+import tech.metavm.util.*;
 
 import java.util.List;
 
@@ -105,8 +103,13 @@ public class FunctionMethods {
         return from.isAssignableFrom(to);
     }
 
-    public static LongInstance LEN(ArrayInstance array) {
-        return InstanceUtils.longInstance(array.length());
+    public static LongInstance LEN(Instance instance) {
+        if(instance instanceof ArrayInstance array) {
+            return InstanceUtils.longInstance(array.length());
+        }
+        else {
+            throw new BusinessException(ErrorCode.ERROR_DELETING_TYPE, "LEN");
+        }
     }
 
     public static BooleanInstance HAS_NEXT(Instance iterator) {

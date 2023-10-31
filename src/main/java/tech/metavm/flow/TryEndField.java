@@ -6,11 +6,11 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.TryEndFieldDTO;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadonlyArray;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.List;
 
 public class TryEndField extends Entity {
@@ -19,19 +19,19 @@ public class TryEndField extends Entity {
     private final Field field;
 
     @ChildEntity("值列表")
-    private final Table<TryEndValue> values = new Table<>(TryEndValue.class, true);
+    private final ChildArray<TryEndValue> values = new ChildArray<>(TryEndValue.class);
 
     private Value defaultValue;
 
     public TryEndField(Field field, List<TryEndValue> values, Value defaultValue, TryEndNode tryEndNode) {
         this.field = field;
-        this.values.addAll(values);
+        this.values.addChildren(values);
         this.defaultValue = defaultValue;
         tryEndNode.addField(this);
     }
 
-    public List<TryEndValue> getValues() {
-        return Collections.unmodifiableList(values);
+    public ReadonlyArray<TryEndValue> getValues() {
+        return values;
     }
 
     public Value getDefaultValue() {

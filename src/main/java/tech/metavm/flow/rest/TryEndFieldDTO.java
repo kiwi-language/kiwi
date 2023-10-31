@@ -38,7 +38,6 @@ public record TryEndFieldDTO(
                 false,
                 null,
                 typeRef,
-                null,
                 false,
                 false
         );

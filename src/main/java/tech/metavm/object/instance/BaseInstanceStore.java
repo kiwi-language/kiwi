@@ -51,9 +51,9 @@ public abstract class BaseInstanceStore implements IInstanceStore {
     }
 
     private void extractRefIdsFromObject(InstancePO instancePO, ClassType type, Set<Long> refIds) {
-        for (Field field : type.getFields()) {
+        for (Field field : type.getAllFields()) {
             boolean fieldIsRef = field.isReference();
-            Object fieldValue = instancePO.get(field.getColumnName());
+            Object fieldValue = instancePO.get(field.getDeclaringType().getIdRequired(), field.getColumnName());
             NncUtils.invokeIfNotNull(convertToRefId(fieldValue, fieldIsRef), refIds::add);
         }
     }
@@ -67,12 +67,13 @@ public abstract class BaseInstanceStore implements IInstanceStore {
     }
 
     private void clearStaleRefIdsForObject(InstancePO instancePO, ClassType type, Set<Long> aliveRefIds) {
-        for (Field field : type.getFields()) {
+        for (Field field : type.getAllFields()) {
             boolean fieldIsRef = field.isReference();
-            Object fieldValue = instancePO.get(field.getColumnName());
+            long typeId = field.getDeclaringType().getIdRequired();
+            Object fieldValue = instancePO.get(typeId, field.getColumnName());
             Long refId = convertToRefId(fieldValue, fieldIsRef);
             if(refId != null && !aliveRefIds.contains(refId)) {
-                instancePO.set(field.getColumnName(), null);
+                instancePO.set(typeId, field.getColumnName(), null);
             }
         }
     }

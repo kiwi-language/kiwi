@@ -9,7 +9,7 @@ import tech.metavm.util.TypeReference;
 public class NodePO extends EntityPO {
 
     public static final IndexDef<NodeRT<?>> INDEX_FLOW_ID
-            = new IndexDef<>(new TypeReference<>() {}, "flowId");
+            = new IndexDef<>(new TypeReference<>() {}, false,"flowId");
 
 
     private Long id;

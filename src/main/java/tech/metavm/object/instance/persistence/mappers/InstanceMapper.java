@@ -14,7 +14,8 @@ import java.util.List;
 @Mapper
 public interface InstanceMapper {
 
-    List<InstancePO> selectByIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids);
+    List<InstancePO> selectByIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids,
+                                 @Param("lockMode") int lockMode);
 
     List<InstancePO> selectByTypeIds(@Param("tenantId") long tenantId,
                                      @Param("queries") Collection<ByTypeQuery> queries);

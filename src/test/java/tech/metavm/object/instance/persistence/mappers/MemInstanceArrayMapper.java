@@ -32,7 +32,7 @@ public class MemInstanceArrayMapper implements InstanceArrayMapper {
     }
 
     @Override
-    public List<InstanceArrayPO> selectByIds(long tenantId, Collection<Long> ids) {
+    public List<InstanceArrayPO> selectByIds(long tenantId, Collection<Long> ids, int lockMode) {
         return NncUtils.mapAndFilter(
                 ids,
                 id2instance::get,

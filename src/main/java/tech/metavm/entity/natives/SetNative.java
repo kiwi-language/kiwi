@@ -24,12 +24,12 @@ public class SetNative extends NativeBase {
         this.instance = instance;
         arrayField = NncUtils.requireNonNull(instance.getType().getFieldByCode("array"));
         if(instance.isFieldInitialized(arrayField)) {
-            array = (ArrayInstance) instance.get(arrayField);
+            array = (ArrayInstance) instance.getField(arrayField);
         }
     }
 
-    public Instance Set(Instance elementAsChild) {
-        array = new ArrayInstance((ArrayType) arrayField.getType(), getBool(elementAsChild));
+    public Instance Set() {
+        array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initializeField(arrayField, array);
         return instance;
     }

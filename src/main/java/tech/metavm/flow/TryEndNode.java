@@ -14,10 +14,7 @@ import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +31,7 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
     }
 
     @ChildEntity("字段列表")
-    private final Table<TryEndField> fields = new Table<>(TryEndField.class, true);
+    private final ChildArray<TryEndField> fields = new ChildArray<>(TryEndField.class);
 
     public TryEndNode(Long tmpId, String name, ClassType outputType, TryNode previous, ScopeRT scope) {
         super(tmpId, name, outputType, previous, scope);
@@ -46,6 +43,7 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
     }
 
     @Override
+    @NotNull
     public ClassType getType() {
         return (ClassType) NncUtils.requireNonNull(super.getType());
     }
@@ -87,11 +85,11 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
     }
 
     void addField(TryEndField field) {
-        this.fields.add(field);
+        this.fields.addChild(field);
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         NncUtils.requireTrue(frame.exitTrySection() == getPredecessor());
         var exceptionInfo = frame.getExceptionInfo(getPredecessor());
         var exceptionField = getType().getFieldByCodeRequired("exception");

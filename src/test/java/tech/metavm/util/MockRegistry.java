@@ -1,8 +1,8 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.*;
-import tech.metavm.job.JobSchedulerStatus;
-import tech.metavm.job.JobSignal;
+import tech.metavm.task.JobSchedulerStatus;
+import tech.metavm.task.TaskSignal;
 import tech.metavm.mocks.*;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
@@ -53,7 +53,7 @@ public class MockRegistry {
             getIdFunc = bootIdProvider::getId;
         }
         else getIdFunc = o -> null;
-        DEF_CONTEXT = new DefContext(getIdFunc, INSTANCE_CONTEXT);
+        DEF_CONTEXT = new DefContext(getIdFunc, INSTANCE_CONTEXT, new MemColumnStore());
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
@@ -77,7 +77,7 @@ public class MockRegistry {
                 INSTANCE_CONTEXT
         ).getEntityContext();
         rootContext.bind(new JobSchedulerStatus());
-        rootContext.bind(new JobSignal(TENANT_ID));
+        rootContext.bind(new TaskSignal(TENANT_ID));
         rootContext.finish();
     }
 

@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.util.InternalException;
 
@@ -38,6 +39,11 @@ public class SubEvaluationContext implements EvaluationContext {
     @Override
     public boolean isContextExpression(Expression expression) {
         return isSelfContextExpression(expression) || this.parent.isContextExpression(expression);
+    }
+
+    @Override
+    public IEntityContext getEntityContext() {
+        return parent.getEntityContext();
     }
 
 }

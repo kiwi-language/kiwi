@@ -26,7 +26,7 @@ public abstract class Expression extends Entity {
 
     public Expression getVariableChild() {
         for (Expression child : getChildren()) {
-            if(child instanceof FieldExpression || child instanceof ThisExpression) {
+            if(child instanceof PropertyExpression || child instanceof ThisExpression) {
                 return child;
             }
         }
@@ -48,8 +48,8 @@ public abstract class Expression extends Entity {
 
     public abstract Expression cloneWithNewChildren(List<Expression> children);
 
-    public FieldExpression getFieldChild() {
-        return getChild(FieldExpression.class);
+    public PropertyExpression getFieldChild() {
+        return getChild(PropertyExpression.class);
     }
 
     public ArrayExpression getArrayChild() {

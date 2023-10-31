@@ -35,14 +35,15 @@ public final class InstanceIndexQuery {
         this.limit = limit;
     }
 
-    public IndexQueryPO toPO(long tenantId) {
+    public IndexQueryPO toPO(long tenantId, int lockMode) {
         return new IndexQueryPO(
                 tenantId,
                 index.getIdRequired(),
                 index.createIndexKey(NncUtils.map(items, InstanceIndexQueryItem::value)).toPO(),
                 lastOperator,
                 desc,
-                limit
+                limit,
+                lockMode
         );
     }
 

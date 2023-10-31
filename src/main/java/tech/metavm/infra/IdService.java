@@ -139,7 +139,7 @@ public class IdService implements EntityIdProvider {
         updateBlocks(activeBlockMap.values());
         if(!residual.isEmpty()) {
             allocate0(tenantId, residual, depth + 1).forEach((typeId, ids) ->
-                result.compute(typeId, (k, old) -> NncUtils.merge(old, ids))
+                result.compute(typeId, (k, old) -> NncUtils.union(old, ids))
             );
         }
         return result;

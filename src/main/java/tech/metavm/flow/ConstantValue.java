@@ -5,7 +5,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InstanceUtils;
 
@@ -34,7 +34,7 @@ public class ConstantValue extends Value {
     }
 
     @Override
-    protected FieldValueDTO getDTOValue(boolean persisting) {
+    protected FieldValue getDTOValue(boolean persisting) {
         ConstantExpression constantExpression = (ConstantExpression) expression;
         return ExpressionUtil.expressionToConstant(constantExpression);
     }

@@ -61,7 +61,7 @@ public class ListDef<E> extends ModelDef<List<E>, ClassInstance> {
     @Override
     public void initInstance(ClassInstance instance, List<E> model, ModelInstanceMap instanceMap) {
         var listNative = (ListNative) NativeInvoker.getNativeObject(instance);
-        listNative.List(new BooleanInstance(false, booleanType));
+        listNative.List();
         for (E e : model) {
             listNative.add(instanceMap.getInstance(e));
         }

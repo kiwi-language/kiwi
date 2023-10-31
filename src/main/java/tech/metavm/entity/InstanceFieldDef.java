@@ -24,12 +24,12 @@ public class InstanceFieldDef implements IFieldDef {
 
     @Override
     public void setModelField(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        ReflectUtils.set(model, javaField, instance.get(field));
+        ReflectUtils.set(model, javaField, instance.getField(field));
     }
 
     @Override
     public Instance getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        return instance.get(field);
+        return instance.getField(field);
     }
 
     @Override

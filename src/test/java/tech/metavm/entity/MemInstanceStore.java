@@ -44,7 +44,7 @@ public class MemInstanceStore extends InstanceStore {
     }
 
     public InstancePO get(long id) {
-        return NncUtils.getFirst(instanceMapperGateway.selectByIds(TestConstants.TENANT_ID, List.of(id)));
+        return NncUtils.getFirst(instanceMapperGateway.selectByIds(TestConstants.TENANT_ID, List.of(id), 0));
     }
 
     public void addIndex(long tenantId, IndexKeyPO indexKey, Long id) {

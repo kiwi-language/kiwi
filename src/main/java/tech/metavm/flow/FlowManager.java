@@ -5,23 +5,30 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
-import tech.metavm.entity.*;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.expression.NodeExpression;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
-import tech.metavm.object.instance.rest.FieldValueDTO;
-import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.ClassParamDTO;
+import tech.metavm.object.meta.rest.dto.ClassTypeParam;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class FlowManager {
@@ -30,46 +37,41 @@ public class FlowManager {
 
     private TypeManager typeManager;
 
-    private final EntityQueryService entityQueryService;
-
-    public FlowManager(InstanceContextFactory contextFactory, EntityQueryService entityQueryService) {
+    public FlowManager(InstanceContextFactory contextFactory) {
         this.contextFactory = contextFactory;
-        this.entityQueryService = entityQueryService;
     }
 
-    public FlowDTO get(long flowId) {
+    public GetFlowResponse get(GetFlowRequest request) {
         IEntityContext context = newContext();
-        Flow flow = context.getEntity(Flow.class, flowId);
+        Flow flow = context.getEntity(Flow.class, request.id());
         if (flow == null) {
             return null;
         }
-        return flow.toDTO(true);
+        try (var serContext = SerializeContext.enter()) {
+            serContext.setIncludingNodeOutputType(true);
+            var flowDTO = flow.toDTO(request.includeNodes());
+            serContext.writeDependencies();
+            return new GetFlowResponse(flowDTO, serContext.getTypes());
+        }
     }
 
-    public Flow saveDeclaration(FlowDTO flowDTO, ClassType declaringType, IEntityContext context) {
-        return save(flowDTO, declaringType, true, context);
+    public Flow saveDeclaration(FlowDTO flowDTO, IEntityContext context) {
+        return save(flowDTO, true, context);
     }
-
-//    public Flow save(FlowDTO flowDTO, ClassType declaringType, boolean declarationOnly, IEntityContext context) {
-//        if (flowDTO.id() == null) {
-//            return create(flowDTO, declaringType, declarationOnly, context);
-//        } else {
-//            return update(flowDTO, context);
-//        }
-//    }
 
     @Transactional
     public List<NodeDTO> createTryNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext();
+        IEntityContext context = newContext(false);
         var scope = context.getScope(nodeDTO.scopeId());
         TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
         TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束",
                 ClassBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
                 tryNode, scope);
         FieldBuilder.newBuilder("异常", "exception",
-                        tryEndNode.getType(), TypeUtil.getNullableType(StandardTypes.getThrowableType()))
+                        tryEndNode.getType(), context.getNullableType(StandardTypes.getThrowableType()))
                 .build();
         context.bind(tryEndNode);
+        retransformFlowIfRequired(scope.getFlow(), context);
         context.finish();
         try (var ignored = SerializeContext.enter()) {
             return List.of(tryNode.toDTO(), tryEndNode.toDTO());
@@ -78,91 +80,158 @@ public class FlowManager {
 
     @Transactional
     public List<NodeDTO> createBranchNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext();
+        IEntityContext context = newContext(false);
         var scope = context.getScope(nodeDTO.scopeId());
         BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
         MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并",
                 branchNode, ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                 scope);
         context.bind(mergeNode);
+        retransformFlowIfRequired(branchNode.getFlow(), context);
         context.finish();
         try (var ignored = SerializeContext.enter()) {
             return List.of(branchNode.toDTO(), mergeNode.toDTO());
         }
     }
 
-    @Transactional
-    public long create(FlowDTO flowDTO) {
+    private Type getReturnType(FlowDTO flowDTO, ClassType declaringType, IEntityContext context) {
+        if (flowDTO.isConstructor()) {
+            return declaringType.isTemplate() ?
+                    context.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
+        } else {
+            return context.getType(NncUtils.requireNonNull(flowDTO.returnTypeRef()));
+        }
+    }
+
+    public Flow save(FlowDTO flowDTO) {
         IEntityContext context = newContext();
-        var flow = save(flowDTO, context.getClassType(flowDTO.declaringTypeRef()), false, context);
+        var flow = save(flowDTO, context);
         context.finish();
-        return flow.getIdRequired();
+        return flow;
     }
 
-    public Flow create(FlowDTO flowDTO, ClassType declaringClass, IEntityContext context) {
-        return save(flowDTO, declaringClass, false, context);
+    public Flow save(FlowDTO flowDTO, IEntityContext context) {
+        return save(flowDTO, false, context);
     }
 
-    public Flow save(FlowDTO flowDTO, ClassType declaringClass, boolean declarationOnly, IEntityContext context) {
-        Flow overriden = flowDTO.overridenRef() != null ? context.getFlow(flowDTO.overridenRef()) : null;
-        Type outputType = context.getType(flowDTO.returnTypeRef());
+    public Flow save(FlowDTO flowDTO, boolean declarationOnly, IEntityContext context) {
+        List<Flow> overriden = NncUtils.map(flowDTO.overriddenRefs(), context::getFlow);
         Flow flow = context.getFlow(flowDTO.getRef());
+        ClassType declaringType = flow != null ? flow.getDeclaringType() :
+                context.getClassType(flowDTO.declaringTypeRef());
+        boolean creating = flow == null;
         if (flow == null) {
             flow = FlowBuilder
-                    .newBuilder(context.getClassType(flowDTO.declaringTypeRef()), flowDTO.name(), flowDTO.code())
+                    .newBuilder(context.getClassType(flowDTO.declaringTypeRef()), flowDTO.name(),
+                            flowDTO.code(), context.getFunctionTypeContext())
                     .flowDTO(flowDTO)
                     .tmpId(flowDTO.tmpId()).build();
             context.bind(flow);
         }
+        Type oldFuncType = flow.getType();
+        Type returnType = getReturnType(flowDTO, declaringType, context);
         flow.setConstructor(flowDTO.isConstructor());
-        flow.setAbstract(flowDTO.isAbstract());
-        flow.setNative(flowDTO.isNative());
         flow.setOverridden(overriden);
+        flow.setAbstract(declaringType.isInterface() || flowDTO.isAbstract());
+        flow.setNative(flowDTO.isNative());
         flow.setTypeArguments(NncUtils.map(flowDTO.typeArgumentRefs(), context::getType));
-        flow.setTypeParameters(NncUtils.map(flowDTO.typeParameters(),
-                typeParam -> context.getTypeVariable(typeParam.getRef())));
-        flow.setReturnType(outputType);
-        if (overriden == null && flowDTO.parameters() != null) {
-            flow.setParameters(NncUtils.map(
-                    flowDTO.parameters(),
-                    paramDTO -> new Parameter(
-                            paramDTO.tmpId(), paramDTO.name(), paramDTO.code(), context.getType(paramDTO.typeRef())
-                    )
-            ));
-        }
+        flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), context::getTypeVariable));
+        flow.setReturnType(returnType);
+        flow.setType(context.getFunctionType(flow.getParameterTypes(), returnType));
+        flow.setStaticType(context.getFunctionType(NncUtils.prepend(declaringType, flow.getParameterTypes()), returnType));
+        flow.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, context)));
         if (flowDTO.templateInstances() != null) {
             for (FlowDTO templateInstance : flowDTO.templateInstances()) {
-                save(templateInstance, declaringClass, declarationOnly, context);
+                save(templateInstance, declarationOnly, context);
             }
         }
-        if (!declarationOnly && !flow.isNative() && !flow.isAbstract()) {
-            if (flowDTO.rootScope() == null) {
-                NodeRT<?> selfNode = createSelfNode(flow);
-                NodeRT<?> inputNode = createInputNode(flow, selfNode);
-                createReturnNode(flow, inputNode);
-            } else {
-                for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
-                    createNode(nodeDTO, flow.getRootScope(), context);
-                }
+        if (!declarationOnly) {
+            saveContent(flowDTO, flow, context);
+        }
+        retransformFlowIfRequired(flow, context);
+        if (flow.isAbstract()) {
+            if (creating) {
+                createOverrideFlows(flow, context);
+            } else if (oldFuncType != flow.getType()) {
+                recreateOverrideFlows(flow, context);
             }
         }
         return flow;
     }
 
-    private void initNodes(Flow flow) {
-        NodeRT<?> selfNode = createSelfNode(flow);
+    public Parameter saveParameter(ParameterDTO parameterDTO, IEntityContext context) {
+        var parameter = context.getEntity(Parameter.class, parameterDTO.getRef());
+        if (parameter != null) {
+            parameter.setName(parameterDTO.name());
+            parameter.setCode(parameterDTO.code());
+            parameter.setType(context.getType(parameterDTO.typeRef()));
+            return parameter;
+        } else {
+            return new Parameter(
+                    parameterDTO.tmpId(),
+                    parameterDTO.name(),
+                    parameterDTO.code(),
+                    context.getType(parameterDTO.typeRef())
+            );
+        }
+    }
+
+    public void createOverrideFlows(Flow overriden, IEntityContext context) {
+        NncUtils.requireTrue(overriden.isAbstract());
+        for (ClassType subType : overriden.getDeclaringType().getSubTypes()) {
+            createOverrideFlows(overriden, subType, context);
+        }
+    }
+
+    public void recreateOverrideFlows(Flow flow, IEntityContext context) {
+        detachOverrideFlows(flow);
+        createOverrideFlows(flow, context);
+    }
+
+    public void createOverrideFlows(Flow overriden, ClassType type, IEntityContext context) {
+        NncUtils.requireTrue(overriden.isAbstract());
+        if (type.isAbstract()) {
+            for (ClassType subType : type.getSubTypes()) {
+                createOverrideFlows(overriden, subType, context);
+            }
+        } else {
+            var flow = type.resolveFlow(overriden);
+            if (flow == null) {
+                var candidate = NncUtils.find(
+                        type.getFlows(),
+                        f -> f.getParameterTypes().equals(overriden.getParameterTypes())
+                                && overriden.getReturnType().isAssignableFrom(f.getReturnType())
+                );
+                if (candidate != null) {
+                    candidate.addOverriden(overriden);
+                } else {
+                    flow = FlowBuilder.newBuilder(type, overriden.getName(), overriden.getCode(), context.getFunctionTypeContext())
+                            .returnType(overriden.getReturnType())
+                            .type(overriden.getType())
+                            .staticType(overriden.getStaticType())
+                            .overriden(List.of(overriden))
+                            .parameters(NncUtils.map(overriden.getParameters(), Parameter::copy))
+                            .typeParameters(NncUtils.map(overriden.getTypeParameters(), TypeVariable::copy))
+                            .build();
+                    initNodes(flow, context);
+                }
+            }
+        }
+    }
+
+    public void initNodes(Flow flow, IEntityContext context) {
+        NodeRT<?> selfNode = createSelfNode(flow, context);
         NodeRT<?> inputNode = createInputNode(flow, selfNode);
         createReturnNode(flow, inputNode);
     }
 
     private void saveNodes(FlowDTO flowDTO, Flow flow, IEntityContext context) {
+        if (flowDTO.rootScope() == null) {
+            return;
+        }
         flow.clearNodes();
         for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
-            if (nodeDTO.id() == null) {
-                createNode(nodeDTO, flow.getRootScope(), context);
-            } else {
-                updateNode(nodeDTO, context);
-            }
+            saveNode(nodeDTO, flow.getRootScope(), context);
         }
     }
 
@@ -174,30 +243,54 @@ public class FlowManager {
         }
     }
 
-    public void saveContent(FlowDTO flowDTO, Flow flow, ClassType declaringType, IEntityContext context) {
+    private void retransformFlowIfRequired(Flow flow, IEntityContext context) {
+        if (flow.getDeclaringType().isTemplate() && context.isPersisted(flow.getDeclaringType())) {
+            new FlowAnalyzer().visitFlow(flow);
+            var templateInstances = context.getTemplateInstances(flow.getDeclaringType());
+            for (ClassType templateInstance : templateInstances) {
+                context.getGenericContext().retransformFlow(flow, templateInstance);
+            }
+        }
+    }
+
+    private void removeTransformedFlowsIfRequired(Flow flow, IEntityContext context) {
+        if (flow.getDeclaringType().isTemplate() && context.isPersisted(flow.getDeclaringType())) {
+            var templateInstances = context.getTemplateInstances(flow.getDeclaringType());
+            for (ClassType templateInstance : templateInstances) {
+                var flowTi = templateInstance.getFlowByTemplate(flow);
+                templateInstance.removeFlow(flowTi);
+                context.remove(flowTi);
+            }
+        }
+    }
+
+    public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {
         if (flow.isNative() || flow.isAbstract()) {
             return;
         }
         if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {
-            initNodes(flow);
+            if (context.isNewEntity(flow)) {
+                initNodes(flow, context);
+            }
         } else {
             saveNodes(flowDTO, flow, context);
         }
         if (flowDTO.templateInstances() != null) {
             for (FlowDTO templateInstance : flowDTO.templateInstances()) {
-                saveContent(templateInstance, context.getFlow(templateInstance.getRef()), declaringType, context);
+                saveContent(templateInstance, context.getFlow(templateInstance.getRef()), context);
             }
         }
     }
 
-    private SelfNode createSelfNode(Flow flow) {
+    private SelfNode createSelfNode(Flow flow, IEntityContext context) {
         NodeDTO selfNodeDTO = NodeDTO.newNode(
                 0L,
                 "当前记录",
                 NodeKind.SELF.code(),
                 null
         );
-        return new SelfNode(selfNodeDTO.tmpId(), selfNodeDTO.name(), null, flow.getRootScope());
+        return new SelfNode(selfNodeDTO.tmpId(), selfNodeDTO.name(),
+                SelfNode.getSelfType(flow, context), null, flow.getRootScope());
     }
 
     private NodeRT<?> createInputNode(Flow flow, NodeRT<?> prev) {
@@ -216,39 +309,11 @@ public class FlowManager {
     }
 
     private void createReturnNode(Flow flow, NodeRT<?> prev) {
-        NodeDTO returnNodeDTO = NodeDTO.newNode(
-                0L,
-                "结束",
-                NodeKind.RETURN.code(),
-                null
-        );
-        new ReturnNode(returnNodeDTO, prev, flow.getRootScope());
-    }
-
-    @Transactional
-    public void update(FlowDTO flowDTO) {
-        flowDTO.requiredId();
-        IEntityContext context = newContext();
-        update(flowDTO, context);
-        context.finish();
-    }
-
-    public Flow update(FlowDTO flowDTO, IEntityContext context) {
-        Flow flow = context.getFlow(flowDTO.getRef());
-        if (flow == null) {
-            throw BusinessException.flowNotFound(flowDTO.id());
+        var node = new ReturnNode(null, "结束", prev, flow.getRootScope());
+        if (flow.isConstructor()) {
+            NncUtils.requireTrue(flow.getRootNode() instanceof SelfNode);
+            node.setValue(new ReferenceValue(new NodeExpression(flow.getRootNode())));
         }
-        if (flowDTO.returnTypeRef() != null) {
-            var outputType = context.getType(flowDTO.returnTypeRef());
-            flow.setReturnType(outputType);
-            var returnNodes = NncUtils.filterByType(flow.getNodes(), ReturnNode.class);
-            for (ReturnNode returnNode : returnNodes) {
-                returnNode.setOutputType(outputType);
-            }
-        }
-        flow.update(flowDTO);
-//        flow.getInputType().setName(getInputTypeName(flow.getName()));
-        return flow;
     }
 
     @Transactional
@@ -260,12 +325,34 @@ public class FlowManager {
     }
 
     public void delete(Flow flow, IEntityContext context) {
+        removeTransformedFlowsIfRequired(flow, context);
+        for (ClassType subType : flow.getDeclaringType().getSubTypes()) {
+            detachOverrideFlows(flow, subType);
+        }
         context.remove(flow);
+    }
+
+    private void detachOverrideFlows(Flow flow) {
+        for (ClassType subType : flow.getDeclaringType().getSubTypes()) {
+            detachOverrideFlows(flow, subType);
+        }
+    }
+
+    private void detachOverrideFlows(Flow flow, ClassType type) {
+        var override = type.resolveFlow(flow);
+        if (override != null) {
+            override.removeOverriden(flow);
+            override.addOverriden(flow.getOverridden());
+        } else {
+            for (ClassType subType : type.getSubTypes()) {
+                detachOverrideFlows(flow, subType);
+            }
+        }
     }
 
     @Transactional
     public NodeDTO createNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext();
+        IEntityContext context = newContext(false);
         Flow flow = context.getEntity(Flow.class, nodeDTO.flowId());
         if (flow == null) {
             throw BusinessException.flowNotFound(nodeDTO.flowId());
@@ -280,6 +367,7 @@ public class FlowManager {
         new FlowAnalyzer().visitFlow(scope.getFlow());
         var node = NodeFactory.create(nodeDTO, scope, context);
         afterNodeChange(nodeDTO, node, context);
+        retransformFlowIfRequired(scope.getFlow(), context);
         return node;
     }
 
@@ -314,7 +402,7 @@ public class FlowManager {
 
     @Transactional
     public NodeDTO updateNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext();
+        IEntityContext context = newContext(false);
         var node = updateNode(nodeDTO, context);
         context.finish();
         return node.toDTO();
@@ -327,9 +415,11 @@ public class FlowManager {
             throw BusinessException.nodeNotFound(nodeDTO.id());
         }
         var scope = context.getScope(nodeDTO.scopeId());
+        new FlowAnalyzer().visitFlow(scope.getFlow());
         nodeDTO = beforeNodeChange(nodeDTO, node, scope, context);
         node.update(nodeDTO, context);
         afterNodeChange(nodeDTO, node, context);
+        retransformFlowIfRequired(scope.getFlow(), context);
         return node;
     }
 
@@ -374,25 +464,25 @@ public class FlowManager {
                             null, NncUtils.random(), 1L, null,
                             new ValueDTO(
                                     ValueKind.CONSTANT.code(),
-                                    new PrimitiveFieldValueDTO(
+                                    new PrimitiveFieldValue(
                                             null,
+                                            PrimitiveKind.BOOLEAN.getCode(),
                                             true
-                                    ),
-                                    null
+                                    )
                             ),
-                            null, false
+                            null, false, false
                     ),
                     new BranchDTO(
                             null, NncUtils.random(), 10000L, null,
                             new ValueDTO(
                                     ValueKind.CONSTANT.code(),
-                                    new PrimitiveFieldValueDTO(
+                                    new PrimitiveFieldValue(
                                             null,
+                                            PrimitiveKind.BOOLEAN.getCode(),
                                             true
-                                    ),
-                                    null
+                                    )
                             ),
-                            null, true
+                            null, true, false
                     )
             );
             return nodeDTO.copyWithParam(new BranchParamDTO(param.inclusive(), branches));
@@ -442,7 +532,7 @@ public class FlowManager {
             excetpionFieldDTO = new FieldDTO(
                     null, null, "异常", "exception", Access.GLOBAL.code(),
                     null, false, false, null,
-                    StandardTypes.getNullableThrowableType().getRef(), null, false, false
+                    StandardTypes.getNullableThrowableType().getRef(), false, false
             );
         }
         fieldDTOs = NncUtils.prepend(excetpionFieldDTO, fieldDTOs);
@@ -492,12 +582,8 @@ public class FlowManager {
                 TypeCategory.CLASS.code(),
                 true,
                 true,
-                null,
-                null,
-                new ClassParamDTO(
+                new ClassTypeParam(
                         null,
-                        null,
-                        List.of(),
                         List.of(),
                         ClassSource.RUNTIME.code(),
                         fields,
@@ -508,10 +594,13 @@ public class FlowManager {
                         null,
                         null,
                         List.of(),
+                        false,
+                        List.of(),
                         List.of(),
                         null,
                         List.of(),
-                        List.of()
+                        List.of(),
+                        false
                 )
         );
     }
@@ -539,7 +628,6 @@ public class FlowManager {
                     false,
                     null,
                     arrayValue.getType().getRef(),
-                    null,
                     false,
                     false
             ));
@@ -558,7 +646,6 @@ public class FlowManager {
                     false,
                     null,
                     ModelDefRegistry.getType(Long.class).getRef(),
-                    null,
                     false,
                     false
             ));
@@ -580,8 +667,7 @@ public class FlowManager {
                                     ValueKind.EXPRESSION.code(),
                                     new ExpressionFieldValueDTO(
                                             nodeDTO.name() + ".array[" + nodeDTO.name() + ".index]"
-                                    ),
-                                    null
+                                    )
                             )
                     ),
                     null,
@@ -599,8 +685,8 @@ public class FlowManager {
     }
 
     private void afterNodeChange(NodeDTO nodeDTO, NodeRT<?> node, IEntityContext context) {
-        if(node instanceof InputNode inputNode) {
-            updateFlowParameters(inputNode);
+        if (node instanceof InputNode inputNode) {
+            updateParameters(inputNode, context);
         }
         if (node instanceof BranchNode branchNode) {
             saveBranchNodeContent(nodeDTO, branchNode, context);
@@ -613,21 +699,31 @@ public class FlowManager {
         }
     }
 
-    private void updateFlowParameters(InputNode inputNode) {
-        var flow = inputNode.getFlow();
+    private void updateParameters(InputNode inputNode, IEntityContext context) {
+        var callable = inputNode.getScope().getOwner() == null ? inputNode.getFlow() :
+                (Callable) inputNode.getScope().getOwner();
         List<Parameter> parameters = new ArrayList<>();
         for (var field : inputNode.getType().getFields()) {
-            var parameter = flow.getParameterByName(field.getName());
-            if(parameter == null) {
+            var parameter = callable.getParameterByName(field.getName());
+            if (parameter == null) {
                 parameters.add(new Parameter(null, field.getName(), field.getCode(), field.getType()));
-            }
-            else {
+            } else {
                 parameters.add(parameter);
                 parameter.setName(field.getName());
                 parameter.setType(field.getType());
             }
         }
-        flow.setParameters(parameters);
+        var oldFuncType = callable.getFunctionType();
+        callable.setParameters(parameters);
+        var funcTypeContext = context.getFunctionTypeContext();
+        callable.setFunctionType(funcTypeContext.get(callable.getParameterTypes(), callable.getReturnType()));
+        if (callable instanceof Flow flow) {
+            flow.setStaticType(funcTypeContext.get(
+                    NncUtils.prepend(flow.getDeclaringType(), flow.getParameterTypes()), flow.getReturnType()));
+            if (flow.isAbstract() && !oldFuncType.equals(callable.getFunctionType())) {
+                recreateOverrideFlows(flow, context);
+            }
+        }
     }
 
     private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode<?> tryNode, IEntityContext context) {
@@ -654,16 +750,6 @@ public class FlowManager {
         }
     }
 
-    private void createTryEndNode(TryNode tryNode, IEntityContext context) {
-        var tryEndNode = new TryEndNode(
-                null, "守护结束节点",
-                ClassBuilder.newBuilder("守护结束节点类型", "TryEndNodeOutput")
-                        .temporary().build(),
-                tryNode, tryNode.getScope()
-        );
-        context.bind(tryEndNode);
-    }
-
     private void updateLoopFields(NodeDTO nodeDTO, LoopNode<?> loopNode, IEntityContext context) {
         LoopParamDTO param = nodeDTO.getParam();
         loopNode.updateFields(param.getFields(), context);
@@ -679,17 +765,15 @@ public class FlowManager {
         );
     }
 
-    private FieldDTO convertToFieldDTO(OutputFieldDTO inputFieldDTO, Flow flow) {
-        return convertToFieldDTO(
-                inputFieldDTO.fieldRef(),
-                flow.getReturnType().getId(),
-                inputFieldDTO.name(),
-                null,
-                inputFieldDTO.typeRef()
-        );
+    @Transactional
+    public void moveFlow(long id, int ordinal) {
+        var context = newContext(true);
+        var flow = context.getFlow(id);
+        flow.getDeclaringType().moveFlow(flow, ordinal);
+        context.finish();
     }
 
-    private FieldDTO convertToFieldDTO(RefDTO ref, Long declaringTypeId, String name, FieldValueDTO defaultValue, RefDTO typeRef) {
+    private FieldDTO convertToFieldDTO(RefDTO ref, Long declaringTypeId, String name, FieldValue defaultValue, RefDTO typeRef) {
         return new FieldDTO(
                 ref.tmpId(),
                 ref.id(),
@@ -701,7 +785,6 @@ public class FlowManager {
                 false,
                 declaringTypeId,
                 typeRef,
-                null,
                 false,
                 false
         );
@@ -720,98 +803,21 @@ public class FlowManager {
 
     private void deleteNode(NodeRT<?> node, IEntityContext context) {
         context.remove(node);
-    }
-
-    private TypeDTO getInputTypeDTO(FlowDTO flowDTO) {
-        var inputNode = extractNodeDTO(flowDTO.rootScope(),
-                nodeDTO -> nodeDTO.kind() == NodeKind.INPUT.code());
-        return NncUtils.get(inputNode, NodeDTO::outputType);
-    }
-
-    public TypeDTO getOutputTypeDTO(FlowDTO flowDTO) {
-        var returnNode = extractNodeDTO(flowDTO.rootScope(),
-                nodeDTO -> nodeDTO.kind() == NodeKind.RETURN.code() && nodeDTO.outputType() != null);
-        return NncUtils.get(returnNode, NodeDTO::outputType);
-    }
-
-    private NodeDTO extractNodeDTO(ScopeDTO scopeDTO, Predicate<NodeDTO> filter) {
-        if (scopeDTO == null || NncUtils.isEmpty(scopeDTO.nodes())) return null;
-        for (NodeDTO node : scopeDTO.nodes()) {
-            if (filter.test(node)) {
-                return node;
-            }
-            if (node.kind() == NodeKind.BRANCH.code()) {
-                BranchParamDTO branchParam = node.getParam();
-                for (BranchDTO branch : branchParam.branches()) {
-                    var innerNode = extractNodeDTO(branch.scope(), filter);
-                    if (innerNode != null) return innerNode;
-                }
-            }
-        }
-        return null;
-    }
-
-    private ClassType saveInputType(@SuppressWarnings("SameParameterValue") @Nullable ClassType type, List<FieldDTO> fieldDTOs, String typeName, IEntityContext context) {
-        TypeDTO typeDTO = TypeDTO.createClass(
-                NncUtils.get(type, ClassType::getId),
-                NncUtils.random(),
-                typeName,
-                null,
-                true,
-                true,
-                fieldDTOs,
-                List.of(),
-                null
-        );
-        if (type != null) {
-            typeManager.saveTypeWithContent(typeDTO, type, context);
-            return type;
-        } else {
-            return typeManager.saveTypeWithContent(typeDTO, context);
-        }
-    }
-
-    private ClassType saveOutputType(@SuppressWarnings("SameParameterValue") @Nullable ClassType type, List<FieldDTO> fieldDTOs, String flowName, IEntityContext context) {
-        TypeDTO typeDTO = TypeDTO.createClass(
-                NncUtils.get(type, ClassType::getId),
-                NncUtils.random(),
-                getOutputTypeName(flowName),
-                null,
-                true,
-                true,
-                fieldDTOs,
-                List.of(),
-                "流程输出"
-        );
-        if (type != null) {
-            typeManager.saveTypeWithContent(typeDTO, type, context);
-            return type;
-        } else {
-            return typeManager.saveTypeWithContent(typeDTO, context);
-        }
-    }
-
-    private String getInputTypeName(String ignored) {
-        return "流程输入" + NncUtils.random();
-    }
-
-    private String getOutputTypeName(String ignored) {
-        return "流程输出" + NncUtils.random();
+        retransformFlowIfRequired(node.getFlow(), context);
     }
 
     public Page<FlowSummaryDTO> list(long typeId, int page, int pageSize, String searchText) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(typeId);
-        EntityQuery<Flow> query = EntityQuery.create(
-                Flow.class,
-                searchText,
-                page,
-                pageSize,
-                List.of(
-                        new EntityQueryField("declaringType", type)
-                )
-        );
-        Page<Flow> flowPage = entityQueryService.query(query, context);
+        var flows = type.getAllFlows();
+        if (searchText != null) {
+            flows = NncUtils.filter(flows, flow -> flow.getName().contains(searchText)
+                    || flow.getCode() != null && flow.getCode().contains(searchText));
+        }
+        int start = Math.min((page - 1) * pageSize, flows.size());
+        int end = Math.min(page * pageSize, flows.size());
+        List<Flow> data = flows.subList(start, end);
+        Page<Flow> flowPage = new Page<>(data, flows.size());
         return new Page<>(
                 NncUtils.map(flowPage.data(), Flow::toSummaryDTO),
                 flowPage.total()
@@ -824,6 +830,7 @@ public class FlowManager {
         NodeRT<?> nodeRT = context.getEntity(NodeRT.class, branchDTO.ownerId());
         if (nodeRT instanceof BranchNode branchNode) {
             Branch branch = branchNode.addBranch(branchDTO, context);
+            retransformFlowIfRequired(branchNode.getFlow(), context);
             context.finish();
             return branch.toDTO(true, false);
         } else {
@@ -869,7 +876,11 @@ public class FlowManager {
     }
 
     private IEntityContext newContext() {
-        return contextFactory.newContext().getEntityContext();
+        return newContext(false);
+    }
+
+    private IEntityContext newContext(boolean asyncPostProcessing) {
+        return contextFactory.newContext(ContextUtil.getTenantId(), asyncPostProcessing).getEntityContext();
     }
 
     @Autowired

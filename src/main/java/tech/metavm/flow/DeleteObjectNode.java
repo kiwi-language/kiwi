@@ -46,7 +46,7 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         frame.deleteInstance(objectId.evaluate(frame));
     }
 }

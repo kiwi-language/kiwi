@@ -3,16 +3,23 @@ package tech.metavm.flow;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.meta.ClassType;
 
 @EntityType("当前记录节点")
 public class SelfNode extends NodeRT<Void> {
 
-    public static SelfNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-            return new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+    public static ClassType getSelfType(Flow flow, IEntityContext context) {
+        var declaringType = flow.getDeclaringType();
+        return declaringType.isTemplate() ?
+                context.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
     }
 
-    public SelfNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name, scope.getFlow().getDeclaringType(), prev, scope);
+    public static SelfNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+        return new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), getSelfType(scope.getFlow(), context), prev, scope);
+    }
+
+    public SelfNode(Long tmpId, String name, ClassType type, NodeRT<?> prev, ScopeRT scope) {
+        super(tmpId, name, type, prev, scope);
     }
 
     @Override
@@ -25,7 +32,7 @@ public class SelfNode extends NodeRT<Void> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         frame.setResult(frame.getSelf());
     }
 }

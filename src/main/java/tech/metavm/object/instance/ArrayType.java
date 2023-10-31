@@ -2,35 +2,39 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IndexDef;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.meta.CompositeType;
 import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.object.meta.UnionType;
-import tech.metavm.object.meta.rest.dto.ArrayTypeParamDTO;
+import tech.metavm.object.meta.rest.dto.ArrayTypeParam;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("数组类型")
-public class ArrayType extends Type {
+public class ArrayType extends CompositeType {
+
+    public static final IndexDef<ArrayType> KEY_IDX = IndexDef.uniqueKey(ArrayType.class, "key");
+
+    public static final IndexDef<ArrayType> ELEMENT_TYPE_IDX = IndexDef.normalKey(ArrayType.class, "elementType");
 
     @EntityField("元素类型")
     private final Type elementType;
 
-    public ArrayType(Long tmpId, Type elementType) {
-        this(tmpId, elementType, false);
-    }
+    @EntityField("数组类别")
+    private final ArrayKind kind;
 
-    public ArrayType(Long tmpId, Type elementType, boolean ephemeral) {
-        super(getArrayTypeName(elementType), false, ephemeral, TypeCategory.ARRAY);
+    public ArrayType(Long tmpId, Type elementType, ArrayKind kind) {
+        super(getArrayTypeName(elementType), false, false, kind.category());
         setTmpId(tmpId);
+        this.kind = kind;
         if (elementType.getCode() != null) {
             setCode(elementType.getCode() + "[]");
         }
@@ -46,6 +50,11 @@ public class ArrayType extends Type {
     }
 
     @Override
+    protected String getKey() {
+        return getKey(elementType, kind);
+    }
+
+    @Override
     public Type getConcreteType() {
         return elementType.getConcreteType();
     }
@@ -53,7 +62,7 @@ public class ArrayType extends Type {
     @Override
     protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ArrayType arrayType) {
-            return elementType.isAssignableFrom(arrayType.elementType);
+            return kind.isAssignableFrom(arrayType.kind) && elementType.isWithinRange(arrayType.elementType);
         } else {
             return false;
         }
@@ -78,9 +87,9 @@ public class ArrayType extends Type {
     }
 
     @Override
-    public List<ReferencePO> extractReferences(InstancePO instancePO) {
+    public Set<ReferencePO> extractReferences(InstancePO instancePO) {
         InstanceArrayPO arrayPO = (InstanceArrayPO) instancePO;
-        List<ReferencePO> refs = new ArrayList<>();
+        Set<ReferencePO> refs = new HashSet<>();
         boolean isRefType = getElementType().isReference();
         for (Object element : arrayPO.getElements()) {
             NncUtils.invokeIfNotNull(
@@ -98,12 +107,9 @@ public class ArrayType extends Type {
     }
 
     @Override
-    protected ArrayTypeParamDTO getParam() {
+    protected ArrayTypeParam getParamInternal() {
         try (var context = SerializeContext.enter()) {
-            return new ArrayTypeParamDTO(
-                    context.getRef(elementType),
-                    elementType.toDTO()
-            );
+            return new ArrayTypeParam(context.getRef(elementType), kind.code());
         }
     }
 
@@ -114,19 +120,25 @@ public class ArrayType extends Type {
 
     @Override
     public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return Table.class.getName() + "<" + elementType.getCanonicalName(getJavaType) + ">";
+        return kind.getEntityClass().getName() + "<" + elementType.getCanonicalName(getJavaType) + ">";
+    }
+
+    public ArrayKind kind() {
+        return kind;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ArrayType arrayType = (ArrayType) o;
-        return Objects.equals(elementType, arrayType.elementType);
+    public List<Type> getComponentTypes() {
+        return List.of(elementType);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(elementType);
+    public static String getKey(Type elementType, ArrayKind kind) {
+        String key = CompositeType.getKey(List.of(elementType));
+        return switch (kind) {
+            case READ_WRITE -> key;
+            case READ_ONLY -> "r-" + key;
+            case CHILD -> "c-" + key;
+        };
     }
+
 }

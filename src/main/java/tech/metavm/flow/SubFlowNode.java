@@ -65,7 +65,7 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
         this.selfId = selfId;
     }
 
-    protected Instance getSelf(FlowFrame frame) {
+    protected Instance getSelf(MetaFrame frame) {
         return selfId.evaluate(frame);
     }
 

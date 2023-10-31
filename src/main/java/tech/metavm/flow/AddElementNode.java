@@ -41,7 +41,7 @@ public class AddElementNode extends NodeRT<AddElementParamDTO>  {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         var arrayInst = (ArrayInstance) array.evaluate(frame);
         var elementInst = (Instance) element.evaluate(frame);
         arrayInst.add(elementInst);

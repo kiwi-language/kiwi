@@ -8,7 +8,6 @@ import java.util.Objects;
 public enum NodeKind {
     SELF(0, SelfNode.class),
     INPUT(1, InputNode.class, true),
-    //    GET_OBJECT(2, GetObjectNode.class),
     ADD_OBJECT(3, AddObjectNode.class),
     UPDATE_OBJECT(4, UpdateObjectNode.class),
     DELETE_OBJECT(5, DeleteObjectNode.class),
@@ -27,6 +26,8 @@ public enum NodeKind {
     EXIT_BRANCH(22, CheckNode.class),
     TRY(23, TryNode.class),
     TRY_END(24, TryEndNode.class, true),
+    FUNC(25, FunctionNode.class),
+    LAMBDA(26, LambdaNode.class),
 
     ;
 

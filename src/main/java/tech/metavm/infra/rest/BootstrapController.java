@@ -7,12 +7,10 @@ import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.dto.Result;
 import tech.metavm.entity.Bootstrap;
 import tech.metavm.infra.RegionManager;
-import tech.metavm.job.IndexRebuildGlobalJob;
-import tech.metavm.job.JobManager;
-import tech.metavm.job.JobScheduler;
+import tech.metavm.task.IndexRebuildGlobalTask;
+import tech.metavm.task.TaskManager;
+import tech.metavm.task.Scheduler;
 import tech.metavm.tenant.TenantManager;
-import tech.metavm.tenant.rest.dto.TenantCreateRequest;
-import tech.metavm.util.Constants;
 
 @RestController
 @RequestMapping("/bootstrap")
@@ -20,14 +18,14 @@ public class BootstrapController {
 
     private final Bootstrap bootstrap;
     private final RegionManager regionManager;
-    private final JobScheduler jobScheduler;
-    private final JobManager jobManager;
+    private final Scheduler jobScheduler;
+    private final TaskManager jobManager;
     private final TenantManager tenantManager;
 
     public BootstrapController(Bootstrap bootstrap,
                                RegionManager regionManager,
-                               JobScheduler jobScheduler,
-                               JobManager jobManager,
+                               Scheduler jobScheduler,
+                               TaskManager jobManager,
                                TenantManager tenantManager) {
         this.bootstrap = bootstrap;
         this.regionManager = regionManager;
@@ -65,7 +63,7 @@ public class BootstrapController {
 
     @PostMapping("/rebuild-index")
     public Result<Void> rebuildIndex()  {
-        jobManager.addGlobalJob(new IndexRebuildGlobalJob());
+        jobManager.addGlobalTask(new IndexRebuildGlobalTask());
         return Result.voidSuccess();
     }
 

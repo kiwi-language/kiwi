@@ -7,8 +7,8 @@ import tech.metavm.flow.rest.NewArrayParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ArrayType;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
 import java.util.List;
 
@@ -23,11 +23,11 @@ public class NewArrayNode extends NodeRT<NewArrayParamDTO> {
     }
 
     @ChildEntity("元素")
-    private final Table<Value> elements = new Table<>(Value.class, true);
+    private final ChildArray<Value> elements = new ChildArray<>(Value.class);
 
     public NewArrayNode(Long tmpId, String name, ArrayType type, List<Value> elements, NodeRT<?> previous, ScopeRT scope) {
         super(tmpId, name, type, previous, scope);
-        this.elements.addAll(elements);
+        this.elements.addChildren(elements);
     }
 
     @Override
@@ -41,8 +41,7 @@ public class NewArrayNode extends NodeRT<NewArrayParamDTO> {
     protected void setParam(NewArrayParamDTO param, IEntityContext context) {
         if(param.elements() != null) {
             var parsingContext = getParsingContext(context);
-            elements.clear();
-            elements.addAll(
+            elements.resetChildren(
                     NncUtils.map(
                             param.elements(),
                             element -> ValueFactory.create(element, parsingContext)
@@ -57,7 +56,7 @@ public class NewArrayNode extends NodeRT<NewArrayParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         frame.setResult(new ArrayInstance(getType(), NncUtils.map(elements, e -> e.evaluate(frame))));
     }
 

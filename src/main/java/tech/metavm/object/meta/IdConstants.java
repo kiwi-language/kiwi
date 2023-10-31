@@ -14,13 +14,17 @@ public class IdConstants {
 
     public static final long CLASS_REGION_END = MAX_ID / 10 * 5;
 
-    public static final long MAP_REGION_BASE = MAX_ID / 10 * 7;
+    public static final long READ_WRITE_ARRAY_REGION_BASE = MAX_ID / 100 * 80;
 
-    public static final long MAP_REGION_END = MAX_ID / 10 * 8 - 1;
+    public static final long READ_WRITE_ARRAY_REGION_END = MAX_ID / 100 * 85 - 1;
 
-    public static final long ARRAY_REGION_BASE = MAX_ID / 10 * 8;
+    public static final long READ_ONLY_ARRAY_REGION_BASE = MAX_ID / 100 * 85;
 
-    public static final long ARRAY_REGION_END = MAX_ID / 10 * 9 - 1;
+    public static final long READ_ONLY_ARRAY_REGION_END = MAX_ID / 100 * 87 - 1;
+
+    public static final long CHILD_ARRAY_REGION_BASE = MAX_ID / 100 * 87;
+
+    public static final long CHILD_ARRAY_REGION_END = MAX_ID / 100 * 90 - 1;
 
     public static final long ENUM_REGION_BASE = MAX_ID / 10 * 9;
 

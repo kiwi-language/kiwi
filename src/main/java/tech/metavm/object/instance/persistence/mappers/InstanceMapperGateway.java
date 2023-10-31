@@ -30,20 +30,20 @@ public class InstanceMapperGateway {
         this.instanceArrayMapper = instanceArrayMapper;
     }
 
-    public List<InstancePO> selectByIds(long tenantId, Collection<Long> ids) {
+    public List<InstancePO> selectByIds(long tenantId, Collection<Long> ids, int lockMode) {
         return convertForLoading(
                 NncUtils.splitAndMerge(
                     ids,
                     this::isArrayId,
-                    arrayIds -> new ArrayList<>(instanceArrayMapper.selectByIds(tenantId, arrayIds)),
-                    instanceIds -> instanceMapper.selectByIds(tenantId, instanceIds)
+                    arrayIds -> new ArrayList<>(instanceArrayMapper.selectByIds(tenantId, arrayIds, lockMode)),
+                    instanceIds -> instanceMapper.selectByIds(tenantId, instanceIds, lockMode)
                 )
         );
     }
 
     public List<InstancePO> selectByTypeIds(long tenantId, Collection<ByTypeQuery> queries) {
         return convertForLoading(
-                NncUtils.merge(
+                NncUtils.union(
                         instanceMapper.selectByTypeIds(tenantId, queries),
                         instanceArrayMapper.selectByTypeIds(tenantId, queries)
                 )
@@ -117,7 +117,7 @@ public class InstanceMapperGateway {
     }
 
     private boolean isArrayId(long id) {
-        return TypeCategory.ARRAY.idRangeContains(id);
+        return NncUtils.anyMatch(TypeCategory.arrayCategories(), category -> category.idRangeContains(id));
     }
 
     public int updateSyncVersion(List<VersionPO> versions) {

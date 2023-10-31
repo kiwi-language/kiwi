@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import com.fasterxml.jackson.core.sym.NameN;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
 
@@ -38,6 +39,8 @@ public enum SQLType {
 
     public static final List<String> COLUMN_NAMES;
 
+    public static final Map<String, Column> NAME_2_COLUMN;
+
     final static Map<SQLType, List<Column>> COLUMN_MAP;
 
     static {
@@ -45,17 +48,20 @@ public enum SQLType {
         List<String> columnNames = new ArrayList<>();
         List<Column> sqlColumns = new ArrayList<>();
         Map<SQLType, List<Column>> columnMap = new HashMap<>();
+        Map<String, Column> name2col = new HashMap<>();
         for (SQLType columnType : values()) {
             for(int i = 0; i < columnType.count; i++) {
                 Column column = new Column(columnType.prefix()+ i, columnType);
                 columns.add(column);
                 columnNames.add(column.name());
                 columnMap.computeIfAbsent(columnType, k -> new ArrayList<>()).add(column);
+                name2col.put(column.name(), column);
                 if(columnType.sqlType != null) {
                     sqlColumns.add(column);
                 }
             }
         }
+        NAME_2_COLUMN = Collections.unmodifiableMap(name2col);
         COLUMNS = Collections.unmodifiableList(columns);
         COLUMN_MAP = Collections.unmodifiableMap(columnMap);
         COLUMN_NAMES = Collections.unmodifiableList(columnNames);
@@ -77,6 +83,15 @@ public enum SQLType {
             }
         }
         throw new RuntimeException("No column category found for column: " + columnName);
+    }
+
+    public Column getColumn(int index) {
+        return COLUMN_MAP.get(this).get(index);
+    }
+
+    public static Column getColumnByName(String name) {
+        return NncUtils.requireNonNull(NAME_2_COLUMN.get(name),
+                "Can not find column with name '" + name + "'");
     }
 
     public String sqlName() {

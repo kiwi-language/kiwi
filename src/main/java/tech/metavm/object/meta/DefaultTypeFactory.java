@@ -14,4 +14,5 @@ public class DefaultTypeFactory extends TypeFactory {
     public Type getType(java.lang.reflect.Type javaType) {
         return getTypeFunc.apply(javaType);
     }
+
 }

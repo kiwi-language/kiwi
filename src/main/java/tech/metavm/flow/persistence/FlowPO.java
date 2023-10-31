@@ -7,7 +7,7 @@ import tech.metavm.flow.Flow;
 public class FlowPO extends EntityPO {
 
     public static final IndexDef<Flow> INDEX_DECLARING_TYPE_ID = new IndexDef<>(
-            Flow.class, "declaringTypeId"
+            Flow.class,false, "declaringTypeId"
     );
 
     private Long id;

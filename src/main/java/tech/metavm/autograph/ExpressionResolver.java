@@ -3,13 +3,14 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.generic.GenericContext;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
@@ -43,13 +44,17 @@ public class ExpressionResolver {
     private final FlowGenerator flowBuilder;
     private final TypeResolver typeResolver;
     private final VariableTable variableTable;
+    private final GenericContext genericContext;
     private final IEntityContext entityContext;
+    private final Generator visitor;
 
-    public ExpressionResolver(FlowGenerator flowBuilder, VariableTable variableTable, TypeResolver typeResolver, IEntityContext entityContext) {
+    public ExpressionResolver(FlowGenerator flowBuilder, VariableTable variableTable, TypeResolver typeResolver, IEntityContext entityContext, Generator visitor) {
         this.flowBuilder = flowBuilder;
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
         this.entityContext = entityContext;
+        genericContext = entityContext.getGenericContext();
+        this.visitor = visitor;
     }
 
     public Expression resolve(PsiExpression psiExpression) {
@@ -79,6 +84,7 @@ public class ExpressionResolver {
             case PsiConditionalExpression conditionalExpression -> resolveConditional(conditionalExpression, context);
             case PsiArrayAccessExpression arrayAccessExpression -> resolveArrayAccess(arrayAccessExpression, context);
             case PsiInstanceOfExpression instanceOfExpression -> resolveInstanceOf(instanceOfExpression, context);
+            case PsiLambdaExpression lambdaExpression -> resolveLambdaExpression(lambdaExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
     }
@@ -118,12 +124,13 @@ public class ExpressionResolver {
     private Expression resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
         return new FunctionExpression(
                 Function.IF,
-                new ArrayExpression(
+                ArrayExpression.create(
                         List.of(
                                 resolve(psiExpression.getCondition(), context),
                                 resolve(requireNonNull(psiExpression.getThenExpression()), context),
                                 resolve(requireNonNull(psiExpression.getElseExpression()), context)
-                        )
+                        ),
+                        entityContext
                 )
         );
     }
@@ -177,7 +184,7 @@ public class ExpressionResolver {
                     ClassType klass = (ClassType) flowBuilder.getExpressionType(qualifierExpr);
                     typeResolver.ensureDeclared(klass);
                     field = klass.getFieldByCode(psiField.getName());
-                    return new FieldExpression(qualifierExpr, field);
+                    return new PropertyExpression(qualifierExpr, field);
                 }
             }
         } else if (target instanceof PsiVariable variable) {
@@ -237,7 +244,7 @@ public class ExpressionResolver {
     }
 
     private Expression resolveUnary(PsiUnaryExpression psiUnaryExpression, ResolutionContext context) {
-        if(psiUnaryExpression.getOperand() instanceof PsiLiteralExpression literalExpression) {
+        if (psiUnaryExpression.getOperand() instanceof PsiLiteralExpression literalExpression) {
             return new UnaryExpression(
                     resolveOperator(psiUnaryExpression.getOperationSign().getTokenType()),
                     resolveLiteral(literalExpression)
@@ -375,24 +382,14 @@ public class ExpressionResolver {
         if (psiSelf != null) {
             ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
         }
-        Expression self;
-        if (psiSelf == null) self = variableTable.get("this");
-        else self = resolve(requireNonNull(psiSelf), context);
-        var exprType = flowBuilder.getExpressionType(self);
-        ClassType selfType;
-        if (exprType instanceof ClassType classType) {
-            selfType = classType;
-        } else if (exprType instanceof TypeVariable typeVariable) {
-            selfType = (ClassType) typeVariable.getBounds().get(0);
-        } else {
-            throw new InternalException("Unexpected self expression type: " + exprType);
-        }
+        Expression qualifier = getQualifier(psiSelf, context);
+        var selfType = TypeUtil.getClassType(flowBuilder.getExpressionType(qualifier));
         Flow flow = resolveFlow(selfType, expression);
         List<Expression> args = NncUtils.map(
                 expression.getArgumentList().getExpressions(),
                 expr -> resolve(expr, context)
         );
-        var node = flowBuilder.createSubFlow(self, flow, args);
+        var node = flowBuilder.createSubFlow(qualifier, flow, args);
         if (flow.getReturnType().isVoid()) {
             return null;
         } else {
@@ -400,36 +397,33 @@ public class ExpressionResolver {
         }
     }
 
+    private Expression getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
+        return qualifierExpression == null ? variableTable.get("this")
+                : resolve(requireNonNull(qualifierExpression), context);
+    }
+
     private Flow resolveFlow(ClassType declaringType, PsiCallExpression expression) {
         var methodGenerics = expression.resolveMethodGenerics();
-        var method = (PsiMethod) methodGenerics.getElement();
-        List<PsiType> paramPsiTypes = NncUtils.map(
-                requireNonNull(method).getParameterList().getParameters(),
-                PsiParameter::getType
-        );
-        if (expression instanceof PsiMethodCallExpression methodCallExpression) {
-            var methodExpr = methodCallExpression.getMethodExpression();
-            var qualifierExpr = methodExpr.getQualifierExpression();
-            if (qualifierExpr != null) {
-                var selfType = NncUtils.requireNonNull(qualifierExpr.getType());
-                if (selfType instanceof PsiClassType classType) {
-                    var selfSubstitutor = classType.resolveGenerics().getSubstitutor();
-                    paramPsiTypes = NncUtils.map(
-                            paramPsiTypes,
-                            selfSubstitutor::substitute
-                    );
-                }
-            }
-        }
-        List<Type> paramTypes = NncUtils.map(paramPsiTypes, typeResolver::resolveDeclaration);
         var substitutor = methodGenerics.getSubstitutor();
-        var flow = declaringType.getFlow(method.getName(), paramTypes);
-        if (!flow.getTypeParameters().isEmpty()) {
-            List<Type> typeArguments = NncUtils.map(
-                    method.getTypeParameters(),
-                    typeParam -> typeResolver.resolveDeclaration(substitutor.substitute(typeParam))
-            );
-            flow = entityContext.getGenericContext().getParameterizedFlow(flow, typeArguments);
+        var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
+        var psiParameters = NncUtils.requireNonNull(method.getParameterList()).getParameters();
+        var template = declaringType.getEffectiveTemplate();
+        List<Type> rawParamTypes = NncUtils.map(
+                psiParameters,
+                param -> typeResolver.resolveDeclaration(param.getType())
+        );
+        var tempalteFlow = template.getFlowByCodeAndParamTypes(method.getName(), rawParamTypes);
+        Flow piFlow = template != declaringType ? declaringType.getFlowByTemplate(tempalteFlow) : tempalteFlow;
+        Flow flow;
+        if (piFlow.getTypeParameters().isEmpty()) {
+            flow = piFlow;
+        } else {
+            var flowTypeArgs = NncUtils.map(method.getTypeParameters(),
+                    typeParam -> typeResolver.resolveDeclaration(substitutor.substitute(typeParam)));
+            flow = piFlow.getTemplateInstance(flowTypeArgs);
+            if (flow == null) {
+                flow = genericContext.getParameterizedFlow(piFlow, flowTypeArgs);
+            }
         }
         return flow;
     }
@@ -463,27 +457,13 @@ public class ExpressionResolver {
         if (psiListType.isAssignableFrom(type)) {
             var listType = (ClassType) typeResolver.resolve(type);
             var subFlow = listType.getFlowByCode("List");
-            Expression elementAsChild = ExpressionUtil.falseExpression();
-            if (Objects.equals(psiClass.getQualifiedName(), Table.class.getName())) {
-                var argList = requireNonNull(expression.getArgumentList());
-                if (argList.getExpressionCount() > 1) {
-                    elementAsChild = resolve(argList.getExpressions()[1], context);
-                }
-            }
-            return getSingleValue(flowBuilder.createNew(subFlow, List.of(elementAsChild)));
+            return getSingleValue(flowBuilder.createNew(subFlow, List.of()));
         }
         var psiMapType = TranspileUtil.createType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = (ClassType) typeResolver.resolve(type);
             var subFlow = mapType.getFlowByCode("Map");
-            Expression valueAsChild = ExpressionUtil.falseExpression();
-            var childHashMapType = TranspileUtil.createType(ChildHashMap.class);
-            if (childHashMapType.isAssignableFrom(type)) {
-                valueAsChild = ExpressionUtil.trueExpression();
-            }
-            return getSingleValue(flowBuilder.createNew(subFlow,
-                    List.of(ExpressionUtil.falseExpression(), valueAsChild)
-            ));
+            return getSingleValue(flowBuilder.createNew(subFlow, List.of()));
         }
         if (expression.getType() instanceof PsiClassType psiClassType) {
             var klass = (ClassType) typeResolver.resolve(psiClassType);
@@ -501,20 +481,25 @@ public class ExpressionResolver {
     public Expression newInstance(ClassType declaringType, List<Expression> arguments,
                                   List<PsiType> prefixTypes, PsiConstructorCall constructorCall) {
         var methodGenerics = constructorCall.resolveMethodGenerics();
-        var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
-        var substitutor = methodGenerics.getSubstitutor();
-        var prefixParamTypes = NncUtils.map(
-                prefixTypes,
-                type -> typeResolver.resolveTypeOnly(substitutor.substitute(type))
-        );
-        var paramTypes = NncUtils.map(
-                requireNonNull(method.getParameterList()).getParameters(),
-                param -> typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()))
-        );
-        paramTypes = NncUtils.merge(prefixParamTypes, paramTypes);
-        var flow = declaringType.getFlow(declaringType.getCode(), paramTypes);
-        var newNode = flowBuilder.createNew(flow, arguments);
-        return new NodeExpression(newNode);
+        if (methodGenerics.getElement() == null) {
+            var flow = declaringType.getDefaultConstructor();
+            return new NodeExpression(flowBuilder.createNew(flow, List.of()));
+        } else {
+            var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
+            var substitutor = methodGenerics.getSubstitutor();
+            var prefixParamTypes = NncUtils.map(
+                    prefixTypes,
+                    type -> typeResolver.resolveTypeOnly(substitutor.substitute(type))
+            );
+            var paramTypes = NncUtils.map(
+                    requireNonNull(method.getParameterList()).getParameters(),
+                    param -> typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()))
+            );
+            paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
+            var flow = declaringType.getFlowByCodeAndParamTypes(declaringType.getEffectiveTemplate().getCode(), paramTypes);
+            var newNode = flowBuilder.createNew(flow, arguments);
+            return new NodeExpression(newNode);
+        }
     }
 
     private Expression getSingleValue(NodeRT<?> node) {
@@ -557,7 +542,8 @@ public class ExpressionResolver {
                     self = variableTable.get("this");
                 }
                 ClassType instanceType = (ClassType) flowBuilder.getExpressionType(self);
-                Field field = instanceType.getFieldByCode(psiField.getName());
+                typeResolver.ensureDeclared(instanceType);
+                Field field = instanceType.getFieldByCodeRequired(psiField.getName());
                 UpdateObjectNode node = flowBuilder.createUpdateObject();
                 node.setObjectId(new ExpressionValue(self));
                 node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(assignment));
@@ -581,8 +567,8 @@ public class ExpressionResolver {
         return OPERATOR_MAP.get(elementType);
     }
 
-    public void constructBool(PsiExpression expression) {
-        constructBool(expression, false, new ResolutionContext());
+    public void constructBool(PsiExpression expression, BranchNode parent) {
+        constructBool(expression, false, parent, new ResolutionContext());
     }
 
     public Expression resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
@@ -590,11 +576,13 @@ public class ExpressionResolver {
         var thenBranch = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
         var elseBranch = branchNode.addDefaultBranch();
 
-        flowBuilder.enterScope(thenBranch.getScope(), null);
-        constructBool(expression, false, new ResolutionContext());
-        flowBuilder.exitScope();
-
+        flowBuilder.enterCondSection(branchNode);
+        flowBuilder.enterBranch(thenBranch);
+        constructBool(expression, false, branchNode, new ResolutionContext());
+        flowBuilder.exitBranch();
         var mergeNode = flowBuilder.createMerge();
+        flowBuilder.exitCondSection(mergeNode, List.of());
+
         var valueField = FieldBuilder
                 .newBuilder("value", "value", mergeNode.getType(), StandardTypes.getBoolType())
                 .build();
@@ -602,29 +590,63 @@ public class ExpressionResolver {
                 thenBranch, new ExpressionValue(ExpressionUtil.trueExpression()),
                 elseBranch, new ExpressionValue(ExpressionUtil.falseExpression())
         ));
-        return new FieldExpression(new NodeExpression(mergeNode), valueField);
+        return new PropertyExpression(new NodeExpression(mergeNode), valueField);
     }
 
-    public void constructBool(PsiExpression expression, boolean negated, ResolutionContext context) {
+    public void constructBool(PsiExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
         switch (expression) {
-            case PsiBinaryExpression binaryExpression -> constructBinaryBool(binaryExpression, negated, context);
-            case PsiUnaryExpression unaryExpression -> constructUnaryBool(unaryExpression, negated, context);
+            case PsiBinaryExpression binaryExpression ->
+                    constructBinaryBool(binaryExpression, negated, parent, context);
+            case PsiUnaryExpression unaryExpression -> constructUnaryBool(unaryExpression, negated, parent, context);
             case PsiPolyadicExpression polyadicExpression ->
-                    constructPolyadicBool(polyadicExpression, negated, context);
-            default -> constructAtomicBool(expression, negated, context);
+                    constructPolyadicBool(polyadicExpression, negated, parent, context);
+            default -> constructAtomicBool(expression, negated, parent, context);
         }
     }
 
-    private void constructUnaryBool(PsiUnaryExpression unaryExpression, boolean negated, ResolutionContext context) {
+    private void constructUnaryBool(PsiUnaryExpression unaryExpression, boolean negated, BranchNode parent, ResolutionContext context) {
         var op = unaryExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
-            constructBool(requireNonNull(unaryExpression.getOperand()), !negated, context);
+            constructBool(requireNonNull(unaryExpression.getOperand()), !negated, parent, context);
         } else {
             throw new InternalException("Invalid unary operator for bool expression: " + op);
         }
     }
 
-    public void constructBinaryBool(PsiBinaryExpression psiBinaryExpression, boolean negated, ResolutionContext context) {
+    public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
+        var returnType = typeResolver.resolveDeclaration(TranspileUtil.getLambdaReturnType(expression));
+        var parameters = resolveParameterList(expression.getParameterList());
+        var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
+        var lambdaNode = flowBuilder.createLambda(parameters, returnType, funcInterface);
+        flowBuilder.enterScope(lambdaNode.getBodyScope());
+        var inputNode = flowBuilder.createInput();
+        for (Parameter parameter : parameters) {
+            var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getType(), parameter.getType())
+                    .build();
+            flowBuilder.setVariable(parameter.getCode(),
+                    new PropertyExpression(new NodeExpression(inputNode), field));
+        }
+        if (expression.getBody() instanceof PsiExpression bodyExpr) {
+            flowBuilder.createReturn(resolve(bodyExpr, context));
+        } else {
+            requireNonNull(expression.getBody()).accept(visitor);
+        }
+        flowBuilder.exitScope();
+        return new NodeExpression(lambdaNode);
+    }
+
+    private List<Parameter> resolveParameterList(PsiParameterList parameterList) {
+        return NncUtils.map(parameterList.getParameters(), this::resolveParameter);
+    }
+
+    private Parameter resolveParameter(PsiParameter psiParameter) {
+        return new Parameter(
+                null, TranspileUtil.getFlowParamName(psiParameter), psiParameter.getName(),
+                typeResolver.resolveDeclaration(psiParameter.getType())
+        );
+    }
+
+    public void constructBinaryBool(PsiBinaryExpression psiBinaryExpression, boolean negated, BranchNode parent, ResolutionContext context) {
         var op = resolveOperator(psiBinaryExpression.getOperationSign());
         var first = NncUtils.requireNonNull(psiBinaryExpression.getLOperand());
         var second = NncUtils.requireNonNull(psiBinaryExpression.getROperand());
@@ -632,80 +654,60 @@ public class ExpressionResolver {
             op = op.negate();
         }
         if (op == Operator.AND) {
-            constructBool(first, negated, context);
-            constructBool(second, negated, context);
+            constructBool(first, negated, parent, context);
+            constructBool(second, negated, parent, context);
         } else if (op == Operator.OR) {
             var branchNode = flowBuilder.createBranchNode(false);
             var branch1 = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
-            var branch2 = branchNode.addDefaultBranch();
+            branchNode.addDefaultBranch();
 
-            flowBuilder.enterScope(branch1.getScope(), null);
-            constructBool(first, negated, context);
-            flowBuilder.exitScope();
-
-            flowBuilder.enterScope(branch2.getScope(), null);
-            constructBool(second, negated, context);
+            flowBuilder.enterScope(branch1.getScope());
+            constructBool(first, !negated, branchNode, context);
+            constructBool(second, !negated, branchNode, context);
+            flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
             flowBuilder.exitScope();
 
             flowBuilder.createMerge();
         } else {
             var expr = resolveBinary(psiBinaryExpression, context);
-            flowBuilder.createCheck(expr);
+            flowBuilder.createCheck(expr, parent);
         }
     }
 
-    public void constructPolyadicBool(PsiPolyadicExpression expression, boolean negated, ResolutionContext context) {
+    public void constructPolyadicBool(PsiPolyadicExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
         var op = resolveOperator(expression.getOperationTokenType());
         if (negated) {
             op = op.negate();
         }
         if (op == Operator.AND) {
             for (PsiExpression operand : expression.getOperands()) {
-                constructBool(operand, negated, context);
+                constructBool(operand, negated, parent, context);
             }
         } else if (op == Operator.OR) {
             var branchNode = flowBuilder.createBranchNode(false);
+            var thenBranch = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
+            branchNode.addDefaultBranch();
+            flowBuilder.enterScope(thenBranch.getScope());
             var operands = expression.getOperands();
             for (PsiExpression operand : operands) {
-                var branch = operand == operands[operands.length - 1] ?
-                        branchNode.addDefaultBranch() :
-                        branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
-                flowBuilder.enterScope(branch.getScope(), null);
-                constructBool(operand, negated, context);
-                flowBuilder.exitScope();
+                constructBool(operand, !negated, branchNode, context);
             }
+            flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
+            flowBuilder.exitScope();
             flowBuilder.createMerge();
         } else {
             throw new InternalException("Invalid operator for polyadic boolean expression: " + op);
         }
     }
 
-    private Expression constructAtomicBool(PsiExpression expression, boolean negated, ResolutionContext context) {
+    private Expression constructAtomicBool(PsiExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
         var expr = resolveNormal(expression, context);
         if (negated) {
             expr = ExpressionUtil.not(expr);
         }
-        flowBuilder.createCheck(expr);
+        flowBuilder.createCheck(expr, parent);
         return expr;
     }
-
-    private Expression merge(Branch trueBranch, Expression trueBranchValue,
-                             Branch falseBranch, Expression falseBranchValue) {
-        var mergeNode = flowBuilder.createMerge();
-        var valueField = FieldBuilder.newBuilder(
-                "值",
-                "value",
-                mergeNode.getType(),
-                ModelDefRegistry.getType(boolean.class)
-        ).build();
-        var valueMergeField = new MergeNodeField(valueField, mergeNode);
-        valueMergeField.setValues(Map.of(
-                trueBranch, new ExpressionValue(trueBranchValue),
-                falseBranch, new ExpressionValue(falseBranchValue)
-        ));
-        return new FieldExpression(new NodeExpression(mergeNode), valueField);
-    }
-
 
     public static class ResolutionContext {
         private final Map<QualifiedName, Expression> tempVariableMap = new HashMap<>();

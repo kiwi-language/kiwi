@@ -2,7 +2,10 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Method;
@@ -10,7 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class InstanceFactory {
@@ -40,22 +42,21 @@ public class InstanceFactory {
     }
 
     public static Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
-        return create(instanceDTO, context::getType, context::get, context::bind);
+        return create(instanceDTO, context::getType, context);
     }
 
     public static Instance create(
             InstanceDTO instanceDTO,
             Function<Long, Type> getType,
-            Function<Long, Instance> getInstance,
-            Consumer<Instance> bindInstance
+            IInstanceContext context
     ) {
-        Type type = getType.apply(instanceDTO.typeId());
+        Type type = getType.apply(instanceDTO.typeRef().id());
 
         if(type instanceof ClassType classType) {
-            ClassInstanceParamDTO param = (ClassInstanceParamDTO) instanceDTO.param();
+            ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
             Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(param.fields(), InstanceFieldDTO::fieldId);
             Map<Field, Instance> data = new HashMap<>();
-            for (Field field : classType.getFields()) {
+            for (Field field : classType.getAllFields()) {
                 if (fieldMap.containsKey(field.getId())) {
                     data.put(
                             field,
@@ -63,7 +64,7 @@ public class InstanceFactory {
                                     fieldMap.get(field.getId()).value(),
                                     field.getType(),
                                     getType,
-                                    getInstance
+                                    context
                             )
                     );
                 }
@@ -74,7 +75,7 @@ public class InstanceFactory {
                     classType
             );
             if(!instance.getType().isEphemeral()) {
-                bindInstance.accept(instance);
+                context.bind(instance);
             }
             return instance;
         }
@@ -84,10 +85,10 @@ public class InstanceFactory {
                     arrayType,
                     NncUtils.map(
                             param.elements(),
-                            v -> resolveValue(v, arrayType.getElementType(), getType, getInstance)
+                            v -> resolveValue(v, arrayType.getElementType(), getType, context)
                     )
             );
-            bindInstance.accept(arrayInstance);
+            context.bind(arrayInstance);
             return arrayInstance;
         }
         else {
@@ -95,21 +96,21 @@ public class InstanceFactory {
         }
     }
 
-    public static Instance resolveValue(FieldValueDTO rawValue, Type type, IEntityContext context) {
+    public static Instance resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
         return resolveValue(rawValue, type, context::getType,
-                Objects.requireNonNull(context.getInstanceContext())::get);
+                Objects.requireNonNull(context.getInstanceContext()));
     }
 
-    public static Instance resolveValue(FieldValueDTO rawValue, Type type,
-                                         Function<Long, Type> getType,
-                                         Function<Long, Instance> getInstance) {
+    public static Instance resolveValue(FieldValue rawValue, Type type,
+                                        Function<Long, Type> getType,
+                                        IInstanceContext context) {
         if(rawValue == null) {
             return InstanceUtils.nullInstance();
         }
         if(type.isNullable()) {
             type = type.getUnderlyingType();
         }
-        if(rawValue instanceof PrimitiveFieldValueDTO primitiveFieldValue) {
+        if(rawValue instanceof PrimitiveFieldValue primitiveFieldValue) {
             if(type.isPassword()) {
                 return new PasswordInstance(
                         EncodingUtils.md5((String) primitiveFieldValue.getValue()),
@@ -119,33 +120,33 @@ public class InstanceFactory {
             return InstanceUtils.resolvePrimitiveValue(type, primitiveFieldValue.getValue());
         }
         else if(rawValue instanceof ReferenceFieldValueDTO referenceFieldValue){
-            return getInstance.apply(referenceFieldValue.getId());
+            return context.get(referenceFieldValue.getId());
         }
         else if(rawValue instanceof InstanceFieldValueDTO instanceFieldValue) {
-            return create(instanceFieldValue.getInstance(), getType, getInstance, inst -> {});
+            return create(instanceFieldValue.getInstance(), getType, context);
         }
         else if(rawValue instanceof ArrayFieldValueDTO arrayFieldValue) {
-            if(arrayFieldValue.getId() != null) {
-                ArrayInstance arrayInstance = (ArrayInstance) getInstance.apply(arrayFieldValue.getId());
+            if(arrayFieldValue.getId() != null && arrayFieldValue.getId() != 0) {
+                ArrayInstance arrayInstance = (ArrayInstance) context.get(arrayFieldValue.getId());
                 arrayInstance.clear();
                 arrayInstance.setElements(
                         NncUtils.map(
                                 arrayFieldValue.getElements(),
-                                e -> resolveValue(e, arrayInstance.getType().getElementType(), getType, getInstance)
+                                e -> resolveValue(e, arrayInstance.getType().getElementType(), getType, context)
                         )
                 );
                 return arrayInstance;
             }
             else {
-                ArrayType arrayType = (type instanceof ArrayType a) ? a :
-                        TypeUtil.getArrayType(ModelDefRegistry.getType(Object.class));
-                return new ArrayInstance(
-                        arrayType,
-                        NncUtils.map(
-                                arrayFieldValue.getElements(),
-                                e -> resolveValue(e, arrayType.getElementType(), getType, getInstance)
-                        )
+                var elements = NncUtils.map(
+                        arrayFieldValue.getElements(),
+                        e -> resolveValue(e, StandardTypes.getObjectType(), getType, context)
                 );
+                var effectiveArrayType = context.getEntityContext().getArrayType(
+                        ValueUtil.getCommonSuperType(NncUtils.map(elements, Instance::getType)),
+                        arrayFieldValue.isElementAsChild() ? ArrayKind.CHILD : ArrayKind.READ_WRITE
+                );
+                return new ArrayInstance(effectiveArrayType, elements);
             }
         }
         throw new InternalException("Can not resolve field value: " + rawValue);

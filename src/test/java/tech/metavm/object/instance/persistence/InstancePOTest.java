@@ -16,7 +16,7 @@ public class InstancePOTest extends TestCase {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstancePOTest.class);
 
     public void testToJSON() {
-        InstancePO instancePO = new InstanceArrayPO(1L, 1L, -1L, 0, List.of(), false, 0L, 0L);
+        InstancePO instancePO = new InstanceArrayPO(1L, 1L, -1L, 0, List.of(), 0L, 0L);
         String jsonString = NncUtils.toJSONString(instancePO);
         InstancePO recovered = NncUtils.readJSONString(jsonString, InstancePO.class);
         MatcherAssert.assertThat(instancePO, PojoMatcher.of(recovered));

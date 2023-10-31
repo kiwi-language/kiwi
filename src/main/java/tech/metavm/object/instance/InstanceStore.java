@@ -68,7 +68,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<Long> query(InstanceIndexQuery query, IInstanceContext context) {
         return NncUtils.map(
-                indexEntryMapper.query(query.toPO(context.getTenantId())),
+                indexEntryMapper.query(query.toPO(context.getTenantId(), context.getLockMode().code())),
                 IndexEntryPO::getInstanceId
         );
     }
@@ -100,7 +100,8 @@ public class InstanceStore extends BaseInstanceStore {
         if(NncUtils.isEmpty(request.ids())) {
             return List.of();
         }
-        List<InstancePO> records = instanceMapperGateway.selectByIds(context.getTenantId(), request.ids());
+        List<InstancePO> records = instanceMapperGateway.selectByIds(context.getTenantId(), request.ids(),
+                context.getLockMode().code());
         Set<Long> typeIds = NncUtils.mapUnique(records, InstancePO::getTypeId);
         context.preload(typeIds, LoadingOption.ENUM_CONSTANTS_LAZY_LOADING);
         return records;

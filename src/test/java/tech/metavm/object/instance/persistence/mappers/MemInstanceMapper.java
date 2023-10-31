@@ -38,7 +38,7 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     @Override
-    public List<InstancePO> selectByIds(long tenantId, Collection<Long> ids) {
+    public List<InstancePO> selectByIds(long tenantId, Collection<Long> ids, int lockMode) {
         return NncUtils.mapAndFilter(
                 ids,
                 id2instance::get,
@@ -113,7 +113,7 @@ public class MemInstanceMapper implements InstanceMapper {
 
     @Override
     public List<InstanceTitlePO> selectTitleByIds(long tenantId, Collection<Long> ids) {
-        List<InstancePO> instancePOs = selectByIds(tenantId, ids);
+        List<InstancePO> instancePOs = selectByIds(tenantId, ids, 0);
         return NncUtils.map(instancePOs, i -> new InstanceTitlePO(i.getId(), i.getTitle()));
     }
 

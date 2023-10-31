@@ -4,7 +4,7 @@ import tech.metavm.util.NncUtils;
 
 public enum FieldValueKind {
 
-    PRIMITIVE(1, PrimitiveFieldValueDTO.class),
+    PRIMITIVE(1, PrimitiveFieldValue.class),
     REFERENCE(2, ReferenceFieldValueDTO.class),
     ARRAY(3, ArrayFieldValueDTO.class),
     INSTANCE_DTO(4, InstanceFieldValueDTO.class),

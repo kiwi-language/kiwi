@@ -7,10 +7,7 @@ import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.*;
 
 import java.util.*;
 
@@ -27,10 +24,10 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     @EntityField("是否包容")
     private boolean inclusive;
     @ChildEntity("分支列表")
-    private final Table<Branch> branches = new Table<>(Branch.class, true);
+    private final ChildArray<Branch> branches = new ChildArray<>(Branch.class);
 
     public BranchNode(Long tmpId, String name, boolean inclusive, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name,  null, prev, scope);
+        super(tmpId, name, null, prev, scope);
         this.inclusive = inclusive;
     }
 
@@ -48,29 +45,33 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
             if (NncUtils.count(param.branches(), BranchDTO::preselected) != 1) {
                 throw new BusinessException(ErrorCode.NUM_PRESELECTED_BRANCH_NOT_EQUAL_TO_ONE);
             }
-            branches.removeIf(branch -> !branchRefs.contains(branch.getRef()));
-            for (BranchDTO branchDTO : param.branches()) {
+            List<Branch> branches = new ArrayList<>();
+            for (int i = 0; i < param.branches().size(); i++) {
+                BranchDTO branchDTO = param.branches().get(i);
                 var branch = entityContext.getEntity(Branch.class, branchDTO.getRef());
                 if (branch == null) {
                     branch = new Branch(
                             branchDTO.index(),
                             ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext)),
                             branchDTO.preselected(),
+                            branchDTO.isExit(),
                             new ScopeRT(getFlow(), this),
                             this
                     );
                     branch.setTmpId(branchDTO.tmpId());
-                    branches.add(branch);
+                    branches.add(i, branch);
                     entityContext.bind(branch);
                 } else {
-                    if(branch.getOwner() != this) {
+                    if (branch.getOwner() != this) {
                         throw new BusinessException(ErrorCode.BRANCH_OWNER_MISMATCH,
                                 branch.getOwner().getName() + "/" + branch.getIndex(),
                                 getName());
                     }
                     branch.update(branchDTO, entityContext);
+                    branches.add(branch);
                 }
             }
+            this.branches.resetChildren(branches);
         }
     }
 
@@ -98,6 +99,11 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 //        fields.add(outputField);
 //    }
 
+    public void addBranch(Branch branch) {
+        NncUtils.requireTrue(branch.getOwner() == this);
+        this.branches.addChild(branch);
+    }
+
     public Branch addBranch(Value condition) {
         long branchId;
         long maxIndex = 1;
@@ -107,23 +113,27 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
             }
         }
         branchId = maxIndex + 1;
-        Branch branch = new Branch(branchId, condition, false, new ScopeRT(getFlow(), this), this);
+        Branch branch = new Branch(branchId, condition, false, false, new ScopeRT(getFlow(), this), this);
         if (!branches.isEmpty() && branches.get(branches.size() - 1).isPreselected()) {
-            branches.add(branches.size() - 1, branch);
+            branches.addChild(branches.size() - 1, branch);
         } else {
-            branches.add(branch);
+            branches.addChild(branch);
         }
         return branch;
     }
 
     public Branch addDefaultBranch() {
-        var branch = Branch.createPreselected(this);
-        branches.add(branch);
+        return addDefaultBranch(false);
+    }
+
+    public Branch addDefaultBranch(boolean isExit) {
+        var branch = Branch.createPreselected(this, isExit);
+        branches.addChild(branch);
         return branch;
     }
 
-    public List<Branch> getBranches() {
-        return new ArrayList<>(branches);
+    public ReadonlyArray<Branch> getBranches() {
+        return branches;
     }
 
     public Branch getBranchById(long id) {
@@ -150,11 +160,11 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         var exitBranch = frame.getExitBranch(this);
         for (Branch branch : branches) {
-            if(exitBranch != null) {
-                if(branch == exitBranch) {
+            if (exitBranch != null) {
+                if (branch == exitBranch) {
                     exitBranch = null;
                 }
                 continue;
@@ -171,15 +181,19 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
 
     @Override
     protected List<Object> nodeBeforeRemove() {
-        if(getSuccessor() instanceof MergeNode mergeNode) {
+        if (getSuccessor() instanceof MergeNode mergeNode) {
             return List.of(mergeNode);
-        }
-        else {
+        } else {
             return List.of();
         }
     }
 
     public boolean isInclusive() {
         return inclusive;
+    }
+
+    public Branch getDefaultBranch() {
+        return NncUtils.requireNonNull(branches.get(Branch::isPreselected, true),
+                "Default branch is missing in branch node " + getName() + "(" + getId() + ")");
     }
 }

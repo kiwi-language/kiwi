@@ -20,16 +20,18 @@ public class Branch extends Entity {
                 index,
                 new ConstantValue(ExpressionUtil.constant(InstanceUtils.trueInstance())),
                 false,
+                false,
                 new ScopeRT(owner.getFlow(), owner),
                 owner
         );
     }
 
-    public static Branch createPreselected(BranchNode owner) {
+    public static Branch createPreselected(BranchNode owner, boolean isExit) {
         return new Branch(
                 PRESELECTED_BRANCH_ID,
                 new ConstantValue(ExpressionUtil.trueExpression()),
                 true,
+                isExit,
                 new ScopeRT(owner.getFlow(), owner),
                 owner
         );
@@ -45,13 +47,19 @@ public class Branch extends Entity {
     private Value condition;
     @EntityField("是否默认")
     private final boolean preselected;
+    @EntityField("是否为出口")
+    private final boolean isExit;
 
-    public Branch(long index, Value condition, boolean preselected, ScopeRT scope, BranchNode owner) {
+    public Branch(long index, Value condition, boolean preselected, boolean isExit, ScopeRT scope, BranchNode owner) {
         this.index = index;
         this.owner = owner;
         this.scope = scope;
         this.preselected = preselected;
         this.condition = condition;
+        if(isExit) {
+            NncUtils.requireTrue(preselected, "Only default branch can be an exit");
+        }
+        this.isExit = isExit;
         scope.setBranch(this);
     }
 
@@ -71,6 +79,10 @@ public class Branch extends Entity {
         return scope;
     }
 
+    public boolean isExit() {
+        return isExit;
+    }
+
     public BranchDTO toDTO(boolean withNodes, boolean persisting) {
         try(var context = SerializeContext.enter()) {
             return new BranchDTO(
@@ -80,7 +92,8 @@ public class Branch extends Entity {
                     owner.getId(),
                     NncUtils.get(condition, v -> v.toDTO(persisting)),
                     scope.toDTO(withNodes),
-                    preselected
+                    preselected,
+                    isExit
             );
         }
     }
@@ -99,7 +112,8 @@ public class Branch extends Entity {
         }
     }
 
-    public List<Object> beforeRemove() {
+    @Override
+    public List<Object> beforeRemove(IEntityContext context) {
         owner.deleteBranch(this);
         return List.of();
     }
@@ -109,7 +123,7 @@ public class Branch extends Entity {
         this.condition = condition;
     }
 
-    public boolean checkCondition(FlowFrame frame) {
+    public boolean checkCondition(MetaFrame frame) {
         return InstanceUtils.isTrue(condition.evaluate(frame));
     }
 

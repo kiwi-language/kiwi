@@ -3,9 +3,10 @@ package tech.metavm.object.instance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.IndexField;
-import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class IndexKeyRT {
 
@@ -28,6 +29,7 @@ public class IndexKeyRT {
     public IndexKeyPO toPO() {
         IndexKeyPO key = new IndexKeyPO();
         key.setConstraintId(index.getIdRequired());
+        int i = 0;
         for (IndexField field : index.getFields()) {
             field.setKeyItem(key, fields.get(field));
         }

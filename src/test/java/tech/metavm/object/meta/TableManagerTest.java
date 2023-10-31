@@ -3,7 +3,7 @@ package tech.metavm.object.meta;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.*;
-import tech.metavm.job.JobManager;
+import tech.metavm.task.TaskManager;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.ArrayType;
@@ -25,10 +25,10 @@ public class TableManagerTest extends TestCase {
     protected void setUp() throws Exception {
         EntityIdProvider idProvider = new MockIdProvider();
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(new MemInstanceStore()).setIdService(idProvider);
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()));
+        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()), new MemColumnStore());
         bootstrap.bootAndSave();
 
-        JobManager jobManager = new JobManager(instanceContextFactory, new MockTransactionOperations());
+        TaskManager jobManager = new TaskManager(instanceContextFactory, new MockTransactionOperations());
 
         EntityQueryService entityQueryService =
                 new EntityQueryService(new InstanceQueryService(new MemInstanceSearchService()));
@@ -55,7 +55,7 @@ public class TableManagerTest extends TestCase {
         TableDTO tableDTO = tableManager.get(type.getId());
         Assert.assertNotNull(tableDTO.id());
         Assert.assertEquals(type.getName(), tableDTO.name());
-        Assert.assertEquals(type.getFields().size(), tableDTO.fields().size());
+        Assert.assertEquals(type.getAllFields().size(), tableDTO.fields().size());
         for (ColumnDTO column : tableDTO.fields()) {
             Assert.assertNotNull(column.id());
             Field field = type.getField(column.id());

@@ -1,38 +1,37 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.GenericDeclaration;
-import tech.metavm.entity.SerializeContext;
-import tech.metavm.object.meta.rest.dto.TypeVariableParamDTO;
+import tech.metavm.entity.*;
+import tech.metavm.object.meta.rest.dto.TypeVariableParam;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("类型变量")
 public class TypeVariable extends Type {
 
     @ChildEntity("类型上界")
-    private final Table<Type> bounds = new Table<>(Type.class, false);
+    private final ReadWriteArray<Type> bounds = new ReadWriteArray<>(Type.class);
     private GenericDeclaration genericDeclaration;
 
     private transient TypeIntersection intersection;
 
-    public TypeVariable(Long tmpId, String name, @Nullable String code) {
-        this(tmpId, name, code, null);
-    }
-
-    public TypeVariable(Long tmpId, String name, @Nullable String code, @Nullable GenericDeclaration genericDeclarator) {
+    public TypeVariable(Long tmpId, String name, @Nullable String code, GenericDeclaration genericDeclarator) {
         super(name, false, false, TypeCategory.VARIABLE);
         setTmpId(tmpId);
         setCode(code);
         if(genericDeclarator != null) {
             setGenericDeclaration(genericDeclarator);
         }
+    }
+
+    @Override
+    public Set<TypeVariable> getVariables() {
+        return Set.of(this);
     }
 
     public void setGenericDeclaration(GenericDeclaration genericDeclaration) {
@@ -61,6 +60,9 @@ public class TypeVariable extends Type {
 
     @Override
     public Type getUpperBound() {
+        if(bounds.size() == 1) {
+            return bounds.get(0);
+        }
         if(intersection != null) {
             return intersection;
         }
@@ -68,13 +70,14 @@ public class TypeVariable extends Type {
     }
 
     public List<Type> getBounds() {
-        return Collections.unmodifiableList(bounds);
+        return bounds.toList();
     }
 
     @Override
-    protected TypeVariableParamDTO getParam() {
+    protected TypeVariableParam getParam() {
         try(var context = SerializeContext.enter()) {
-            return new TypeVariableParamDTO(context.getRef(genericDeclaration), NncUtils.map(bounds, context::getRef));
+            getBounds().forEach(context::writeType);
+            return new TypeVariableParam(context.getRef(genericDeclaration), NncUtils.map(bounds, context::getRef));
         }
     }
 
@@ -82,4 +85,11 @@ public class TypeVariable extends Type {
     public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
         return genericDeclaration.getCanonicalName(getJavaType) + "-" + getJavaType.apply(this).getTypeName();
     }
+
+    public TypeVariable copy() {
+        var copy = new TypeVariable(null, name, null, DummyGenericDeclaration.INSTANCE);
+        copy.setBounds(getBounds());
+        return copy;
+    }
+
 }

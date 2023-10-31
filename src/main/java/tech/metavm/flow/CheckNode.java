@@ -1,8 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CheckNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -16,26 +14,36 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         CheckNodeParamDTO param = nodeDTO.getParam();
         var condition = ValueFactory.create(param.condition(), parsingContext);
-        return new CheckNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, condition);
+        var exit = context.getEntity(BranchNode.class, param.exitRef());
+        return new CheckNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, condition, exit);
     }
 
     @ChildEntity("条件")
     private Value condition;
 
-    public CheckNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value condition) {
+    @EntityField("退出位置")
+    private BranchNode exit;
+
+    public CheckNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value condition, BranchNode exit) {
         super(tmpId, name, null, previous, scope);
         this.condition = condition;
+        this.exit = exit;
     }
 
     @Override
     protected CheckNodeParamDTO getParam(boolean persisting) {
-        return new CheckNodeParamDTO(condition.toDTO(persisting));
+        try(var context = SerializeContext.enter()) {
+            return new CheckNodeParamDTO(condition.toDTO(persisting), context.getRef(exit));
+        }
     }
 
     @Override
     protected void setParam(CheckNodeParamDTO param, IEntityContext context) {
-        if(param.condition() != null) {
+        if (param.condition() != null) {
             condition = ValueFactory.create(param.condition(), getParsingContext(context));
+        }
+        if(param.exitRef() != null) {
+            exit = context.getEntity(BranchNode.class, param.exitRef());
         }
     }
 
@@ -44,24 +52,22 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
     }
 
     @Override
-    public boolean isExit() {
-        return true;
-    }
-
-    @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         var branch = getScope().getBranch();
-        while (branch != null && branch.isPreselected()) {
-            var owner = branch.getScope().getOwner();
-            branch = owner != null ? owner.getScope().getBranch() : null;
+        while (branch != null && branch.getOwner() != exit) {
+            branch = branch.getOwner().getScope().getBranch();
         }
         if (branch == null) {
-            throw new InternalException("Exit branch failed. No other branches to enter.");
+            throw new InternalException("Can not find an exit branch");
         }
-        var checkResult = ((BooleanInstance)condition.evaluate(frame)).isTrue();
-        if(!checkResult) {
+        var checkResult = ((BooleanInstance) condition.evaluate(frame)).isTrue();
+        if (!checkResult) {
             frame.setExitBranch(branch.getOwner(), branch);
             frame.jumpTo(branch.getOwner());
         }
+    }
+
+    public BranchNode getExit() {
+        return exit;
     }
 }

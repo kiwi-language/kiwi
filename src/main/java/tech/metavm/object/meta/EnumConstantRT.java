@@ -1,8 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.rest.FieldValueDTO;
-import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
@@ -49,11 +48,11 @@ public class EnumConstantRT {
     }
 
     public String getName() {
-        return instance.getString(getEnumNameField(instance.getType())).getValue();
+        return instance.getStringField(getEnumNameField(instance.getType())).getValue();
     }
 
     public int getOrdinal() {
-        return instance.getLong(getEnumOrdinalField(instance.getType())).getValue().intValue();
+        return instance.getLongField(getEnumOrdinalField(instance.getType())).getValue().intValue();
     }
 
     public void update(EnumConstantDTO update) {
@@ -62,11 +61,11 @@ public class EnumConstantRT {
     }
 
     public void setName(String name) {
-        instance.set(getEnumNameField(instance.getType()), InstanceUtils.stringInstance(name));
+        instance.setField(getEnumNameField(instance.getType()), InstanceUtils.stringInstance(name));
     }
 
     public void setOrdinal(int ordinal) {
-        instance.set(getEnumOrdinalField(instance.getType()), InstanceUtils.longInstance(ordinal));
+        instance.setField(getEnumOrdinalField(instance.getType()), InstanceUtils.longInstance(ordinal));
     }
 
     public EnumConstantDTO toDTO() {
@@ -82,7 +81,7 @@ public class EnumConstantRT {
         return instance.getId();
     }
 
-    public FieldValueDTO toFieldValue() {
+    public FieldValue toFieldValue() {
         return instance.toFieldValueDTO();
     }
 

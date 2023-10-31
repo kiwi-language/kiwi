@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.user.rest.dto.LoginRequest;
@@ -51,10 +52,13 @@ public class LoginService {
         Map<String, Cookie> cookieMap = NncUtils.toMap(cookies, Cookie::getName);
         String tokenEncoding = NncUtils.get(cookieMap.get(TOKEN_COOKIE_NAME), Cookie::getValue);
         if(tokenEncoding == null) {
-            return null;
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
         Token token = tokenManager.decodeToken(tokenEncoding);
-        return token.createdAt() + TOKEN_TTL > System.currentTimeMillis() ? token : null;
+        if(token.createdAt() + TOKEN_TTL < System.currentTimeMillis()) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+        return token;
     }
 
 }

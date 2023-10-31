@@ -1,8 +1,3 @@
-Issue 0001
-部分对象创建后，并没有bind到context，常见于子对象，例如：FieldParam。导致的问题是，当这些对象强关联的对象被删除时，context不会阻止。
+1 method call on primitive types
 
-Issue 0002
-类型删除失败，原因是删除类型下实例时会创建ReferenceCleanupJob，创建时会获取实例的title，但此时实例所属类型已经被删除，导致getTitle失败
-
-Issue 0003
-InputNode实例被持久化
+2 variable table needs to consider scopes

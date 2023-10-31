@@ -18,9 +18,9 @@ public class IndexSourceBuilder {
         source.put(TENANT_ID, tenantId);
         source.put(TYPE_ID, type.getId());
         source.put(ID, instance.getId());
-        for (Field field : type.getFields()) {
+        for (Field field : type.getAllFields()) {
             setEsValue(
-                    instance.get(field),
+                    instance.getField(field),
                     field,
                     source
             );

@@ -3,7 +3,7 @@ package tech.metavm.mocks;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import java.util.List;
 public class Baz extends Entity {
 
     @ChildEntity("巴巴巴巴")
-    private Table<Bar> bars = new Table<>(Bar.class);
+    private ReadWriteArray<Bar> bars = new ReadWriteArray<>(Bar.class);
 
     public Baz() {
     }
@@ -20,11 +20,11 @@ public class Baz extends Entity {
         setBars(bars);
     }
 
-    public Table<Bar> getBars() {
+    public ReadWriteArray<Bar> getBars() {
         return bars;
     }
 
     public void setBars(List<Bar> bars) {
-        this.bars = new Table<>(Bar.class, bars);
+        this.bars = new ReadWriteArray<>(Bar.class, bars);
     }
 }

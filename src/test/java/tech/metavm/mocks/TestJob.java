@@ -2,10 +2,10 @@ package tech.metavm.mocks;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IInstanceContext;
-import tech.metavm.job.Job;
+import tech.metavm.task.Task;
 
 @EntityType("测试任务")
-public class TestJob extends Job {
+public class TestJob extends Task {
 
     private int count = 0;
 

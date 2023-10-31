@@ -1,11 +1,13 @@
 package tech.metavm.util;
 
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.SQLType;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 
 @ValueType("列")
 public record Column(
@@ -20,6 +22,15 @@ public record Column(
             return null;
         }
         return new Column(columnName, SQLType.getByColumnName(columnName));
+    }
+
+    public static Column allocate(Set<Column> usedColumns, SQLType sqlType) {
+        Map<SQLType, Queue<Column>> columnMap = SQLType.getColumnMap(usedColumns);
+        Queue<Column> columns = columnMap.get(sqlType);
+        if (columns.isEmpty()) {
+            throw BusinessException.tooManyFields();
+        }
+        return columns.poll().copy();
     }
 
     public String fuzzyName() {

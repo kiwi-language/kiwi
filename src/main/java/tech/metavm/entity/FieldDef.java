@@ -35,10 +35,14 @@ public class FieldDef implements IFieldDef {
 
     @Override
     public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        Instance fieldValue = instance.get(field);
+        Instance fieldValue = instance.getField(field);
         if(fieldValue instanceof PrimitiveInstance primitiveInstance) {
             if(primitiveInstance.isNull()) {
                 return null;
+            }
+            if(primitiveInstance instanceof  LongInstance longInstance &&
+                    (javaField.getType() == int.class || javaField.getType() == Integer.class)) {
+                return longInstance.getValue().intValue();
             }
             if(primitiveInstance instanceof PasswordInstance passwordInstance) {
                 return new Password(passwordInstance);

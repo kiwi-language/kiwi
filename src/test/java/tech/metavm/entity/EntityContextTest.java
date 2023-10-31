@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.job.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -16,6 +15,10 @@ import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
+import tech.metavm.task.IndexRebuildGlobalTask;
+import tech.metavm.task.ReferenceCleanupTask;
+import tech.metavm.task.Task;
+import tech.metavm.task.TaskSignal;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -67,9 +70,9 @@ public class EntityContextTest extends TestCase {
         Foo foo = context.get(Foo.class, fooInst.getIdRequired());
         Assert.assertNotNull(foo);
         Assert.assertEquals(fooInst.getId(), foo.getId());
-        Assert.assertEquals(fooInst.getString(fooNameField).getValue(), foo.getName());
+        Assert.assertEquals(fooInst.getStringField(fooNameField).getValue(), foo.getName());
         Assert.assertNotNull(foo.getBar());
-        Assert.assertEquals(foo.getBar().code(), fooInst.getClassInstance(fooBarField).getString(barCodeField).getValue());
+        Assert.assertEquals(foo.getBar().code(), fooInst.getClassInstance(fooBarField).getStringField(barCodeField).getValue());
     }
 
     public void testInitIds() {
@@ -148,14 +151,14 @@ public class EntityContextTest extends TestCase {
         context.finish();
 
         context = newIntegratedContext();
-        List<ReferenceCleanupJob> jobs = context.getByType(ReferenceCleanupJob.class, null, 100);
+        List<ReferenceCleanupTask> jobs = context.getByType(ReferenceCleanupTask.class, null, 100);
         Assert.assertFalse(jobs.isEmpty());
-        ReferenceCleanupJob jobForFoo = NncUtils.find(jobs, j -> j.getTargetId() == foo.getIdRequired());
+        ReferenceCleanupTask jobForFoo = NncUtils.find(jobs, j -> j.getTargetId() == foo.getIdRequired());
         Assert.assertNotNull(jobForFoo);
         Assert.assertTrue(jobForFoo.isRunnable());
 
         IEntityContext rootContext = newIntegratedRootContext();
-        JobSignal signal = rootContext.selectByUniqueKey(JobSignal.IDX_TENANT_ID, TENANT_ID);
+        TaskSignal signal = rootContext.selectByUniqueKey(TaskSignal.IDX_TENANT_ID, TENANT_ID);
         Assert.assertNotNull(signal);
         Assert.assertEquals(2, signal.getUnfinishedCount());
     }
@@ -259,21 +262,21 @@ public class EntityContextTest extends TestCase {
 
         instanceStore.addIndex(
                 TENANT_ID,
-                constraint.createIndexKey(List.of(fooInst.getString(fooNameField))).toPO(),
+                constraint.createIndexKey(List.of(fooInst.getStringField(fooNameField))).toPO(),
                 fooInst.getId()
         );
 
-        List<Foo> selectedFooList = context.selectByKey(Foo.IDX_NAME, fooInst.getString(fooNameField).getValue());
+        List<Foo> selectedFooList = context.selectByKey(Foo.IDX_NAME, fooInst.getStringField(fooNameField).getValue());
         Assert.assertNotNull(selectedFooList);
         Assert.assertEquals(1, selectedFooList.size());
 
         Foo selectedFoo = selectedFooList.get(0);
         Assert.assertEquals(fooInst.getId(), selectedFoo.getId());
-        Assert.assertEquals(fooInst.getString(fooNameField).getValue(), selectedFoo.getName());
+        Assert.assertEquals(fooInst.getStringField(fooNameField).getValue(), selectedFoo.getName());
 
         Bar selectedBar = selectedFoo.getBar();
         Assert.assertNotNull(selectedBar);
-        Assert.assertEquals(barInst.getString(barCodeField).getValue(), selectedBar.code());
+        Assert.assertEquals(barInst.getStringField(barCodeField).getValue(), selectedBar.code());
     }
 
     public void test_get_entity_with_wrong_type() {
@@ -294,12 +297,13 @@ public class EntityContextTest extends TestCase {
     public void test_array_with_generic_element_type() {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
 
-        Table<Constraint<?>> constraints = new Table<>(
+        ReadWriteArray<Constraint<?>> constraints = new ReadWriteArray<>(
                 new TypeReference<>() {
                 },
                 List.of(
                         ConstraintFactory.createFromDTO(
                                 new ConstraintDTO(
+                                        null,
                                         null,
                                         ConstraintKind.CHECK.code(),
                                         fooType.getIdRequired(),
@@ -312,6 +316,7 @@ public class EntityContextTest extends TestCase {
                         ),
                         ConstraintFactory.createFromDTO(
                                 new ConstraintDTO(
+                                        null,
                                         null,
                                         ConstraintKind.UNIQUE.code(),
                                         fooType.getIdRequired(),
@@ -403,18 +408,18 @@ public class EntityContextTest extends TestCase {
     }
 
     public void test_multi_level_inheritance() {
-        ClassType type = MockRegistry.getClassType(IndexRebuildGlobalJob.class);
+        ClassType type = MockRegistry.getClassType(IndexRebuildGlobalTask.class);
 
         IEntityContext context = newIntegratedContext();
-        IndexRebuildGlobalJob job = new IndexRebuildGlobalJob();
+        IndexRebuildGlobalTask job = new IndexRebuildGlobalTask();
         context.bind(job);
         Instance instance = context.getInstance(job);
         Assert.assertEquals(type, instance.getType());
         context.finish();
 
         context = newIntegratedContext();
-        Job loadedJob = context.getEntity(Job.class, job.getIdRequired());
-        Assert.assertTrue(loadedJob instanceof IndexRebuildGlobalJob);
+        Task loadedJob = context.getEntity(Task.class, job.getIdRequired());
+        Assert.assertTrue(loadedJob instanceof IndexRebuildGlobalTask);
     }
 
     public EntityContext newIntegratedContext() {

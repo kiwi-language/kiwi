@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.meta.rest.dto.TypeParam;
 
 import java.util.function.Function;
 
@@ -8,7 +9,7 @@ import java.util.function.Function;
 public class ObjectType extends Type {
 
     public ObjectType() {
-        super("对象类型",  false, false, TypeCategory.OBJECT);
+        super("对象",  false, false, TypeCategory.OBJECT);
         setCode("Object");
     }
 
@@ -18,7 +19,7 @@ public class ObjectType extends Type {
     }
 
     @Override
-    protected Object getParam() {
+    protected TypeParam getParam() {
         return null;
     }
 

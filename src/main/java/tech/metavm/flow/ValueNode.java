@@ -17,7 +17,7 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
         ValueParamDTO param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context.getInstanceContext());
         var value = ValueFactory.create(param.value(), parsingContext);
-        var outputType = parsingContext.getExpressionType(value.getExpression());
+        var outputType = parsingContext.getExpressionType(value.getExpression()).getCertainUpperBound();
         return new ValueNode(nodeDTO.tmpId(), nodeDTO.name(), outputType, prev, scope, value);
     }
 
@@ -46,7 +46,7 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
     protected void setParam(ValueParamDTO param, IEntityContext context) {
         if(param.value() != null) {
             value = ValueFactory.create(param.value(), getParsingContext(context));
-            setOutputType(value.getType());
+            setOutputType(value.getType().getCertainUpperBound());
         }
     }
 
@@ -57,7 +57,7 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         frame.setResult(value.evaluate(frame));
     }
 }

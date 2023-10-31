@@ -3,6 +3,7 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.ConstraintDef;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Value;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.expression.InstanceEvaluationContext;
@@ -42,8 +43,8 @@ public class CheckConstraint extends Constraint<CheckConstraintParamDTO> {
         this.condition = condition;
     }
 
-    public boolean check(ClassInstance instance) {
-        return InstanceUtils.isTrue(condition.evaluate(new InstanceEvaluationContext(instance)));
+    public boolean check(ClassInstance instance, IEntityContext entityContext) {
+        return InstanceUtils.isTrue(condition.evaluate(new InstanceEvaluationContext(instance, entityContext)));
     }
 
     public ConstraintDef<?> getConstraintDef() {

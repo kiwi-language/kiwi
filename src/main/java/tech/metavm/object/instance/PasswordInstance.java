@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
+import tech.metavm.object.meta.PrimitiveKind;
 import tech.metavm.object.meta.PrimitiveType;
 
 public class PasswordInstance extends PrimitiveInstance {
@@ -18,9 +19,11 @@ public class PasswordInstance extends PrimitiveInstance {
     }
 
     @Override
-    public PrimitiveFieldValueDTO toFieldValueDTO() {
-        return new PrimitiveFieldValueDTO(
-                "******", null
+    public PrimitiveFieldValue toFieldValueDTO() {
+        return new PrimitiveFieldValue(
+                "******",
+                PrimitiveKind.PASSWORD.getCode(),
+                null
         );
     }
 

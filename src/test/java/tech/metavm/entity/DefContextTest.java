@@ -33,7 +33,7 @@ public class DefContextTest extends TestCase {
     @Override
     protected void setUp() {
         idProvider = new MockIdProvider();
-        defContext = new DefContext(o -> null);
+        defContext = new DefContext(o -> null, null, new MemColumnStore());
         modelInstanceMap = new MockModelInstanceMap(defContext);
         typeFactory = new DefaultTypeFactory(defContext::getType);
     }
@@ -70,7 +70,7 @@ public class DefContextTest extends TestCase {
     }
 
     public void testGenerateInstances() {
-        defContext = new DefContext(o -> null, new MemInstanceContext());
+        defContext = new DefContext(o -> null, new MemInstanceContext(), new MemColumnStore());
         ModelDef<ClassType, ?> typeDef = defContext.getDef(ClassType.class);
         Assert.assertNotNull(typeDef);
 
@@ -81,7 +81,7 @@ public class DefContextTest extends TestCase {
         Assert.assertTrue(typeDef.getType() instanceof ClassType);
         ClassType classType = (ClassType) typeDef.getType();
 
-        Table<Constraint<?>> constraints = classType.getDeclaredConstraints();
+        ReadonlyArray<Constraint<?>> constraints = classType.getDeclaredConstraints();
         Assert.assertNotNull(constraints);
         Assert.assertNotNull(constraints.getId());
     }

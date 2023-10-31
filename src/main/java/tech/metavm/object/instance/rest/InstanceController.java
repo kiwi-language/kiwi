@@ -15,12 +15,9 @@ public class InstanceController {
     @Autowired
     private InstanceManager instanceManager;
 
-    @GetMapping
-    public Result<Page<InstanceDTO>> list(@RequestParam("typeId") long typeId,
-                                          @RequestParam(value = "searchText", required = false) String searchText,
-                                          @RequestParam(value = "page", defaultValue = "1") int page,
-                                          @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
-        return Result.success(instanceManager.query(new InstanceQueryDTO(typeId, searchText, page, pageSize)));
+    @PostMapping("/query")
+    public Result<QueryInstancesResponse> query(@RequestBody InstanceQuery query) {
+        return Result.success(instanceManager.query(query));
     }
 
     @PostMapping("/select")
@@ -34,7 +31,7 @@ public class InstanceController {
     }
 
     @PostMapping
-    public Result<Long> upsert(@RequestBody InstanceDTO instance) {
+    public Result<Long> save(@RequestBody InstanceDTO instance) {
         if (instance.id() == null || instance.id() == 0L) {
             return Result.success(instanceManager.create(instance, false));
         } else {
@@ -44,13 +41,13 @@ public class InstanceController {
     }
 
     @GetMapping("/{id:[0-9]+}")
-    public Result<InstanceDTO> get(@PathVariable("id") long id,
+    public Result<GetInstanceResponse> get(@PathVariable("id") long id,
                                    @RequestParam(value = "depth", defaultValue = "1") int depth) {
         return Result.success(instanceManager.get(id, depth));
     }
 
     @PostMapping("/batch-get")
-    public Result<List<InstanceDTO>> batchGet(@RequestBody BatchGetInstancesRequest request) {
+    public Result<GetInstancesResponse> batchGet(@RequestBody GetInstancesRequest request) {
         return Result.success(instanceManager.batchGet(request.ids(), request.depth()));
     }
 
@@ -63,6 +60,12 @@ public class InstanceController {
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
         instanceManager.delete(id, false);
+        return Result.success(null);
+    }
+
+    @PostMapping("/batch-delete")
+    public Result<Void> batchDelete(@RequestBody List<Long> ids) {
+        instanceManager.batchDelete(ids, false);
         return Result.success(null);
     }
 

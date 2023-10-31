@@ -2,20 +2,17 @@ package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.autograph.ExpressionTypeMap;
-import tech.metavm.autograph.TypeNarrower;
 import tech.metavm.entity.*;
-import tech.metavm.flow.persistence.NodePO;
-import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.flow.persistence.NodePO;
+import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-
 import java.util.List;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
@@ -23,7 +20,7 @@ import static tech.metavm.util.ContextUtil.getTenantId;
 @EntityType("节点")
 public abstract class NodeRT<P> extends Entity {
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField("类别")
     private final NodeKind kind;
@@ -123,7 +120,7 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     @Override
-    public final List<Object> beforeRemove() {
+    public final List<Object> beforeRemove(IEntityContext context) {
         var cascade = nodeBeforeRemove();
         if (this.predecessor != null) {
             this.predecessor.setSuccessor(this.successor);
@@ -156,6 +153,9 @@ public abstract class NodeRT<P> extends Entity {
 
     public final NodeDTO toDTO() {
         try (var context = SerializeContext.enter()) {
+            if(getType() != null && context.isIncludingNodeOutputType()) {
+                context.writeType(getType());
+            }
             return new NodeDTO(
                     context.getTmpId(this),
                     id,
@@ -165,7 +165,7 @@ public abstract class NodeRT<P> extends Entity {
                     NncUtils.get(predecessor, context::getRef),
                     NncUtils.get(outputType, context::getRef),
                     getParam(false),
-                    getTypeDTO(),
+                    kind.isOutputTypeAsChild() ? getTypeDTO() : null,
                     scope.getId()
             );
         }
@@ -175,9 +175,6 @@ public abstract class NodeRT<P> extends Entity {
         Type type = getType();
         if (type == null) {
             return null;
-        }
-        if (type instanceof ClassType classType) {
-            return classType.toDTO(true, true);
         }
         return type.toDTO();
     }
@@ -209,11 +206,11 @@ public abstract class NodeRT<P> extends Entity {
 
     protected abstract void setParam(P param, IEntityContext context);
 
-    public Type getType() {
+    public @Nullable Type getType() {
         return outputType;
     }
 
-    public abstract void execute(FlowFrame frame);
+    public abstract void execute(MetaFrame frame);
 
     public ExpressionTypeMap getExpressionTypes() {
         return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);

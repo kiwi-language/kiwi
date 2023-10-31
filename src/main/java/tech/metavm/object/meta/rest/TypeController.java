@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
-import tech.metavm.object.instance.InstanceManager;
+import tech.metavm.object.instance.ArrayKind;
+import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.TypeManager;
 import tech.metavm.object.meta.rest.dto.*;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -22,36 +22,35 @@ public class TypeController {
         this.typeManager = typeManager;
     }
 
-    @GetMapping
-    public Result<Page<TypeDTO>> list(
-            @RequestParam(value = "searchText", required = false) String searchText,
-            @RequestParam(value = "categoryCodes", required = false) String categoryCodes,
-            @RequestParam(value = "includeBuiltin", required = false, defaultValue = "false") boolean includeBuiltin,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "pageSize", defaultValue = "20") int pageSize
-    ) {
-        List<Integer> categoryCodeList = NncUtils.isNotEmpty(categoryCodes) ? NncUtils.splitIntegers(categoryCodes) : null;
-        return Result.success(typeManager.query(searchText, categoryCodeList, includeBuiltin, page, pageSize));
+    @PostMapping("/query")
+    public Result<Page<TypeDTO>> query(@RequestBody QueryTypeRequest request) {
+        return Result.success(typeManager.query(request));
     }
 
-    @GetMapping("/{id:[0-9]+}")
-    public Result<TypeDTO> get(
-            @PathVariable("id") long id,
-            @RequestParam(value = "includingFields", defaultValue = "true") boolean includingFields,
-            @RequestParam(value = "includingFieldTypes", defaultValue = "true") boolean includingFieldTypes
-    ) {
-        TypeDTO typeDTO = typeManager.getType(id, includingFields, includingFieldTypes);
-        if(typeDTO == null) {
+    @GetMapping("/{id:[0-9]+}/descendants")
+    public Result<GetTypesResponse> getDescendants(@PathVariable("id") long id) {
+        return Result.success(typeManager.getDescendants(id));
+    }
+
+    @PostMapping("/get")
+    public Result<GetTypeResponse> get(@RequestBody GetTypeRequest request) {
+        GetTypeResponse resp = typeManager.getType(request);
+        if (resp == null) {
             return Result.failure(ErrorCode.RECORD_NOT_FOUND);
         }
-        return Result.success(typeDTO);
+        return Result.success(resp);
     }
 
     @PostMapping("/batch-get")
-    public Result<List<TypeDTO>> batchGet(@RequestBody BatchGetRequest request) {
+    public Result<GetTypesResponse> batchGet(@RequestBody GetTypesRequest request) {
         return Result.success(
-                typeManager.batchGetTypes(request.ids(), request.includingFields(), request.includingFieldTypes())
+                typeManager.batchGetTypes(request)
         );
+    }
+
+    @GetMapping("/{id:[0-9]+}/creating-fields")
+    public Result<List<CreatingFieldDTO>> getCreatingFields(@PathVariable("id") long id) {
+        return Result.success(typeManager.getCreatingFields(id));
     }
 
     @PostMapping
@@ -70,9 +69,20 @@ public class TypeController {
         return Result.voidSuccess();
     }
 
+    @PostMapping("/enum-constant")
+    public Result<Long> saveEnumConstant(@RequestBody InstanceDTO instanceDTO) {
+        return Result.success(typeManager.saveEnumConstant(instanceDTO));
+    }
+
+    @DeleteMapping("/enum-constant/{id:[0-9]+}")
+    public Result<Void> deleteEnumConstant(@PathVariable("id") long id) {
+        typeManager.deleteEnumConstant(id);
+        return Result.voidSuccess();
+    }
+
     @GetMapping("/{id:[0-9]+}/array")
     public Result<TypeDTO> getArrayType(@PathVariable("id") long id) {
-        return Result.success(typeManager.getArrayType(id));
+        return Result.success(typeManager.getArrayType(id, ArrayKind.READ_WRITE.code()).type());
     }
 
     @GetMapping("/{id:[0-9]+}/nullable")
@@ -92,13 +102,19 @@ public class TypeController {
     }
 
     @GetMapping("/field/{id:[0-9]+}")
-    public Result<FieldDTO> getField(@PathVariable("id") long fieldId) {
+    public Result<GetFieldResponse> getField(@PathVariable("id") long fieldId) {
         return Result.success(typeManager.getField(fieldId));
     }
 
     @PostMapping("/field")
     public Result<Long> saveField(@RequestBody FieldDTO field) {
         return Result.success(typeManager.saveField(field));
+    }
+
+    @PostMapping("/move-field")
+    public Result<Void> moveField(@RequestBody MovePropertyRequest request) {
+        typeManager.moveField(request.id(), request.ordinal());
+        return Result.voidSuccess();
     }
 
     @DeleteMapping("/field/{id:[0-9]+}")
@@ -113,6 +129,30 @@ public class TypeController {
         return Result.success(null);
     }
 
+    @PostMapping("/get-union-type")
+    public Result<GetTypeResponse> getUnionType(@RequestBody GetUnionTypeRequest request) {
+        return Result.success(typeManager.getUnionType(request.memberIds()));
+    }
+
+    @PostMapping("/get-array-type")
+    public Result<GetTypeResponse> getArrayType(@RequestBody GetArrayTypeRequest request) {
+        return Result.success(typeManager.getArrayType(request.elementTypeId(), request.kind()));
+    }
+
+    @PostMapping("/get-parameterized-type")
+    public Result<GetTypeResponse> getParameterizedType(@RequestBody GetParameterizedTypeRequest request) {
+        return Result.success(typeManager.getParameterizedType(request));
+    }
+
+    @PostMapping("/get-function-type")
+    public Result<GetTypeResponse> getFunctionType(@RequestBody GetFunctionTypeRequest request) {
+        return Result.success(typeManager.getFunctionType(request.parameterTypeIds(), request.returnTypeId()));
+    }
+
+    @PostMapping("/get-uncertain-type")
+    public Result<GetTypeResponse> getUncertainType(@RequestBody GetUncertainTypeRequest request) {
+        return Result.success(typeManager.getUncertainType(request.lowerBoundId(), request.upperBoundId()));
+    }
 
     @GetMapping("/constraint")
     public Result<Page<ConstraintDTO>> listConstraint(
@@ -153,6 +193,11 @@ public class TypeController {
     @GetMapping("/primitives")
     public Result<Map<String, TypeDTO>> getPrimitiveTypes() {
         return Result.success(typeManager.getPrimitiveTypes());
+    }
+
+    @GetMapping("/primitive-map")
+    public Result<Map<Integer, Long>> getPrimitiveMap() {
+        return Result.success(typeManager.getPrimitiveMap());
     }
 
 }

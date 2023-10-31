@@ -52,8 +52,10 @@ public class InstanceStoreTest extends TestCase {
         InstancePO bar = new InstancePO(
                 TENANT_ID, barId, barType.getId(), "Bar001",
                 Map.of(
-                        "s0", "Bar001"
-                ),
+                        NncUtils.toBase64(barType.getIdRequired()),
+                        Map.of(
+                                "s0", "Bar001"
+                        )),
                 0L, 0L
         );
 
@@ -64,18 +66,21 @@ public class InstanceStoreTest extends TestCase {
                         new InstancePO(
                                 TENANT_ID, fooId, fooType.getId(), "Big Foo",
                                 Map.of(
-                                        "s0", "Big Foo",
-                                        "r1", barId,
-                                        "m1", barArrayId
+                                        NncUtils.toBase64(fooType.getIdRequired()),
+                                        Map.of(
+                                                "s0", "Big Foo",
+                                                "r1", barId,
+                                                "m1", barArrayId
+                                        )
                                 ),
                                 0L, 0L
                         ),
                         bar,
                         new InstanceArrayPO(
-                                barArrayId, barArrayType.getId(),
+                                barArrayId, barArrayType.getIdRequired(),
                                 TENANT_ID, 1,
                                 List.of(barId),
-                                false, 0L, 0L
+                                0L, 0L
                         )
                 ))
         );
@@ -91,7 +96,7 @@ public class InstanceStoreTest extends TestCase {
                 NncUtils.toMap(instanceStore.load(loadRequest, context), InstancePO::getId);
         InstancePO foo = instancePOMap.get(fooId);
         InstanceArrayPO barArray = (InstanceArrayPO) instancePOMap.get(barArrayId);
-        Assert.assertEquals(barId, foo.get("r1"));
+        Assert.assertEquals(barId, foo.get(fooType.getIdRequired(), "r1"));
         Assert.assertEquals(barId, barArray.getElements().get(0));
 
         instanceStore.save(ChangeList.deletes(List.of(bar)));

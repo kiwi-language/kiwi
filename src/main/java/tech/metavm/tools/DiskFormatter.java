@@ -28,7 +28,6 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 
 public class DiskFormatter {
 
-
     private static final String CONFIG_HOST = "host";
     private static final String CONFIG_ES_PORT ="es_port";
     private static final String CONFIG_DELETE_ID_FILES = "delete_id_files";
@@ -93,6 +92,7 @@ public class DiskFormatter {
 
         RestClientBuilder builder = RestClient.builder(new HttpHost(host(), esPort()))
                 .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
+        //noinspection deprecation
         try(RestHighLevelClient client = new RestHighLevelClient(builder)) {
             DeleteByQueryRequest request = new DeleteByQueryRequest("instance");
             request.setQuery(new MatchAllQueryBuilder());

@@ -30,7 +30,7 @@ public class Parameter extends Entity {
         this.name = name;
     }
 
-    public void setCode(String code) {
+    public void setCode(@Nullable String code) {
         this.code = code;
     }
 
@@ -42,6 +42,7 @@ public class Parameter extends Entity {
         return name;
     }
 
+    @Nullable
     public String getCode() {
         return code;
     }

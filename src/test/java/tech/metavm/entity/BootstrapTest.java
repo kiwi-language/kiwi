@@ -50,7 +50,7 @@ public class BootstrapTest extends TestCase {
     }
 
     public void testSmoking() {
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
 
         InstanceContext context = new InstanceContext(
@@ -87,15 +87,15 @@ public class BootstrapTest extends TestCase {
 
     public void testRepeatBoot() {
         AllocatorStore allocatorStore = this.allocatorStore;
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
         bootstrap.bootAndSave();
-        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap2.bootAndSave();
     }
 
     public void testReboot() {
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
         DefContext defContext1 = ModelDefRegistry.getDefContext();
 
@@ -105,7 +105,7 @@ public class BootstrapTest extends TestCase {
 //        Table<Field> fields1 = typeType1.getDeclaredFields();
 //        Assert.assertNotNull(typeType1.getNullableType());
 
-        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore));
+        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap2.boot();
 
         DefContext defContext2 = ModelDefRegistry.getDefContext();

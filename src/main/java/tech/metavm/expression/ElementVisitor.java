@@ -84,8 +84,16 @@ public class ElementVisitor {
             case TryNode tryNode -> visitTryNode(tryNode);
             case TryEndNode tryMergeNode -> vistTryMergeNode(tryMergeNode);
             case AddObjectNode addObjectNode -> visitAddObjectNode(addObjectNode);
+            case FunctionNode functionNode -> visitFunctionNode(functionNode);
+            case LambdaNode lambdaNode -> visitLambdaNode(lambdaNode);
             default -> throw new IllegalStateException("Unexpected node: " + node);
         }
+    }
+
+    private void visitFunctionNode(FunctionNode functionNode) {
+    }
+
+    private void visitLambdaNode(LambdaNode lambdaNode) {
     }
 
     public void visitAddObjectNode(AddObjectNode addObjectNode) {
@@ -177,7 +185,7 @@ public class ElementVisitor {
         switch (expression) {
             case BinaryExpression binaryExpression-> visitBinaryExpression(binaryExpression);
             case UnaryExpression unaryExpression-> visitUnaryExpression(unaryExpression);
-            case FieldExpression fieldExpression-> visitFieldExpression(fieldExpression);
+            case PropertyExpression fieldExpression-> visitFieldExpression(fieldExpression);
             case ArrayAccessExpression arrayAccExpression-> visitArrayAccessExpression(arrayAccExpression);
             case FunctionExpression functionExpression-> visitFunctionExpression(functionExpression);
             case AsExpression asExpression-> visitAsExpression(asExpression);
@@ -203,7 +211,7 @@ public class ElementVisitor {
     public void visitUnaryExpression(UnaryExpression expression) {
     }
 
-    public void visitFieldExpression(FieldExpression expression) {
+    public void visitFieldExpression(PropertyExpression expression) {
     }
 
     public void visitArrayAccessExpression(ArrayAccessExpression expression) {

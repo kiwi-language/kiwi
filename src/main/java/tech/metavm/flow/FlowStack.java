@@ -10,6 +10,7 @@ import tech.metavm.object.instance.StringInstance;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
+import tech.metavm.util.NncUtils;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -19,19 +20,19 @@ public class FlowStack {
     private final IInstanceContext context;
     private final PathTree root = new PathTree("root");
     private final LinkedList<NodeRT<?>> actionBuffer = new LinkedList<>();
-    private final LinkedList<FlowFrame> stack = new LinkedList<>();
+    private final LinkedList<Frame> stack = new LinkedList<>();
     private Instance ret;
 
     public FlowStack(Flow flow, Instance self, List<Instance> arguments, IInstanceContext context) {
         this.context = context;
-        stack.push(new FlowFrame(flow, self, arguments, this));
+        stack.push(new MetaFrame(flow, self, arguments, this));
     }
 
     public Instance execute() {
         while (!stack.isEmpty()) {
-            FlowFrame frame = stack.peek();
+            Frame frame = stack.peek();
             frame.execute();
-            if(frame.getState() == FlowFrame.State.RETURN) {
+            if(frame.getState() == FrameState.RETURN) {
                 stack.pop();
                 if(stack.isEmpty()) {
                     ret = frame.getRet();
@@ -40,14 +41,16 @@ public class FlowStack {
                     stack.peek().resume(frame.getRet());
                 }
             }
-            else if(frame.getState() == FlowFrame.State.EXCEPTION) {
-                stack.pop();
-                var exception = frame.getThrow();
-                if(stack.isEmpty()) {
-                    exception(exception);
-                }
-                else {
-                    stack.peek().resumeWithException(exception);
+            else {
+                while (frame.getState() == FrameState.EXCEPTION) {
+                    stack.pop();
+                    var exception = frame.getThrow();
+                    if (stack.isEmpty()) {
+                        exception(exception);
+                    } else {
+                        frame = stack.peek();
+                        frame.resumeWithException(exception);
+                    }
                 }
             }
         }
@@ -60,7 +63,7 @@ public class FlowStack {
         throw new FlowExecutionException(message);
     }
 
-    FlowFrame pop() {
+    Frame pop() {
         return stack.pop();
     }
 
@@ -68,15 +71,15 @@ public class FlowStack {
         return ret.toDTO();
     }
 
-    void push(FlowFrame context) {
-        stack.push(context);
+    void push(Frame frame) {
+        stack.push(frame);
     }
 
     IInstanceContext getContext() {
         return context;
     }
 
-    FlowFrame peek() {
+    Frame peek() {
         return stack.peek();
     }
 

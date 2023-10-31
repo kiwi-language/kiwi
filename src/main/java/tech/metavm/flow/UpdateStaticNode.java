@@ -8,10 +8,9 @@ import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateStaticParamDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
-import java.util.Collections;
 import java.util.List;
 
 public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
@@ -29,7 +28,7 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
     private ClassType type;
 
     @ChildEntity("更新字段")
-    private final Table<UpdateField> fields = new Table<>(UpdateField.class, true);
+    private final ChildArray<UpdateField> fields = new ChildArray<>(UpdateField.class);
 
     public UpdateStaticNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, ClassType type) {
         super(tmpId, name, null, previous, scope);
@@ -55,9 +54,8 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
             for (UpdateFieldDTO field : param.fields()) {
                 NncUtils.requireTrue(context.getField(field.fieldRef()).getDeclaringType() == type);
             }
-            fields.clear();
             var parsingContext = getParsingContext(context);
-            fields.addAll(
+            fields.resetChildren(
                     NncUtils.map(
                             param.fields(),
                             field -> new UpdateField(
@@ -76,7 +74,7 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
         var updateField = fields.get(UpdateField::getField, field);
         if (updateField == null) {
             updateField = new UpdateField(field, op, value);
-            fields.add(updateField);
+            fields.addChild(updateField);
         } else {
             updateField.setOp(op);
             updateField.setValue(value);
@@ -88,11 +86,11 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
     }
 
     public List<UpdateField> getFields() {
-        return Collections.unmodifiableList(fields);
+        return fields.toList();
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         for (UpdateField field : fields) {
             field.execute(null, frame, getFlow().isConstructor(), frame.getStack().getContext());
         }

@@ -1,7 +1,10 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.query.ObjectNode;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.*;
 
@@ -14,12 +17,12 @@ import static tech.metavm.util.ValueUtil.isCollection;
 
 public class ExpressionEvaluator {
 
-    public static Instance evaluate(Expression expression, ObjectNode objectNode, Instance instance) {
-        return new ExpressionEvaluator(expression, new TreeEvaluationContext(objectNode, instance)).evaluate();
+    public static Instance evaluate(Expression expression, ObjectNode objectNode, Instance instance, IEntityContext entityContext) {
+        return new ExpressionEvaluator(expression, new TreeEvaluationContext(objectNode, instance, entityContext)).evaluate();
     }
 
-    public static Instance evaluate(Expression expression, ClassInstance instance) {
-        return new ExpressionEvaluator(expression, new InstanceEvaluationContext(instance)).evaluate();
+    public static Instance evaluate(Expression expression, ClassInstance instance, IEntityContext entityContext) {
+        return new ExpressionEvaluator(expression, new InstanceEvaluationContext(instance, entityContext)).evaluate();
     }
 
     public static Instance evaluate(Expression expression, EvaluationContext context) {
@@ -49,40 +52,25 @@ public class ExpressionEvaluator {
         if (context.isContextExpression(expression)) {
             return evaluateInContext(expression);
         }
-        if (expression instanceof UnaryExpression unaryExpression) {
-            return evaluateUnary(unaryExpression);
-        }
-        if (expression instanceof BinaryExpression binaryExpression) {
-            return evaluateBinary(binaryExpression);
-        }
-        if (expression instanceof ConstantExpression constantExpression) {
-            return evaluateConst(constantExpression);
-        }
-        if (expression instanceof ArrayExpression listExpression) {
-            return evaluateList(listExpression);
-        }
-        if (expression instanceof FunctionExpression functionExpression) {
-            return evaluateFunction(functionExpression);
-        }
-        if (expression instanceof FieldExpression fieldExpression) {
-            return evaluateField(fieldExpression);
-        }
-        if (expression instanceof AllMatchExpression allMatchExpression) {
-            return evaluateAllMatch(allMatchExpression);
-        }
-        if (expression instanceof AsExpression asExpression) {
-            return evaluateAs(asExpression);
-        }
-        if(expression instanceof StaticFieldExpression staticFieldExpression) {
-            return evaluateStaticField(staticFieldExpression);
-        }
-        if(expression instanceof ArrayAccessExpression arrayAccExpression) {
-            return evaluateArrayAccess(arrayAccExpression);
-        }
-        if (expression instanceof InstanceOfExpression instanceOfExpression) {
-            return evaluateInstanceOf(instanceOfExpression);
-        }
-        throw new RuntimeException("Unsupported expression: " + expression);
+        return switch (expression) {
+            case UnaryExpression unaryExpression -> evaluateUnary(unaryExpression);
+            case BinaryExpression binaryExpression -> evaluateBinary(binaryExpression);
+            case ConstantExpression constantExpression -> evaluateConst(constantExpression);
+            case ArrayExpression listExpression -> evaluateList(listExpression);
+            case FunctionExpression functionExpression -> evaluateFunction(functionExpression);
+            case PropertyExpression fieldExpression -> evaluateProperty(fieldExpression);
+            case AllMatchExpression allMatchExpression -> evaluateAllMatch(allMatchExpression);
+            case AsExpression asExpression -> evaluateAs(asExpression);
+            case StaticFieldExpression staticFieldExpression -> evaluateStaticField(staticFieldExpression);
+            case ArrayAccessExpression arrayAccExpression -> evaluateArrayAccess(arrayAccExpression);
+            case InstanceOfExpression instanceOfExpression -> evaluateInstanceOf(instanceOfExpression);
+            case FuncExpression funcExpression -> evaluateFunc(funcExpression);
+            case null, default -> throw new RuntimeException("Unsupported expression: " + expression);
+        };
+    }
+
+    private Instance evaluateFunc(FuncExpression funcExpression) {
+        return ((ClassInstance) evaluate(funcExpression.getSelf())).getFunction(funcExpression.getFlow());
     }
 
     private Instance evaluateInstanceOf(InstanceOfExpression instanceOfExpression) {
@@ -100,9 +88,9 @@ public class ExpressionEvaluator {
         return evaluate(expression.getExpression());
     }
 
-    private Instance evaluateField(FieldExpression fieldExpression) {
-        ClassInstance instance = (ClassInstance) evaluate(fieldExpression.getInstance());
-        return NncUtils.get(instance, inst -> inst.get(fieldExpression.getField()));
+    private Instance evaluateProperty(PropertyExpression expression) {
+        ClassInstance instance = (ClassInstance) evaluate(expression.getInstance());
+        return NncUtils.get(instance, inst -> inst.getProperty(expression.getProperty()));
     }
 
     private Instance evaluateFunction(FunctionExpression functionExpression) {
@@ -165,7 +153,7 @@ public class ExpressionEvaluator {
 //                );
                 if (secondValue instanceof StringInstance title) {
                     ClassInstance classInstance = (ClassInstance) firstValue;
-                    StringInstance optionName = classInstance.getString(classInstance.getType().getFieldByJavaField(
+                    StringInstance optionName = classInstance.getStringField(classInstance.getType().getFieldByJavaField(
                             ReflectUtils.getField(Enum.class, "name")
                     ));
                     return InstanceUtils.equals(optionName, title);
@@ -177,11 +165,9 @@ public class ExpressionEvaluator {
             boolean equals;
             if (isAllIntegers(firstValue, secondValue)) {
                 equals = castInteger(firstValue).equals(castInteger(secondValue));
-            }
-            else if(isAllNumbers(firstValue, secondValue)) {
+            } else if (isAllNumbers(firstValue, secondValue)) {
                 equals = castFloat(firstValue).equals(castFloat(secondValue));
-            }
-            else {
+            } else {
                 equals = Objects.equals(firstValue, secondValue) ||
                         containAsEqual && isCollection(firstValue) && castCollection(firstValue).contains(secondValue);
             }
@@ -191,35 +177,45 @@ public class ExpressionEvaluator {
             boolean equals;
             if (isAllIntegers(firstValue, secondValue)) {
                 equals = !castInteger(firstValue).equals(castInteger(secondValue));
-            }
-            else if(isAllNumbers(firstValue, secondValue)) {
+            } else if (isAllNumbers(firstValue, secondValue)) {
                 equals = !castFloat(firstValue).equals(castFloat(secondValue));
-            }
-            else {
+            } else {
                 equals = !Objects.equals(firstValue, secondValue) &&
                         !(containAsEqual && isCollection(firstValue) && castCollection(firstValue).contains(secondValue));
             }
             return InstanceUtils.createBoolean(equals);
         }
         if (op == Operator.GE) {
+            if (isAllTime(firstValue, secondValue)) {
+                return ((TimeInstance) firstValue).isAfterOrAt((TimeInstance) secondValue);
+            }
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isGreaterThanOrEqualTo(castInteger(secondValue));
             }
             return castFloat(firstValue).isGreaterThanOrEqualTo(castFloat(secondValue));
         }
         if (op == Operator.GT) {
+            if (isAllTime(firstValue, secondValue)) {
+                return ((TimeInstance) firstValue).isAfter((TimeInstance) secondValue);
+            }
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isGreaterThan(castInteger(secondValue));
             }
             return castFloat(firstValue).isGreaterThan(castFloat(secondValue));
         }
         if (op == Operator.LE) {
+            if (isAllTime(firstValue, secondValue)) {
+                return ((TimeInstance) firstValue).isBeforeOrAt((TimeInstance) secondValue);
+            }
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isLessThanOrEqualTo(castInteger(secondValue));
             }
             return castFloat(firstValue).isLessThanOrEqualTo(castFloat(secondValue));
         }
         if (op == Operator.LT) {
+            if (isAllTime(firstValue, secondValue)) {
+                return ((TimeInstance) firstValue).isBefore((TimeInstance) secondValue);
+            }
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).isLessThan(castInteger(secondValue));
             }
@@ -229,7 +225,7 @@ public class ExpressionEvaluator {
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).add(castInteger(secondValue));
             }
-            if(firstValue instanceof StringInstance || secondValue instanceof StringInstance) {
+            if (firstValue instanceof StringInstance || secondValue instanceof StringInstance) {
                 return castString(firstValue).concat(castString(secondValue));
             }
             return castFloat(firstValue).add(castFloat(secondValue));
@@ -302,7 +298,7 @@ public class ExpressionEvaluator {
             return InstanceUtils.createBoolean(!value.isNull());
         }
         if (op == Operator.IS_NULL) {
-            return InstanceUtils.createBoolean(value == null);
+            return InstanceUtils.createBoolean(value.isNull());
         }
         throw BusinessException.invalidExpression("不支持的运算符: " + expr.getOperator());
     }

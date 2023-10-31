@@ -1,6 +1,9 @@
 package tech.metavm.util;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -28,8 +31,7 @@ public class EncodingUtils {
             signature.initSign(privateKey);
             signature.update(text.getBytes(StandardCharsets.UTF_8));
             return encodeBase64(signature.sign());
-        }
-        catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new InternalException(e);
         }
     }
@@ -40,8 +42,7 @@ public class EncodingUtils {
             signature.initVerify(privateKey);
             signature.update(text.getBytes(StandardCharsets.UTF_8));
             return signature.verify(decodeBase64(sign));
-        }
-        catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new InternalException(e);
         }
     }
@@ -62,8 +63,9 @@ public class EncodingUtils {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             return new String(cipher.doFinal(Base64.getDecoder().decode(text)), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new InternalException(e);
+        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -74,6 +76,7 @@ public class EncodingUtils {
     public static String encodeBase64(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
     }
+
     public static byte[] decodeBase64(String text) {
         return Base64.getDecoder().decode(text);
     }

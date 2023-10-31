@@ -7,6 +7,7 @@ import tech.metavm.constant.FieldNames;
 import tech.metavm.expression.*;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.StringInstance;
+import tech.metavm.object.meta.Field;
 import tech.metavm.util.Column;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -80,15 +81,15 @@ public class SearchBuilder {
         }
         if(operator == Operator.IN) {
             Expression fieldExpr = expression.getVariableChild();
-            ArrayExpression arrayExpr;
+            Iterable<Expression> expressions;
             if(expression.getSecond() instanceof ArrayExpression) {
-                arrayExpr = expression.getArrayChild();
+                expressions = expression.getArrayChild().getExpressions();
             }
             else {
-                arrayExpr = new ArrayExpression(List.of(expression.getConstChild()));
+                expressions = List.of(expression.getConstChild());
             }
             List<Object> values = new ArrayList<>();
-            for (Expression expr : arrayExpr.getExpressions()) {
+            for (Expression expr : expressions) {
                 if(expr instanceof ConstantExpression constExpr) {
                     values.add(parseConstant(constExpr));
                 }
@@ -118,8 +119,8 @@ public class SearchBuilder {
         if(expression instanceof ThisExpression) {
             return Column.ID;
         }
-        else if(expression instanceof FieldExpression fieldExpression) {
-            return fieldExpression.getField().getColumn();
+        else if(expression instanceof PropertyExpression fieldExpression) {
+            return ((Field) fieldExpression.getProperty()).getColumn();
         }
         else {
             throw new InternalException("Can not get es field for " + expression);

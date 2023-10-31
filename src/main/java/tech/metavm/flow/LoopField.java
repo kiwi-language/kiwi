@@ -4,8 +4,6 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.LoopFieldDTO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
 @EntityType("循环字段")
 public class LoopField extends Entity {

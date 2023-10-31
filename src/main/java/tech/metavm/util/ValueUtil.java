@@ -149,7 +149,11 @@ public class ValueUtil {
     }
 
     public static boolean isArrayType(Class<?> klass) {
-        return Collection.class.isAssignableFrom(klass);
+        return ReadonlyArray.class.isAssignableFrom(klass);
+    }
+
+    public static boolean isChildArrayType(Class<?> klass) {
+        return ChildArray.class.isAssignableFrom(klass);
     }
 
     public static boolean isEntityType(Class<?> klass) {
@@ -189,7 +193,10 @@ public class ValueUtil {
 
     public static TypeCategory getTypeCategory(java.lang.reflect.Type type) {
         if (type instanceof Class<?> klass) {
-            if(klass.isInterface()) {
+            if (BiUnion.class.isAssignableFrom(klass)) {
+                return TypeCategory.UNION;
+            }
+            if (klass.isInterface()) {
                 return TypeCategory.INTERFACE;
             }
             if (isLong(klass) || isInteger(klass)) {
@@ -223,16 +230,19 @@ public class ValueUtil {
                 return TypeCategory.VALUE;
             }
             if (isArrayType(klass)) {
-                return TypeCategory.ARRAY;
+                if (isChildArrayType(klass)) {
+                    return TypeCategory.CHILD_ARRAY;
+                } else if (ReadWriteArray.class.isAssignableFrom(klass)) {
+                    return TypeCategory.READ_WRITE_ARRAY;
+                } else {
+                    return TypeCategory.READ_ONLY_ARRAY;
+                }
             }
             if (isEnumType(klass)) {
                 return TypeCategory.ENUM;
             }
             if (isEntityType(klass)) {
                 return TypeCategory.CLASS;
-            }
-            if (Instance.class.isAssignableFrom(klass)) {
-                return TypeCategory.INSTANCE;
             }
             if (Class.class == klass) {
                 return TypeCategory.CLASS;
@@ -241,9 +251,10 @@ public class ValueUtil {
         if (type instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getRawType() instanceof Class<?> rawClass) {
                 if (Collection.class.isAssignableFrom(rawClass)) {
-                    return TypeCategory.ARRAY;
-                } else if (Map.class.isAssignableFrom(rawClass)) {
-
+                    if (ChildArray.class.isAssignableFrom(rawClass)) {
+                        return TypeCategory.CHILD_ARRAY;
+                    }
+                    return TypeCategory.READ_WRITE_ARRAY;
                 } else {
                     return getTypeCategory(rawClass);
                 }

@@ -8,6 +8,7 @@ import tech.metavm.dto.Result;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.rest.dto.MovePropertyRequest;
 import tech.metavm.util.FlowExecutionException;
 
 import java.util.List;
@@ -22,9 +23,9 @@ public class FlowController {
     @Autowired
     private FlowExecutionService flowExecutionService;
 
-    @GetMapping("/{id:[0-9]+}")
-    public Result<FlowDTO> get(@PathVariable("id") long id) {
-        return Result.success(flowManager.get(id));
+    @PostMapping("/get")
+    public Result<GetFlowResponse> get(@RequestBody GetFlowRequest request) {
+        return Result.success(flowManager.get(request));
     }
 
     @GetMapping
@@ -39,13 +40,7 @@ public class FlowController {
 
     @PostMapping
     public Result<Long> save(@RequestBody FlowDTO flow) {
-        if(flow.id() == null || flow.id() == 0L) {
-            return Result.success(flowManager.create(flow));
-        }
-        else {
-            flowManager.update(flow);
-            return Result.success(flow.id());
-        }
+        return Result.success(flowManager.save(flow).getIdRequired());
     }
 
     @DeleteMapping("{id:[0-9]+}")
@@ -62,6 +57,12 @@ public class FlowController {
         else {
             return Result.success(flowManager.updateNode(node));
         }
+    }
+
+    @PostMapping("/move")
+    public Result<Void> move(@RequestBody MovePropertyRequest request) {
+        flowManager.moveFlow(request.id(), request.ordinal());
+        return Result.voidSuccess();
     }
 
     @PostMapping("/try-node")

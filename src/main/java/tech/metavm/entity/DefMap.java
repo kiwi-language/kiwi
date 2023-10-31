@@ -1,7 +1,9 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.TypeUtil;
+import tech.metavm.object.meta.UnionType;
 import tech.metavm.util.RuntimeGeneric;
 import tech.metavm.util.TypeReference;
 
@@ -12,6 +14,8 @@ public interface DefMap {
     ModelDef<?, ?> getDef(Type javaType);
 
     boolean containsDef(Type javaType);
+
+    boolean containsDef(tech.metavm.object.meta.Type type);
 
     default ModelDef<?,?> getDefByModel(Object model) {
         if(model instanceof RuntimeGeneric runtimeGeneric) {
@@ -31,6 +35,12 @@ public interface DefMap {
     void addDef(ModelDef<?, ?> def);
 
     void afterDefInitialized(ModelDef<?,?> def);
+
+    ArrayType getArrayType(tech.metavm.object.meta.Type type, ArrayKind kind);
+
+    UnionType getNullableType(tech.metavm.object.meta.Type type);
+
+    boolean containsJavaType(Type javaType);
 
     default <T> PojoDef<T> getPojoDef(TypeReference<T> typeRef) {
         return new TypeReference<PojoDef<T>>() {}.cast(

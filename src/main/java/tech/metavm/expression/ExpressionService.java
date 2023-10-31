@@ -11,9 +11,8 @@ import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
-import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.EntityContextBean;
 import tech.metavm.util.NncUtils;
@@ -91,7 +90,7 @@ public class ExpressionService extends EntityContextBean {
         Expression second = binaryExpression.getSecond();
         Operator operator = binaryExpression.getOperator();
         if(!SEARCH_EXPR_OPERATORS.contains(operator)
-                || !(first instanceof FieldExpression fieldExpr)
+                || !(first instanceof PropertyExpression fieldExpr)
                 || !(second instanceof ConstantExpression constExpr)) {
             throw BusinessException.invalidExpression(binaryExpression.buildSelf(VarType.NAME));
         }
@@ -102,12 +101,12 @@ public class ExpressionService extends EntityContextBean {
         else {
             searchValue = NncUtils.requireNonNull(constExpr.getValue().getId());
         }
-        return new InstanceSearchItemDTO(fieldExpr.getField().getId(), searchValue);
+        return new InstanceSearchItemDTO(fieldExpr.getProperty().getId(), searchValue);
     }
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {
         if(value.kind() == ValueKind.CONSTANT.code()) {
-            if(value.value() instanceof PrimitiveFieldValueDTO primValue) {
+            if(value.value() instanceof PrimitiveFieldValue primValue) {
                 if(Boolean.TRUE.equals(primValue.getValue())) {
                     return "true";
                 }
@@ -145,7 +144,7 @@ public class ExpressionService extends EntityContextBean {
             if(binaryExpression.getOperator() == Operator.OR) {
                 List<ConditionGroupDTO> firstGroups = parseConditionGroups(binaryExpression.getFirst());
                 List<ConditionGroupDTO> secondGroups = parseConditionGroups(binaryExpression.getSecond());
-                return NncUtils.merge(firstGroups, secondGroups);
+                return NncUtils.union(firstGroups, secondGroups);
             }
         }
         if(ExpressionUtil.isConstantTrue(expression)) {
@@ -159,7 +158,7 @@ public class ExpressionService extends EntityContextBean {
             if(binaryExpression.getOperator() == Operator.AND) {
                 List<ConditionDTO> firstGroups = parseConditions(binaryExpression.getFirst());
                 List<ConditionDTO> secondGroups = parseConditions(binaryExpression.getSecond());
-                return NncUtils.merge(firstGroups, secondGroups);
+                return NncUtils.union(firstGroups, secondGroups);
             }
         }
         if(ExpressionUtil.isConstantTrue(expression)) {
@@ -187,7 +186,7 @@ public class ExpressionService extends EntityContextBean {
     }
 
     private ValueDTO parseRefValue(Expression expression) throws ExpressionParsingException {
-        if(expression instanceof FieldExpression fieldExpression) {
+        if(expression instanceof PropertyExpression fieldExpression) {
             Expression instance = fieldExpression.getInstance();
             StringBuilder buf = new StringBuilder();
             if(instance instanceof NodeExpression nodeExpression) {
@@ -196,7 +195,7 @@ public class ExpressionService extends EntityContextBean {
             else if(!(instance instanceof ThisExpression)) {
                 throw new ExpressionParsingException();
             }
-            buf.append(fieldExpression.getField().getName());
+            buf.append(fieldExpression.getProperty().getName());
             return ValueDTO.refValue(buf.toString());
         }
         else if(expression instanceof NodeExpression nodeExpression) {
@@ -209,7 +208,7 @@ public class ExpressionService extends EntityContextBean {
         if(expression instanceof ConstantExpression constantExpression) {
             return ValueDTO.constValue(ExpressionUtil.expressionToConstant(constantExpression));
         }
-        if(expression instanceof FieldExpression || expression instanceof NodeExpression) {
+        if(expression instanceof PropertyExpression || expression instanceof NodeExpression) {
             return parseRefValue(expression);
         }
         else {

@@ -57,13 +57,17 @@ public class GeneratorTest extends TestCase {
             );
             instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
             var stdAllocators = new StdAllocators(allocatorStore);
-            Bootstrap bootstrap = new Bootstrap(instanceContextFactory, stdAllocators);
+            Bootstrap bootstrap = new Bootstrap(instanceContextFactory, stdAllocators, new MemColumnStore());
             bootstrap.boot();
             var context = instanceContextFactory.newContext().getEntityContext();
-            typeResolver = new MockTypeResolver(context, stdAllocators);
+            typeResolver = new TypeResolverImpl(context);
             return action.apply(context);
         }
     }
+
+//    public void test_lambda() {
+//        build(List.of(FuncType.class, AstLambdaFoo.class));
+//    }
 
     public void test_product_coupon_order() {
         build(
@@ -71,6 +75,10 @@ public class GeneratorTest extends TestCase {
                         AstCouponState.class, AstProductState.class, AstCoupon.class)
         );
     }
+
+//    public void test_generic() {
+//        compile(List.of(AstQueue.class, AstGenericLab.class));
+//    }
 
     public void test_product_coupon_order_compile_only() {
         compile(List.of(AstProduct.class, DirectAstCoupon.class, AstOrder.class,
@@ -105,7 +113,7 @@ public class GeneratorTest extends TestCase {
             assertTrue(it.isAssignableFrom(sub));
             var itTest = it.getFlowByCode("test");
             assertTrue(itTest.isAbstract());
-            var subTest = sub.getOverrideFlow(itTest);
+            var subTest = sub.resolveFlow(itTest);
             assertNotNull(subTest);
             assertEquals(subTest.getName(), itTest.getName());
             assertFalse(subTest.isAbstract());
@@ -194,30 +202,26 @@ public class GeneratorTest extends TestCase {
         return doInSession(entityContext -> {
             List<PsiClassType> psiTypes = NncUtils.map(classes, TranspileTestTools::getPsiClassType);
             NncUtils.map(psiTypes, k -> (ClassType) typeResolver.resolve(k));
-            try (SerializeContext ignored = SerializeContext.enter()) {
-                List<TypeDTO> result = new ArrayList<>();
+            try (SerializeContext context = SerializeContext.enter()) {
+                context.setIncludingCode(true);
+                context.setIncludingNodeOutputType(false);
+                context.setIncludingValueType(false);
                 var generatedTypes = typeResolver.getGeneratedTypes();
                 for (Type metaType : generatedTypes) {
                     if (metaType instanceof ClassType classType) {
                         typeResolver.ensureCodeGenerated(classType);
-                        result.add(classType.toDTO(true, true, true, true));
-                    } else {
-                        result.add(metaType.toDTO());
                     }
-                    if (metaType.getArrayType() != null) {
-                        result.add(metaType.getArrayType().toDTO());
-                    }
-                    if (metaType.getNullableType() != null) {
-                        result.add(metaType.getNullableType().toDTO());
-                    }
+                    context.writeType(metaType);
                     var collTypeNames = TypeUtil.getCollectionTypeNames(metaType);
                     for (String collTypeName : collTypeNames) {
-                        var collType = (ClassType) entityContext.selectByUniqueKey(Type.UNIQUE_NAME, collTypeName);
+                        var collType = entityContext.selectByUniqueKey(ClassType.UNIQUE_NAME, collTypeName);
                         if (collType != null) {
-                            result.add(collType.toDTO(true, true, true, true));
+                            context.writeType(collType);
                         }
                     }
                 }
+                context.writeDependencies();
+                var result = context.getTypes();
                 writeJson(OUTPUT_FILE, result);
                 System.out.println("Compile succeeded");
                 return result;

@@ -1,12 +1,10 @@
 package tech.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.Objects;
 
-public class InstanceFieldValueDTO extends FieldValueDTO {
+public class InstanceFieldValueDTO extends FieldValue {
 
     private final InstanceDTO instance;
 

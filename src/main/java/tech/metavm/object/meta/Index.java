@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.Instance;
@@ -8,9 +9,10 @@ import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.InstanceEvaluationContext;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadonlyArray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +22,7 @@ import java.util.Objects;
 public class Index extends Constraint<UniqueConstraintParamDTO> {
 
     @ChildEntity("索引字段列表")
-    private final Table<IndexField> fields = new Table<>(IndexField.class, true);
+    private final ChildArray<IndexField> fields = new ChildArray<>(IndexField.class);
     @EntityField("是否唯一")
     private final boolean unique;
     private transient IndexDef<?> indexDef;
@@ -39,7 +41,7 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
     }
 
     void addField(IndexField item) {
-        this.fields.add(item);
+        this.fields.addChild(item);
     }
 
     public IndexField getField(long id) {
@@ -60,9 +62,12 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
         return NncUtils.map(fields, IndexField::getField);
     }
 
-    public IndexEntryPO createIndexEntry(long tenantId, ClassInstance instance) {
-        IndexKeyRT key = createIndexKey(instance);
-        return new IndexEntryPO(tenantId, key.toPO(), instance.getIdRequired());
+    public List<IndexEntryPO> createIndexEntry(ClassInstance instance, IEntityContext entityContext) {
+        List<IndexKeyRT> keys = createIndexKey(instance, entityContext);
+        return NncUtils.map(
+                keys,
+                key -> new IndexEntryPO(entityContext.getTenantId(), key.toPO(), instance.getIdRequired())
+        );
     }
 
     public IndexKeyRT createIndexKeyByModels(List<Object> values, IEntityContext entityContext) {
@@ -75,10 +80,23 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
         return createIndexKey(instanceValues);
     }
 
-    public IndexKeyRT createIndexKey(ClassInstance instance) {
-        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
-        List<Instance> values = NncUtils.map(fields, field -> field.getValue().evaluate(evaluationContext));
-        return createIndexKey(values);
+    public List<IndexKeyRT> createIndexKey(ClassInstance instance, IEntityContext entityContext) {
+        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance, entityContext);
+        List<Instance> prefix = NncUtils.map(fields.subList(0, fields.size() - 1),
+                field -> field.getValue().evaluate(evaluationContext));
+         // When the last index item is an array, create an index key for each element.
+        var lastField = fields.get(fields.size() - 1);
+        if (lastField.getValue().getType().getUnderlyingType().isArray()) {
+            var lastValues = ((ArrayInstance) lastField.getValue().evaluate(evaluationContext)).getElements();
+            return NncUtils.map(
+                    lastValues,
+                    lastValue -> createIndexKey(NncUtils.append(prefix, lastValue))
+            );
+        } else {
+            return List.of(createIndexKey(
+                    NncUtils.append(prefix, lastField.getValue().evaluate(evaluationContext))
+            ));
+        }
     }
 
     public IndexKeyRT createIndexKey(List<Instance> values) {
@@ -109,12 +127,12 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
         );
     }
 
-    public Table<IndexField> getFields() {
+    public ChildArray<IndexField> getFields() {
         return fields;
     }
 
     public boolean isFieldIndex(Field field) {
-        if(fields.size() != 1) {
+        if (fields.size() != 1) {
             return false;
         }
         IndexField indexField = fields.get(0);
@@ -135,12 +153,12 @@ public class Index extends Constraint<UniqueConstraintParamDTO> {
     }
 
     public boolean isLastItem(IndexField item) {
-        return !fields.isEmpty() && fields.get(fields.size()-1) == item;
+        return !fields.isEmpty() && fields.get(fields.size() - 1) == item;
     }
 
     public int getItemIndex(IndexField item) {
-        int index =  fields.indexOf(item);
-        if(index < 0) {
+        int index = fields.indexOf(item);
+        if (index < 0) {
             throw new InternalException(item + " is not contained in " + this);
         }
         return index;

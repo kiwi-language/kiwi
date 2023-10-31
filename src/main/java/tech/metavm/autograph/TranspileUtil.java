@@ -5,6 +5,7 @@ import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.ClassType;
@@ -39,6 +40,15 @@ public class TranspileUtil {
     public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {
         NncUtils.requireFalse(codeBlock.isEmpty(), "Code block is empty");
         return codeBlock.getStatements()[codeBlock.getStatementCount() - 1];
+    }
+
+    public static PsiType getLambdaReturnType(PsiLambdaExpression lambdaExpression) {
+        var funcTypeGenerics = ((PsiClassType) requireNonNull(lambdaExpression.getFunctionalInterfaceType()))
+                .resolveGenerics();
+        var funcClass = funcTypeGenerics.getElement();
+        var funcMethod = NncUtils.find(requireNonNull(funcClass).getAllMethods(),
+                        m -> m.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT));
+        return funcTypeGenerics.getSubstitutor().substitute(requireNonNull(funcMethod).getReturnType());
     }
 
     private static String getCanonicalName(PsiTypeParameterListOwner typeParameterOwner) {
@@ -153,19 +163,21 @@ public class TranspileUtil {
         return true;
     }
 
-    public static @Nullable PsiMethod getOverriddenMethod(PsiMethod method) {
+    @NotNull
+    public static List<PsiMethod> getOverriddenMethods(PsiMethod method) {
         var declaringClass = NncUtils.requireNonNull(method.getContainingClass());
         Queue<PsiClass> queue = new LinkedList<>();
         queue.offer(declaringClass);
         Set<String> visited = new HashSet<>();
         visited.add(declaringClass.getQualifiedName());
+        List<PsiMethod> overridenMethods = new ArrayList<>();
         while (!queue.isEmpty()) {
             var klass = queue.poll();
             if (klass != declaringClass) {
                 var superMethods = klass.getMethods();
                 for (PsiMethod superMethod : superMethods) {
                     if (isOverrideOf(method, superMethod)) {
-                        return superMethod;
+                        overridenMethods.add(superMethod);
                     }
                 }
             }
@@ -183,7 +195,7 @@ public class TranspileUtil {
                 }
             }
         }
-        return null;
+        return overridenMethods;
     }
 
     public static boolean isOverrideOf(PsiMethod override, PsiMethod overriden) {
@@ -398,7 +410,7 @@ public class TranspileUtil {
     }
 
     public static Flow getFlowByMethod(ClassType klass, PsiMethod psiMethod, TypeResolver typeResolver) {
-        return klass.getFlow(
+        return klass.getFlowByCodeAndParamTypes(
                 psiMethod.getName(),
                 NncUtils.map(
                         psiMethod.getParameterList().getParameters(),
@@ -501,12 +513,31 @@ public class TranspileUtil {
 
     public static String getBizClassName(PsiClass klass) {
         String bizName = tryGetNameFromAnnotation(klass, EntityType.class);
-        return bizName != null ? bizName : klass.getName();
+        return bizName != null ? bizName : getClassCode(klass);
+    }
+
+    public static String getClassCode(PsiClass psiClass) {
+        StringBuilder code = new StringBuilder(requireNonNull(psiClass.getName()));
+        var owner = psiClass.getContainingClass();
+        while (owner != null) {
+            code.insert(0, owner.getName() + "_");
+            owner = owner.getContainingClass();
+        }
+        return code.toString();
     }
 
     public static String getFlowName(PsiMethod method) {
         String bizName = tryGetNameFromAnnotation(method, EntityFlow.class);
-        return bizName != null ? bizName : method.getName();
+        return bizName != null ? bizName : getFlowCode(method);
+    }
+
+    public static String getFlowCode(PsiMethod method) {
+        if(method.isConstructor()) {
+            return TranspileUtil.getClassCode(requireNonNull(method.getContainingClass()));
+        }
+        else {
+            return method.getName();
+        }
     }
 
     private static String tryGetNameFromAnnotation(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass) {

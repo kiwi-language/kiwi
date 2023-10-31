@@ -4,17 +4,17 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.expression.Expression;
+import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadonlyArray;
 
-import java.util.List;
+import java.util.Objects;
 
 @EntityType("更新对象节点")
 public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
@@ -28,7 +28,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     @ChildEntity("对象")
     private Value objectId;
     @ChildEntity("更新字段")
-    private final Table<UpdateField> fieldParams = new Table<>(UpdateField.class, true);
+    private final ChildArray<UpdateField> fieldParams = new ChildArray<>(UpdateField.class);
 
     public UpdateObjectNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
         super(tmpId, name,  null, prev, scope);
@@ -38,7 +38,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         return objectId;
     }
 
-    public List<UpdateField> getUpdateFields() {
+    public ReadonlyArray<UpdateField> getUpdateFields() {
         return fieldParams;
     }
 
@@ -56,8 +56,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
                         )
                 );
             }
-            fieldParams.clear();
-            fieldParams.addAll(
+            fieldParams.resetChildren(
                     NncUtils.map(
                             param.fields(),
                             fieldParamDTO -> new UpdateField(
@@ -85,7 +84,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         var updateField = fieldParams.get(UpdateField::getField, field);
         if(updateField == null) {
             updateField = new UpdateField(field, op, value);
-            fieldParams.add(updateField);
+            fieldParams.addChild(updateField);
         }
         else {
             updateField.setOp(op);
@@ -102,11 +101,12 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         ClassInstance instance = (ClassInstance) objectId.evaluate(frame);
         if(instance != null) {
             for (UpdateField updateField : fieldParams) {
-                updateField.execute(instance, frame, getFlow().isConstructor(), frame.getStack().getContext());
+                var inConstructor = getFlow().isConstructor() || Objects.equals(getFlow().getCode(), "<init>");
+                updateField.execute(instance, frame, inConstructor, frame.getStack().getContext());
             }
         }
     }

@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface RemovalAware {
 
-    List<Object> beforeRemove();
+    List<Object> beforeRemove(IEntityContext context);
 
 }

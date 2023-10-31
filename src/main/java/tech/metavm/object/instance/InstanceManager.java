@@ -2,6 +2,7 @@ package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ConstantExpression;
@@ -13,14 +14,13 @@ import tech.metavm.object.instance.query.GraphQueryExecutor;
 import tech.metavm.object.instance.query.InstanceNode;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
-import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceQueryDTO;
-import tech.metavm.object.instance.rest.LoadInstancesByPathsRequest;
-import tech.metavm.object.instance.rest.SelectRequestDTO;
+import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ValueFormatter;
 import tech.metavm.util.*;
 
@@ -41,9 +41,9 @@ public class InstanceManager {
         this.instanceSearchService = instanceSearchService;
     }
 
-    public InstanceDTO get(long id, int depth) {
-        Instance instance = newContext().get(id);
-        return instance != null ? InstanceDTOBuilder.buildDTO(instance, depth) : null;
+    public GetInstanceResponse get(long id, int depth) {
+        var batchResp = batchGet(List.of(id), depth);
+        return new GetInstanceResponse(batchResp.instances().get(0), batchResp.contextTypes());
     }
 
     public Page<InstanceDTO[]> select(SelectRequestDTO request) {
@@ -63,21 +63,26 @@ public class InstanceManager {
         GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
         List<Instance> roots = NncUtils.map(idPage.data(), context::get);
         return new Page<>(
-                graphQueryExecutor.execute(type, roots, selects),
+                graphQueryExecutor.execute(type, roots, selects, context.getEntityContext()),
                 idPage.total()
         );
     }
 
-    public List<InstanceDTO> batchGet(List<Long> ids) {
+    public GetInstancesResponse batchGet(List<Long> ids) {
         return batchGet(ContextUtil.getTenantId(), ids, 1);
     }
 
-    public List<InstanceDTO> batchGet(List<Long> ids, int depth) {
+    public GetInstancesResponse batchGet(List<Long> ids, int depth) {
         return batchGet(ContextUtil.getTenantId(), ids, depth);
     }
 
-    public List<InstanceDTO> batchGet(long tenantId, List<Long> ids, int depth) {
-        return NncUtils.map(newContext(tenantId).batchGet(ids), i -> InstanceDTOBuilder.buildDTO(i, depth));
+    public GetInstancesResponse batchGet(long tenantId, List<Long> ids, int depth) {
+        var instances = newContext(tenantId).batchGet(ids);
+        try (var serContext = SerializeContext.enter()) {
+            var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth));
+            serContext.writeDependencies();
+            return new GetInstancesResponse(instanceDTOs, serContext.getTypes());
+        }
     }
 
     @Transactional
@@ -86,16 +91,31 @@ public class InstanceManager {
         if (instanceDTO.id() == null) {
             throw BusinessException.invalidParams("实例ID为空");
         }
-        ValueFormatter.parseInstance(instanceDTO, context);
+        update(instanceDTO, context);
         context.finish();
+    }
+
+    public Instance update(InstanceDTO instanceDTO, IInstanceContext context) {
+        return ValueFormatter.parseInstance(instanceDTO, context);
     }
 
     @Transactional
     public long create(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
         InstanceContext context = newContext(asyncLogProcessing);
-        Instance instance = InstanceFactory.create(instanceDTO, context);
+        Instance instance = create(instanceDTO, context);
         context.finish();
-        return instance.getId();
+        return instance.getIdRequired();
+    }
+
+    public Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
+        return InstanceFactory.create(instanceDTO, context);
+    }
+
+    @Transactional
+    public void batchDelete(List<Long> ids, boolean asyncLogProcessing) {
+        InstanceContext context = newContext(asyncLogProcessing);
+        context.batchRemove(NncUtils.mapAndFilter(ids, context::get, Objects::nonNull));
+        context.finish();
     }
 
     @Transactional
@@ -147,7 +167,7 @@ public class InstanceManager {
         return root.getPaths();
     }
 
-    public Page<InstanceDTO> query(InstanceQueryDTO query) {
+    public QueryInstancesResponse query(InstanceQuery query) {
         long tenantId = ContextUtil.getTenantId();
         InstanceContext context = newContext(tenantId);
         ClassType type = context.getClassType(query.typeId());
@@ -162,7 +182,7 @@ public class InstanceManager {
         }
         SearchQuery searchQuery = new SearchQuery(
                 tenantId,
-                type.getTypeIdsInHierarchy(),
+                query.includeSubTypes() ? type.getTypeIdsInHierarchy() : Set.of(type.getIdRequired()),
                 expression,
                 false,
                 query.page(),
@@ -172,10 +192,19 @@ public class InstanceManager {
 
         List<Instance> instances = context.batchGet(idPage.data());
         instanceStore.loadTitles(NncUtils.map(instances, Instance::getId), context);
-        return new Page<>(
+        var page = new Page<>(
                 NncUtils.map(instances, Instance::toDTO),
                 idPage.total()
         );
+        if(query.includeContextTypes()) {
+            try (var serContext = SerializeContext.enter()) {
+                type.toDTO();
+                return new QueryInstancesResponse(page, serContext.getTypes());
+            }
+        }
+        else {
+            return new QueryInstancesResponse(page, List.of());
+        }
     }
 
     public List<InstanceDTO> loadByPaths(LoadInstancesByPathsRequest request) {

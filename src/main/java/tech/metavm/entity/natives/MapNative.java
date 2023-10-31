@@ -32,8 +32,8 @@ public class MapNative extends NativeBase {
         keyType = ((ArrayType) keyArrayField.getType()).getElementType();
         valueType = ((ArrayType) valueArrayField.getType()).getElementType();
         if (instance.isFieldInitialized(keyArrayField)) {
-            keyArray = (ArrayInstance) instance.get(keyArrayField);
-            valueArray = (ArrayInstance) instance.get(valueArrayField);
+            keyArray = (ArrayInstance) instance.getField(keyArrayField);
+            valueArray = (ArrayInstance) instance.getField(valueArrayField);
             if (valueArray == null || keyArray.length() != valueArray.length()) {
                 throw new InternalException("Map data corrupted");
             }
@@ -43,18 +43,16 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance Map(Instance keyAsChild, Instance valueAsChild) {
+    public Instance Map() {
         instance.initialize(
                 Map.of(
                         keyArrayField,
                         keyArray = new ArrayInstance(
-                                (ArrayType) keyArrayField.getType(),
-                                getBoolean(keyAsChild)
+                                (ArrayType) keyArrayField.getType()
                         ),
                         valueArrayField,
                         valueArray = new ArrayInstance(
-                                (ArrayType) valueArrayField.getType(),
-                                getBoolean(valueAsChild)
+                                (ArrayType) valueArrayField.getType()
                         )
                 ),
                 0L,
@@ -67,7 +65,7 @@ public class MapNative extends NativeBase {
         var keySetType = (ClassType) instance.getType().getDependency(CollectionKind.SET);
         ClassInstance keySet = ClassInstance.allocate(keySetType);
         var setNative = (SetNative) NativeInvoker.getNativeObject(keySet);
-        setNative.Set(keySet);
+        setNative.Set();
         for (Instance key : keyArray) {
             setNative.add(key);
         }

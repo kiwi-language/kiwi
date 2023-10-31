@@ -7,7 +7,7 @@ import tech.metavm.flow.ScopeRT;
 public class ScopePO extends EntityPO {
 
     public static final IndexDef<ScopeRT> INDEX_FLOW_ID = new IndexDef<>(
-            ScopeRT.class, "flowId"
+            ScopeRT.class, false,"flowId"
     );
 
 

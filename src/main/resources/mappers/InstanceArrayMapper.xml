@@ -8,7 +8,6 @@
     <result property="tenantId" jdbcType="BIGINT" column="tenant_id"/>
     <result property="typeId" jdbcType="BIGINT" column="type_id"/>
     <result property="length" jdbcType="INTEGER" column="length"/>
-    <result property="elementAsChild" jdbcType="BOOLEAN" column="element_as_child"/>
     <result property="elements" jdbcType="VARCHAR" column="elements"
             typeHandler="tech.metavm.util.JsonArrayTypeHandler"/>
     <result property="version" jdbcType="BIGINT" column="version"/>
@@ -17,7 +16,7 @@
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, type_id, length, element_as_child, elements, version, sync_version
+    id, tenant_id, type_id, length, elements, version, sync_version
   </sql>
 
   <update id="batchDelete">
@@ -34,10 +33,10 @@
 
   <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
     <!--@mbg.generated-->
-    insert into instance_array (id, tenant_id, type_id, length, element_as_child, elements)
+    insert into instance_array (id, tenant_id, type_id, length, elements)
     values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.tenantId}, #{item.typeId}, #{item.length}, #{item.elementAsChild},
+      (#{item.id}, #{item.tenantId}, #{item.typeId}, #{item.length},
       #{item.elements, typeHandler=tech.metavm.util.JsonArrayTypeHandler})
     </foreach>
   </insert>
@@ -52,9 +51,6 @@
         </if>
         <if test="item.length != null">
           length = #{item.length},
-        </if>
-        <if test="item.elementAsChild != null">
-          element_as_child = #{item.elementAsChild},
         </if>
         <if test="item.elements != null">
           elements = #{item.elements, typeHandler=tech.metavm.util.JsonArrayTypeHandler},
@@ -82,7 +78,12 @@
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
           #{id}
         </foreach>
-    lock in share mode
+    <if test="lockMode == 1">
+      lock in share mode
+    </if>
+    <if test="lockMode == 2 ">
+      for update
+    </if>
   </select>
 
   <select id="selectByTypeIds" resultMap="BaseResultMap">

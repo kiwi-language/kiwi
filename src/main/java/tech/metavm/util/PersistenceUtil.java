@@ -29,6 +29,18 @@ public class PersistenceUtil {
         return NncUtils.map(records, PersistenceUtil::convertForLoading);
     }
 
+    private static Map<String, Map<String, Object>> writeInstanceData(Map<String, Map<String,Object>> instanceData) {
+        Map<String, Map<String, Object>> dataForPersisting = new HashMap<>();
+        for (var entry : instanceData.entrySet()) {
+            Map<String, Object> subMapForPersisting = new HashMap<>();
+            dataForPersisting.put(entry.getKey(), subMapForPersisting);
+            entry.getValue().forEach((k, v) ->
+                    subMapForPersisting.put(k, writeValue(v))
+            );
+        }
+        return dataForPersisting;
+    }
+
     public static InstancePO convertForPersisting(InstancePO instancePO) {
         if(instancePO instanceof InstanceArrayPO arrayPO) {
             List<Object> elementsForPersisting = new ArrayList<>();
@@ -41,22 +53,17 @@ public class PersistenceUtil {
                     arrayPO.getTenantId(),
                     arrayPO.getLength(),
                     elementsForPersisting,
-                    arrayPO.isElementAsChild(),
                     arrayPO.getVersion(),
                     arrayPO.getSyncVersion()
             );
         }
         else {
-            Map<String, Object> dataForPersisting = new HashMap<>();
-            instancePO.getData().forEach((k, v) ->
-                    dataForPersisting.put(k, writeValue(v))
-            );
             return new InstancePO(
                     instancePO.getTenantId(),
                     instancePO.getId(),
                     instancePO.getTypeId(),
                     instancePO.getTitle(),
-                    dataForPersisting,
+                    writeInstanceData(instancePO.getData()),
                     instancePO.getVersion(),
                     instancePO.getSyncVersion()
             );
@@ -75,16 +82,12 @@ public class PersistenceUtil {
                     arrayPO.getTenantId(),
                     arrayPO.getLength(),
                     elements,
-                    arrayPO.isElementAsChild(),
                     arrayPO.getVersion(),
                     arrayPO.getSyncVersion()
             );
         }
         else {
-            Map<String, Object> data = new HashMap<>();
-            instancePO.getData().forEach((k, v) ->
-                data.put(k, readValue(instancePO.getTenantId(), v))
-            );
+            Map<String, Map<String, Object>> data = readInstanceData(instancePO.getTenantId(), instancePO.getData());
             return new InstancePO(
                     instancePO.getTenantId(),
                     instancePO.getId(),
@@ -130,19 +133,14 @@ public class PersistenceUtil {
             }
         }
         else if(value instanceof InstancePO instancePO) {
-            Map<String, Object> data = instancePO.getData();
-            Map<String, Object> columValues = new HashMap<>();
-
-            data.forEach((col, v) ->
-                    columValues.put(col, writeValue(v))
-            );
+            Map<String, Map<String, Object>> data = writeInstanceData(instancePO.getData());
             if(instancePO.getId() != null) {
                 return Map.of(
                         KEY_KIND, ValueKind.INSTANCE.code,
                         KEY_ID, instancePO.getId(),
                         KEY_TITLE, instancePO.getTitle(),
                         KEY_TYPE_ID, instancePO.getTypeId(),
-                        KEY_VALUE, columValues
+                        KEY_VALUE, data
                 );
             }
             else {
@@ -150,7 +148,7 @@ public class PersistenceUtil {
                         KEY_KIND, ValueKind.INSTANCE.code,
                         KEY_TITLE, instancePO.getTitle(),
                         KEY_TYPE_ID, instancePO.getTypeId(),
-                        KEY_VALUE, columValues
+                        KEY_VALUE, data
                 );
             }
         }
@@ -186,19 +184,24 @@ public class PersistenceUtil {
                 tenantId,
                 elements.size(),
                 NncUtils.map(elements, element -> readValue(tenantId, element)),
-                false,
                 0L,
                 0L
         );
     }
 
-    public static InstancePO readInstance(long tenantId, ValueWrap wrap) {
-        Map<String, Object> value = wrap.get(new TypeReference<>() {}, KEY_VALUE);
-        Map<String, Object> data = new HashMap<>();
+    private static Map<String, Map<String, Object>> readInstanceData(long tenantId, Map<String, Map<String, Object>> data) {
+        var readData = new HashMap<String, Map<String, Object>>();
+        for (var entry : data.entrySet()) {
+            var subMap = new HashMap<String, Object>();
+            readData.put(entry.getKey(), subMap);
+            entry.getValue().forEach((k ,v) -> subMap.put(k, readValue(tenantId, v)));
+        }
+        return readData;
+    }
 
-        value.forEach((k ,v) ->
-                data.put(k, readValue(tenantId, v))
-        );
+    public static InstancePO readInstance(long tenantId, ValueWrap wrap) {
+        Map<String, Map<String, Object>> value = wrap.get(new TypeReference<>() {}, KEY_VALUE);
+        Map<String, Map<String, Object>> data = readInstanceData(tenantId, value);
 
         return new InstancePO(
                 tenantId,

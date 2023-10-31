@@ -3,6 +3,7 @@ package tech.metavm.object.instance;
 import tech.metavm.object.instance.persistence.TimePO;
 import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InstanceUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -26,6 +27,22 @@ public class TimeInstance extends PrimitiveInstance {
     @Override
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
         return new TimePO(value);
+    }
+
+    public BooleanInstance isBefore(TimeInstance that) {
+        return InstanceUtils.booleanInstance(value < that.value);
+    }
+
+    public BooleanInstance isBeforeOrAt(TimeInstance that) {
+        return InstanceUtils.booleanInstance(value <= that.value);
+    }
+
+    public BooleanInstance isAfter(TimeInstance that) {
+        return InstanceUtils.booleanInstance(value > that.value);
+    }
+
+    public BooleanInstance isAfterOrAt(TimeInstance that) {
+        return InstanceUtils.booleanInstance(value >= that.value);
     }
 
     @Override

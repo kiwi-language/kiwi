@@ -6,7 +6,7 @@ import tech.metavm.dto.RefDTO;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class SubFlowParam extends CallParamDTO {
+public class SubFlowParam extends CallParam {
 
     private final ValueDTO self;
 

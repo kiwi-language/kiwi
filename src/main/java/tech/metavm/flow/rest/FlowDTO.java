@@ -2,7 +2,6 @@ package tech.metavm.flow.rest;
 
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
@@ -18,29 +17,22 @@ public record FlowDTO(
         boolean isNative,
         RefDTO declaringTypeRef,
         ScopeDTO rootScope,
-        TypeDTO type,
-//        RefDTO inputTypeRef,
-//        List<RefDTO> parameterTypeRefs,
         RefDTO returnTypeRef,
-//        TypeDTO inputType,
         List<ParameterDTO> parameters,
-        TypeDTO returnType,
-        List<TypeDTO> typeParameters,
+        RefDTO typeRef,
+        RefDTO staticTypeRef,
+        List<RefDTO> typeParameterRefs,
         @Nullable RefDTO templateRef,
         List<RefDTO> typeArgumentRefs,
-        @Nullable RefDTO overridenRef,
+        List<RefDTO> overriddenRefs,
         List<FlowDTO> templateInstances
 ) implements BaseDTO {
 
-//    public Long inputTypeId() {
-//        return inputTypeRef.id();
-//    }
-
     public static FlowDTO create(String name, long declaringTypeId) {
         return new FlowDTO(
-                null, null, name, null, false, false, false,
-                RefDTO.ofId(declaringTypeId), null, null, null, null,
-                null, null,  null,  List.of(),null, List.of()
+                null, null, name, null,false, false, false,
+                RefDTO.ofId(declaringTypeId), null,  null, null,
+                 null, null,  null,  null, List.of(),null, List.of()
         );
     }
 

@@ -21,9 +21,11 @@ public class ClassBuilder {
     private ClassSource source = ClassSource.RUNTIME;
     private boolean anonymous;
     private boolean ephemeral;
+    private boolean isTemplate;
     private String desc;
     private List<ClassType> interfaces = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
+    private ClassType existing;
     private boolean done;
     private Long suffix;
     private String collectName;
@@ -48,6 +50,11 @@ public class ClassBuilder {
 
     public ClassBuilder source(ClassSource source) {
         this.source = source;
+        return this;
+    }
+
+    public ClassBuilder isTemplate(boolean isTemplate) {
+        this.isTemplate = isTemplate;
         return this;
     }
 
@@ -124,6 +131,12 @@ public class ClassBuilder {
         return this;
     }
 
+
+    public ClassBuilder existing(ClassType existing) {
+        this.existing = existing;
+        return this;
+    }
+
     public ClassType build() {
         NncUtils.requireFalse(done, "Build has already been invoked");
         done = true;
@@ -136,24 +149,46 @@ public class ClassBuilder {
 
     @NotNull
     private ClassType create() {
-        var classType = new ClassType(
-                tmpId,
-                suffix != null ? name + "_" + suffix : name,
-                code != null ? (suffix != null ? code + "_" + suffix : code) : null,
-                superType,
-                interfaces,
-                category,
-                source,
-                anonymous,
-                ephemeral,
-                desc,
-                collectName,
-                template,
-                typeArguments
-        );
+        if(NncUtils.isNotEmpty(typeParameters)) {
+            isTemplate = true;
+        }
+        ClassType classType;
+        String effectiveName = suffix != null ? name + "_" + suffix : name;
+        String effectiveCode = code != null ? (suffix != null ? code + "_" + suffix : code) : null;
+        if(existing == null) {
+            classType = new ClassType(
+                    tmpId,
+                    effectiveName,
+                    effectiveCode,
+                    superType,
+                    interfaces,
+                    category,
+                    source,
+                    anonymous,
+                    ephemeral,
+                    desc,
+                    collectName,
+                    isTemplate,
+                    template,
+                    typeArguments
+            );
+        }
+        else {
+            classType = existing;
+            existing.setTmpId(tmpId);
+            existing.setName(effectiveName);
+            existing.setCode(effectiveCode);
+            existing.setSuperType(superType);
+            existing.setInterfaces(interfaces);
+            existing.setSource(source);
+            existing.setAnonymous(anonymous);
+            existing.setDesc(desc);
+            existing.setTypeArguments(typeArguments);
+        }
         if(dependencies != null) {
             classType.setDependencies(dependencies);
         }
         return classType;
     }
+
 }

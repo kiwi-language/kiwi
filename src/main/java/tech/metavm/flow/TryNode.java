@@ -32,7 +32,7 @@ public class TryNode extends ScopeNode<TryNodeParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         frame.enterTrySection(this);
         if(!bodyScope.isEmpty()) {
             frame.jumpTo(bodyScope.getFirstNode());

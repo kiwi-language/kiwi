@@ -1,0 +1,69 @@
+package tech.metavm.object.meta;
+
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.object.meta.rest.dto.TypeParam;
+import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Set;
+
+import static tech.metavm.util.NncUtils.toBase64;
+
+@EntityType("复合类型")
+public abstract class CompositeType extends Type {
+
+    @Nullable
+    private String key;
+
+    public CompositeType(String name, boolean anonymous, boolean ephemeral, TypeCategory category) {
+        super(name, anonymous, ephemeral, category);
+    }
+
+    public abstract List<Type> getComponentTypes();
+
+    @Override
+    public boolean isUncertain() {
+        return NncUtils.anyMatch(getComponentTypes(), Type::isUncertain);
+    }
+
+    @Override
+    protected boolean isParameterized() {
+        return NncUtils.anyMatch(getComponentTypes(), Type::isParameterized);
+    }
+
+    @Override
+    public Set<TypeVariable> getVariables() {
+        return NncUtils.flatMapUnique(getComponentTypes(), Type::getVariables);
+    }
+
+    @Override
+    protected boolean afterContextInitIdsInternal() {
+        if(key == null) {
+            key = getKey();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    @Override
+    protected final TypeParam getParam() {
+        try(var context = SerializeContext.enter()) {
+            getComponentTypes().forEach(context::writeType);
+            return getParamInternal();
+        }
+    }
+
+    protected abstract TypeParam getParamInternal();
+
+    protected String getKey() {
+        return getKey(getComponentTypes());
+    }
+
+    public static String getKey(List<Type> componentTypes) {
+        return NncUtils.join(componentTypes, typeArg -> toBase64(typeArg.getIdRequired()), "-");
+    }
+}

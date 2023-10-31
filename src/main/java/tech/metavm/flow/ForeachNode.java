@@ -76,7 +76,7 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
     }
 
     @Override
-    protected Map<Field, Instance> getExtraLoopFields(FlowFrame frame) {
+    protected Map<Field, Instance> getExtraLoopFields(MetaFrame frame) {
         var arrayValue = array.evaluate(frame);
         var index = InstanceUtils.longInstance(0);
         return new HashMap<>(Map.of(
@@ -86,19 +86,19 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
     }
 
     @Override
-    protected void updateExtraFields(ClassInstance instance, FlowFrame frame) {
-        instance.set(
+    protected void updateExtraFields(ClassInstance instance, MetaFrame frame) {
+        instance.setField(
                 getType().getFieldByCode("index"),
-                instance.getLong(getType().getFieldByCode("index")).inc(1)
+                instance.getLongField(getType().getFieldByCode("index")).inc(1)
         );
     }
 
     @Override
-    protected boolean checkExtraCondition(ClassInstance loopObject, FlowFrame frame) {
+    protected boolean checkExtraCondition(ClassInstance loopObject, MetaFrame frame) {
         var arrayField = getType().getFieldByCode("array");
         var indexField = getType().getFieldByCode("index");
-        var array = (ArrayInstance) loopObject.get(arrayField);
-        var index = loopObject.getLong(indexField);
+        var array = (ArrayInstance) loopObject.getField(arrayField);
+        var index = loopObject.getLongField(indexField);
         return index.getValue() < array.length();
     }
 

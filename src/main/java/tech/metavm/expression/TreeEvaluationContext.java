@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.query.ObjectNode;
 import tech.metavm.object.instance.query.Path;
@@ -8,16 +9,18 @@ public class TreeEvaluationContext implements EvaluationContext {
 
     private final ObjectNode objectNode;
     private final Instance instance;
+    private final IEntityContext entityContext;
 
-    public TreeEvaluationContext(ObjectNode objectNode, Instance instance) {
+    public TreeEvaluationContext(ObjectNode objectNode, Instance instance, IEntityContext entityContext) {
         this.objectNode = objectNode;
         this.instance = instance;
+        this.entityContext = entityContext;
     }
 
     @Override
     public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
-        if(expression instanceof FieldExpression fieldExpression) {
-            return objectNode.getByPath(instance, Path.create(fieldExpression.getField().getName()));
+        if(expression instanceof PropertyExpression fieldExpression) {
+            return objectNode.getByPath(instance, Path.create(fieldExpression.getProperty().getName()));
         }
         else {
             throw new RuntimeException("Unsupported expression");
@@ -26,7 +29,12 @@ public class TreeEvaluationContext implements EvaluationContext {
 
     @Override
     public boolean isContextExpression(Expression expression) {
-        return expression instanceof FieldExpression;
+        return expression instanceof PropertyExpression;
+    }
+
+    @Override
+    public IEntityContext getEntityContext() {
+        return entityContext;
     }
 
 }

@@ -17,10 +17,22 @@ import java.util.List;
 
 public class IndexDef<T> {
 
+    public static <T> IndexDef<T> normalKey(Class<T> klass, String...fieldNames) {
+        return new IndexDef<>(klass, false, fieldNames);
+    }
+
+    public static <T> IndexDef<T> uniqueKey(Class<T> klass, String...fieldNames) {
+        return new IndexDef<>(klass, true, fieldNames);
+    }
+
     private final Class<T> type;
     private final Type genericType;
     private final List<String> fieldNames;
     private final boolean unique;
+
+    public IndexDef(TypeReference<T> typeReference, boolean unique, String...fieldNames) {
+        this(typeReference.getType(), typeReference.getGenericType(), unique, fieldNames);
+    }
 
     public IndexDef(TypeReference<T> typeReference, String...fieldNames) {
         this(typeReference.getType(), typeReference.getGenericType(), true, fieldNames);
@@ -86,7 +98,7 @@ public class IndexDef<T> {
             new IndexField(
                     index,
                     field.getName(),
-                    new ReferenceValue(ExpressionUtil.fieldExpr(field))
+                    new ReferenceValue(ExpressionUtil.attributeExpr(field))
             );
         }
         return index;

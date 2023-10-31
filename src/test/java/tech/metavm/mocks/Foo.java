@@ -1,7 +1,7 @@
 package tech.metavm.mocks;
 
 import tech.metavm.entity.*;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -32,7 +32,7 @@ public class Foo extends Entity {
 
     @EntityField("巴子")
     @Nullable
-    private Table<Baz> bazList;
+    private ReadWriteArray<Baz> bazList;
 
     public Foo(String name, Bar bar) {
         this.name = name;
@@ -43,7 +43,7 @@ public class Foo extends Entity {
         this.name = name;
         this.bar = bar;
         this.qux = qux;
-        this.bazList = new Table<Baz>(Baz.class, bazList);
+        this.bazList = new ReadWriteArray<>(Baz.class, bazList);
     }
 
     public String getName() {
@@ -87,12 +87,12 @@ public class Foo extends Entity {
     }
 
     @Nullable
-    public Table<Baz> getBazList() {
+    public ReadWriteArray<Baz> getBazList() {
         return bazList;
     }
 
     public void setBazList(@Nullable List<Baz> bazList) {
-        this.bazList = new Table<>(Baz.class, bazList);
+        this.bazList = bazList != null ? new ReadWriteArray<>(Baz.class, bazList) : null;
     }
 
     @Nullable

@@ -7,7 +7,9 @@ import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.meta.rest.dto.TypeParam;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -18,10 +20,6 @@ import java.util.function.Function;
 
 @EntityType("类型")
 public abstract class Type extends Entity {
-
-    public static IndexDef<Type> UNIQUE_NAME = new IndexDef<>(Type.class, "name");
-
-    public static IndexDef<Type> UNIQUE_CODE = new IndexDef<>(Type.class, "code");
 
     public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
 
@@ -36,12 +34,10 @@ public abstract class Type extends Entity {
     protected final boolean ephemeral;
     @EntityField("类别")
     protected TypeCategory category;
-    @EntityField("数组类型")
-    @Nullable
-    private ArrayType arrayType;
-    @EntityField("可空类型")
-    @Nullable
-    private UnionType nullableType;
+    @EntityField("是否模版")
+    private boolean isTemplate;
+    @EntityField("是否参数化")
+    private boolean isParameterized;
 
     public Type(String name, boolean anonymous, boolean ephemeral, TypeCategory category) {
         this.name = name;
@@ -87,6 +83,41 @@ public abstract class Type extends Entity {
         return !isEphemeral();
     }
 
+    public Type getCertainUpperBound() {
+        if(!(this instanceof UncertainType)) {
+            return this;
+        }
+        var current = getUpperBound();
+        Set<Type> visited = new IdentitySet<>();
+        while (current instanceof UncertainType) {
+            if(visited.contains(current)) {
+                throw new InternalException("Circular reference detected in the upper bound chain of type " + this);
+            }
+            visited.add(current);
+            current = current.getUpperBound();
+        }
+        return current;
+    }
+
+    public Type getUltimateUpperBound() {
+        var upperBound = getUpperBound();
+        if(upperBound == this) {
+            return this;
+        }
+        Set<Type> visited = new IdentitySet<>(List.of(this, upperBound));
+        var last = upperBound;
+        var current = upperBound.getUpperBound();
+        while (last != current) {
+            if(visited.contains(current)) {
+                throw new InternalException("Circular reference detected in the upper bound chain of type " + this);
+            }
+            last = current;
+            current = current.getUpperBound();
+            visited.add(current);
+        }
+        return current;
+    }
+
     public boolean isNullable() {
         return isAssignableFrom(NULL_TYPE);
     }
@@ -105,17 +136,68 @@ public abstract class Type extends Entity {
 
     protected abstract boolean isAssignableFrom0(Type that);
 
-    public boolean isAssignableFrom(Type that) {
-        var bound = that.getUpperBound();
-        if(bound instanceof UnionType unionType) {
-            return NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom0);
-        }
-        else if(bound instanceof TypeIntersection intersection) {
-            return NncUtils.anyMatch(intersection.getTypes(), this::isAssignableFrom0);
+    protected boolean isParameterized() {
+        return false;
+    }
+
+    @Override
+    public final boolean afterContextInitIds() {
+        boolean b = afterContextInitIdsInternal();
+        boolean p = isParameterized();
+        if(p != isParameterized) {
+            isParameterized = p;
+            return true;
         }
         else {
-            return isAssignableFrom0(bound);
+            return b;
         }
+    }
+
+    protected boolean afterContextInitIdsInternal() {
+        return false;
+    }
+
+    public boolean isAssignableFrom(Type that) {
+        if (that instanceof NothingType) {
+            return true;
+        }
+        var bound = that.getUpperBound();
+        if (bound instanceof UnionType unionType) {
+            return NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
+        } else if (bound instanceof TypeIntersection intersection) {
+            return NncUtils.anyMatch(intersection.getTypes(), this::isAssignableFrom);
+        } else {
+            return getLowerBound().isAssignableFrom0(bound);
+        }
+    }
+
+    public boolean isTemplate() {
+        return isTemplate;
+    }
+
+    protected void setTemplate(boolean template) {
+        isTemplate = template;
+    }
+
+    public boolean isUncertain() {
+        return false;
+    }
+
+    public final boolean isWithinRange(Type that) {
+        return getUpperBound().isAssignableFrom(that.getUpperBound()) &&
+                that.getLowerBound().isAssignableFrom(getLowerBound());
+    }
+
+    public boolean isVariable() {
+        return false;
+    }
+
+    public Set<TypeVariable> getVariables() {
+        return Set.of();
+    }
+
+    public Type getLowerBound() {
+        return this;
     }
 
     public Type getUpperBound() {
@@ -200,18 +282,18 @@ public abstract class Type extends Entity {
                 (!(this instanceof ObjectType) && isNullable() && getUnderlyingType().isReference());
     }
 
-    public @Nullable ArrayType getArrayType() {
-        return arrayType;
-    }
+//    public @Nullable ArrayType getArrayType() {
+//        return arrayType;
+//    }
 
-    public void setArrayType(@Nullable ArrayType arrayType) {
-        this.arrayType = arrayType;
-    }
+//    public void setArrayType(@Nullable ArrayType arrayType) {
+//        this.arrayType = arrayType;
+//    }
 
-    @Nullable
-    public UnionType getNullableType() {
-        return nullableType;
-    }
+//    @Nullable
+//    public UnionType getNullableType() {
+//        return nullableType;
+//    }
 
     public Type getUnderlyingType() {
         if (this instanceof UnionType unionType) {
@@ -222,19 +304,19 @@ public abstract class Type extends Entity {
         return this;
     }
 
-    public void setNullableType(@Nullable UnionType nullableType) {
-        this.nullableType = nullableType;
-    }
+//    public void setNullableType(@Nullable UnionType nullableType) {
+//        this.nullableType = nullableType;
+//    }
 
     public SQLType getSQLType() {
         return category.getSQLType();
     }
 
-    public List<ReferencePO> extractReferences(InstancePO instancePO) {
-        return List.of();
+    public Set<ReferencePO> extractReferences(InstancePO instancePO) {
+        return Set.of();
     }
 
-    protected TypeDTO toDTO(Object param, Long tmpId) {
+    protected TypeDTO toDTO(TypeParam param, Long tmpId) {
         try (var context = SerializeContext.enter()) {
             return new TypeDTO(
                     getId(),
@@ -244,8 +326,6 @@ public abstract class Type extends Entity {
                     category.code(),
                     ephemeral,
                     anonymous,
-                    NncUtils.get(nullableType, context::getRef),
-                    NncUtils.get(arrayType, context::getRef),
                     param
             );
         }
@@ -257,28 +337,36 @@ public abstract class Type extends Entity {
         }
     }
 
-    protected void extractCompositeTypesRecursively(Set<Type> result) {
-        if (nullableType != null) {
-            result.add(nullableType);
-            nullableType.extractCompositeTypesRecursively(result);
-        }
-        if (arrayType != null) {
-            result.add(arrayType);
-            arrayType.extractCompositeTypesRecursively(result);
-        }
-    }
-
-    protected abstract Object getParam();
+    protected abstract TypeParam getParam();
 
     public Class<? extends Instance> getInstanceClass() {
         return Instance.class;
     }
 
     @Override
-    public List<Object> beforeRemove() {
-        Set<Type> compositeTypes = new IdentitySet<>();
-        extractCompositeTypesRecursively(compositeTypes);
-        return new ArrayList<>(compositeTypes);
+    public final List<Object> beforeRemove(IEntityContext context) {
+        Set<Object> cascade = new IdentitySet<>(beforeRemoveInternal(context));
+        if(isTemplate) {
+            cascade.addAll(context.selectByKey(ClassType.TEMPLATE_IDX, this));
+        }
+//        else {
+            cascade.addAll(
+                    NncUtils.union(
+                            context.selectByKey(FunctionType.PARAMETER_TYPE_KEY, this),
+                            context.selectByKey(FunctionType.RETURN_TYPE_KEY, this)
+                    )
+            );
+            cascade.addAll(context.selectByKey(UnionType.MEMBER_IDX, this));
+            cascade.addAll(context.selectByKey(UncertainType.LOWER_BOUND_IDX, this));
+            cascade.addAll(context.selectByKey(UncertainType.UPPER_BOUND_IDX, this));
+            cascade.addAll(context.selectByKey(ArrayType.ELEMENT_TYPE_IDX, this));
+            cascade.addAll(context.selectByKey(ClassType.TYPE_ARGUMENTS_IDX, this));
+//        }
+        return new ArrayList<>(cascade);
+    }
+
+    protected List<Object> beforeRemoveInternal(IEntityContext context) {
+        return List.of();
     }
 
     public @Nullable Class<?> getNativeClass() {

@@ -17,13 +17,13 @@ public class IdentitySet<T> implements Set<T> {
     public IdentitySet() {
     }
 
-    public IdentitySet(Collection<T> collection) {
-        this.addAll(collection);
+    public IdentitySet(Iterable<? extends T> iterable) {
+        iterable.forEach(this::add);
     }
 
     @Override
     public boolean add(T t) {
-        return map.put(t, t) != null;
+        return map.put(t, t) == null;
     }
 
     @Override

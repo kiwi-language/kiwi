@@ -1,14 +1,10 @@
 package tech.metavm.entity;
 
+import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowBuilder;
 import tech.metavm.flow.Parameter;
-import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.NullInstance;
+import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.generic.GenericContext;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
@@ -50,29 +46,36 @@ public class StandardDefBuilder {
 
     private ClassType throwableType;
 
+
+    private final DefContext defContext;
+
+//    private final FunctionTypeContext defContext.getFunctionTypeContext() = new FunctionTypeContext(null);
+
+//    private final UnionTypeContext unionTypeContext = new UnionTypeContext(null);
+
+//    private final ArrayTypeContext defContext.getArrayTypeContext() = new ArrayTypeContext(null);
+
     private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
-    private final GenericContext genericContext = new GenericContext(null, primTypeFactory);
+//    private final GenericContext defContext.getGenericContext() = new GenericContext(functionTypeContext, unionTypeContext, defContext.getArrayTypeContext(), primTypeFactory);
 
-
-    public StandardDefBuilder() {
+    public StandardDefBuilder(DefContext defContext) {
+        this.defContext = defContext;
     }
 
-    public StandardDefBuilder(DefMap defMa) {
-        initRootTypes(defMa);
-    }
-
-    public void initRootTypes(DefMap defMap) {
-        TypeFactory typeFactory = new DefaultTypeFactory(defMap::getType);
-
+    public void initRootTypes() {
         ObjectType objectType = new ObjectType();
 
         objectDef = new ObjectTypeDef<>(
                 Object.class,
                 objectType
         );
-        defMap.addDef(objectDef);
 
+        NothingType nothingType = new NothingType();
+        var notingDef = new DirectDef<>(Nothing.class, nothingType);
+        defContext.addDef(notingDef);
+
+        primTypeFactory.addAuxType(Nothing.class, nothingType);
         primTypeFactory.addAuxType(Object.class, objectType);
         nullType = primTypeFactory.createPrimitive(PrimitiveKind.NULL);
         longType = primTypeFactory.createPrimitive(PrimitiveKind.LONG);
@@ -93,6 +96,8 @@ public class StandardDefBuilder {
                 Map.entry(Void.class, voidType)
         );
 
+        primitiveTypeMap.forEach((klass, primType) -> defContext.addDef(new PrimitiveDef<>(klass, primType)));
+
         var collectionTypeMap = new LinkedHashMap<Class<?>, ClassType>();
         collectionTypeMap.put(Iterator.class, iteratorType = createIteratorType());
         collectionTypeMap.put(Collection.class, collectionType = createCollectionType());
@@ -101,20 +106,21 @@ public class StandardDefBuilder {
         collectionTypeMap.put(Set.class, createListType());
         collectionTypeMap.put(Map.class, createMapType());
 
+        defContext.addDef(objectDef);
+        defContext.createCompositeTypes(Object.class, objectType);
+
         for (var entry : primitiveTypeMap.entrySet()) {
+            var javaClass = entry.getKey();
             var primType = entry.getValue();
             if (!primType.isNull() && !primType.isVoid()) {
-                TypeUtil.fillCompositeTypes(primType, primTypeFactory);
+                defContext.createCompositeTypes(javaClass, primType);
                 collectionTypeMap.forEach((collClass, collType) -> {
                     if (collClass != Map.class) {
-                        genericContext.getParameterizedType(collType, primType);
+                        defContext.getGenericContext().getParameterizedType(collType, primType);
                     }
                 });
             }
         }
-
-        primitiveTypeMap.forEach((klass, primType) -> defMap.addDef(new PrimitiveDef<>(klass, primType)));
-
 
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
@@ -122,9 +128,9 @@ public class StandardDefBuilder {
                 ClassBuilder.newBuilder("记录", Record.class.getSimpleName())
                         .source(ClassSource.REFLECTION)
                         .category(TypeCategory.VALUE).build(),
-                defMap
+                defContext
         );
-        defMap.addDef(recordDef);
+        defContext.addDef(recordDef);
 
         EntityDef<Entity> entityDef = createEntityDef(
                 Entity.class,
@@ -132,22 +138,13 @@ public class StandardDefBuilder {
                 ClassBuilder.newBuilder("实体", Entity.class.getSimpleName())
                         .source(ClassSource.REFLECTION)
                         .build(),
-                defMap
+                defContext
         );
 
-        defMap.addDef(entityDef);
+        defContext.addDef(entityDef);
 
-        objectType.setArrayType(typeFactory.createArrayType(objectType));
-        defMap.addDef(
-                CollectionDef.createHelper(
-                        Table.class,
-                        Table.class,
-                        objectDef,
-                        objectType.getArrayType()
-                )
-        );
-
-        var enumTypeParam = new TypeVariable(null, "枚举类型", "Enum-E");
+        var enumTypeParam = new TypeVariable(null, "枚举类型", "Enum-E",
+                DummyGenericDeclaration.INSTANCE);
         primTypeFactory.addAuxType(Enum.class.getTypeParameters()[0], enumTypeParam);
         var enumType = ClassBuilder.newBuilder("枚举", Enum.class.getSimpleName())
                 .source(ClassSource.REFLECTION)
@@ -155,7 +152,7 @@ public class StandardDefBuilder {
                 .build();
         primTypeFactory.addAuxType(Enum.class, enumType);
 
-        var pEnumType = genericContext.getParameterizedType(enumType, enumTypeParam);
+        var pEnumType = defContext.getGenericContext().getParameterizedType(enumType, enumTypeParam);
         enumTypeParam.setBounds(List.of(pEnumType));
 
         enumDef = createValueDef(
@@ -163,53 +160,43 @@ public class StandardDefBuilder {
                 new TypeReference<Enum<?>>() {
                 }.getType(),
                 enumType,
-                defMap
+                defContext
         );
 
         enumNameDef = createFieldDef(
                 ENUM_NAME_FIELD,
-                createField(ENUM_NAME_FIELD, true, stringType, enumType),
+                createField(ENUM_NAME_FIELD, true, stringType, SQLType.VARCHAR64.getColumn(0), enumType),
                 enumDef
         );
 
         enumOrdinalDef = createFieldDef(
                 ENUM_ORDINAL_FIELD,
-                createField(ENUM_ORDINAL_FIELD, false, longType, enumType),
+                createField(ENUM_ORDINAL_FIELD, false, longType, SQLType.INT64.getColumn(0), enumType),
                 enumDef
         );
 
-        enumType.stage = ResolutionStage.GENERATED;
-        genericContext.generateCode(enumType);
+        enumType.setStage(ResolutionStage.GENERATED);
+        defContext.getGenericContext().generateCode(enumType);
 
         var enumTypeParamDef = new TypeVariableDef(Enum.class.getTypeParameters()[0], enumTypeParam);
         var pEnumTypeDef = new DirectDef<>(
                 ParameterizedTypeImpl.create(Enum.class, Enum.class.getTypeParameters()[0]),
                 pEnumType
         );
-        defMap.preAddDef(enumTypeParamDef);
-        defMap.preAddDef(pEnumTypeDef);
-        defMap.addDef(enumDef);
-        defMap.afterDefInitialized(enumTypeParamDef);
-        defMap.afterDefInitialized(pEnumTypeDef);
+        defContext.preAddDef(enumTypeParamDef);
+        defContext.preAddDef(pEnumTypeDef);
+        defContext.addDef(enumDef);
+        defContext.afterDefInitialized(enumTypeParamDef);
+        defContext.afterDefInitialized(pEnumTypeDef);
 
-        defMap.addDef(new InstanceDef<>(Instance.class, objectType));
-        defMap.addDef(new InstanceDef<>(ClassInstance.class, objectType));
-        defMap.addDef(new InstanceDef<>(ArrayInstance.class, objectType));
+        defContext.addDef(new InstanceDef<>(Instance.class, objectType));
+        defContext.addDef(new InstanceDef<>(ClassInstance.class, objectType));
+        defContext.addDef(new InstanceDef<>(ArrayInstance.class, objectType));
 
-        primTypeFactory.getMap().forEach((javaType, type) -> {
-            if (!defMap.containsDef(javaType)) {
-                switch (type) {
-                    case ClassType classType -> defMap.preAddDef(new DirectDef<>(javaType, classType));
-                    case TypeVariable typeVariable ->
-                            defMap.preAddDef(new TypeVariableDef((java.lang.reflect.TypeVariable<?>) javaType, typeVariable));
-                    default -> {
-                    }
-                }
-            }
-        });
+        primTypeFactory.saveDefs(defContext);
 
         primTypeFactory.getMap().keySet().forEach(javaType ->
-                defMap.afterDefInitialized(defMap.getDef(javaType))
+                defContext.afterDefInitialized(defContext.getDef(javaType))
         );
 
         throwableType = ClassBuilder.newBuilder("中断", Throwable.class.getSimpleName())
@@ -220,24 +207,36 @@ public class StandardDefBuilder {
                 Throwable.class,
                 Throwable.class,
                 throwableType,
-                defMap
+                defContext
         );
+        defContext.preAddDef(throwableDef);
+        primTypeFactory.addAuxType(Throwable.class, throwableType);
         var javaMessageField = ReflectUtils.getField(Throwable.class, "detailMessage");
-        TypeUtil.fillCompositeTypes(throwableType, primTypeFactory);
+        /*
+         Predefine composite types because the cause field depends on Throwable | Null
+
+         Can't call createCompositeTypes here. Because it will make the Throwable type been
+         initialized prematurely (without fields)
+         */
+        defContext.predefineCompositeTypes(Throwable.class, throwableType);
         createFieldDef(
                 javaMessageField,
-                createField(javaMessageField, true, stringType.getNullableType(), throwableType),
+                createField(javaMessageField, true,
+                        defContext.getNullableType(stringType),
+                        SQLType.VARCHAR64.getColumn(0), throwableType),
                 throwableDef
         );
 
         var javaCauseField = ReflectUtils.getField(Throwable.class, "cause");
         createFieldDef(
                 javaCauseField,
-                createField(javaCauseField, false, throwableType.getNullableType(), throwableType),
+                createField(javaCauseField, false,
+                        defContext.getNullableType(throwableType),
+                        SQLType.REFERENCE.getColumn(0), throwableType),
                 throwableDef
         );
-
-        defMap.addDef(throwableDef);
+        defContext.afterDefInitialized(throwableDef);
+        defContext.initCompositeTypes(Throwable.class);
 
         var exceptionType = ClassBuilder.newBuilder("异常", Exception.class.getSimpleName())
                 .collectionName("Exception")
@@ -245,14 +244,14 @@ public class StandardDefBuilder {
                 .source(ClassSource.REFLECTION).build();
 
         createExceptionFlows(exceptionType);
-        defMap.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defMap));
+        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
 
         var runtimeExceptionType = ClassBuilder.newBuilder("运行时异常", RuntimeException.class.getSimpleName())
                 .collectionName("RuntimeException")
                 .superType(exceptionType)
                 .source(ClassSource.REFLECTION).build();
         createRuntimeExceptionFlows(runtimeExceptionType);
-        defMap.addDef(createValueDef(RuntimeException.class, RuntimeException.class, runtimeExceptionType, defMap));
+        defContext.addDef(createValueDef(RuntimeException.class, RuntimeException.class, runtimeExceptionType, defContext));
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -286,12 +285,14 @@ public class StandardDefBuilder {
     private tech.metavm.object.meta.Field createField(Field javaField,
                                                       boolean asTitle,
                                                       Type type,
+                                                      Column column,
                                                       ClassType declaringType) {
         return FieldBuilder.newBuilder(
                         getMetaFieldName(javaField),
                         javaField.getName(),
                         declaringType, type)
                 .asTitle(asTitle)
+                .column(column)
                 .defaultValue(new NullInstance(getNullType()))
                 .staticValue(new NullInstance(getNullType()))
                 .build();
@@ -351,7 +352,8 @@ public class StandardDefBuilder {
     public ClassType createIteratorType() {
         String name = getParameterizedName("迭代器");
         String code = getParameterizedCode("Iterator");
-        var elementType = new TypeVariable(null, "迭代器元素", "IteratorElement");
+        var elementType = new TypeVariable(null, "迭代器元素", "IteratorElement",
+                DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Iterator.class.getTypeParameters()[0], elementType);
         ClassType iteratorType = ClassBuilder.newBuilder(name, code)
@@ -366,28 +368,29 @@ public class StandardDefBuilder {
     private void createIteratorFlows(ClassType iteratorType, Type elementType) {
         boolean isAbstract = iteratorType.isInterface();
         boolean isNative = !iteratorType.isInterface();
-        FlowBuilder.newBuilder(iteratorType, "是否存在次项", "hasNext")
+        FlowBuilder.newBuilder(iteratorType, "是否存在次项", "hasNext", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(isNative)
                 .isAbstract(isAbstract)
-                .outputType(boolType)
+                .returnType(boolType)
                 .build();
 
-        FlowBuilder.newBuilder(iteratorType, "获取次项", "next")
+        FlowBuilder.newBuilder(iteratorType, "获取次项", "next", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isAbstract(isAbstract)
                 .isNative(isNative)
-                .outputType(elementType)
+                .returnType(elementType)
                 .build();
 
-        iteratorType.stage = ResolutionStage.GENERATED;
+        iteratorType.setStage(ResolutionStage.GENERATED);
     }
 
 
     public ClassType createCollectionType() {
         String name = getParameterizedName("Collection");
         String code = getParameterizedCode("Collection");
-        var elementType = new TypeVariable(null, "Collection元素", "CollectionElement");
+        var elementType = new TypeVariable(null, "Collection元素", "CollectionElement",
+                DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
         ClassType collectionType = ClassBuilder.newBuilder(name, code)
@@ -396,79 +399,80 @@ public class StandardDefBuilder {
                 .category(TypeCategory.INTERFACE)
                 .build();
         primTypeFactory.putType(Collection.class, collectionType);
-        var pIteratorType = genericContext.getParameterizedType(iteratorType, elementType);
+        var pIteratorType = defContext.getGenericContext().getParameterizedType(iteratorType, elementType);
         createCollectionFlows(collectionType, pIteratorType, elementType);
         return collectionType;
     }
 
     private void createCollectionFlows(ClassType collectionType, ClassType iteratorType,
                                        TypeVariable elementType) {
-        FlowBuilder.newBuilder(collectionType, "获取迭代器", "iterator")
+        FlowBuilder.newBuilder(collectionType, "获取迭代器", "iterator", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(iteratorType)
+                .returnType(iteratorType)
                 .build();
 
-        FlowBuilder.newBuilder(collectionType, "计数", "size")
+        FlowBuilder.newBuilder(collectionType, "计数", "size", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(longType)
+                .returnType(longType)
                 .build();
 
-        FlowBuilder.newBuilder(collectionType, "是否为空", "isEmpty")
+        FlowBuilder.newBuilder(collectionType, "是否为空", "isEmpty", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(boolType)
+                .returnType(boolType)
                 .build();
 
-        FlowBuilder.newBuilder(collectionType, "是否包含", "contains")
+        FlowBuilder.newBuilder(collectionType, "是否包含", "contains", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(boolType)
+                .returnType(boolType)
                 .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
-        FlowBuilder.newBuilder(collectionType, "添加", "add")
+        FlowBuilder.newBuilder(collectionType, "添加", "add", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(boolType)
+                .returnType(boolType)
                 .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
-        FlowBuilder.newBuilder(collectionType, "删除", "remove")
+        FlowBuilder.newBuilder(collectionType, "删除", "remove", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(boolType)
+                .returnType(boolType)
                 .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
-        FlowBuilder.newBuilder(collectionType, "清空", "clear")
+        FlowBuilder.newBuilder(collectionType, "清空", "clear", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(voidType)
+                .returnType(voidType)
                 .build();
 
-        collectionType.stage = ResolutionStage.GENERATED;
+        collectionType.setStage(ResolutionStage.GENERATED);
     }
 
     public ClassType createSetType() {
         String name = getParameterizedName("集合");
         String code = getParameterizedCode("Set");
-        var elementType = new TypeVariable(null, "集合元素", "SetElement");
+        var elementType = new TypeVariable(null, "集合元素", "SetElement",
+                DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Set.class.getTypeParameters()[0], elementType);
-        var pCollectionType = genericContext.getParameterizedType(collectionType, elementType);
-        var pIteratorImplType = genericContext.getParameterizedType(iteratorImplType, elementType);
+        var pCollectionType = defContext.getGenericContext().getParameterizedType(collectionType, elementType);
+        var pIteratorImplType = defContext.getGenericContext().getParameterizedType(iteratorImplType, elementType);
         ClassType setType = ClassBuilder.newBuilder(name, code)
-                .interfaces()
+                .category(TypeCategory.INTERFACE)
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .dependencies(List.of(pIteratorImplType))
                 .collectionName("Set")
                 .build();
-        var pSetType = genericContext.getParameterizedType(setType, elementType);
+        var pSetType = defContext.getGenericContext().getParameterizedType(setType, elementType);
         primTypeFactory.putType(Set.class, setType);
-        FieldBuilder.newBuilder("数组", "array", setType, TypeUtil.getArrayType(elementType))
+        FieldBuilder.newBuilder("数组", "array", setType, defContext.getArrayTypeContext(ArrayKind.READ_WRITE).get(elementType))
                 .nullType(getNullType())
                 .access(Access.CLASS)
                 .isChild(true).build();
@@ -477,34 +481,35 @@ public class StandardDefBuilder {
     }
 
     private void createSetFlows(ClassType setType, ClassType pSetType, ClassType collectionType) {
-        FlowBuilder.newBuilder(setType, "初始化", "Set")
+        FlowBuilder.newBuilder(setType, "初始化", "Set", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(pSetType)
-                .parameters(List.of(new Parameter(null, "元素作为从对象", "elementAsChild", boolType)))
+                .returnType(pSetType)
                 .build();
         createOverridingFlows(setType, collectionType);
-        setType.stage = ResolutionStage.GENERATED;
-        genericContext.generateCode(pSetType, setType);
+        setType.setStage(ResolutionStage.GENERATED);
+        defContext.getGenericContext().generateCode(pSetType, setType);
     }
 
     public ClassType createListType() {
         String name = getParameterizedName("列表");
         String code = getParameterizedName("List");
-        var elementType = new TypeVariable(null, "列表元素", "ListElement");
+        var elementType = new TypeVariable(null, "列表元素", "ListElement",
+                DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(List.class.getTypeParameters()[0], elementType);
-        var pCollectionType = genericContext.getParameterizedType(collectionType, elementType);
-        var pIteratorImplType = genericContext.getParameterizedType(iteratorImplType, elementType);
+        var pCollectionType = defContext.getGenericContext().getParameterizedType(collectionType, elementType);
+        var pIteratorImplType = defContext.getGenericContext().getParameterizedType(iteratorImplType, elementType);
         ClassType listType = ClassBuilder.newBuilder(name, code)
+                .category(TypeCategory.INTERFACE)
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .dependencies(List.of(pIteratorImplType))
                 .collectionName("List")
                 .build();
         primTypeFactory.putType(List.class, listType);
-        var pListType = genericContext.getParameterizedType(listType, elementType);
-        FieldBuilder.newBuilder("数组", "array", listType, TypeUtil.getArrayType(elementType))
+        var pListType = defContext.getGenericContext().getParameterizedType(listType, elementType);
+        FieldBuilder.newBuilder("数组", "array", listType, defContext.getArrayTypeContext(ArrayKind.READ_WRITE).get(elementType))
                 .nullType(getNullType())
                 .access(Access.CLASS)
                 .isChild(true).build();
@@ -513,53 +518,54 @@ public class StandardDefBuilder {
     }
 
     private void createListFlows(ClassType listType, ClassType pListType, ClassType collectionType) {
-        FlowBuilder.newBuilder(listType, "List", "List")
+        FlowBuilder.newBuilder(listType, "List", "List", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(pListType)
-                .parameters(List.of(new Parameter(null, "元素作为从对象", "elementAsChild", boolType)))
+                .returnType(pListType)
                 .build();
         createOverridingFlows(listType, collectionType);
-        listType.stage = ResolutionStage.GENERATED;
-        genericContext.generateCode(pListType, listType);
+        listType.setStage(ResolutionStage.GENERATED);
+        defContext.getGenericContext().generateCode(pListType, listType);
     }
 
     public ClassType createIteratorImplType() {
         String name = getParameterizedName("迭代器实现");
         String code = getParameterizedCode("IteratorImpl");
-        var elementType = new TypeVariable(null, "迭代器实现元素", "IteratorImplElement");
+        var elementType = new TypeVariable(null, "迭代器实现元素", "IteratorImplElement",
+                DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(IteratorImpl.class.getTypeParameters()[0], elementType);
-        var pIteratorType = genericContext.getParameterizedType(iteratorType, elementType);
+        var pIteratorType = defContext.getGenericContext().getParameterizedType(iteratorType, elementType);
         ClassType iteratorImplType = ClassBuilder.newBuilder(name, code)
                 .interfaces(List.of(pIteratorType))
                 .typeParameters(elementType)
                 .collectionName("IteratorImpl")
                 .build();
         primTypeFactory.putType(IteratorImpl.class, iteratorImplType);
-        var pCollectionType = genericContext.getParameterizedType(collectionType, elementType);
-        ClassType pIteratorImplType = genericContext.getParameterizedType(iteratorImplType, elementType);
-        FlowBuilder.newBuilder(iteratorImplType, "IteratorImpl", "IteratorImpl")
+        var pCollectionType = defContext.getGenericContext().getParameterizedType(collectionType, elementType);
+        ClassType pIteratorImplType = defContext.getGenericContext().getParameterizedType(iteratorImplType, elementType);
+        FlowBuilder.newBuilder(iteratorImplType, "IteratorImpl", "IteratorImpl", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(pIteratorImplType)
+                .returnType(pIteratorImplType)
                 .parameters(new Parameter(null, "集合", "collection", pCollectionType))
                 .build();
         createOverridingFlows(iteratorImplType, pIteratorType);
-        iteratorImplType.stage = ResolutionStage.GENERATED;
-        genericContext.generateCode(pIteratorImplType, iteratorImplType);
+        iteratorImplType.setStage(ResolutionStage.GENERATED);
+        defContext.getGenericContext().generateCode(pIteratorImplType, iteratorImplType);
         return iteratorImplType;
     }
 
     private void createOverridingFlows(ClassType declaringType, ClassType baseType) {
         for (Flow flow : baseType.getFlows()) {
-            FlowBuilder.newBuilder(declaringType, flow.getName(), flow.getCode())
+            FlowBuilder.newBuilder(declaringType, flow.getName(), flow.getCode(), defContext.getFunctionTypeContext())
                     .nullType(getNullType())
                     .isNative(true)
-                    .overriden(flow)
-                    .outputType(flow.getReturnType())
-//                    .parameters(NncUtils.map(flow.getParameters(), Parameter::copy))
+                    .overriden(List.of(flow))
+                    .returnType(flow.getReturnType())
+                    .parameters(NncUtils.map(flow.getParameters(), Parameter::copy))
+                    .typeParameters(NncUtils.map(flow.getTypeParameters(), TypeVariable::copy))
                     .build();
         }
     }
@@ -567,27 +573,30 @@ public class StandardDefBuilder {
     public ClassType createMapType() {
         String name = getParameterizedName("词典");
         String code = getParameterizedName("Map");
-        var keyType = new TypeVariable(null, "词典键", "MapKey");
+        var keyType = new TypeVariable(null, "词典键", "MapKey",
+                DummyGenericDeclaration.INSTANCE);
         keyType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Map.class.getTypeParameters()[0], keyType);
-        var valueType = new TypeVariable(null, "词典值", "MapValue");
+        var valueType = new TypeVariable(null, "词典值", "MapValue",
+                DummyGenericDeclaration.INSTANCE);
         valueType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Map.class.getTypeParameters()[1], valueType);
-        var pSetType = genericContext.getParameterizedType(setType, keyType);
+        var pSetType = defContext.getGenericContext().getParameterizedType(setType, keyType);
         ClassType mapType = ClassBuilder.newBuilder(name, code)
+                .category(TypeCategory.INTERFACE)
                 .collectionName("Map")
                 .dependencies(List.of(pSetType))
                 .typeParameters(keyType, valueType)
                 .build();
         primTypeFactory.putType(Map.class, mapType);
-        var pMapType = genericContext.getParameterizedType(mapType, keyType, valueType);
+        var pMapType = defContext.getGenericContext().getParameterizedType(mapType, keyType, valueType);
         FieldBuilder
-                .newBuilder("键数组", "keyArray", mapType, TypeUtil.getArrayType(keyType, primTypeFactory))
+                .newBuilder("键数组", "keyArray", mapType, defContext.getArrayTypeContext(ArrayKind.READ_WRITE).get(keyType))
                 .access(Access.CLASS)
                 .nullType(getNullType())
                 .build();
         FieldBuilder
-                .newBuilder("值数组", "valueArray", mapType, TypeUtil.getArrayType(valueType, primTypeFactory))
+                .newBuilder("值数组", "valueArray", mapType, defContext.getArrayTypeContext(ArrayKind.READ_WRITE).get(valueType))
                 .access(Access.CLASS)
                 .nullType(getNullType())
                 .build();
@@ -596,124 +605,122 @@ public class StandardDefBuilder {
     }
 
     private void createMapFlows(ClassType mapType, ClassType pMapType, Type keyType, Type valueType) {
-        FlowBuilder.newBuilder(mapType, "Map", "Map")
+        FlowBuilder.newBuilder(mapType, "Map", "Map", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(pMapType)
-                .parameters(
-                        new Parameter(null, "键作为子对象", "keyAsChild", boolType),
-                        new Parameter(null, "值作为子对象", "valueAsChild", boolType)
-                )
+                .returnType(pMapType)
                 .build();
 
-        FlowBuilder.newBuilder(mapType, "添加", "put")
+        var nullableValueType = defContext.getUnionTypeContext().get(List.of(valueType, nullType));
+
+        FlowBuilder.newBuilder(mapType, "添加", "put", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(primTypeFactory.getNullableType(valueType))
+                .returnType(nullableValueType)
                 .parameters(new Parameter(null, "键", "key", keyType),
                         new Parameter(null, "值", "value", valueType))
                 .build();
 
-        FlowBuilder.newBuilder(mapType, "查询", "get")
+        FlowBuilder.newBuilder(mapType, "查询", "get", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(primTypeFactory.getNullableType(valueType))
+                .returnType(nullableValueType)
                 .parameters(new Parameter(null, "键", "key", keyType))
                 .build();
 
-        FlowBuilder.newBuilder(mapType, "删除", "remove")
+        FlowBuilder.newBuilder(mapType, "删除", "remove", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(primTypeFactory.getNullableType(valueType))
+                .returnType(nullableValueType)
                 .parameters(new Parameter(null, "键", "key", keyType))
                 .build();
 
-        FlowBuilder.newBuilder(mapType, "计数", "size")
+        FlowBuilder.newBuilder(mapType, "计数", "size", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .outputType(longType)
+                .returnType(longType)
                 .build();
 
-        FlowBuilder.newBuilder(mapType, "清空", "clear")
+        FlowBuilder.newBuilder(mapType, "清空", "clear", defContext.getFunctionTypeContext())
                 .isNative(true)
-                .outputType(voidType)
+                .returnType(voidType)
                 .build();
-        mapType.stage = ResolutionStage.GENERATED;
-        genericContext.generateCode(pMapType, mapType);
+        mapType.setStage(ResolutionStage.GENERATED);
+        defContext.getGenericContext().generateCode(pMapType, mapType);
     }
 
     private void createThrowableFlows(ClassType throwableType) {
-        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(throwableType)
+                .returnType(throwableType)
                 .build();
 
-        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(throwableType)
+                .returnType(throwableType)
                 .parameters(new Parameter(null, "错误详情", "message", stringType))
                 .build();
 
-        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(throwableType)
+                .returnType(throwableType)
                 .parameters(new Parameter(null, "原因", "cause", throwableType))
                 .build();
 
-        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        FlowBuilder.newBuilder(throwableType, "Throwable", "Throwable", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(throwableType)
+                .returnType(throwableType)
                 .parameters(
                         new Parameter(null, "错误详情", "message", stringType),
                         new Parameter(null, "原因", "cause", throwableType)
                 )
                 .build();
 
-        FlowBuilder.newBuilder(throwableType, "获取详情", "getMessage")
+        FlowBuilder.newBuilder(throwableType, "获取详情", "getMessage", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isNative(true)
-                .outputType(stringType.getNullableType())
+                .returnType(defContext.getNullableType(stringType))
                 .build();
     }
 
     private void createExceptionFlows(ClassType exceptionType) {
-        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(exceptionType)
+                .returnType(exceptionType)
                 .build();
 
-        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(exceptionType)
+                .returnType(exceptionType)
                 .parameters(new Parameter(null, "错误详情", "message", stringType))
                 .build();
 
-        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(exceptionType)
+                .returnType(exceptionType)
                 .parameters(new Parameter(null, "原因", "cause", throwableType))
                 .build();
 
-        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception")
+        FlowBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(exceptionType)
+                .returnType(exceptionType)
                 .parameters(
                         new Parameter(null, "错误详情", "message", stringType),
                         new Parameter(null, "原因", "cause", throwableType)
@@ -722,34 +729,34 @@ public class StandardDefBuilder {
     }
 
     private void createRuntimeExceptionFlows(ClassType runtimeExceptionType) {
-        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(runtimeExceptionType)
+                .returnType(runtimeExceptionType)
                 .build();
 
-        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(runtimeExceptionType)
+                .returnType(runtimeExceptionType)
                 .parameters(new Parameter(null, "错误详情", "message", stringType))
                 .build();
 
-        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(runtimeExceptionType)
+                .returnType(runtimeExceptionType)
                 .parameters(new Parameter(null, "原因", "cause", throwableType))
                 .build();
 
-        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException")
+        FlowBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
                 .nullType(nullType)
                 .isConstructor(true)
                 .isNative(true)
-                .outputType(runtimeExceptionType)
+                .returnType(runtimeExceptionType)
                 .parameters(
                         new Parameter(null, "错误详情", "message", stringType),
                         new Parameter(null, "原因", "cause", throwableType)
@@ -759,10 +766,10 @@ public class StandardDefBuilder {
 
     private static class PrimTypeFactory extends TypeFactory {
 
-        private final Map<java.lang.reflect.Type, Type> javaType2Type = new IdentityHashMap<>();
+        private final Map<java.lang.reflect.Type, Type> javaType2Type = new HashMap<>();
         private final Map<Type, java.lang.reflect.Type> type2JavaType = new IdentityHashMap<>();
 
-        private final Map<java.lang.reflect.Type, Type> auxJavaType2Type = new IdentityHashMap<>();
+        private final Map<java.lang.reflect.Type, Type> auxJavaType2Type = new HashMap<>();
         private final Map<Type, java.lang.reflect.Type> axuType2Java2Type = new IdentityHashMap<>();
 
         @Override
@@ -796,6 +803,31 @@ public class StandardDefBuilder {
         public Map<java.lang.reflect.Type, Type> getMap() {
             return Collections.unmodifiableMap(javaType2Type);
         }
+
+        public void saveDefs(DefMap defMap) {
+            for (Type type : javaType2Type.values()) {
+                createDefIfAbsent(type, defMap);
+            }
+            for (Type type : javaType2Type.values()) {
+                defMap.afterDefInitialized(defMap.getDef(type));
+            }
+        }
+
+        private ModelDef<?, ?> createDefIfAbsent(Type type, DefMap defMap) {
+            if (defMap.containsDef(type)) {
+                return defMap.getDef(type);
+            }
+            var javaType = NncUtils.requireNonNull(type2JavaType.get(type));
+            var def = switch (type) {
+                case TypeVariable typeVariable -> new TypeVariableDef(
+                        (java.lang.reflect.TypeVariable<?>) javaType, typeVariable
+                );
+                default -> new DirectDef<>(javaType, type);
+            };
+            defMap.preAddDef(def);
+            return def;
+        }
+
 
     }
 

@@ -43,9 +43,9 @@ public class JsonFixer {
             var key = entry.getKey();
             nameStack.push(key);
             var value = entry.getValue();
-            if (/*fixing && */key.equals("superTypeId")) {
+            if (/*fixing && */key.equals("typeId")) {
                 entryIt.remove();
-                add.put("superTypeRef", Map.of("id", value));
+                add.put("typeRef", Map.of("id", value));
             }
             if (value instanceof Map<?, ?> subMap) {
                 //noinspection unchecked

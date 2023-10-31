@@ -4,11 +4,11 @@ import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.FunctionType;
 import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
@@ -63,9 +63,7 @@ public class IdentityContext {
                 && !isClassTypeInitialized.test(classType)) {
             return;
         }
-        if(model instanceof tech.metavm.object.meta.Type type
-                && (!(type.getConcreteType() instanceof ClassType klass)
-                || klass.isFromReflection() || klass.isCollection())) {
+        if(model instanceof tech.metavm.object.meta.Type type && isBuiltinType(type)) {
             putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
         }
         else if(model instanceof Field field && field.getDeclaringType().isFromReflection()) {
@@ -89,11 +87,11 @@ public class IdentityContext {
                     result
             );
         }
-        if(model instanceof Collection<?> collection) {
+        if(model instanceof ReadonlyArray<?> array) {
             int index = 0;
-            for (Object item : collection) {
+            for (Object item : array) {
                 if(item != null) {
-                    addToInvertedIndex(collection, Integer.toString(index), item);
+                    addToInvertedIndex(array, Integer.toString(index), item);
                     path.addLast(index + "");
                     getIdentityMap0(item, result, path);
                     path.removeLast();
@@ -112,6 +110,18 @@ public class IdentityContext {
                 }
             }
         }
+    }
+
+    private boolean isBuiltinType(tech.metavm.object.meta.Type type) {
+        if(!(type.getConcreteType() instanceof ClassType klass)
+                || klass.isFromReflection() || klass.isCollection()) {
+            return true;
+        }
+        if(type instanceof FunctionType functionType) {
+            return NncUtils.allMatch(functionType.getParameterTypes(), this::isBuiltinType)
+                    && isBuiltinType(functionType.getReturnType());
+        }
+        return false;
     }
 
     private void addToInvertedIndex(Object source , String fieldName, Object target) {
@@ -150,7 +160,7 @@ public class IdentityContext {
 
     private java.lang.reflect.Field getJavaField(Field field) {
         var javaClass = getRawClass(field.getDeclaringType());
-        return ReflectUtils.getDeclaredFieldByMetaFieldName(javaClass, field.getName());
+        return ReflectUtils.getDeclaredFieldByName(javaClass, field.getCodeRequired());
     }
 
     private Class<?> getRawClass(ClassType classType) {

@@ -29,7 +29,7 @@ public class NodeFactory {
         } else {
             Constructor<?> constructor = getConstructor(klass, NodeDTO.class, ScopeRT.class);
             node = (NodeRT) newInstance(constructor, nodeDTO, scope);
-            if(nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
+            if (nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
         }
         var prevExprTypes = prev != null ? prev.getExpressionTypes() : ExpressionTypeMap.EMPTY;
         node.mergeExpressionTypes(prevExprTypes);
@@ -42,12 +42,11 @@ public class NodeFactory {
         Class<? extends NodeRT<?>> klass = nodeType.getKlass();
         Class<?> paramClass = getParamClass(klass);
         Constructor<?> constructor;
-        if(paramClass != Void.class) {
+        if (paramClass != Void.class) {
             constructor = getConstructor(klass, NodePO.class, paramClass, ScopeRT.class);
             Object param = NncUtils.readJSONString(nodePO.getParam(), paramClass);
             return (NodeRT<?>) newInstance(constructor, nodePO, param, context);
-        }
-        else {
+        } else {
             constructor = getConstructor(klass, NodePO.class, ScopeRT.class);
             return (NodeRT<?>) newInstance(constructor, nodePO, context);
         }
@@ -55,7 +54,7 @@ public class NodeFactory {
 
     public static Class<?> getParamClass(Class<? extends NodeRT<?>> nodeType) {
         ParameterizedType superType = (ParameterizedType) nodeType.getGenericSuperclass();
-        return  (Class<?>) superType.getActualTypeArguments()[0];
+        return (Class<?>) superType.getActualTypeArguments()[0];
     }
 
 

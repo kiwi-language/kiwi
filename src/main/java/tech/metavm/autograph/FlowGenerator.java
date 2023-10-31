@@ -11,7 +11,6 @@ import tech.metavm.object.meta.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 public class FlowGenerator {
@@ -26,12 +25,13 @@ public class FlowGenerator {
     private Expression yieldValue;
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
+    private final IEntityContext entityContext;
 
-
-    public FlowGenerator(Flow flow, TypeResolver typeResolver, IEntityContext entityContext) {
+    public FlowGenerator(Flow flow, TypeResolver typeResolver, IEntityContext entityContext, Generator visitor) {
         this.flow = flow;
         this.typeResolver = typeResolver;
-        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver, entityContext);
+        this.entityContext = entityContext;
+        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver, entityContext, visitor);
     }
 
     Flow getFlow() {
@@ -45,13 +45,15 @@ public class FlowGenerator {
     MergeNode createMerge() {
         scope().getLastNode();
         if ((scope().getLastNode() instanceof BranchNode branchNode)) {
-            return setNodeExprTypes(new MergeNode(
+            var mergeNode = setNodeExprTypes(new MergeNode(
                     null,
                     nextName("Merge"),
                     branchNode,
                     ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                     scope()
             ));
+            mergeNode.mergeExpressionTypes(MergeNode.getExpressionTypeMap(branchNode));
+            return mergeNode;
         } else {
             throw new InternalException("MergeNode must directly follow a BranchNode");
         }
@@ -104,7 +106,7 @@ public class FlowGenerator {
 
     void enterTrySection(TryNode tryNode) {
         variableTable.enterTrySection(tryNode);
-        enterScope(tryNode.getBodyScope(), null);
+        enterScope(tryNode.getBodyScope());
     }
 
     Map<NodeRT<?>, Map<String, Expression>> exitTrySection(TryNode tryNode, List<String> outputVars) {
@@ -118,9 +120,9 @@ public class FlowGenerator {
     }
 
     void enterBranch(Branch branch) {
-        variableTable.newCondBranch(branch.getOwner(), branch);
-        var scope = enterScope(branch.getScope(), branch.getCondition().getExpression());
-        condScopes.get(branch.getOwner()).add(scope);
+        var exprTypeMap = variableTable.nextBranch(branch.getOwner(), branch);
+        var scopeInfo = enterScope(branch.getScope(), exprTypeMap);
+        condScopes.get(branch.getOwner()).add(scopeInfo);
     }
 
     void exitBranch() {
@@ -160,12 +162,14 @@ public class FlowGenerator {
         return variableTable.get(name);
     }
 
-    ScopeInfo enterScope(ScopeRT scope, @Nullable Expression condition) {
-        if (scope.getOwner() != null) {
-            scope.setExpressionTypes(scope.getOwner().getExpressionTypes());
+    ScopeInfo enterScope(ScopeRT scope) {
+        return enterScope(scope, NncUtils.get(scope.getOwner(), NodeRT::getExpressionTypes));
+    }
+
+    ScopeInfo enterScope(ScopeRT scope, ExpressionTypeMap expressionTypeMap) {
+        if(expressionTypeMap != null) {
+            scope.setExpressionTypes(expressionTypeMap);
         }
-        var exprTypeMap = condition != null ? typeNarrower.narrowType(condition) : ExpressionTypeMap.EMPTY;
-        scope.mergeExpressionTypes(exprTypeMap);
         var scopeInfo = new ScopeInfo(scope);
         scopes.push(scopeInfo);
         return scopeInfo;
@@ -192,13 +196,15 @@ public class FlowGenerator {
         }
     }
 
-    CheckNode createCheck(Expression condition) {
+    CheckNode createCheck(Expression condition, BranchNode exit) {
         var checkNode = setNodeExprTypes(
                 new CheckNode(null, nextName("Check"), scope().getLastNode(), scope(),
-                        new ExpressionValue(condition))
+                        new ExpressionValue(condition), exit)
                 );
         var narrower = new TypeNarrower(checkNode.getExpressionTypes()::getType);
+        var branchEntry = checkNode.getExpressionTypes().merge(narrower.narrowType(ExpressionUtil.not(condition)));
         checkNode.mergeExpressionTypes(narrower.narrowType(condition));
+        variableTable.addBranchEntry(branchEntry, exit);
         return checkNode;
     }
 
@@ -275,6 +281,16 @@ public class FlowGenerator {
                 new ExpressionValue(self), args, flow));
     }
 
+    LambdaNode createLambda(List<Parameter> parameters, Type returnType, ClassType functionalInterface) {
+        var funcType = entityContext.getFunctionTypeContext().get(
+                NncUtils.map(parameters, Parameter::getType), returnType
+        );
+        return new LambdaNode(
+                null, nextName("Lambda"), scope().getLastNode(), scope(),
+                parameters, returnType, funcType, functionalInterface
+        );
+    }
+
     NewNode createNew(Flow flow, List<Expression> arguments) {
         List<Argument> args = NncUtils.biMap(
                 flow.getParameters(), arguments,
@@ -294,11 +310,13 @@ public class FlowGenerator {
 
     public InputNode createInput() {
         var type = ClassBuilder.newBuilder("输入类型", "InputType").temporary().build();
-        return setNodeExprTypes(new InputNode(null, "Input", type, scope().getLastNode(), scope()));
+        return setNodeExprTypes(new InputNode(null, nextName("Input"), type, scope().getLastNode(), scope()));
     }
 
     public SelfNode createSelf() {
-        return setNodeExprTypes(new SelfNode(null, "Self", scope().getLastNode(), scope()));
+        return setNodeExprTypes(new SelfNode(null, nextName("Self"),
+                SelfNode.getSelfType(scope().getFlow(), entityContext),
+                scope().getLastNode(), scope()));
     }
 
     private <T extends NodeRT<?>> T setNodeExprTypes(T node) {
@@ -322,7 +340,9 @@ public class FlowGenerator {
         var node = setNodeExprTypes(new RaiseNode(
                 null,
                 nextName("Error"),
+                RaiseParameterKind.THROWABLE,
                 new ExpressionValue(exception),
+                null,
                 scope().getLastNode(),
                 scope()
         ));

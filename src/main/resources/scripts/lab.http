@@ -23,6 +23,44 @@ Content-Type: application/json
 }
 
 ###
+
+POST http://localhost:8080/type/get-parameterized-type
+Accept: application/json
+Content-Type: application/json
+
+{
+  "templateRef": {
+    "id": 60085
+  },
+  "typeArgumentRefs": [
+    {
+      "id": 1232304647
+    }
+  ]
+}
+
+###
+
+POST http://localhost:8080/type/get-union-type
+Accept: application/json
+Content-Type: application/json
+
+{
+  "memberIds": [30002, 30006]
+}
+
+###
+POST http://localhost:8080/type/get-function-type
+Accept: application/json
+Content-Type: application/json
+
+{
+  "returnTypeId": 50000,
+  "parameterTypeIds": []
+}
+
+
+###
 GET http://localhost:8081/api/expression/parse-search-expression?typeId=1000500011&searchExpression=(code%20STARTS%20WITH%20%27001%27%20OR%20code%20LIKE%20%27001%27)%20AND%20op%20IN%20($$8106480329266893)
 Cookie: __token__=AVveZlx9Ae1exLrox2y3y76CDG8+tYj6+7zlbOrl/StQEoraoO7hVwNvuE1XSzGas9Xc+46UQgmo2wlw2uRBAysJkxTNtA7XYef+YWKIPK7mhtW+jTD5CIfnBXoyy3mcKYISL3w8ujHsiXMdd0GQQClsgjlhmjODlNhjoYBXOZyEU9EUhHxtCW9n2xE2R+HFdoXSLzUYfuLpwuwm0YE88t4n6AMmX2MhaUjqfeweGLVKZ/Gbrdcchjm5k2qXH/GJZ5k0wP7ffATFhIFt9pzgeY0AfOEfs8+08qLQsLWt1olmvI2DIWTG9+6YrAeOs0xl0p+1ZILP9zXsPUye/ydZNKk89BOu43IIEVEE3cF0UYSsZk05q4W4TshBfEKjx6o6CN6vtD/4gyGfVxhYxB7MTv3a6qsSWBmPJn/Tizi8gCjVOGprVuoWQvK3bsTM1xIKiVO+3OKgn0b8ov2cr8Mmejn7rdP3goCWpabjET7M7OO97Ov5ZtleHzgcC7P2gLWPDiD06B5cUGfxk3UP2Hw3+xPIHFPjNif/Ch0b/dh3mSPbtVXMqyz3VWZ4BXasT01zbn6LHReuTSV21U/XCR4q9NLgES3ZtOZzz+bIF4lFDtYbRIrPp3LEBBqAMUQraPiWmmTVn36zgxwsyMRcxaW69jjmz7Sjf94bqF4nT3INtChEVqJPP+ejiiVc8sLVKelIkCpZ3t76bFF0kxNxWb73P5K002naqPHR9MmBJ+RmjE4jedv7IIH9nKPr1lduOKH4gJ6yh7T1hld+3pzUG48KferGzyBJqeCmnY7J290/gfordlogW/USbLMP4t54Hle97gx79pi8Q8P+gbShC/5AW4Dz9crxs3635l5ju7L28B3jIHhtmcP48FtDGL6LKvEylEW9BiKzVruHDzlXC01IXGCfiZ5e5Oh1RZaCjOVWtdClLltiDsOIvA6c+XysND0bNI2tzE3iLYJV2Eiwb4Xgj6YnCAtEVEEahjhnK1kh+qyZIGrGCKvwLm/Iex/CvDIR1MNYqd9P06tfft1b6crf16JEAN9rUY77KucjFSPx9U8nPT8NXJ7zo4kRIQDS0oHVyoyASa9Kn9fRK9SsC97A0wpWzVt/bVURj4j6kKX5Hf3P7iTDVRxqGnoCnlGQ17JFgIyAmqb6VVCfY+Gl/011/GtLBhmB81JFwtKTwNSu7ArjgMkXIoolf4yMHXn8saF7zUOVeGV/YNoFlSnDBPgO5nUWz+xJX+xhaK/ScvxISgf6P5//Wv+80SXp+Urp13T5yxHkmTqmPlViVJgsoRg01yofCzV4klhig5Yvl4AOHqiJEvia3xBBKLX/
 
@@ -50,7 +88,14 @@ Accept: application/json
 }
 
 ###
-GET http://localhost:8080/type/1004700100
+POST http://localhost:8080/type/get
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1250005002,
+  "includingPropertyTypes": true
+}
 
 ###
 POST http://localhost:8080/type/load-by-paths
@@ -66,7 +111,7 @@ Content-Type: application/json
 GET http://localhost:8080/instance/7205760425393226
 
 ###
-DELETE http://localhost:8080/instance/1145403656
+DELETE http://localhost:8080/instance/1247304949
 
 ###
 POST http://localhost:8080/instance/load-by-tree
@@ -82,10 +127,20 @@ Content-Type: application/json
 
 
 ###
-GET http://localhost:8080/instance/7205760447793678
+GET http://localhost:8080/instance/60143
 
 ###
-GET http://localhost:8080/type/14086
+GET http://localhost:8080/instance/1215104303
+
+###
+POST http://localhost:8080/type/get
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 60143,
+  "includingPropertyTypes": false
+}
 
 ###
 GET http://localhost:8080/instance/1007800157?depth=2
@@ -107,7 +162,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "ids": [13021, 13022],
+  "ids": [1215104319],
   "includingFields": true,
   "includingFieldTypes": true
 }
@@ -181,7 +236,7 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:8080/type/1028900610
+DELETE http://localhost:8080/type/1234004690
 
 <> 2023-02-23T165253.200.json
 <> 2023-02-22T195734.200.json
@@ -218,6 +273,15 @@ POST http://localhost:8080/type/init-composite-types/1004700107
 
 
 ###
+POST http://localhost:8080/type/get-array-type
+Accept: application/json
+Content-Type: application/json
+
+{
+  "elementTypeId": 50003
+}
+
+###
 GET http://localhost:8080/type/constraint/1008300172
 
 <> 2023-02-21T004806.200.json
@@ -228,14 +292,14 @@ POST http://localhost:8080/type/batch-delete
 Accept: application/json
 Content-Type: application/json
 
-[1036500752,1036500771,1036500734,1036500743,1036500763]
+[1245104903,1245304907]
 
 ###
-DELETE http://localhost:8080/flow/node/1010700276
+DELETE http://localhost:8080/flow/node/1242404897
 
 
 ###
-DELETE http://localhost:8080/instance/1175503532
+DELETE http://localhost:8080/instance/1183103663
 
 ###
 DELETE http://localhost:8080/flow/node/1139802809
@@ -247,13 +311,16 @@ GET http://localhost:8080/type/12004
 GET http://localhost:8080/instance/1175503532
 
 ###
-GET http://localhost:8080/instance/reference-chain/1179303642?rootMode=1
+GET http://localhost:8080/instance/reference-chain/7205760485294470?rootMode=1
 
 ###
-GET http://localhost:8080/instance/reference-chain/1179303642?rootMode=2
+GET http://localhost:8080/instance/reference-chain/7205760485394472?rootMode=2
 
 ###
 GET http://localhost:8080/type/primitives
+
+###
+GET http://localhost:8080/type/primitive-map
 
 ###
 POST http://localhost:8080/type

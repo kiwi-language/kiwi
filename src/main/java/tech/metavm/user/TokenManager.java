@@ -32,31 +32,31 @@ public class TokenManager {
     }
 
     public Token decodeToken(String tokenEncoding) {
-        String decrypted = EncodingUtils.decrypt(tokenEncoding, encryptPrivateKey);
-        int idx = decrypted.lastIndexOf(":");
-        if(idx < 0) {
-            throw BusinessException.invalidToken();
-        }
-        String rawToken = decrypted.substring(0, idx);
-        String sign = decrypted.substring(idx + 1);
-        if(!EncodingUtils.verify(rawToken, sign, signPublicKey)) {
-            throw BusinessException.invalidToken();
-        }
-        String[] splits = rawToken.split(":");
-        if(splits.length != 3) {
-            throw BusinessException.invalidToken();
-        }
         try {
+            String decrypted = EncodingUtils.decrypt(tokenEncoding, encryptPrivateKey);
+            int idx = decrypted.lastIndexOf(":");
+            if (idx < 0) {
+                throw BusinessException.invalidToken();
+            }
+            String rawToken = decrypted.substring(0, idx);
+            String sign = decrypted.substring(idx + 1);
+            if (!EncodingUtils.verify(rawToken, sign, signPublicKey)) {
+                throw BusinessException.invalidToken();
+            }
+            String[] splits = rawToken.split(":");
+            if (splits.length != 3) {
+                throw BusinessException.invalidToken();
+            }
+
             return new Token(Long.parseLong(splits[0]), Long.parseLong(splits[1]), Long.parseLong(splits[2]));
-        }
-        catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             throw BusinessException.invalidToken();
         }
     }
 
     private String getSignature(String tokenEncoding) {
         int idx = tokenEncoding.lastIndexOf(':');
-        if(idx < 0) {
+        if (idx < 0) {
             return null;
         }
         return tokenEncoding.substring(idx + 1);

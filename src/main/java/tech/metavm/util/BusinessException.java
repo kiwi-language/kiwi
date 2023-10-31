@@ -94,6 +94,10 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.INVALID_FIELD, fieldName, reason);
     }
 
+    public static BusinessException tooManyFields() {
+        throw new BusinessException(ErrorCode.TOO_MAY_FIELDS);
+    }
+
     public static BusinessException instanceNotFound(long id) {
         throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id);
     }
@@ -115,7 +119,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException fieldNotFound(long fieldId) {
-        throw new BusinessException(ErrorCode.FIELD_NOT_FOUND, fieldId);
+        throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND, fieldId);
     }
 
     public static BusinessException invalidFieldValue(Field field, Object value) {

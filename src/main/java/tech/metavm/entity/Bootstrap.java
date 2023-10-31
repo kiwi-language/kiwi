@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.BootIdProvider;
+import tech.metavm.object.meta.ColumnStore;
+import tech.metavm.object.meta.FileColumnStore;
 import tech.metavm.object.meta.StdAllocators;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
@@ -24,10 +26,12 @@ public class Bootstrap implements InitializingBean {
 
     private final InstanceContextFactory instanceContextFactory;
     private final StdAllocators stdAllocators;
+    private final ColumnStore columnStore;
 
-    public Bootstrap(InstanceContextFactory instanceContextFactory, StdAllocators stdAllocators) {
+    public Bootstrap(InstanceContextFactory instanceContextFactory, StdAllocators stdAllocators, ColumnStore columnStore) {
         this.instanceContextFactory = instanceContextFactory;
         this.stdAllocators = stdAllocators;
+        this.columnStore = columnStore;
     }
 
     @Transactional
@@ -45,7 +49,7 @@ public class Bootstrap implements InitializingBean {
 
         DefContext defContext = new DefContext(
                 stdAllocators::getId,
-                standardInstanceContext);
+                standardInstanceContext, columnStore);
         standardInstanceContext.setDefContext(defContext);
         standardInstanceContext.setEntityContext(defContext);
         ModelDefRegistry.setDefContext(defContext);
@@ -91,6 +95,7 @@ public class Bootstrap implements InitializingBean {
 //        }
         if(saveIds) {
             stdAllocators.save();
+            columnStore.save();
         }
         check();
         tempContext.finish();

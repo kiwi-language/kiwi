@@ -6,7 +6,7 @@ import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 
@@ -47,11 +47,11 @@ public class FieldParam extends Entity {
         }
     }
 
-    public Instance evaluate(FlowFrame executionContext) {
+    public Instance evaluate(MetaFrame executionContext) {
         return value.evaluate(executionContext);
     }
 
-    private FieldValueDTO getFieldValue(Value value, EvaluationContext evaluationContext) {
+    private FieldValue getFieldValue(Value value, EvaluationContext evaluationContext) {
         return value.evaluate(evaluationContext).toFieldValueDTO();
     }
 

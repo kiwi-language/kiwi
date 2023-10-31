@@ -38,15 +38,22 @@ public class Declarator extends JavaRecursiveElementVisitor {
         var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.META_CLASS));
         psiClass.putUserData(Keys.RESOLVE_STAGE, 1);
         if(!metaClass.isInterface()) {
-            FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>")
+            FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
+                    .build();
+            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext()).build();
+        }
+        boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
+        if(!hashConstructor) {
+            String constructorName = metaClass.getEffectiveTemplate().getName();
+            String constructorCode = metaClass.getEffectiveTemplate().getCode();
+            FlowBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
                     .isConstructor(true)
                     .build();
-            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>").build();
         }
         classStack.push(metaClass);
         super.visitClass(psiClass);
         classStack.pop();
-        metaClass.stage = ResolutionStage.DECLARED;
+        metaClass.setStage(ResolutionStage.DECLARED);
     }
 
     private ClassType createEmptyType(String namePrefix) {
@@ -55,34 +62,27 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitMethod(PsiMethod method) {
-        PsiMethod overridenMethod = TranspileUtil.getOverriddenMethod(method);
-        Flow overridenFlow;
-        if (overridenMethod != null) {
+        List<PsiMethod> overridenMethods = TranspileUtil.getOverriddenMethods(method);
+        List<Flow> overriden = new ArrayList<>();
+        for (PsiMethod overridenMethod : overridenMethods) {
             var overridenMethodCls = NncUtils.requireNonNull(overridenMethod.getContainingClass());
             var overridenMethodType = TranspileUtil.createTemplateType(overridenMethodCls);
-            overridenFlow = TranspileUtil.getFlowByMethod(
+            overriden.add(TranspileUtil.getFlowByMethod(
                     (ClassType) typeResolver.resolveDeclaration(overridenMethodType),
-                    overridenMethod, typeResolver
+                    overridenMethod, typeResolver)
             );
-        } else {
-            overridenFlow = null;
         }
-        List<Parameter> parameters;
-        if (overridenFlow != null) {
-            parameters = null;
-        } else {
-            parameters = new ArrayList<>();
+        List<Parameter> parameters = new ArrayList<>();
             if (method.isConstructor() && currentClass().isEnum()) {
                 parameters.addAll(getEnumConstructorParams());
             }
             parameters.addAll(processParameters(method.getParameterList()));
-        }
-        var flow = FlowBuilder.newBuilder(currentClass(), getFlowName(method), method.getName())
+        var flow = FlowBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method), context.getFunctionTypeContext())
                 .isConstructor(method.isConstructor())
                 .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
                 .parameters(parameters)
-                .outputType(getOutputType(method))
-                .overriden(overridenFlow)
+                .returnType(getOutputType(method))
+                .overriden(overriden)
                 .build();
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
             typeResolver.resolveTypeVariable(typeParameter).setGenericDeclaration(flow);
@@ -108,7 +108,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
     public void visitField(PsiField psiField) {
         var type = resolveType(psiField.getType());
         if(TranspileUtil.getAnnotation(psiField, Nullable.class) != null) {
-            type = TypeUtil.getNullableType(type);
+            type = context.getNullableType(type);
         }
         var field = FieldBuilder
                 .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), type)

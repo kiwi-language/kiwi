@@ -2,6 +2,7 @@ package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.CheckConstraint;
@@ -18,16 +19,16 @@ public class CheckConstraintPlugin implements ContextPlugin {
         List<InstancePO> instancePOs = difference.insertsAndUpdates();
         List<ClassInstance> instances = NncUtils.mapAndFilterByType(
                 instancePOs,
-                instancePO -> context.get(instancePO.getId()),
+                instancePO -> context.get(instancePO.getIdRequired()),
                 ClassInstance.class
         );
-        instances.forEach(this::checkConstraints);
+        instances.forEach(i -> checkConstraints(i, context.getEntityContext()));
     }
 
-    private void checkConstraints(ClassInstance instance) {
+    private void checkConstraints(ClassInstance instance, IEntityContext entityContext) {
         List<CheckConstraint> constraints = instance.getType().getConstraints(CheckConstraint.class);
         for (CheckConstraint constraint : constraints) {
-            if(!constraint.check(instance)) {
+            if(!constraint.check(instance, entityContext)) {
                 throw BusinessException.constraintCheckFailed(instance, constraint);
             }
         }

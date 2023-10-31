@@ -17,11 +17,10 @@ public class FlowAnalyzer extends ElementVisitor {
         super.visitNode(node);
     }
 
-//    @Override
-//    public void visitMergeNode(MergeNode node) {
-//        var exprTypes = MergeNode.getExpressionTypeMap(node.getBranchNode());
-//        node.mergeExpressionTypes(exprTypes);
-//    }
+    @Override
+    public void visitMergeNode(MergeNode node) {
+        node.mergeExpressionTypes(MergeNode.getExpressionTypeMap(node.getBranchNode()));
+    }
 
     @Override
     public void visitCheckNode(CheckNode node) {

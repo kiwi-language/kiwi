@@ -5,20 +5,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 
-public class ArrayFieldValueDTO extends FieldValueDTO {
+public class ArrayFieldValueDTO extends FieldValue {
 
     private final Long id;
-    private final List<FieldValueDTO> elements;
+    private final boolean elementAsChild;
+    private final List<FieldValue> elements;
 
     public ArrayFieldValueDTO(@JsonProperty("id") Long id,
-                              @JsonProperty("elements") List<FieldValueDTO> elements) {
+                              @JsonProperty("elementAsChild") boolean elementAsChild,
+                              @JsonProperty("elements") List<FieldValue> elements) {
         super(FieldValueKind.ARRAY.code(), "");
         this.id = id;
+        this.elementAsChild = elementAsChild;
         this.elements = elements;
     }
 
-    public List<FieldValueDTO> getElements() {
+    public List<FieldValue> getElements() {
         return elements;
+    }
+
+    public boolean isElementAsChild() {
+        return elementAsChild;
     }
 
     public Long getId() {

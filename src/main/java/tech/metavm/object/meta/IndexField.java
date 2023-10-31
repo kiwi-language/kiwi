@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.ExpressionValue;
 import tech.metavm.flow.ReferenceValue;
 import tech.metavm.flow.Value;
@@ -10,7 +11,6 @@ import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
-import tech.metavm.expression.FieldExpression;
 import tech.metavm.expression.ThisExpression;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
@@ -23,7 +23,7 @@ public class IndexField extends Entity {
         return new IndexField(
                 constraint,
                 field.getName(),
-                new ReferenceValue(ExpressionUtil.fieldExpr(field))
+                new ReferenceValue(ExpressionUtil.attributeExpr(field))
         );
     }
 
@@ -72,9 +72,9 @@ public class IndexField extends Entity {
     }
 
     private Field extractField(Expression expression) {
-        if(expression instanceof FieldExpression fieldExpression) {
+        if(expression instanceof PropertyExpression fieldExpression) {
             if((fieldExpression.getInstance() instanceof ThisExpression)) {
-                return fieldExpression.getField();
+                return (Field) fieldExpression.getProperty();
             }
         }
         return null;

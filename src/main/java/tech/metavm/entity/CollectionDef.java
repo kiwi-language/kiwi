@@ -3,18 +3,16 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.ArrayInstance;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 
-public class CollectionDef<E, C extends Table<E>> extends ModelDef<C, ArrayInstance> {
+public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, ArrayInstance> {
 
     @SuppressWarnings("unchecked")
-    static <E, C extends Table<E>> CollectionDef<?, ?> createHelper(Class<?> javaClass,
+    static <E, C extends ReadonlyArray<E>> CollectionDef<?, ?> createHelper(Class<?> javaClass,
                                                                          java.lang.reflect.Type javaType,
                                                                          ModelDef<?,?> elementDef, ArrayType type) {
         if(javaType instanceof Class<?>) {
@@ -70,8 +68,7 @@ public class CollectionDef<E, C extends Table<E>> extends ModelDef<C, ArrayInsta
 
     @Override
     public void initModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
-        model.setElementAsChild(instance.isElementAsChild());
-        model.addAll(
+        model.initialize(
                 NncUtils.map(
                         instance.getElements(),
                         e -> modelInstanceMap.getModel(elementDef.getJavaClass(), e)
@@ -81,28 +78,25 @@ public class CollectionDef<E, C extends Table<E>> extends ModelDef<C, ArrayInsta
 
     @Override
     public void updateModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
-        model.clear();
-        model.setElementAsChild(instance.isElementAsChild());
-        initModel(model, instance, modelInstanceMap);
+//        model.clear();
+//        initModel(model, instance, modelInstanceMap);
     }
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
-        instance.setElementAsChild(model.isElementAsChild());
         if(elementDef instanceof InstanceDef<?>) {
             for (E e : model) {
                 instance.add(elementDef.getInstanceType().cast(e));
             }
         }
         else {
-            instance.addAll(NncUtils.map(new ArrayList<>(model), instanceMap::getInstance));
+            instance.addAll(NncUtils.map(NncUtils.listOf(model), instanceMap::getInstance));
         }
     }
 
     @Override
     public void updateInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
         instance.clear();
-        instance.setElementAsChild(model.isElementAsChild());
         initInstance(instance, model, instanceMap);
     }
 

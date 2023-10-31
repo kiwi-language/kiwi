@@ -5,9 +5,8 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.util.ParameterizedTypeImpl;
+import tech.metavm.util.ReadWriteArray;
 import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.Table;
-import tech.metavm.util.TestUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -76,7 +75,7 @@ public class StdAllocatorsTest extends TestCase {
         allocators.allocate(
                 Map.of(
                         Type.class, 1,
-                        ParameterizedTypeImpl.create(Table.class, Type.class), 1
+                        ParameterizedTypeImpl.create(ReadWriteArray.class, Type.class), 1
                 )
         );
 
@@ -84,7 +83,7 @@ public class StdAllocatorsTest extends TestCase {
 
         Assert.assertEquals(
                 Set.of("/id/" + Type.class.getName() +".properties",
-                        "/id/" + ParameterizedTypeImpl.create(Table.class, Type.class).getTypeName() + ".properties"),
+                        "/id/" + ParameterizedTypeImpl.create(ReadWriteArray.class, Type.class).getTypeName() + ".properties"),
                 new HashSet<>(allocatorStore.getFileNames())
         );
     }

@@ -1,39 +1,51 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
-import tech.metavm.object.meta.rest.dto.FunctionTypeParamDTO;
+import tech.metavm.entity.*;
+import tech.metavm.object.meta.rest.dto.FunctionTypeParam;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadWriteArray;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
 @EntityType("函数类型")
-public class FunctionType extends Type {
+public class FunctionType extends CompositeType {
+
+    public static final IndexDef<FunctionType> KEY_IDX = IndexDef.uniqueKey(
+            FunctionType.class, "key");
+
+    public static final IndexDef<FunctionType> PARAMETER_TYPE_KEY = IndexDef.normalKey(
+            FunctionType.class, "parameterTypes"
+    );
+
+    public static final IndexDef<FunctionType> RETURN_TYPE_KEY = IndexDef.normalKey(
+            FunctionType.class, "returnType"
+    );
+
 
     @EntityField("返回类型")
     private Type returnType;
 
-    @EntityField("参数类型列表")
-    private final Table<Type> parameterTypes = new Table<>(Type.class, false);
+    @ChildEntity("参数类型列表")
+    private final ReadWriteArray<Type> parameterTypes = new ReadWriteArray<>(Type.class);
 
-    public FunctionType(List<Type> parameterTypes, Type returnType) {
-        super(createName(parameterTypes, returnType), true, true, TypeCategory.FUNCTION);
+    public FunctionType(Long tmpId, List<Type> parameterTypes, Type returnType) {
+        super(createName(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
+        setTmpId(tmpId);
+        this.parameterTypes.addAll(parameterTypes);
+        this.returnType = returnType;
     }
 
     private static String createName(List<Type> parameterTypes, Type returnType) {
-        return "(" + NncUtils.join(parameterTypes, Type::getName) + "):" + returnType.getName();
+        return "(" + NncUtils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        if(that instanceof FunctionType functionType) {
-            if(parameterTypes.size() == functionType.parameterTypes.size()) {
+        if (that instanceof FunctionType functionType) {
+            if (parameterTypes.size() == functionType.parameterTypes.size()) {
                 for (int i = 0; i < parameterTypes.size(); i++) {
-                    if(!parameterTypes.get(i).isAssignableFrom(((FunctionType) that).parameterTypes.get(i))) {
+                    if (!parameterTypes.get(i).isAssignableFrom(((FunctionType) that).parameterTypes.get(i))) {
                         return false;
                     }
                 }
@@ -57,13 +69,13 @@ public class FunctionType extends Type {
     }
 
     public List<Type> getParameterTypes() {
-        return Collections.unmodifiableList(parameterTypes);
+        return parameterTypes.toList();
     }
 
     @Override
-    protected FunctionTypeParamDTO getParam() {
-        try(var context = SerializeContext.enter()) {
-            return new FunctionTypeParamDTO(
+    protected FunctionTypeParam getParamInternal() {
+        try (var context = SerializeContext.enter()) {
+            return new FunctionTypeParam(
                     NncUtils.map(parameterTypes, context::getRef),
                     context.getRef(returnType)
             );
@@ -71,8 +83,14 @@ public class FunctionType extends Type {
     }
 
     @Override
+    public List<Type> getComponentTypes() {
+        return NncUtils.append(getParameterTypes(), returnType);
+    }
+
+    @Override
     public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
         return "(" + NncUtils.join(parameterTypes, paramType -> paramType.getCanonicalName(getJavaType)) + ")"
-                + ":" + returnType.getCanonicalName(getJavaType);
+                + "->" + returnType.getCanonicalName(getJavaType);
     }
+
 }

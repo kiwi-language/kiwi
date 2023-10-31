@@ -362,6 +362,12 @@ public class ReflectUtils {
         return anno != null ? anno.value() : method.getName();
     }
 
+    public static String getMetaEnumConstantName(Enum<?> enumConstant) {
+        var field = getField(enumConstant.getDeclaringClass(), enumConstant.name());
+        var anno = field.getAnnotation(EnumConstant.class);
+        return anno != null ? anno.value() : enumConstant.name();
+    }
+
     public static String getMetaTypeName(Class<?> javaType) {
         EntityType entityType = javaType.getAnnotation(EntityType.class);
         ValueType valueType = javaType.getAnnotation(ValueType.class);
@@ -674,7 +680,11 @@ public class ReflectUtils {
             Field field = klass.getDeclaredField(name);
             return trySetAccessible(field);
         } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            if (klass.getSuperclass() != null) {
+                return getField(klass.getSuperclass(), name);
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -774,13 +784,13 @@ public class ReflectUtils {
         return field;
     }
 
-    public static Field getDeclaredFieldByMetaFieldName(Class<?> klass, String metaFieldName) {
+    public static Field getDeclaredFieldByName(Class<?> klass, String name) {
         for (Field declaredField : klass.getDeclaredFields()) {
-            if (getMetaFieldName(declaredField).equals(metaFieldName)) {
+            if (declaredField.getName().equals(name)) {
                 return declaredField;
             }
         }
-        throw new InternalException("Can not find a declared field for meta field name '" + metaFieldName + "' " +
+        throw new InternalException("Can not find a declared field for meta field name '" + name + "' " +
                 "in class '" + klass.getName() + "'");
     }
 
@@ -949,7 +959,7 @@ public class ReflectUtils {
         if (type instanceof Class<?>) {
             return type;
         }
-        if(type instanceof TypeVariable<?>) {
+        if (type instanceof TypeVariable<?>) {
             return type;
         }
         if (type instanceof ParameterizedType parameterizedType) {
@@ -965,8 +975,7 @@ public class ReflectUtils {
             } else {
                 return rawClass;
             }
-        }
-        else {
+        } else {
             throw new InternalException("Can not erase type " + type);
         }
     }
@@ -1028,8 +1037,7 @@ public class ReflectUtils {
         if (fieldType instanceof TypeVariable<?> typeVariable) {
             if (declaringType instanceof ParameterizedType pType) {
                 return evaluateTypeVariable(pType, typeVariable);
-            }
-            else {
+            } else {
                 return typeVariable;
             }
         }

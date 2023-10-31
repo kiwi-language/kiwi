@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.InputFieldDTO;
@@ -54,8 +55,9 @@ public class InputNode extends NodeRT<InputParamDTO> {
     }
 
     @Override
+    @NotNull
     public ClassType getType() {
-        return (ClassType) super.getType();
+        return (ClassType) NncUtils.requireNonNull(super.getType());
     }
 
     private InputFieldDTO toInputFieldDTO(FieldDTO fieldDTO) {
@@ -73,7 +75,7 @@ public class InputNode extends NodeRT<InputParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         Map<Field, Instance> fieldValues = new HashMap<>();
         NncUtils.biForEach(getType().getFields(), frame.getArguments(), fieldValues::put);
         var instance = new ClassInstance(fieldValues, getType());

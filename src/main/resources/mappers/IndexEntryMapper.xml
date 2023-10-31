@@ -130,5 +130,11 @@
     <if test="limit != null and limit != -1">
       limit #{limit}
     </if>
+    <if test="lockMode == 1">
+      lock in share mode
+    </if>
+    <if test="lockMode == 2">
+      for update
+    </if>
   </select>
 </mapper>

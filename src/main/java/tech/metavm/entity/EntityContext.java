@@ -3,6 +3,8 @@ package tech.metavm.entity;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.meta.*;
 
+import java.util.Set;
+
 public class EntityContext extends BaseEntityContext implements CompositeTypeFactory, IEntityContext {
 
     private final DefContext defContext;
@@ -17,7 +19,12 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
     }
 
     @Override
-    protected DefContext getDefContext() {
+    protected TypeFactory getTypeFactory() {
+        return new DefaultTypeFactory(ModelDefRegistry::getType);
+    }
+
+    @Override
+    public DefContext getDefContext() {
         return defContext;
     }
 
@@ -27,7 +34,17 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
     }
 
     @Override
+    public UnionType getNullableType(Type type) {
+        return getUnionType(Set.of(type, StandardTypes.getNullType()));
+    }
+
+    @Override
     public Type getType(Class<?> javaType) {
         return defContext.getType(javaType);
+    }
+
+    @Override
+    public boolean isBindSupported() {
+        return true;
     }
 }

@@ -23,7 +23,7 @@ public class ClassInstanceTest extends TestCase {
 
     public void testToFieldValueDTO_for_reference() {
         ClassInstance foo = MockRegistry.getFooInstance();
-        FieldValueDTO fieldValueDTO = foo.toFieldValueDTO();
+        FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
         Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValueDTO);
         ReferenceFieldValueDTO refFieldValueDTO = (ReferenceFieldValueDTO) fieldValueDTO;
@@ -33,7 +33,7 @@ public class ClassInstanceTest extends TestCase {
     public void testToFieldValueDTO_for_value() {
         ClassInstance foo = MockRegistry.getFooInstance();
         ClassInstance bar = foo.getClassInstance(MockRegistry.getField(Foo.class, "bar"));
-        FieldValueDTO fieldValueDTO = bar.toFieldValueDTO();
+        FieldValue fieldValueDTO = bar.toFieldValueDTO();
         Assert.assertEquals(bar.getTitle(), fieldValueDTO.getDisplayValue());
         if(bar.isValue()) {
             Assert.assertTrue(fieldValueDTO instanceof InstanceFieldValueDTO);
@@ -50,8 +50,8 @@ public class ClassInstanceTest extends TestCase {
     public void testToDTO() {
         ClassInstance foo = MockRegistry.getFooInstance();
         InstanceDTO instanceDTO = foo.toDTO();
-        Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParamDTO);
-        ClassInstanceParamDTO paramDTO = (ClassInstanceParamDTO) instanceDTO.param();
+        Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
+        ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
         Assert.assertEquals(foo.getType().getFields().size(), paramDTO.fields().size());
         TestUtils.logJSON(LOGGER, instanceDTO);
     }
@@ -83,7 +83,7 @@ public class ClassInstanceTest extends TestCase {
                 0L
         );
 
-        Assert.assertEquals(statusField.getDefaultValue(), instance.get(statusField));
+        Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
 }

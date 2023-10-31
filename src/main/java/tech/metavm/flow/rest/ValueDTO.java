@@ -3,26 +3,24 @@ package tech.metavm.flow.rest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.flow.ValueKind;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
-import tech.metavm.object.instance.rest.FieldValueDTO;
-import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.instance.rest.FieldValue;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 
 public record ValueDTO (
         int kind,
-        FieldValueDTO value,
-        TypeDTO valueType
+        FieldValue value
 ) {
 
-    public static ValueDTO constValue(FieldValueDTO value) {
-        return new ValueDTO(ValueKind.CONSTANT.code(), value, null);
+    public static ValueDTO constValue(FieldValue value) {
+        return new ValueDTO(ValueKind.CONSTANT.code(), value);
     }
 
     public static ValueDTO refValue(String ref) {
-        return new ValueDTO(ValueKind.REFERENCE.code(), new ExpressionFieldValueDTO(ref), null);
+        return new ValueDTO(ValueKind.REFERENCE.code(), new ExpressionFieldValueDTO(ref));
     }
 
     public static ValueDTO exprValue(String expr) {
-        return new ValueDTO(ValueKind.EXPRESSION.code(), new ExpressionFieldValueDTO(expr), null);
+        return new ValueDTO(ValueKind.EXPRESSION.code(), new ExpressionFieldValueDTO(expr));
     }
 
     @JsonIgnore
@@ -30,7 +28,7 @@ public record ValueDTO (
         if(value == null) {
             return true;
         }
-        if(value instanceof PrimitiveFieldValueDTO primitiveFieldValue) {
+        if(value instanceof PrimitiveFieldValue primitiveFieldValue) {
             return primitiveFieldValue.getValue() == null;
         }
         return false;

@@ -3,6 +3,8 @@ package tech.metavm.object.meta;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.ArrayKind;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.SQLType;
 import tech.metavm.util.MockIdProvider;
@@ -42,7 +44,7 @@ public class ClassTypeTest extends TestCase {
         ClassType bazType = ClassBuilder.newBuilder("Baz", null).build();
         ClassType barType = ClassBuilder.newBuilder("Bar", null).build();
         Field barsField = FieldBuilder
-                .newBuilder("bars", null, bazType, TypeUtil.getArrayType(barType))
+                .newBuilder("bars", null, bazType, new ArrayType(null, barType, ArrayKind.READ_WRITE))
                 .build();
         Assert.assertNotNull(barsField.getColumn());
         Assert.assertTrue(barsField.getColumnName().startsWith(SQLType.MULTI_REFERENCE.prefix()));

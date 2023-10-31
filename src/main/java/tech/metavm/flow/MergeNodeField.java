@@ -3,13 +3,12 @@ package tech.metavm.flow;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.MergeFieldDTO;
 import tech.metavm.object.meta.Field;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadonlyArray;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 
 @EntityType("合并节点字段")
@@ -18,7 +17,7 @@ public class MergeNodeField extends Entity {
     @EntityField("字段")
     private final Field field;
     @ChildEntity("值")
-    private final Table<ConditionalValue> values = new Table<>(ConditionalValue.class, true);
+    private final ChildArray<ConditionalValue> values = new ChildArray<>(ConditionalValue.class);
 
     public MergeNodeField(Field field, MergeNode mergeNode) {
         this(field, mergeNode, null);
@@ -43,7 +42,7 @@ public class MergeNodeField extends Entity {
     public void setValue(Branch branch, Value value) {
         var condValue = values.get(ConditionalValue::getBranch, branch);
         if (condValue == null) {
-            values.add(new ConditionalValue(branch, value));
+            values.addChild(new ConditionalValue(branch, value));
         } else {
             condValue.setValue(value);
         }
@@ -53,8 +52,8 @@ public class MergeNodeField extends Entity {
         values.forEach(this::setValue);
     }
 
-    public List<ConditionalValue> getValues() {
-        return Collections.unmodifiableList(values);
+    public ReadonlyArray<ConditionalValue> getValues() {
+        return values;
     }
 
     public MergeFieldDTO toDTO(boolean persisting) {

@@ -4,13 +4,12 @@ import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.instance.ArrayKind;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeVariable;
-import tech.metavm.object.meta.generic.GenericContext;
+import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.generic.*;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.NncUtils;
@@ -18,6 +17,7 @@ import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Set;
 
 public interface IEntityContext extends ModelInstanceMap {
 
@@ -33,15 +33,38 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(typeReference.getType(), ref);
     }
 
+    DefContext getDefContext();
+
     <T> List<T> getByType(Class<T> type, T startExclusive, long limit);
+
+    default List<ClassType> getTemplateInstances(ClassType template) {
+        NncUtils.requireTrue(template.isTemplate());
+        return selectByKey(ClassType.TEMPLATE_IDX,template);
+    }
 
     boolean existsInstances(Class<?> type);
 
     boolean containsEntity(Class<?> entityType, long id);
 
-    ClassType getParameterizedType(ClassType template, List<Type> typeArguments);
+    ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments);
+
+    FunctionType getFunctionType(List<Type> parameterTypes, Type returnType);
 
     GenericContext getGenericContext();
+
+    FunctionTypeContext getFunctionTypeContext();
+
+    UncertainType getUncertainType(Type lowerBound, Type upperBound);
+
+    UnionType getNullableType(Type type);
+
+    UncertainTypeContext getUncertainTypeContext();
+
+    ArrayTypeContext getArrayTypeContext(ArrayKind kind);
+
+    UnionTypeContext getUnionTypeContext();
+
+    Set<CompositeType> getNewCompositeTypes();
 
     <T> T getEntity(Class<T> entityType, long id);
 
@@ -49,7 +72,13 @@ public interface IEntityContext extends ModelInstanceMap {
 
     Type getType(Class<?> javaType);
 
+    default FunctionType getFunctionType(RefDTO ref) {
+        return getEntity(FunctionType.class, ref);
+    }
+
     boolean isNewEntity(Object entity);
+
+    boolean isPersisted(Object entity);
 
     default Type getType(long id) {
         return getEntity(Type.class, id);
@@ -67,17 +96,23 @@ public interface IEntityContext extends ModelInstanceMap {
         return getEntity(ClassType.class, ref);
     }
 
+    UnionType getUnionType(Set<Type> members);
+
+    ArrayType getArrayType(Type elementType, ArrayKind kind);
+
     default ClassType getClassType(Long id, String code) {
         NncUtils.requireTrue(id != null || code != null, "id and code can't both be null");
         if(id != null) {
             return getClassType(id);
         }
         else {
-            return (ClassType) selectByUniqueKey(Type.UNIQUE_CODE, code);
+            return selectByUniqueKey(ClassType.UNIQUE_CODE, code);
         }
     }
 
     long getTenantId(Object model);
+
+    long getTenantId();
 
     default Field getField(long id) {
         return getEntity(Field.class, id);
@@ -143,6 +178,8 @@ public interface IEntityContext extends ModelInstanceMap {
     void initIds();
 
     void bind(Object entity);
+
+    boolean isBindSupported();
 
     void initIdManually(Object model, long id);
 

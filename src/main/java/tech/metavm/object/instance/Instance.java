@@ -2,9 +2,10 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.IdInitializing;
 import tech.metavm.entity.NoProxy;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceParamDTO;
 import tech.metavm.object.meta.Field;
@@ -15,9 +16,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Instance implements IdInitializing {
 
@@ -29,8 +28,8 @@ public abstract class Instance implements IdInitializing {
 
     private transient Long tmpId;
 
-    private transient final Set<ReferenceRT> outgoingReferences = new HashSet<>();
-    private transient final Set<ReferenceRT> incomingReferences = new HashSet<>();
+    private transient final Map<ReferenceRT, Integer> outgoingReferences = new HashMap<>();
+    private transient final Map<ReferenceRT, Integer> incomingReferences = new HashMap<>();
 
     private transient Object nativeObject;
 
@@ -128,7 +127,7 @@ public abstract class Instance implements IdInitializing {
         if (this.id != null) {
             throw new InternalException("id already initialized");
         }
-        if (isArray() && !TypeCategory.ARRAY.idRangeContains(id)) {
+        if (isArray() && NncUtils.noneMatch(TypeCategory.arrayCategories(), category -> category.idRangeContains(id))) {
             throw new InternalException("Invalid id for array instance");
         }
         this.id = id;
@@ -158,57 +157,52 @@ public abstract class Instance implements IdInitializing {
 
     @NoProxy
     public void addOutgoingReference(ReferenceRT reference) {
-        if (!outgoingReferences.add(reference)) {
-            throw new InternalException(reference + " already exists");
-        }
+        outgoingReferences.compute(reference, (k, c) -> c == null ? 1 : c + 1);
     }
 
     @NoProxy
     public void removeOutgoingReference(ReferenceRT reference) {
-        if (!outgoingReferences.remove(reference)) {
-            throw new InternalException(reference + " does not exist");
-        }
+        outgoingReferences.compute(reference, (k, c) -> c == null || c <= 1 ? null : c - 1);
     }
 
     @NoProxy
     public void addIncomingReference(ReferenceRT reference) {
-        if (!incomingReferences.add(reference)) {
-            throw new InternalException(reference + " already exists");
-        }
+        incomingReferences.compute(reference, (k, c) -> c == null ? 1 : c + 1);
     }
 
     @NoProxy
     public void removeIncomingReference(ReferenceRT reference) {
-        if (!incomingReferences.remove(reference)) {
-            throw new InternalException(reference + " does not exist");
-        }
+        incomingReferences.compute(reference, (k, c) -> c == null || c <= 1 ? null : c - 1);
     }
 
     @NoProxy
     public Set<ReferenceRT> getIncomingReferences() {
-        return Collections.unmodifiableSet(incomingReferences);
+        return Collections.unmodifiableSet(incomingReferences.keySet());
     }
 
     @NoProxy
     public Set<ReferenceRT> getOutgoingReferences() {
-        return Collections.unmodifiableSet(outgoingReferences);
+        return Collections.unmodifiableSet(outgoingReferences.keySet());
     }
 
     public ReferenceRT getOutgoingReference(Instance target, Field field) {
-        return NncUtils.findRequired(outgoingReferences, ref -> ref.target() == target && ref.field() == field);
+        return NncUtils.findRequired(outgoingReferences.keySet(),
+                ref -> ref.target() == target && ref.field() == field);
     }
 
     protected InstanceDTO toDTO(InstanceParamDTO param) {
-        return new InstanceDTO(
-                id,
-                NncUtils.requireNonNull(type.getId(), "typeId required"),
-                type.getName(),
-                getTitle(),
-                param
-        );
+        try(var context = SerializeContext.enter()) {
+            return new InstanceDTO(
+                    NncUtils.orElse(id, () -> 0L),
+                    context.getRef(getType()),
+                    type.getName(),
+                    getTitle(),
+                    param
+            );
+        }
     }
 
-    public abstract FieldValueDTO toFieldValueDTO();
+    public abstract FieldValue toFieldValueDTO();
 
     public InstanceDTO toDTO() {
         return toDTO(getParam());

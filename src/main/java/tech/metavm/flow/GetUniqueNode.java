@@ -6,8 +6,8 @@ import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.meta.Index;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     @EntityField("索引")
     private Index constraint;
     @ChildEntity("字段值列表")
-    private final Table<Value> values = new Table<>(Value.class, true);
+    private final ChildArray<Value> values = new ChildArray<>(Value.class);
 
     public GetUniqueNode(Long tmpId, String name, Index index, NodeRT<?> previous, ScopeRT scope) {
         super(tmpId, name,  index.getDeclaringType(), previous, scope);
@@ -49,8 +49,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     }
 
     public void setValues(List<Value> values) {
-        this.values.clear();
-        this.values.addAll(values);
+        this.values.resetChildren(values);
     }
 
     public void setConstraint(Index constraint) {
@@ -62,14 +61,14 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     }
 
     @Override
-    public void execute(FlowFrame frame) {
+    public void execute(MetaFrame frame) {
         IInstanceContext instanceContext = frame.getStack().getContext();
         frame.setResult(
                 instanceContext.selectByUniqueKey(buildIndexKey(frame))
         );
     }
 
-    private IndexKeyRT buildIndexKey(FlowFrame frame) {
+    private IndexKeyRT buildIndexKey(MetaFrame frame) {
         return constraint.createIndexKey(NncUtils.map(values, fp -> fp.evaluate(frame)));
     }
 

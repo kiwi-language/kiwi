@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.NullInstance;
+import tech.metavm.util.Column;
 
 import javax.annotation.Nullable;
 
@@ -15,6 +16,8 @@ public class FieldBuilder {
     private final @Nullable String code;
     private final ClassType declaringType;
     private final Type type;
+    private Integer ordinal;
+    private Column column;
     private Long tmpId;
     private Access access = Access.GLOBAL;
     private boolean unique = false;
@@ -25,6 +28,7 @@ public class FieldBuilder {
     private boolean isStatic = false;
     private Instance staticValue;
     private Field template;
+    private Field existing;
 
     private FieldBuilder(String name, @Nullable String code, ClassType declaringType, Type type) {
         this.name = name;
@@ -50,6 +54,21 @@ public class FieldBuilder {
 
     public FieldBuilder unique(boolean unique) {
         this.unique = unique;
+        return this;
+    }
+
+    public FieldBuilder column(Column column) {
+        this.column = column;
+        return this;
+    }
+
+    public FieldBuilder ordinal(int ordinal) {
+        this.ordinal = ordinal;
+        return this;
+    }
+
+    public FieldBuilder existing(Field existing) {
+        this.existing = existing;
         return this;
     }
 
@@ -84,21 +103,39 @@ public class FieldBuilder {
     }
 
     public Field build() {
-        var field = new Field(
-                name,
-                code,
-                declaringType,
-                type, access,
-                unique,
-                asTitle,
-                defaultValue != null ? defaultValue : new NullInstance(nullType()),
-                isChild,
-                isStatic,
-                staticValue != null ? staticValue : new NullInstance(nullType()),
-                template
-        );
-        field.setTmpId(tmpId);
-        return field;
+        var effectiveDefaultValue = defaultValue != null ? defaultValue : new NullInstance(nullType());
+        var effectiveStaticValue = staticValue != null ? staticValue : new NullInstance(nullType());
+        if(existing == null) {
+            var field = new Field(
+                    tmpId,
+                    name,
+                    code,
+                    declaringType,
+                    type,
+                    access,
+                    unique,
+                    asTitle,
+                    effectiveDefaultValue,
+                    isChild,
+                    isStatic,
+                    effectiveStaticValue,
+                    template,
+                    column
+            );
+            return field;
+        }
+        else {
+            existing.setTmpId(tmpId);
+            existing.setName(name);
+            existing.setCode(code);
+            existing.setType(type);
+            existing.setAccess(access);
+            existing.setUnique(unique);
+            existing.setAsTitle(asTitle);
+            existing.setDefaultValue(effectiveDefaultValue);
+            existing.setStaticValue(effectiveStaticValue);
+            return existing;
+        }
     }
 
     private PrimitiveType nullType() {

@@ -3,12 +3,11 @@ package tech.metavm.entity;
 import tech.metavm.object.meta.*;
 
 import java.lang.reflect.Type;
-import java.util.List;
 
 public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> {
 
-    public EntityParser(Class<T> entityType, Type genericType, DefMap defMap) {
-        super(entityType, genericType, defMap);
+    public EntityParser(Class<T> entityType, Type genericType, DefContext defContext, ColumnStore columnStore) {
+        super(entityType, genericType, defContext, columnStore);
     }
 
     @Override
@@ -18,7 +17,7 @@ public class EntityParser<T extends Entity> extends PojoParser<T, EntityDef<T>> 
                 getJavaType(),
                 superDef,
                 createType(),
-                defMap
+                defContext
         );
     }
 

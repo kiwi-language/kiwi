@@ -1,9 +1,7 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.ContextUtil;
@@ -43,13 +41,16 @@ public abstract class Constraint<T> extends Entity {
     protected abstract T getParam(boolean forPersistence);
 
     public ConstraintDTO toDTO() {
-        return new ConstraintDTO(
-                getId(),
-                kind.code(),
-                declaringType.getIdRequired(),
-                message,
-                getParam(false)
-        );
+        try(var context = SerializeContext.enter()) {
+            return new ConstraintDTO(
+                    context.getTmpId(this),
+                    getId(),
+                    kind.code(),
+                    declaringType.getIdRequired(),
+                    message,
+                    getParam(false)
+            );
+        }
     }
 
     public abstract String getDesc();
@@ -75,7 +76,7 @@ public abstract class Constraint<T> extends Entity {
     }
 
     @Override
-    public List<Object> beforeRemove() {
+    public List<Object> beforeRemove(IEntityContext context) {
         declaringType.removeConstraint(this);
         return List.of();
     }

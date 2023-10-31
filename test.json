@@ -1,0 +1,397 @@
+{
+  "string|null": {
+    "id": 40010,
+    "name": "字符串|空",
+    "category": 9,
+    "ephemeral": false,
+    "anonymous": false,
+    "param": {
+      "memberRefs": [
+        {
+          "id": 20006
+        },
+        {
+          "id": 20002
+        }
+      ],
+      "type": 4
+    }
+  },
+  "void": {
+    "id": 20003,
+    "name": "Void",
+    "code": "VOID",
+    "category": 23,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 8,
+      "type": 3
+    }
+  },
+  "childArray": {
+    "id": 50020,
+    "name": "对象[]",
+    "code": "Object[]",
+    "category": 8,
+    "ephemeral": false,
+    "anonymous": false,
+    "param": {
+      "elementTypeRef": {
+        "id": 30000
+      },
+      "kind": 3,
+      "type": 2
+    }
+  },
+  "string": {
+    "id": 20006,
+    "name": "字符串",
+    "code": "STRING",
+    "category": 11,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 3,
+      "type": 3
+    }
+  },
+  "double": {
+    "id": 20004,
+    "name": "浮点数",
+    "code": "DOUBLE",
+    "category": 12,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 2,
+      "type": 3
+    }
+  },
+  "throwable": {
+    "id": 60009,
+    "name": "中断",
+    "code": "Throwable",
+    "category": 0,
+    "ephemeral": false,
+    "anonymous": false,
+    "param": {
+      "interfaceRefs": [],
+      "source": 1,
+      "fields": [
+        {
+          "id": 80131,
+          "name": "detailMessage",
+          "code": "detailMessage",
+          "access": 1,
+          "unique": false,
+          "asTitle": true,
+          "declaringTypeId": 60009,
+          "typeRef": {
+            "id": 40010
+          },
+          "isChild": false,
+          "isStatic": false
+        },
+        {
+          "id": 80067,
+          "name": "cause",
+          "code": "cause",
+          "access": 1,
+          "unique": false,
+          "asTitle": false,
+          "declaringTypeId": 60009,
+          "typeRef": {
+            "id": 40056
+          },
+          "isChild": false,
+          "isStatic": false
+        }
+      ],
+      "staticFields": [],
+      "constraints": [],
+      "flows": [
+        {
+          "id": 110005,
+          "name": "Throwable",
+          "code": "Throwable",
+          "isConstructor": true,
+          "isAbstract": false,
+          "isNative": true,
+          "declaringTypeRef": {
+            "id": 60009
+          },
+          "rootScope": {
+            "id": 100039,
+            "nodes": []
+          },
+          "returnTypeRef": {
+            "id": 60009
+          },
+          "parameters": [],
+          "typeRef": {
+            "id": 90038
+          },
+          "staticTypeRef": {
+            "id": 90010
+          },
+          "typeParameterRefs": [],
+          "typeArgumentRefs": [],
+          "overriddenRefs": [],
+          "templateInstances": []
+        },
+        {
+          "id": 110100,
+          "name": "Throwable",
+          "code": "Throwable",
+          "isConstructor": true,
+          "isAbstract": false,
+          "isNative": true,
+          "declaringTypeRef": {
+            "id": 60009
+          },
+          "rootScope": {
+            "id": 100126,
+            "nodes": []
+          },
+          "returnTypeRef": {
+            "id": 60009
+          },
+          "parameters": [
+            {
+              "id": 120022,
+              "name": "错误详情",
+              "code": "message",
+              "typeRef": {
+                "id": 20006
+              }
+            }
+          ],
+          "typeRef": {
+            "id": 90136
+          },
+          "staticTypeRef": {
+            "id": 90079
+          },
+          "typeParameterRefs": [],
+          "typeArgumentRefs": [],
+          "overriddenRefs": [],
+          "templateInstances": []
+        },
+        {
+          "id": 110026,
+          "name": "Throwable",
+          "code": "Throwable",
+          "isConstructor": true,
+          "isAbstract": false,
+          "isNative": true,
+          "declaringTypeRef": {
+            "id": 60009
+          },
+          "rootScope": {
+            "id": 100082,
+            "nodes": []
+          },
+          "returnTypeRef": {
+            "id": 60009
+          },
+          "parameters": [
+            {
+              "id": 120027,
+              "name": "原因",
+              "code": "cause",
+              "typeRef": {
+                "id": 60009
+              }
+            }
+          ],
+          "typeRef": {
+            "id": 90010
+          },
+          "staticTypeRef": {
+            "id": 90006
+          },
+          "typeParameterRefs": [],
+          "typeArgumentRefs": [],
+          "overriddenRefs": [],
+          "templateInstances": []
+        },
+        {
+          "id": 110043,
+          "name": "Throwable",
+          "code": "Throwable",
+          "isConstructor": true,
+          "isAbstract": false,
+          "isNative": true,
+          "declaringTypeRef": {
+            "id": 60009
+          },
+          "rootScope": {
+            "id": 100116,
+            "nodes": []
+          },
+          "returnTypeRef": {
+            "id": 60009
+          },
+          "parameters": [
+            {
+              "id": 120051,
+              "name": "错误详情",
+              "code": "message",
+              "typeRef": {
+                "id": 20006
+              }
+            },
+            {
+              "id": 120046,
+              "name": "原因",
+              "code": "cause",
+              "typeRef": {
+                "id": 60009
+              }
+            }
+          ],
+          "typeRef": {
+            "id": 90124
+          },
+          "staticTypeRef": {
+            "id": 90058
+          },
+          "typeParameterRefs": [],
+          "typeArgumentRefs": [],
+          "overriddenRefs": [],
+          "templateInstances": []
+        },
+        {
+          "id": 110039,
+          "name": "获取详情",
+          "code": "getMessage",
+          "isConstructor": false,
+          "isAbstract": false,
+          "isNative": true,
+          "declaringTypeRef": {
+            "id": 60009
+          },
+          "rootScope": {
+            "id": 100076,
+            "nodes": []
+          },
+          "returnTypeRef": {
+            "id": 40010
+          },
+          "parameters": [],
+          "typeRef": {
+            "id": 90007
+          },
+          "staticTypeRef": {
+            "id": 90008
+          },
+          "typeParameterRefs": [],
+          "typeArgumentRefs": [],
+          "overriddenRefs": [],
+          "templateInstances": []
+        }
+      ],
+      "templateName": "Throwable",
+      "enumConstants": [],
+      "isTemplate": false,
+      "typeParameterRefs": [],
+      "typeParameters": [],
+      "typeArgumentRefs": [],
+      "dependencyRefs": [],
+      "hasSubTypes": true,
+      "type": 1
+    }
+  },
+  "nothing": {
+    "id": 10000,
+    "name": "Nothing",
+    "code": "Nothing",
+    "category": 29,
+    "ephemeral": true,
+    "anonymous": false
+  },
+  "long": {
+    "id": 20007,
+    "name": "整数",
+    "code": "LONG",
+    "category": 13,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 1,
+      "type": 3
+    }
+  },
+  "password": {
+    "id": 20000,
+    "name": "密码",
+    "code": "PASSWORD",
+    "category": 22,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 6,
+      "type": 3
+    }
+  },
+  "boolean": {
+    "id": 20001,
+    "name": "布尔",
+    "code": "BOOLEAN",
+    "category": 16,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 4,
+      "type": 3
+    }
+  },
+  "null": {
+    "id": 20002,
+    "name": "空",
+    "code": "NULL",
+    "category": 10,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 7,
+      "type": 3
+    }
+  },
+  "array": {
+    "id": 50108,
+    "name": "对象[]",
+    "code": "Object[]",
+    "category": 6,
+    "ephemeral": false,
+    "anonymous": false,
+    "param": {
+      "elementTypeRef": {
+        "id": 30000
+      },
+      "kind": 1,
+      "type": 2
+    }
+  },
+  "time": {
+    "id": 20005,
+    "name": "时间",
+    "code": "TIME",
+    "category": 18,
+    "ephemeral": true,
+    "anonymous": false,
+    "param": {
+      "kind": 5,
+      "type": 3
+    }
+  },
+  "object": {
+    "id": 30000,
+    "name": "对象",
+    "code": "Object",
+    "category": 21,
+    "ephemeral": false,
+    "anonymous": false
+  }
+}

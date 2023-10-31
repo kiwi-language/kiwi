@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.util.*;
 
@@ -22,6 +23,10 @@ public class StandardTypes {
 
     public static ObjectType getObjectType() {
         return (ObjectType) ModelDefRegistry.getType(Object.class);
+    }
+
+    public static UnionType getNullableObjectType() {
+        return ModelDefRegistry.getDefContext().getUnionType(Set.of(getObjectType(), getNullType()));
     }
 
     public static ClassType getEnumType() {
@@ -75,8 +80,12 @@ public class StandardTypes {
         return (PrimitiveType) getType(Double.class);
     }
 
-    public static ArrayType getArrayType() {
-        return (ArrayType) getType(Table.class);
+    public static ArrayType getObjectArrayType() {
+        return ModelDefRegistry.getDefContext().getArrayType(getObjectType(), ArrayKind.READ_WRITE);
+    }
+
+    public static ArrayType getObjectChildArrayType() {
+        return ModelDefRegistry.getDefContext().getArrayType(getObjectType(), ArrayKind.CHILD);
     }
 
     public static Field getEnumNameField(ClassType classType) {
@@ -124,7 +133,11 @@ public class StandardTypes {
     }
 
     public static UnionType getNullableThrowableType() {
-        return NncUtils.requireNonNull(getThrowableType().getNullableType());
+        return (UnionType) ModelDefRegistry.getType(BiUnion.createNullableType(Throwable.class));
+    }
+
+    public static NothingType getNothingType() {
+        return (NothingType) getType(Nothing.class);
     }
 
     public static List<PrimitiveType> getPrimitiveTypes() {

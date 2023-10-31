@@ -15,11 +15,7 @@ public class ArrayNative {
         this.array = array;
     }
 
-    public ArrayInstance init(Instance elementAsChild) {
-        if(!(elementAsChild instanceof BooleanInstance bool)) {
-            throw new InternalException("elementAsChild must be a BooleanInstance, actually got: " + elementAsChild);
-        }
-        array.setElementAsChild(bool.isTrue());
+    public ArrayInstance init() {
         return array;
     }
 

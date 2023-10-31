@@ -7,6 +7,7 @@ import tech.metavm.infra.MemBlockMapper;
 import tech.metavm.infra.MemRegionMapper;
 import tech.metavm.infra.RegionManager;
 import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
@@ -21,7 +22,7 @@ public class EntityIdProviderTest extends TestCase {
     private void testAllocate(EntityIdProvider entityIdProvider) {
         ClassType typeType = ClassBuilder.newBuilder("Type", null).build();
         ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
-        ArrayType fooArrayType = new ArrayType(null, fooType);
+        ArrayType fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
         typeType.initId(-1L);
         fooType.initId(entityIdProvider.allocateOne(TestConstants.TENANT_ID, typeType));
         fooArrayType.initId(entityIdProvider.allocateOne(TestConstants.TENANT_ID, typeType));
@@ -54,7 +55,7 @@ public class EntityIdProviderTest extends TestCase {
             return Foo.class;
         }
         else if(type instanceof ArrayType) {
-            return new TypeReference<Table<Foo>>(){}.getGenericType();
+            return new TypeReference<ReadWriteArray<Foo>>(){}.getGenericType();
         }
         throw new InternalException();
     }

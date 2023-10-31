@@ -1,17 +1,15 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.ArrayInstance;
+import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.meta.DefaultTypeFactory;
-import tech.metavm.object.meta.TypeFactory;
-import tech.metavm.object.meta.TypeUtil;
-import tech.metavm.util.Table;
+import tech.metavm.util.ReadonlyArray;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 
-public class CollectionParser<C extends Table<?>>
+public class CollectionParser<C extends ReadonlyArray<?>>
         implements DefParser<C, ArrayInstance, CollectionDef<?, C>> {
 
     private final Class<C> javaClass;
@@ -29,9 +27,7 @@ public class CollectionParser<C extends Table<?>>
     public CollectionDef<?, C> create() {
         Type elementType = getElementType();
         ModelDef elementDef = defMap.getDef(elementType);
-        var typeFactory = new DefaultTypeFactory(defMap::getType);
-        ArrayType type = TypeUtil.getArrayType(elementDef.getType(), typeFactory);
-        CollectionDef<?, C> def;
+        ArrayType type = defMap.getArrayType(elementDef.getType(), ArrayKind.getByEntityClass(javaClass));
         return new CollectionDef<>((Class)javaClass, javaType, type, elementDef);
     }
 

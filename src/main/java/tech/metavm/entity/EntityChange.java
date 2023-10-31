@@ -1,6 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.ChangeList;
@@ -70,7 +69,7 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
     }
 
     public List<T> insertsAndUpdates() {
-        return NncUtils.merge(inserts(), updates());
+        return NncUtils.union(inserts(), updates());
     }
 
     public boolean isEmpty() {

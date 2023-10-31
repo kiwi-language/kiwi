@@ -17,12 +17,12 @@ public class ListNative extends NativeBase {
         this.instance = instance;
         arrayField = NncUtils.requireNonNull(instance.getType().getFieldByCode("array"));
         if(instance.isFieldInitialized(arrayField)) {
-            array = (ArrayInstance) instance.get(arrayField);
+            array = (ArrayInstance) instance.getField(arrayField);
         }
     }
 
-    public Instance List(Instance elementAsChild) {
-        array = new ArrayInstance((ArrayType) arrayField.getType(), getBool(elementAsChild));
+    public Instance List() {
+        array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initializeField(arrayField, array);
         return instance;
     }

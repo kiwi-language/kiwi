@@ -54,7 +54,9 @@ public class RegionManager {
     static {
         create(TypeCategory.CLASS, CLASS_REGION_BASE, CLASS_REGION_END);
         create(TypeCategory.ENUM, ENUM_REGION_BASE, ENUM_REGION_END);
-        create(TypeCategory.ARRAY, ARRAY_REGION_BASE, ARRAY_REGION_END);
+        create(TypeCategory.READ_WRITE_ARRAY, READ_WRITE_ARRAY_REGION_BASE, READ_WRITE_ARRAY_REGION_END);
+        create(TypeCategory.READ_ONLY_ARRAY, READ_ONLY_ARRAY_REGION_BASE, READ_ONLY_ARRAY_REGION_END);
+        create(TypeCategory.CHILD_ARRAY, CHILD_ARRAY_REGION_BASE, CHILD_ARRAY_REGION_END);
     }
 
     private static void create(TypeCategory typeCategory, long start, long end) {

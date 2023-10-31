@@ -14,7 +14,8 @@ import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.Table;
+import tech.metavm.util.ChildArray;
+import tech.metavm.util.ReadonlyArray;
 
 import java.util.*;
 
@@ -22,7 +23,7 @@ import java.util.*;
 public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
 
     @ChildEntity("字段列表")
-    private final Table<LoopField> fields = new Table<>(LoopField.class, true);
+    private final ChildArray<LoopField> fields = new ChildArray<>(LoopField.class);
     @ChildEntity("条件")
     private Value condition;
 
@@ -55,7 +56,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
             fields.add(field);
             var loopField = this.fields.get(LoopField::getField, field);
             if (loopField == null) {
-                this.fields.add(new LoopField(
+                this.fields.addChild(new LoopField(
                         field,
                         ValueFactory.create(loopFieldDTO.initialValue(), parsingContext),
                         ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext)
@@ -74,14 +75,14 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         );
     }
 
-    public List<LoopField> getFields() {
-        return Collections.unmodifiableList(fields);
+    public ReadonlyArray<LoopField> getFields() {
+        return fields;
     }
 
     public void setField(Field field, Value initialValue, Value updatedValue) {
         var loopField = fields.get(LoopField::getField, field);
         if (loopField == null) {
-            fields.add(new LoopField(field, initialValue, updatedValue));
+            fields.addChild(new LoopField(field, initialValue, updatedValue));
         } else {
             loopField.setInitialValue(initialValue);
             loopField.setUpdatedValue(updatedValue);
@@ -89,7 +90,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
     }
 
     @Override
-    public final void execute(FlowFrame frame) {
+    public final void execute(MetaFrame frame) {
         ClassInstance loopObject = (ClassInstance) frame.getResult(this);
         if (loopObject == null) {
             loopObject = initLoopObject(frame);
@@ -108,7 +109,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         }
     }
 
-    private ClassInstance initLoopObject(FlowFrame frame) {
+    private ClassInstance initLoopObject(MetaFrame frame) {
         Map<Field, Instance> fieldValues = new HashMap<>(getExtraLoopFields(frame));
         for (LoopField field : fields) {
             fieldValues.put(field.getField(), field.getInitialValue().evaluate(frame));
@@ -116,21 +117,21 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         return new ClassInstance(fieldValues, getType());
     }
 
-    private void updateLoopObject(ClassInstance loopObject, FlowFrame frame) {
+    private void updateLoopObject(ClassInstance loopObject, MetaFrame frame) {
         updateExtraFields(loopObject, frame);
         for (LoopField field : fields) {
-            loopObject.set(field.getField(), field.getUpdatedValue().evaluate(frame));
+            loopObject.setField(field.getField(), field.getUpdatedValue().evaluate(frame));
         }
     }
 
-    protected Map<Field, Instance> getExtraLoopFields(FlowFrame frame) {
+    protected Map<Field, Instance> getExtraLoopFields(MetaFrame frame) {
         return Map.of();
     }
 
-    protected void updateExtraFields(ClassInstance instance, FlowFrame frame) {
+    protected void updateExtraFields(ClassInstance instance, MetaFrame frame) {
     }
 
-    protected boolean checkExtraCondition(ClassInstance loopObject, FlowFrame frame) {
+    protected boolean checkExtraCondition(ClassInstance loopObject, MetaFrame frame) {
         return true;
     }
 

@@ -5,7 +5,7 @@ import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
-import tech.metavm.object.instance.rest.InstanceQueryDTO;
+import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.meta.ClassType;
@@ -27,7 +27,7 @@ public class InstanceQueryService {
         this.instanceSearchService = instanceSearchService;
     }
 
-    public Page<Long> query(InstanceQuery query, IInstanceContext context) {
+    public Page<Long> query(tech.metavm.entity.InstanceQuery query, IInstanceContext context) {
         return query(
                 query.typeId(),
                 buildCondition(query, context),
@@ -38,7 +38,7 @@ public class InstanceQueryService {
         );
     }
 
-    public <T extends Entity> Page<T> query(Class<T> entityType, InstanceQueryDTO query, IEntityContext context) {
+    public <T extends Entity> Page<T> query(Class<T> entityType, InstanceQuery query, IEntityContext context) {
         Page<Long> idPage = query(query, context.getInstanceContext());
         return new Page<>(
                 NncUtils.map(idPage.data(), id -> context.getEntity(entityType, id)),
@@ -46,7 +46,7 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<Long> query(InstanceQueryDTO query, IInstanceContext context) {
+    public Page<Long> query(InstanceQuery query, IInstanceContext context) {
         return query(
                 query.typeId(),
                 buildConditionForSearchText(query.typeId(), query.searchText(), List.of(), context),
@@ -72,7 +72,7 @@ public class InstanceQueryService {
         return instanceSearchService.search(searchQuery);
     }
 
-    private Expression buildCondition(InstanceQuery query, IInstanceContext context) {
+    private Expression buildCondition(tech.metavm.entity.InstanceQuery query, IInstanceContext context) {
         Expression condition = buildConditionForSearchText(
                 query.typeId(), query.searchText(), query.searchFields(), context
         );

@@ -21,7 +21,7 @@ public class ObjectNode extends InstanceNode<ClassInstance> {
         for (PathTree child : path.getChildren()) {
             children.put(
                     child.getName(),
-                    InstanceNode.create(child, type.getFieldByName(child.getName()).getType())
+                    InstanceNode.create(child, type.tryGetFieldByName(child.getName()).getType())
             );
         }
     }
@@ -29,7 +29,7 @@ public class ObjectNode extends InstanceNode<ClassInstance> {
     public List<NodeInstancePair> getNodeInstancePairsForChildren0(ClassInstance instance) {
         return NncUtils.map(
                 getChildren(),
-                child -> new NodeInstancePair(child, instance.get(child.getName()))
+                child -> new NodeInstancePair(child, instance.getField(child.getName()))
         );
     }
 
@@ -41,13 +41,13 @@ public class ObjectNode extends InstanceNode<ClassInstance> {
     @Override
     public Instance getByPath0(ClassInstance instance, Path path) {
         InstanceNode<?> child = children.get(path.firstItem());
-        Instance fieldValue = instance.get(path.firstItem());
+        Instance fieldValue = instance.getField(path.firstItem());
         return child.getByPath(fieldValue, path.subPath());
     }
 
     @Override
     protected void fetch0(ClassInstance instance, Path path, List<Instance> result) {
-        children.get(path.firstItem()).fetch(instance.get(path.firstItem()), path.subPath(), result);
+        children.get(path.firstItem()).fetch(instance.getField(path.firstItem()), path.subPath(), result);
     }
 
     @Override

@@ -1,0 +1,42 @@
+package tech.metavm.object.meta.generic;
+
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.ArrayKind;
+import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.Type;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+
+import java.util.List;
+
+public class ArrayTypeContext extends CompositeTypeContext<ArrayType>  {
+
+    private final ArrayKind kind;
+
+    public ArrayTypeContext(IEntityContext context, ArrayKind kind) {
+        super(context, ArrayType.KEY_IDX);
+        this.kind = kind;
+    }
+
+    public ArrayType get(Type elementType) {
+        return get(List.of(elementType));
+    }
+
+    @Override
+    public void checkComponentTypes(List<Type> types) {
+        if(types.size() != 1) {
+            throw new InternalException("Array type can must have exactly one component type");
+        }
+    }
+
+    @Override
+    protected String getKey(List<Type> componentTypes) {
+        return ArrayType.getKey(componentTypes.get(0), kind);
+    }
+
+    @Override
+    protected ArrayType create(List<Type> componentTypes) {
+        NncUtils.requireTrue(componentTypes.size() == 1);
+        return new ArrayType(null, componentTypes.get(0), kind);
+    }
+}

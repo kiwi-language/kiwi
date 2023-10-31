@@ -52,7 +52,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     }
 
     @Override
-    public ListIterator<T> listIterator(int index) {
+    public @NotNull ListIterator<T> listIterator(int index) {
         beforeAccess();
         if(index < 0 || index > size) {
             throw new IndexOutOfBoundsException();
@@ -377,17 +377,19 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         }
         int i = -1;
         Node<T> node = head;
-        while (node != tail) {
+        while (true) {
             if(i == index) {
                 return node;
+            }
+            if(node == tail) {
+                throw new InternalException("Should not reach here");
             }
             i++;
             node = node.next;
         }
-        throw new InternalException("Should not reach here");
     }
 
-    protected <K> Node<T> getNode(Table.IndexMapper<T, K> keyMapper, K key) {
+    protected <K> Node<T> getNode(IndexMapper<? super T, K> keyMapper, K key) {
         return findNode(n -> Objects.equals(keyMapper.apply(n), key));
     }
 

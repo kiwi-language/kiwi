@@ -51,7 +51,6 @@ public record OutputFieldDTO(
                 false,
                 null,
                 typeRef,
-                null,
                 false,
                 false
         );

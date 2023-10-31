@@ -29,7 +29,6 @@ public record LoopFieldDTO(
                 false,
                 null,
                 typeRef,
-                null,
                 false,
                 false
         );

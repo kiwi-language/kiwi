@@ -5,12 +5,14 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IInstanceContext;
 import tech.metavm.object.instance.PrimitiveInstance;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -237,7 +239,7 @@ public class ExpressionParser {
             }
             else if (operatorOp.isComma()) {
                 Expression second = popExpr(), first = popExpr();
-                exprStack.push(ArrayExpression.merge(first, second));
+                exprStack.push(new ArrayExpression(List.of(first, second), StandardTypes.getObjectArrayType()));
             }
             else if(operatorOp.isInstanceOf()) {
                 var typeExpr = (ConstantExpression) popExpr();

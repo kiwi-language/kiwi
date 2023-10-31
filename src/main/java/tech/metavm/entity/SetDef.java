@@ -60,7 +60,7 @@ public class SetDef<E> extends ModelDef<Set<E>, ClassInstance> {
     @Override
     public void initInstance(ClassInstance instance, Set<E> model, ModelInstanceMap instanceMap) {
         var setNative = (SetNative) NativeInvoker.getNativeObject(instance);
-        setNative.Set(new BooleanInstance(false, booleanType));
+        setNative.Set();
         for (E e : model) {
             setNative.add(instanceMap.getInstance(e));
         }

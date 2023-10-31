@@ -1,12 +1,12 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 
 import java.util.List;
 
 public record FlowExecutionRequest(
         long flowId,
         long instanceId,
-        List<FieldValueDTO> arguments
+        List<FieldValue> arguments
 ) {
 }

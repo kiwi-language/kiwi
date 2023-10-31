@@ -29,7 +29,7 @@ public class ClassFieldDef implements IFieldDef {
 
     @Override
     public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        Instance instanceFieldValue =instance.get(field);
+        Instance instanceFieldValue =instance.getField(field);
         if(instanceFieldValue.isNull()) {
             return null;
         }

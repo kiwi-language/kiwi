@@ -1,9 +1,10 @@
 package tech.metavm.entity;
 
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.ArrayKind;
+import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.Index;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
@@ -25,6 +26,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Map<tech.metavm.object.meta.Type, tech.metavm.object.meta.Type> typeInternMap = new HashMap<>();
     private final Map<Object, Instance> instanceMapping = new IdentityHashMap<>();
     private final IdentityContext identityContext = new IdentityContext(this::isClassTypeInitialized, this::getJavaType);
+    private final ColumnStore columnStore;
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -33,17 +35,40 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             Map.entry(Float.class, Double.class)
     );
 
-    public DefContext(Function<Object, Long> getId) {
-        this(getId, null);
+    public DefContext(Function<Object, Long> getId, FileColumnStore columnStore) {
+        this(getId, null, columnStore);
     }
 
-    public DefContext(Function<Object, Long> getId, IInstanceContext instanceContext) {
+    public DefContext(Function<Object, Long> getId, IInstanceContext instanceContext, ColumnStore columnStore) {
         super(instanceContext, null);
         this.getId = getId;
-        StandardDefBuilder stdBuilder = new StandardDefBuilder();
-        stdBuilder.initRootTypes(this);
+        StandardDefBuilder stdBuilder = new StandardDefBuilder(this);
+        stdBuilder.initRootTypes();
         objectDef = stdBuilder.getObjectDef();
         enumDef = stdBuilder.getEnumDef();
+        this.columnStore = columnStore;
+    }
+
+    public void createCompositeTypes(Type javaType, tech.metavm.object.meta.Type type) {
+        predefineCompositeTypes(javaType, type);
+        initCompositeTypes(javaType);
+    }
+
+    public void predefineCompositeTypes(Type javaType, tech.metavm.object.meta.Type type) {
+        preAddDef(new DirectDef<>(BiUnion.createNullableType(javaType), getNullableType(type)));
+        preAddDef(new CollectionDef<>(ReadWriteArray.class, ParameterizedTypeImpl.create(ReadWriteArray.class, javaType),
+                getArrayType(type, ArrayKind.READ_WRITE), getDef(type)));
+        preAddDef(new CollectionDef<>(ChildArray.class, ParameterizedTypeImpl.create(ChildArray.class, javaType),
+                getArrayType(type, ArrayKind.CHILD), getDef(type)));
+        preAddDef(new CollectionDef<>(ReadonlyArray.class, ParameterizedTypeImpl.create(ReadonlyArray.class, javaType),
+                getArrayType(type, ArrayKind.READ_ONLY), getDef(type)));
+    }
+
+    public void initCompositeTypes(Type javaType) {
+        afterDefInitialized(getDef(BiUnion.createNullableType(javaType)));
+        afterDefInitialized(getDef(ParameterizedTypeImpl.create(ReadWriteArray.class, javaType)));
+        afterDefInitialized(getDef(ParameterizedTypeImpl.create(ChildArray.class, javaType)));
+        afterDefInitialized(getDef(ParameterizedTypeImpl.create(ReadonlyArray.class, javaType)));
     }
 
     @Override
@@ -76,6 +101,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return javaType2Def.containsKey(javaType);
     }
 
+    @Override
+    public boolean containsDef(tech.metavm.object.meta.Type type) {
+        return type2Def.containsKey(type);
+    }
+
     private void checkJavaType(Type javaType) {
         if (javaType instanceof WildcardType && javaType instanceof TypeVariable<?>) {
             throw new InternalException("Can not get def for java type '" + javaType.getTypeName() + "', " +
@@ -94,7 +124,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @SuppressWarnings("unused")
     public java.lang.reflect.Field getJavaField(Field field) {
         Class<?> javaClass = getJavaClass(field.getDeclaringType());
-        return ReflectUtils.getDeclaredFieldByMetaFieldName(javaClass, field.getName());
+        return ReflectUtils.getDeclaredFieldByName(javaClass, field.getCode());
     }
 
     public Field getField(Class<?> javaType, String javaFieldName) {
@@ -135,21 +165,20 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         javaType = ReflectUtils.eraseType(javaType);
         Class<?> javaClass = ReflectUtils.getRawClass(javaType);
         TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
-        if (Table.class.isAssignableFrom(javaClass) || List.class.isAssignableFrom(javaClass)) {
-            Class<? extends Table<?>> collectionClass = Table.class.asSubclass(
-                    new TypeReference<Table<?>>() {
+        if (ReadonlyArray.class.isAssignableFrom(javaClass) || List.class.isAssignableFrom(javaClass)) {
+            Class<? extends ReadonlyArray<?>> collectionClass = ReadonlyArray.class.asSubclass(
+                    new TypeReference<ReadonlyArray<?>>() {
                     }.getType()
             );
             if (javaType instanceof ParameterizedType pType) {
                 Type elementJavaType = pType.getActualTypeArguments()[0];
                 if ((elementJavaType instanceof Class<?> elementJavaClass) &&
                         Instance.class.isAssignableFrom(elementJavaClass)) {
-                    var typeFactory = new DefaultTypeFactory(this::getType);
                     return new InstanceCollectionParser<>(
                             javaType,
                             collectionClass,
                             elementJavaClass,
-                            TypeUtil.getArrayType(objectDef.getType(), typeFactory)
+                            getArrayType(objectDef.getType(), ArrayKind.getByEntityClass(javaClass))
                     );
                 }
             }
@@ -166,21 +195,22 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                         javaClass.asSubclass(new TypeReference<Enum<?>>() {
                         }.getType()), enumDef,
                         this);
-                case CLASS -> new EntityParser<>(javaClass.asSubclass(Entity.class), javaType, this);
+                case CLASS -> new EntityParser<>(javaClass.asSubclass(Entity.class), javaType, this, columnStore);
                 case VALUE -> {
                     if (Record.class.isAssignableFrom(javaClass)) {
                         yield new RecordParser<>(
-                                javaClass.asSubclass(Record.class), javaType, this
+                                javaClass.asSubclass(Record.class), javaType, this, columnStore
                         );
                     } else {
                         yield new ValueParser<>(
                                 javaClass,
                                 javaType,
-                                this
+                                this,
+                                columnStore
                         );
                     }
                 }
-                case INTERFACE -> new InterfaceParser<>(javaClass, javaType, this);
+                case INTERFACE -> new InterfaceParser<>(javaClass, javaType, this, columnStore);
                 default -> throw new IllegalStateException("Unexpected value: " + typeCategory);
             };
         }
@@ -203,12 +233,23 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
+    public boolean containsJavaType(Type javaType) {
+        return javaType2Def.containsKey(javaType);
+    }
+
+    @Override
     public void preAddDef(ModelDef<?, ?> def) {
         ModelDef<?, ?> existing = javaType2Def.get(def.getJavaType());
         if (existing != null && existing != def) {
             throw new InternalException("Def for java type " + def.getJavaType() + " already exists");
         }
         javaType2Def.put(def.getJavaType(), def);
+        if(def.getType() instanceof ArrayType arrayType) {
+            getArrayTypeContext(arrayType.kind()).add(arrayType);
+        }
+        else if(def.getType() instanceof UnionType unionType) {
+            getUnionTypeContext().add(unionType);
+        }
         if (!(def instanceof InstanceDef) && !(def instanceof InstanceCollectionDef<?, ?>)) {
             existing = type2Def.get(def.getType());
             if (existing != null && existing != def) {
@@ -309,10 +350,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @SuppressWarnings("unused")
     private boolean isDebugTarget(Object model) {
-        if (model instanceof Table<?> table) {
+        if (model instanceof ReadonlyArray<?> table) {
             Type type = table.getGenericType();
             return type.equals(
-                    new TypeReference<Table<Flow>>() {
+                    new TypeReference<ReadonlyArray<Flow>>() {
                     }.getGenericType()
             );
         }
@@ -361,8 +402,13 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    protected DefContext getDefContext() {
+    public DefContext getDefContext() {
         return this;
+    }
+
+    @Override
+    protected TypeFactory getTypeFactory() {
+        return new DefaultTypeFactory(this::getType);
     }
 
     @Override
@@ -373,6 +419,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @Override
     public boolean containsModel(Object model) {
         return super.containsModel(model) || pendingModels.contains(model);
+    }
+
+    @Override
+    public UnionType getNullableType(tech.metavm.object.meta.Type type) {
+        return getUnionType(Set.of(type, getType(Null.class)));
     }
 
     public boolean containsTypeDef(tech.metavm.object.meta.Type type) {
@@ -391,7 +442,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @SuppressWarnings("unused")
     // DEBUG用，勿删！
-    public tech.metavm.object.meta.Type getTypeByTable(Table<?> table) {
+    public tech.metavm.object.meta.Type getTypeByTable(ReadonlyArray<?> table) {
         for (Object model : models()) {
             if (model instanceof ClassType type) {
                 if (type.getDeclaredConstraints() == table
@@ -420,4 +471,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean isBindSupported() {
+        return false;
+    }
 }

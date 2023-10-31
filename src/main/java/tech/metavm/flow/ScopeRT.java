@@ -7,10 +7,7 @@ import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -25,8 +22,8 @@ public class ScopeRT extends Entity {
     @Nullable
     private final NodeRT<?> owner;
     @ChildEntity("节点列表")
-    private final Table<NodeRT<?>> nodes = new Table<>(new TypeReference<>() {
-    }, true);
+    private final ChildArray<NodeRT<?>> nodes = new ChildArray<>(new TypeReference<>() {
+    });
     @ChildEntity("是否未循环体")
     private final boolean withBackEdge;
 
@@ -66,14 +63,18 @@ public class ScopeRT extends Entity {
     public void addNode(NodeRT<?> node) {
         var pred = node.getPredecessor() != null ? node.getPredecessor() : null;
         if (pred != null) {
-            nodes.addAfter(node, pred);
+            nodes.addChildAfter(node, pred);
         } else {
             if(!isEmpty()) {
                 getFirstNode().insertBefore(node);
             }
-            nodes.addFirst(node);
+            nodes.addFirstChild(node);
         }
         flow.addNode(node);
+    }
+
+    public void clearNodes() {
+        this.nodes.clear();
     }
 
     public void setBranch(@Nullable Branch branch) {
@@ -121,7 +122,7 @@ public class ScopeRT extends Entity {
         return nodes.get(Entity::getRef, ref);
     }
 
-    public Collection<NodeRT<?>> getNodes() {
+    public ReadonlyArray<NodeRT<?>> getNodes() {
         return nodes;
     }
 

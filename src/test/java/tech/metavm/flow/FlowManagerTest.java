@@ -8,7 +8,7 @@ import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.*;
-import tech.metavm.job.JobManager;
+import tech.metavm.task.TaskManager;
 import tech.metavm.mocks.Coupon;
 import tech.metavm.mocks.CouponState;
 import tech.metavm.mocks.Foo;
@@ -59,20 +59,20 @@ public class FlowManagerTest extends TestCase {
         EntityQueryService entityQueryService =
                 new EntityQueryService(new InstanceQueryService(instanceSearchService));
 
-        JobManager jobManager = new JobManager(instanceContextFactory, new MockTransactionOperations());
+        TaskManager jobManager = new TaskManager(instanceContextFactory, new MockTransactionOperations());
 
         TypeManager typeManager =
                 new TypeManager(instanceContextFactory, entityQueryService, jobManager,  null);
-        flowManager = new FlowManager(instanceContextFactory, entityQueryService);
+        flowManager = new FlowManager(instanceContextFactory);
         flowManager.setTypeManager(typeManager);
         flowExecutionService = new FlowExecutionService(instanceContextFactory);
     }
 
     public void test() {
         ClassType userType = MockRegistry.getClassType(UserRT.class);
-        FlowDTO flowDTO = FlowDTO.create("Flow1", userType.getId());
-        long flowId = flowManager.create(flowDTO);
-        FlowDTO loadedFlowDTO = flowManager.get(flowId);
+        FlowDTO flowDTO = FlowDTO.create("Flow1", userType.getIdRequired());
+        long flowId = flowManager.save(flowDTO).getIdRequired();
+        FlowDTO loadedFlowDTO = flowManager.get(new GetFlowRequest(flowId, true)).flow();
         Assert.assertEquals(flowId, (long) loadedFlowDTO.id());
         Assert.assertEquals(3, loadedFlowDTO.rootScope().nodes().size());
 
@@ -102,7 +102,7 @@ public class FlowManagerTest extends TestCase {
 
         flowManager.createNode(updateNode);
 
-        loadedFlowDTO = flowManager.get(flowId);
+        loadedFlowDTO = flowManager.get(new GetFlowRequest(flowId, true)).flow();
         Assert.assertEquals(4, loadedFlowDTO.rootScope().nodes().size());
 
         TestUtils.logJSON(LOGGER, loadedFlowDTO);
@@ -110,10 +110,10 @@ public class FlowManagerTest extends TestCase {
 
     public void testCoupon() {
         ClassType couponType = MockRegistry.getClassType(Coupon.class);
-        FlowDTO flowDTO = FlowDTO.create("use", couponType.getId());
+        FlowDTO flowDTO = FlowDTO.create("use", couponType.getIdRequired());
 
-        long flowId = flowManager.create(flowDTO);
-        flowDTO = flowManager.get(flowId);
+        long flowId = flowManager.save(flowDTO).getIdRequired();
+        flowDTO = flowManager.get(new GetFlowRequest(flowId, true)).flow();
 
         Field couponStateField = MockRegistry.getField(Coupon.class, "state");
 
@@ -142,11 +142,11 @@ public class FlowManagerTest extends TestCase {
         flowManager.createNode(updateNode);
 
         ClassInstance couponInst = MockRegistry.getCouponInstance();
-        FlowExecutionRequest request = new FlowExecutionRequest(flowId, couponInst.getId(), List.of());
+        FlowExecutionRequest request = new FlowExecutionRequest(flowId, couponInst.getIdRequired(), List.of());
         flowExecutionService.execute(request);
 
         IEntityContext context = instanceContextFactory.newContext().getEntityContext();
-        Coupon coupon = context.getEntity(Coupon.class, couponInst.getId());
+        Coupon coupon = context.getEntity(Coupon.class, couponInst.getIdRequired());
         Assert.assertEquals(CouponState.USED, coupon.getState());
     }
 
@@ -154,24 +154,25 @@ public class FlowManagerTest extends TestCase {
         ClassType userType = MockRegistry.getClassType(UserRT.class);
         FlowDTO flowDTO = new FlowDTO(null, null, "Flow1", null, false,
                 false, false,
-                RefDTO.ofId(userType.getId()), null, null, null, null, null, null,
-                 null, List.of(),
+                RefDTO.ofId(userType.getId()),  null, null,
+                null, null,null,
+                 null, null, List.of(),
                 null, List.of());
-        long flowId = flowManager.create(flowDTO);
-        Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getId(), 1, 20, null);
+        long flowId = flowManager.save(flowDTO).getIdRequired();
+        Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getIdRequired(), 1, 20, null);
         Assert.assertEquals(1, dataPage.total());
         FlowSummaryDTO flowSummaryDTO = dataPage.data().get(0);
         Assert.assertEquals(Long.valueOf(flowId), flowSummaryDTO.id());
 
         ClassType roleType = MockRegistry.getClassType(RoleRT.class);
-        Page<FlowSummaryDTO> dataPage2 = flowManager.list(roleType.getId(), 1, 20, null);
+        Page<FlowSummaryDTO> dataPage2 = flowManager.list(roleType.getIdRequired(), 1, 20, null);
         Assert.assertEquals(0, dataPage2.total());
     }
 
     public void testRemove() {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
-        FlowDTO flowDTO = FlowDTO.create("test", fooType.getId());
-        long flowId = flowManager.create(flowDTO);
+        FlowDTO flowDTO = FlowDTO.create("test", fooType.getIdRequired());
+        long flowId = flowManager.save(flowDTO).getIdRequired();
         flowManager.delete(flowId);
     }
 

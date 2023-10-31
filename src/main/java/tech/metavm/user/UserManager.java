@@ -1,6 +1,5 @@
 package tech.metavm.user;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
@@ -8,8 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.rest.InstanceQueryDTO;
-import tech.metavm.object.meta.IdConstants;
+import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -28,11 +26,13 @@ public class UserManager {
 
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
         IEntityContext context = newContext();
-        InstanceQueryDTO query = new InstanceQueryDTO(
-                ModelDefRegistry.getType(UserRT.class).getId(),
+        InstanceQuery query = new InstanceQuery(
+                ModelDefRegistry.getType(UserRT.class).getIdRequired(),
                 searchText,
                 page,
-                pageSize
+                pageSize,
+                true,
+                false
         );
         Page<UserRT> dataPage = instanceQueryService.query(UserRT.class, query, context);
         return new Page<>(

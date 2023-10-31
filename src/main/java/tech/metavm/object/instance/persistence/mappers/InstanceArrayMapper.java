@@ -14,7 +14,8 @@ public interface InstanceArrayMapper {
     List<InstanceArrayPO> selectByTypeIds(@Param("tenantId") long tenantId,
                                           @Param("queries") Collection<ByTypeQuery> queries);
 
-    List<InstanceArrayPO> selectByIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids);
+    List<InstanceArrayPO> selectByIds(@Param("tenantId") long tenantId, @Param("ids") Collection<Long> ids,
+                                      @Param("lockMode") int lockMode);
 
     void batchUpdate(Collection<InstanceArrayPO> records);
 

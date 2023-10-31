@@ -15,14 +15,14 @@ public class TypeReducerTest extends TestCase {
 
     public void test() {
         var fooType = MockRegistry.getClassType(TypeReducerFoo.class);
-        var nameField = fooType.getFieldByName("code");
-        var amountField = fooType.getFieldByName("amount");
+        var nameField = fooType.tryGetFieldByName("code");
+        var amountField = fooType.tryGetFieldByName("amount");
         assertTrue(nameField.getType().isNullable());
-        var nameFieldExpr = new FieldExpression(
+        var nameFieldExpr = new PropertyExpression(
                 new ThisExpression(fooType),
                 nameField
         );
-        var amountFieldExpr = new FieldExpression(new ThisExpression(fooType), amountField);
+        var amountFieldExpr = new PropertyExpression(new ThisExpression(fooType), amountField);
         Expression expression = new BinaryExpression(
                 Operator.OR,
                 new BinaryExpression(

@@ -7,7 +7,6 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -109,7 +108,7 @@ public class TypeParsingContext implements ParsingContext {
 
     public static Field getField(ClassType type, Var var) {
         return switch (var.getType()) {
-            case NAME -> type.getFieldByName(var.getName());
+            case NAME -> type.tryGetFieldByName(var.getName());
             case ID -> type.getField(var.getId());
         };
     }

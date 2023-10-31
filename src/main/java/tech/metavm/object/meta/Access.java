@@ -1,12 +1,18 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.EnumConstant;
 import tech.metavm.util.BusinessException;
 
 import java.util.Arrays;
 
+@EntityType("可见范围")
 public enum Access {
+    @EnumConstant("全局")
     GLOBAL(1),
+    @EnumConstant("模块")
     MODULE(2),
+    @EnumConstant("类型")
     CLASS(3)
 
     ;

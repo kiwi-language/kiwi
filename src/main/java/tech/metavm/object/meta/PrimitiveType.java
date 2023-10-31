@@ -3,8 +3,10 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.rest.dto.PrimitiveTypeParam;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("基础类型")
@@ -38,8 +40,8 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    protected Object getParam() {
-        return null;
+    protected PrimitiveTypeParam getParam() {
+        return new PrimitiveTypeParam(kind.getCode());
     }
 
     @Override

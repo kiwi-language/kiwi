@@ -1,11 +1,9 @@
 package tech.metavm.object.meta;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.*;
-import tech.metavm.object.meta.persistence.FieldPO;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
 
@@ -14,18 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.util.ContextUtil.getTenantId;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 @EntityType("字段")
-public class Field extends Entity implements UpdateAware {
+public class Field extends Property implements UpdateAware {
 
-    public static final IndexDef<Field> INDEX_TYPE_ID = new IndexDef<>(Field.class, false,"type");
-
-    @EntityField(value = "名称", asTitle = true)
-    private String name;
-    @EntityField("所属类型")
-    private final ClassType declaringType;
     @EntityField("可见范围")
     private Access access;
     @EntityField("默认值")
@@ -34,13 +25,8 @@ public class Field extends Entity implements UpdateAware {
     private boolean asTitle;
     @EntityField("列")
     private final Column column;
-    @EntityField("类型")
-    private final Type type;
     @EntityField("是否从对象字段")
     private final boolean isChildField;
-    @EntityField("编号")
-    @Nullable
-    private String code;
     @EntityField(value = "是否静态", code = "static")
     private boolean _static;
     @EntityField(value = "静态属性值", code = "static")
@@ -48,12 +34,10 @@ public class Field extends Entity implements UpdateAware {
     @Nullable
     private Expression initializer;
     @Nullable
-    private Field template;
-
-//    @EntityField("状态")
-//    private MetadataState state;
+    private final Field template;
 
     public Field(
+            Long tmpId,
             String name,
             @Nullable String code,
             ClassType declaringType,
@@ -65,16 +49,23 @@ public class Field extends Entity implements UpdateAware {
             boolean isChildField,
             boolean isStatic,
             Instance staticValue,
-            @Nullable Field template
+            @Nullable Field template,
+            @Nullable Column column
     ) {
+        super(tmpId, name, code, type, declaringType);
         setName(name);
-        this.code = code;
-        this.declaringType = requireNonNull(declaringType, "属性所属类型");
+        requireNonNull(type);
+        requireNonNull(declaringType, "属性所属类型不能为空");
         this.access = requireNonNull(access, "属性访问控制");
-        this.type = type;
         this.asTitle = asTitle;
-        this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
-                "Fail to allocate a column for field " + this);
+        if(column != null) {
+            NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
+            this.column = column;
+        }
+        else {
+            this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
+                    "Fail to allocate a column for field " + this);
+        }
         setDefaultValue(defaultValue);
         this.isChildField = isChildField;
         if(unique != null) {
@@ -86,34 +77,8 @@ public class Field extends Entity implements UpdateAware {
         declaringType.addField(this);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = NameUtils.checkName(name);
-    }
-
-    public void setCode(@org.jetbrains.annotations.Nullable String code) {
-        this.code = code;
-    }
-
-    @Nullable
-    public String getCode() {
-        return code;
-    }
-
-    @JsonIgnore
-    public ClassType getDeclaringType() {
-        return declaringType;
-    }
-
     public Access getAccess() {
         return access;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     public boolean isChildField() {
@@ -125,11 +90,11 @@ public class Field extends Entity implements UpdateAware {
     }
 
     public Type getConcreteType() {
-        return type.getConcreteType();
+        return getType().getConcreteType();
     }
 
     public void update(FieldDTO update) {
-        if(update.typeId() != null && !Objects.equals(type.getId(), update.typeId())) {
+        if(update.typeId() != null && !Objects.equals(getType().getId(), update.typeId())) {
             throw BusinessException.invalidField(this, "类型不支持修改");
         }
         setName(update.name());
@@ -138,14 +103,6 @@ public class Field extends Entity implements UpdateAware {
         setAsTitle(update.asTitle());
         setUnique(update.unique());
     }
-
-//    public void setState(MetadataState state) {
-//        this.state = state;
-//    }
-//
-//    public MetadataState getState() {
-//        return state;
-//    }
 
     public boolean isReady() {
         return true;
@@ -177,15 +134,16 @@ public class Field extends Entity implements UpdateAware {
         }
     }
 
-    public List<Object> beforeRemove() {
+    @Override
+    public List<Object> beforeRemove(IEntityContext context) {
         List<Index> fieldIndices = declaringType.getFieldIndices(this);
         List<Object> cascades = new ArrayList<>();
         for (Index fieldIndex : fieldIndices) {
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
-        if(type.isAnonymous()) {
-            cascades.add(type);
+        if(getType().isAnonymous()) {
+            cascades.add(getType());
         }
         if(declaringType.isEnumConstantField(this)) {
             cascades.add(staticValue);
@@ -199,7 +157,7 @@ public class Field extends Entity implements UpdateAware {
             return (LongInstance) getStaticValue();
         }
         else {
-            return NncUtils.requireNonNull(instance).getLong(this);
+            return NncUtils.requireNonNull(instance).getLongField(this);
         }
     }
 
@@ -208,7 +166,7 @@ public class Field extends Entity implements UpdateAware {
             return (DoubleInstance) getStaticValue();
         }
         else {
-            return NncUtils.requireNonNull(instance).getDouble(this);
+            return NncUtils.requireNonNull(instance).getDoubleField(this);
         }
     }
 
@@ -217,7 +175,7 @@ public class Field extends Entity implements UpdateAware {
             return (StringInstance) getStaticValue();
         }
         else {
-            return NncUtils.requireNonNull((instance)).getString(this);
+            return NncUtils.requireNonNull((instance)).getStringField(this);
         }
     }
 
@@ -226,7 +184,7 @@ public class Field extends Entity implements UpdateAware {
             return getStaticValue();
         }
         else {
-            return NncUtils.requireNonNull((instance)).get(this);
+            return NncUtils.requireNonNull((instance)).getField(this);
         }
     }
 
@@ -262,15 +220,15 @@ public class Field extends Entity implements UpdateAware {
     }
 
     public boolean isEnum() {
-        return type.isEnum();
+        return getType().isEnum();
     }
 
     public boolean isArray() {
-        return type.isArray();
+        return getType().isArray();
     }
 
     public boolean isReference() {
-        return type.isReference();
+        return getType().isReference();
     }
 
     public boolean isNullable() {
@@ -302,7 +260,7 @@ public class Field extends Entity implements UpdateAware {
     }
 
     public boolean isPrimitive() {
-        return type.isPrimitive();
+        return getType().isPrimitive();
     }
 
     public boolean isUnique() {
@@ -351,43 +309,22 @@ public class Field extends Entity implements UpdateAware {
     }
 
     public String getQualifiedName() {
-        return declaringType.getName() + "." + name;
-    }
-
-    public FieldPO toPO() {
-
-        return new FieldPO(
-                id,
-                getTenantId(),
-                name,
-                declaringType.getId(),
-                access.code(),
-                isUnique(),
-                getStrRawDefaultValue(),
-                NncUtils.get(column, Column::name),
-                asTitle,
-                type.getId()
-        );
+        return declaringType.getName() + "." + getName();
     }
 
     public FieldDTO toDTO() {
-        return toDTO(false);
-    }
-
-    public FieldDTO toDTO(boolean withType) {
         try(var context = SerializeContext.enter()) {
             return new FieldDTO(
                     context.getTmpId(this),
                     id,
-                    name,
-                    code,
+                    getName(),
+                    getCode(),
                     access.code(),
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
                     asTitle,
                     declaringType.getId(),
-                    context.getRef(type),
-                    withType ? type.toDTO() : null,
+                    context.getRef(getType()),
                     isChildField,
                     _static
             );
@@ -404,7 +341,7 @@ public class Field extends Entity implements UpdateAware {
     }
 
     private String getDesc() {
-        return getQualifiedName() + ":" + type.getName();
+        return getQualifiedName() + ":" + getType().getName();
     }
 
     @Nullable
@@ -416,8 +353,8 @@ public class Field extends Entity implements UpdateAware {
     public void onUpdate(ClassInstance instance) {
         if(isStatic()) {
             var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
-            var value = instance.get(staticValueField);
-            if(!type.isInstance(value)) {
+            var value = instance.getField(staticValueField);
+            if(!getType().isInstance(value)) {
                 throw new BusinessException(ErrorCode.STATIC_FIELD__CAN_NOT_BE_NULL, getQualifiedName());
             }
         }

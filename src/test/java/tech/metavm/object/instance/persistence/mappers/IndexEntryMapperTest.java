@@ -6,6 +6,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.Assert;
 import tech.metavm.entity.IndexQueryOperator;
+import tech.metavm.entity.LockMode;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.IndexQueryPO;
@@ -64,7 +65,7 @@ public class IndexEntryMapperTest extends TestCase {
                     TENANT_ID, CONSTRAINT_ID,
                     key,
                     IndexQueryOperator.GT,
-                    true, 2
+                    true, 2, LockMode.NONE.code()
             );
             List<IndexEntryPO> result = indexEntryMapper.query(query);
             Assert.assertEquals(2, result.size());

@@ -7,9 +7,9 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.infra.IdService;
-import tech.metavm.job.JobSignal;
+import tech.metavm.task.TaskSignal;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.rest.InstanceQueryDTO;
+import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.tenant.persistence.TenantPO;
 import tech.metavm.tenant.persistence.mapper.TenantMapper;
 import tech.metavm.tenant.rest.dto.TenantCreateRequest;
@@ -87,7 +87,7 @@ public class TenantManager {
                 idService.allocate(-1L, ModelDefRegistry.getType(TenantRT.class));
         TenantPO tenantPO = new TenantPO(tenantId, request.name());
         tenantMapper.insert(tenantPO);
-        rootContext.bind(new JobSignal(tenantId));
+        rootContext.bind(new TaskSignal(tenantId));
         TenantRT tenantRT = new TenantRT(tenantPO.getName());
         rootContext.initIdManually(tenantRT, tenantPO.getId());
         rootContext.finish();
@@ -144,14 +144,14 @@ public class TenantManager {
         for (Long roleId : roleIds) {
             context.remove(context.getEntity(RoleRT.class, roleId));
         }
-        context.remove(context.getByType(JobSignal.class, null, 1).get(0));
+        context.remove(context.getByType(TaskSignal.class, null, 1).get(0));
         context.finish();
     }
 
     private List<Long> getInstanceIds(long tenantId, long typeId) {
         IEntityContext context = newContext();
-        Page<Long> idPage = instanceQueryService.query(new InstanceQueryDTO(
-                typeId , null, 1, 100
+        Page<Long> idPage = instanceQueryService.query(new InstanceQuery(
+                typeId , null, 1, 100, true, false
         ), context.getInstanceContext());
         return idPage.data();
     }

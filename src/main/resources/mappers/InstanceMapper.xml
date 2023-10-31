@@ -86,6 +86,12 @@
         <foreach collection="ids" item="id" open="(" close=")" separator=",">
           #{id}
         </foreach>
+    <if test="lockMode == 1 ">
+      lock in share mode
+    </if>
+    <if test="lockMode == 2">
+      for update
+    </if>
   </select>
 
   <select id="selectByTypeIds" resultMap="BaseResultMap">
@@ -138,7 +144,6 @@
     <foreach collection="ids" item="id" open="(" close=")" separator=",">
       #{id}
     </foreach>
-    lock in share mode
   </select>
 
   <select id="scan" resultMap="BaseResultMap">

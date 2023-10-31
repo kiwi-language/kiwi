@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.meta.Type;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +27,10 @@ public class ExpressionTypeMap {
 
     public ExpressionTypeMap merge(ExpressionTypeMap that) {
         return new ExpressionTypeMap(TypeNarrower.mergeResults(map, that.map));
+    }
+
+    public Map<Expression, Type> toMap() {
+        return Collections.unmodifiableMap(map);
     }
 
 }

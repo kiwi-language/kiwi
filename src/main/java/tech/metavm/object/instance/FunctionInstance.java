@@ -1,28 +1,28 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.FlowExecutionService;
+import tech.metavm.flow.FlowStack;
+import tech.metavm.flow.Frame;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.rest.FieldValueDTO;
+import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParamDTO;
 import tech.metavm.object.meta.FunctionType;
 import tech.metavm.util.IdentitySet;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
-public class FunctionInstance extends Instance {
+public abstract class FunctionInstance extends Instance {
 
-    private final Flow flow;
-    @Nullable
-    private final ClassInstance boundSelf;
-
-    public FunctionInstance(FunctionType type, Flow flow, @Nullable ClassInstance boundSelf) {
+    public FunctionInstance(FunctionType type) {
         super(type);
-        this.flow = flow;
-        this.boundSelf = boundSelf;
     }
+
+    @Override
+    public FunctionType getType() {
+        return (FunctionType) super.getType();
+    }
+
+    public abstract Frame createFrame(FlowStack stack, List<Instance> arguments);
 
     @Override
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
@@ -50,7 +50,7 @@ public class FunctionInstance extends Instance {
     }
 
     @Override
-    public FieldValueDTO toFieldValueDTO() {
+    public FieldValue toFieldValueDTO() {
         return null;
     }
 

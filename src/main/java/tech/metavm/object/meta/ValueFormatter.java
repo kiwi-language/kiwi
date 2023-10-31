@@ -79,16 +79,21 @@ public class ValueFormatter {
 //    }
 
     public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
-        Type actualType = context.getType(instanceDTO.typeId());
-        if(actualType instanceof ClassType classType) {
+        Type actualType;
+        if (instanceDTO.id() != null) {
+            actualType = context.get(instanceDTO.id()).getType();
+        } else {
+            actualType = context.getEntityContext().getType(instanceDTO.typeRef());
+        }
+        if (actualType instanceof ClassType classType) {
             Map<Field, Instance> fieldValueMap = new HashMap<>();
-            ClassInstanceParamDTO param = (ClassInstanceParamDTO) instanceDTO.param();
+            ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
             Map<Long, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(
                     param.fields(),
                     InstanceFieldDTO::fieldId
             );
-            for (Field field : classType.getFields()) {
-                FieldValueDTO rawValue = NncUtils.get(fieldDTOMap.get(field.getId()), InstanceFieldDTO::value);
+            for (Field field : classType.getAllFields()) {
+                FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getId()), InstanceFieldDTO::value);
                 Instance fieldValue = rawValue != null ?
                         parseOne(rawValue, field.getType(), context) : InstanceUtils.nullInstance();
                 fieldValueMap.put(field, fieldValue);
@@ -96,32 +101,29 @@ public class ValueFormatter {
             ClassInstance instance;
             if (instanceDTO.id() != null) {
                 instance = (ClassInstance) context.get(instanceDTO.id());
-                fieldValueMap.forEach(instance::set);
+                fieldValueMap.forEach(instance::setField);
             } else {
                 instance = new ClassInstance(fieldValueMap, classType);
                 context.bind(instance);
             }
             return instance;
-        }
-        else if(actualType instanceof ArrayType arrayType){
+        } else if (actualType instanceof ArrayType arrayType) {
             ArrayParamDTO param = (ArrayParamDTO) instanceDTO.param();
             List<Instance> elements = new ArrayList<>();
-            for (FieldValueDTO element : param.elements()) {
+            for (FieldValue element : param.elements()) {
                 elements.add(
                         parseOne(element, arrayType.getElementType(), context)
                 );
             }
             ArrayInstance array;
-            if(instanceDTO.id() != null) {
+            if (instanceDTO.id() != null) {
                 array = (ArrayInstance) context.get(instanceDTO.id());
                 array.setElements(elements);
-            }
-            else {
+            } else {
                 array = new ArrayInstance(arrayType, elements);
             }
             return array;
-        }
-        else {
+        } else {
             throw new InternalException("Can not parse instance of type '" + actualType + "'");
         }
     }
@@ -130,11 +132,11 @@ public class ValueFormatter {
         return context.get(referenceDTO.getId());
     }
 
-    private static Instance parseOne(FieldValueDTO rawValue, Type type, IInstanceContext context) {
-        Instance value =  InstanceFactory.resolveValue(
-                rawValue, type, context::getType, context::get
+    private static Instance parseOne(FieldValue rawValue, Type type, IInstanceContext context) {
+        Instance value = InstanceFactory.resolveValue(
+                rawValue, type, context::getType, context
         );
-        if(value.isReference() && value.getId() == null) {
+        if (value.isReference() && value.getId() == null) {
             context.bind(value);
         }
         return value;
@@ -173,39 +175,35 @@ public class ValueFormatter {
     }
 
     public static Object format(Instance value) {
-        if(value == null) {
+        if (value == null) {
             return null;
         }
-        if(value instanceof PrimitiveInstance primitiveInstance) {
-            if(primitiveInstance.getType().isPassword()) {
+        if (value instanceof PrimitiveInstance primitiveInstance) {
+            if (primitiveInstance.getType().isPassword()) {
                 return null;
-            }
-            else {
+            } else {
                 return primitiveInstance.getValue();
             }
-        }
-        else {
-            if(value.getType().isValue()) {
+        } else {
+            if (value.getType().isValue()) {
                 return value.toDTO();
-            }
-            else if(value.getId() != null){
+            } else if (value.getId() != null) {
                 return new ReferenceDTO(value.getId());
-            }
-            else {
+            } else {
                 return null;
             }
         }
     }
 
     public static String formatDate(Long time) {
-        if(time == null) {
+        if (time == null) {
             return null;
         }
         return DATE_FORMAT.format(new Date(time));
     }
 
     public static String formatTime(Long time) {
-        if(time == null) {
+        if (time == null) {
             return null;
         }
         return DATE_TIME_FORMAT.format(new Date(time));
@@ -216,7 +214,7 @@ public class ValueFormatter {
     }
 
     public static Long parseDate(String source) {
-        if(source == null) {
+        if (source == null) {
             return null;
         }
         try {

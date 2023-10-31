@@ -141,7 +141,7 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void initializeInstance(Instance instance) {
-        InstancePO instancePO = loadingBuffer.getInstancePO(instance.getId());
+        InstancePO instancePO = loadingBuffer.getInstancePO(instance.getIdRequired());
         if (instancePO == null) {
             throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
         }
@@ -157,7 +157,6 @@ public class InstanceContext extends BaseInstanceContext {
                     arrayPO.getElements(),
                     e -> resolveColumnValue(TypeUtil.getElementType(arrayInstance.getType()), e)
             );
-            arrayInstance.setElementAsChild(arrayPO.isElementAsChild());
             arrayInstance.initialize(elements);
         } else if (instance instanceof ClassInstance classInstance) {
             classInstance.initialize(
@@ -169,8 +168,10 @@ public class InstanceContext extends BaseInstanceContext {
 
     private Map<Field, Instance> getInstanceFields(InstancePO instancePO, ClassType type) {
         Map<Field, Instance> data = new HashMap<>();
-        for (Field field : type.getFields()) {
-            data.put(field, resolveColumnValue(field.getType(), instancePO.get(field.getColumnName())));
+        for (Field field : type.getAllFields()) {
+            data.put(field, resolveColumnValue(field.getType(), instancePO.get(
+                    field.getDeclaringType().getIdRequired(), field.getColumnName()))
+            );
         }
         return data;
     }
@@ -203,7 +204,8 @@ public class InstanceContext extends BaseInstanceContext {
         this.defContext = defContext;
     }
 
-    public void finish() {
+    @Override
+    protected void finishInternal() {
         if (finished) {
             throw new IllegalStateException("Already finished");
         }
@@ -265,7 +267,7 @@ public class InstanceContext extends BaseInstanceContext {
 
     private void processUpdate(EntityChange<InstancePO> entityChange,
                                IdentityHashMap<InstancePO, Instance> bufferedInstancePOs) {
-        List<InstancePO> insertOrUpdate = NncUtils.merge(entityChange.inserts(), entityChange.updates());
+        List<InstancePO> insertOrUpdate = NncUtils.union(entityChange.inserts(), entityChange.updates());
         for (InstancePO instancePO : insertOrUpdate) {
             Instance instance = bufferedInstancePOs.get(instancePO);
             if (instance instanceof ClassInstance classInstance) {
@@ -310,7 +312,7 @@ public class InstanceContext extends BaseInstanceContext {
         long sourceId = referencePO.getSourceId();
         Instance source = isRemoved(sourceId) ? getRemoved(sourceId) : get(sourceId);
         if (source instanceof ArrayInstance array) {
-            return array.isElementAsChild();
+            return array.isChildArray();
         } else {
             ClassType type = (ClassType) source.getType();
             var field = type.getField(referencePO.getFieldId());
@@ -406,7 +408,7 @@ public class InstanceContext extends BaseInstanceContext {
 
     @Override
     protected boolean checkAliveInStore(long id) {
-        return loadingBuffer.isRefTargetAlive(id);
+        return loadingBuffer.isAlive(id);
     }
 
     public void setEntityContext(IEntityContext entityContext) {

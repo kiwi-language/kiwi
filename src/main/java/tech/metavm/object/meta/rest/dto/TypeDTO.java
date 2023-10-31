@@ -1,13 +1,10 @@
 package tech.metavm.object.meta.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.object.meta.ClassSource;
 import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.object.meta.rest.TypeParamTypeIdResolver;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -20,11 +17,7 @@ public record TypeDTO(
         int category,
         boolean ephemeral,
         boolean anonymous,
-        @Nullable RefDTO nullableTypeRef,
-        @Nullable RefDTO arrayTypeRef,
-        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-        @JsonTypeIdResolver(TypeParamTypeIdResolver.class)
-        Object param
+        TypeParam param
 ) implements BaseDTO {
 
     public static TypeDTO createClass(String name, List<FieldDTO> fieldDTOs) {
@@ -35,21 +28,20 @@ public record TypeDTO(
         return new TypeDTO(
                 id, null, name, null, TypeCategory.CLASS.code(),
                 false, false,
-                null, null,
-                new ClassParamDTO(
-                        null, null,
-                        List.of(),
+                new ClassTypeParam(
+                        null,
                         List.of(),
                         ClassSource.RUNTIME.code(),
                         fieldDTOs, List.of(), List.of(), List.of(), null, null, null,
-                        List.of(), List.of(), null, List.of(), List.of()
+                        List.of(), false, List.of(), List.of(), null, List.of(), List.of(),
+                        false
                 )
         );
     }
 
     @JsonIgnore
-    public ClassParamDTO getClassParam() {
-        return (ClassParamDTO) param;
+    public ClassTypeParam getClassParam() {
+        return (ClassTypeParam) param;
     }
 
     public static TypeDTO createClass(Long id,
@@ -63,11 +55,9 @@ public record TypeDTO(
                                       String desc) {
         return new TypeDTO(
                 id, tmpId, name, null, TypeCategory.CLASS.code(),
-                ephemeral, anonymous, null, null,
-                new ClassParamDTO(
+                ephemeral, anonymous,
+                new ClassTypeParam(
                         RefDTO.ofId(superTypeId),
-                        null,
-                        List.of(),
                         List.of(),
                         ClassSource.RUNTIME.code(),
                         fieldDTOs,
@@ -78,26 +68,40 @@ public record TypeDTO(
                         desc,
                         null,
                         List.of(),
+                        false,
+                        List.of(),
                         List.of(),
                         null,
                         List.of(),
-                        List.of()
+                        List.of(),
+                        false
                 )
         );
     }
 
     @JsonIgnore
-    public TypeVariableParamDTO getTypeVariableParam() {
-        return (TypeVariableParamDTO) param;
+    public TypeVariableParam getTypeVariableParam() {
+        return (TypeVariableParam) param;
     }
 
     @JsonIgnore
-    public ArrayTypeParamDTO getArrayTypeParam() {
-        return (ArrayTypeParamDTO) param;
+    public ArrayTypeParam getArrayTypeParam() {
+        return (ArrayTypeParam) param;
     }
 
     @JsonIgnore
-    public UnionTypeParamDTO getUnionParam() {
-        return (UnionTypeParamDTO) param;
+    public UnionTypeParam getUnionParam() {
+        return (UnionTypeParam) param;
     }
+
+    @JsonIgnore
+    public FunctionTypeParam getFunctionTypeParam() {
+        return (FunctionTypeParam) param;
+    }
+
+    @JsonIgnore
+    public UncertainTypeParam getUncertainTypeParam() {
+        return (UncertainTypeParam) param;
+    }
+
 }

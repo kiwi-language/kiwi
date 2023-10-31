@@ -6,7 +6,6 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MemInstanceContext;
-import tech.metavm.entity.MockEntityContext;
 import tech.metavm.object.instance.ClassInstance;
 import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
@@ -39,8 +38,8 @@ public class ValueFormatterTest extends TestCase {
 
     public void testFormat() {
         ClassInstance instance = MockRegistry.getFooInstance();
-        for (Field field : instance.getType().getFields()) {
-            Object fieldValue = ValueFormatter.format(instance.get(field));
+        for (Field field : instance.getType().getAllFields()) {
+            Object fieldValue = ValueFormatter.format(instance.getField(field));
             TestUtils.logJSON(LOGGER, field.getName(), fieldValue);
         }
 

@@ -1,6 +1,5 @@
 package tech.metavm.user;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
@@ -8,7 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.rest.InstanceQueryDTO;
+import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -26,11 +25,13 @@ public class RoleManager {
     }
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
-        InstanceQueryDTO query = new InstanceQueryDTO(
+        InstanceQuery query = new InstanceQuery(
                 ModelDefRegistry.getTypeId(RoleRT.class),
                 searchText,
                 page,
-                pageSize
+                pageSize,
+                true,
+                false
         );
         Page<RoleRT> dataPage =
                 instanceQueryService.query(RoleRT.class, query, newContext());

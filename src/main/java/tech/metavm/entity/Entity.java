@@ -46,6 +46,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @JsonIgnore
+    @NoProxy
     public final boolean isIdNull() {
         return id == null;
     }
@@ -93,7 +94,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public void validate() {}
 
     @Override
-    public List<Object> beforeRemove() {
+    public List<Object> beforeRemove(IEntityContext context) {
         return List.of();
     }
 

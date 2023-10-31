@@ -10,8 +10,8 @@ import java.util.List;
 
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
 
-    public RecordParser(Class<T> entityType, Type genericType, DefMap defMap) {
-        super(entityType, genericType, defMap);
+    public RecordParser(Class<T> entityType, Type genericType, DefContext defContext, ColumnStore columnStore) {
+        super(entityType, genericType, defContext, columnStore);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 getJavaType(),
                 parentDef,
                 createType(),
-                defMap
+                defContext
         );
     }
 

@@ -1,9 +1,12 @@
 package tech.metavm.expression;
 
+import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.meta.Property;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -17,13 +20,55 @@ public class ExpressionUtil {
     }
 
     public static Expression not(Expression expression) {
-        return new UnaryExpression(
-                Operator.NOT,
-                expression
-        );
+        if (isConstantFalse(expression)) {
+            return trueExpression();
+        } else if (isConstantTrue(expression)) {
+            return falseExpression();
+        } else if (expression instanceof UnaryExpression unaryExpression
+                && unaryExpression.getOperator() == Operator.NOT) {
+            return unaryExpression.getOperand();
+        } else if (expression instanceof BinaryExpression binaryExpression) {
+            var op = binaryExpression.getOperator();
+            if(op == Operator.AND) {
+                return new BinaryExpression(
+                        Operator.OR,
+                        not(binaryExpression.getFirst()),
+                        not(binaryExpression.getSecond())
+                );
+            }
+            else if(op == Operator.OR) {
+                return new BinaryExpression(
+                        Operator.AND,
+                        not(binaryExpression.getFirst()),
+                        not(binaryExpression.getSecond())
+                );
+            }
+            else {
+                return new BinaryExpression(
+                        op.negate(),
+                        binaryExpression.getFirst(),
+                        binaryExpression.getSecond()
+                );
+            }
+        }
+        else {
+            return new UnaryExpression(
+                    Operator.NOT,
+                    expression
+            );
+        }
     }
 
     public static Expression or(Expression first, Expression second) {
+        if(isConstantTrue(first) || isConstantTrue(second)) {
+            return trueExpression();
+        }
+        if(isConstantFalse(first)) {
+            return second;
+        }
+        if(isConstantFalse(second)) {
+            return first;
+        }
         return new BinaryExpression(
                 Operator.OR,
                 first,
@@ -32,6 +77,15 @@ public class ExpressionUtil {
     }
 
     public static Expression and(Expression first, Expression second) {
+        if (isConstantFalse(first) || isConstantFalse(second)) {
+            return falseExpression();
+        }
+        if (isConstantTrue(first)) {
+            return second;
+        }
+        if (isConstantTrue(second)) {
+            return first;
+        }
         return new BinaryExpression(
                 Operator.AND,
                 first,
@@ -72,7 +126,7 @@ public class ExpressionUtil {
     public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.STARTS_WITH,
-                fieldExpr(field),
+                attributeExpr(field),
                 new ConstantExpression(strInstance)
         );
     }
@@ -80,29 +134,42 @@ public class ExpressionUtil {
     public static Expression fieldLike(Field field, PrimitiveInstance strInstance) {
         return new BinaryExpression(
                 Operator.LIKE,
-                fieldExpr(field),
+                attributeExpr(field),
                 new ConstantExpression(strInstance)
         );
+    }
+
+    public static Expression arrayAccess(Expression array, Expression index) {
+        return new ArrayAccessExpression(array, index);
+    }
+
+    public static Expression nodeProp(NodeRT<?> node, Property property) {
+        return prop(new NodeExpression(node), property);
+    }
+
+    public static Expression prop(Expression self, Property property) {
+        return new PropertyExpression(self, property);
     }
 
     public static Expression fieldEq(Field field, Instance value) {
         return new BinaryExpression(
                 Operator.EQ,
-                fieldExpr(field),
+                attributeExpr(field),
                 new ConstantExpression(value)
         );
     }
 
-    public static FieldExpression fieldExpr(Field field) {
-        return new FieldExpression(thisObject(field.getDeclaringType()), field);
+    public static PropertyExpression attributeExpr(Property attribute) {
+        return new PropertyExpression(thisObject(attribute.getDeclaringType()), attribute);
     }
 
     public static Expression fieldIn(Field field, Collection<? extends Instance> values) {
         return new BinaryExpression(
                 Operator.IN,
-                fieldExpr(field),
+                attributeExpr(field),
                 new ArrayExpression(
-                        NncUtils.map(values, ConstantExpression::new)
+                        NncUtils.map(values, ConstantExpression::new),
+                        StandardTypes.getObjectArrayType()
                 )
         );
     }
@@ -114,7 +181,7 @@ public class ExpressionUtil {
     private static class NegateTransformer extends ElementTransformer {
 
         @Override
-        public Expression transformFieldExpression(FieldExpression expression) {
+        public Expression transformPropertyExpression(PropertyExpression expression) {
             return defaultNegate(expression);
         }
 
@@ -135,21 +202,20 @@ public class ExpressionUtil {
         @Override
         public Expression transformBinaryExpression(BinaryExpression expression) {
             var op = expression.getOperator();
-            if(op == Operator.AND) {
+            if (op == Operator.AND) {
                 return new BinaryExpression(
                         Operator.OR,
                         transformExpression(expression.getFirst()),
                         transformExpression(expression.getSecond())
                 );
             }
-            if(op == Operator.OR) {
+            if (op == Operator.OR) {
                 return new BinaryExpression(
                         Operator.AND,
                         transformExpression(expression.getFirst()),
                         transformExpression(expression.getSecond())
                 );
-            }
-            else {
+            } else {
                 return new BinaryExpression(
                         op.negate(),
                         copyExpression(expression.getFirst()),
@@ -161,23 +227,20 @@ public class ExpressionUtil {
         @Override
         public Expression transformUnaryExpression(UnaryExpression expression) {
             var op = expression.getOperator();
-            if(op == Operator.NOT) {
+            if (op == Operator.NOT) {
                 return copyExpression(expression.getOperand());
-            }
-            else {
+            } else {
                 return new UnaryExpression(op.negate(), copyExpression(expression.getOperand()));
             }
         }
 
         @Override
         public Expression transformConstantExpression(ConstantExpression expression) {
-            if(ExpressionUtil.isConstantTrue(expression)) {
+            if (ExpressionUtil.isConstantTrue(expression)) {
                 return ExpressionUtil.falseExpression();
-            }
-            else if(ExpressionUtil.isConstantFalse(expression)) {
+            } else if (ExpressionUtil.isConstantFalse(expression)) {
                 return ExpressionUtil.trueExpression();
-            }
-            else {
+            } else {
                 throw new InternalException("Can not negate non-boolean constant expression: " + expression);
             }
         }
@@ -188,8 +251,6 @@ public class ExpressionUtil {
     public static Expression copyExpression(Expression expression) {
         return ELEMENT_TRANSFORMER.transformExpression(expression);
     }
-
-
 
 
     public static Expression subtract(Expression first, Expression second) {
@@ -253,20 +314,18 @@ public class ExpressionUtil {
     }
 
     public static boolean isConstantTrue(Expression expression) {
-        if(expression instanceof ConstantExpression constantExpression) {
+        if (expression instanceof ConstantExpression constantExpression) {
             return InstanceUtils.isTrue(constantExpression.getValue());
-        }
-        else {
+        } else {
             return false;
         }
     }
 
 
     public static boolean isConstantFalse(Expression expression) {
-        if(expression instanceof ConstantExpression constantExpression) {
+        if (expression instanceof ConstantExpression constantExpression) {
             return InstanceUtils.isFalse(constantExpression.getValue());
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -280,65 +339,59 @@ public class ExpressionUtil {
     }
 
     public static boolean isConstantNull(Expression expression) {
-        if(expression instanceof ConstantExpression constantExpression) {
+        if (expression instanceof ConstantExpression constantExpression) {
             return constantExpression.getValue() == null;
-        }
-        else {
+        } else {
             return false;
         }
     }
 
 
     public static LongInstance castInteger(Instance value) {
-        if(value instanceof LongInstance longInstance) {
+        if (value instanceof LongInstance longInstance) {
             return longInstance;
-        }
-        else {
+        } else {
             throw BusinessException.invalidExpressionValue("整数", value);
         }
     }
 
     public static DoubleInstance castFloat(Instance value) {
-        if(value instanceof DoubleInstance doubleInstance) {
+        if (value instanceof DoubleInstance doubleInstance) {
             return doubleInstance;
         }
-        if(value instanceof LongInstance longInstance) {
+        if (value instanceof LongInstance longInstance) {
             return InstanceUtils.doubleInstance(longInstance.getValue());
-        }
-        else {
+        } else {
             throw BusinessException.invalidExpressionValue("数值", value);
         }
     }
 
     public static BooleanInstance castBoolean(Instance value) {
-        if(value instanceof BooleanInstance booleanInstance) {
+        if (value instanceof BooleanInstance booleanInstance) {
             return booleanInstance;
-        }
-        else {
+        } else {
             throw BusinessException.invalidExpressionValue("布尔", value);
         }
     }
 
     public static StringInstance castString(Instance value) {
-        if(value instanceof StringInstance stringInstance) {
+        if (value instanceof StringInstance stringInstance) {
             return stringInstance;
-        }
-        else {
+        } else {
             return InstanceUtils.stringInstance(Objects.toString(value.getTitle()));
         }
     }
 
     public static ArrayInstance castCollection(Instance value) {
-        if(value instanceof ArrayInstance arrayInstance) {
+        if (value instanceof ArrayInstance arrayInstance) {
             return arrayInstance;
-        }
-        else {
+        } else {
             throw BusinessException.invalidExpressionValue("集合", value);
         }
     }
 
-    public static String constantToExpression(FieldValueDTO fieldValue) {
-        if(fieldValue instanceof PrimitiveFieldValueDTO primitiveFieldValue) {
+    public static String constantToExpression(FieldValue fieldValue) {
+        if (fieldValue instanceof PrimitiveFieldValue primitiveFieldValue) {
             Object value = primitiveFieldValue.getValue();
             if (value instanceof String str) {
                 return "'" + str + "'";
@@ -346,19 +399,19 @@ public class ExpressionUtil {
                 return value.toString();
             }
         }
-        if(fieldValue instanceof ReferenceFieldValueDTO refFieldValue) {
+        if (fieldValue instanceof ReferenceFieldValueDTO refFieldValue) {
             return Constants.CONSTANT_ID_PREFIX + refFieldValue.getId();
         }
-        if(fieldValue instanceof ArrayFieldValueDTO arrayFieldValue) {
+        if (fieldValue instanceof ArrayFieldValueDTO arrayFieldValue) {
             return "[" + NncUtils.join(arrayFieldValue.getElements(), ExpressionUtil::constantToExpression) + "]";
         }
-        if(fieldValue instanceof ExpressionFieldValueDTO exprFieldValue) {
+        if (fieldValue instanceof ExpressionFieldValueDTO exprFieldValue) {
             return exprFieldValue.getExpression();
         }
         throw new InternalException("Can not convert value '" + fieldValue + "' to expression");
     }
 
-    public static FieldValueDTO expressionToConstant(ConstantExpression expression) {
+    public static FieldValue expressionToConstant(ConstantExpression expression) {
         return expression.getValue().toFieldValueDTO();
     }
 
@@ -371,7 +424,7 @@ public class ExpressionUtil {
     }
 
     public static long parseIdFromConstantVar(String var) {
-        if(var.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+        if (var.startsWith(Constants.CONSTANT_ID_PREFIX)) {
             return Long.parseLong(var.substring(Constants.CONSTANT_ID_PREFIX.length()));
         }
         throw new InternalException("Path item '" + var + "' does not represent an identity");

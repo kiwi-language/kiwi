@@ -4,10 +4,9 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,25 +15,25 @@ public class FunctionExpression extends Expression {
     @EntityField("函数")
     private final Function function;
     @ChildEntity("参数表达式列表")
-    private final Table<Expression> arguments = new Table<>(Expression.class, true);
+    private final ChildArray<Expression> arguments = new ChildArray<>(Expression.class);
 
     public FunctionExpression(Function function) {
-        this(function, new ArrayExpression(List.of()));
+        this(function, List.of());
     }
 
     public FunctionExpression(Function function, List<Expression> arguments) {
         this.function = function;
-        this.arguments.addAll(arguments);
+        this.arguments.addChildren(arguments);
     }
 
 
     public FunctionExpression(Function function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {
-            arguments.addAll(arrayExpression.getExpressions());
+            arguments.addChildren(arrayExpression.getExpressions());
         }
         else {
-            arguments.add(argument);
+            arguments.addChild(argument);
         }
     }
 
@@ -42,7 +41,7 @@ public class FunctionExpression extends Expression {
         return function;
     }
 
-    public List<Expression> getArguments() {
+    public ChildArray<Expression> getArguments() {
         return arguments;
     }
 
@@ -63,13 +62,13 @@ public class FunctionExpression extends Expression {
 
     @Override
     protected List<Expression> getChildren() {
-        return Collections.unmodifiableList(arguments);
+        return NncUtils.listOf(arguments);
     }
 
     @Override
     public Expression cloneWithNewChildren(List<Expression> children) {
         NncUtils.requireLength(children, this.arguments.size());
-        return new FunctionExpression(function, new ArrayExpression(children));
+        return new FunctionExpression(function, children);
     }
 
     @Override

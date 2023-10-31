@@ -3,11 +3,10 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.sql.Ref;
+import java.util.*;
 
 public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
@@ -17,8 +16,10 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final List<EnumConstantDef<T>> enumConstantDefList = new ArrayList<>();
     private final ClassType type;
     private final PrimitiveType nullType;
+    private final PrimitiveType stringType;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type, PrimitiveType nullType) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type,
+                   PrimitiveType nullType, PrimitiveType stringType) {
         super(enumType, Instance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
@@ -26,6 +27,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
         this.type = type;
         this.nullType = nullType;
+        this.stringType = stringType;
     }
 
     void addEnumConstantDef(EnumConstantDef<T> enumConstantDef) {
@@ -96,6 +98,14 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
                 parentDef.getInstanceFields(value, new EmptyModelInstanceMap()),
                 type
         );
+        instance.setField(
+                type.getFieldByCodeRequired("name"),
+                new StringInstance(
+                        ReflectUtils.getMetaEnumConstantName(value),
+                        stringType
+                )
+        );
+
         EnumConstantRT enumConstant = new EnumConstantRT(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), type, type)
                 .defaultValue(new NullInstance(nullType))

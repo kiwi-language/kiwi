@@ -5,7 +5,8 @@ import tech.metavm.object.instance.InstanceKind;
 import java.util.List;
 
 public record ArrayParamDTO (
-        List<FieldValueDTO> elements
+        boolean elementAsChild,
+        List<FieldValue> elements
 ) implements InstanceParamDTO{
     @Override
     public int getType() {

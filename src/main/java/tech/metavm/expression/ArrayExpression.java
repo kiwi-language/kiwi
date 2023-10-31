@@ -1,38 +1,47 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeUtil;
+import tech.metavm.util.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Table;
 import tech.metavm.util.ValueUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 @EntityType("数组表达式")
 public class ArrayExpression extends Expression {
 
-    private final Table<Expression> expressions = new Table<>(Expression.class, true);
-
-    public ArrayExpression(Collection<Expression> expressions) {
-        this.expressions.addAll(expressions);
+    public static ArrayExpression create(List<Expression> expressions, IEntityContext entityContext) {
+        var type = entityContext.getArrayType(ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
+        return new ArrayExpression(expressions, type);
     }
 
-    public static ArrayExpression merge(Expression first, Expression second) {
+    private final ChildArray<Expression> expressions = new ChildArray<>(Expression.class);
+    private final ArrayType type;
+
+    public ArrayExpression(Collection<Expression> expressions, ArrayType type) {
+        this.expressions.addChildren(expressions);
+        this.type = type;
+    }
+
+    public static ArrayExpression merge(Expression first, Expression second, IEntityContext entityContext) {
         if (first instanceof ArrayExpression listExpression) {
-            List<Expression> rest = listExpression.expressions;
+            var rest = listExpression.expressions;
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
-            expressions.addAll(rest);
+            rest.forEach(expressions::add);
             expressions.add(second);
-            return new ArrayExpression(expressions/*, first.context*/);
+            return create(expressions, entityContext);
         } else {
-            return new ArrayExpression(List.of(first, second)/*, first.context*/);
+            return create(List.of(first, second), entityContext);
         }
     }
 
-    public Table<Expression> getExpressions() {
+    public ChildArray<Expression> getExpressions() {
         return expressions;
     }
 
@@ -47,20 +56,21 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    public Type getType() {
-        return TypeUtil.getArrayType(
-                ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType))
-        );
+    public ArrayType getType() {
+        return type;
+//        return TypeUtil.getArrayType(
+//                ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType))
+//        );
     }
 
     @Override
     protected List<Expression> getChildren() {
-        return Collections.unmodifiableList(expressions);
+        return NncUtils.listOf(expressions);
     }
 
     @Override
     public Expression cloneWithNewChildren(List<Expression> children) {
-        return new ArrayExpression(children);
+        return new ArrayExpression(children, type);
     }
 
     @Override

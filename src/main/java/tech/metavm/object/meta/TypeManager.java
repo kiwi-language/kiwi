@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
-import tech.metavm.flow.FlowBuilder;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
@@ -15,15 +14,24 @@ import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.Var;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.job.JobManager;
+import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.query.Path;
+import tech.metavm.object.instance.rest.ClassInstanceParam;
+import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.meta.rest.dto.*;
+import tech.metavm.task.AddFieldJobGroup;
+import tech.metavm.task.FieldData;
+import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
+import java.util.LinkedList;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 @Component
 public class TypeManager {
@@ -35,7 +43,7 @@ public class TypeManager {
     private final EntityQueryService entityQueryService;
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final JobManager jobManager;
+    private final TaskManager jobManager;
 
     private final TransactionOperations transactionTemplate;
 
@@ -43,9 +51,11 @@ public class TypeManager {
 
     private FlowManager flowManager;
 
+    private InstanceManager instanceManager;
+
     public TypeManager(InstanceContextFactory instanceContextFactory,
                        EntityQueryService entityQueryService,
-                       JobManager jobManager,
+                       TaskManager jobManager,
                        TransactionOperations transactionTemplate) {
         this.instanceContextFactory = instanceContextFactory;
         this.entityQueryService = entityQueryService;
@@ -54,49 +64,69 @@ public class TypeManager {
     }
 
     public Map<String, TypeDTO> getPrimitiveTypes() {
-        Map<String, TypeDTO> primitiveTypes = new HashMap<>();
-        primitiveTypes.put("int", ModelDefRegistry.getType(Integer.class).toDTO());
-        primitiveTypes.put("long", ModelDefRegistry.getType(Long.class).toDTO());
-        primitiveTypes.put("number", ModelDefRegistry.getType(Double.class).toDTO());
-        primitiveTypes.put("boolean", ModelDefRegistry.getType(Boolean.class).toDTO());
-        primitiveTypes.put("string", ModelDefRegistry.getType(String.class).toDTO());
-        primitiveTypes.put("time", ModelDefRegistry.getType(Date.class).toDTO());
-        primitiveTypes.put("password", ModelDefRegistry.getType(Password.class).toDTO());
-        primitiveTypes.put("null", ModelDefRegistry.getType(Null.class).toDTO());
-        primitiveTypes.put("void", ModelDefRegistry.getType(Void.class).toDTO());
-        primitiveTypes.put("object", ModelDefRegistry.getType(Object.class).toDTO());
-        primitiveTypes.put("array", ModelDefRegistry.getType(Table.class).toDTO());
-        primitiveTypes.put("throwable", ModelDefRegistry.getType(Throwable.class).toDTO());
+        try(var ignored = SerializeContext.enter()) {
+            Map<String, TypeDTO> primitiveTypes = new HashMap<>();
+            primitiveTypes.put("long", StandardTypes.getLongType().toDTO());
+            primitiveTypes.put("double", StandardTypes.getDoubleType().toDTO());
+            primitiveTypes.put("boolean", StandardTypes.getBoolType().toDTO());
+            primitiveTypes.put("string", StandardTypes.getStringType().toDTO());
+            primitiveTypes.put("time", StandardTypes.getTimeType().toDTO());
+            primitiveTypes.put("password", StandardTypes.getPasswordType().toDTO());
+            primitiveTypes.put("null", StandardTypes.getNullType().toDTO());
+            primitiveTypes.put("void", StandardTypes.getVoidType().toDTO());
+            primitiveTypes.put("object", StandardTypes.getObjectType().toDTO());
+            primitiveTypes.put("array", StandardTypes.getObjectArrayType().toDTO());
+            primitiveTypes.put("childArray", StandardTypes.getObjectChildArrayType().toDTO());
+            primitiveTypes.put("throwable", StandardTypes.getThrowableType().toDTO());
+            primitiveTypes.put("nothing", StandardTypes.getNothingType().toDTO());
+            primitiveTypes.put("string|null", StandardTypes.getType(BiUnion.createNullableType(String.class)).toDTO());
+            return primitiveTypes;
+        }
+    }
+
+    public Map<Integer, Long> getPrimitiveMap() {
+        Map<Integer, Long> primitiveTypes = new HashMap<>();
+        primitiveTypes.put(PrimitiveKind.LONG.getCode(), StandardTypes.getLongType().getId());
+        primitiveTypes.put(PrimitiveKind.DOUBLE.getCode(), StandardTypes.getDoubleType().getId());
+        primitiveTypes.put(PrimitiveKind.STRING.getCode(), StandardTypes.getStringType().getId());
+        primitiveTypes.put(PrimitiveKind.BOOLEAN.getCode(), StandardTypes.getBoolType().getId());
+        primitiveTypes.put(PrimitiveKind.TIME.getCode(), StandardTypes.getTimeType().getId());
+        primitiveTypes.put(PrimitiveKind.PASSWORD.getCode(), StandardTypes.getPasswordType().getId());
+        primitiveTypes.put(PrimitiveKind.NULL.getCode(), StandardTypes.getNullType().getId());
+        primitiveTypes.put(PrimitiveKind.VOID.getCode(), StandardTypes.getVoidType().getId());
         return primitiveTypes;
     }
 
-    public Page<TypeDTO> query(String searchText, List<Integer> categoryCodes, boolean includeBuiltin,
-                               int page, int pageSize) {
+    public Page<TypeDTO> query(QueryTypeRequest request) {
         IEntityContext context = newContext();
-        return query(searchText, categoryCodes, includeBuiltin, page, pageSize, context);
+        return query(request, context);
     }
 
-    public Page<TypeDTO> query(String searchText,
-                               List<Integer> categoryCodes,
-                               boolean includeBuiltin,
-                               int page,
-                               int pageSize,
+    public Page<TypeDTO> query(QueryTypeRequest request,
                                IEntityContext context) {
-        List<TypeCategory> categories = categoryCodes != null ?
-                NncUtils.map(categoryCodes, TypeCategory::getByCode)
+        List<TypeCategory> categories = request.categories() != null ?
+                NncUtils.map(request.categories(), TypeCategory::getByCode)
                 : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
-        Page<Type> typePage = entityQueryService.query(
+        if (categories.isEmpty()) {
+            return new Page<>(List.of(), 0);
+        }
+        var fields = new ArrayList<>(List.of(
+                new EntityQueryField("category", categories),
+                new EntityQueryField("anonymous", categories.equals(List.of(TypeCategory.FUNCTION)))
+        ));
+        fields.add(new EntityQueryField("isParameterized", request.isParameterized()));
+        if (request.isTemplate() != null) {
+            fields.add(new EntityQueryField("isTemplate", request.isTemplate()));
+        }
+        Page<? extends Type> typePage = entityQueryService.query(
                 new EntityQuery<>(
                         Type.class,
-                        searchText,
+                        request.searchText(),
                         List.of("code"),
-                        includeBuiltin,
-                        page,
-                        pageSize,
-                        List.of(
-                                new EntityQueryField("category", categories),
-                                new EntityQueryField("anonymous", false)
-                        )
+                        request.includeBuiltin(),
+                        request.page(),
+                        request.pageSize(),
+                        fields
                 ),
                 context
         );
@@ -107,44 +137,59 @@ public class TypeManager {
         );
     }
 
-    public TypeDTO getType(long id, boolean includingFields, boolean includingFieldTypes) {
+    public List<CreatingFieldDTO> getCreatingFields(long typeId) {
+        var context = newContext();
+        var creatingFields = context.selectByKey(FieldData.IDX_DECLARING_TYPE, context.getClassType(typeId));
+        return NncUtils.map(creatingFields, FieldData::toDTO);
+    }
+
+    public GetTypeResponse getType(GetTypeRequest request) {
         IEntityContext context = newContext();
-        Type type = context.getType(id);
-        if (type instanceof ClassType classType) {
-            return NncUtils.get(classType, t -> t.toDTO(includingFields, includingFieldTypes));
-        } else {
-            return type.toDTO();
+        Type type = context.getType(request.id());
+
+        try (var serContext = SerializeContext.enter()) {
+            serContext.forceWriteType(type);
+            serContext.writeDependencies();
+            return new GetTypeResponse(
+                    NncUtils.findRequired(serContext.getTypes(), t -> t.id() == request.id()),
+                    NncUtils.filter(serContext.getTypes(), t -> !Objects.equals(t.id(), type.getId()))
+            );
         }
     }
 
-    public List<TypeDTO> batchGetTypes(List<Long> ids, boolean includingFields, boolean includingFieldTypes) {
+    public GetTypesResponse batchGetTypes(GetTypesRequest request) {
         IEntityContext context = newContext();
-        List<Type> types = NncUtils.map(ids, context::getType);
-        return NncUtils.map(types, t -> {
-            if (t instanceof ClassType classType) {
-                return classType.toDTO(includingFields, includingFieldTypes);
-            } else {
-                return t.toDTO();
+        Set<Long> idSet = new HashSet<>(request.ids());
+        try (var serContext = SerializeContext.enter()) {
+            for (Long id : request.ids()) {
+                serContext.forceWriteType(context.getType(id));
             }
-        });
+            serContext.writeDependencies();
+            return new GetTypesResponse(
+                    NncUtils.map(request.ids(), serContext::getType),
+                    NncUtils.filter(serContext.getTypes(), t -> !idSet.contains(t.id()))
+            );
+        }
     }
 
-    public TypeDTO getArrayType(long id) {
-        return getOrCreateCompositeType(id, TypeUtil::getArrayType);
-    }
+    //    public TypeDTO getArrayType(long id) {
+//        return getOrCreateCompositeType(id, TypeUtil::getArrayType);
+//    }
 
     public TypeDTO getNullableType(long id) {
-        return getOrCreateCompositeType(id, TypeUtil::getNullableType);
+        return getOrCreateCompositeType(id, (ctx, type) -> ctx.getUnionType(Set.of(
+                type, StandardTypes.getNullType()
+        )));
     }
 
     public TypeDTO getNullableArrayType(long id) {
-        return getOrCreateCompositeType(id, TypeUtil::getArrayNullableType);
+        return getOrCreateCompositeType(id, (context, type) -> context.getArrayType(type, ArrayKind.READ_WRITE));
     }
 
-    private TypeDTO getOrCreateCompositeType(long id, Function<Type, ? extends Type> mapper) {
+    private TypeDTO getOrCreateCompositeType(long id, BiFunction<IEntityContext, Type, ? extends Type> mapper) {
         IEntityContext context = newContext();
         Type type = context.getType(id);
-        Type compositeType = mapper.apply(type);
+        Type compositeType = mapper.apply(context, type);
         if (compositeType.getId() != null) {
             return compositeType.toDTO();
         } else {
@@ -152,10 +197,10 @@ public class TypeManager {
         }
     }
 
-    private TypeDTO createCompositeType(long id, Function<Type, ? extends Type> mapper) {
+    private TypeDTO createCompositeType(long id, BiFunction<IEntityContext, Type, ? extends Type> mapper) {
         return transactionTemplate.execute(status -> {
             IEntityContext context = newContext();
-            Type compositeType = mapper.apply(context.getType(id));
+            Type compositeType = mapper.apply(context, context.getType(id));
             if (!context.containsModel(compositeType)) {
                 context.bind(compositeType);
             }
@@ -169,7 +214,7 @@ public class TypeManager {
         IEntityContext context = newContext();
         ClassType type = saveTypeWithContent(typeDTO, context);
         context.finish();
-        return type.toDTO(true, false);
+        return type.toDTO();
     }
 
     public ClassType saveType(TypeDTO typeDTO, IEntityContext context) {
@@ -194,7 +239,7 @@ public class TypeManager {
             isCreate = false;
             updateType(typeDTO, type, context);
         }
-        if (typeDTO.param() instanceof ClassParamDTO param) {
+        if (typeDTO.param() instanceof ClassTypeParam param) {
             List<FlowDTO> flows = param.flows();
             if (flows != null) {
                 saveFlows(type, flows, context);
@@ -225,8 +270,7 @@ public class TypeManager {
             }
         }
         for (FlowDTO flowDTO : flows) {
-            if (flowDTO.id() != null) flowManager.update(flowDTO, context);
-            else flowManager.create(flowDTO, type, context);
+            flowManager.save(flowDTO, context);
         }
     }
 
@@ -234,42 +278,77 @@ public class TypeManager {
     public List<Long> batchSave(List<TypeDTO> typeDTOs) {
         FlowSavingContext.skipPreprocessing(true);
         IEntityContext context = newContext();
+        batchSave(typeDTOs, context);
+        List<ClassType> newClasses = NncUtils.filterAndMap(
+                typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && t.id() == null,
+                t -> context.getClassType(t.getRef())
+        );
+        for (ClassType newClass : newClasses) {
+            if (!newClass.isInterface()) {
+                context.initIds();
+                initClass(newClass, context);
+            }
+        }
+        context.finish();
+        return NncUtils.map(typeDTOs, typeDTO -> context.getType(typeDTO.getRef()).getIdRequired());
+    }
+
+    public void batchSave(List<TypeDTO> typeDTOs, IEntityContext context) {
         List<ClassType> newClasses = new ArrayList<>();
         var newDTOs = sortByTopology(typeDTOs);
         for (BaseDTO baseDTO : newDTOs) {
             if (baseDTO instanceof TypeDTO typeDTO) {
-                if (TypeCategory.getByCode(typeDTO.category()).isPojo()) {
+                var category = TypeCategory.getByCode(typeDTO.category());
+                if (category.isPojo()) {
                     newClasses.add(TypeUtil.createClassType(typeDTO, context));
                 } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
-                    var param = typeDTO.getTypeVariableParam();
                     var typeVar = new TypeVariable(
                             typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
-                            context.getEntity(GenericDeclaration.class, param.genericDeclarationRef())
+                            DummyGenericDeclaration.INSTANCE
                     );
                     context.bind(typeVar);
-                } else if (typeDTO.category() == TypeCategory.ARRAY.code()) {
+                } else if (category.isArray()) {
                     var param = typeDTO.getArrayTypeParam();
                     var elementType = context.getType(param.elementTypeRef());
-                    var arrayType = new ArrayType(typeDTO.tmpId(), elementType);
-                    elementType.setArrayType(arrayType);
+                    var arrayType = new ArrayType(typeDTO.tmpId(), elementType, ArrayKind.getByCode(param.kind()));
                     context.bind(arrayType);
                 } else if (typeDTO.category() == TypeCategory.UNION.code()) {
                     var param = typeDTO.getUnionParam();
                     var unionType = new UnionType(
                             typeDTO.tmpId(),
-                            NncUtils.mapUnique(param.members(), member -> context.getType(member.getRef()))
+                            NncUtils.mapUnique(param.memberRefs(), context::getType)
                     );
-                    if (unionType.isNullable()) {
-                        unionType.getUnderlyingType().setNullableType(unionType);
-                    }
                     context.bind(unionType);
+                } else if (typeDTO.category() == TypeCategory.UNCERTAIN.code()) {
+                    var param = typeDTO.getUncertainTypeParam();
+                    context.bind(
+                            new UncertainType(
+                                    typeDTO.tmpId(),
+                                    context.getType(param.lowerBoundRef()),
+                                    context.getType(param.upperBoundRef())
+                            )
+                    );
+                } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
+                    var param = typeDTO.getFunctionTypeParam();
+                    var funcType = new FunctionType(
+                            typeDTO.tmpId(),
+                            NncUtils.map(param.parameterTypeRefs(), context::getType),
+                            context.getType(param.returnTypeRef())
+                    );
+                    context.bind(funcType);
+                } else {
+                    throw new InternalException("Invalid type category: " + typeDTO.category());
                 }
             } else if (baseDTO instanceof FlowDTO flowDTO) {
                 var flow = FlowBuilder
                         .newBuilder(
                                 context.getClassType(flowDTO.declaringTypeRef()),
-                                flowDTO.name(), flowDTO.code()
+                                flowDTO.name(), flowDTO.code(),
+                                context.getFunctionTypeContext()
                         )
+                        .typeParameters(NncUtils.map(flowDTO.typeParameterRefs(), context::getTypeVariable))
+                        .type(context.getFunctionType(flowDTO.typeRef()))
+                        .staticType(context.getFunctionType(flowDTO.staticTypeRef()))
                         .template(flowDTO.templateRef() != null ? context.getFlow(flowDTO.templateRef()) : null)
                         .flowDTO(flowDTO).build();
                 context.bind(flow);
@@ -281,18 +360,24 @@ public class TypeManager {
                 typeDTO -> TypeCategory.getByCode(typeDTO.category()).isPojo());
         for (TypeDTO typeDTO : classDTOs) {
             TypeUtil.saveClasType(typeDTO, true, context);
-            ClassParamDTO param = typeDTO.getClassParam();
+            ClassTypeParam param = typeDTO.getClassParam();
             ClassType klass = context.getClassType(typeDTO.getRef());
-            saveFields(param.fields(), klass, context);
-            saveFields(param.staticFields(), klass, context);
-            Set<RefDTO> flowRefs = new HashSet<>();
-            for (FlowDTO flowDTO : param.flows()) {
-                flowRefs.add(flowDTO.getRef());
-                flowManager.saveDeclaration(flowDTO, klass, context);
+            if (param.fields() != null) {
+                saveFields(param.fields(), klass, context);
             }
-            List<Flow> flowsToRemove = NncUtils.filter(klass.getFlows(),
-                    flow -> !flowRefs.contains(flow.getRef()));
-            flowsToRemove.forEach(klass::removeFlow);
+            if (param.staticFields() != null) {
+                saveFields(param.staticFields(), klass, context);
+            }
+            if (param.flows() != null) {
+                Set<RefDTO> flowRefs = new HashSet<>();
+                for (FlowDTO flowDTO : param.flows()) {
+                    flowRefs.add(flowDTO.getRef());
+                    flowManager.saveDeclaration(flowDTO, context);
+                }
+                List<Flow> flowsToRemove = NncUtils.filter(klass.getFlows(),
+                        flow -> !flowRefs.contains(flow.getRef()));
+                flowsToRemove.forEach(klass::removeFlow);
+            }
         }
         List<TypeDTO> typeVariableDTOs = NncUtils.filter(typeDTOs,
                 typeDTO -> typeDTO.category() == TypeCategory.VARIABLE.code());
@@ -302,24 +387,227 @@ public class TypeManager {
             typeVariable.setBounds(NncUtils.map(param.boundRefs(), context::getType));
         }
         for (TypeDTO typeDTO : classDTOs) {
-            ClassParamDTO param = typeDTO.getClassParam();
+            ClassTypeParam param = typeDTO.getClassParam();
             ClassType klass = context.getClassType(typeDTO.getRef());
-            for (FlowDTO flowDTO : param.flows()) {
-                flowManager.saveContent(flowDTO, context.getFlow(flowDTO.getRef()), klass, context);
+            if (param.flows() != null) {
+                for (FlowDTO flowDTO : param.flows()) {
+                    flowManager.saveContent(flowDTO, context.getFlow(flowDTO.getRef()), context);
+                }
             }
         }
-        for (ClassType newClass : newClasses) {
-            if(!newClass.isInterface()) {
-                context.initIds();
-                initClass(newClass, context);
+        List<ClassType> templates = new ArrayList<>();
+        for (TypeDTO typeDTO : typeDTOs) {
+            var type = context.getType(typeDTO.getRef());
+            if (type instanceof ClassType classType) {
+                if (classType.isTemplate()) {
+                    templates.add(classType);
+                }
+                createOverridingFlows(classType, context);
             }
         }
-        context.finish();
-        return NncUtils.map(typeDTOs, typeDTO -> context.getType(typeDTO.getRef()).getIdRequired());
+        for (ClassType updatedTemplate : templates) {
+            retransformClassTypeIfRequired(updatedTemplate, context);
+        }
+    }
+
+    private void createOverridingFlows(ClassType type, IEntityContext context) {
+        if (type.isParameterized()) {
+            return;
+        }
+        for (ClassType it : type.getInterfaces()) {
+            var flows = it.getAllFlows();
+            for (Flow overriden : flows) {
+                flowManager.createOverrideFlows(overriden, type, context);
+            }
+        }
     }
 
     private List<BaseDTO> sortByTopology(List<TypeDTO> typeDTOs) {
         return new DTOVisitor(typeDTOs).result;
+    }
+
+    @Transactional
+    public GetTypeResponse getUnionType(List<Long> memberIds) {
+        var context = newContext();
+        var members = NncUtils.mapUnique(memberIds, context::getType);
+        var type = context.getUnionType(members);
+        if (type.getId() == null) {
+            context.finish();
+        }
+        try (var serContext = SerializeContext.enter()) {
+            var typeDTO = type.toDTO();
+            return new GetTypeResponse(typeDTO, serContext.getTypesExclude(type));
+        }
+    }
+
+    public GetTypeResponse getArrayType(long elementId, int kind) {
+        var context = newContext();
+        var elementType = context.getType(elementId);
+        var arrayType = context.getArrayType(elementType, ArrayKind.getByCode(kind));
+        if (arrayType.getId() == null) {
+            context.finish();
+        }
+        try (var serContext = SerializeContext.enter()) {
+            var typeDTO = arrayType.toDTO();
+            return new GetTypeResponse(typeDTO, serContext.getTypesExclude(arrayType));
+        }
+    }
+
+    public GetTypeResponse getParameterizedType(GetParameterizedTypeRequest request) {
+        if (request.templateRef().isPersisted() && NncUtils.allMatch(request.typeArgumentRefs(), RefDTO::isPersisted)) {
+            var context = newContext();
+            var template = context.getClassType(request.templateRef());
+            var typeArgs = NncUtils.map(request.typeArgumentRefs(), context::getType);
+            var existing = context.getGenericContext().getExisting(template, typeArgs);
+            if (existing != null) {
+                return generateResponse(existing);
+            } else {
+                return transactionTemplate.execute((status) -> createParameterizedType0(request));
+            }
+        } else {
+            return createParameterizedType0(request);
+        }
+    }
+
+    private GetTypeResponse createParameterizedType0(GetParameterizedTypeRequest request) {
+        var context = newContext();
+        if (NncUtils.isNotEmpty(request.contextTypes())) {
+            batchSave(request.contextTypes(), context);
+        }
+        var template = context.getClassType(request.templateRef());
+        var typeArgs = NncUtils.map(request.typeArgumentRefs(), context::getType);
+        var type = context.getParameterizedType(template, typeArgs);
+        if (type.getId() == null && request.templateRef().isPersisted()
+                && NncUtils.allMatch(request.typeArgumentRefs(), RefDTO::isPersisted)) {
+            context.finish();
+        }
+        return generateResponse(type);
+    }
+
+    private GetTypeResponse generateResponse(ClassType type) {
+        try (var serContext = SerializeContext.enter()) {
+            var typeDTO = type.toDTO();
+            serContext.writeDependencies();
+            return new GetTypeResponse(typeDTO, serContext.getTypesExclude(type));
+        }
+    }
+
+    @Transactional
+    public GetTypeResponse getFunctionType(List<Long> parameterTypeIds, Long returnTypeId) {
+        var context = newContext();
+        var parameterTypes = NncUtils.map(parameterTypeIds, context::getType);
+        var returnType = context.getType(returnTypeId);
+        var type = context.getFunctionType(parameterTypes, returnType);
+        if (type.getId() == null) {
+            context.finish();
+        }
+        try (var serContext = SerializeContext.enter()) {
+            var typeDTO = type.toDTO();
+            return new GetTypeResponse(typeDTO, serContext.getTypesExclude(type));
+        }
+    }
+
+    @Transactional
+    public GetTypeResponse getUncertainType(Long lowerBoundId, Long upperBoundId) {
+        var context = newContext();
+        var lowerBound = context.getType(lowerBoundId);
+        var upperBound = context.getType(upperBoundId);
+        var type = context.getUncertainType(lowerBound, upperBound);
+        if (type.getId() == null) {
+            context.finish();
+        }
+        try (var serContext = SerializeContext.enter()) {
+            var typeDTO = type.toDTO();
+            return new GetTypeResponse(typeDTO, serContext.getTypesExclude(type));
+        }
+    }
+
+    public GetTypesResponse getDescendants(long id) {
+        var context = newContext();
+        var type = context.getType(id);
+        Queue<ClassType> queue = new LinkedList<>();
+        if (type instanceof ClassType classType) {
+            queue.offer(classType);
+        } else if (type instanceof UnionType unionType) {
+            for (Type member : unionType.getMembers()) {
+                if (member instanceof ClassType classType) {
+                    queue.offer(classType);
+                }
+            }
+        }
+        List<ClassType> types = new ArrayList<>();
+        Set<RefDTO> typeRefs = new LinkedHashSet<>();
+        while (!queue.isEmpty()) {
+            var t = queue.poll();
+            types.add(t);
+            typeRefs.add(t.getRef());
+            queue.addAll(t.getSubTypes());
+        }
+        try (var serContext = SerializeContext.enter()) {
+            types.forEach(serContext::forceWriteType);
+            return new GetTypesResponse(
+                    NncUtils.map(types, t -> serContext.getType(t.getIdRequired())),
+                    serContext.getTypes(t -> !typeRefs.contains(t.getRef()))
+            );
+        }
+    }
+
+    @Transactional
+    public long saveEnumConstant(InstanceDTO instanceDTO) {
+        var context = newContext();
+        var instanceContext = Objects.requireNonNull(context.getInstanceContext());
+        var type = context.getClassType(instanceDTO.typeRef());
+        ClassInstance instance;
+        if(instanceDTO.id() == null) {
+            instanceDTO = setOrdinal(instanceDTO, type.getEnumConstants().size(), type);
+            instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext);
+            FieldBuilder.newBuilder(instance.getTitle(), null, type, type)
+                    .isStatic(true)
+                    .staticValue(instance)
+                    .build();
+        }
+        else {
+            instance = (ClassInstance) instanceContext.get(instanceDTO.id());
+            var ordinalField = type.getFieldByCode("ordinal");
+            int ordinal = instance.getLongField(ordinalField).getValue().intValue();
+            instanceDTO = setOrdinal(instanceDTO, ordinal, type);
+            var field = type.getStaticFieldByName(instance.getTitle());
+            instanceManager.update(instanceDTO, instanceContext);
+            field.setName(instance.getTitle());
+        }
+        context.finish();
+        return instance.getIdRequired();
+    }
+
+    private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, ClassType type) {
+        var ordinalField = type.getFieldByCode("ordinal");
+        var param = (ClassInstanceParam) instanceDTO.param();
+        return instanceDTO.copyWithParam(
+                param.copyWithNewField(
+                        new InstanceFieldDTO(
+                                ordinalField.getIdRequired(),
+                                ordinalField.getName(),
+                                TypeCategory.LONG.code(),
+                                false,
+                                new PrimitiveFieldValue(
+                                        ordinal + "",
+                                        PrimitiveKind.LONG.getCode(),
+                                        ordinal
+                                )
+                        )
+                )
+        );
+    }
+
+    @Transactional
+    public void deleteEnumConstant(long id) {
+        var context = newContext();
+        var instanceContext = NncUtils.requireNonNull(context.getInstanceContext());
+        var instance = instanceContext.get(id);
+        var type = (ClassType) instance.getType();
+        var field = type.getStaticFieldByName(instance.getTitle());
+        context.remove(field);
+        context.finish();
     }
 
     private static class DTOVisitor {
@@ -330,17 +618,13 @@ public class TypeManager {
 
         public DTOVisitor(List<TypeDTO> typeDTOs) {
             for (TypeDTO typeDTO : typeDTOs) {
-                if (typeDTO.id() == null) {
-                    map.put(typeDTO.getRef(), typeDTO);
-                }
+                map.put(typeDTO.getRef(), typeDTO);
                 if (TypeCategory.getByCode(typeDTO.category()).isPojo()) {
                     var param = typeDTO.getClassParam();
-                    for (FlowDTO flow : param.flows()) {
-                        if (flow.id() == null) {
+                    if (param.flows() != null) {
+                        for (FlowDTO flow : param.flows()) {
                             map.put(flow.getRef(), flow);
-                        }
-                        for (FlowDTO flowTmpInst : flow.templateInstances()) {
-                            if (flowTmpInst.id() == null) {
+                            for (FlowDTO flowTmpInst : flow.templateInstances()) {
                                 map.put(flowTmpInst.getRef(), flowTmpInst);
                             }
                         }
@@ -363,6 +647,9 @@ public class TypeManager {
         }
 
         private void visit(BaseDTO baseDTO) {
+            if (baseDTO.getRef().id() != null) {
+                return;
+            }
             if (visiting.contains(baseDTO)) {
                 throw new InternalException("Circular reference");
             }
@@ -391,62 +678,34 @@ public class TypeManager {
             if (category.isPojo()) {
                 var param = typeDTO.getClassParam();
                 dependencies.add(param.templateRef());
-            } else if (category == TypeCategory.VARIABLE) {
-                var param = typeDTO.getTypeVariableParam();
-                dependencies.add(param.genericDeclarationRef());
-            } else if (category == TypeCategory.ARRAY) {
+                if (param.typeParameterRefs() != null) {
+                    dependencies.addAll(param.typeParameterRefs());
+                }
+            } else if (category.isArray()) {
                 var param = typeDTO.getArrayTypeParam();
                 dependencies.add(param.elementTypeRef());
             } else if (category == TypeCategory.UNION) {
                 var param = typeDTO.getUnionParam();
-                dependencies.addAll(NncUtils.map(param.members(), BaseDTO::getRef));
+                dependencies.addAll(param.memberRefs());
+            } else if (category == TypeCategory.FUNCTION) {
+                var param = typeDTO.getFunctionTypeParam();
+                dependencies.addAll(param.parameterTypeRefs());
+                dependencies.add(param.returnTypeRef());
+            } else if (category == TypeCategory.UNCERTAIN) {
+                var param = (UncertainTypeParam) typeDTO.param();
+                dependencies.add(param.lowerBoundRef());
+                dependencies.add(param.upperBoundRef());
             }
         }
 
         private void getDependencies(FlowDTO flowDTO, Set<RefDTO> dependencies) {
             dependencies.add(flowDTO.declaringTypeRef());
             dependencies.add(flowDTO.templateRef());
+            dependencies.add(flowDTO.typeRef());
+            dependencies.add(flowDTO.staticTypeRef());
+            dependencies.addAll(flowDTO.typeParameterRefs());
         }
 
-    }
-
-    private void extractTypeDTOsToSave0(List<?> objects, Set<Object> visited, List<TypeDTO> result) {
-        List<Object> cascade = new ArrayList<>();
-        for (Object object : objects) {
-            if (visited.contains(object)) {
-                continue;
-            }
-            visited.add(object);
-            if (object instanceof TypeDTO typeDTO) {
-                if (typeDTO.id() == null || typeDTO.id() > IdConstants.SYSTEM_RESERVE_PER_REGION) {
-                    result.add(typeDTO);
-                    cascade.add(typeDTO);
-                }
-            } else {
-                cascade.addAll(getReferences(object));
-            }
-        }
-        if (!cascade.isEmpty()) {
-            extractTypeDTOsToSave0(cascade, visited, result);
-        }
-    }
-
-    private Collection<?> getReferences(Object object) {
-        if (object instanceof Collection<?> coll) {
-            return coll;
-        } else if (object instanceof Map<?, ?> map) {
-            return map.values();
-        } else {
-            EntityDesc desc = DescStore.get(object.getClass());
-            List<Object> references = new ArrayList<>();
-            for (EntityProp prop : desc.getProps()) {
-                var ref = prop.get(object);
-                if (ref != null) {
-                    references.add(ref);
-                }
-            }
-            return references;
-        }
     }
 
     @Transactional
@@ -463,37 +722,23 @@ public class TypeManager {
 
     public ClassType createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "类型名称不能为空");
-        ensureTypeNameAvailable(classDTO, context);
-        return TypeUtil.saveClasType(classDTO, withContent, context);
+        ensureClassNameAvailable(classDTO, context);
+        var type = TypeUtil.saveClasType(classDTO, withContent, context);
+        createOverridingFlows(type, context);
+        return type;
     }
 
     public ClassType updateType(TypeDTO typeDTO, ClassType type, IEntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "类型名称不能为空");
-        if (!type.getName().equals(typeDTO.name())) {
-            ensureTypeNameAvailable(typeDTO, context);
-        }
-        if(typeDTO.code() != null) {
-            type.setCode(typeDTO.code());
-        }
-        type.update(typeDTO);
-        ClassParamDTO param = (ClassParamDTO) typeDTO.param();
-        if (param.fields() != null) {
-            Set<RefDTO> fieldRefs = NncUtils.mapAndFilterUnique(param.fields(), FieldDTO::getRef, RefDTO::isNotEmpty);
-            for (Field field : type.getFields()) {
-                if (!fieldRefs.contains(field.getRef())) {
-                    removeField(field, context);
-                }
-            }
-            for (FieldDTO fieldDTO : param.fields()) {
-                saveField(fieldDTO, type, context);
-            }
-        }
+        TypeUtil.saveClasType(typeDTO, true, context);
+        retransformClassTypeIfRequired(type, context);
+        createOverridingFlows(type, context);
         return type;
     }
 
-    private void ensureTypeNameAvailable(TypeDTO typeDTO, IEntityContext context) {
-        Type typeWithSameName = context.selectByUniqueKey(Type.UNIQUE_NAME, typeDTO.name());
-        if (typeWithSameName != null && !typeWithSameName.isAnonymous()) {
+    private void ensureClassNameAvailable(TypeDTO typeDTO, IEntityContext context) {
+        var classWithSameName = context.selectByUniqueKey(ClassType.UNIQUE_NAME, typeDTO.name());
+        if (classWithSameName != null && !classWithSameName.isAnonymous()) {
             throw BusinessException.invalidType(typeDTO, "对象名称已存在");
         }
     }
@@ -514,7 +759,7 @@ public class TypeManager {
         IEntityContext context = newContext();
         Field field = saveField(fieldDTO, context);
         context.finish();
-        return field.getIdRequired();
+        return field != null ? field.getIdRequired() : 0L;
     }
 
     public void saveFields(List<FieldDTO> fieldDTOs, ClassType declaringClass, IEntityContext context) {
@@ -529,7 +774,7 @@ public class TypeManager {
             }
         }
         List<Field> toRemove = NncUtils.filter(
-                declaringClass.getFields(), f -> f.getId() != null && !fieldIds.contains(f.getId()));
+                declaringClass.getAllFields(), f -> f.getId() != null && !fieldIds.contains(f.getId()));
         toRemove.forEach(declaringClass::removeField);
     }
 
@@ -547,11 +792,56 @@ public class TypeManager {
     }
 
     private Field createField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
-        return TypeUtil.createFieldAndBind(
-                declaringType,
-                fieldDTO,
-                context
-        );
+        if (fieldDTO.defaultValue() != null) {
+            FieldData fieldData = FieldData.fromFieldDTO(fieldDTO, context);
+            context.bind(new AddFieldJobGroup(fieldData));
+            return null;
+        } else {
+            var field = TypeUtil.createFieldAndBind(
+                    declaringType,
+                    fieldDTO,
+                    context
+            );
+            retransformFieldIfRequired(field, context);
+            return field;
+        }
+    }
+
+    @Transactional
+    public void moveField(long id, int ordinal) {
+        var context = newContext(true);
+        var field = context.getField(id);
+        field.getDeclaringType().moveField(field, ordinal);
+        context.finish();
+    }
+
+    private void removeTransformedFieldIfRequired(Field field, IEntityContext context) {
+        if (field.getDeclaringType().isTemplate() && context.isPersisted(field.getDeclaringType())) {
+            var templateInstances = context.selectByKey(ClassType.TEMPLATE_IDX, field.getDeclaringType());
+            for (ClassType templateInstance : templateInstances) {
+                templateInstance.removeField(
+                        templateInstance.tryGetFieldByName(field.getName())
+                );
+            }
+        }
+    }
+
+    private void retransformFieldIfRequired(Field field, IEntityContext context) {
+        if (field.getDeclaringType().isTemplate() && context.isPersisted(field.getDeclaringType())) {
+            var templateInstances = context.getTemplateInstances(field.getDeclaringType());
+            for (ClassType templateInstance : templateInstances) {
+                context.getGenericContext().retransformField(field, templateInstance);
+            }
+        }
+    }
+
+    private void retransformClassTypeIfRequired(ClassType classType, IEntityContext context) {
+        if (classType.isTemplate() && context.isPersisted(classType)) {
+            var templateInstances = context.getTemplateInstances(classType);
+            for (ClassType templateInstance : templateInstances) {
+                context.getGenericContext().retransformClass(classType, templateInstance);
+            }
+        }
     }
 
     private Field updateField(FieldDTO fieldDTO, Field field, IEntityContext context) {
@@ -561,13 +851,18 @@ public class TypeManager {
         } else {
             field.setDefaultValue(InstanceUtils.nullInstance());
         }
+        retransformFieldIfRequired(field, context);
         return field;
     }
 
-    public FieldDTO getField(long fieldId) {
+    public GetFieldResponse getField(long fieldId) {
         IEntityContext context = newContext();
         Field field = context.getField(fieldId);
-        return NncUtils.get(field, Field::toDTO);
+        try (var serContext = SerializeContext.enter()) {
+            var fieldDTO = NncUtils.get(field, Field::toDTO);
+            serContext.writeType(field.getType());
+            return new GetFieldResponse(fieldDTO, serContext.getTypes());
+        }
     }
 
     @Transactional
@@ -575,6 +870,7 @@ public class TypeManager {
         IEntityContext context = newContext();
         Field field = context.getField(fieldId);
         context.remove(field);
+        removeTransformedFieldIfRequired(field, context);
         context.finish();
     }
 
@@ -594,7 +890,13 @@ public class TypeManager {
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newContext().getEntityContext();
+        return newContext(false);
+    }
+
+
+    private IEntityContext newContext(boolean asyncLogProcessing) {
+        return instanceContextFactory.newContext(ContextUtil.getTenantId(), asyncLogProcessing)
+                .getEntityContext();
     }
 
     public Page<ConstraintDTO> listConstraints(long typeId, int page, int pageSize) {
@@ -630,12 +932,7 @@ public class TypeManager {
     public long saveConstraint(ConstraintDTO constraintDTO) {
         IEntityContext context = newContext();
         Constraint<?> constraint;
-        if (constraintDTO.id() == null || constraintDTO.id() == 0L) {
-            constraint = ConstraintFactory.createFromDTO(constraintDTO, context);
-        } else {
-            constraint = context.getEntity(Constraint.class, constraintDTO.id());
-            ConstraintFactory.update(constraintDTO, context);
-        }
+        constraint = ConstraintFactory.save(constraintDTO, context);
         context.finish();
         return constraint.getIdRequired();
     }
@@ -666,7 +963,7 @@ public class TypeManager {
             if (firstItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
                 type = context.getType(ExpressionUtil.parseIdFromConstantVar(firstItem));
             } else {
-                type = context.selectByUniqueKey(Type.UNIQUE_NAME, firstItem);
+                type = context.selectByUniqueKey(ClassType.UNIQUE_NAME, firstItem);
             }
             path2type.put(firstItem, type);
             maxLevels = Math.max(maxLevels, path.length());
@@ -737,20 +1034,13 @@ public class TypeManager {
     }
 
     private void initCompositeTypes(Type type, IEntityContext context) {
-        if (type.getNullableType() == null) {
-            UnionType nullableType = new UnionType(null, Set.of(type, context.getType(Null.class)));
-            TypeUtil.getArrayType(nullableType);
-            type.setNullableType(nullableType);
-            context.bind(nullableType);
-        }
-        ArrayType arrayType = TypeUtil.getArrayType(type);
-        if (!context.containsModel(arrayType)) {
-            context.bind(arrayType);
-        }
-        if (arrayType.getNullableType() == null) {
-            arrayType.setNullableType(new UnionType(null, Set.of(arrayType, context.getType(Null.class))));
-            context.bind(arrayType.getNullableType());
-        }
+        context.getUnionType(Set.of(type, StandardTypes.getNullType()));
+        ArrayType arrayType = context.getArrayType(type, ArrayKind.READ_WRITE);
+        context.getUnionType(Set.of(arrayType, StandardTypes.getNullType()));
     }
 
+    @Autowired
+    public void setInstanceManager(InstanceManager instanceManager) {
+        this.instanceManager = instanceManager;
+    }
 }

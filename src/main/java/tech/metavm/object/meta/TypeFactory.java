@@ -12,15 +12,12 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class TypeFactory {
-
-    public PrimitiveType createPrimitiveWithComposition(PrimitiveKind kind) {
-        PrimitiveType primitiveType = createPrimitive(kind);
-        TypeUtil.fillCompositeTypes(primitiveType, this);
-        return primitiveType;
-    }
 
     public PrimitiveType createPrimitive(PrimitiveKind kind) {
         var type = new PrimitiveType(kind);
@@ -31,11 +28,13 @@ public abstract class TypeFactory {
     }
 
     public ClassType createClassType(TypeDTO typeDTO, IEntityContext context) {
-        ClassParamDTO param = typeDTO.getClassParam();
+        ClassTypeParam param = typeDTO.getClassParam();
         var type = ClassBuilder.newBuilder(typeDTO.name(), typeDTO.code())
                 .category(TypeCategory.getByCode(typeDTO.category()))
                 .ephemeral(typeDTO.ephemeral())
                 .anonymous(typeDTO.anonymous())
+                .isTemplate(param.isTemplate())
+                .typeParameters(NncUtils.map(param.typeParameterRefs(), context::getTypeVariable))
                 .template(param.templateRef() != null ? context.getClassType(param.templateRef()) : null)
                 .collectionName(param.templateName())
                 .source(ClassSource.getByCode(param.source()))
@@ -47,25 +46,35 @@ public abstract class TypeFactory {
     public ClassType saveClassType(TypeDTO typeDTO, boolean withContent, IEntityContext context) {
         var param = typeDTO.getClassParam();
         var type = context.getClassType(typeDTO.getRef());
-        if(type == null) {
+        if (type == null) {
             type = createClassType(typeDTO, context);
         }
-        type.setSuperType(NncUtils.get(param.superTypeRef(), context::getClassType));
-        type.setInterfaces(NncUtils.map(param.interfaceRefs(), context::getClassType));
-        type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
-        type.setDesc(param.desc());
-        if(param.dependencyRefs() != null) {
+        else {
+            type.setCode(typeDTO.code());
+            type.setName(typeDTO.name());
+            if(typeDTO.category() == TypeCategory.ENUM.code()) {
+                type.setSuperType(context.getParameterizedType(StandardTypes.getEnumType(), List.of(type)));
+            }
+            else {
+                type.setSuperType(NncUtils.get(param.superTypeRef(), context::getClassType));
+            }
+            type.setInterfaces(NncUtils.map(param.interfaceRefs(), context::getClassType));
+            type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
+            type.setDesc(param.desc());
+        }
+        if (param.dependencyRefs() != null) {
             type.setDependencies(NncUtils.map(param.dependencyRefs(), context::getClassType));
         }
+        var declaringType = type;
         if (withContent) {
-            for (FieldDTO field : param.fields()) {
-                createField(type, field, context);
+            if (param.fields() != null) {
+                type.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
             }
-            for (FieldDTO field : param.staticFields()) {
-                createField(type, field, context);
+            if (param.staticFields() != null) {
+                type.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
             }
-            for (ConstraintDTO constraint : param.constraints()) {
-                ConstraintFactory.createFromDTO(constraint, context);
+            if (param.constraints() != null) {
+                type.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
             }
         }
         return type;
@@ -73,11 +82,9 @@ public abstract class TypeFactory {
 
     public TypeVariable createTypeVariable(TypeDTO typeDTO,
                                            boolean withBounds, IEntityContext context) {
-        var param = (TypeVariableParamDTO) typeDTO.param();
-        var typeVariable = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code());
-        typeVariable.setGenericDeclaration(
-                context.getEntity(GenericDeclaration.class, param.genericDeclarationRef())
-        );
+        var param = (TypeVariableParam) typeDTO.param();
+        var typeVariable = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
+                context.getEntity(GenericDeclaration.class, param.genericDeclarationRef()));
         if (withBounds) {
             typeVariable.setBounds(NncUtils.map(param.boundRefs(), context::getType));
         }
@@ -89,51 +96,69 @@ public abstract class TypeFactory {
         return type.isNullable();
     }
 
-    public Field createField(ClassType declaringType, FieldDTO fieldDTO, IEntityContext context) {
+//    public TypeVariable saveTypeVariable(TypeDTO typeDTO, ClassType declaringType, IEntityContext context) {
+//        TypeVariable typeVariable = context.getTypeVariable(typeDTO.getRef());
+//        if (typeVariable == null) {
+//            typeVariable = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(), declaringType);
+//        } else {
+//            typeVariable.setName(typeDTO.name());
+//            typeVariable.setCode(typeDTO.code());
+//        }
+//        var param = (TypeVariableParam) typeDTO.param();
+//        typeVariable.setBounds(NncUtils.map(param.boundRefs(), context::getType));
+//        return typeVariable;
+//    }
+
+    public Field saveField(ClassType declaringType, FieldDTO fieldDTO, IEntityContext context) {
+        Field field = context.getField(fieldDTO.getRef());
         Type fieldType = context.getType(fieldDTO.typeRef());
-        Field field = FieldBuilder.newBuilder(fieldDTO.name(), fieldDTO.code(), declaringType, fieldType)
-                .tmpId(fieldDTO.tmpId())
-                .access(Access.getByCodeRequired(fieldDTO.access()))
-                .unique(fieldDTO.unique())
-                .asTitle(fieldDTO.asTitle())
-                .defaultValue(InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context))
-                .isChild(fieldDTO.isChild())
-                .isStatic(fieldDTO.isStatic())
-                .staticValue(InstanceUtils.nullInstance())
-                .build();
-        context.bind(field);
+        var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
+        var access = Access.getByCodeRequired(fieldDTO.access());
+        if (field == null) {
+            field = FieldBuilder.newBuilder(fieldDTO.name(), fieldDTO.code(), declaringType, fieldType)
+                    .tmpId(fieldDTO.tmpId())
+                    .access(access)
+                    .unique(fieldDTO.unique())
+                    .asTitle(fieldDTO.asTitle())
+                    .defaultValue(defaultValue)
+                    .isChild(fieldDTO.isChild())
+                    .isStatic(fieldDTO.isStatic())
+                    .staticValue(InstanceUtils.nullInstance())
+                    .build();
+            context.bind(field);
+        } else {
+            field.setName(fieldDTO.name());
+            field.setCode(fieldDTO.code());
+            field.setAsTitle(fieldDTO.asTitle());
+            field.setUnique(fieldDTO.unique());
+            field.setType(fieldType);
+            field.setDefaultValue(defaultValue);
+            field.setAccess(access);
+        }
         return field;
     }
 
-    public UnionType getNullableType(Type type) {
-        UnionType nullableType = type.getNullableType();
-        if (nullableType == null) {
-            nullableType = createNullableType(type, null);
-            type.setNullableType(nullableType);
-        }
-        return nullableType;
-    }
+//    public UnionType getNullableType(Type type) {
+//        UnionType nullableType = type.getNullableType();
+//        if (nullableType == null) {
+//            nullableType = createNullableType(type, null);
+//            type.setNullableType(nullableType);
+//        }
+//        return nullableType;
+//    }
 
-    public UnionType createNullableType(Type type, @Nullable TypeDTO typeDTO) {
-        var nullableType = createUnion(Set.of(type, getType(Null.class)));
-        type.setNullableType(nullableType);
-        if (typeDTO != null) {
-            nullableType.setTmpId(typeDTO.tmpId());
-        }
-        return nullableType;
-    }
-
-    public ArrayType createArrayType(Type elementType) {
-        return createArrayType(elementType, null);
-    }
-
-    public ArrayType createArrayType(Type elementType, @Nullable TypeDTO typeDTO) {
-        return new ArrayType(NncUtils.get(typeDTO, TypeDTO::tmpId), elementType, false);
-    }
+//    public UnionType createNullableType(Type type, @Nullable TypeDTO typeDTO) {
+//        var nullableType = createUnion(Set.of(type, getType(Null.class)));
+//        type.setNullableType(nullableType);
+//        if (typeDTO != null) {
+//            nullableType.setTmpId(typeDTO.tmpId());
+//        }
+//        return nullableType;
+//    }
 
     private Map<String, FlowDTO> getFlowDTOMap(@Nullable TypeDTO typeDTO) {
         Map<String, FlowDTO> flowDTOMap = new HashMap<>();
-        if (typeDTO != null && typeDTO.param() instanceof ClassParamDTO param) {
+        if (typeDTO != null && typeDTO.param() instanceof ClassTypeParam param) {
             flowDTOMap.putAll(NncUtils.toMap(param.flows(), FlowDTO::code));
         }
         return flowDTOMap;
@@ -157,6 +182,10 @@ public abstract class TypeFactory {
 
     public PrimitiveType getNullType() {
         return (PrimitiveType) getType(Null.class);
+    }
+
+    public PrimitiveType getStringType() {
+        return (PrimitiveType) getType(String.class);
     }
 
     public abstract Type getType(java.lang.reflect.Type javaType);
@@ -191,6 +220,10 @@ public abstract class TypeFactory {
 
     public PrimitiveType getBooleanType() {
         return (PrimitiveType) getType(Boolean.class);
+    }
+
+    public boolean containsJavaType(java.lang.reflect.Type javaType) {
+        return getType(javaType) != null;
     }
 
 }

@@ -5,8 +5,6 @@ import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdAndValue;
 import tech.metavm.util.NncUtils;
 
@@ -33,7 +31,7 @@ public class LoadingBuffer {
     }
 
     public void load(LoadRequest request) {
-        if(isMissing(request.id())) {
+        if (isMissing(request.id())) {
             identityRequests.add(request);
         }
     }
@@ -43,7 +41,7 @@ public class LoadingBuffer {
     }
 
     public void preload(long id, InstancePO instancePO) {
-        if(isMissing(id)) {
+        if (isMissing(id)) {
             loaded.add(id);
             identityResultMap.put(id, instancePO);
         }
@@ -54,7 +52,7 @@ public class LoadingBuffer {
     }
 
     public InstancePO getInstancePO(long id) {
-        if(!identityResultMap.containsKey(id)) {
+        if (!identityResultMap.containsKey(id)) {
             load(LoadRequest.create(id, ENUM_CONSTANTS_LAZY_LOADING));
             flush();
         }
@@ -98,7 +96,7 @@ public class LoadingBuffer {
 
     private Map<RangeQuery, List<IdAndValue<Long>>> buildRangeResult(List<RangeQuery> queries, List<InstancePO> instancePOs) {
         for (InstancePO instancePO : instancePOs) {
-            if(!identityResultMap.containsKey(instancePO.getId())) {
+            if (!identityResultMap.containsKey(instancePO.getId())) {
                 identityResultMap.put(instancePO.getId(), instancePO);
             }
         }
@@ -116,7 +114,7 @@ public class LoadingBuffer {
     }
 
     private void flushIdRequests() {
-        if(identityRequests.isEmpty()) {
+        if (identityRequests.isEmpty()) {
             return;
         }
         for (InstancePO instancePO : loadInstancePOs(identityRequests)) {
@@ -131,17 +129,16 @@ public class LoadingBuffer {
         return instancePOs;
     }
 
-    public boolean isRefTargetAlive(long id) {
+    public boolean isAlive(long id) {
         return identityResultMap.containsKey(id) || aliveIds.contains(id);
     }
 
     private void addAliveIds(List<InstancePO> instancePOs) {
         Set<Long> refIds = new HashSet<>();
         for (InstancePO instancePO : instancePOs) {
-            if(instancePO instanceof InstanceArrayPO arrayPO) {
+            if (instancePO instanceof InstanceArrayPO arrayPO) {
                 extractRefIdsFromArray(arrayPO, refIds);
-            }
-            else {
+            } else {
                 extractRefIdsFromObject(instancePO, refIds);
             }
         }
@@ -150,8 +147,10 @@ public class LoadingBuffer {
     }
 
     public void extractRefIdsFromObject(InstancePO instancePO, Set<Long> refIds) {
-        for (Object fieldValue: instancePO.getData().values()) {
-            NncUtils.invokeIfNotNull(convertToRefId(fieldValue), refIds::add);
+        for (Map<String, Object> subMap : instancePO.getData().values()) {
+            for (Object fieldValue : subMap.values()) {
+                NncUtils.invokeIfNotNull(convertToRefId(fieldValue), refIds::add);
+            }
         }
     }
 
@@ -163,14 +162,14 @@ public class LoadingBuffer {
     }
 
     private Long convertToRefId(Object fieldValue) {
-        if(fieldValue instanceof IdentityPO identityPO) {
+        if (fieldValue instanceof IdentityPO identityPO) {
             return identityPO.id();
         }
         return null;
     }
 
     private void flushByTypeRequests() {
-        if(byTypeRequests.isEmpty()) {
+        if (byTypeRequests.isEmpty()) {
             return;
         }
         List<InstancePO> instancePOs =
@@ -179,7 +178,7 @@ public class LoadingBuffer {
         for (ClassType byTypeRequest : byTypeRequests) {
             byTypeResultMap.put(
                     byTypeRequest,
-                    typeId2InstancePOs.computeIfAbsent(byTypeRequest.getId(), k-> new ArrayList<>())
+                    typeId2InstancePOs.computeIfAbsent(byTypeRequest.getId(), k -> new ArrayList<>())
             );
         }
     }

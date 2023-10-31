@@ -60,7 +60,7 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
     }
 
     public List<T> insertsOrUpdates() {
-        return NncUtils.merge(inserts, updates);
+        return NncUtils.union(inserts, updates);
     }
 
     public T any() {

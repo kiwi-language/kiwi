@@ -7,7 +7,6 @@ import tech.metavm.expression.ExpressionService;
 import tech.metavm.expression.dto.BoolExprDTO;
 import tech.metavm.expression.dto.BoolExprParseRequest;
 import tech.metavm.expression.dto.InstanceSearchItemDTO;
-import tech.metavm.object.instance.rest.PrimitiveFieldValueDTO;
 
 import java.util.List;
 

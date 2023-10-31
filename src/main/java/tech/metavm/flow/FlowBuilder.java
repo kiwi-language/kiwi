@@ -1,24 +1,25 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.instance.NullInstance;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.ClassParamDTO;
+import tech.metavm.object.meta.rest.dto.ClassTypeParam;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class FlowBuilder {
 
-    public static FlowBuilder newBuilder(ClassType declaringType, String name, String code) {
-        return new FlowBuilder(declaringType, name, code);
+    public static FlowBuilder newBuilder(ClassType declaringType, String name, String code, FunctionTypeContext functionTypeContext) {
+        return new FlowBuilder(declaringType, name, code, functionTypeContext);
     }
 
+    private final FunctionTypeContext functionTypeContext;
     private final ClassType declaringType;
     private final String name;
     private @Nullable
@@ -27,21 +28,23 @@ public class FlowBuilder {
     private boolean isConstructor;
     private boolean isAbstract;
     private boolean isNative;
-    private Flow overriden;
+    private List<Flow> overriden = new ArrayList<>();
     private FlowDTO flowDTO;
-    private Type outputType;
+    private Type returnType;
     private List<Parameter> parameters;
     private PrimitiveType nullType;
     private List<TypeVariable> typeParameters = List.of();
     private Flow template;
     private List<Type> typeArguments = List.of();
+    private FunctionType type;
+    private FunctionType staticType;
+    private Flow existing;
 
-//    private ClassType inputType;
-
-    private FlowBuilder(ClassType declaringType, String name, @Nullable String code) {
+    private FlowBuilder(ClassType declaringType, String name, @Nullable String code, FunctionTypeContext functionTypeContext) {
         this.declaringType = declaringType;
         this.name = name;
         this.code = code;
+        this.functionTypeContext = functionTypeContext;
     }
 
     public FlowBuilder isAbstract(boolean isAbstract) {
@@ -59,7 +62,7 @@ public class FlowBuilder {
         return this;
     }
 
-    public FlowBuilder overriden(Flow overriden) {
+    public FlowBuilder overriden(List<Flow> overriden) {
         this.overriden = overriden;
         return this;
     }
@@ -69,8 +72,8 @@ public class FlowBuilder {
         return this;
     }
 
-    public FlowBuilder outputType(Type returnType) {
-        this.outputType = returnType;
+    public FlowBuilder returnType(Type returnType) {
+        this.returnType = returnType;
         return this;
     }
 
@@ -98,6 +101,16 @@ public class FlowBuilder {
         return this;
     }
 
+    public FlowBuilder type(FunctionType type) {
+        this.type = type;
+        return this;
+    }
+
+    public FlowBuilder staticType(FunctionType staticType) {
+        this.staticType = staticType;
+        return this;
+    }
+
     public FlowBuilder typeParameters(List<TypeVariable> typeParameters) {
         this.typeParameters = typeParameters;
         return this;
@@ -108,55 +121,60 @@ public class FlowBuilder {
         return this;
     }
 
-//    public FlowBuilder inputType(ClassType inputType) {
-//        this.inputType = inputType;
-//        return this;
-//    }
-
     public Flow build() {
-//        if (this.parameters == null) {
-//            if (overriden == null) {
-//                inputType = ClassBuilder
-//                        .newBuilder("原生流程输入", "NativeFlowInput")
-//                        .tmpId(NncUtils.get(flowDTO, f -> NncUtils.get(f.inputTypeRef(), RefDTO::tmpId)))
-//                        .temporary().build();
-//                Map<String, Long> inputFieldTmpIds = getFieldTmpIds(NncUtils.get(flowDTO, FlowDTO::inputType));
-//                for (Parameter param : parameters) {
-//                    createTemporaryField(
-//                            inputFieldTmpIds.get(param.getCode()),
-//                            param.getName(),
-//                            param.getCode(),
-//                            inputType,
-//                            param.getType()
-//                    );
-//                }
-//            }
-//        }
-        if(overriden == null && parameters == null) {
-            parameters = List.of();
+        if (returnType == null) {
+            if (isConstructor) {
+                returnType = declaringType;
+            } else {
+                returnType = StandardTypes.getVoidType();
+            }
         }
-        return new Flow(
-                tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId),
-                declaringType,
-                name,
-                code,
-                isConstructor,
-                isAbstract,
-                isNative,
-                parameters,
-                outputType != null ? outputType : StandardTypes.getVoidType(),
-                overriden,
-                typeParameters,
-                template,
-                typeArguments
-        );
+        var paramTypes = NncUtils.map(parameters, Parameter::getType);
+        if (type == null) {
+            type = functionTypeContext.get(NncUtils.map(parameters, Parameter::getType), returnType);
+        }
+        if (staticType == null) {
+            staticType = functionTypeContext.get(NncUtils.prepend(declaringType, paramTypes), returnType);
+        }
+        var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
+        if (existing == null) {
+            return new Flow(
+                    effectiveTmpId,
+                    declaringType,
+                    name,
+                    code,
+                    isConstructor,
+                    isAbstract,
+                    isNative,
+                    parameters,
+                    returnType,
+                    overriden,
+                    typeParameters,
+                    template,
+                    typeArguments,
+                    type,
+                    staticType
+            );
+        } else {
+            existing.setTmpId(effectiveTmpId);
+            existing.setName(name);
+            existing.setCode(code);
+            existing.setParameters(parameters);
+            existing.setReturnType(returnType);
+            existing.setOverridden(overriden);
+            existing.setTypeParameters(typeParameters);
+            existing.setTypeArguments(typeArguments);
+            existing.setType(type);
+            existing.setStaticType(staticType);
+            return existing;
+        }
     }
 
     public static Map<String, Long> getFieldTmpIds(@Nullable TypeDTO typeDTO) {
         if (typeDTO == null) {
             return Map.of();
         }
-        var param = (ClassParamDTO) typeDTO.param();
+        var param = (ClassTypeParam) typeDTO.param();
         Map<String, Long> code2tmpId = new HashMap<>();
         for (FieldDTO field : param.fields()) {
             if (field.code() != null) {
@@ -166,19 +184,12 @@ public class FlowBuilder {
         return code2tmpId;
     }
 
-    private void createTemporaryField(Long tmpId, String name, String code, ClassType declaringType,
-                                      Type type) {
-        var field = new Field(
-                name, code, declaringType, type, Access.GLOBAL, false, false,
-                new NullInstance(nullType()),
-                false, false, new NullInstance(nullType()),
-                null
-        );
-        field.setTmpId(tmpId);
-    }
-
     private PrimitiveType nullType() {
         return nullType != null ? nullType : StandardTypes.getNullType();
     }
 
+    public FlowBuilder existing(Flow existing) {
+        this.existing = existing;
+        return this;
+    }
 }
