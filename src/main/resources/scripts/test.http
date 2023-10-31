@@ -3,6 +3,9 @@ Accept: application/json
 Content-Type: application/json
 
 ###
+POST https://www.metavm.tech/api/bootstrap
+
+###
 POST http://localhost:8080/bootstrap
 
 ###

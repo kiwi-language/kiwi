@@ -16,15 +16,15 @@ public class FileColumnStore extends MemColumnStore {
 
     private static final String FILE = "/column/columns.properties";
 
-    private final String filePath;
+    private final String cpRoot;
 
     public FileColumnStore(@Value("${metavm.resource-cp-root}") String cpRoot) {
-        this.filePath = cpRoot + FILE;
+        this.cpRoot = cpRoot;
         var properties = new Properties();
         try {
-            properties.load(new FileReader(filePath));
+            properties.load(FileColumnStore.class.getResourceAsStream(FILE));
         } catch (IOException e) {
-            throw new InternalException("Fail to load column file '" + filePath + "'", e);
+            throw new InternalException("Fail to load column file '" + FILE + "'", e);
         }
         for (String propName : properties.stringPropertyNames()) {
             int idx = propName.lastIndexOf('.');
@@ -44,6 +44,7 @@ public class FileColumnStore extends MemColumnStore {
                 properties.put(entry.getKey() + "." + subEntry.getKey(), subEntry.getValue());
             }
         }
+        String filePath = cpRoot + FILE;
         try {
             properties.store(new FileOutputStream(filePath), null);
         } catch (IOException e) {
