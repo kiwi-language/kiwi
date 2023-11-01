@@ -142,11 +142,11 @@ public class InstanceFactory {
                         arrayFieldValue.getElements(),
                         e -> resolveValue(e, StandardTypes.getObjectType(), getType, context)
                 );
-                var effectiveArrayType = context.getEntityContext().getArrayType(
-                        ValueUtil.getCommonSuperType(NncUtils.map(elements, Instance::getType)),
-                        arrayFieldValue.isElementAsChild() ? ArrayKind.CHILD : ArrayKind.READ_WRITE
-                );
-                return new ArrayInstance(effectiveArrayType, elements);
+//                var effectiveArrayType = context.getEntityContext().getArrayType(
+//                        ValueUtil.getCommonSuperType(NncUtils.map(elements, Instance::getType)),
+//                        arrayFieldValue.isElementAsChild() ? ArrayKind.CHILD : ArrayKind.READ_WRITE
+//                );
+                return new ArrayInstance((ArrayType) type, elements);
             }
         }
         throw new InternalException("Can not resolve field value: " + rawValue);

@@ -339,6 +339,12 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         instanceContext.finish();
     }
 
+    public void close() {
+        if(instanceContext != null) {
+            instanceContext.close();
+        }
+    }
+
     @Override
     public boolean isFinished() {
         return instanceContext != null && instanceContext.isFinished();

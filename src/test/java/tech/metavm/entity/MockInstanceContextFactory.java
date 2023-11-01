@@ -26,4 +26,10 @@ public class MockInstanceContextFactory implements IInstanceContextFactory{
     public IInstanceContext newRootContext() {
         return contextSupplier.apply(Constants.ROOT_TENANT_ID);
     }
+
+    @Override
+    public IEntityContext newEntityContext(long tenantId, boolean asyncProcessing) {
+        //noinspection resource
+        return newContext(tenantId, asyncProcessing).getEntityContext();
+    }
 }

@@ -42,16 +42,17 @@ public class FlowManager {
     }
 
     public GetFlowResponse get(GetFlowRequest request) {
-        IEntityContext context = newContext();
-        Flow flow = context.getEntity(Flow.class, request.id());
-        if (flow == null) {
-            return null;
-        }
-        try (var serContext = SerializeContext.enter()) {
-            serContext.setIncludingNodeOutputType(true);
-            var flowDTO = flow.toDTO(request.includeNodes());
-            serContext.writeDependencies();
-            return new GetFlowResponse(flowDTO, serContext.getTypes());
+        try(var context = newContext()) {
+            Flow flow = context.getEntity(Flow.class, request.id());
+            if (flow == null) {
+                return null;
+            }
+            try (var serContext = SerializeContext.enter()) {
+                serContext.setIncludingNodeOutputType(true);
+                var flowDTO = flow.toDTO(request.includeNodes());
+                serContext.writeDependencies();
+                return new GetFlowResponse(flowDTO, serContext.getTypes());
+            }
         }
     }
 
@@ -61,36 +62,38 @@ public class FlowManager {
 
     @Transactional
     public List<NodeDTO> createTryNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext(false);
-        var scope = context.getScope(nodeDTO.scopeId());
-        TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
-        TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束",
-                ClassBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
-                tryNode, scope);
-        FieldBuilder.newBuilder("异常", "exception",
-                        tryEndNode.getType(), context.getNullableType(StandardTypes.getThrowableType()))
-                .build();
-        context.bind(tryEndNode);
-        retransformFlowIfRequired(scope.getFlow(), context);
-        context.finish();
-        try (var ignored = SerializeContext.enter()) {
-            return List.of(tryNode.toDTO(), tryEndNode.toDTO());
+        try(var context = newContext(true)) {
+            var scope = context.getScope(nodeDTO.scopeId());
+            TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
+            TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束",
+                    ClassBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
+                    tryNode, scope);
+            FieldBuilder.newBuilder("异常", "exception",
+                            tryEndNode.getType(), context.getNullableType(StandardTypes.getThrowableType()))
+                    .build();
+            context.bind(tryEndNode);
+            retransformFlowIfRequired(scope.getFlow(), context);
+            context.finish();
+            try (var ignored = SerializeContext.enter()) {
+                return List.of(tryNode.toDTO(), tryEndNode.toDTO());
+            }
         }
     }
 
     @Transactional
     public List<NodeDTO> createBranchNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext(false);
-        var scope = context.getScope(nodeDTO.scopeId());
-        BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
-        MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并",
-                branchNode, ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
-                scope);
-        context.bind(mergeNode);
-        retransformFlowIfRequired(branchNode.getFlow(), context);
-        context.finish();
-        try (var ignored = SerializeContext.enter()) {
-            return List.of(branchNode.toDTO(), mergeNode.toDTO());
+        try(var context = newContext(true)) {
+            var scope = context.getScope(nodeDTO.scopeId());
+            BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
+            MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并",
+                    branchNode, ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
+                    scope);
+            context.bind(mergeNode);
+            retransformFlowIfRequired(branchNode.getFlow(), context);
+            context.finish();
+            try (var ignored = SerializeContext.enter()) {
+                return List.of(branchNode.toDTO(), mergeNode.toDTO());
+            }
         }
     }
 
@@ -104,10 +107,11 @@ public class FlowManager {
     }
 
     public Flow save(FlowDTO flowDTO) {
-        IEntityContext context = newContext();
-        var flow = save(flowDTO, context);
-        context.finish();
-        return flow;
+        try(var context = newContext()) {
+            var flow = save(flowDTO, context);
+            context.finish();
+            return flow;
+        }
     }
 
     public Flow save(FlowDTO flowDTO, IEntityContext context) {
@@ -318,10 +322,11 @@ public class FlowManager {
 
     @Transactional
     public void delete(long id) {
-        IEntityContext context = newContext();
-        Flow flow = context.getEntity(Flow.class, id);
-        delete(flow, context);
-        context.finish();
+        try(var context = newContext()) {
+            Flow flow = context.getEntity(Flow.class, id);
+            delete(flow, context);
+            context.finish();
+        }
     }
 
     public void delete(Flow flow, IEntityContext context) {
@@ -352,14 +357,15 @@ public class FlowManager {
 
     @Transactional
     public NodeDTO createNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext(false);
-        Flow flow = context.getEntity(Flow.class, nodeDTO.flowId());
-        if (flow == null) {
-            throw BusinessException.flowNotFound(nodeDTO.flowId());
+        try(var context = newContext(true)) {
+            Flow flow = context.getEntity(Flow.class, nodeDTO.flowId());
+            if (flow == null) {
+                throw BusinessException.flowNotFound(nodeDTO.flowId());
+            }
+            var node = createNode(nodeDTO, context.getScope(nodeDTO.scopeId()), context);
+            context.finish();
+            return node.toDTO();
         }
-        var node = createNode(nodeDTO, context.getScope(nodeDTO.scopeId()), context);
-        context.finish();
-        return node.toDTO();
     }
 
     private NodeRT<?> createNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
@@ -395,17 +401,19 @@ public class FlowManager {
     }
 
     public NodeDTO getNode(long id) {
-        IEntityContext context = newContext();
-        NodeRT<?> node = context.getEntity(NodeRT.class, id);
-        return NncUtils.get(node, NodeRT::toDTO);
+        try(var context = newContext()) {
+            NodeRT<?> node = context.getEntity(NodeRT.class, id);
+            return NncUtils.get(node, NodeRT::toDTO);
+        }
     }
 
     @Transactional
     public NodeDTO updateNode(NodeDTO nodeDTO) {
-        IEntityContext context = newContext(false);
-        var node = updateNode(nodeDTO, context);
-        context.finish();
-        return node.toDTO();
+        try(var context = newContext(true)) {
+            var node = updateNode(nodeDTO, context);
+            context.finish();
+            return node.toDTO();
+        }
     }
 
     NodeRT<?> updateNode(NodeDTO nodeDTO, IEntityContext context) {
@@ -767,10 +775,11 @@ public class FlowManager {
 
     @Transactional
     public void moveFlow(long id, int ordinal) {
-        var context = newContext(true);
-        var flow = context.getFlow(id);
-        flow.getDeclaringType().moveFlow(flow, ordinal);
-        context.finish();
+        try(var context = newContext(true)) {
+            var flow = context.getFlow(id);
+            flow.getDeclaringType().moveFlow(flow, ordinal);
+            context.finish();
+        }
     }
 
     private FieldDTO convertToFieldDTO(RefDTO ref, Long declaringTypeId, String name, FieldValue defaultValue, RefDTO typeRef) {
@@ -792,13 +801,14 @@ public class FlowManager {
 
     @Transactional
     public void deleteNode(long nodeId) {
-        IEntityContext context = newContext();
-        NodeRT<?> node = context.getEntity(NodeRT.class, nodeId);
-        if (node == null) {
-            return;
+        try(var context = newContext()) {
+            NodeRT<?> node = context.getEntity(NodeRT.class, nodeId);
+            if (node == null) {
+                return;
+            }
+            deleteNode(node, context);
+            context.finish();
         }
-        deleteNode(node, context);
-        context.finish();
     }
 
     private void deleteNode(NodeRT<?> node, IEntityContext context) {
@@ -807,71 +817,75 @@ public class FlowManager {
     }
 
     public Page<FlowSummaryDTO> list(long typeId, int page, int pageSize, String searchText) {
-        IEntityContext context = newContext();
-        ClassType type = context.getClassType(typeId);
-        var flows = type.getAllFlows();
-        if (searchText != null) {
-            flows = NncUtils.filter(flows, flow -> flow.getName().contains(searchText)
-                    || flow.getCode() != null && flow.getCode().contains(searchText));
+        try(var context = newContext()) {
+            ClassType type = context.getClassType(typeId);
+            var flows = type.getAllFlows();
+            if (searchText != null) {
+                flows = NncUtils.filter(flows, flow -> flow.getName().contains(searchText)
+                        || flow.getCode() != null && flow.getCode().contains(searchText));
+            }
+            int start = Math.min((page - 1) * pageSize, flows.size());
+            int end = Math.min(page * pageSize, flows.size());
+            List<Flow> data = flows.subList(start, end);
+            Page<Flow> flowPage = new Page<>(data, flows.size());
+            return new Page<>(
+                    NncUtils.map(flowPage.data(), Flow::toSummaryDTO),
+                    flowPage.total()
+            );
         }
-        int start = Math.min((page - 1) * pageSize, flows.size());
-        int end = Math.min(page * pageSize, flows.size());
-        List<Flow> data = flows.subList(start, end);
-        Page<Flow> flowPage = new Page<>(data, flows.size());
-        return new Page<>(
-                NncUtils.map(flowPage.data(), Flow::toSummaryDTO),
-                flowPage.total()
-        );
     }
 
     @Transactional
     public BranchDTO createBranch(BranchDTO branchDTO) {
-        IEntityContext context = newContext();
-        NodeRT<?> nodeRT = context.getEntity(NodeRT.class, branchDTO.ownerId());
-        if (nodeRT instanceof BranchNode branchNode) {
-            Branch branch = branchNode.addBranch(branchDTO, context);
-            retransformFlowIfRequired(branchNode.getFlow(), context);
-            context.finish();
-            return branch.toDTO(true, false);
-        } else {
-            throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
+        try(var context = newContext()) {
+            NodeRT<?> nodeRT = context.getEntity(NodeRT.class, branchDTO.ownerId());
+            if (nodeRT instanceof BranchNode branchNode) {
+                Branch branch = branchNode.addBranch(branchDTO, context);
+                retransformFlowIfRequired(branchNode.getFlow(), context);
+                context.finish();
+                return branch.toDTO(true, false);
+            } else {
+                throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
+            }
         }
     }
 
     @Transactional
     public BranchDTO updateBranch(BranchDTO branchDTO) {
         NncUtils.requireNonNull(branchDTO.index(), "分支序号必填");
-        IEntityContext context = newContext();
-        NodeRT<?> owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
-        if (owner == null) {
-            throw BusinessException.nodeNotFound(branchDTO.ownerId());
-        }
-        if (owner instanceof BranchNode branchNode) {
-            Branch branch = branchNode.getBranchByIndex(branchDTO.index());
-            if (branch == null) {
-                throw BusinessException.branchNotFound(branchDTO.index());
+        try(var context = newContext()) {
+            NodeRT<?> owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
+            if (owner == null) {
+                throw BusinessException.nodeNotFound(branchDTO.ownerId());
             }
-            branch.update(branchDTO, context);
-            context.finish();
-            return branch.toDTO(true, false);
-        } else {
-            throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
+            if (owner instanceof BranchNode branchNode) {
+                Branch branch = branchNode.getBranchByIndex(branchDTO.index());
+                if (branch == null) {
+                    throw BusinessException.branchNotFound(branchDTO.index());
+                }
+                branch.update(branchDTO, context);
+                context.finish();
+                return branch.toDTO(true, false);
+            } else {
+                throw BusinessException.invalidParams("节点" + branchDTO.ownerId() + "不是分支节点");
+            }
         }
     }
 
     @Transactional
     public void deleteBranch(long ownerId, long branchId) {
-        IEntityContext context = newContext();
-        NodeRT<?> owner = context.getEntity(NodeRT.class, ownerId);
-        if (owner instanceof BranchNode branchNode) {
-            Branch branch = branchNode.getBranchByIndex(branchId);
-            if (branch == null) {
-                throw BusinessException.branchNotFound(branchId);
+        try(var context = newContext()) {
+            NodeRT<?> owner = context.getEntity(NodeRT.class, ownerId);
+            if (owner instanceof BranchNode branchNode) {
+                Branch branch = branchNode.getBranchByIndex(branchId);
+                if (branch == null) {
+                    throw BusinessException.branchNotFound(branchId);
+                }
+                context.remove(branch);
+                context.finish();
+            } else {
+                throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
             }
-            context.remove(branch);
-            context.finish();
-        } else {
-            throw BusinessException.invalidParams("节点" + ownerId + "不是分支节点");
         }
     }
 
@@ -880,7 +894,7 @@ public class FlowManager {
     }
 
     private IEntityContext newContext(boolean asyncPostProcessing) {
-        return contextFactory.newContext(ContextUtil.getTenantId(), asyncPostProcessing).getEntityContext();
+        return contextFactory.newEntityContext(asyncPostProcessing);
     }
 
     @Autowired

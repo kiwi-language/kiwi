@@ -16,10 +16,11 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
+import java.io.Closeable;
 import java.util.List;
 import java.util.Set;
 
-public interface IEntityContext extends ModelInstanceMap {
+public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     boolean containsInstance(Instance instance);
 
@@ -41,6 +42,8 @@ public interface IEntityContext extends ModelInstanceMap {
         NncUtils.requireTrue(template.isTemplate());
         return selectByKey(ClassType.TEMPLATE_IDX,template);
     }
+
+    void close();
 
     boolean existsInstances(Class<?> type);
 

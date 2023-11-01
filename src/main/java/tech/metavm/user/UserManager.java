@@ -10,6 +10,7 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 @Component
@@ -25,50 +26,51 @@ public class UserManager {
     }
 
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
-        IEntityContext context = newContext();
-        InstanceQuery query = new InstanceQuery(
-                ModelDefRegistry.getType(UserRT.class).getIdRequired(),
-                searchText,
-                page,
-                pageSize,
-                true,
-                false
-        );
-        Page<UserRT> dataPage = instanceQueryService.query(UserRT.class, query, context);
-        return new Page<>(
-                NncUtils.map(dataPage.data(), UserRT::toUserDTO),
-                dataPage.total()
-        );
+        try(var context = newContext()) {
+            InstanceQuery query = new InstanceQuery(
+                    ModelDefRegistry.getType(UserRT.class).getIdRequired(),
+                    searchText,
+                    page,
+                    pageSize,
+                    true,
+                    false
+            );
+            Page<UserRT> dataPage = instanceQueryService.query(UserRT.class, query, context);
+            return new Page<>(
+                    NncUtils.map(dataPage.data(), UserRT::toUserDTO),
+                    dataPage.total()
+            );
+        }
     }
 
     @Transactional
     public long save(UserDTO userDTO) {
-        IEntityContext context = newContext();
-        UserRT user = save(userDTO, context);
-        context.finish();
-        return user.getId();
+        try (var context = newContext()) {
+            UserRT user = save(userDTO, context);
+            context.finish();
+            return user.getIdRequired();
+        }
     }
 
     public UserRT save(UserDTO userDTO, IEntityContext context) {
         UserRT user;
-        if(userDTO.id() == null) {
+        if (userDTO.id() == null) {
             user = new UserRT(
-                        userDTO.loginName(),
-                        userDTO.password(),
-                        userDTO.name(),
-                        NncUtils.map(userDTO.roleIds(), context::getRole)
-                    );
+                    userDTO.loginName(),
+                    userDTO.password(),
+                    userDTO.name(),
+                    NncUtils.map(userDTO.roleIds(), context::getRole)
+            );
             context.bind(user);
-        }
-        else {
+        } else {
             user = context.getEntity(UserRT.class, userDTO.id());
-            if(userDTO.name() != null) {
+            if (userDTO.name() != null) {
                 user.setName(userDTO.name());
             }
-            if(userDTO.password() != null) {
+            if (userDTO.password() != null) {
                 user.setPassword(userDTO.password());
             }
-            if(userDTO.roleIds() != null) {
+            if (userDTO.roleIds() != null) {
                 user.setRoles(NncUtils.map(userDTO.roleIds(), context::getRole));
             }
         }
@@ -77,22 +79,24 @@ public class UserManager {
 
     @Transactional
     public void delete(long userId) {
-        IEntityContext context = newContext();
-        UserRT user = context.getEntity(UserRT.class, userId);
-        if(user == null) {
-            throw BusinessException.userNotFound(userId);
+        try (var context = newContext()) {
+            UserRT user = context.getEntity(UserRT.class, userId);
+            if (user == null) {
+                throw BusinessException.userNotFound(userId);
+            }
+            context.remove(user);
+            context.finish();
         }
-        context.remove(user);
-        context.finish();
     }
 
     public UserDTO get(long id) {
-        IEntityContext context = newContext();
-        return NncUtils.get(context.getEntity(UserRT.class, id), UserRT::toUserDTO);
+        try (var context = newContext()) {
+            return NncUtils.get(context.getEntity(UserRT.class, id), UserRT::toUserDTO);
+        }
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newContext().getEntityContext();
+        return instanceContextFactory.newEntityContext( false);
     }
 
 }

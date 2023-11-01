@@ -42,17 +42,20 @@ public class RoleManager {
     }
 
     public RoleDTO get(long id) {
-        RoleRT role = newContext().getEntity(RoleRT.class, id);
-        NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
-        return role.toRoleDTO();
+        try(var context = newContext()) {
+            RoleRT role = context.getEntity(RoleRT.class, id);
+            NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
+            return role.toRoleDTO();
+        }
     }
 
     @Transactional
     public long save(RoleDTO roleDTO) {
-        IEntityContext context = newContext();
-        RoleRT role = save(roleDTO, context);
-        context.finish();
-        return role.getId();
+        try(var context = newContext()) {
+            RoleRT role = save(roleDTO, context);
+            context.finish();
+            return role.getIdRequired();
+        }
     }
 
     public RoleRT save(RoleDTO roleDTO, IEntityContext context) {
@@ -71,15 +74,16 @@ public class RoleManager {
 
     @Transactional
     public void delete(long id) {
-        IEntityContext context = newContext();
-        RoleRT role = context.getEntity(RoleRT.class, id);
-        NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
-        context.remove(role);
-        context.finish();
+        try(var context = newContext() ) {
+            RoleRT role = context.getEntity(RoleRT.class, id);
+            NncUtils.requireNonNull(role, () -> BusinessException.roleNotFound(id));
+            context.remove(role);
+            context.finish();
+        }
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newContext().getEntityContext();
+        return instanceContextFactory.newEntityContext(false);
     }
 
 }

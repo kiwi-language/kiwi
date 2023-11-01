@@ -8,10 +8,11 @@ import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
 
-public interface IInstanceContext extends InstanceSink {
+public interface IInstanceContext extends InstanceSink, Closeable {
 
     IInstanceContext newContext(long tenantId);
 
@@ -50,6 +51,8 @@ public interface IInstanceContext extends InstanceSink {
     void preload(Collection<Long> ids, LoadingOption...options);
 
     void addRemovalListener(Consumer<Instance> removalListener);
+
+    void close();
 
     void finish();
 

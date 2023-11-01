@@ -1,21 +1,37 @@
-POST http://metavm.tech:9090/tenant/create
+###
+POST http://metavm.tech/api/bootstrap/region
+
+###
+POST http://metavm.tech/api/bootstrap/scheduler
+
+###
+POST https://metavm.tech/api/bootstrap
+
+###
+POST https://metavm.tech/api/bootstrap/save
+
+###
+POST https://metavm.tech/api/tenant/create
 Accept: application/json
 Content-Type: application/json
 
 {
-  "name": "TodoList",
+  "name": "test",
   "rootPassword": "123456"
 }
 
 ###
-POST http://metavm.tech:9090/bootstrap
+POST https://metavm.tech/api/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "tenantId": 1000400009,
+  "loginName": "admin",
+  "password": "123456"
+}
 
 ###
-POST http://metavm.tech:9090/bootstrap/region
+DELETE https://metavm.tech/api/instance/7205760404292733
 
 
-###
-POST http://metavm.tech:9090/bootstrap/scheduler
-
-###
-POST http://metavm.tech:9090/bootstrap/save?saveIds=false

@@ -52,15 +52,14 @@ public class InstanceLogServiceImpl implements InstanceLogService {
     public void asyncProcess(List<InstanceLog> logs) {
         try {
             executor.execute(() -> process(logs));
-        }
-        catch (RejectedExecutionException e) {
+        } catch (RejectedExecutionException e) {
             LOGGER.error("task rejected by thread pool", e);
         }
     }
 
     @Override
     public void process(List<InstanceLog> logs) {
-        if(NncUtils.isEmpty(logs)) {
+        if (NncUtils.isEmpty(logs)) {
             return;
         }
         long tenantId = logs.get(0).getTenantId();
@@ -70,33 +69,34 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                 InstanceLog::getId
         );
         Set<Long> insertIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
-        IInstanceContext context = instanceContextFactory.newContext(tenantId);
-
-        List<ClassInstance> toIndex = NncUtils.filterByType(context.batchGet(idsToLoad), ClassInstance.class);
-        ClassType taskType = ModelDefRegistry.getClassType(Task.class);
-        List<ClassInstance> taskInstances = NncUtils.filter(
-                toIndex, inst -> insertIds.contains(inst.getId()) && taskType.isInstance(inst)
-        );
-        if(NncUtils.isNotEmpty(taskInstances)) {
-            increaseUnfinishedTaskCount(tenantId, taskInstances.size());
+        try (var context = instanceContextFactory.newContext(tenantId)) {
+            List<ClassInstance> toIndex = NncUtils.filterByType(context.batchGet(idsToLoad), ClassInstance.class);
+            ClassType taskType = ModelDefRegistry.getClassType(Task.class);
+            List<ClassInstance> taskInstances = NncUtils.filter(
+                    toIndex, inst -> insertIds.contains(inst.getId()) && taskType.isInstance(inst)
+            );
+            if (NncUtils.isNotEmpty(taskInstances)) {
+                increaseUnfinishedTaskCount(tenantId, taskInstances.size());
+            }
+            List<Long> toDelete = NncUtils.filterAndMap(
+                    logs,
+                    InstanceLog::isDelete,
+                    InstanceLog::getId
+            );
+            if (NncUtils.isNotEmpty(toIndex) || NncUtils.isNotEmpty(toDelete)) {
+                instanceSearchService.bulk(tenantId, toIndex, toDelete);
+            }
+            instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));
         }
-        List<Long> toDelete = NncUtils.filterAndMap(
-                logs,
-                InstanceLog::isDelete,
-                InstanceLog::getId
-        );
-        if (NncUtils.isNotEmpty(toIndex) || NncUtils.isNotEmpty(toDelete)) {
-            instanceSearchService.bulk(tenantId, toIndex, toDelete);
-        }
-        instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));
     }
 
     private void increaseUnfinishedTaskCount(long tenantId, int newJobCount) {
-        IEntityContext rootContext = instanceContextFactory.newRootContext().getEntityContext();
-        TaskSignal signal = NncUtils.requireNonNull(rootContext.selectByUniqueKey(TaskSignal.IDX_TENANT_ID, tenantId));
-        signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
-        signal.setLastTaskCreatedAt(System.currentTimeMillis());
-        rootContext.finish();
+        try (var rootContext = instanceContextFactory.newRootEntityContext(true)) {
+            TaskSignal signal = NncUtils.requireNonNull(rootContext.selectByUniqueKey(TaskSignal.IDX_TENANT_ID, tenantId));
+            signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
+            signal.setLastTaskCreatedAt(System.currentTimeMillis());
+            rootContext.finish();
+        }
     }
 
 }

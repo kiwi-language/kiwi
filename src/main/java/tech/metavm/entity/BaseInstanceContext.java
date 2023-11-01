@@ -13,13 +13,14 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.tenant.TenantRT;
 import tech.metavm.util.*;
 
+import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static tech.metavm.util.NncUtils.*;
 
-public abstract class BaseInstanceContext implements IInstanceContext {
+public abstract class BaseInstanceContext implements IInstanceContext, Closeable {
     protected final long tenantId;
     protected final EntityIdProvider idService;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
@@ -38,6 +39,7 @@ public abstract class BaseInstanceContext implements IInstanceContext {
     private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
     private final Map<ClassInstance, List<IndexKeyRT>> indexKeys = new HashMap<>();
     private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
+    private boolean closed;
 
     public BaseInstanceContext(long tenantId,
                                EntityIdProvider idService,
@@ -187,6 +189,19 @@ public abstract class BaseInstanceContext implements IInstanceContext {
     public final void finish() {
         finishInternal();
         newInstances.clear();
+    }
+
+    @Override
+    public void close() {
+        if(closed) {
+            throw new IllegalStateException("Context already closed");
+        }
+        closed = true;
+        for (Instance instance : instances) {
+            for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
+                ref.clear();
+            }
+        }
     }
 
     protected abstract void finishInternal();
