@@ -91,7 +91,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
     }
 
     private void increaseUnfinishedTaskCount(long tenantId, int newJobCount) {
-        try (var rootContext = instanceContextFactory.newRootEntityContext(true)) {
+        try (var rootContext = instanceContextFactory.newRootEntityContext(false)) {
             TaskSignal signal = NncUtils.requireNonNull(rootContext.selectByUniqueKey(TaskSignal.IDX_TENANT_ID, tenantId));
             signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
             signal.setLastTaskCreatedAt(System.currentTimeMillis());
