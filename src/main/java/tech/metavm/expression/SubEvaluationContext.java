@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;

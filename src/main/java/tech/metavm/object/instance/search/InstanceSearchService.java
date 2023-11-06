@@ -1,8 +1,7 @@
 package tech.metavm.object.instance.search;
 
 import tech.metavm.dto.Page;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
 
 import java.util.List;
 

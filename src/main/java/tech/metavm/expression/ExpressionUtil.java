@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.flow.NodeRT;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.meta.Property;
 import tech.metavm.object.meta.ClassType;
@@ -11,6 +11,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 public class ExpressionUtil {
@@ -29,29 +30,26 @@ public class ExpressionUtil {
             return unaryExpression.getOperand();
         } else if (expression instanceof BinaryExpression binaryExpression) {
             var op = binaryExpression.getOperator();
-            if(op == Operator.AND) {
+            if (op == Operator.AND) {
                 return new BinaryExpression(
                         Operator.OR,
                         not(binaryExpression.getFirst()),
                         not(binaryExpression.getSecond())
                 );
-            }
-            else if(op == Operator.OR) {
+            } else if (op == Operator.OR) {
                 return new BinaryExpression(
                         Operator.AND,
                         not(binaryExpression.getFirst()),
                         not(binaryExpression.getSecond())
                 );
-            }
-            else {
+            } else {
                 return new BinaryExpression(
                         op.negate(),
                         binaryExpression.getFirst(),
                         binaryExpression.getSecond()
                 );
             }
-        }
-        else {
+        } else {
             return new UnaryExpression(
                     Operator.NOT,
                     expression
@@ -60,13 +58,13 @@ public class ExpressionUtil {
     }
 
     public static Expression or(Expression first, Expression second) {
-        if(isConstantTrue(first) || isConstantTrue(second)) {
+        if (isConstantTrue(first) || isConstantTrue(second)) {
             return trueExpression();
         }
-        if(isConstantFalse(first)) {
+        if (isConstantFalse(first)) {
             return second;
         }
-        if(isConstantFalse(second)) {
+        if (isConstantFalse(second)) {
             return first;
         }
         return new BinaryExpression(
@@ -124,18 +122,22 @@ public class ExpressionUtil {
     }
 
     public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
-        return new BinaryExpression(
-                Operator.STARTS_WITH,
-                attributeExpr(field),
-                new ConstantExpression(strInstance)
+        return new FunctionExpression(
+                Function.STARTS_WITH,
+                List.of(
+                        attributeExpr(field),
+                        new ConstantExpression(strInstance)
+                )
         );
     }
 
     public static Expression fieldLike(Field field, PrimitiveInstance strInstance) {
-        return new BinaryExpression(
-                Operator.LIKE,
-                attributeExpr(field),
-                new ConstantExpression(strInstance)
+        return new FunctionExpression(
+                Function.CONTAINS,
+                List.of(
+                        attributeExpr(field),
+                        new ConstantExpression(strInstance)
+                )
         );
     }
 

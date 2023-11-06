@@ -12,6 +12,7 @@ import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;

@@ -1,9 +1,7 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.StringInstance;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 
 public class ExceptionNative extends ThrowableNative {
 

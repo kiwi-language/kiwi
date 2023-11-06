@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.util.ReflectUtils;
 

@@ -1,30 +1,29 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.CollectionDef;
-import tech.metavm.entity.DefMap;
+import tech.metavm.entity.DefContext;
 import tech.metavm.entity.DirectDef;
-import tech.metavm.object.instance.ArrayType;
 
 public class DefTypeFactory extends TypeFactory {
 
-    private final DefMap defMap;
+    private final DefContext defContext;
 
-    public DefTypeFactory(DefMap defMap) {
-        this.defMap = defMap;
+    public DefTypeFactory(DefContext defContext) {
+        this.defContext = defContext;
     }
 
     @Override
     public void putType(java.lang.reflect.Type javaType, Type type) {
         if(type instanceof ArrayType arrayType) {
-            defMap.addDef(new CollectionDef<>(
-                    arrayType.kind().getEntityClass(),
+            defContext.addDef(new CollectionDef<>(
+                    arrayType.getKind().getEntityClass(),
                     javaType,
                     arrayType,
-                    defMap.getDef(arrayType.getElementType())
-            ));
+                    defContext.getDef(arrayType.getElementType()),
+                    defContext));
         }
         else {
-            defMap.addDef(new DirectDef<>(javaType, type));
+            defContext.addDef(new DirectDef<>(javaType, type));
         }
     }
 
@@ -35,16 +34,16 @@ public class DefTypeFactory extends TypeFactory {
 
     @Override
     public Type getType(java.lang.reflect.Type javaType) {
-        return defMap.getType(javaType);
+        return defContext.getType(javaType);
     }
 
     @Override
     public java.lang.reflect.Type getJavaType(Type type) {
-        return defMap.getDef(type).getJavaType();
+        return defContext.getDef(type).getJavaType();
     }
 
     @Override
     public boolean containsJavaType(java.lang.reflect.Type javaType) {
-        return defMap.containsDef(javaType);
+        return defContext.containsDef(javaType);
     }
 }

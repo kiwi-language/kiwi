@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.persistence;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.Map;
 
@@ -16,10 +18,12 @@ public final class InstanceArrayPO extends InstancePO {
             long tenantId,
             int length,
             List<Object> elements,
+            @Nullable Long parentId,
+            @Nullable Long parentFieldId,
             long version,
             long syncVersion
     ) {
-        super(tenantId, id, typeId, null, Map.of(), version, syncVersion);
+        super(tenantId, id, typeId, null, Map.of(), parentId, parentFieldId, version, syncVersion);
         this.length = length;
         this.elements = elements;
     }

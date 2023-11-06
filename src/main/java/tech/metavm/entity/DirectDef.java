@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ReflectUtils;
@@ -10,11 +10,17 @@ import java.util.Map;
 public class DirectDef<T> extends ModelDef<T, ClassInstance> {
 
     private final Type type;
+    private final Class<?> nativeClass;
 
     public DirectDef(java.lang.reflect.Type javaType, Type type) {
+        this(javaType, type, null);
+    }
+
+    public DirectDef(java.lang.reflect.Type javaType, Type type, Class<?> nativeClass) {
         //noinspection rawtypes,unchecked
         super((Class) ReflectUtils.getRawClass(javaType), javaType, ClassInstance.class);
         this.type = type;
+        this.nativeClass = nativeClass;
     }
 
     @Override
@@ -45,5 +51,9 @@ public class DirectDef<T> extends ModelDef<T, ClassInstance> {
     @Override
     public Map<Object, Identifiable> getEntityMapping() {
         return Map.of();
+    }
+
+    public Class<?> getNativeClass() {
+        return nativeClass;
     }
 }

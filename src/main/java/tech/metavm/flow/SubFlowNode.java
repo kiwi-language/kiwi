@@ -8,7 +8,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.SubFlowParam;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

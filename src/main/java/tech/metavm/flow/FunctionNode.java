@@ -8,10 +8,10 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.FunctionNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.FunctionInstance;
+import tech.metavm.object.instance.core.FunctionInstance;
 import tech.metavm.object.meta.FunctionType;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
     @ChildEntity("函数")
     private Value func;
     @ChildEntity("实参列表")
-    private final ChildArray<Value> arguments = new ChildArray<>(Value.class);
+    private final ChildArray<Value> arguments = addChild(new ChildArray<>(Value.class), "arguments");
 
     public FunctionNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value func, List<Value> arguments) {
         super(tmpId, name,

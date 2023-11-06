@@ -1,12 +1,10 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.*;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.meta.TypeUtils;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,11 +15,13 @@ import java.util.Objects;
 public class ArrayExpression extends Expression {
 
     public static ArrayExpression create(List<Expression> expressions, IEntityContext entityContext) {
-        var type = entityContext.getArrayType(ValueUtil.getCommonSuperType(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
+        var type = entityContext.getArrayType(TypeUtils.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
         return new ArrayExpression(expressions, type);
     }
 
-    private final ChildArray<Expression> expressions = new ChildArray<>(Expression.class);
+    @ChildEntity("表达式列表")
+    private final ChildArray<Expression> expressions = addChild(new ChildArray<>(Expression.class), "expressions");
+    @EntityField("类型")
     private final ArrayType type;
 
     public ArrayExpression(Collection<Expression> expressions, ArrayType type) {

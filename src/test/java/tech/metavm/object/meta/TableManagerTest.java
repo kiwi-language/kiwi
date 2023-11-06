@@ -6,7 +6,6 @@ import tech.metavm.entity.*;
 import tech.metavm.task.TaskManager;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.meta.rest.dto.ColumnDTO;

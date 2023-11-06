@@ -1,6 +1,9 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;

@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.instance.PrimitiveInstance;
+import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.meta.Type;
 
 import java.util.Map;

@@ -1,11 +1,14 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.NullInstance;
+import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
-import java.sql.Ref;
 import java.util.*;
 
 public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {

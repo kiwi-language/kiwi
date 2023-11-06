@@ -2,7 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.util.NncUtils;

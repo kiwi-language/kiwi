@@ -1,7 +1,7 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.NullInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.util.Column;
 
 import javax.annotation.Nullable;

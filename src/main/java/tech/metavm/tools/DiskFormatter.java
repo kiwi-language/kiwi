@@ -42,7 +42,7 @@ public class DiskFormatter {
     public static final Map<String, Object> LOCAL_CONFIG = Map.of(
             CONFIG_HOST, "localhost",
             CONFIG_ES_PORT, 9200,
-            CONFIG_DELETE_ID_FILES, false
+            CONFIG_DELETE_ID_FILES, true
     );
 
     public static final Map<String, Object> CONFIG = LOCAL_CONFIG;

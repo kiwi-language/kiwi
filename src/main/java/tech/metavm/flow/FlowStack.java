@@ -1,16 +1,15 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.natives.ThrowableNative;
 import tech.metavm.entity.natives.NativeInvoker;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.expression.Expression;
-import tech.metavm.object.instance.StringInstance;
+import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.FlowExecutionException;
-import tech.metavm.util.NncUtils;
 
 import java.util.LinkedList;
 import java.util.List;

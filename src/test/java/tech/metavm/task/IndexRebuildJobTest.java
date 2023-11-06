@@ -2,11 +2,11 @@ package tech.metavm.task;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.MockIdProvider;

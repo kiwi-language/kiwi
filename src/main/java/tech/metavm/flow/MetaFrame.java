@@ -1,13 +1,13 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.expression.NodeExpression;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;

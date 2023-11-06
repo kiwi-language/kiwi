@@ -3,6 +3,7 @@ package tech.metavm.object.instance;
 import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;

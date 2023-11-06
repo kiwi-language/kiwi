@@ -7,6 +7,11 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.*;
 

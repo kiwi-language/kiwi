@@ -1,14 +1,15 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.BaseInstanceContext;
 import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 import static tech.metavm.util.Constants.ROOT_TENANT_ID;

@@ -17,7 +17,6 @@ import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -212,7 +211,7 @@ public class GeneratorTest extends TestCase {
                         typeResolver.ensureCodeGenerated(classType);
                     }
                     context.writeType(metaType);
-                    var collTypeNames = TypeUtil.getCollectionTypeNames(metaType);
+                    var collTypeNames = TypeUtils.getCollectionTypeNames(metaType);
                     for (String collTypeName : collTypeNames) {
                         var collType = entityContext.selectByUniqueKey(ClassType.UNIQUE_NAME, collTypeName);
                         if (collType != null) {

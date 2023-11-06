@@ -1,11 +1,12 @@
 package tech.metavm.flow;
 
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
@@ -14,6 +15,18 @@ import java.util.Objects;
 
 @EntityType("字段值")
 public class FieldParam extends Entity {
+
+    public static FieldParam create(FieldParamDTO fieldParamDTO,
+                                    EntityParentRef parentRef,
+                                    ParsingContext parsingContext) {
+        var entityContext = NncUtils.requireNonNull(parsingContext.getEntityContext());
+        return new FieldParam(
+                entityContext.getField(fieldParamDTO.fieldRef()),
+                ValueFactory.create(fieldParamDTO.value(), parsingContext),
+                parentRef
+        );
+    }
+
     @EntityField("字段")
     private final Field field;
     @ChildEntity("值")
@@ -24,6 +37,10 @@ public class FieldParam extends Entity {
     }
 
     public FieldParam(Field field, Value value) {
+        this(field, value, null);
+    }
+
+    public FieldParam(Field field, Value value, EntityParentRef parentRef) {
         this.field = field;
         this.value = value;
     }
@@ -43,7 +60,17 @@ public class FieldParam extends Entity {
     public FieldParamDTO toDTO(boolean persisting) {
         try(var context = SerializeContext.enter()) {
             return new FieldParamDTO(
+                    getId(), getTmpId(),
                     context.getRef(field), NncUtils.get(value, v -> v.toDTO(persisting)));
+        }
+    }
+
+    public void update(FieldParamDTO fieldParamDTO, ParsingContext parsingContext) {
+        if(fieldParamDTO.value() != null) {
+            var value = ValueFactory.create(fieldParamDTO.value(), parsingContext);
+            NncUtils.assertTrue(field.getType().isAssignableFrom(value.getType()),
+                    ErrorCode.INCORRECT_FIELD_VALUE, field.getName());
+            this.value = value;
         }
     }
 

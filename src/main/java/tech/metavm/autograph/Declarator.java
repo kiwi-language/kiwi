@@ -92,15 +92,15 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     private List<Parameter> getEnumConstructorParams() {
         return List.of(
-                new Parameter(null, "名称", "name", StandardTypes.getStringType()),
-                new Parameter(null, "序号", "ordinal", StandardTypes.getLongType())
+                new Parameter(null, "名称", "name", StandardTypes.getStringType(), null),
+                new Parameter(null, "序号", "ordinal", StandardTypes.getLongType(), null)
         );
     }
 
     private List<Parameter> processParameters(PsiParameterList parameterList) {
         return NncUtils.map(
                 parameterList.getParameters(),
-                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveType(param.getType()))
+                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveType(param.getType()), null)
         );
     }
 

@@ -4,13 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.LambdaNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.LambdaInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.LambdaInstance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.FunctionType;
 import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeUtil;
-import tech.metavm.util.ChildArray;
+import tech.metavm.object.meta.TypeUtils;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -25,7 +25,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         var parameters = NncUtils.map(
                 param.getParameters(),
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                        context.getType(paramDTO.typeRef()))
+                        context.getType(paramDTO.typeRef()), null)
         );
         var parameterTypes = NncUtils.map(parameters, Parameter::getType);
         var returnType = context.getType(param.getReturnTypeRef());
@@ -38,7 +38,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
     }
 
     @ChildEntity("参数列表")
-    private final ChildArray<Parameter> parameters = new ChildArray<>(Parameter.class);
+    private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
 
     @EntityField("返回类型")
     private Type returnType;
@@ -104,7 +104,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
                     NncUtils.map(
                             param.getParameters(),
                             paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                                    context.getType(paramDTO.typeRef()))
+                                    context.getType(paramDTO.typeRef()), null)
                     )
             );
         }
@@ -137,7 +137,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         if (functionalInterface == null) {
             frame.setResult(func);
         } else {
-            var funcClass = TypeUtil.createFunctionalClass(
+            var funcClass = TypeUtils.createFunctionalClass(
                     functionalInterface,
                     frame.getStack().getContext().getEntityContext());
             var funcField = funcClass.getFieldByCodeRequired("func");

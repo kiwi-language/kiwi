@@ -8,14 +8,14 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.LoopFieldDTO;
 import tech.metavm.flow.rest.LoopParamDTO;
-import tech.metavm.object.instance.BooleanInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.ChildArray;
-import tech.metavm.util.ReadonlyArray;
+import tech.metavm.entity.ChildArray;
+import tech.metavm.entity.ReadonlyArray;
 
 import java.util.*;
 
@@ -23,7 +23,7 @@ import java.util.*;
 public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
 
     @ChildEntity("字段列表")
-    private final ChildArray<LoopField> fields = new ChildArray<>(LoopField.class);
+    private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
     @ChildEntity("条件")
     private Value condition;
 

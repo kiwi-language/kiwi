@@ -15,8 +15,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static tech.metavm.object.meta.TypeUtil.getParameterizedCode;
-import static tech.metavm.object.meta.TypeUtil.getParameterizedName;
+import static tech.metavm.object.meta.TypeUtils.getParameterizedCode;
+import static tech.metavm.object.meta.TypeUtils.getParameterizedName;
 import static tech.metavm.util.NncUtils.zip;
 
 public class GenericTransformer extends ElementTransformer {

@@ -25,6 +25,7 @@ public enum ErrorCode {
     TOO_MAY_FIELDS(309, "字段数量超出限制"),
     OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES(209, "复写流程不支持修改参数数量或参数类型"),
     ORDINAL_OUT_OF_BOUND(310, "属性序号超出范围"),
+    CAN_NOT_ASSIGN__CHILD_FIELD(311, "从对象字段不支持更新"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "实例不存在(id: {})"),
@@ -33,8 +34,8 @@ public enum ErrorCode {
     INVALID_TYPE_VALUE(304, "数据格式错误，类型: {}, 值: {}"),
     FIELD_VALUE_REQUIRED(305, "属性'{}'不能为空"),
     STRONG_REFS_PREVENT_REMOVAL(306, "对象被其他对象关联，无法删除: {}"),
+    STRONG_REFS_PREVENT_REMOVAL2(308, "'{}' 被 '{}' 使用，无法删除"),
     INVALID_INSTANCE_PATH(307, "对象路径不合法: {}"),
-
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),
@@ -54,7 +55,7 @@ public enum ErrorCode {
     NOT_AN_ARRAY_VALUE(419, "传入的数组值不合法， 数据类型不是数组"),
     INCORRECT_ELEMENT_TYPE(419, "元素值不合法， 数据类型与数组元素类型不相符"),
     INCORRECT_INDEX_VALUE(419, "索引必须是整数类型"),
-    INDEX_OUT_OF_BOUND(420, "数组索引超出范围"),
+    INDEX_OUT_OF_BOUND(420, "索引超出范围"),
     INTERFACE_FLOW_NOT_IMPLEMENTED(421, "'{}'未实现接口'{}'定义的'{}'流程"),
     DEST_NODE_FIELD_MISSING_SOURCE_CONFIG(422, "目标节点字段必须配置所有来源节点值"),
     ILLEGAL_TARGET_BRANCH(423, "跳转目标分支不合法"),
@@ -68,6 +69,9 @@ public enum ErrorCode {
     MASTER_FIELD_REQUIRED(430, "主对象字段必填"),
     MASTER_FIELD_SHOULD_BE_NULL(430, "主对象为数组时，不能设置主对象字段"),
     INVALID_MASTER(431, "'{}'不能作为主对象"),
+    INCORRECT_FIELD_VALUE(432, "字段值'{}'赋值错误"),
+    INVALID_ADD_OBJECT_CHILD(433, "节点'{}'不能作为新建记录节点的子节点"),
+    FIELD_NOT_INITIALIZED(433, "{}创建失败，{}未初始化"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),

@@ -2,11 +2,11 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.rest.dto.PrimitiveTypeParam;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("基础类型")
@@ -42,11 +42,6 @@ public class PrimitiveType extends Type {
     @Override
     protected PrimitiveTypeParam getParam() {
         return new PrimitiveTypeParam(kind.getCode());
-    }
-
-    @Override
-    public Class<? extends Instance> getInstanceClass() {
-        return kind.getInstanceClass();
     }
 
     public PrimitiveKind getKind() {

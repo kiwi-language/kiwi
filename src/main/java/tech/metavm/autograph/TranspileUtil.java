@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeUtil;
+import tech.metavm.object.meta.TypeUtils;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -63,7 +63,7 @@ public class TranspileUtil {
         return switch (type) {
             case PsiClassType classType -> {
                 var klass = NncUtils.requireNonNull(classType.resolve());
-                yield TypeUtil.parameterizedName(
+                yield TypeUtils.parameterizedName(
                         getClassCanonicalName(klass),
                         NncUtils.map(
                                 classType.getParameters(),

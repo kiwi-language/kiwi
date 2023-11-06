@@ -21,6 +21,10 @@ public class PersistenceUtil {
 
     public static final String KEY_VALUE = "value";
 
+    public static final String KEY_PARENT_ID = "parentId";
+
+    public static final String KEY_PARENT_FIELD_ID = "parentFieldId";
+
     public static List<InstancePO> convertForPersisting(Collection<InstancePO> records) {
         return NncUtils.map(records ,PersistenceUtil::convertForPersisting);
     }
@@ -53,6 +57,8 @@ public class PersistenceUtil {
                     arrayPO.getTenantId(),
                     arrayPO.getLength(),
                     elementsForPersisting,
+                    arrayPO.getParentId(),
+                    arrayPO.getParentFieldId(),
                     arrayPO.getVersion(),
                     arrayPO.getSyncVersion()
             );
@@ -64,6 +70,8 @@ public class PersistenceUtil {
                     instancePO.getTypeId(),
                     instancePO.getTitle(),
                     writeInstanceData(instancePO.getData()),
+                    instancePO.getParentId(),
+                    instancePO.getParentFieldId(),
                     instancePO.getVersion(),
                     instancePO.getSyncVersion()
             );
@@ -82,6 +90,8 @@ public class PersistenceUtil {
                     arrayPO.getTenantId(),
                     arrayPO.getLength(),
                     elements,
+                    arrayPO.getParentId(),
+                    arrayPO.getParentFieldId(),
                     arrayPO.getVersion(),
                     arrayPO.getSyncVersion()
             );
@@ -94,6 +104,8 @@ public class PersistenceUtil {
                     instancePO.getTypeId(),
                     instancePO.getTitle(),
                     data,
+                    instancePO.getParentId(),
+                    instancePO.getParentFieldId(),
                     instancePO.getVersion(),
                     instancePO.getSyncVersion()
             );
@@ -101,59 +113,67 @@ public class PersistenceUtil {
     }
 
     public static Object writeValue(Object value) {
-        if(value instanceof IdentityPO identityPO) {
-            return Map.of(
-                    KEY_KIND, ValueKind.REF.code,
-                    KEY_VALUE, identityPO.id()
-            );
-        }
-        else if(value instanceof TimePO timePO) {
-            return Map.of(
-                    KEY_KIND, ValueKind.TIME.code,
-                    KEY_VALUE, timePO.time()
-            );
-        }
-        else if(value instanceof InstanceArrayPO arrayPO) {
-            List<Object> elements = arrayPO.getElements();
-            List<Object> elementCols = NncUtils.map(elements, PersistenceUtil::writeValue);
-            if(arrayPO.getId() != null) {
+        switch (value) {
+            case IdentityPO identityPO -> {
                 return Map.of(
-                        KEY_KIND, ValueKind.ARRAY.code,
-                        KEY_ID, arrayPO.getId(),
-                        KEY_TYPE_ID, arrayPO.getTypeId(),
-                        KEY_VALUE, elementCols
+                        KEY_KIND, ValueKind.REF.code,
+                        KEY_VALUE, identityPO.id()
                 );
             }
-            else {
+            case TimePO timePO -> {
                 return Map.of(
-                        KEY_KIND, ValueKind.ARRAY.code,
-                        KEY_TYPE_ID, arrayPO.getTypeId(),
-                        KEY_VALUE, elementCols
+                        KEY_KIND, ValueKind.TIME.code,
+                        KEY_VALUE, timePO.time()
                 );
             }
-        }
-        else if(value instanceof InstancePO instancePO) {
-            Map<String, Map<String, Object>> data = writeInstanceData(instancePO.getData());
-            if(instancePO.getId() != null) {
-                return Map.of(
-                        KEY_KIND, ValueKind.INSTANCE.code,
-                        KEY_ID, instancePO.getId(),
-                        KEY_TITLE, instancePO.getTitle(),
-                        KEY_TYPE_ID, instancePO.getTypeId(),
-                        KEY_VALUE, data
-                );
+            case InstanceArrayPO arrayPO -> {
+                List<Object> elements = arrayPO.getElements();
+                List<Object> elementCols = NncUtils.map(elements, PersistenceUtil::writeValue);
+                if (arrayPO.getId() != null) {
+                    return Map.of(
+                            KEY_KIND, ValueKind.ARRAY.code,
+                            KEY_ID, arrayPO.getId(),
+                            KEY_TYPE_ID, arrayPO.getTypeId(),
+                            KEY_VALUE, elementCols,
+                            KEY_PARENT_ID, arrayPO.getParentId(),
+                            KEY_PARENT_FIELD_ID, arrayPO.getParentFieldId()
+                    );
+                } else {
+                    return Map.of(
+                            KEY_KIND, ValueKind.ARRAY.code,
+                            KEY_TYPE_ID, arrayPO.getTypeId(),
+                            KEY_VALUE, elementCols,
+                            KEY_PARENT_ID, arrayPO.getParentId(),
+                            KEY_PARENT_FIELD_ID, arrayPO.getParentFieldId()
+                    );
+                }
             }
-            else {
-                return Map.of(
-                        KEY_KIND, ValueKind.INSTANCE.code,
-                        KEY_TITLE, instancePO.getTitle(),
-                        KEY_TYPE_ID, instancePO.getTypeId(),
-                        KEY_VALUE, data
-                );
+            case InstancePO instancePO -> {
+                Map<String, Map<String, Object>> data = writeInstanceData(instancePO.getData());
+                if (instancePO.getId() != null) {
+                    return Map.of(
+                            KEY_KIND, ValueKind.INSTANCE.code,
+                            KEY_ID, instancePO.getId(),
+                            KEY_TITLE, instancePO.getTitle(),
+                            KEY_TYPE_ID, instancePO.getTypeId(),
+                            KEY_VALUE, data,
+                            KEY_PARENT_ID, instancePO.getParentId(),
+                            KEY_PARENT_FIELD_ID, instancePO.getParentFieldId()
+                    );
+                } else {
+                    return Map.of(
+                            KEY_KIND, ValueKind.INSTANCE.code,
+                            KEY_TITLE, instancePO.getTitle(),
+                            KEY_TYPE_ID, instancePO.getTypeId(),
+                            KEY_VALUE, data,
+                            KEY_PARENT_ID, instancePO.getParentId(),
+                            KEY_PARENT_FIELD_ID, instancePO.getParentFieldId()
+                    );
+                }
             }
-        }
-        else {
-            return value;
+            case null, default -> {
+                return value;
+            }
         }
     }
 
@@ -184,6 +204,8 @@ public class PersistenceUtil {
                 tenantId,
                 elements.size(),
                 NncUtils.map(elements, element -> readValue(tenantId, element)),
+                wrap.getLong(KEY_PARENT_ID),
+                wrap.getLong(KEY_PARENT_FIELD_ID),
                 0L,
                 0L
         );
@@ -199,7 +221,7 @@ public class PersistenceUtil {
         return readData;
     }
 
-    public static InstancePO readInstance(long tenantId, ValueWrap wrap) {
+    private static InstancePO readInstance(long tenantId, ValueWrap wrap) {
         Map<String, Map<String, Object>> value = wrap.get(new TypeReference<>() {}, KEY_VALUE);
         Map<String, Map<String, Object>> data = readInstanceData(tenantId, value);
 
@@ -209,6 +231,8 @@ public class PersistenceUtil {
                 wrap.getLong(KEY_TYPE_ID),
                 wrap.getString(KEY_TITLE),
                 data,
+                wrap.getLong(KEY_PARENT_ID),
+                wrap.getLong(KEY_PARENT_FIELD_ID),
                 0L,
                 0L
         );

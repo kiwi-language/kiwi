@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.util.Constants;
 
 import java.util.function.Function;

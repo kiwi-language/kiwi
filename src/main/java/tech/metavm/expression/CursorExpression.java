@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeUtil;
+import tech.metavm.object.meta.TypeUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -39,7 +39,7 @@ public class CursorExpression extends Expression{
 
     @Override
     public ClassType getType() {
-        return TypeUtil.ensureClassArray(array.getType());
+        return TypeUtils.ensureClassArray(array.getType());
     }
 
     @Override

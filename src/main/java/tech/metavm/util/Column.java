@@ -35,7 +35,8 @@ public record Column(
 
     public String fuzzyName() {
         if (type != SQLType.VARCHAR64) {
-            throw new UnsupportedOperationException("fuzzy name is only available for string columns");
+            return name();
+//            throw new UnsupportedOperationException("fuzzy name is only available for string columns");
         }
         return "t" + name.substring(1);
     }

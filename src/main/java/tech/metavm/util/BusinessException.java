@@ -1,8 +1,8 @@
 package tech.metavm.util;
 
 import tech.metavm.dto.ErrorCode;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.expression.Function;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.meta.*;
@@ -29,20 +29,17 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException strongReferencesPreventRemoval(Map<Instance, Instance> refMap) {
-        return new BusinessException(
-                ErrorCode.STRONG_REFS_PREVENT_REMOVAL,
-                NncUtils.join(refMap.entrySet(),
-                        entry -> entry.getKey().getDescription() + "->" + entry.getValue().getDescription())
-        );
+        var entry = refMap.entrySet().iterator().next();
+        var source = entry.getKey();
+        var target = entry.getValue();
+        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target, source);
     }
 
     public static BusinessException strongReferencesPreventRemovalFromPO(Map<InstancePO, Instance> refMap) {
-        return new BusinessException(
-                ErrorCode.STRONG_REFS_PREVENT_REMOVAL,
-                NncUtils.join(refMap.entrySet(),
-                        entry -> entry.getKey().getId() + "/" + entry.getKey().getTitle()
-                                + "->" + entry.getValue().getDescription())
-        );
+        var entry = refMap.entrySet().iterator().next();
+        var source = entry.getKey().getTitle();
+        var target = entry.getValue();
+        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target, source);
     }
 
     public static BusinessException invalidType(TypeDTO typeDTO, String reason) {
@@ -207,7 +204,7 @@ public class BusinessException extends RuntimeException {
         );
     }
 
-    public static BusinessException constraintCheckFailed(Instance instance, Constraint<?> constraint) {
+    public static BusinessException constraintCheckFailed(Instance instance, Constraint constraint) {
         String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(
                 ErrorCode.CONSTRAINT_CHECK_FAILED,

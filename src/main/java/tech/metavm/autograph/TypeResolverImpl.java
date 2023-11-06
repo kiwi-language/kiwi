@@ -4,8 +4,8 @@ import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.IteratorImpl;
@@ -58,11 +58,11 @@ public class TypeResolverImpl implements TypeResolver {
     );
 
     private static final Map<Class<?>, BiFunction<Type, IEntityContext, ClassType>> COLLECTION_CLASSES = Map.of(
-            Iterator.class, TypeUtil::getIteratorType,
-            Collection.class, TypeUtil::getCollectionType,
-            List.class, TypeUtil::getListType,
-            Set.class, TypeUtil::getSetType,
-            IteratorImpl.class, TypeUtil::getIteratorImplType
+            Iterator.class, TypeUtils::getIteratorType,
+            Collection.class, TypeUtils::getCollectionType,
+            List.class, TypeUtils::getListType,
+            Set.class, TypeUtils::getSetType,
+            IteratorImpl.class, TypeUtils::getIteratorImplType
     );
 
     public TypeResolverImpl(IEntityContext context) {
@@ -148,7 +148,7 @@ public class TypeResolverImpl implements TypeResolver {
                 return StandardTypes.getObjectType();
             } else if (TranspileUtil.createType(Map.class).isAssignableFrom(classType)) {
                 var mapType = TranspileUtil.getSuperType(classType, Map.class);
-                return TypeUtil.getMapType(
+                return TypeUtils.getMapType(
                         resolve(mapType.getParameters()[0], stage),
                         resolve(mapType.getParameters()[1], stage),
                         context
@@ -272,7 +272,7 @@ public class TypeResolverImpl implements TypeResolver {
         }
         if (psiClass.getSuperClass() != null &&
                 !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
-            metaClass.setSuperType((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass)));
+            metaClass.setSuperClass((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass)));
         }
         compiler.transform(psiClass);
         return metaClass;
@@ -314,7 +314,7 @@ public class TypeResolverImpl implements TypeResolver {
         if (stage == 0) {
             return;
         }
-        for (ClassType superType : metaClass.getSupers()) {
+        for (ClassType superType : metaClass.getSuperTypes()) {
             procesClassType(superType, stage);
         }
         int currentStage = NncUtils.requireNonNull(psiClass.getUserData(Keys.RESOLVE_STAGE));

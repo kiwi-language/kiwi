@@ -1,9 +1,9 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.NullInstance;
-import tech.metavm.object.instance.StringInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.NullInstance;
+import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
@@ -38,8 +38,8 @@ public class ThrowableNative extends NativeBase {
     }
 
     public ClassInstance Throwable(Instance message, Instance cause) {
-        instance.initializeField(messageField, message);
-        instance.initializeField(causeField, cause);
+        instance.initField(messageField, message);
+        instance.initField(causeField, cause);
         return instance;
     }
 

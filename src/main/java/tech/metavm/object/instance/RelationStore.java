@@ -1,15 +1,11 @@
 package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.entity.InstanceContext;
-import tech.metavm.entity.InstanceFactory;
 import tech.metavm.entity.ValueStore;
-import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.instance.persistence.mappers.RelationMapper;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class RelationStore implements ValueStore<InstanceRelation> {

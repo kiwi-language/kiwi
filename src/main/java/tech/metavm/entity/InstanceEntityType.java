@@ -1,6 +1,6 @@
 //package tech.metavm.entity;
 //
-//import tech.metavm.object.instance.Instance;
+//import tech.metavm.object.instance.core.Instance;
 //import tech.metavm.object.meta.EnumConstantRT;
 //import tech.metavm.object.meta.IdConstants;
 //import tech.metavm.object.meta.Type;

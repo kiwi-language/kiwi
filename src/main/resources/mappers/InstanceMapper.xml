@@ -10,6 +10,8 @@
     <result property="title" jdbcType="INTEGER" column="title"/>
     <result property="data" jdbcType="VARCHAR" column="data"
             typeHandler="tech.metavm.util.JsonObjectTypeHandler"/>
+    <result property="parentId" jdbcType="BIGINT" column="parent_id"/>
+    <result property="parentFieldId" jdbcType="BIGINT" column="parent_field_id"/>
     <result property="version" jdbcType="BIGINT" column="version"/>
     <result property="syncVersion" jdbcType="BIGINT" column="sync_version"/>
   </resultMap>
@@ -23,7 +25,7 @@
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, type_id, title, `data`, version, sync_version
+    id, tenant_id, type_id, title, `data`, parent_id, parent_field_id, version, sync_version
   </sql>
 
   <update id="batchDelete">
@@ -41,11 +43,12 @@
 
   <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
     <!--@mbg.generated-->
-    insert into instance (id, tenant_id, type_id, title, `data`)
+    insert into instance (id, tenant_id, type_id, title, `data`, parent_id, parent_field_id)
     values
     <foreach collection="collection" item="item" separator=",">
       (#{item.id}, #{item.tenantId}, #{item.typeId}, #{item.title},
-      #{item.data, typeHandler=tech.metavm.util.JsonObjectTypeHandler})
+      #{item.data, typeHandler=tech.metavm.util.JsonObjectTypeHandler},
+      #{item.parentId}, #{item.parentFieldId})
     </foreach>
   </insert>
 

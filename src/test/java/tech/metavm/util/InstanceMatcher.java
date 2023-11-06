@@ -3,7 +3,7 @@ package tech.metavm.util;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import tech.metavm.entity.EntityUtils;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 
 import java.util.Map;
 import java.util.Set;

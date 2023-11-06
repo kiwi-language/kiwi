@@ -1,8 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.EntityChange;
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
 
 public interface ContextPlugin {

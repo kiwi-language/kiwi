@@ -4,7 +4,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Type;
@@ -38,6 +38,11 @@ public class ReferenceValue extends Value {
 
     public Expression getExpression() {
         return expression;
+    }
+
+    @Override
+    public ReferenceValue copy() {
+        return new ReferenceValue(expression.copy());
     }
 
     @Override

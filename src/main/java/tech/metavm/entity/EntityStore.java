@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.InstanceContext;
+
 import java.util.List;
 
 public interface EntityStore<T extends Entity> extends ModelStore<T> {

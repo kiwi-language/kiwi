@@ -3,9 +3,9 @@ package tech.metavm.flow;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.MergeFieldDTO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadonlyArray;
+import tech.metavm.entity.ReadonlyArray;
 
 import javax.annotation.Nullable;
 import java.util.Comparator;
@@ -17,7 +17,7 @@ public class MergeNodeField extends Entity {
     @EntityField("字段")
     private final Field field;
     @ChildEntity("值")
-    private final ChildArray<ConditionalValue> values = new ChildArray<>(ConditionalValue.class);
+    private final ChildArray<ConditionalValue> values = addChild(new ChildArray<>(ConditionalValue.class), "values");
 
     public MergeNodeField(Field field, MergeNode mergeNode) {
         this(field, mergeNode, null);

@@ -1,9 +1,11 @@
 package tech.metavm.entity;
 
 import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
@@ -57,11 +59,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public void predefineCompositeTypes(Type javaType, tech.metavm.object.meta.Type type) {
         preAddDef(new DirectDef<>(BiUnion.createNullableType(javaType), getNullableType(type)));
         preAddDef(new CollectionDef<>(ReadWriteArray.class, ParameterizedTypeImpl.create(ReadWriteArray.class, javaType),
-                getArrayType(type, ArrayKind.READ_WRITE), getDef(type)));
+                getArrayType(type, ArrayKind.READ_WRITE), getDef(type), this));
         preAddDef(new CollectionDef<>(ChildArray.class, ParameterizedTypeImpl.create(ChildArray.class, javaType),
-                getArrayType(type, ArrayKind.CHILD), getDef(type)));
+                getArrayType(type, ArrayKind.CHILD), getDef(type), this));
         preAddDef(new CollectionDef<>(ReadonlyArray.class, ParameterizedTypeImpl.create(ReadonlyArray.class, javaType),
-                getArrayType(type, ArrayKind.READ_ONLY), getDef(type)));
+                getArrayType(type, ArrayKind.READ_ONLY), getDef(type), this));
     }
 
     public void initCompositeTypes(Type javaType) {
@@ -165,8 +167,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         javaType = ReflectUtils.eraseType(javaType);
         Class<?> javaClass = ReflectUtils.getRawClass(javaType);
         TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
-        if (ReadonlyArray.class.isAssignableFrom(javaClass) || List.class.isAssignableFrom(javaClass)) {
-            Class<? extends ReadonlyArray<?>> collectionClass = ReadonlyArray.class.asSubclass(
+        if (ReadonlyArray.class.isAssignableFrom(javaClass)) {
+            Class<? extends ReadonlyArray<?>> arrayClass = ReadonlyArray.class.asSubclass(
                     new TypeReference<ReadonlyArray<?>>() {
                     }.getType()
             );
@@ -176,14 +178,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                         Instance.class.isAssignableFrom(elementJavaClass)) {
                     return new InstanceCollectionParser<>(
                             javaType,
-                            collectionClass,
+                            arrayClass,
                             elementJavaClass,
                             getArrayType(objectDef.getType(), ArrayKind.getByEntityClass(javaClass))
                     );
                 }
             }
-            return new CollectionParser<>(
-                    collectionClass,
+            return new ArrayParser<>(
+                    arrayClass,
                     javaType,
                     this
             );
@@ -216,13 +218,13 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
     }
 
-    private ModelDef<?, ?> parseType(Type genericType) {
-        DefParser<?, ?, ?> parser = getParser(genericType);
+    private ModelDef<?, ?> parseType(Type javaType) {
+        DefParser<?, ?, ?> parser = getParser(javaType);
         for (Type dependencyType : parser.getDependencyTypes()) {
             getDef(dependencyType);
         }
         ModelDef<?, ?> def;
-        if ((def = javaType2Def.get(genericType)) != null) {
+        if ((def = javaType2Def.get(javaType)) != null) {
             return def;
         }
         def = parser.create();
@@ -245,7 +247,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
         javaType2Def.put(def.getJavaType(), def);
         if(def.getType() instanceof ArrayType arrayType) {
-            getArrayTypeContext(arrayType.kind()).add(arrayType);
+            getArrayTypeContext(arrayType.getKind()).add(arrayType);
         }
         else if(def.getType() instanceof UnionType unionType) {
             getUnionTypeContext().add(unionType);
@@ -426,8 +428,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getUnionType(Set.of(type, getType(Null.class)));
     }
 
-    public boolean containsTypeDef(tech.metavm.object.meta.Type type) {
-        return type2Def.containsKey(type);
+    public boolean containsNonDirectDef(tech.metavm.object.meta.Type type) {
+        var def = type2Def.get(type);
+        return def != null && !(def instanceof DirectDef<?>);
     }
 
     @Override
@@ -468,7 +471,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     public void bind(Object model) {
-        throw new UnsupportedOperationException();
+        // Entities enter the DefContext through models def.
+        throw new UnsupportedOperationException("Binding not supported.");
     }
 
     @Override

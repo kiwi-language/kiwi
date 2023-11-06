@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionEvaluator;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.NncUtils;

@@ -1,7 +1,8 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
@@ -42,9 +43,10 @@ public class FieldData extends Entity {
     private final boolean isChild;
     private final boolean isStatic;
     private final Instance staticValue;
+    @Nullable
     private final Instance defaultValue;
 
-    public FieldData(Long tmpId, String name, String code, Column column, boolean unique, boolean asTitle, ClassType declaringType, Access access, Type type, boolean isChild, boolean isStatic, Instance staticValue, Instance defaultValue) {
+    public FieldData(Long tmpId, String name, @Nullable String code, Column column, boolean unique, boolean asTitle, ClassType declaringType, Access access, Type type, boolean isChild, boolean isStatic, Instance staticValue, @Nullable Instance defaultValue) {
         super(tmpId);
         this.name = name;
         this.code = code;
@@ -105,6 +107,7 @@ public class FieldData extends Entity {
         return staticValue;
     }
 
+    @Nullable
     public Instance getDefaultValue() {
         return defaultValue;
     }

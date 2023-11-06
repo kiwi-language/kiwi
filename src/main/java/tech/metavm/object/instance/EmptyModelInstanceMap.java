@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.ModelDef;
+import tech.metavm.object.instance.core.Instance;
 
 import javax.annotation.Nullable;
 

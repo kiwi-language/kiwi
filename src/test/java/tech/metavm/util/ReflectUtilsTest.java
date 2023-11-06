@@ -25,10 +25,9 @@ public class ReflectUtilsTest extends TestCase {
     }
 
     public void testEraseType() {
-        //noinspection rawtypes
         Type rawType = new TypeReference<Table<Table<Constraint>>>() {
         }.getGenericType();
-        Type type = new TypeReference<Table<Table<Constraint<?>>>>() {
+        Type type = new TypeReference<Table<Table<Constraint>>>() {
         }.getGenericType();
         Type erasedType = ReflectUtils.eraseType(type);
         Assert.assertEquals(rawType, erasedType);

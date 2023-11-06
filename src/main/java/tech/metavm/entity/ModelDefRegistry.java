@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.ClassType;
@@ -27,8 +28,8 @@ public class ModelDefRegistry {
         return DEF_CONTEXT;
     }
 
-    public static boolean containsTypeDef(Type type) {
-        return DEF_CONTEXT.containsTypeDef(type);
+    public static boolean containsDef(Type type) {
+        return DEF_CONTEXT.containsDef(type);
     }
 
     public static void setModelFields(Object model, Instance instance, ModelInstanceMap modelInstanceMap) {

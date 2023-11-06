@@ -1,10 +1,10 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.CollectionKind;
-import tech.metavm.object.instance.*;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -44,7 +44,7 @@ public class MapNative extends NativeBase {
     }
 
     public Instance Map() {
-        instance.initialize(
+        instance.reload(
                 Map.of(
                         keyArrayField,
                         keyArray = new ArrayInstance(
@@ -61,9 +61,9 @@ public class MapNative extends NativeBase {
         return instance;
     }
 
-    public Instance keySet() {
-        var keySetType = (ClassType) instance.getType().getDependency(CollectionKind.SET);
-        ClassInstance keySet = ClassInstance.allocate(keySetType);
+    public ClassInstance keySet() {
+        var keySetType = (ClassType) instance.getType().getDependency(StandardTypes.getSetType());
+        ClassInstance keySet = new ClassInstance(keySetType);
         var setNative = (SetNative) NativeInvoker.getNativeObject(keySet);
         setNative.Set();
         for (Instance key : keyArray) {

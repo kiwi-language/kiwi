@@ -4,9 +4,10 @@ import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.generic.*;
@@ -51,6 +52,10 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments);
 
+    default ClassType getParameterizedType(ClassType template, Type...typeArguments) {
+        return getParameterizedType(template, List.of(typeArguments));
+    }
+
     FunctionType getFunctionType(List<Type> parameterTypes, Type returnType);
 
     GenericContext getGenericContext();
@@ -61,13 +66,9 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     UnionType getNullableType(Type type);
 
-    UncertainTypeContext getUncertainTypeContext();
-
-    ArrayTypeContext getArrayTypeContext(ArrayKind kind);
-
-    UnionTypeContext getUnionTypeContext();
-
     Set<CompositeType> getNewCompositeTypes();
+
+    Type substitueType(Type type, List<TypeVariable> typeParameters, List<Type> typeArguments);
 
     <T> T getEntity(Class<T> entityType, long id);
 
@@ -100,6 +101,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     }
 
     UnionType getUnionType(Set<Type> members);
+
+    IntersectionType getIntersectionType(Set<Type> types);
 
     ArrayType getArrayType(Type elementType, ArrayKind kind);
 
@@ -163,7 +166,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     void finish();
 
-    @Nullable IInstanceContext getInstanceContext();
+    @Nullable
+    IInstanceContext getInstanceContext();
 
     <T> List<T> query(EntityIndexQuery<T> query);
 

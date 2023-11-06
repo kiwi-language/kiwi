@@ -1,8 +1,8 @@
 package tech.metavm.object.meta.generic;
 
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;

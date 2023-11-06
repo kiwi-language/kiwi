@@ -2,12 +2,11 @@ package tech.metavm.entity;
 
 
 import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Constraint;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.UnionType;
-import tech.metavm.util.ChildArray;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
 

@@ -2,8 +2,7 @@ package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.InstancePO;

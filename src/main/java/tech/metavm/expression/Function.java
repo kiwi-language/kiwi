@@ -1,6 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.ValueUtil;
 
@@ -30,6 +30,12 @@ public enum Function {
     NOW(Date.class),
 
     LEN(Boolean.class, Object.class),
+
+    STARTS_WITH(Boolean.class, String.class, String.class),
+
+    CONTAINS(Boolean.class, String.class, String.class),
+
+    CONCAT(String.class, String.class, String.class),
 
     HAS_NEXT(Boolean.class, Object.class),
 
@@ -63,7 +69,7 @@ public enum Function {
         return dollarIndex == -1 ? name : name.substring(0 ,dollarIndex);
     }
 
-    public static Function getByNameRequired(String name) {
+    public static Function getByName(String name) {
         return Arrays.stream(values())
                 .filter(value -> value.name().equalsIgnoreCase(name))
                 .findAny()

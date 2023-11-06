@@ -3,8 +3,10 @@ package tech.metavm.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.util.List;
 
 public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
@@ -13,6 +15,10 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     private transient Long tmpId;
     @Nullable
     protected Long id;
+    @Nullable
+    private transient Entity parentEntity;
+    @Nullable
+    private transient Field parentEntityField;
     private long version;
     private long syncVersion;
 
@@ -20,7 +26,23 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public Entity(Long tmpId) {
+        this(tmpId, null);
+    }
+
+    public Entity(Long tmpId, @Nullable EntityParentRef parentRef) {
         this.tmpId = tmpId;
+        if(parentRef != null) {
+            if(parentRef.parent() instanceof ReadonlyArray<?> array) {
+                NncUtils.requireNull(parentRef.field());
+                NncUtils.requireTrue(array.getElementClass().isAssignableFrom(getClass()));
+            }
+            else {
+                NncUtils.requireNonNull(parentRef.field());
+                NncUtils.requireTrue(parentRef.field().getType().isAssignableFrom(getClass()));
+                this.parentEntityField = parentRef.field();
+            }
+            this.parentEntity = parentRef.parent();
+        }
     }
 
     @Nullable
@@ -45,6 +67,31 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return EntityKey.create(this.getEntityType(), id);
     }
 
+    @Nullable
+    public Entity getParentEntity() {
+        return parentEntity;
+    }
+
+    public <T extends Entity> T addChild(T child, @Nullable String fieldName) {
+        var field = fieldName != null ?
+                ReflectUtils.getDeclaredFieldRecursively(this.getClass(), fieldName) : null;
+        child.initParent(this, field);
+        return child;
+    }
+
+    void initParent(Entity parent, @Nullable Field parentField) {
+//        if(this.parent != null) {
+//            throw new InternalException("Can not reInit parent");
+//        }
+        this.parentEntity = parent;
+        this.parentEntityField = parentField;
+    }
+
+    @Nullable
+    public Field getParentEntityField() {
+        return parentEntityField;
+    }
+
     @JsonIgnore
     @NoProxy
     public final boolean isIdNull() {
@@ -62,6 +109,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         this.id = id;
     }
 
+    @NoProxy
     public Long getTmpId() {
         return tmpId;
     }

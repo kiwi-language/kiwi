@@ -3,8 +3,8 @@
 //import org.jetbrains.annotations.Nullable;
 //import tech.metavm.entity.ChildEntity;
 //import tech.metavm.entity.EntityType;
-//import tech.metavm.object.instance.ClassInstance;
-//import tech.metavm.object.instance.Instance;
+//import tech.metavm.object.instance.core.ClassInstance;
+//import tech.metavm.object.instance.core.Instance;
 //import tech.metavm.object.meta.rest.dto.ClassParamDTO;
 //import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 //import tech.metavm.util.NncUtils;

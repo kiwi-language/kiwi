@@ -1,8 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
+import tech.metavm.object.meta.rest.dto.InstanceParentRef;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
@@ -23,14 +26,6 @@ public abstract class ModelDef<T, I extends Instance> {
     }
 
     ModelDef(Class<T> javaClass, java.lang.reflect.Type javaType, Class<I> instanceType) {
-//        if(!RuntimeGeneric.class.isAssignableFrom(javaClass) && !(javaType instanceof TypeVariable<?>)) {
-//            NncUtils.requireEquals(
-//                    javaClass, javaType,
-//                    () -> new InternalException(
-//                            "class '" + javaClass.getName() + "' is not a RuntimeGeneric, generic type is not allowed."
-//                    )
-//            );
-//        }
         this.javaClass = javaClass;
         this.javaType = javaType;
         this.instanceType = instanceType;
@@ -42,6 +37,20 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public void initModelHelper(Object model, Instance instance, ModelInstanceMap modelInstanceMap) {
         initModel(javaClass.cast(model), instanceType.cast(instance), modelInstanceMap);
+    }
+
+    protected void reloadParent(Entity entity, Instance instance, ModelInstanceMap instanceMap, DefContext defContext) {
+        if(entity.getParentEntity() != null) {
+            var parent = instanceMap.getInstance(entity.getParentEntity());
+            Field parentField = null;
+            if(entity.getParentEntityField() != null) {
+                parentField = defContext.getField(entity.getParentEntityField());
+            }
+            instance.reloadParent(new InstanceParentRef(parent, parentField));
+        }
+        else {
+            instance.reloadParent(null);
+        }
     }
 
     public abstract void updateModel(T model, I instance, ModelInstanceMap modelInstanceMap);

@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 

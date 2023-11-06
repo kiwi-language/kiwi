@@ -1,6 +1,6 @@
 package tech.metavm.util;
 
-import tech.metavm.object.instance.PasswordInstance;
+import tech.metavm.object.instance.core.PasswordInstance;
 
 public class Password {
 

@@ -2,11 +2,10 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.meta.rest.dto.ChoiceOptionDTO;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +97,7 @@ public class EnumEditContext {
 
     private ClassType createType() {
         type = ClassBuilder.newBuilder(name, null)
-                .superType(ModelDefRegistry.getClassType(Enum.class))
+                .superClass(ModelDefRegistry.getClassType(Enum.class))
                 .category(TypeCategory.ENUM)
                 .anonymous(anonymous)
                 .build();

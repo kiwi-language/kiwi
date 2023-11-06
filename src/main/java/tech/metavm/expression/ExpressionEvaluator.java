@@ -1,11 +1,11 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.*;
+import tech.metavm.flow.ParentRef;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.query.ObjectNode;
-import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.meta.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -26,6 +26,10 @@ public class ExpressionEvaluator {
     }
 
     public static Instance evaluate(Expression expression, EvaluationContext context) {
+        return new ExpressionEvaluator(expression, context).evaluate();
+    }
+
+    public static Instance evaluateChild(Expression expression, InstanceParentRef parentRef, EvaluationContext context) {
         return new ExpressionEvaluator(expression, context).evaluate();
     }
 

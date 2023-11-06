@@ -1,8 +1,8 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 

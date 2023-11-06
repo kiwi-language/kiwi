@@ -4,7 +4,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -15,7 +15,7 @@ public class FunctionExpression extends Expression {
     @EntityField("函数")
     private final Function function;
     @ChildEntity("参数表达式列表")
-    private final ChildArray<Expression> arguments = new ChildArray<>(Expression.class);
+    private final ChildArray<Expression> arguments = addChild(new ChildArray<>(Expression.class), "arguments");
 
     public FunctionExpression(Function function) {
         this(function, List.of());

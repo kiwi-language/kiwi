@@ -9,6 +9,7 @@ public record ParameterDTO(
         Long id,
         String name,
         String code,
-        RefDTO typeRef
+        RefDTO typeRef,
+        ValueDTO condition
 ) implements BaseDTO {
 }

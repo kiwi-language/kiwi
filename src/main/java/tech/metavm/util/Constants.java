@@ -8,6 +8,8 @@ public class Constants {
 
     public static final String META_VM_PKG = "tech.metavm";
 
+    public static final int MAX_INHERITANCE_DEPTH = 7;
+
     public static final String INITIAL_ROOT_PASSWORD = "123456";
     public static final String CONSTANT_ID_PREFIX = "$$";
     public static final String CONSTANT_TMP_ID_PREFIX = "$_$";

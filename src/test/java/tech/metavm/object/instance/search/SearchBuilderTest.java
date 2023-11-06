@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.meta.Field;

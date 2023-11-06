@@ -1,6 +1,6 @@
 //package tech.metavm.entity;
 //
-//import tech.metavm.object.instance.Instance;
+//import tech.metavm.object.instance.core.Instance;
 //import tech.metavm.object.meta.ClassType;
 //import tech.metavm.object.meta.TypeCategory;
 //import tech.metavm.util.*;

@@ -2,13 +2,12 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.PrimitiveInstance;
-import tech.metavm.object.instance.StringInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
 
 import java.util.List;
 import java.util.Objects;

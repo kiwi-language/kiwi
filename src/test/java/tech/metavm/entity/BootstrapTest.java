@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;

@@ -14,10 +14,8 @@ import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.Var;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.InstanceManager;
+import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.ClassInstanceParam;
 import tech.metavm.object.instance.rest.InstanceDTO;
@@ -104,6 +102,14 @@ public class TypeManager {
 
     public Page<TypeDTO> query(QueryTypeRequest request,
                                IEntityContext context) {
+        var typePage = query0(request, context);
+        return new Page<>(
+                NncUtils.map(typePage.data(), Type::toDTO),
+                typePage.total()
+        );
+    }
+
+    private Page<Type> query0(QueryTypeRequest request, IEntityContext context) {
         List<TypeCategory> categories = request.categories() != null ?
                 NncUtils.map(request.categories(), TypeCategory::getByCode)
                 : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
@@ -111,14 +117,16 @@ public class TypeManager {
             return new Page<>(List.of(), 0);
         }
         var fields = new ArrayList<>(List.of(
-                new EntityQueryField("category", categories),
-                new EntityQueryField("anonymous", categories.equals(List.of(TypeCategory.FUNCTION)))
+                EntityQueryField.create(Type.class, "category", categories),
+                EntityQueryField.create(Type.class, "anonymous", categories.equals(List.of(TypeCategory.FUNCTION)))
         ));
-        fields.add(new EntityQueryField("isParameterized", request.isParameterized()));
-        if (request.isTemplate() != null) {
-            fields.add(new EntityQueryField("isTemplate", request.isTemplate()));
+        if(!request.includeParameterized()) {
+            fields.add(EntityQueryField.create(ClassType.class, "isParameterized", false));
         }
-        Page<? extends Type> typePage = entityQueryService.query(
+        if (request.isTemplate() != null) {
+            fields.add(EntityQueryField.create(ClassType.class, "isTemplate", request.isTemplate()));
+        }
+        return entityQueryService.query(
                 new EntityQuery<>(
                         Type.class,
                         request.searchText(),
@@ -130,22 +138,17 @@ public class TypeManager {
                 ),
                 context
         );
-
-        return new Page<>(
-                NncUtils.map(typePage.data(), Type::toDTO),
-                typePage.total()
-        );
     }
 
     public List<CreatingFieldDTO> getCreatingFields(long typeId) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var creatingFields = context.selectByKey(FieldData.IDX_DECLARING_TYPE, context.getClassType(typeId));
             return NncUtils.map(creatingFields, FieldData::toDTO);
         }
     }
 
     public GetTypeResponse getType(GetTypeRequest request) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             Type type = context.getType(request.id());
 
             try (var serContext = SerializeContext.enter()) {
@@ -160,7 +163,7 @@ public class TypeManager {
     }
 
     public GetTypesResponse batchGetTypes(GetTypesRequest request) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             Set<Long> idSet = new HashSet<>(request.ids());
             try (var serContext = SerializeContext.enter()) {
                 for (Long id : request.ids()) {
@@ -299,7 +302,7 @@ public class TypeManager {
             if (baseDTO instanceof TypeDTO typeDTO) {
                 var category = TypeCategory.getByCode(typeDTO.category());
                 if (category.isPojo()) {
-                    newClasses.add(TypeUtil.createClassType(typeDTO, context));
+                    newClasses.add(TypeUtils.createClassType(typeDTO, context));
                 } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
                     var typeVar = new TypeVariable(
                             typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
@@ -358,7 +361,7 @@ public class TypeManager {
         List<TypeDTO> classDTOs = NncUtils.filter(typeDTOs,
                 typeDTO -> TypeCategory.getByCode(typeDTO.category()).isPojo());
         for (TypeDTO typeDTO : classDTOs) {
-            TypeUtil.saveClasType(typeDTO, true, context);
+            TypeUtils.saveClasType(typeDTO, true, context);
             ClassTypeParam param = typeDTO.getClassParam();
             ClassType klass = context.getClassType(typeDTO.getRef());
             if (param.fields() != null) {
@@ -426,7 +429,7 @@ public class TypeManager {
 
     @Transactional
     public GetTypeResponse getUnionType(List<Long> memberIds) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var members = NncUtils.mapUnique(memberIds, context::getType);
             var type = context.getUnionType(members);
             if (type.getId() == null) {
@@ -440,7 +443,7 @@ public class TypeManager {
     }
 
     public GetTypeResponse getArrayType(long elementId, int kind) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var elementType = context.getType(elementId);
             var arrayType = context.getArrayType(elementType, ArrayKind.getByCode(kind));
             if (arrayType.getId() == null) {
@@ -455,7 +458,7 @@ public class TypeManager {
 
     public GetTypeResponse getParameterizedType(GetParameterizedTypeRequest request) {
         if (request.templateRef().isPersisted() && NncUtils.allMatch(request.typeArgumentRefs(), RefDTO::isPersisted)) {
-            try(var context = newContext()) {
+            try (var context = newContext()) {
                 var template = context.getClassType(request.templateRef());
                 var typeArgs = NncUtils.map(request.typeArgumentRefs(), context::getType);
                 var existing = context.getGenericContext().getExisting(template, typeArgs);
@@ -495,7 +498,7 @@ public class TypeManager {
 
     @Transactional
     public GetTypeResponse getFunctionType(List<Long> parameterTypeIds, Long returnTypeId) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var parameterTypes = NncUtils.map(parameterTypeIds, context::getType);
             var returnType = context.getType(returnTypeId);
             var type = context.getFunctionType(parameterTypes, returnType);
@@ -511,7 +514,7 @@ public class TypeManager {
 
     @Transactional
     public GetTypeResponse getUncertainType(Long lowerBoundId, Long upperBoundId) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var lowerBound = context.getType(lowerBoundId);
             var upperBound = context.getType(upperBoundId);
             var type = context.getUncertainType(lowerBound, upperBound);
@@ -526,26 +529,78 @@ public class TypeManager {
     }
 
     public GetTypesResponse getDescendants(long id) {
-        try(var context = newContext()) {
-            var type = context.getType(id);
-            Queue<ClassType> queue = new LinkedList<>();
-            if (type instanceof ClassType classType) {
-                queue.offer(classType);
-            } else if (type instanceof UnionType unionType) {
-                for (Type member : unionType.getMembers()) {
-                    if (member instanceof ClassType classType) {
+        return getByRange(new GetByRangeRequest(
+                StandardTypes.getNothingType().getIdRequired(),
+                id,
+                false,
+                false,
+                true,
+                null));
+    }
+
+    public GetTypesResponse getByRange(GetByRangeRequest request) {
+        try (var context = newContext()) {
+            var lowerBound = context.getType(request.lowerBoundId());
+            var upperBound = context.getType(request.upperBoundId());
+
+            List<ClassType> types;
+            if (lowerBound == StandardTypes.getNothingType() && upperBound == StandardTypes.getObjectType()) {
+                types = NncUtils.filterByType(query0(
+                        new QueryTypeRequest(null, request.categories(), request.isTemplate(),
+                                request.isParameterized(), request.includeBuiltin(), 1, 20),
+                        context
+                ).data(), ClassType.class);
+            } else {
+                Set<TypeCategory> categories = request.categories() != null ?
+                        NncUtils.mapUnique(request.categories(), TypeCategory::getByCode) : TypeCategory.pojoCategories();
+                boolean downwards = upperBound != StandardTypes.getObjectType();
+                Queue<ClassType> queue = new LinkedList<>();
+                if (downwards) {
+                    if (upperBound instanceof ClassType classType) {
                         queue.offer(classType);
+                    } else if (upperBound instanceof UnionType unionType) {
+                        for (Type member : unionType.getMembers()) {
+                            if (member instanceof ClassType classType) {
+                                queue.offer(classType);
+                            }
+                        }
+                    }
+                } else {
+                    if (lowerBound instanceof ClassType classType) {
+                        queue.offer(classType);
+                    } else {
+                        if (lowerBound instanceof IntersectionType intersection) {
+                            for (Type type : intersection.getTypes()) {
+                                if (type instanceof ClassType classType) {
+                                    queue.offer(classType);
+                                }
+                            }
+                        }
+                    }
+                }
+                LinkedList<ClassType> typeList = new LinkedList<>();
+                types = typeList;
+                while (!queue.isEmpty()) {
+                    var t = queue.poll();
+                    if (t.isAssignableFrom(lowerBound)) {
+                        if (t.isTemplate() == request.isTemplate()
+                                && categories.contains(t.category)
+                                && t.isParameterized() == request.isParameterized()) {
+                            if (downwards) {
+                                typeList.add(t);
+                            } else {
+                                typeList.addFirst(t);
+                            }
+                        }
+                        if (downwards) {
+                            queue.addAll(t.getSubTypes());
+                        } else {
+                            queue.addAll(t.getSuperTypes());
+                        }
                     }
                 }
             }
-            List<ClassType> types = new ArrayList<>();
-            Set<RefDTO> typeRefs = new LinkedHashSet<>();
-            while (!queue.isEmpty()) {
-                var t = queue.poll();
-                types.add(t);
-                typeRefs.add(t.getRef());
-                queue.addAll(t.getSubTypes());
-            }
+            var typeRefs = NncUtils.mapUnique(types, Entity::getRef);
             try (var serContext = SerializeContext.enter()) {
                 types.forEach(serContext::forceWriteType);
                 return new GetTypesResponse(
@@ -558,7 +613,7 @@ public class TypeManager {
 
     @Transactional
     public long saveEnumConstant(InstanceDTO instanceDTO) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
             var type = context.getClassType(instanceDTO.typeRef());
             ClassInstance instance;
@@ -605,7 +660,7 @@ public class TypeManager {
 
     @Transactional
     public void deleteEnumConstant(long id) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var instanceContext = NncUtils.requireNonNull(context.getInstanceContext());
             var instance = instanceContext.get(id);
             var type = (ClassType) instance.getType();
@@ -715,7 +770,7 @@ public class TypeManager {
 
     @Transactional
     public void batchRemove(List<Long> typeIds) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             List<Type> types = NncUtils.map(typeIds, context::getType);
             context.batchRemove(types);
             context.finish();
@@ -729,14 +784,14 @@ public class TypeManager {
     public ClassType createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "类型名称不能为空");
         ensureClassNameAvailable(classDTO, context);
-        var type = TypeUtil.saveClasType(classDTO, withContent, context);
+        var type = TypeUtils.saveClasType(classDTO, withContent, context);
         createOverridingFlows(type, context);
         return type;
     }
 
     public ClassType updateType(TypeDTO typeDTO, ClassType type, IEntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "类型名称不能为空");
-        TypeUtil.saveClasType(typeDTO, true, context);
+        TypeUtils.saveClasType(typeDTO, true, context);
         retransformClassTypeIfRequired(type, context);
         createOverridingFlows(type, context);
         return type;
@@ -751,7 +806,7 @@ public class TypeManager {
 
     @Transactional
     public void remove(long id) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             ClassType type = context.getClassType(id);
             if (type == null) {
                 return;
@@ -799,12 +854,13 @@ public class TypeManager {
     }
 
     private Field createField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
-        if (fieldDTO.defaultValue() != null) {
+        var type = context.getType(fieldDTO.typeRef());
+        if (fieldDTO.defaultValue() != null || fieldDTO.isChild() && type.isArray()) {
             FieldData fieldData = FieldData.fromFieldDTO(fieldDTO, context);
             context.bind(new AddFieldJobGroup(fieldData));
             return null;
         } else {
-            var field = TypeUtil.createFieldAndBind(
+            var field = TypeUtils.createFieldAndBind(
                     declaringType,
                     fieldDTO,
                     context
@@ -816,7 +872,7 @@ public class TypeManager {
 
     @Transactional
     public void moveField(long id, int ordinal) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             var field = context.getField(id);
             field.getDeclaringType().moveField(field, ordinal);
             context.finish();
@@ -864,7 +920,7 @@ public class TypeManager {
     }
 
     public GetFieldResponse getField(long fieldId) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             Field field = context.getField(fieldId);
             try (var serContext = SerializeContext.enter()) {
                 var fieldDTO = NncUtils.get(field, Field::toDTO);
@@ -907,14 +963,14 @@ public class TypeManager {
     public Page<ConstraintDTO> listConstraints(long typeId, int page, int pageSize) {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(typeId);
-        Page<Constraint<?>> dataPage = entityQueryService.query(
+        Page<Constraint> dataPage = entityQueryService.query(
                 EntityQuery.create(
                         new TypeReference<>() {
                         },
                         null,
                         page,
                         pageSize,
-                        List.of(new EntityQueryField("declaringType", type))
+                        List.of(EntityQueryField.create(Constraint.class, "declaringType", type))
                 ),
                 context
         );
@@ -926,7 +982,7 @@ public class TypeManager {
 
     public ConstraintDTO getConstraint(long id) {
         try (IEntityContext context = newContext()) {
-            Constraint<?> constraint = context.getEntity(Constraint.class, id);
+            Constraint constraint = context.getEntity(Constraint.class, id);
             if (constraint == null) {
                 throw BusinessException.constraintNotFound(id);
             }
@@ -937,7 +993,7 @@ public class TypeManager {
     @Transactional
     public long saveConstraint(ConstraintDTO constraintDTO) {
         var context = newContext();
-        Constraint<?> constraint;
+        Constraint constraint;
         constraint = ConstraintFactory.save(constraintDTO, context);
         context.finish();
         return constraint.getIdRequired();
@@ -946,8 +1002,8 @@ public class TypeManager {
 
     @Transactional
     public void removeConstraint(long id) {
-        try(var context = newContext()) {
-            Constraint<?> constraint = context.getEntity(Constraint.class, id);
+        try (var context = newContext()) {
+            Constraint constraint = context.getEntity(Constraint.class, id);
             if (constraint == null) {
                 throw BusinessException.constraintNotFound(id);
             }
@@ -957,7 +1013,7 @@ public class TypeManager {
     }
 
     public LoadByPathsResponse loadByPaths(List<String> paths) {
-        try(IEntityContext context = newContext()) {
+        try (IEntityContext context = newContext()) {
             Map<String, Type> path2type = new HashMap<>();
 
             List<Path> pathList = new ArrayList<>();

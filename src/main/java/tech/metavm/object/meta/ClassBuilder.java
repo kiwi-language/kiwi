@@ -38,7 +38,7 @@ public class ClassBuilder {
         this.code = code;
     }
 
-    public ClassBuilder superType(ClassType superType) {
+    public ClassBuilder superClass(ClassType superType) {
         this.superType = superType;
         return this;
     }
@@ -151,6 +151,7 @@ public class ClassBuilder {
     private ClassType create() {
         if(NncUtils.isNotEmpty(typeParameters)) {
             isTemplate = true;
+            typeArguments = new ArrayList<>(typeParameters);
         }
         ClassType classType;
         String effectiveName = suffix != null ? name + "_" + suffix : name;
@@ -178,7 +179,7 @@ public class ClassBuilder {
             existing.setTmpId(tmpId);
             existing.setName(effectiveName);
             existing.setCode(effectiveCode);
-            existing.setSuperType(superType);
+            existing.setSuperClass(superType);
             existing.setInterfaces(interfaces);
             existing.setSource(source);
             existing.setAnonymous(anonymous);

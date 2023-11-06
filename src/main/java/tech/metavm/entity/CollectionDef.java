@@ -1,46 +1,26 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.util.*;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.RuntimeGeneric;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, ArrayInstance> {
 
-    @SuppressWarnings("unchecked")
-    static <E, C extends ReadonlyArray<E>> CollectionDef<?, ?> createHelper(Class<?> javaClass,
-                                                                         java.lang.reflect.Type javaType,
-                                                                         ModelDef<?,?> elementDef, ArrayType type) {
-        if(javaType instanceof Class<?>) {
-            NncUtils.requireEquals(Object.class, elementDef.getJavaClass(),
-                    "For a raw collection def, element type should be object");
-        }
-        else if(javaType instanceof ParameterizedType parameterizedType){
-            java.lang.reflect.Type elementType = parameterizedType.getActualTypeArguments()[0];
-            NncUtils.requireEquals(
-                    elementType, elementDef.getJavaType(),
-                    "Element type mismatch. " +
-                            "Element type from java type: " + elementType + ", " +
-                            "Type of elementDef: " + elementDef.getJavaType());
-        }
-        else {
-            throw new InternalException("Invalid java type '" + javaType + "' for collection def");
-        }
-        CollectionDef<E, C>  def = new CollectionDef<>((Class<C>) javaClass, javaType, type, (ModelDef<E, ?>) elementDef);
-        return def;
-    }
-
     private final ArrayType type;
     private final ModelDef<E, ?> elementDef;
+    private final DefContext defContext;
 
-    public CollectionDef(Class<C> javaClass, java.lang.reflect.Type javaType, ArrayType type, ModelDef<E, ?> elementDef) {
+    public CollectionDef(Class<C> javaClass, Type javaType, ArrayType type, ModelDef<E, ?> elementDef, DefContext defContext) {
         super(javaClass, javaType, ArrayInstance.class);
         this.elementDef = elementDef;
         this.type = type;
+        this.defContext = defContext;
     }
 
     @Override
@@ -50,13 +30,12 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
 
     @Override
     public C createModelProxy(Class<? extends C> proxyClass) {
-        if(isProxySupported()) {
+        if (isProxySupported()) {
             return ReflectUtils.invokeConstructor(
                     ReflectUtils.getConstructor(proxyClass, java.lang.reflect.Type.class),
                     elementDef.getJavaType()
             );
-        }
-        else {
+        } else {
             return ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(proxyClass));
         }
     }
@@ -84,19 +63,16 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
-        if(elementDef instanceof InstanceDef<?>) {
-            for (E e : model) {
-                instance.add(elementDef.getInstanceType().cast(e));
-            }
-        }
-        else {
-            instance.addAll(NncUtils.map(NncUtils.listOf(model), instanceMap::getInstance));
+        reloadParent(model, instance, instanceMap, defContext);
+        if (elementDef instanceof InstanceDef<?>) {
+            instance.reload(NncUtils.map(model, e -> elementDef.getInstanceType().cast(e)));
+        } else {
+            instance.reload(NncUtils.map(NncUtils.listOf(model), instanceMap::getInstance));
         }
     }
 
     @Override
     public void updateInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
-        instance.clear();
         initInstance(instance, model, instanceMap);
     }
 

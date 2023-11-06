@@ -6,7 +6,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.TaskGroup;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.FieldBuilder;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -18,7 +18,8 @@ public class AddFieldJobGroup extends TaskGroup {
     @ChildEntity("字段")
     private final FieldData data;
     @ChildEntity("模版实例字段列表")
-    private final ChildArray<FieldData> transformedFieldData = new ChildArray<>(FieldData.class);
+    private final ChildArray<FieldData> transformedFieldData =
+            addChild(new ChildArray<>(FieldData.class), "transformedFieldData");
 
     public AddFieldJobGroup(FieldData fieldData) {
         this.data = fieldData;

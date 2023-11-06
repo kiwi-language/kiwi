@@ -5,7 +5,7 @@ import tech.metavm.util.NncUtils;
 
 @EntityType("Class来源")
 public enum ClassSource {
-    REFLECTION(1),
+    BUILTIN(1),
     COMPILATION(2),
     RUNTIME(3);
 

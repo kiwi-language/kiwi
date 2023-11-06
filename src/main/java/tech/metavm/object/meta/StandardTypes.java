@@ -2,11 +2,12 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.util.*;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 public class StandardTypes {
@@ -27,6 +28,10 @@ public class StandardTypes {
 
     public static UnionType getNullableObjectType() {
         return ModelDefRegistry.getDefContext().getUnionType(Set.of(getObjectType(), getNullType()));
+    }
+
+    public static Type getObjectType(boolean nullable) {
+        return nullable ? getNullableObjectType() : getObjectType();
     }
 
     public static ClassType getEnumType() {
@@ -84,6 +89,10 @@ public class StandardTypes {
         return ModelDefRegistry.getDefContext().getArrayType(getObjectType(), ArrayKind.READ_WRITE);
     }
 
+    public static ArrayType getReadOnlyObjectArrayType() {
+        return ModelDefRegistry.getDefContext().getArrayType(getObjectType(), ArrayKind.READ_ONLY);
+    }
+
     public static ArrayType getObjectChildArrayType() {
         return ModelDefRegistry.getDefContext().getArrayType(getObjectType(), ArrayKind.CHILD);
     }
@@ -97,15 +106,15 @@ public class StandardTypes {
     }
 
     public static ClassType getListType() {
-        return getClassType(List.class);
+        return getClassType(MetaList.class);
     }
 
     public static ClassType getSetType() {
-        return getClassType(Set.class);
+        return getClassType(MetaSet.class);
     }
 
     public static ClassType getMapType() {
-        return getClassType(Map.class);
+        return getClassType(MetaMap.class);
     }
 
     public static ClassType getCollectionType() {
@@ -113,7 +122,7 @@ public class StandardTypes {
     }
 
     public static ClassType getIteratorType() {
-        return getClassType(Iterator.class);
+        return getClassType(MetaIterator.class);
     }
 
     public static ClassType getIteratorImplType() {

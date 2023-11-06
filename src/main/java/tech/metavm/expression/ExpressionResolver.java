@@ -1,16 +1,16 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class ExpressionResolver {
 
-    public static Expression resolve(Expression expression, ParsingContext parsingContext) {
-        return new ExpressionResolver(parsingContext).resolve(expression);
+    public static Expression resolve(Expression expression, @Nullable Type assignedType, ParsingContext parsingContext) {
+        return new ExpressionResolver(parsingContext).resolve(expression, assignedType);
     }
 
     private final ParsingContext context;
@@ -19,23 +19,36 @@ public class ExpressionResolver {
         this.context = context;
     }
 
-    private Expression resolve(Expression expression) {
-        switch (expression) {
-            case VariableExpression variableExpression -> {
-                return resolveVariable(variableExpression);
+    private Expression resolve(Expression expression, @Nullable Type assignedType) {
+        return switch (expression) {
+            case VariableExpression variableExpression -> resolveVariable(variableExpression);
+            case VariablePathExpression variablePathExpression -> resolveVariablePath(variablePathExpression);
+            case AllMatchExpression allMatchExpression -> resolveAllMatch(allMatchExpression);
+            case ArrayExpression arrayExpression -> resoleArray(arrayExpression, assignedType);
+            default -> expression.cloneWithNewChildren(
+                    NncUtils.map(expression.getChildren(), child -> resolve(child, assignedType))
+            );
+        };
+    }
+
+    private Expression resoleArray(ArrayExpression array, @Nullable Type assignedType) {
+        var assignedElementType = assignedType instanceof ArrayType arrayType ? arrayType.getElementType() : null;
+        var elements = NncUtils.map(array.getExpressions(), expr -> resolve(expr, assignedElementType));
+        var types = NncUtils.map(elements, Expression::getType);
+        Type elementType = assignedElementType;
+        if(elementType == null) {
+            if(types.isEmpty()) {
+                elementType = StandardTypes.getNothingType();
             }
-            case VariablePathExpression variablePathExpression -> {
-                return resolveVariablePath(variablePathExpression);
-            }
-            case AllMatchExpression allMatchExpression -> {
-                return resolveAllMatch(allMatchExpression);
-            }
-            default -> {
-                List<Expression> children = expression.getChildren();
-                List<Expression> resolvedChildren = NncUtils.map(children, this::resolve);
-                return expression.cloneWithNewChildren(resolvedChildren);
+            else {
+                elementType = TypeUtils.getLeastUpperBound(types);
             }
         }
+        return new ArrayExpression(
+                elements,
+                Objects.requireNonNull(context.getEntityContext())
+                        .getArrayType(elementType, ArrayKind.READ_WRITE)
+        );
     }
 
     private Expression resolveVariable(VariableExpression expr) {
@@ -62,7 +75,7 @@ public class ExpressionResolver {
                 }
             }
         }
-        var qualifier = resolve(expression.getQualifier());
+        var qualifier = resolve(expression.getQualifier(), null);
         var qualifierType = (ClassType) context.getExpressionType(qualifier);
         var attr = qualifierType.getAttributeByVar(Var.parse(expression.getField().getVariable()));
         return new PropertyExpression(qualifier, attr);
@@ -82,11 +95,13 @@ public class ExpressionResolver {
     }
 
     private AllMatchExpression resolveAllMatch(AllMatchExpression expression) {
-        Expression resolvedArray = resolve(expression.getArray());
+        Expression resolvedArray = resolve(expression.getArray(), null);
         String alias = ExpressionUtil.getAlias(resolvedArray);
         CursorExpression cursor = new CursorExpression(resolvedArray, alias);
         SubParsingContext subContext = new SubParsingContext(cursor, context);
-        Expression resolvedCondition = ExpressionResolver.resolve(expression.getCondition(), subContext);
+        Expression resolvedCondition = ExpressionResolver.resolve(
+                expression.getCondition(), StandardTypes.getBoolType(), subContext
+        );
         return new AllMatchExpression(resolvedArray, resolvedCondition, cursor);
     }
 

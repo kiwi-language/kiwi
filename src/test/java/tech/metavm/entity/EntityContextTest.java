@@ -12,6 +12,7 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
@@ -297,7 +298,7 @@ public class EntityContextTest extends TestCase {
     public void test_array_with_generic_element_type() {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
 
-        ReadWriteArray<Constraint<?>> constraints = new ReadWriteArray<>(
+        ReadWriteArray<Constraint> constraints = new ReadWriteArray<>(
                 new TypeReference<>() {
                 },
                 List.of(

@@ -1,7 +1,5 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.ArrayType;
-
 public class MetaTypeVisitor {
 
     public void visitType(Type type) {
@@ -14,8 +12,8 @@ public class MetaTypeVisitor {
     }
 
     public void visitClassType(ClassType classType) {
-        if(classType.getSuperType() != null) {
-            visitType(classType.getSuperType());
+        if(classType.getSuperClass() != null) {
+            visitType(classType.getSuperClass());
         }
         classType.getInterfaces().forEach(this::visitType);
         classType.getTypeParameters().forEach(this::visitType);

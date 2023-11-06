@@ -6,7 +6,7 @@ public record QueryTypeRequest(
         String searchText,
         List<Integer> categories,
         Boolean isTemplate,
-        boolean isParameterized,
+        boolean includeParameterized,
         boolean includeBuiltin,
         int page,
         int pageSize

@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.IndexField;

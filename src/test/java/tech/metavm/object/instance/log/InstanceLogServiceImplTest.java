@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.*;
 
 import java.util.ArrayList;

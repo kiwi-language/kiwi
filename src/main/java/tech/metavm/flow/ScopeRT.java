@@ -10,7 +10,6 @@ import tech.metavm.flow.rest.ScopeDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
 import java.util.List;
 
 @EntityType("流程范围")
@@ -22,11 +21,9 @@ public class ScopeRT extends Entity {
     @Nullable
     private final NodeRT<?> owner;
     @ChildEntity("节点列表")
-    private final ChildArray<NodeRT<?>> nodes = new ChildArray<>(new TypeReference<>() {
-    });
+    private final ChildArray<NodeRT<?>> nodes = addChild(new ChildArray<>(new TypeReference<>() {}), "nodes");
     @ChildEntity("是否未循环体")
     private final boolean withBackEdge;
-
     @EntityField("所属分支")
     @Nullable
     private Branch branch;
@@ -122,7 +119,7 @@ public class ScopeRT extends Entity {
         return nodes.get(Entity::getRef, ref);
     }
 
-    public ReadonlyArray<NodeRT<?>> getNodes() {
+    public ChildArray<NodeRT<?>> getNodes() {
         return nodes;
     }
 
@@ -146,7 +143,7 @@ public class ScopeRT extends Entity {
         return owner;
     }
 
-    public @Nullable ScopeRT getParent() {
+    public @Nullable ScopeRT getParentScope() {
         return NncUtils.get(owner, NodeRT::getScope);
     }
 
@@ -162,6 +159,10 @@ public class ScopeRT extends Entity {
 
     public boolean isEmpty() {
         return nodes.isEmpty();
+    }
+
+    public boolean isNotEmpty() {
+        return !isEmpty();
     }
 
     public boolean isWithBackEdge() {

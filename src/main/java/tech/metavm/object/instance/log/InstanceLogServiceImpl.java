@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import tech.metavm.entity.*;
 import tech.metavm.task.Task;
 import tech.metavm.task.TaskSignal;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.meta.ClassType;

@@ -2,9 +2,9 @@ package tech.metavm.util;
 
 import javassist.util.proxy.ProxyObject;
 import tech.metavm.entity.EntityMethodHandler;
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.persistence.TimePO;
 import tech.metavm.object.meta.*;
 

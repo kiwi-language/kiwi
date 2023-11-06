@@ -1,5 +1,8 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.ChildArray;
+import tech.metavm.entity.ReadWriteArray;
+import tech.metavm.entity.ReadonlyArray;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Type;

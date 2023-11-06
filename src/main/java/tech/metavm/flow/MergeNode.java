@@ -3,15 +3,13 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.dto.ErrorCode;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.MergeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.*;
@@ -50,10 +48,10 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
     }
 
     @ChildEntity("分支列表")
-    private final ReadWriteArray<Branch> branches = new ReadWriteArray<>(Branch.class);
+    private final ReadWriteArray<Branch> branches = addChild(new ReadWriteArray<>(Branch.class), "branches");
 
     @ChildEntity("字段列表")
-    private final ChildArray<MergeNodeField> fields = new ChildArray<>(MergeNodeField.class);
+    private final ChildArray<MergeNodeField> fields = addChild(new ChildArray<>(MergeNodeField.class), "fields");
 
     public MergeNode(Long tmpId, String name, BranchNode branchNode, ClassType outputType, ScopeRT scope) {
         super(tmpId, name, outputType, branchNode, scope);

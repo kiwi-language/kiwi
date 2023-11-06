@@ -5,12 +5,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeUtil;
+import tech.metavm.object.meta.TypeUtils;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static tech.metavm.object.meta.TypeUtil.*;
+import static tech.metavm.object.meta.TypeUtils.*;
 
 public class DefaultValueUtil {
 
@@ -26,7 +26,7 @@ public class DefaultValueUtil {
         }
         if(isArray(type)) {
             List<Object> values = NncUtils.readJSONString(str, new TypeReference<>() {});
-            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), TypeUtil.getElementType(type)));
+            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), TypeUtils.getElementType(type)));
         }
         else if(isNullable(type)) {
             return convertFromStr(str, type.getUnderlyingType());

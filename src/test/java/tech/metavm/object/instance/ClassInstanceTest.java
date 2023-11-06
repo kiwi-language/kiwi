@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
@@ -79,6 +80,7 @@ public class ClassInstanceTest extends TestCase {
                         InstanceUtils.stringInstance("Big Foo")
                 ),
                 type,
+                null,
                 0L,
                 0L
         );

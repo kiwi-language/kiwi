@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;

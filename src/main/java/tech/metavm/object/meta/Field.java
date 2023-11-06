@@ -3,7 +3,7 @@ package tech.metavm.object.meta;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.*;
 
@@ -58,17 +58,16 @@ public class Field extends Property implements UpdateAware {
         requireNonNull(declaringType, "属性所属类型不能为空");
         this.access = requireNonNull(access, "属性访问控制");
         this.asTitle = asTitle;
-        if(column != null) {
+        if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
             this.column = column;
-        }
-        else {
+        } else {
             this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
                     "Fail to allocate a column for field " + this);
         }
         setDefaultValue(defaultValue);
         this.isChildField = isChildField;
-        if(unique != null) {
+        if (unique != null) {
             setUnique(unique);
         }
         this._static = isStatic;
@@ -94,7 +93,7 @@ public class Field extends Property implements UpdateAware {
     }
 
     public void update(FieldDTO update) {
-        if(update.typeId() != null && !Objects.equals(getType().getId(), update.typeId())) {
+        if (update.typeId() != null && !Objects.equals(getType().getId(), update.typeId())) {
             throw BusinessException.invalidField(this, "类型不支持修改");
         }
         setName(update.name());
@@ -117,19 +116,19 @@ public class Field extends Property implements UpdateAware {
     }
 
     public Instance getStaticValue() {
-        if(isStatic()) return staticValue;
+        if (isStatic()) return staticValue;
         else throw new InternalException("Can not get static value from an instance field");
     }
 
     public void setUnique(boolean unique) {
-        if(unique && isArray()) {
+        if (unique && isArray()) {
             throw BusinessException.invalidField(this, "数组不支持唯一性约束");
         }
         Index constraint = declaringType.getUniqueConstraint(List.of(this));
-        if(constraint != null && !unique) {
+        if (constraint != null && !unique) {
             declaringType.removeConstraint(constraint);
         }
-        if(constraint == null && unique) {
+        if (constraint == null && unique) {
             ConstraintFactory.newUniqueConstraint(List.of(this));
         }
     }
@@ -142,48 +141,43 @@ public class Field extends Property implements UpdateAware {
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
-        if(getType().isAnonymous()) {
+        if (getType().isAnonymous()) {
             cascades.add(getType());
         }
-        if(declaringType.isEnumConstantField(this)) {
+        if (declaringType.isEnumConstantField(this)) {
             cascades.add(staticValue);
         }
-        declaringType.removeField(this);
         return cascades;
     }
 
     public LongInstance getLong(@Nullable ClassInstance instance) {
-        if(isStatic()) {
+        if (isStatic()) {
             return (LongInstance) getStaticValue();
-        }
-        else {
+        } else {
             return NncUtils.requireNonNull(instance).getLongField(this);
         }
     }
 
     public DoubleInstance getDouble(@Nullable ClassInstance instance) {
-        if(isStatic()) {
+        if (isStatic()) {
             return (DoubleInstance) getStaticValue();
-        }
-        else {
+        } else {
             return NncUtils.requireNonNull(instance).getDoubleField(this);
         }
     }
 
     public StringInstance getString(@Nullable ClassInstance instance) {
-        if(isStatic()) {
+        if (isStatic()) {
             return (StringInstance) getStaticValue();
-        }
-        else {
+        } else {
             return NncUtils.requireNonNull((instance)).getStringField(this);
         }
     }
 
     public Instance get(@Nullable ClassInstance instance) {
-        if(isStatic()) {
+        if (isStatic()) {
             return getStaticValue();
-        }
-        else {
+        } else {
             return NncUtils.requireNonNull((instance)).getField(this);
         }
     }
@@ -211,10 +205,10 @@ public class Field extends Property implements UpdateAware {
 
     @Override
     public void onBind(IEntityContext context) {
-        if(isNullable() || getDefaultValue().isNotNull()) {
+        if (isNullable() || getDefaultValue().isNotNull() || isChildField() && getType().isArray()) {
             return;
         }
-        if(Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType)) {
+        if (Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType)) {
             throw BusinessException.notNullFieldWithoutDefaultValue(this);
         }
     }
@@ -276,9 +270,9 @@ public class Field extends Property implements UpdateAware {
     }
 
     public void setAsTitle(boolean asTitle) {
-        if(asTitle) {
+        if (asTitle) {
             Field titleField = declaringType.getTileField();
-            if(titleField != null && !titleField.equals(this)) {
+            if (titleField != null && !titleField.equals(this)) {
                 throw BusinessException.multipleTitleFields();
             }
         }
@@ -298,7 +292,7 @@ public class Field extends Property implements UpdateAware {
 //    }
 
     public String getDisplayValue(Instance value) {
-        if(value == null) {
+        if (value == null) {
             return "";
         }
         return value.getTitle();
@@ -313,7 +307,7 @@ public class Field extends Property implements UpdateAware {
     }
 
     public FieldDTO toDTO() {
-        try(var context = SerializeContext.enter()) {
+        try (var context = SerializeContext.enter()) {
             return new FieldDTO(
                     context.getTmpId(this),
                     id,
@@ -351,10 +345,10 @@ public class Field extends Property implements UpdateAware {
 
     @Override
     public void onUpdate(ClassInstance instance) {
-        if(isStatic()) {
+        if (isStatic()) {
             var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
             var value = instance.getField(staticValueField);
-            if(!getType().isInstance(value)) {
+            if (!getType().isInstance(value)) {
                 throw new BusinessException(ErrorCode.STATIC_FIELD__CAN_NOT_BE_NULL, getQualifiedName());
             }
         }

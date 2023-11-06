@@ -3,10 +3,10 @@ package tech.metavm.entity;
 import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.flow.ValueFactory;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.NullInstance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 
@@ -228,11 +228,11 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass) : null;
         PojoDef<? super T> superDef = getSuperDef();
         List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
-        return ClassBuilder.newBuilder(TypeUtil.getTypeName(javaType), TypeUtil.getTypeCode(javaType))
+        return ClassBuilder.newBuilder(TypeUtils.getTypeName(javaType), TypeUtils.getTypeCode(javaType))
                 .category(getTypeCategory())
-                .source(ClassSource.REFLECTION)
+                .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getType))
-                .superType(NncUtils.get(superDef, PojoDef::getType))
+                .superClass(NncUtils.get(superDef, PojoDef::getType))
                 .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
                 .build();
     }

@@ -2,6 +2,8 @@ package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapperGateway;

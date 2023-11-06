@@ -14,7 +14,7 @@ public class ClassTypeFactoryTest extends TestCase {
 
     public void testCreateClass() {
         ClassType type = ClassBuilder.newBuilder("Foo", "Foo")
-                .superType(MockRegistry.getEntityType()).build();
+                .superClass(MockRegistry.getEntityType()).build();
         Assert.assertNotNull(type.getDeclaredFields());
         Assert.assertNotNull(type.getDeclaredConstraints());
         Assert.assertNotNull(type.getDeclaredFlows());

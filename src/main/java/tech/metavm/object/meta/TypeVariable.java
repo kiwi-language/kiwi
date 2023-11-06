@@ -3,10 +3,10 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.*;
 import tech.metavm.object.meta.rest.dto.TypeVariableParam;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadWriteArray;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -15,10 +15,10 @@ import java.util.function.Function;
 public class TypeVariable extends Type {
 
     @ChildEntity("类型上界")
-    private final ReadWriteArray<Type> bounds = new ReadWriteArray<>(Type.class);
+    private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
     private GenericDeclaration genericDeclaration;
 
-    private transient TypeIntersection intersection;
+    private transient IntersectionType intersection;
 
     public TypeVariable(Long tmpId, String name, @Nullable String code, GenericDeclaration genericDeclarator) {
         super(name, false, false, TypeCategory.VARIABLE);
@@ -46,6 +46,7 @@ public class TypeVariable extends Type {
     public void setBounds(List<Type> bounds) {
         this.bounds.clear();
         this.bounds.addAll(bounds);
+        onSuperTypesChanged();
     }
 
     @Override
@@ -66,7 +67,12 @@ public class TypeVariable extends Type {
         if(intersection != null) {
             return intersection;
         }
-        return intersection = new TypeIntersection(bounds);
+        return intersection = new IntersectionType(null, new HashSet<>(bounds));
+    }
+
+    @Override
+    public List<? extends Type> getSuperTypes() {
+        return Collections.unmodifiableList(bounds);
     }
 
     public List<Type> getBounds() {

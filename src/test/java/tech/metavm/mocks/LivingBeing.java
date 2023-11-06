@@ -1,10 +1,6 @@
 package tech.metavm.mocks;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
-import tech.metavm.util.ReadWriteArray;
+import tech.metavm.entity.*;
 
 import java.util.List;
 
@@ -21,9 +17,11 @@ public class LivingBeing extends Entity {
     @EntityField("额外信息")
     private Object extraInfo;
 
-    private final ReadWriteArray<LivingBeing> offsprings = new ReadWriteArray<>(LivingBeing.class);
+    @ChildEntity("后代")
+    private final ReadWriteArray<LivingBeing> offsprings = addChild(new ReadWriteArray<>(LivingBeing.class), "offsprings");
 
-    private final ReadWriteArray<LivingBeing> ancestors = new ReadWriteArray<>(LivingBeing.class);
+    @ChildEntity("祖先")
+    private final ReadWriteArray<LivingBeing> ancestors = addChild(new ReadWriteArray<>(LivingBeing.class), "ancestors");
 
     public LivingBeing(long age) {
         this.age = age;

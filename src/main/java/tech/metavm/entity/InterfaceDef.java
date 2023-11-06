@@ -1,12 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.meta.ClassType;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,9 +17,9 @@ public class InterfaceDef<T> extends PojoDef<T>  {
                      Type javaType,
                      @Nullable PojoDef<? super T> superDef,
                      ClassType type,
-                     DefMap defMap
+                     DefContext defContext
     ) {
-        super(javaClass, javaType, superDef, type, defMap);
+        super(javaClass, javaType, superDef, type, defContext);
     }
 
     @Override

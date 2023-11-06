@@ -1,28 +1,27 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.InstanceEvaluationContext;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadonlyArray;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @EntityType("索引")
-public class Index extends Constraint<UniqueConstraintParamDTO> {
+public class Index extends Constraint {
 
     @ChildEntity("索引字段列表")
-    private final ChildArray<IndexField> fields = new ChildArray<>(IndexField.class);
+    private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
     @EntityField("是否唯一")
     private final boolean unique;
     private transient IndexDef<?> indexDef;

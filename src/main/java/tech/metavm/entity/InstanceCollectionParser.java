@@ -1,11 +1,10 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ObjectType;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.ReadWriteArray;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

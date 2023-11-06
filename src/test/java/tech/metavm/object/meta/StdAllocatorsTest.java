@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.util.ParameterizedTypeImpl;
-import tech.metavm.util.ReadWriteArray;
+import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.util.ReflectUtils;
 
 import java.util.HashSet;

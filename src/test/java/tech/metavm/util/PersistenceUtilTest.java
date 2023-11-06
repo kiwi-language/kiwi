@@ -4,20 +4,10 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.*;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.AllocatorStore;
-import tech.metavm.object.meta.MemAllocatorStore;
-import tech.metavm.object.meta.StdAllocators;
 
-import java.util.List;
-
-import static tech.metavm.util.Constants.ROOT_TENANT_ID;
 import static tech.metavm.util.PersistenceUtil.readValue;
 import static tech.metavm.util.PersistenceUtil.writeValue;
 import static tech.metavm.util.TestConstants.TENANT_ID;

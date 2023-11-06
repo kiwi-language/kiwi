@@ -1,7 +1,7 @@
 package tech.metavm.mocks;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.task.Task;
 
 @EntityType("测试任务")

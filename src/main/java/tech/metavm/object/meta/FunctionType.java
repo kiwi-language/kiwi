@@ -3,7 +3,7 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.*;
 import tech.metavm.object.meta.rest.dto.FunctionTypeParam;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadWriteArray;
+import tech.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 import java.util.function.Function;
@@ -27,7 +27,7 @@ public class FunctionType extends CompositeType {
     private Type returnType;
 
     @ChildEntity("参数类型列表")
-    private final ReadWriteArray<Type> parameterTypes = new ReadWriteArray<>(Type.class);
+    private final ReadWriteArray<Type> parameterTypes = addChild(new ReadWriteArray<>(Type.class), "parameterTypes");
 
     public FunctionType(Long tmpId, List<Type> parameterTypes, Type returnType) {
         super(createName(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);

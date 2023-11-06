@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;

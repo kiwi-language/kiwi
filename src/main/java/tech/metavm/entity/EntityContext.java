@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.meta.*;
 
 import java.util.Set;

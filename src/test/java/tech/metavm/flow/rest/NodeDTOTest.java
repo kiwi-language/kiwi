@@ -27,7 +27,9 @@ public class NodeDTOTest extends TestCase {
                 RefDTO.ofId(1L),
                 new AddObjectParam(
                         RefDTO.ofId(1L),
+                        true,
                         List.of(),
+                        null,
                         null
                 ),
                 null,

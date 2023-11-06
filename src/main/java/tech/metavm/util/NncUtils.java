@@ -13,9 +13,11 @@ import com.intellij.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.Identifiable;
+import tech.metavm.expression.ExpressionParsingException;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -49,7 +51,8 @@ public class NncUtils {
 
 
     public static Runnable noop() {
-        return () -> {};
+        return () -> {
+        };
     }
 
     public static <K, V> Map<K, V> zip(Iterable<K> keys, Iterable<V> values) {
@@ -259,6 +262,10 @@ public class NncUtils {
                 .max().orElse(defaultMax);
     }
 
+    public static <T> int maxInt(List<T> list, ToIntFunction<T> mapper, int defaultMax) {
+        return list.stream().mapToInt(mapper).max().orElse(defaultMax);
+    }
+
     @PassNull
     public static boolean isEmpty(Collection<?> coll) {
         return coll == null || coll.isEmpty();
@@ -394,7 +401,7 @@ public class NncUtils {
     public static <T> Set<T> mergeSets(List<Collection<? extends T>> sets) {
         var merged = new HashSet<T>();
         for (Collection<? extends T> set : sets) {
-            if(set != null) {
+            if (set != null) {
                 merged.addAll(set);
             }
         }
@@ -469,7 +476,7 @@ public class NncUtils {
 
     public static byte[] toBytes(long l) {
         int n = 8 - (Long.numberOfLeadingZeros(l) >> 3);
-        if(n == 0) {
+        if (n == 0) {
             n = 1;
         }
         byte[] bytes = new byte[n];
@@ -586,10 +593,10 @@ public class NncUtils {
     }
 
     public static <T, R> void biForEach(Iterable<T> list1, Iterable<R> list2, BiConsumer<T, R> action) {
-        if(list1 == null) {
+        if (list1 == null) {
             list1 = List.of();
         }
-        if(list2 == null) {
+        if (list2 == null) {
             list2 = List.of();
         }
         Iterator<T> it1 = list1.iterator();
@@ -624,10 +631,10 @@ public class NncUtils {
     }
 
     public static <T1, T2, R> List<R> biMap(List<T1> list1, List<T2> list2, BiFunction<T1, T2, R> mapper) {
-        if(list1 == null) {
+        if (list1 == null) {
             list1 = List.of();
         }
-        if(list2 == null) {
+        if (list2 == null) {
             list2 = List.of();
         }
         if (list1.size() != list2.size()) {
@@ -1047,7 +1054,11 @@ public class NncUtils {
         return true;
     }
 
-    public static <T> T orElse(T t, Supplier<T> elseSupplier) {
+    public static <T> T orElse(@Nullable T t, T elseValue) {
+        return mapOrElse(t, Function.identity(), () -> elseValue);
+    }
+
+    public static <T> T orElse(@Nullable T t, Supplier<T> elseSupplier) {
         return mapOrElse(t, Function.identity(), elseSupplier);
     }
 
@@ -1123,7 +1134,7 @@ public class NncUtils {
     }
 
     public static <T> boolean equalsIgnoreOrder(Collection<T> coll1, Collection<T> coll2) {
-        if(coll1.size() != coll2.size()) {
+        if (coll1.size() != coll2.size()) {
             return false;
         }
         return new HashSet<>(coll1).equals(new HashSet<>(coll2));
@@ -1154,6 +1165,12 @@ public class NncUtils {
 
     public static void requireTrue(boolean value, String message) {
         requireTrue(value, () -> new InternalException(message));
+    }
+
+    public static void assertTrue(boolean condition, ErrorCode errorCode, Object... params) {
+        if (!condition) {
+            throw new BusinessException(errorCode, params);
+        }
     }
 
     public static void requireTrue(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
@@ -1222,10 +1239,56 @@ public class NncUtils {
         return buf.toString();
     }
 
-    public static <T> List<T> merge(List<T> list, T... elements) {
-        var merged = new ArrayList<>(list);
-        merged.addAll(Arrays.asList(elements));
-        return merged;
+    public static String deEscapeDoubleQuoted(String escaped) {
+        NncUtils.requireTrue(escaped.length() >= 2);
+        StringBuilder builder = new StringBuilder();
+        boolean lastBackslash = false;
+        for (int i = 1; i < escaped.length() - 1; i++) {
+            char c = escaped.charAt(i);
+            if(lastBackslash) {
+                if(c == '\\' || c == '\"') {
+                    builder.append(c);
+                }
+                else {
+                    throw new ExpressionParsingException("Invalid single escaped string '" + escaped + "'");
+                }
+            }
+            else {
+                if(c == '\\') {
+                    lastBackslash = true;
+                }
+                else {
+                    builder.append(c);
+                }
+            }
+        }
+        return builder.toString();
+    }
+
+    public static String deEscapeSingleQuoted(String escaped) {
+        NncUtils.requireTrue(escaped.length() >= 2);
+        StringBuilder builder = new StringBuilder();
+        boolean lastBackslash = false;
+        for (int i = 1; i < escaped.length() - 1; i++) {
+            char c = escaped.charAt(i);
+            if(lastBackslash) {
+                if(c == '\\' || c == '\'') {
+                    builder.append(c);
+                }
+                else {
+                    throw new ExpressionParsingException("Invalid single escaped string '" + escaped + "'");
+                }
+            }
+            else {
+                if(c == '\\') {
+                    lastBackslash = true;
+                }
+                else {
+                    builder.append(c);
+                }
+            }
+        }
+        return builder.toString();
     }
 
     public static <T> void addRepeatedly(List<T> list, T element, int times) {
@@ -1249,13 +1312,13 @@ public class NncUtils {
         return streamOf(iterable).anyMatch(predicate);
     }
 
-    public static <T1,T2> boolean biAllMatch(Iterable<T1> iterable1,
-                                             Iterable<T2> iterable2,
-                                         BiPredicate<T1,T2> predicate) {
+    public static <T1, T2> boolean biAllMatch(Iterable<T1> iterable1,
+                                              Iterable<T2> iterable2,
+                                              BiPredicate<T1, T2> predicate) {
         var it1 = iterable1.iterator();
         var it2 = iterable2.iterator();
         while (it1.hasNext() && it2.hasNext()) {
-            if(!predicate.test(it1.next(), it2.next())) {
+            if (!predicate.test(it1.next(), it2.next())) {
                 return false;
             }
         }
@@ -1297,16 +1360,15 @@ public class NncUtils {
     }
 
     public static SerializedLambda getSerializedLambda(Serializable lambda) {
-        try(var output = new MyObjectOutput(new ByteArrayOutputStream())) {
+        try (var output = new MyObjectOutput(new ByteArrayOutputStream())) {
             output.writeObject(lambda);
             return output.getSerializedLambda();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new InternalException(e);
         }
     }
 
-    private static class MyObjectOutput extends ObjectOutputStream  {
+    private static class MyObjectOutput extends ObjectOutputStream {
 
         private SerializedLambda serializedLambda;
 
@@ -1317,7 +1379,7 @@ public class NncUtils {
 
         @Override
         protected Object replaceObject(Object obj) throws IOException {
-            if(obj instanceof SerializedLambda ser) {
+            if (obj instanceof SerializedLambda ser) {
                 this.serializedLambda = ser;
             }
             return obj;

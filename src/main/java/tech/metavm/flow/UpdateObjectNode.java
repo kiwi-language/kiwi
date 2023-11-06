@@ -8,11 +8,11 @@ import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadonlyArray;
+import tech.metavm.entity.ReadonlyArray;
 
 import java.util.Objects;
 
@@ -28,7 +28,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     @ChildEntity("对象")
     private Value objectId;
     @ChildEntity("更新字段")
-    private final ChildArray<UpdateField> fieldParams = new ChildArray<>(UpdateField.class);
+    private final ChildArray<UpdateField> fieldParams = addChild(new ChildArray<>(UpdateField.class), "fieldParams");
 
     public UpdateObjectNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
         super(tmpId, name,  null, prev, scope);

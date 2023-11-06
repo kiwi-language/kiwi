@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.Value;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.RelationPO;
 import tech.metavm.object.meta.Field;
 

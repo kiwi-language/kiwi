@@ -24,6 +24,8 @@ public class InstancePO implements Identifiable {
     private Long typeId;
     private @Nullable String title;
     private Map<String, Map<String, @org.jetbrains.annotations.Nullable Object>> data;
+    private @Nullable Long parentId;
+    private @Nullable Long parentFieldId;
     private Long version;
     private Long syncVersion;
 
@@ -35,12 +37,16 @@ public class InstancePO implements Identifiable {
                       Long typeId,
                       @Nullable String title,
                       Map<String, Map<String, @org.jetbrains.annotations.Nullable Object>> data,
+                      @Nullable Long parentId,
+                      @Nullable Long parentFieldId,
                       Long version,
                       Long syncVersion) {
         this.tenantId = tenantId;
         this.id = id;
         this.typeId = typeId;
         this.title = title;
+        this.parentId = parentId;
+        this.parentFieldId = parentFieldId;
         this.data = data;
         this.version = version;
         this.syncVersion = syncVersion;
@@ -83,6 +89,7 @@ public class InstancePO implements Identifiable {
         return id;
     }
 
+    @Nullable
     public String getTitle() {
         return title;
     }
@@ -99,8 +106,26 @@ public class InstancePO implements Identifiable {
         this.typeId = typeId;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(@Nullable String title) {
         this.title = title;
+    }
+
+    @Nullable
+    public Long getParentId() {
+        return parentId;
+    }
+
+    @Nullable
+    public Long getParentFieldId() {
+        return parentFieldId;
+    }
+
+    public void setParentId(@Nullable Long parentId) {
+        this.parentId = parentId;
+    }
+
+    public void setParentFieldId(@Nullable Long parentFieldId) {
+        this.parentFieldId = parentFieldId;
     }
 
     public void setData(Map<String, Map<String ,@org.jetbrains.annotations.Nullable Object>> data) {

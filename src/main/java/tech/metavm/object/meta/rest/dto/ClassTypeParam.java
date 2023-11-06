@@ -8,14 +8,13 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record ClassTypeParam(
-        RefDTO superTypeRef,
+        RefDTO superClassRef,
         List<RefDTO> interfaceRefs,
         int source,
         List<FieldDTO> fields,
         List<FieldDTO> staticFields,
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
-        String templateName,
         String desc,
         Object extra,
         List<InstanceDTO> enumConstants,

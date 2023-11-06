@@ -29,11 +29,6 @@ public abstract class CompositeType extends Type {
     }
 
     @Override
-    protected boolean isParameterized() {
-        return NncUtils.anyMatch(getComponentTypes(), Type::isParameterized);
-    }
-
-    @Override
     public Set<TypeVariable> getVariables() {
         return NncUtils.flatMapUnique(getComponentTypes(), Type::getVariables);
     }

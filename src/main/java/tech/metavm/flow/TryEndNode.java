@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.dto.ErrorCode;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.FlowParsingContext;
@@ -10,8 +11,8 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.TryEndParamDTO;
 import tech.metavm.flow.rest.TryEndFieldDTO;
 import tech.metavm.flow.rest.TryEndValueDTO;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.*;
@@ -31,7 +32,7 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
     }
 
     @ChildEntity("字段列表")
-    private final ChildArray<TryEndField> fields = new ChildArray<>(TryEndField.class);
+    private final ChildArray<TryEndField> fields = addChild(new ChildArray<>(TryEndField.class), "fields");
 
     public TryEndNode(Long tmpId, String name, ClassType outputType, TryNode previous, ScopeRT scope) {
         super(tmpId, name, outputType, previous, scope);

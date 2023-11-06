@@ -3,10 +3,10 @@
 //import junit.framework.TestCase;
 //import org.junit.Assert;
 //import tech.metavm.entity.EntityIdProvider;
-//import tech.metavm.entity.InstanceContext;
+//import tech.metavm.object.instance.core.InstanceContext;
 //import tech.metavm.entity.InstanceContextFactory;
 //import tech.metavm.mocks.Foo;
-//import tech.metavm.object.instance.Instance;
+//import tech.metavm.object.instance.core.Instance;
 //import tech.metavm.object.meta.Field;
 //import tech.metavm.object.meta.MetadataState;
 //import tech.metavm.util.MockIdProvider;

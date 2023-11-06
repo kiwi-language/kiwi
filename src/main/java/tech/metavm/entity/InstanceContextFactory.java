@@ -5,6 +5,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.core.InstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
 

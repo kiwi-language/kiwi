@@ -6,9 +6,9 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.TryEndFieldDTO;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadonlyArray;
+import tech.metavm.entity.ReadonlyArray;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -19,7 +19,7 @@ public class TryEndField extends Entity {
     private final Field field;
 
     @ChildEntity("值列表")
-    private final ChildArray<TryEndValue> values = new ChildArray<>(TryEndValue.class);
+    private final ChildArray<TryEndValue> values = addChild(new ChildArray<>(TryEndValue.class), "values");
 
     private Value defaultValue;
 

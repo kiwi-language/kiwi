@@ -1,7 +1,7 @@
 //package tech.metavm.entity;
 //
 //import tech.metavm.object.instance.IInstanceStore;
-//import tech.metavm.object.instance.Instance;
+//import tech.metavm.object.instance.core.Instance;
 //import tech.metavm.object.instance.persistence.IndexKeyPO;
 //import tech.metavm.object.instance.persistence.InstancePO;
 //import tech.metavm.object.meta.Type;

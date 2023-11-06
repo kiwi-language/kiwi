@@ -1,16 +1,17 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.InputParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -47,10 +48,7 @@ public class InputNode extends NodeRT<InputParamDTO> {
     protected InputParamDTO getParam(boolean persisting) {
         return new InputParamDTO(
                 getType().getId(),
-                NncUtils.map(
-                        getType().getFields(),
-                        field -> toInputFieldDTO(field.toDTO())
-                )
+                NncUtils.map(getType().getFields(), this::toInputFieldDTO)
         );
     }
 
@@ -60,13 +58,28 @@ public class InputNode extends NodeRT<InputParamDTO> {
         return (ClassType) NncUtils.requireNonNull(super.getType());
     }
 
-    private InputFieldDTO toInputFieldDTO(FieldDTO fieldDTO) {
-        return new InputFieldDTO(
-                fieldDTO.getRef(),
-                fieldDTO.name(),
-                fieldDTO.typeRef(),
-                fieldDTO.defaultValue()
-        );
+    private InputFieldDTO toInputFieldDTO(Field field) {
+        try (var serContext = SerializeContext.enter()) {
+            return new InputFieldDTO(
+                    serContext.getRef(field),
+                    field.getName(),
+                    serContext.getRef(field.getType()),
+                    NncUtils.get(field.getDefaultValue(), Instance::toFieldValueDTO),
+                    NncUtils.get(getFieldCondition(field), v -> v.toDTO(false))
+            );
+        }
+    }
+
+    @Nullable
+    public Value getFieldCondition(Field field) {
+        var type = getType();
+        var constraints = type.getFieldCheckConstraints(field);
+        if(constraints.isEmpty()) {
+            return null;
+        }
+        else {
+            return constraints.get(0).getCondition();
+        }
     }
 
     @Override

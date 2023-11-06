@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGeneric {
+public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGeneric {
 
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
@@ -64,7 +64,7 @@ class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGeneric {
         this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
-    Table(Type elementType, Collection<T> data, int buildIndexThreshold) {
+    public Table(Type elementType, Collection<T> data, int buildIndexThreshold) {
         this.elementType = elementType;
         this.genericType = new ParameterizedTypeImpl(
                 null,

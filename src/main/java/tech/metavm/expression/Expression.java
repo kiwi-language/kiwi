@@ -4,6 +4,7 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,6 +77,11 @@ public abstract class Expression extends Entity {
 
     protected  <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return List.of();
+    }
+
+    public Expression copy() {
+        var children = getChildren();
+        return cloneWithNewChildren(NncUtils.map(children, Expression::copy));
     }
 
 }

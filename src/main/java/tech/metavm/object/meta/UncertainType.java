@@ -1,16 +1,13 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.meta.rest.dto.UncertainTypeParam;
 
 import java.util.List;
 import java.util.function.Function;
 
 @EntityType("不确定类型")
-public class UncertainType extends CompositeType {
+public class UncertainType extends CompositeType implements LoadAware  {
 
     public static final IndexDef<UncertainType> KEY_IDX = IndexDef.uniqueKey(UncertainType.class, "key");
 
@@ -57,6 +54,12 @@ public class UncertainType extends CompositeType {
 
     public void setUpperBound(Type upperBound) {
         this.upperBound = upperBound;
+        onSuperTypesChanged();
+    }
+
+    @Override
+    public List<? extends Type> getSuperTypes() {
+        return List.of(upperBound);
     }
 
     public void setLowerBound(Type lowerBound) {

@@ -3,8 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.flow.rest.ArgumentDTO;
-import tech.metavm.flow.rest.FieldParamDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 
 @EntityType("实参")
 public class Argument extends Entity {

@@ -1,6 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.rest.dto.EnumConstantDTO;
 import tech.metavm.util.InstanceUtils;

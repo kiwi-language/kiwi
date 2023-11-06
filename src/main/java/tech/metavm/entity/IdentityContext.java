@@ -1,11 +1,8 @@
 package tech.metavm.entity;
 
 import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.FunctionType;
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 
@@ -13,6 +10,8 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static tech.metavm.util.NncUtils.allMatch;
 
 public class IdentityContext {
 
@@ -55,42 +54,40 @@ public class IdentityContext {
     }
 
     private void getIdentityMap0(Object model, Map<Object, ModelIdentity> result, LinkedList<String> path) {
-        if(model2identity.containsKey(model) || ValueUtil.isPrimitive(model) || (model instanceof Instance)) {
+        if (model2identity.containsKey(model) || ValueUtil.isPrimitive(model) || (model instanceof Instance)) {
             return;
         }
-        if((model instanceof ClassType classType) && classType.isFromReflection()
-                && !classType.isCollection()
+        if ((model instanceof ClassType classType)
+                && classType.isFromReflection()
                 && !isClassTypeInitialized.test(classType)) {
             return;
         }
-        if(model instanceof tech.metavm.object.meta.Type type && isBuiltinType(type)) {
-            putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
+        switch (model) {
+            case tech.metavm.object.meta.Type type when isBuiltinType(type) ->
+                    putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
+            case Field field when field.getDeclaringType().isFromReflection() ->
+                    putModelId(model, ModelIdentity.field(field, this::getJavaType, this::getJavaField), result);
+            case Flow flow when isBuiltinType(flow.getDeclaringType()) ->
+                    putModelId(model, new ModelIdentity(Flow.class, flow.getCanonicalName(getJavaType)), result);
+            case Index index when index.getDeclaringType().isFromReflection() ->
+                    putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(index)), result);
+            default -> {
+                Reference ref = getIncomingReference(model);
+                ModelIdentity sourceId = NncUtils.requireNonNull(
+                        getModelId(ref.source()),
+                        "Fail to create model id fro model '" + model + "', " +
+                                "can not get model id of the source model '" + ref.source() + "'");
+                putModelId(
+                        model,
+                        new ModelIdentity(ReflectUtils.getType(model), sourceId.name() + "." + ref.fieldName()),
+                        result
+                );
+            }
         }
-        else if(model instanceof Field field && field.getDeclaringType().isFromReflection()) {
-            putModelId(model, ModelIdentity.field(field, this::getJavaType, this::getJavaField), result);
-        }
-        else if(model instanceof Flow flow && flow.getDeclaringType().isCollection()) {
-            putModelId(model, new ModelIdentity(Flow.class, flow.getCanonicalName(getJavaType)), result);
-        }
-        else if(model instanceof Index index && index.getDeclaringType().isFromReflection()) {
-            putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(index)), result);
-        }
-        else {
-            Reference ref = getIncomingReference(model);
-            ModelIdentity sourceId = NncUtils.requireNonNull(
-                    getModelId(ref.source()),
-                    "Fail to create model id fro model '" + model + "', " +
-                            "can not get model id of the source model '" + ref.source() + "'");
-            putModelId(
-                    model,
-                    new ModelIdentity(ReflectUtils.getType(model), sourceId.name() + "." + ref.fieldName()),
-                    result
-            );
-        }
-        if(model instanceof ReadonlyArray<?> array) {
+        if (model instanceof ReadonlyArray<?> array) {
             int index = 0;
             for (Object item : array) {
-                if(item != null) {
+                if (item != null) {
                     addToInvertedIndex(array, Integer.toString(index), item);
                     path.addLast(index + "");
                     getIdentityMap0(item, result, path);
@@ -98,8 +95,7 @@ public class IdentityContext {
                 }
                 index++;
             }
-        }
-        else if(!ValueUtil.isEnumConstant(model)) {
+        } else if (!ValueUtil.isEnumConstant(model)) {
             for (EntityProp prop : DescStore.get(model.getClass()).getNonTransientProps()) {
                 Object fieldValue = prop.get(model);
                 if (fieldValue != null) {
@@ -112,27 +108,34 @@ public class IdentityContext {
         }
     }
 
+
     private boolean isBuiltinType(tech.metavm.object.meta.Type type) {
-        if(!(type.getConcreteType() instanceof ClassType klass)
-                || klass.isFromReflection() || klass.isCollection()) {
-            return true;
-        }
-        if(type instanceof FunctionType functionType) {
-            return NncUtils.allMatch(functionType.getParameterTypes(), this::isBuiltinType)
-                    && isBuiltinType(functionType.getReturnType());
-        }
-        return false;
+        return switch (type) {
+            case PrimitiveType ignored1 -> true;
+            case ObjectType ignored2 -> true;
+            case NothingType ignored3 -> true;
+            case ClassType classType when classType.isFromReflection() -> true;
+            case ClassType classType when classType.getTemplate() != null -> isBuiltinType(classType.getTemplate())
+                    && allMatch(classType.getTypeArguments(), this::isBuiltinType);
+            case CompositeType compositeType -> allMatch(compositeType.getComponentTypes(), this::isBuiltinType);
+            case TypeVariable typeVariable -> switch (typeVariable.getGenericDeclaration()) {
+                case ClassType classType -> isBuiltinType(classType);
+                case Flow flow -> isBuiltinType(flow.getDeclaringType());
+                default -> throw new IllegalStateException("Unexpected value: " + typeVariable.getGenericDeclaration());
+            };
+            default -> false;
+        };
     }
 
-    private void addToInvertedIndex(Object source , String fieldName, Object target) {
-        invertedIndex.computeIfAbsent(target, k->new ArrayList<>()).add(
+    private void addToInvertedIndex(Object source, String fieldName, Object target) {
+        invertedIndex.computeIfAbsent(target, k -> new ArrayList<>()).add(
                 new Reference(source, fieldName, target)
         );
     }
 
     private Reference getIncomingReference(Object model) {
         List<Reference> refs = invertedIndex.get(model);
-        if(NncUtils.isEmpty(refs)) {
+        if (NncUtils.isEmpty(refs)) {
             throw new InternalException("Can not create an identifier for model '" + model +
                     "' because there's no reference to the model");
         }
@@ -150,8 +153,8 @@ public class IdentityContext {
         );
         Class<?> javaClass = (Class<?>) getJavaType(uniqueConstraint.getDeclaringType());
         for (java.lang.reflect.Field indexDefField : ReflectUtils.getIndexDefFields(javaClass)) {
-            IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null ,indexDefField);
-            if(indexDef == uniqueConstraint.getIndexDef()) {
+            IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
+            if (indexDef == uniqueConstraint.getIndexDef()) {
                 return indexDefField;
             }
         }

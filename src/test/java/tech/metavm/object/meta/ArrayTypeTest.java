@@ -3,8 +3,6 @@ package tech.metavm.object.meta;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 

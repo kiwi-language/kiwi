@@ -9,7 +9,7 @@ import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.ExceptionParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.util.NncUtils;
 
@@ -91,7 +91,7 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
         }
         else {
             NncUtils.requireNonNull(message);
-            var exceptionInst = ClassInstance.allocate(StandardTypes.getExceptionType());
+            var exceptionInst = new ClassInstance(StandardTypes.getExceptionType());
             ExceptionNative nativeObj = (ExceptionNative) NativeInvoker.getNativeObject(exceptionInst);
             nativeObj.Exception(message.evaluate(frame));
             frame.exception(exceptionInst);

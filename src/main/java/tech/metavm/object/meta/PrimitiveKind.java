@@ -1,6 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 import tech.metavm.util.Password;

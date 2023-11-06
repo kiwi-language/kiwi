@@ -309,8 +309,9 @@ public class ExpressionTokenizer {
                 }
             }
             if (isOpenParenthesis()) {
-                return new Token(TokenType.FUNCTION, token.rawValue(), Function.getByNameRequired(token.getName()));
-            } else {
+                return new Token(TokenType.FUNCTION, token.rawValue(), Function.getByName(token.getName()));
+            }
+            else {
                 return token;
             }
         } else if (ROOT.containsChild(token.rawValue())) {
@@ -330,7 +331,7 @@ public class ExpressionTokenizer {
                 return new Token(
                         TokenType.OPERATOR,
                         tokenSeq,
-                        Operator.getByOpRequired(tokenSeq)
+                        Operator.getByOp(tokenSeq)
                 );
             } else {
                 return new Token(
@@ -444,8 +445,8 @@ public class ExpressionTokenizer {
             case BOOLEAN -> Boolean.parseBoolean(rawValue);
             case DOUBLE_QUOTED_STRING -> unquoteDoubleQuoted(rawValue);
             case SINGLE_QUOTED_STRING -> unquoteSingleQuoted(rawValue);
-            case OPERATOR -> Operator.getByOpRequired(rawValue);
-            case FUNCTION -> Function.getByNameRequired(rawValue);
+            case OPERATOR -> Operator.getByOp(rawValue);
+            case FUNCTION -> Function.getByName(rawValue);
             case VARIABLE -> rawValue;
             case NULL, KEYWORD, OPEN_PARENTHESIS, CLOSING_PARENTHESIS, OPEN_BRACKET, CLOSING_BRACKET -> null;
         };

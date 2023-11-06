@@ -1,9 +1,8 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.instance.BooleanInstance;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.LongInstance;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.util.InternalException;
 
 public class NativeBase {

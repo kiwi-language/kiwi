@@ -28,7 +28,7 @@ public class FlowTable {
                     }
                 }
             }
-            type = type.getSuperType();
+            type = type.getSuperClass();
         }
     }
 

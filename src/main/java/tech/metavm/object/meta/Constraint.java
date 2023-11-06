@@ -1,17 +1,19 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.entity.*;
+import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 @EntityType("约束")
-public abstract class Constraint<T> extends Entity {
+public abstract class Constraint extends Entity {
 
     @EntityField("所属类型")
     private final ClassType declaringType;
@@ -38,7 +40,7 @@ public abstract class Constraint<T> extends Entity {
         this.message = message;
     }
 
-    protected abstract T getParam(boolean forPersistence);
+    protected abstract Object getParam(boolean forPersistence);
 
     public ConstraintDTO toDTO() {
         try(var context = SerializeContext.enter()) {
@@ -75,9 +77,4 @@ public abstract class Constraint<T> extends Entity {
         setMessage(constraintDTO.message());
     }
 
-    @Override
-    public List<Object> beforeRemove(IEntityContext context) {
-        declaringType.removeConstraint(this);
-        return List.of();
-    }
 }

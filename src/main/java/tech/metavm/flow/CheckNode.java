@@ -4,7 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CheckNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.BooleanInstance;
+import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.util.InternalException;
 
 @EntityType("检查节点")

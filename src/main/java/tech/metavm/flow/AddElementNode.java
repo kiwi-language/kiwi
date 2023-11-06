@@ -4,8 +4,8 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.AddElementParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Instance;
 
 public class AddElementNode extends NodeRT<AddElementParamDTO>  {
 

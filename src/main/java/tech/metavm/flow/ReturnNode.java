@@ -6,7 +6,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ReturnParamDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 

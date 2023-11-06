@@ -4,7 +4,7 @@
 //import tech.metavm.flow.NodeStore;
 //import tech.metavm.flow.ScopeRT;
 //import tech.metavm.flow.ScopeStore;
-//import tech.metavm.object.instance.Instance;
+//import tech.metavm.object.instance.core.Instance;
 //import tech.metavm.object.instance.InstanceStore;
 //import tech.metavm.object.meta.*;
 //import tech.metavm.util.TypeReference;

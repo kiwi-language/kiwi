@@ -5,6 +5,8 @@ import org.junit.Assert;
 import tech.metavm.dto.Page;
 import tech.metavm.entity.*;
 import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.util.MockIdProvider;

@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 

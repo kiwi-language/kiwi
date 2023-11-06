@@ -11,8 +11,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 import org.springframework.stereotype.Component;
 import tech.metavm.dto.Page;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
@@ -57,7 +56,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         deleteRequests.forEach(bulkRequest::add);
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         try {
-            restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+            var resp = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new RuntimeException("ElasticSearch Error", e);
         }

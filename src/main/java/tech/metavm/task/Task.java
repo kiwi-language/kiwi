@@ -2,6 +2,7 @@ package tech.metavm.task;
 
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.TaskGroup;
+import tech.metavm.object.instance.core.IInstanceContext;
 
 import javax.annotation.Nullable;
 

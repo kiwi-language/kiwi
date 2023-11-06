@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;

@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.ModelDef;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.EnumConstantRT;
 import tech.metavm.object.meta.Field;

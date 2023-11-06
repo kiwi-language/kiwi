@@ -15,7 +15,7 @@ import java.util.Objects;
 
 public class ConstraintFactory {
 
-    public static Constraint<?> save(ConstraintDTO constraintDTO, IEntityContext context) {
+    public static Constraint save(ConstraintDTO constraintDTO, IEntityContext context) {
         var constraint = context.getEntity(Constraint.class, constraintDTO.getRef());
         if(constraint != null) {
             constraint.update(constraintDTO);
@@ -26,7 +26,7 @@ public class ConstraintFactory {
         }
     }
 
-    public static Constraint<?> createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
+    public static Constraint createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
         ClassType type = entityContext.getClassType(constraintDTO.typeId());
         ParsingContext parsingContext = new TypeParsingContext(type,
                 Objects.requireNonNull(entityContext.getInstanceContext()));
@@ -63,9 +63,10 @@ public class ConstraintFactory {
     }
 
     public static void update(ConstraintDTO constraintDTO, IEntityContext entityContext) {
-        Constraint<?> constraint = entityContext.getEntity(new TypeReference<>() {}, constraintDTO.id());
+        Constraint constraint = entityContext.getEntity(new TypeReference<>() {}, constraintDTO.id());
         ClassType type = entityContext.getClassType(constraintDTO.typeId());
-        ParsingContext parsingContext = new TypeParsingContext(type, entityContext.getInstanceContext());
+        ParsingContext parsingContext = new TypeParsingContext(type,
+                Objects.requireNonNull(entityContext.getInstanceContext()));
         constraint.update(constraintDTO);
         if(constraint instanceof Index indexConstraint) {
             updateIndexConstraint(indexConstraint, constraintDTO.getParam(), parsingContext);

@@ -1,12 +1,13 @@
 package tech.metavm.entity.natives;
 
 import tech.metavm.entity.CollectionKind;
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -23,20 +24,23 @@ public class SetNative extends NativeBase {
     public SetNative(ClassInstance instance) {
         this.instance = instance;
         arrayField = NncUtils.requireNonNull(instance.getType().getFieldByCode("array"));
-        if(instance.isFieldInitialized(arrayField)) {
+        if (instance.isFieldInitialized(arrayField)) {
             array = (ArrayInstance) instance.getField(arrayField);
+            for (int i = 0; i < array.getElements().size(); i++) {
+                element2index.put(array.get(i), i);
+            }
         }
     }
 
     public Instance Set() {
         array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initializeField(arrayField, array);
+        instance.initField(arrayField, array);
         return instance;
     }
 
-    public Instance iterator() {
-        var iteratorImplType = (ClassType) instance.getType().getDependency(CollectionKind.ITERATOR_IMPL);
-        var it = ClassInstance.allocate(iteratorImplType);
+    public ClassInstance iterator() {
+        var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
+        var it = new ClassInstance(iteratorImplType);
         var itNative = (IteratorImplNative) NativeInvoker.getNativeObject(it);
         itNative.IteratorImpl(instance);
         return it;
@@ -62,8 +66,7 @@ public class SetNative extends NativeBase {
                 element2index.put(last, index);
             }
             return InstanceUtils.trueInstance();
-        }
-        else {
+        } else {
             return InstanceUtils.falseInstance();
         }
     }

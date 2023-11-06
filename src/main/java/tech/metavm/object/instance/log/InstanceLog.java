@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.log;
 
 import tech.metavm.object.instance.ChangeType;
-import tech.metavm.object.instance.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.VersionPO;
 

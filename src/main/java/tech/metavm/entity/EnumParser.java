@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.NncUtils;
 
@@ -19,11 +19,11 @@ public class EnumParser<T extends Enum<?>> implements DefParser<T, Instance, Enu
     private final DefMap defMap;
     private final TypeFactory typeFactory;
 
-    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefMap defMap) {
+    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefContext defContext) {
         this.javaClass = enumType;
         this.superDef = superDef;
-        this.defMap = defMap;
-        typeFactory = new DefTypeFactory(defMap);
+        this.defMap = defContext;
+        typeFactory = new DefTypeFactory(defContext);
     }
 
     private void parseEnumConstant(T value, EnumDef<T> enumDef) {
@@ -37,10 +37,10 @@ public class EnumParser<T extends Enum<?>> implements DefParser<T, Instance, Enu
                 javaClass,
                 superDef,
                 ClassBuilder.newBuilder(getMetaTypeName(javaClass), javaClass.getSimpleName())
-                        .superType(superDef.getType())
+                        .superClass(superDef.getType())
                         .category(TypeCategory.ENUM)
                         .interfaces(NncUtils.map(interfaceDefs, InterfaceDef::getType))
-                        .source(ClassSource.REFLECTION)
+                        .source(ClassSource.BUILTIN)
                         .build(),
                 typeFactory.getNullType(),
                 typeFactory.getStringType()

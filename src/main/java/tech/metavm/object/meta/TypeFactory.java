@@ -3,9 +3,8 @@ package tech.metavm.object.meta;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.GenericDeclaration;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceFactory;
+import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.instance.ArrayType;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
@@ -36,7 +35,6 @@ public abstract class TypeFactory {
                 .isTemplate(param.isTemplate())
                 .typeParameters(NncUtils.map(param.typeParameterRefs(), context::getTypeVariable))
                 .template(param.templateRef() != null ? context.getClassType(param.templateRef()) : null)
-                .collectionName(param.templateName())
                 .source(ClassSource.getByCode(param.source()))
                 .tmpId(typeDTO.tmpId()).build();
         context.bind(type);
@@ -48,18 +46,20 @@ public abstract class TypeFactory {
         var type = context.getClassType(typeDTO.getRef());
         if (type == null) {
             type = createClassType(typeDTO, context);
-        }
-        else {
+        } else {
             type.setCode(typeDTO.code());
             type.setName(typeDTO.name());
-            if(typeDTO.category() == TypeCategory.ENUM.code()) {
-                type.setSuperType(context.getParameterizedType(StandardTypes.getEnumType(), List.of(type)));
-            }
-            else {
-                type.setSuperType(NncUtils.get(param.superTypeRef(), context::getClassType));
+//            Important: Not allowed to update super type
+            if (context.isNewEntity(type)) {
+                if (typeDTO.category() == TypeCategory.ENUM.code()) {
+                    type.setSuperClass(context.getParameterizedType(StandardTypes.getEnumType(), List.of(type)));
+                } else {
+                    type.setSuperClass(NncUtils.get(param.superClassRef(), context::getClassType));
+                }
             }
             type.setInterfaces(NncUtils.map(param.interfaceRefs(), context::getClassType));
-            type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
+            if(!type.isTemplate())
+                type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
             type.setDesc(param.desc());
         }
         if (param.dependencyRefs() != null) {

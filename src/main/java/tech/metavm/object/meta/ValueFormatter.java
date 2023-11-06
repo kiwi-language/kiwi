@@ -1,14 +1,16 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.entity.InstanceFactory;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.InstanceFactory;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -92,13 +94,28 @@ public class ValueFormatter {
                     param.fields(),
                     InstanceFieldDTO::fieldId
             );
+            ClassInstance instance;
+            if (instanceDTO.id() != null) {
+                instance = (ClassInstance) context.get(instanceDTO.id());
+            } else {
+                instance = new ClassInstance(classType);
+            }
             for (Field field : classType.getAllFields()) {
                 FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getId()), InstanceFieldDTO::value);
                 Instance fieldValue = rawValue != null ?
-                        parseOne(rawValue, field.getType(), context) : InstanceUtils.nullInstance();
-                fieldValueMap.put(field, fieldValue);
+                        parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
+                        : InstanceUtils.nullInstance();
+                if (!field.isChildField()) {
+                    fieldValueMap.put(field, fieldValue);
+                }
             }
-            ClassInstance instance;
+            if (instanceDTO.id() != null) {
+                fieldValueMap.forEach(instance::setField);
+            } else {
+                fieldValueMap.forEach(instance::initField);
+                instance.ensureAllFieldsInitialized();
+                context.bind(instance);
+            }
             if (instanceDTO.id() != null) {
                 instance = (ClassInstance) context.get(instanceDTO.id());
                 fieldValueMap.forEach(instance::setField);
@@ -109,18 +126,29 @@ public class ValueFormatter {
             return instance;
         } else if (actualType instanceof ArrayType arrayType) {
             ArrayParamDTO param = (ArrayParamDTO) instanceDTO.param();
-            List<Instance> elements = new ArrayList<>();
-            for (FieldValue element : param.elements()) {
-                elements.add(
-                        parseOne(element, arrayType.getElementType(), context)
-                );
-            }
             ArrayInstance array;
             if (instanceDTO.id() != null) {
                 array = (ArrayInstance) context.get(instanceDTO.id());
-                array.setElements(elements);
             } else {
-                array = new ArrayInstance(arrayType, elements);
+                array = new ArrayInstance(arrayType);
+            }
+            List<Instance> elements = new ArrayList<>();
+            for (FieldValue element : param.elements()) {
+                elements.add(
+                        parseOne(element, arrayType.getElementType(),
+                                InstanceParentRef.ofArray(array),
+                                context)
+                );
+            }
+            if (array.isChildArray()) {
+                Set<Instance> elementSet = new IdentitySet<>(elements);
+                for (Instance element : new ArrayList<>(array.getElements())) {
+                    if (!elementSet.contains(element)) {
+                        array.remove(element);
+                    }
+                }
+            } else {
+                array.setElements(elements);
             }
             return array;
         } else {
@@ -132,9 +160,10 @@ public class ValueFormatter {
         return context.get(referenceDTO.getId());
     }
 
-    private static Instance parseOne(FieldValue rawValue, Type type, IInstanceContext context) {
+    private static Instance parseOne(FieldValue rawValue, Type type,
+                                     @Nullable InstanceParentRef parentRef, IInstanceContext context) {
         Instance value = InstanceFactory.resolveValue(
-                rawValue, type, context::getType, context
+                rawValue, type, context::getType, parentRef, context
         );
         if (value.isReference() && value.getId() == null) {
             context.bind(value);

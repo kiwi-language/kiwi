@@ -1,9 +1,9 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.object.instance.ArrayInstance;
-import tech.metavm.object.instance.BooleanInstance;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 

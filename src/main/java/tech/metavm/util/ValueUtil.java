@@ -1,9 +1,8 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.ValueType;
-import tech.metavm.object.instance.Instance;
-import tech.metavm.object.instance.LongInstance;
+import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.meta.*;
 
 import java.lang.reflect.ParameterizedType;
@@ -250,35 +249,17 @@ public class ValueUtil {
         }
         if (type instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getRawType() instanceof Class<?> rawClass) {
-                if (Collection.class.isAssignableFrom(rawClass)) {
-                    if (ChildArray.class.isAssignableFrom(rawClass)) {
-                        return TypeCategory.CHILD_ARRAY;
-                    }
+                if (ChildArray.class.isAssignableFrom(rawClass))
+                    return TypeCategory.CHILD_ARRAY;
+                else if (ReadWriteArray.class.isAssignableFrom(rawClass))
                     return TypeCategory.READ_WRITE_ARRAY;
-                } else {
+                else if (ReadonlyArray.class.isAssignableFrom(rawClass))
+                    return TypeCategory.READ_ONLY_ARRAY;
+                else
                     return getTypeCategory(rawClass);
-                }
             }
         }
-        throw new InternalException("Can not get TypeCategory for java type: " + type);
-    }
-
-    public static Type getCommonSuperType(Collection<Type> types) {
-        NncUtils.requireMinimumSize(types, 1);
-        Iterator<Type> it = types.iterator();
-        Type commonSuperType = it.next();
-        while (it.hasNext()) {
-            Type t = it.next();
-            while (!commonSuperType.isAssignableFrom(t)) {
-                if (commonSuperType instanceof ClassType type) {
-                    commonSuperType = type.getSuperType();
-                }
-                if (commonSuperType == null) {
-                    throw new InternalException("Can not find common super type for types: " + types);
-                }
-            }
-        }
-        return commonSuperType;
+        return TypeCategory.CLASS;
     }
 
     public static boolean isAssignable(Type from, Type to) {
@@ -286,8 +267,8 @@ public class ValueUtil {
             return true;
         }
         if (from.isPrimitive() && to.isPrimitive()) {
-            if (TypeUtil.isDouble(to)) {
-                return TypeUtil.isLong(from);
+            if (TypeUtils.isDouble(to)) {
+                return TypeUtils.isLong(from);
             }
         }
         return false;

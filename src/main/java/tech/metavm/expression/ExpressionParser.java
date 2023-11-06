@@ -1,374 +1,272 @@
 package tech.metavm.expression;
 
-import tech.metavm.dto.RefDTO;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.IInstanceContext;
-import tech.metavm.object.instance.PrimitiveInstance;
+import tech.metavm.expression.antlr.InstacodeLexer;
+import tech.metavm.expression.antlr.InstacodeParser;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import java.util.LinkedList;
+import javax.annotation.Nullable;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 public class ExpressionParser {
 
-    public static final int FUNC_PRECEDENCE = 0;
-
-    public static final int OPEN_BRACKET_PRECEDENCE = 0;
-
     public static Expression parse(ClassType type, String expression, IInstanceContext instanceContext) {
         return parse(expression, new TypeParsingContext(type, instanceContext));
     }
 
     public static Expression parse(String expression, ParsingContext context) {
-        return parse(expression, 0, context);
+        return parse(expression, null , context);
     }
 
-    public static Expression parse(String expression, int offset, ParsingContext context) {
-        if(NncUtils.isEmpty(expression)) {
-            return null;
-        }
-        return new ExpressionParser(expression, offset, context).parse();
+    public static Expression parse(String expression, @Nullable Type assignedType, ParsingContext context) {
+        return new ExpressionParser(expression, context).parse(assignedType);
     }
 
-    private final ExpressionTokenizer tokenizer;
-    private final LinkedList<Expression> exprStack = new LinkedList<>();
-    private final LinkedList<Op> opStack = new LinkedList<>();
+    private final InstacodeParser parser;
     private final ParsingContext context;
-    private int numUnpairedLeftParentheses = 0;
 
-    public ExpressionParser(String expression, int offset, ParsingContext context) {
-        this(new ExpressionTokenizer(expression, offset), context);
-    }
-
-    ExpressionParser(ExpressionTokenizer tokenizer, ParsingContext context) {
-        this.tokenizer = tokenizer;
+    public ExpressionParser(String expression, ParsingContext context) {
         this.context = context;
+        CharStream input = CharStreams.fromString(expression);
+        parser = new InstacodeParser(new CommonTokenStream(new InstacodeLexer(input)));
     }
 
-    public Expression parse() {
-        Expression expression = preParse();
-        return resolve(expression);
+    public Expression parse(@Nullable Type assignedType) {
+        Expression expression = antlrPreparse();
+        return resolve(expression, assignedType);
     }
 
-    private Expression resolve(Expression expression) {
-        return ExpressionResolver.resolve(expression, context);
+    private Expression resolve(Expression expression, @Nullable Type assignedType) {
+        return ExpressionResolver.resolve(expression, assignedType, context);
     }
 
-    public Expression preParse() {
-        while (tokenizer.hasNext() &&
-                !(tokenizer.peekToken().isClosingParenthesis() && numUnpairedLeftParentheses == 0)) {
-            Token token = tokenizer.nextToken();
-            if(token.isOpenParenthesis()) {
-                numUnpairedLeftParentheses++;
-                opStack.push(Op.op(Operator.OPEN_PARENTHESIS));
-            }
-            else if(token.isClosingBracket()) {
-                while (!opStack.isEmpty() && !Op.isOpenBracket(opStack.peek())) {
-                    writeExpression();
-                }
-                if(opStack.isEmpty()) {
-                    throw new RuntimeException("Unpaired closing bracket");
-                }
-                opStack.pop();
-                if(exprStack.size() < 2) {
-                    throw new RuntimeException("Invalid array access expression");
-                }
-                var index = exprStack.pop();
-                var array = exprStack.pop();
-                exprStack.push(new ArrayAccessExpression(array, index));
-            }
-            else if(token.isClosingParenthesis()) {
-                numUnpairedLeftParentheses--;
-                while (!opStack.isEmpty() && !Op.isOpenParenthesis(opStack.peek())) {
-                    writeExpression();
-                }
-                if(opStack.isEmpty()) {
-                    throw new RuntimeException("Unpaired closing parenthesis");
-                }
-                opStack.pop();
-            }
-            else if(token.isOperator()) {
-                Operator operator = token.getOperator();
-                while (hasPrecedentOp(operator.precedence())) {
-                    writeExpression();
-                }
-                opStack.push(Op.op(operator));
-            }
-            else if(token.isFunction()) {
-                while (hasPrecedentOp(FUNC_PRECEDENCE)) {
-                    writeExpression();
-                }
-                opStack.push(Op.func(token.getFunction()));
-            }
-            else if(token.isOpenBracket()) {
-                while (hasPrecedentOp(OPEN_BRACKET_PRECEDENCE)) {
-                    writeExpression();
-                }
-                opStack.push(Op.op(Operator.OPEN_BRACKET));
-            }
-            else if(token.isAllMatch()) {
-                opStack.push(new AllMatchOp());
-//                tokenizer.nextToken(TokenType.LEFT_PARENTHESIS);
-//                Expression arrayExpr = parseConstantOrField(tokenizer.nextToken());
-//                CursorExpression cursor = new CursorExpression(arrayExpr, parseAlias());
-//                tokenizer.nextOperator(Operator.COMMA);
-//                Expression subExpr = parseSubExpression(cursor);
-//                tokenizer.nextToken(TokenType.RIGHT_PARENTHESIS);
-//                exprStack.push(new AllMatchExpression(cursor, subExpr));
-            }
-            else if(token.isAs()) {
-                Token alias = tokenizer.nextVariable();
-                exprStack.push(new AsExpression(exprStack.pop(), alias.rawValue()));
-            }
-            else {
-                exprStack.push(parseConstantOrField(token));
-            }
-        }
-
-        while (!opStack.isEmpty()) {
-            writeExpression();
-        }
-
-        if(exprStack.size() != 1) {
-            throw new RuntimeException("Expression stack must have one element at this point");
-        }
-        return exprStack.pop();
+    Expression antlrPreparse() {
+        return parse(parser.expression());
     }
 
-    private QueryStringException incorrectTokenType(@SuppressWarnings("SameParameterValue")
-                                                    TokenType expectedTokenType, Token actualToken) {
-        return new QueryStringException("Expecting token type " + expectedTokenType.name() + " at position "
-                +  tokenizer.getPosition() + " but got " + actualToken);
-    }
-
-    private String parseAlias() {
-        if(tokenizer.peekToken().isAs()) {
-            tokenizer.nextKeyword(Token.AS);
-            return tokenizer.nextVariable().rawValue();
-        }
-        else if(tokenizer.peekToken().isVariable()) {
-            return tokenizer.nextVariable().rawValue();
-        }
-        else {
-            return null;
+    private Expression parse(InstacodeParser.ExpressionContext expression) {
+        if (expression.primary() != null) {
+            return preParsePrimary(expression.primary());
+        } else if (expression.DOT() != null && !expression.typeType().isEmpty()) {
+            return parseStaticField(expression);
+        } else if (expression.bop != null) {
+            return parseBop(expression);
+        } else if (expression.LBRACK() != null) {
+            return parseArrayAccess(expression);
+        } else if (expression.list() != null) {
+            return parseArray(expression.list());
+        } else if (expression.prefix != null) {
+            return parsePrefix(expression);
+        } else if (expression.allMatch() != null) {
+            return parseAllMatch(expression.allMatch());
+        } else if (expression.AS() != null) {
+            return parseAs(expression);
+        } else if (expression.methodCall() != null) {
+            return parseMethodCall(expression.methodCall());
+        } else {
+            throw new ExpressionParsingException();
         }
     }
 
-    private Expression parseSubExpression(CursorExpression cursor) {
-        SubParsingContext subParsingContext = new SubParsingContext(cursor, context);
-        return new ExpressionParser(tokenizer, subParsingContext).parse();
+    private Expression parseAs(InstacodeParser.ExpressionContext expression) {
+        return new AsExpression(
+                parse(expression.expression(0)),
+                expression.IDENTIFIER().getText()
+        );
     }
 
-    private Expression parseConstantOrField(Token token) {
-        if(token.isConstant()) {
-            PrimitiveInstance constValue;
-            if (token.isString()) {
-                constValue = InstanceUtils.createString((String) token.value());
-            }
-            else if (token.isInt()) {
-                constValue = InstanceUtils.createLong((long) token.value());
-            }
-            else if(token.isFloat()) {
-                constValue = InstanceUtils.createDouble((double) token.value());
-            }
-            else if (token.isBoolean()) {
-                constValue = InstanceUtils.createBoolean((boolean) token.value());
-            }
-            else if (token.isNull()) {
-                constValue = InstanceUtils.createNull();
-            }
-            else {
-                throw new InternalException("Invalid constant token type " + token.type());
-            }
-            return new ConstantExpression(constValue);
-        }
-        else if(token.isIdConstant()) {
-            long id = Long.parseLong(token.rawValue().substring(Constants.CONSTANT_ID_PREFIX.length()));
-            return new ConstantExpression(context.getInstance(id));
-        }
-        else if(token.isTmpIdConstant()) {
-            long tmpId = Long.parseLong(token.rawValue().substring(Constants.CONSTANT_TMP_ID_PREFIX.length()));
-            return new ConstantExpression(context.getInstanceContext().get(RefDTO.ofTmpId(tmpId)));
-        }
-        else if(token.isVariable()){
-            return parseVariable(token.getName());
-        }
-        else {
-            throw incorrectTokenType(TokenType.VARIABLE, token);
+    private Expression parseAllMatch(InstacodeParser.AllMatchContext allMatch) {
+        return new AllMatchExpression(
+                parse(allMatch.expression(0)),
+                parse(allMatch.expression(1))
+        );
+    }
+
+    private Expression parseMethodCall(InstacodeParser.MethodCallContext methodCall) {
+        if (methodCall.identifier().IDENTIFIER() != null) {
+            return new FunctionExpression(
+                    Function.getByName(methodCall.identifier().IDENTIFIER().getText()),
+                    methodCall.expressionList() != null ?
+                            parseExpressionList(methodCall.expressionList())
+                            : List.of()
+            );
+        } else {
+            throw new ExpressionParsingException();
         }
     }
 
-    private VariableExpression parseVariable(String variable) {
-        return new VariableExpression(variable);
+    private List<Expression> parseExpressionList(InstacodeParser.ExpressionListContext expressionList) {
+        return NncUtils.map(expressionList.expression(), this::parse);
     }
 
-    private boolean hasPrecedentOp(int precedence) {
-        return !opStack.isEmpty() && opStack.peek().precedence() <= precedence;
+    private Expression parsePrefix(InstacodeParser.ExpressionContext expression) {
+        return switch (expression.prefix.getType()) {
+            case InstacodeParser.ADD -> new UnaryExpression(
+                    Operator.POS, parse(expression.expression(0))
+            );
+            case InstacodeParser.SUB -> new UnaryExpression(
+                    Operator.NEG, parse(expression.expression(0))
+            );
+            default -> throw new IllegalStateException("Unexpected prefix: " + expression.prefix.getTokenIndex());
+        };
     }
 
-    private void writeExpression() {
-        Op op = opStack.pop();
-        if(op instanceof FunctionOp funcOp) {
-            FunctionExpression funcExpr;
-            if(funcOp.func.getParameterTypes().isEmpty()) {
-                funcExpr = new FunctionExpression(funcOp.func);
-            }
-            else {
-                funcExpr = new FunctionExpression(funcOp.func, exprStack.pop());
-            }
-            exprStack.push(funcExpr);
+    private ArrayExpression parseArray(InstacodeParser.ListContext list) {
+        return new ArrayExpression(
+                list.expressionList() != null ?
+                        parseExpressionList(list.expressionList()) : List.of(),
+                StandardTypes.getObjectArrayType()
+        );
+    }
+
+    private StaticFieldExpression parseStaticField(InstacodeParser.ExpressionContext expression) {
+        var type = (ClassType) parseTypeType(expression.typeType(0));
+        String identifier = expression.identifier().IDENTIFIER().getText();
+        Field field = identifier.startsWith(Constants.CONSTANT_ID_PREFIX) ?
+                type.getField(Long.parseLong(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
+                type.getFieldByName(identifier);
+        return new StaticFieldExpression(field);
+    }
+
+    private Expression parseArrayAccess(InstacodeParser.ExpressionContext expression) {
+        return new ArrayAccessExpression(
+                parse(expression.expression(0)),
+                parse(expression.expression(1))
+        );
+    }
+
+    private Expression preParsePrimary(InstacodeParser.PrimaryContext primary) {
+        if (primary.LPAREN() != null) {
+            return parse(primary.expression());
+        } else if (primary.THIS() != null) {
+            return new VariableExpression("this");
+        } else if (primary.literal() != null) {
+            return preParseLiteral(primary.literal());
+        } else if (primary.identifier() != null) {
+            return parseIdentifier(primary.identifier());
+        } else {
+            throw new ExpressionParsingException();
         }
-        else if(op instanceof OperatorOp operatorOp) {
-            if(operatorOp.isDot()) {
-                Expression field = popExpr();
-                Expression qualifier = popExpr();
-                if(field instanceof VariableExpression fieldVariableExpr) {
-                    exprStack.push(new VariablePathExpression(qualifier, fieldVariableExpr));
+    }
+
+    private Expression parseBop(InstacodeParser.ExpressionContext expression) {
+        var bop = expression.bop;
+        return switch (bop.getType()) {
+            case InstacodeParser.DOT -> {
+                if (expression.identifier() != null) {
+                    yield new VariablePathExpression(
+                            parse(expression.expression(0)),
+                            (VariableExpression) parseIdentifier(expression.identifier())
+                    );
+                } else {
+                    throw new ExpressionParsingException();
                 }
-                else {
-                    throw new InternalException("Invalid field expression. " +
-                            "Expecting a field name, but got " + field);
-                }
             }
-            else if (operatorOp.isComma()) {
-                Expression second = popExpr(), first = popExpr();
-                exprStack.push(new ArrayExpression(List.of(first, second), StandardTypes.getObjectArrayType()));
-            }
-            else if(operatorOp.isInstanceOf()) {
-                var typeExpr = (ConstantExpression) popExpr();
-                var type = getEntityContext().getType(typeExpr.getValue());
-                var operand = popExpr();
-                exprStack.push(new InstanceOfExpression(operand, type));
-            }
-            else if (operatorOp.isUnary()) {
-                Expression expression = popExpr();
-                exprStack.push(new UnaryExpression(operatorOp.op(), expression));
-            } else {
-                Expression second = popExpr(), first = popExpr();
-                exprStack.push(new BinaryExpression(operatorOp.op(), first, second));
-            }
-        }
-        else if(op instanceof AllMatchOp) {
-            Expression top = exprStack.pop();
-            if(top instanceof ArrayExpression args) {
-                if(args.getExpressions().size() != 2) {
-                    throw new InternalException(
-                            "Expecting 2 elements in array expression, but got "
-                                    + args.getExpressions().size()
+            case InstacodeParser.INSTANCEOF -> new InstanceOfExpression(
+                    parse(expression.expression(0)),
+                    parseTypeType(expression.typeType(0))
+            );
+            case InstacodeParser.QUESTION -> new ConditionalExpression(
+                    parse(expression.expression(0)),
+                    parse(expression.expression(1)),
+                    parse(expression.expression(2))
+            );
+            default -> new BinaryExpression(
+                    Operator.getByOp(bop.getText()),
+                    parse(expression.expression(0)),
+                    parse(expression.expression(1))
+            );
+        };
+    }
+
+    private Type parseTypeType(InstacodeParser.TypeTypeContext typeType) {
+        if (typeType.classOrInterfaceType() != null) {
+            var classType = typeType.classOrInterfaceType();
+            var identifier = classType.typeIdentifier();
+            if (identifier.IDENTIFIER() != null) {
+                String name = identifier.IDENTIFIER().getText();
+                if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+                    return getEntityContext().getType(
+                            Long.parseLong(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
+                    );
+                } else {
+                    String className = classType.typeArguments().isEmpty() ? name :
+                            name + classType.typeArguments(0).getText();
+                    return requireNonNull(context.getEntityContext()).selectByUniqueKey(
+                            ClassType.UNIQUE_NAME, className
                     );
                 }
-                Expression array = args.getExpressions().get(0);
-                Expression condition = args.getExpressions().get(1);
-                exprStack.push(new AllMatchExpression(array, condition, null));
-            }
-            else {
-                throw new InternalException("Expecting array expression for AllMatch, but got " + top);
             }
         }
-        else {
-            throw new InternalException("Unrecognized op " + op);
+        throw new ExpressionParsingException();
+    }
+
+    private Expression preParseLiteral(InstacodeParser.LiteralContext literal) {
+        if (literal.STRING_LITERAL() != null) {
+            return parseStringLiteral(literal.STRING_LITERAL());
+        } else if (literal.SINGLE_QUOTED_STRING_LITERAL() != null) {
+            return parseSingleQuoteLiteral(literal.SINGLE_QUOTED_STRING_LITERAL());
+        } else if (literal.integerLiteral() != null) {
+            String intText = literal.integerLiteral().getText();
+            return new ConstantExpression(
+                    InstanceUtils.longInstance(Long.parseLong(intText))
+            );
+        } else if (literal.floatLiteral() != null) {
+            return new ConstantExpression(
+                    InstanceUtils.doubleInstance(Double.parseDouble(literal.getText()))
+            );
+        } else if (literal.BOOL_LITERAL() != null) {
+            return new ConstantExpression(
+                    InstanceUtils.booleanInstance(Boolean.parseBoolean(literal.getText()))
+            );
+        } else if (literal.NULL_LITERAL() != null) {
+            return new ConstantExpression(InstanceUtils.nullInstance());
+        } else {
+            throw new ExpressionParsingException();
+        }
+    }
+
+    private Expression parseStringLiteral(TerminalNode stringLiteral) {
+        return new ConstantExpression(
+                InstanceUtils.stringInstance(NncUtils.deEscapeDoubleQuoted(stringLiteral.getText()))
+        );
+    }
+
+    private Expression parseSingleQuoteLiteral(TerminalNode singleQuoteStringLiteral) {
+        return new ConstantExpression(
+                InstanceUtils.stringInstance(NncUtils.deEscapeSingleQuoted(singleQuoteStringLiteral.getText()))
+        );
+    }
+
+    private Expression parseIdentifier(InstacodeParser.IdentifierContext identifier) {
+        if (identifier.IDENTIFIER() != null) {
+            String text = identifier.IDENTIFIER().getText();
+            if (text.startsWith(Constants.CONSTANT_ID_PREFIX)) {
+                return new ConstantExpression(requireNonNull(context.getInstanceContext()).get(
+                        Long.parseLong(text.substring(Constants.CONSTANT_ID_PREFIX.length()))));
+            } else {
+                return new VariableExpression(identifier.IDENTIFIER().getText());
+            }
+        } else {
+            throw new ExpressionParsingException();
         }
     }
 
     private IEntityContext getEntityContext() {
         return requireNonNull(context.getInstanceContext()).getEntityContext();
-    }
-
-    public Expression popExpr() {
-        if(exprStack.isEmpty()) {
-            throw new QueryStringException("Expression stack underflow, expression: " + tokenizer.getExpression());
-        }
-        return exprStack.pop();
-    }
-
-    private interface Op {
-
-        static Op op(Operator operator) {
-            return new OperatorOp(operator);
-        }
-
-        static Op func(Function function) {
-            return new FunctionOp(function);
-        }
-
-        static boolean isOpenParenthesis(Op op) {
-            return op instanceof OperatorOp oop && oop.isOpenParenthesis();
-        }
-
-        static boolean isOpenBracket(Op op) {
-            return op instanceof OperatorOp oop && oop.isOpenBracket();
-        }
-
-        default boolean isFunc() {
-            return this instanceof OperatorOp;
-        }
-
-        default boolean isOp() {
-            return this instanceof OperatorOp;
-        }
-
-        int precedence();
-
-    }
-
-    private record OperatorOp
-    (
-        Operator op
-    ) implements Op {
-
-        boolean isOpenParenthesis() {
-            return op == Operator.OPEN_PARENTHESIS;
-        }
-
-        boolean isOpenBracket() {
-            return op == Operator.OPEN_BRACKET;
-        }
-
-        boolean isComma() {
-            return op == Operator.COMMA;
-        }
-
-        boolean isInstanceOf() {
-            return op == Operator.INSTANCEOF;
-        }
-
-        boolean isDot() {
-            return op == Operator.DOT;
-        }
-
-        boolean isUnary() {
-            return op.isUnary();
-        }
-
-        public int precedence() {
-            return op.precedence();
-        }
-    }
-
-    private record FunctionOp(
-            Function func
-    ) implements Op
-    {
-
-        @Override
-        public int precedence() {
-            return FUNC_PRECEDENCE;
-        }
-    }
-
-    private static class AllMatchOp implements Op {
-
-        @Override
-        public int precedence() {
-            return FUNC_PRECEDENCE;
-        }
     }
 
 }

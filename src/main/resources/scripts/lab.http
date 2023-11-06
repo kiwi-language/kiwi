@@ -168,6 +168,20 @@ Accept: application/json
 }
 
 ###
+POST http://localhost:8080/type/query
+Accept: application/json
+Content-Type: application/json
+
+{
+  "categories": [13],
+  "includeBuiltin": true,
+  "page": 1,
+  "pageSize": 20
+}
+
+
+
+###
 GET http://localhost:8080/instance?typeId=13021&searchText=$$1004700100%20=%20this%20AND%20$$1004700100%20=%20this
 
 ###
@@ -299,7 +313,7 @@ DELETE http://localhost:8080/flow/node/1242404897
 
 
 ###
-DELETE http://localhost:8080/instance/1183103663
+DELETE http://localhost:8080/instance/7836264356524685
 
 ###
 DELETE http://localhost:8080/flow/node/1139802809
@@ -311,13 +325,28 @@ GET http://localhost:8080/type/12004
 GET http://localhost:8080/instance/1175503532
 
 ###
-GET http://localhost:8080/instance/reference-chain/7205760485294470?rootMode=1
+GET http://localhost:8080/instance/reference-chain/1022100456?rootMode=1
 
 ###
-GET http://localhost:8080/instance/reference-chain/7205760485394472?rootMode=2
+GET http://localhost:8080/instance/reference-chain/1020500429?rootMode=2
 
 ###
 GET http://localhost:8080/type/primitives
+
+###
+POST http://localhost:8080/type/get-by-range
+Accept: application/json
+Content-Type: application/json
+
+{
+  "lowerBoundId": 10000,
+  "upperBoundId": 30000,
+  "isParameterized": false,
+  "isTemplate": false,
+  "includeBuiltin": false,
+  "categories": [0]
+}
+
 
 ###
 GET http://localhost:8080/type/primitive-map

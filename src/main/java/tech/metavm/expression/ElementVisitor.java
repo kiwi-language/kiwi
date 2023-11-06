@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.flow.*;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.*;
 
 public class ElementVisitor {
@@ -23,7 +23,7 @@ public class ElementVisitor {
         classType.getConstraints().forEach(this::visitConstraint);
     }
 
-    public void visitConstraint(Constraint<?> constraint) {
+    public void visitConstraint(Constraint constraint) {
         switch (constraint) {
             case Index index -> visitIndex(index);
             case CheckConstraint checkConstraint -> visitCheckConstraint(checkConstraint);
@@ -144,7 +144,7 @@ public class ElementVisitor {
 
     public void visitCallNode(CallNode<?> callNode) {
         switch (callNode) {
-            case NewNode newNode -> visitNewNode(newNode);
+            case NewObjectNode newNode -> visitNewNode(newNode);
             case SubFlowNode subFlowNode -> visitSubFlowNode(subFlowNode);
             default -> throw new IllegalStateException("Unexpected value: " + callNode);
         }
@@ -153,7 +153,7 @@ public class ElementVisitor {
     public void visitSubFlowNode(SubFlowNode subFlowNode) {
     }
 
-    public void visitNewNode(NewNode node) {
+    public void visitNewNode(NewObjectNode node) {
     }
 
     public void visitUpdateObjectNode(UpdateObjectNode node) {

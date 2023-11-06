@@ -12,9 +12,6 @@ POST https://www.metavm.tech/api/bootstrap?saveIds=false
 POST http://localhost:8080/bootstrap
 
 ###
-POST http://metavm.tech:9090/bootstrap
-
-###
 POST http://localhost:8080/bootstrap/save
 
 <> 2022-12-13T001921.200.json
@@ -47,7 +44,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "tenantId": 1010800218,
+  "tenantId": 1040000801,
   "loginName": "admin",
   "password": "123456"
 }

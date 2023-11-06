@@ -1,8 +1,8 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.natives.NativeInvoker;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.expression.*;

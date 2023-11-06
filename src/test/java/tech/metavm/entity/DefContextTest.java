@@ -10,9 +10,9 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
-import tech.metavm.object.instance.ArrayType;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.expression.ConstantExpression;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
@@ -81,14 +81,14 @@ public class DefContextTest extends TestCase {
         Assert.assertTrue(typeDef.getType() instanceof ClassType);
         ClassType classType = (ClassType) typeDef.getType();
 
-        ReadonlyArray<Constraint<?>> constraints = classType.getDeclaredConstraints();
+        ReadonlyArray<Constraint> constraints = classType.getDeclaredConstraints();
         Assert.assertNotNull(constraints);
         Assert.assertNotNull(constraints.getId());
     }
 
     public void testInheritance() {
         EntityDef<NodeRT<?>> superDef = defContext.getEntityDef(new TypeReference<>(){});
-        Assert.assertSame(superDef.getType().getSuperType(), typeFactory.getEntityType());
+        Assert.assertSame(superDef.getType().getSuperClass(), typeFactory.getEntityType());
     }
 
     public void testArrayFieldType() {

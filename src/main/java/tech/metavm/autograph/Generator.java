@@ -5,7 +5,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.LinkedList;
@@ -270,7 +270,7 @@ public class Generator extends VisitorBase {
         builder.setVariable("this", new NodeExpression(selfNode));
         processParameters(method.getParameterList(), flow);
         if (method.isConstructor()) {
-            var superType = currentClass().getSuperType();
+            var superType = currentClass().getSuperClass();
             if (superType != null && !isEnumType(superType) && !isSuperCallPresent(method)) {
                 builder().createSubFlow(
                         builder().getVariable("this"),

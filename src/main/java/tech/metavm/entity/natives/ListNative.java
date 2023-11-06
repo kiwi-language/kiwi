@@ -1,9 +1,10 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.CollectionKind;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -23,13 +24,13 @@ public class ListNative extends NativeBase {
 
     public Instance List() {
         array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initializeField(arrayField, array);
+        instance.initField(arrayField, array);
         return instance;
     }
 
-    public Instance iterator() {
-        var iteratorImplType = (ClassType) instance.getType().getDependency(CollectionKind.ITERATOR_IMPL);
-        var it = ClassInstance.allocate(iteratorImplType);
+    public ClassInstance iterator() {
+        var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
+        var it = new ClassInstance(iteratorImplType);
         var itNative = (IteratorImplNative) NativeInvoker.getNativeObject(it);
         itNative.IteratorImpl(instance);
         return it;

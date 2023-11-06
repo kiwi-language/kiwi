@@ -4,13 +4,16 @@ import tech.metavm.entity.ConstraintDef;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.expression.BinaryExpression;
+import tech.metavm.expression.PropertyExpression;
+import tech.metavm.expression.UnaryExpression;
 import tech.metavm.flow.Value;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.util.InstanceUtils;
 
 @EntityType("校验约束")
-public class CheckConstraint extends Constraint<CheckConstraintParamDTO> {
+public class CheckConstraint extends Constraint {
 
     @EntityField("条件")
     private Value condition;
@@ -34,6 +37,20 @@ public class CheckConstraint extends Constraint<CheckConstraintParamDTO> {
         );
     }
 
+    public boolean isFieldConstraint(Field field) {
+        if(condition.getExpression() instanceof BinaryExpression binExpr
+                && binExpr.getFirst() instanceof PropertyExpression propExpr) {
+            return propExpr.getProperty() == field;
+        }
+        else if(condition.getExpression() instanceof UnaryExpression unaryExpr
+                && unaryExpr.getOperand() instanceof PropertyExpression propExr) {
+            return propExr.getProperty() == field;
+        }
+        else {
+            return false;
+        }
+    }
+
     @Override
     public String getDesc() {
         return "";
@@ -41,6 +58,10 @@ public class CheckConstraint extends Constraint<CheckConstraintParamDTO> {
 
     public void setCondition(Value condition) {
         this.condition = condition;
+    }
+
+    public Value getCondition() {
+        return condition;
     }
 
     public boolean check(ClassInstance instance, IEntityContext entityContext) {

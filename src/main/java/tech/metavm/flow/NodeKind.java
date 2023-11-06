@@ -4,6 +4,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 
 public enum NodeKind {
     SELF(0, SelfNode.class),
@@ -17,7 +18,7 @@ public enum NodeKind {
     SUB_FLOW(12, SubFlowNode.class),
     GET_UNIQUE(13, GetUniqueNode.class),
     MERGE(14, MergeNode.class, true),
-    NEW(15, NewNode.class),
+    NEW(15, NewObjectNode.class),
     VALUE(16, ValueNode.class),
     UPDATE_STATIC(17, UpdateStaticNode.class),
     FOREACH(19, ForeachNode.class, true),
@@ -34,6 +35,8 @@ public enum NodeKind {
     private final int code;
     private final Class<? extends NodeRT<?>> klass;
     private final boolean outputTypeAsChild;
+
+    public static final Set<NodeKind> CREATING_KINDS = Set.of(ADD_OBJECT, NEW, NEW_ARRAY);
 
     NodeKind(int code, Class<? extends NodeRT<?>> klass) {
         this(code, klass, false);

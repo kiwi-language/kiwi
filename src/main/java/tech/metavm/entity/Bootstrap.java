@@ -5,10 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.meta.BootIdProvider;
 import tech.metavm.object.meta.ColumnStore;
-import tech.metavm.object.meta.FileColumnStore;
 import tech.metavm.object.meta.StdAllocators;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
@@ -54,12 +54,15 @@ public class Bootstrap implements InitializingBean {
         standardInstanceContext.setEntityContext(defContext);
         ModelDefRegistry.setDefContext(defContext);
 
-        ReflectUtils.getModelClasses().forEach(defContext::getDef);
+        ReflectUtils.getModelClasses()
+                .stream()
+                .filter(k -> !ReadonlyArray.class.isAssignableFrom(k))
+                .forEach(defContext::getDef);
         defContext.flushAndWriteInstances();
         ModelDefRegistry.setDefContext(defContext);
 
         List<Instance> idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.getId() == null);
-        if(!idNullInstances.isEmpty()) {
+        if (!idNullInstances.isEmpty()) {
             LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
         }
     }
@@ -67,7 +70,7 @@ public class Bootstrap implements InitializingBean {
     @Transactional
     public void save(boolean saveIds) {
         DefContext defContext = ModelDefRegistry.getDefContext();
-        if(defContext.isFinished()) {
+        if (defContext.isFinished()) {
             return;
         }
         IEntityContext tempContext = instanceContextFactory.newContext(-1).getEntityContext();
@@ -93,7 +96,7 @@ public class Bootstrap implements InitializingBean {
 //                    stdAllocators.putId(javaConstruct, instance.getId())
 //            );
 //        }
-        if(saveIds) {
+        if (saveIds) {
             stdAllocators.save();
             columnStore.save();
         }
@@ -104,7 +107,7 @@ public class Bootstrap implements InitializingBean {
     private void check() {
         DefContext defContext = ModelDefRegistry.getDefContext();
         for (Instance instance : defContext.instances()) {
-            if(instance.getId() == null) {
+            if (instance.getId() == null) {
                 throw new InternalException("Detected instance with uninitialized id. instance: " + instance);
             }
         }

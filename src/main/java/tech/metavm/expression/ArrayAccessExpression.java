@@ -1,9 +1,8 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Type;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Objects;

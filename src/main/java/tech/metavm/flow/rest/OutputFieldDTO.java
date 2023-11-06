@@ -29,10 +29,6 @@ public record OutputFieldDTO(
         );
     }
 
-    public FieldParamDTO toFieldParamDTO() {
-        return new FieldParamDTO(fieldRef, value);
-    }
-
     public OutputFieldDTO copyWithFieldRef(RefDTO fieldRef) {
         return new OutputFieldDTO(
                 fieldRef, name, typeRef, value

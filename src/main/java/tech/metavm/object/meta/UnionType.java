@@ -20,7 +20,7 @@ public class UnionType extends CompositeType {
     public UnionType(Long tmpId, Set<Type> members) {
         super(getTypeName(members), false, false, TypeCategory.UNION);
         setTmpId(tmpId);
-        this.members = new ReadWriteArray<>(Type.class, members);
+        this.members = addChild(new ReadWriteArray<>(Type.class, members), "members");
     }
 
     private static String getTypeName(Set<Type> members) {
@@ -28,7 +28,7 @@ public class UnionType extends CompositeType {
     }
 
     public Set<Type> getMembers() {
-        return new IdentitySet<>(members);
+        return new HashSet<>(members);
     }
 
     @Override
@@ -111,11 +111,16 @@ public class UnionType extends CompositeType {
     }
 
     @Override
+    public List<? extends Type> getSuperTypes() {
+        return List.of(TypeUtils.getLeastUpperBound(members));
+    }
+
+    @Override
     protected String getKey() {
         return getKey(members);
     }
 
-    public static String getKey(Iterable<Type> componentTypes) {
+    public static String getKey(List<Type> componentTypes) {
         return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparingLong(Entity::getIdRequired)));
     }
 

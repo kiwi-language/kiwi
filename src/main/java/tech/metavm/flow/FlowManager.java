@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.IEntityContext;
@@ -12,7 +13,7 @@ import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.flow.rest.*;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
@@ -21,7 +22,6 @@ import tech.metavm.object.meta.rest.dto.ClassTypeParam;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -175,7 +175,8 @@ public class FlowManager {
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
                     parameterDTO.code(),
-                    context.getType(parameterDTO.typeRef())
+                    context.getType(parameterDTO.typeRef()),
+                    null
             );
         }
     }
@@ -239,11 +240,11 @@ public class FlowManager {
         }
     }
 
-    private void saveNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+    private NodeRT<?> saveNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         if (nodeDTO.id() == null) {
-            createNode(nodeDTO, scope, context);
+            return createNode(nodeDTO, scope, context);
         } else {
-            updateNode(nodeDTO, context);
+            return updateNode(nodeDTO, context);
         }
     }
 
@@ -397,6 +398,21 @@ public class FlowManager {
                     }
                 }
             }
+        }
+    }
+
+    private void saveAddObjectChildren(NodeDTO nodeDTO, AddObjectNode node, IEntityContext context) {
+        AddObjectParam param = nodeDTO.getParam();
+        if(param.getBodyScope() != null) {
+            for (NodeDTO childNodeDTO : param.getBodyScope().nodes()) {
+                NodeKind kind = NodeKind.getByCodeRequired(childNodeDTO.kind());
+                NncUtils.assertTrue(NodeKind.CREATING_KINDS.contains(kind),
+                    ErrorCode.INVALID_ADD_OBJECT_CHILD, childNodeDTO.name());
+            }
+            var childrenScope = node.getScope();
+            childrenScope.clearNodes();
+            NncUtils.map(param.getBodyScope().nodes(),
+                    childNodeDTO -> saveNode(childNodeDTO, childrenScope, context));
         }
     }
 
@@ -600,7 +616,6 @@ public class FlowManager {
                         List.of(),
                         null,
                         null,
-                        null,
                         List.of(),
                         false,
                         List.of(),
@@ -705,6 +720,9 @@ public class FlowManager {
         if (node instanceof LoopNode<?> loopNode) {
             updateLoopFields(nodeDTO, loopNode, context);
         }
+        if(node instanceof AddObjectNode addObjectNode) {
+            saveAddObjectChildren(nodeDTO, addObjectNode, context);
+        }
     }
 
     private void updateParameters(InputNode inputNode, IEntityContext context) {
@@ -712,13 +730,17 @@ public class FlowManager {
                 (Callable) inputNode.getScope().getOwner();
         List<Parameter> parameters = new ArrayList<>();
         for (var field : inputNode.getType().getFields()) {
+            var cond = NncUtils.get(inputNode.getFieldCondition(field), Value::copy);
             var parameter = callable.getParameterByName(field.getName());
             if (parameter == null) {
-                parameters.add(new Parameter(null, field.getName(), field.getCode(), field.getType()));
+                parameters.add(
+                        new Parameter(null, field.getName(), field.getCode(), field.getType(), cond)
+                );
             } else {
                 parameters.add(parameter);
                 parameter.setName(field.getName());
                 parameter.setType(field.getType());
+                parameter.setCondition(cond);
             }
         }
         var oldFuncType = callable.getFunctionType();

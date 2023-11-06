@@ -5,8 +5,9 @@ import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.IndexKeyRT;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.meta.Index;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     @EntityField("索引")
     private Index constraint;
     @ChildEntity("字段值列表")
-    private final ChildArray<Value> values = new ChildArray<>(Value.class);
+    private final ChildArray<Value> values = addChild(new ChildArray<>(Value.class), "values");
 
     public GetUniqueNode(Long tmpId, String name, Index index, NodeRT<?> previous, ScopeRT scope) {
         super(tmpId, name,  index.getDeclaringType(), previous, scope);

@@ -22,24 +22,24 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     @ChildEntity("是否原生")
     private boolean isNative;
     @ChildEntity("参数列表")
-    private final ChildArray<Parameter> parameters = new ChildArray<>(Parameter.class);
+    private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
     @EntityField("返回类型")
     private Type returnType;
     @ChildEntity("被复写流程")
-    private final ReadWriteArray<Flow> overridden = new ReadWriteArray<>(Flow.class);
+    private final ReadWriteArray<Flow> overridden = addChild(new ReadWriteArray<>(Flow.class), "overridden");
     @ChildEntity("根流程范围")
     private ScopeRT rootScope;
     @EntityField("版本")
     private Long version = 1L;
     @ChildEntity("类型参数")
-    private final ChildArray<TypeVariable> typeParameters = new ChildArray<>(TypeVariable.class);
+    private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
     @Nullable
     @EntityField("模板")
     private final Flow template;
     @ChildEntity("TypeArguments")
-    private final ReadWriteArray<Type> typeArguments = new ReadWriteArray<>(Type.class);
+    private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
     @ChildEntity("模板实例")
-    private final ChildArray<Flow> templateInstances = new ChildArray<>(Flow.class);
+    private final ChildArray<Flow> templateInstances = addChild(new ChildArray<>(Flow.class), "templateInstances");
     @EntityField("静态类型")
     private FunctionType staticType;
 
@@ -74,7 +74,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         this.isNative = isNative;
-        if(parameters != null) {
+        if (parameters != null) {
             this.parameters.addChildren(parameters);
         }
         this.returnType = returnType;
@@ -187,7 +187,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     }
 
     public FlowSummaryDTO toSummaryDTO() {
-        try(var context = SerializeContext.enter()) {
+        try (var context = SerializeContext.enter()) {
             return new FlowSummaryDTO(
                     id,
                     getName(),
@@ -211,7 +211,8 @@ public class Flow extends Property implements GenericDeclaration, Callable {
 
     private ReadWriteArray<NodeRT<?>> nodes() {
         if (nodes == null) {
-            nodes = new ReadWriteArray<>(new TypeReference<>() {});
+            nodes = new ReadWriteArray<>(new TypeReference<>() {
+            });
             new ElementVisitor() {
                 @Override
                 public void visitNode(NodeRT<?> node) {
@@ -289,12 +290,6 @@ public class Flow extends Property implements GenericDeclaration, Callable {
         return version;
     }
 
-    @Override
-    public List<Object> beforeRemove(IEntityContext context) {
-        declaringType.removeFlow(this);
-        return List.of();
-    }
-
     public boolean isNative() {
         return isNative;
     }
@@ -309,7 +304,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
 
     public void setParameters(List<Parameter> parameters) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        if(!overridden.isEmpty() && !paramTypes.equals(getParameterTypes())) {
+        if (!overridden.isEmpty() && !paramTypes.equals(getParameterTypes())) {
             throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
         }
         this.parameters.resetChildren(parameters);
@@ -345,7 +340,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
 
     public void setReturnType(Type returnType) {
         for (Flow overriddenFlow : overridden) {
-            if(!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
+            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
                 throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
             }
         }
@@ -359,7 +354,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
 
     @Nullable
     public Flow getRootTemplate() {
-        if(template == null) {
+        if (template == null) {
             return null;
         }
         var t = template;

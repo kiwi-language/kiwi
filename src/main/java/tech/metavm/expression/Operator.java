@@ -1,11 +1,9 @@
 package tech.metavm.expression;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +16,8 @@ public enum Operator {
 //        TODO: 支持负数运算符
 //    NEGATE("-", 1, PREFIX, null),
     NOT(1, "!", 1, PREFIX, Boolean.class),
+    POS(35, "+", 1, PREFIX, null),
+    NEG(36, "-", 1, PREFIX, null),
 
     // Multiply and division
     MULTIPLY(2, "*", 2, BINARY, null),
@@ -113,7 +113,7 @@ public enum Operator {
         return NncUtils.findRequired(values(), op -> op.code == code);
     }
 
-    public static Operator getByOpRequired(String op) {
+    public static Operator getByOp(String op) {
         return Arrays.stream(values())
                 .filter(operator -> operator.op.equalsIgnoreCase(op))
                 .findAny()

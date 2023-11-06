@@ -50,8 +50,8 @@ public class EntityQueryServiceTest extends TestCase {
                         1,
                         20,
                         List.of(
-                                new EntityQueryField("name", foo.getName()),
-                                new EntityQueryField("qux", foo.getQux())
+                                EntityQueryField.create(Foo.class, "name", foo.getName()),
+                                EntityQueryField.create(Foo.class, "qux", foo.getQux())
                         )
                 ),
                 entityContext
@@ -89,8 +89,8 @@ public class EntityQueryServiceTest extends TestCase {
                         1,
                         20,
                         List.of(
-                                new EntityQueryField("category", fooType.getCategory()),
-                                new EntityQueryField("name", fooType.getName())
+                                EntityQueryField.create(ClassType.class, "category", fooType.getCategory()),
+                                EntityQueryField.create(ClassType.class, "name", fooType.getName())
                         )
                 ),
                 entityContext

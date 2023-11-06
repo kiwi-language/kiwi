@@ -26,6 +26,7 @@ public class ChangeLogPluginTest extends TestCase {
                         NncUtils.toBase64(100L),
                         Map.of("s0", "Big Foo")
                 ),
+                null, null,
                 1L, 1L
         );
 

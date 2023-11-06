@@ -7,8 +7,8 @@ import tech.metavm.infra.MemBlockMapper;
 import tech.metavm.infra.MemRegionMapper;
 import tech.metavm.infra.RegionManager;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ArrayKind;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayKind;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.*;
 

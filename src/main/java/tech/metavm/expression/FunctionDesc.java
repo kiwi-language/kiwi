@@ -1,6 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceUtils;

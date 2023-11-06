@@ -5,10 +5,9 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContext;
+import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.ArrayKind;
 import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
@@ -24,7 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import static tech.metavm.object.meta.TypeUtil.*;
+import static tech.metavm.object.meta.TypeUtils.*;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 @Component
@@ -64,7 +63,6 @@ public class TableManager {
                         List.of(),
                         List.of(),
                         List.of(),
-                        null,
                         null,
                         null,
                         List.of(),
@@ -350,7 +348,7 @@ public class TableManager {
     private boolean isVisible(FieldDTO fieldDTO, IEntityContext context) {
         NncUtils.requireNonNull(fieldDTO.typeId(), "字段'" + fieldDTO.name() + "'的typeId为空");
         Type fieldType = context.getType(fieldDTO.typeId());
-        if(ModelDefRegistry.containsTypeDef(fieldType)) {
+        if(ModelDefRegistry.containsDef(fieldType)) {
             Class<?> javaClass = ModelDefRegistry.getJavaClass(fieldType);
             return !CONFIDENTIAL_JAVA_CLASSES.contains(javaClass);
         }

@@ -1,8 +1,10 @@
 package tech.metavm.object.meta;
 
 import org.springframework.stereotype.Component;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ModelIdentity;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.entity.ReadWriteArray;
+import tech.metavm.entity.ReadonlyArray;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;

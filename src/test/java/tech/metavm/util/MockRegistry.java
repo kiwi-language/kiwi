@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 import tech.metavm.mocks.*;
@@ -25,6 +26,7 @@ public class MockRegistry {
     private static DefContext DEF_CONTEXT;
     private static ModelInstanceMap MODEL_INSTANCE_MAP;
     public static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
+    private static InstanceContextFactory CONTEXT_FACTORY;
 
     private static String getFieldName(Class<?> javaType, String javaFieldName) {
         java.lang.reflect.Field javaField = ReflectUtils.getField(javaType, javaFieldName);
@@ -38,6 +40,7 @@ public class MockRegistry {
     public static void setUp(EntityIdProvider idProvider, MemInstanceStore instanceStore) {
         NncUtils.requireNonNull(idProvider, "idProvider required");
         ID_PROVIDER = idProvider;
+        CONTEXT_FACTORY = new InstanceContextFactory(instanceStore);
         INSTANCE_STORE = instanceStore;
         INSTANCE_CONTEXT = new InstanceContext(
                 ROOT_TENANT_ID, instanceStore, idProvider, EXECUTOR,
@@ -57,8 +60,11 @@ public class MockRegistry {
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
         MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
-        ReflectUtils.getModelClasses().forEach(DEF_CONTEXT::getDef);
+        ReflectUtils.getModelClasses().stream()
+                .filter(k -> !ReadonlyArray.class.isAssignableFrom(k))
+                .forEach(DEF_CONTEXT::getDef);
         DEF_CONTEXT.finish();
+        InstanceContextFactory.setStdContext(INSTANCE_CONTEXT);
         ContextUtil.setContextInfo(TENANT_ID, TENANT_ID);
         initJobScheduler();
     }
@@ -171,6 +177,14 @@ public class MockRegistry {
         );
     }
 
+    public static IEntityContext newEntityContext(long tenantId) {
+        return CONTEXT_FACTORY.newEntityContext(tenantId, false);
+    }
+
+    public static IInstanceContext newContext(long tenantId) {
+        return CONTEXT_FACTORY.newContext(tenantId, false);
+    }
+
     public static Foo getFoo() {
         Foo foo = new Foo(
                 "Big Foo",
@@ -263,8 +277,8 @@ public class MockRegistry {
             type.initId(idProvider.allocateOne(TENANT_ID, typeType));
         }
         if(type instanceof ClassType t) {
-            if (t.getSuperType() != null) {
-                initTypeAndFieldIds(t.getSuperType(), idProvider, visited);
+            if (t.getSuperClass() != null) {
+                initTypeAndFieldIds(t.getSuperClass(), idProvider, visited);
             }
             for (Field field : t.getDeclaredFields()) {
                 if (field.getId() == null) {

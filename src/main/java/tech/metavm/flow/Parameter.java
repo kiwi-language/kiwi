@@ -1,11 +1,9 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
@@ -18,12 +16,16 @@ public class Parameter extends Entity {
     private String code;
     @EntityField("类型")
     private Type type;
+    @ChildEntity("条件")
+    @Nullable
+    private Value condition;
 
-    public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
+    public Parameter(Long tmpId, String name, @Nullable String code, Type type, @Nullable Value condition) {
         setTmpId(tmpId);
         this.name = name;
         this.code = code;
         this.type = type;
+        this.condition = condition;
     }
 
     public void setName(String name) {
@@ -52,13 +54,27 @@ public class Parameter extends Entity {
     }
 
     public Parameter copy() {
-        return new Parameter(null, name, code, type);
+        return new Parameter(null, name, code, type, condition);
     }
 
     public ParameterDTO toDTO() {
-        try(var context = SerializeContext.enter()) {
-            return new ParameterDTO(context.getTmpId(this), getId(), name, code, context.getRef(type));
+        try (var context = SerializeContext.enter()) {
+            return new ParameterDTO(
+                    context.getTmpId(this),
+                    getId(),
+                    name,
+                    code,
+                    context.getRef(type),
+                    NncUtils.get(condition, v -> v.toDTO(false))
+            );
         }
     }
 
+    public @Nullable Value getCondition() {
+        return condition;
+    }
+
+    public void setCondition(@Nullable Value condition) {
+        this.condition = condition;
+    }
 }

@@ -2,7 +2,10 @@ package tech.metavm.task;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.ClassInstance;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 
 @EntityType("添加字段任务")
@@ -18,7 +21,14 @@ public class AddFieldTask extends ScanByClassTask {
 
     @Override
     protected void processClassInstance(ClassInstance instance) {
-        instance.setDirtyField(fieldData.getDeclaringType(), fieldData.getColumn(), fieldData.getDefaultValue());
+        Instance fieldValue;
+        if(fieldData.isChild() && fieldData.getType() instanceof ArrayType arrayType) {
+            fieldValue = new ArrayInstance(arrayType);
+        }
+        else {
+            fieldValue = fieldData.getDefaultValue();
+        }
+        instance.setDirtyField(fieldData.getDeclaringType(), fieldData.getColumn(), fieldValue);
     }
 
 }

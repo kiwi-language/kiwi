@@ -9,11 +9,11 @@ import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.flow.rest.ArgumentDTO;
 import tech.metavm.flow.rest.CallParam;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReadonlyArray;
+import tech.metavm.entity.ReadonlyArray;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
     }
 
     @ChildEntity("参数列表")
-    protected final ChildArray<Argument> arguments = new ChildArray<>(Argument.class);
+    protected final ChildArray<Argument> arguments = addChild(new ChildArray<>(Argument.class), "arguments");
     @EntityField("子流程")
     protected Flow subFlow;
 

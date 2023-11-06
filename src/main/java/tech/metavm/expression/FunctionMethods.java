@@ -3,10 +3,11 @@ package tech.metavm.expression;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.natives.IteratorImplNative;
 import tech.metavm.entity.natives.NativeInvoker;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
 
+import java.awt.datatransfer.StringSelection;
 import java.util.List;
 
 public class FunctionMethods {
@@ -65,6 +66,18 @@ public class FunctionMethods {
         return str.isBlank();
     }
 
+    public static BooleanInstance STARTS_WITH(StringInstance str, StringInstance prefix) {
+        return str.startsWith(prefix);
+    }
+
+    public static BooleanInstance CONTAINS(StringInstance str, StringInstance prefix) {
+        return str.contains(prefix);
+    }
+
+    public static StringInstance CONCAT(StringInstance str1, StringInstance str2) {
+        return str1.concat(str2);
+    }
+
     public static Instance IF(BooleanInstance condition, Instance value1, Instance value2) {
         return condition.isTrue() ? value1 : value2;
     }
@@ -113,7 +126,7 @@ public class FunctionMethods {
     }
 
     public static BooleanInstance HAS_NEXT(Instance iterator) {
-        var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(iterator);
+        var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject((ClassInstance) iterator);
         return iteratorNative.hasNext();
     }
 

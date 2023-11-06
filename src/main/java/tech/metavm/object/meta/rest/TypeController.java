@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
-import tech.metavm.object.instance.ArrayKind;
+import tech.metavm.object.meta.ArrayKind;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.meta.TypeManager;
 import tech.metavm.object.meta.rest.dto.*;
@@ -26,6 +26,13 @@ public class TypeController {
     public Result<Page<TypeDTO>> query(@RequestBody QueryTypeRequest request) {
         return Result.success(typeManager.query(request));
     }
+
+
+    @PostMapping("/get-by-range")
+    public Result<GetTypesResponse> getByRange(@RequestBody GetByRangeRequest request) {
+        return Result.success(typeManager.getByRange(request));
+    }
+
 
     @GetMapping("/{id:[0-9]+}/descendants")
     public Result<GetTypesResponse> getDescendants(@PathVariable("id") long id) {

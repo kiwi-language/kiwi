@@ -3,10 +3,11 @@ package tech.metavm.autograph;
 import com.intellij.psi.PsiMethod;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.expression.ArrayExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.flow.*;
-import tech.metavm.object.instance.ArrayType;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -65,7 +66,7 @@ public class FlowGenerator {
 
     String nextVarName(String name) {
         String varName = "__" + name + "__";
-        var count = varNames.compute(varName, (k,v) -> v == null ? 1 : v + 1);
+        var count = varNames.compute(varName, (k, v) -> v == null ? 1 : v + 1);
         return varName + count;
     }
 
@@ -78,7 +79,7 @@ public class FlowGenerator {
                 scope()
         );
         FieldBuilder.newBuilder("异常", "exception", node.getType(),
-                StandardTypes.getNullableThrowableType())
+                        StandardTypes.getNullableThrowableType())
                 .build();
         return node;
     }
@@ -99,7 +100,9 @@ public class FlowGenerator {
     NewArrayNode createNewArray(ArrayType type, List<Expression> elements) {
         return setNodeExprTypes(new NewArrayNode(
                 null, nextName("NewArray"),
-                type, NncUtils.map(elements, ExpressionValue::new),
+                type,
+                new ExpressionValue(new ArrayExpression(elements, type)),
+                null,
                 scope().getLastNode(), scope()
         ));
     }
@@ -167,7 +170,7 @@ public class FlowGenerator {
     }
 
     ScopeInfo enterScope(ScopeRT scope, ExpressionTypeMap expressionTypeMap) {
-        if(expressionTypeMap != null) {
+        if (expressionTypeMap != null) {
             scope.setExpressionTypes(expressionTypeMap);
         }
         var scopeInfo = new ScopeInfo(scope);
@@ -200,7 +203,7 @@ public class FlowGenerator {
         var checkNode = setNodeExprTypes(
                 new CheckNode(null, nextName("Check"), scope().getLastNode(), scope(),
                         new ExpressionValue(condition), exit)
-                );
+        );
         var narrower = new TypeNarrower(checkNode.getExpressionTypes()::getType);
         var branchEntry = checkNode.getExpressionTypes().merge(narrower.narrowType(ExpressionUtil.not(condition)));
         checkNode.mergeExpressionTypes(narrower.narrowType(condition));
@@ -233,7 +236,9 @@ public class FlowGenerator {
     }
 
     AddObjectNode createAddObject(ClassType klass) {
-        return setNodeExprTypes(new AddObjectNode(null, nextName("Add"), klass, scope().getLastNode(), scope()));
+        return setNodeExprTypes(new AddObjectNode(null, nextName("Add"),
+                false, klass,
+                scope().getLastNode(), scope()));
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -291,12 +296,12 @@ public class FlowGenerator {
         );
     }
 
-    NewNode createNew(Flow flow, List<Expression> arguments) {
+    NewObjectNode createNew(Flow flow, List<Expression> arguments) {
         List<Argument> args = NncUtils.biMap(
                 flow.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, new ExpressionValue(arg))
         );
-        return setNodeExprTypes(new NewNode(null, nextName(flow.getName()), flow, args,
+        return setNodeExprTypes(new NewObjectNode(null, nextName(flow.getName()), flow, args,
                 scope().getLastNode(), scope()));
     }
 

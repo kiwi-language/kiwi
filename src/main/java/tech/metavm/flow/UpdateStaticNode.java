@@ -8,7 +8,7 @@ import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateStaticParamDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
     private ClassType type;
 
     @ChildEntity("更新字段")
-    private final ChildArray<UpdateField> fields = new ChildArray<>(UpdateField.class);
+    private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
 
     public UpdateStaticNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, ClassType type) {
         super(tmpId, name, null, previous, scope);

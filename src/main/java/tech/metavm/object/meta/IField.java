@@ -1,6 +1,6 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.Column;
 
 public interface IField {

@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.NncUtils;

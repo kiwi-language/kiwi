@@ -4,7 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Password;
-import tech.metavm.util.ReadWriteArray;
+import tech.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class UserRT extends Entity {
     private String name;
 
     @ChildEntity("角色列表")
-    private final ReadWriteArray<RoleRT> roles = new ReadWriteArray<>(RoleRT.class);
+    private final ReadWriteArray<RoleRT> roles = addChild(new ReadWriteArray<>(RoleRT.class), "roles");
 
     public UserRT(String loginName, String password, String name, List<RoleRT> roles) {
         this.loginName = loginName;

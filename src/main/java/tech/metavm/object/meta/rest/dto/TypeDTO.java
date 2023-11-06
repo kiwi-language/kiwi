@@ -32,7 +32,7 @@ public record TypeDTO(
                         null,
                         List.of(),
                         ClassSource.RUNTIME.code(),
-                        fieldDTOs, List.of(), List.of(), List.of(), null, null, null,
+                        fieldDTOs, List.of(), List.of(), List.of(),  null, null,
                         List.of(), false, List.of(), List.of(), null, List.of(), List.of(),
                         false
                 )
@@ -64,7 +64,6 @@ public record TypeDTO(
                         List.of(),
                         constraintDTOs,
                         List.of(),
-                        null,
                         desc,
                         null,
                         List.of(),

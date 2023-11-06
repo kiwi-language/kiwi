@@ -4,8 +4,8 @@
 //import org.springframework.stereotype.Component;
 //import tech.metavm.dto.Page;
 //import tech.metavm.object.instance.AbsInstance;
-//import tech.metavm.object.instance.Instance;
-//import tech.metavm.object.instance.InstanceContext;
+//import tech.metavm.object.instance.core.Instance;
+//import tech.metavm.object.instance.core.InstanceContext;
 //import tech.metavm.object.instance.InstanceQueryService;
 //import tech.metavm.object.instance.persistence.IndexKeyPO;
 //import tech.metavm.object.instance.rest.InstanceQueryDTO;

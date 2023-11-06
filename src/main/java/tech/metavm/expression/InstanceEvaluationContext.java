@@ -1,8 +1,8 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.ClassInstance;
-import tech.metavm.object.instance.Instance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InternalException;
 
 public class InstanceEvaluationContext implements EvaluationContext {

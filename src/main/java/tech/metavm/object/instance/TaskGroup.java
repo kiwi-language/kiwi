@@ -2,7 +2,7 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.*;
 import tech.metavm.task.Task;
-import tech.metavm.util.ChildArray;
+import tech.metavm.entity.ChildArray;
 
 import java.util.List;
 
@@ -13,9 +13,13 @@ public abstract class TaskGroup extends Entity {
     private long numDone;
 
     @ChildEntity("任务列表")
-    private final ChildArray<Task> tasks = new ChildArray<>(Task.class);
+    private final ChildArray<Task> tasks = addChild(new ChildArray<>(Task.class), "tasks");
 
-    public final void onDone(Task job, IEntityContext context) {
+    public TaskGroup() {
+        System.out.println(tasks);
+    }
+
+    public void onDone(Task job, IEntityContext context) {
         numDone++;
         if(numDone == tasks.size()) {
             onJobsDone(context);

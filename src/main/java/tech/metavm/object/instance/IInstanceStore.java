@@ -1,6 +1,6 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.entity.IInstanceContext;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.persistence.*;

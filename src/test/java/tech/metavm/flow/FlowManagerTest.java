@@ -8,6 +8,8 @@ import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.*;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.task.TaskManager;
 import tech.metavm.mocks.Coupon;
 import tech.metavm.mocks.CouponState;

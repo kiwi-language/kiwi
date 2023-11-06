@@ -8,6 +8,10 @@ import tech.metavm.expression.ConstantExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceContext;
+import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.query.GraphQueryExecutor;
 import tech.metavm.object.instance.query.InstanceNode;
@@ -97,6 +101,16 @@ public class InstanceManager {
         }
     }
 
+
+    public void save(InstanceDTO instanceDTO, IInstanceContext context) {
+        if(instanceDTO.id() != null) {
+            update(instanceDTO, context);
+        }
+        else {
+            create(instanceDTO, context);
+        }
+    }
+
     public Instance update(InstanceDTO instanceDTO, IInstanceContext context) {
         return ValueFormatter.parseInstance(instanceDTO, context);
     }
@@ -177,7 +191,10 @@ public class InstanceManager {
     public QueryInstancesResponse query(InstanceQuery query) {
         try(var context = newContext()) {
             ClassType type = context.getClassType(query.typeId());
-            Expression expression = ExpressionParser.parse(type, query.searchText(), context);
+            Expression expression =
+                    query.searchText() != null ?
+                    ExpressionParser.parse(type, query.searchText(), context) :
+                            ExpressionUtil.trueExpression();
             if ((expression instanceof ConstantExpression constExpr) && constExpr.isString()) {
                 Field titleField = type.getTileField();
                 PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(query.searchText());
@@ -204,7 +221,8 @@ public class InstanceManager {
             );
             if (query.includeContextTypes()) {
                 try (var serContext = SerializeContext.enter()) {
-                    type.toDTO();
+                    serContext.writeType(type);
+                    serContext.writeDependencies();
                     return new QueryInstancesResponse(page, serContext.getTypes());
                 }
             } else {

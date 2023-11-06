@@ -24,7 +24,7 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     @EntityField("是否包容")
     private boolean inclusive;
     @ChildEntity("分支列表")
-    private final ChildArray<Branch> branches = new ChildArray<>(Branch.class);
+    private final ChildArray<Branch> branches = addChild(new ChildArray<>(Branch.class), "branches");
 
     public BranchNode(Long tmpId, String name, boolean inclusive, NodeRT<?> prev, ScopeRT scope) {
         super(tmpId, name, null, prev, scope);

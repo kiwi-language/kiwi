@@ -118,6 +118,10 @@ public class ReflectUtils {
         return type;
     }
 
+    public static void ensureFieldDeclared(Class<?> klass, Field field) {
+        NncUtils.requireTrue(field.getDeclaringClass().isAssignableFrom(klass));
+    }
+
     public static Class<?> getBoxedClass(Class<?> klass) {
         if (PRIMITIVE_BOXING_MAP.containsKey(klass)) {
             return PRIMITIVE_BOXING_MAP.get(klass);
@@ -498,7 +502,7 @@ public class ReflectUtils {
         try {
             return klass.cast(UNSAFE.allocateInstance(klass));
         } catch (InstantiationException e) {
-            throw new InternalException("Fail to allocate instance of class " + klass.getName());
+            throw new InternalException("Fail to allocate instance of class " + klass.getName(), e);
         }
     }
 

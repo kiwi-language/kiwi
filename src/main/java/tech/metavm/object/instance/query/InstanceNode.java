@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.query;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.PrimitiveType;
 import tech.metavm.object.meta.Type;

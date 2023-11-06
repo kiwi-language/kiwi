@@ -13,6 +13,7 @@ import tech.metavm.object.instance.persistence.mappers.InstanceMapperGateway;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceArrayMapper;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
+import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.StoreLoadRequestItem;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.*;
@@ -56,6 +57,7 @@ public class InstanceStoreTest extends TestCase {
                         Map.of(
                                 "s0", "Bar001"
                         )),
+                null, null ,
                 0L, 0L
         );
 
@@ -73,6 +75,7 @@ public class InstanceStoreTest extends TestCase {
                                                 "m1", barArrayId
                                         )
                                 ),
+                                null, null ,
                                 0L, 0L
                         ),
                         bar,
@@ -80,6 +83,7 @@ public class InstanceStoreTest extends TestCase {
                                 barArrayId, barArrayType.getIdRequired(),
                                 TENANT_ID, 1,
                                 List.of(barId),
+                                null, null ,
                                 0L, 0L
                         )
                 ))
