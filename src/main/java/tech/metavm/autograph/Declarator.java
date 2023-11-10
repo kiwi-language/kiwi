@@ -36,7 +36,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
     @Override
     public void visitClass(PsiClass psiClass) {
         var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.META_CLASS));
-        psiClass.putUserData(Keys.RESOLVE_STAGE, 1);
+        metaClass.setStage(ResolutionStage.DECLARATION);
         if(!metaClass.isInterface()) {
             FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
                     .build();
@@ -53,7 +53,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
         classStack.push(metaClass);
         super.visitClass(psiClass);
         classStack.pop();
-        metaClass.setStage(ResolutionStage.DECLARED);
+//        metaClass.setStage(ResolutionStage.DECLARATION);
     }
 
     private ClassType createEmptyType(String namePrefix) {
@@ -92,15 +92,15 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     private List<Parameter> getEnumConstructorParams() {
         return List.of(
-                new Parameter(null, "名称", "name", StandardTypes.getStringType(), null),
-                new Parameter(null, "序号", "ordinal", StandardTypes.getLongType(), null)
+                new Parameter(null, "名称", "name", StandardTypes.getStringType()),
+                new Parameter(null, "序号", "ordinal", StandardTypes.getLongType())
         );
     }
 
     private List<Parameter> processParameters(PsiParameterList parameterList) {
         return NncUtils.map(
                 parameterList.getParameters(),
-                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveType(param.getType()), null)
+                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveType(param.getType()))
         );
     }
 

@@ -3,6 +3,8 @@ package tech.metavm.entity;
 import com.intellij.util.TriConsumer;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
+import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
@@ -42,6 +44,16 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
     public void resetChildren(Iterable<? extends T> children) {
         table.clear();
         addChildren(children);
+    }
+
+    @Override
+    protected void getDescendants(List<Object> descendants, IdentitySet<Object> visited) {
+        if(visited.contains(this))
+            throw new InternalException("Circular reference detected in entity structure");
+        descendants.add(this);
+        visited.add(this);
+        for (T child : table)
+            child.getDescendants(descendants, visited);
     }
 
     public void clear() {

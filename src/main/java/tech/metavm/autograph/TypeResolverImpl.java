@@ -7,17 +7,16 @@ import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.ArrayKind;
 import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.IteratorImpl;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
 import static java.util.Objects.requireNonNull;
+import static tech.metavm.object.meta.ResolutionStage.*;
 
 public class TypeResolverImpl implements TypeResolver {
 
@@ -57,37 +56,36 @@ public class TypeResolverImpl implements TypeResolver {
             RuntimeException.class, StandardTypes::getRuntimeExceptionType
     );
 
-    private static final Map<Class<?>, BiFunction<Type, IEntityContext, ClassType>> COLLECTION_CLASSES = Map.of(
-            Iterator.class, TypeUtils::getIteratorType,
-            Collection.class, TypeUtils::getCollectionType,
-            List.class, TypeUtils::getListType,
-            Set.class, TypeUtils::getSetType,
-            IteratorImpl.class, TypeUtils::getIteratorImplType
+    private static final List<KeyValue<Class<?>, BiFunction<Type, IEntityContext, ClassType>>> COLLECTION_CLASSES = List.of(
+            new KeyValue<>(IteratorImpl.class, TypeUtils::getIteratorImplType),
+            new KeyValue<>(Iterator.class, TypeUtils::getIteratorType),
+            new KeyValue<>(List.class, TypeUtils::getListType),
+            new KeyValue<>(Set.class, TypeUtils::getSetType),
+            new KeyValue<>(Collection.class, TypeUtils::getCollectionType)
     );
 
     public TypeResolverImpl(IEntityContext context) {
         this.context = context;
         compiler = new Compiler(context);
-        context.getGenericContext().addCallback(typeFactory::addType);
     }
 
     @Override
     public Type resolveTypeOnly(PsiType psiType) {
-        return resolve(psiType, 0);
+        return resolve(psiType, INIT);
     }
 
     @Override
     public Type resolveDeclaration(PsiType psiType) {
-        return resolve(psiType, 1);
+        return resolve(psiType, DECLARATION);
     }
 
     @Override
     public Type resolve(PsiType psiType) {
-        return resolve(psiType, 2);
+        return resolve(psiType, DEFINITION);
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    public Type resolve(PsiType psiType, int stage) {
+    public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> {
                 var klass = ReflectUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
@@ -100,11 +98,11 @@ public class TypeResolverImpl implements TypeResolver {
         };
     }
 
-    private ArrayType resolveArrayType(PsiArrayType psiArrayType, int stage) {
+    private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
         return context.getArrayType(resolve(psiArrayType.getComponentType(), stage), ArrayKind.READ_WRITE);
     }
 
-    private Type resolveWildcardType(PsiWildcardType wildcardType, int stage) {
+    private Type resolveWildcardType(PsiWildcardType wildcardType, ResolutionStage stage) {
         if (wildcardType.isBounded()) {
             if (wildcardType.isExtends()) {
                 return context.getUncertainType(
@@ -124,7 +122,7 @@ public class TypeResolverImpl implements TypeResolver {
         }
     }
 
-    private Type resolveClassType(PsiClassType classType, int stage) {
+    private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
         var psiClass = requireNonNull(classType.resolve());
         if (psiClass instanceof PsiTypeParameter typeParameter) {
             return resolveTypeVariable(typeParameter);
@@ -134,11 +132,11 @@ public class TypeResolverImpl implements TypeResolver {
                     return entry.getValue().get();
                 }
             }
-            for (var entry : COLLECTION_CLASSES.entrySet()) {
-                var collClass = entry.getKey();
+            for (var entry : COLLECTION_CLASSES) {
+                var collClass = entry.key();
                 if (TranspileUtil.createType(collClass).isAssignableFrom(classType)) {
                     var collType = TranspileUtil.getSuperType(classType, collClass);
-                    return entry.getValue().apply(resolve(collType.getParameters()[0], stage), context);
+                    return entry.value().apply(resolve(collType.getParameters()[0], stage), context);
                 }
             }
             if (ReflectUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
@@ -166,7 +164,7 @@ public class TypeResolverImpl implements TypeResolver {
                     List<Type> typeArgs = NncUtils.map(
                             classType.getParameters(), this::resolveTypeOnly
                     );
-                    return context.getParameterizedType(type, typeArgs);
+                    return context.getGenericContext().getParameterizedType(type, typeArgs, stage);
                 } else {
                     return type;
                 }
@@ -179,7 +177,8 @@ public class TypeResolverImpl implements TypeResolver {
                 List.of(
                         generatedTypes,
                         typeFactory.getGeneratedTypes(),
-                        context.getNewCompositeTypes()
+                        context.getNewCompositeTypes(),
+                        context.getGenericContext().getNewTypes()
                 )
         );
     }
@@ -219,7 +218,7 @@ public class TypeResolverImpl implements TypeResolver {
         PsiType declaringType = TranspileUtil.getElementFactory().createType(
                 requireNonNull(field.getContainingClass()));
         ClassType type = (ClassType) resolve(declaringType);
-        return type.getFieldByCode(field.getName());
+        return type.findFieldByCode(field.getName());
     }
 
     private GenericDeclaration resolveGenericDeclaration(PsiTypeParameterListOwner typeParameterOwner,
@@ -235,6 +234,9 @@ public class TypeResolverImpl implements TypeResolver {
 
     @Override
     public TypeVariable resolveTypeVariable(PsiTypeParameter typeParameter) {
+        var builtInTypeVar = tryResolveBuiltinTypeVar(typeParameter);
+        if(builtInTypeVar != null)
+            return builtInTypeVar;
         var typeVariable = typeParameter.getUserData(Keys.TYPE_VARIABLE);
         if (typeVariable != null) {
             return typeVariable;
@@ -252,15 +254,45 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
 
+    private @Nullable TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
+        if(typeParameter.getOwner() instanceof PsiClass psiClass) {
+            var ownerType = TranspileUtil.createType(psiClass);
+            var listType = TranspileUtil.createType(List.class);
+            if(listType.isAssignableFrom(ownerType)) {
+                return StandardTypes.getListType().getTypeParameters().get(0);
+            }
+            var setType = TranspileUtil.createType(Set.class);
+            if(setType.isAssignableFrom(ownerType)) {
+                return StandardTypes.getSetType().getTypeParameters().get(0);
+            }
+            var mapType = TranspileUtil.createType(Map.class);
+            if(mapType.isAssignableFrom(ownerType)) {
+                int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
+                        .getTypeParameterIndex(typeParameter);
+                return StandardTypes.getMapType().getTypeParameters().get(index);
+            }
+            var enumType = TranspileUtil.createType(Enum.class);
+            if(ownerType.equals(enumType)) {
+                return StandardTypes.getEnumType().getTypeParameters().get(0);
+            }
+        }
+        return null;
+    }
+
     private ClassType createMetaClass(PsiClass psiClass) {
         var name = TranspileUtil.getBizClassName(psiClass);
         ClassType metaClass = ClassBuilder.newBuilder(name, TranspileUtil.getClassCode(psiClass))
                 .category(getTypeCategory(psiClass))
+                .isTemplate(psiClass.getTypeParameterList() != null
+                        && psiClass.getTypeParameterList().getTypeParameters().length > 0)
                 .build();
         psiClass.putUserData(Keys.META_CLASS, metaClass);
-        psiClass.putUserData(Keys.RESOLVE_STAGE, 0);
         psiClassMap.put(metaClass, psiClass);
         generatedTypes.add(metaClass);
+        if (psiClass.getSuperClass() != null &&
+                !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
+            metaClass.setSuperClass((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass)));
+        }
         metaClass.setInterfaces(
                 NncUtils.map(
                         TranspileUtil.getInterfaceTypes(psiClass),
@@ -269,10 +301,6 @@ public class TypeResolverImpl implements TypeResolver {
         );
         for (PsiTypeParameter typeParameter : psiClass.getTypeParameters()) {
             resolveTypeVariable(typeParameter).setGenericDeclaration(metaClass);
-        }
-        if (psiClass.getSuperClass() != null &&
-                !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
-            metaClass.setSuperClass((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass)));
         }
         compiler.transform(psiClass);
         return metaClass;
@@ -283,7 +311,7 @@ public class TypeResolverImpl implements TypeResolver {
                 : (psiClass.isInterface() ? TypeCategory.INTERFACE : TypeCategory.CLASS);
     }
 
-    private ClassType resolvePojoClass(PsiClass psiClass, final int stage) {
+    private ClassType resolvePojoClass(PsiClass psiClass, final ResolutionStage stage) {
         var metaClass = psiClass.getUserData(Keys.META_CLASS);
         if (metaClass == null) {
             metaClass = createMetaClass(psiClass);
@@ -294,15 +322,15 @@ public class TypeResolverImpl implements TypeResolver {
 
     @Override
     public void ensureDeclared(ClassType classType) {
-        procesClassType(classType, 1);
+        procesClassType(classType, DECLARATION);
     }
 
     @Override
     public void ensureCodeGenerated(ClassType classType) {
-        procesClassType(classType, 2);
+        procesClassType(classType, DEFINITION);
     }
 
-    private void procesClassType(ClassType metaClass, final int stage) {
+    private void procesClassType(ClassType metaClass, final ResolutionStage stage) {
         var template = metaClass.getEffectiveTemplate();
         if (template.getId() == null) {
             var psiClass = NncUtils.requireNonNull(psiClassMap.get(template));
@@ -310,26 +338,24 @@ public class TypeResolverImpl implements TypeResolver {
         }
     }
 
-    private void procesClassType(ClassType metaClass, PsiClass psiClass, final int stage) {
-        if (stage == 0) {
+    private void procesClassType(ClassType metaClass, PsiClass psiClass, final ResolutionStage stage) {
+        if (stage == INIT) {
             return;
         }
         for (ClassType superType : metaClass.getSuperTypes()) {
             procesClassType(superType, stage);
         }
-        int currentStage = NncUtils.requireNonNull(psiClass.getUserData(Keys.RESOLVE_STAGE));
-        if (currentStage < 1) {
+        if (metaClass.getStage().isBefore(DECLARATION)) {
             compiler.generateDecl(psiClass, this);
+            context.getGenericContext().generateDeclarations(metaClass);
         }
-        context.getGenericContext().generateDeclarations(metaClass);
-
-        if (stage == 1) {
-            return;
-        }
-        if (currentStage < 2 && !metaClass.isInterface()) {
+        if (stage.isAfterOrAt(DEFINITION) && metaClass.getStage().isBefore(DEFINITION) && !metaClass.isInterface()) {
+            for (PsiClassType superType : psiClass.getSuperTypes())
+                resolveDeclaration(superType);
             compiler.generateCode(psiClass, this);
+            context.getGenericContext().generateCode(metaClass);
         }
-        context.getGenericContext().generateCode(metaClass);
+        metaClass.setStage(stage);
     }
 
 

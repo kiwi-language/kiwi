@@ -1,9 +1,10 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.meta.rest.dto.FunctionTypeKey;
 import tech.metavm.object.meta.rest.dto.FunctionTypeParam;
+import tech.metavm.object.meta.rest.dto.TypeKey;
 import tech.metavm.util.NncUtils;
-import tech.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 import java.util.function.Function;
@@ -38,6 +39,11 @@ public class FunctionType extends CompositeType {
 
     private static String createName(List<Type> parameterTypes, Type returnType) {
         return "(" + NncUtils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
+    }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new FunctionTypeKey(NncUtils.map(parameterTypes, Type::getRef), returnType.getRef());
     }
 
     @Override
@@ -93,4 +99,8 @@ public class FunctionType extends CompositeType {
                 + "->" + returnType.getCanonicalName(getJavaType);
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitFunctionType(this);
+    }
 }

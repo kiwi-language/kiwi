@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 
@@ -34,7 +35,7 @@ public class StaticFieldExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of();
     }
 
@@ -43,7 +44,7 @@ public class StaticFieldExpression extends Expression {
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new StaticFieldExpression(field);
     }
 
@@ -57,5 +58,10 @@ public class StaticFieldExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(field);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitStaticFieldExpression(this);
     }
 }

@@ -1,12 +1,15 @@
 package tech.metavm.object.meta.generic;
 
+import org.elasticsearch.action.search.SearchTask;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.UnionType;
 import tech.metavm.util.InternalException;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class UnionTypeContext extends CompositeTypeContext<UnionType>  {
     public UnionTypeContext(IEntityContext context) {
@@ -20,6 +23,14 @@ public class UnionTypeContext extends CompositeTypeContext<UnionType>  {
         }
     }
 
+    public UnionType get(Set<Type> members) {
+        return get(members, null);
+    }
+
+    public UnionType get(Set<Type> members, Long tmpId) {
+        return get(new ArrayList<>(members), tmpId);
+    }
+
     @Override
     protected String getKey(List<Type> componentTypes) {
         return UnionType.getKey(componentTypes);
@@ -31,7 +42,7 @@ public class UnionTypeContext extends CompositeTypeContext<UnionType>  {
     }
 
     @Override
-    protected UnionType create(List<Type> componentTypes) {
-        return new UnionType(null, new HashSet<>(componentTypes));
+    protected UnionType create(List<Type> componentTypes, Long tmpId) {
+        return new UnionType(tmpId, new HashSet<>(componentTypes));
     }
 }

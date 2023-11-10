@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.TypeUtils;
 import tech.metavm.util.NncUtils;
@@ -43,12 +44,12 @@ public class CursorExpression extends Expression{
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of();
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 0);
         return new CursorExpression(array, alias);
     }
@@ -63,5 +64,10 @@ public class CursorExpression extends Expression{
     @Override
     public int hashCode() {
         return Objects.hash(array, alias);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitCursorExpression(this);
     }
 }

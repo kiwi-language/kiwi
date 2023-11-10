@@ -359,7 +359,7 @@ public class EntityUtils {
     }
 
     private static <T extends Entity> T makeDummyRef(Class<T> entityType, long id) {
-        return EntityProxyFactory.makeDummy(entityType, id);
+        return EntityProxyFactory.makeEntityDummy(entityType, id);
     }
 
     private static boolean isShallow(Class<?> klass) {

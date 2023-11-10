@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
-import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
@@ -14,7 +13,8 @@ import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.Var;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.InstanceFactory;
+import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.ClassInstanceParam;
@@ -109,7 +109,7 @@ public class TypeManager {
         );
     }
 
-    private Page<Type> query0(QueryTypeRequest request, IEntityContext context) {
+    private Page<? extends Type> query0(QueryTypeRequest request, IEntityContext context) {
         List<TypeCategory> categories = request.categories() != null ?
                 NncUtils.map(request.categories(), TypeCategory::getByCode)
                 : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
@@ -117,14 +117,16 @@ public class TypeManager {
             return new Page<>(List.of(), 0);
         }
         var fields = new ArrayList<>(List.of(
-                EntityQueryField.create(Type.class, "category", categories),
-                EntityQueryField.create(Type.class, "anonymous", categories.equals(List.of(TypeCategory.FUNCTION)))
+                new EntityQueryField("category", categories)
         ));
-        if(!request.includeParameterized()) {
-            fields.add(EntityQueryField.create(ClassType.class, "isParameterized", false));
+        if (!request.includeAnonymous()) {
+            fields.add(new EntityQueryField("anonymous", false));
         }
         if (request.isTemplate() != null) {
-            fields.add(EntityQueryField.create(ClassType.class, "isTemplate", request.isTemplate()));
+            fields.add(new EntityQueryField("templateFlag", request.isTemplate()));
+        }
+        if (request.error() != null) {
+            fields.add(new EntityQueryField("error", request.error()));
         }
         return entityQueryService.query(
                 new EntityQuery<>(
@@ -277,7 +279,8 @@ public class TypeManager {
     }
 
     @Transactional
-    public List<Long> batchSave(List<TypeDTO> typeDTOs) {
+    public List<Long> batchSave(BatchSaveRequest request) {
+        List<TypeDTO> typeDTOs = request.types();
         FlowSavingContext.skipPreprocessing(true);
         IEntityContext context = newContext();
         batchSave(typeDTOs, context);
@@ -296,99 +299,8 @@ public class TypeManager {
     }
 
     public void batchSave(List<TypeDTO> typeDTOs, IEntityContext context) {
-        List<ClassType> newClasses = new ArrayList<>();
-        var newDTOs = sortByTopology(typeDTOs);
-        for (BaseDTO baseDTO : newDTOs) {
-            if (baseDTO instanceof TypeDTO typeDTO) {
-                var category = TypeCategory.getByCode(typeDTO.category());
-                if (category.isPojo()) {
-                    newClasses.add(TypeUtils.createClassType(typeDTO, context));
-                } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
-                    var typeVar = new TypeVariable(
-                            typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
-                            DummyGenericDeclaration.INSTANCE
-                    );
-                    context.bind(typeVar);
-                } else if (category.isArray()) {
-                    var param = typeDTO.getArrayTypeParam();
-                    var elementType = context.getType(param.elementTypeRef());
-                    var arrayType = new ArrayType(typeDTO.tmpId(), elementType, ArrayKind.getByCode(param.kind()));
-                    context.bind(arrayType);
-                } else if (typeDTO.category() == TypeCategory.UNION.code()) {
-                    var param = typeDTO.getUnionParam();
-                    var unionType = new UnionType(
-                            typeDTO.tmpId(),
-                            NncUtils.mapUnique(param.memberRefs(), context::getType)
-                    );
-                    context.bind(unionType);
-                } else if (typeDTO.category() == TypeCategory.UNCERTAIN.code()) {
-                    var param = typeDTO.getUncertainTypeParam();
-                    context.bind(
-                            new UncertainType(
-                                    typeDTO.tmpId(),
-                                    context.getType(param.lowerBoundRef()),
-                                    context.getType(param.upperBoundRef())
-                            )
-                    );
-                } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
-                    var param = typeDTO.getFunctionTypeParam();
-                    var funcType = new FunctionType(
-                            typeDTO.tmpId(),
-                            NncUtils.map(param.parameterTypeRefs(), context::getType),
-                            context.getType(param.returnTypeRef())
-                    );
-                    context.bind(funcType);
-                } else {
-                    throw new InternalException("Invalid type category: " + typeDTO.category());
-                }
-            } else if (baseDTO instanceof FlowDTO flowDTO) {
-                var flow = FlowBuilder
-                        .newBuilder(
-                                context.getClassType(flowDTO.declaringTypeRef()),
-                                flowDTO.name(), flowDTO.code(),
-                                context.getFunctionTypeContext()
-                        )
-                        .typeParameters(NncUtils.map(flowDTO.typeParameterRefs(), context::getTypeVariable))
-                        .type(context.getFunctionType(flowDTO.typeRef()))
-                        .staticType(context.getFunctionType(flowDTO.staticTypeRef()))
-                        .template(flowDTO.templateRef() != null ? context.getFlow(flowDTO.templateRef()) : null)
-                        .flowDTO(flowDTO).build();
-                context.bind(flow);
-            } else {
-                throw new InternalException("Unexpected BaseDTO: " + baseDTO);
-            }
-        }
-        List<TypeDTO> classDTOs = NncUtils.filter(typeDTOs,
-                typeDTO -> TypeCategory.getByCode(typeDTO.category()).isPojo());
-        for (TypeDTO typeDTO : classDTOs) {
-            TypeUtils.saveClasType(typeDTO, true, context);
-            ClassTypeParam param = typeDTO.getClassParam();
-            ClassType klass = context.getClassType(typeDTO.getRef());
-            if (param.fields() != null) {
-                saveFields(param.fields(), klass, context);
-            }
-            if (param.staticFields() != null) {
-                saveFields(param.staticFields(), klass, context);
-            }
-            if (param.flows() != null) {
-                Set<RefDTO> flowRefs = new HashSet<>();
-                for (FlowDTO flowDTO : param.flows()) {
-                    flowRefs.add(flowDTO.getRef());
-                    flowManager.saveDeclaration(flowDTO, context);
-                }
-                List<Flow> flowsToRemove = NncUtils.filter(klass.getFlows(),
-                        flow -> !flowRefs.contains(flow.getRef()));
-                flowsToRemove.forEach(klass::removeFlow);
-            }
-        }
-        List<TypeDTO> typeVariableDTOs = NncUtils.filter(typeDTOs,
-                typeDTO -> typeDTO.category() == TypeCategory.VARIABLE.code());
-        for (TypeDTO typeDTO : typeVariableDTOs) {
-            var typeVariable = context.getEntity(TypeVariable.class, typeDTO.getRef());
-            var param = typeDTO.getTypeVariableParam();
-            typeVariable.setBounds(NncUtils.map(param.boundRefs(), context::getType));
-        }
-        for (TypeDTO typeDTO : classDTOs) {
+        var batch = SaveTypeBatch.create(context, typeDTOs);
+        for (TypeDTO typeDTO : batch.getClassTypeDTOs()) {
             ClassTypeParam param = typeDTO.getClassParam();
             if (param.flows() != null) {
                 for (FlowDTO flowDTO : param.flows()) {
@@ -421,10 +333,6 @@ public class TypeManager {
                 flowManager.createOverrideFlows(overriden, type, context);
             }
         }
-    }
-
-    private List<BaseDTO> sortByTopology(List<TypeDTO> typeDTOs) {
-        return new DTOVisitor(typeDTOs).result;
     }
 
     @Transactional
@@ -547,7 +455,7 @@ public class TypeManager {
             if (lowerBound == StandardTypes.getNothingType() && upperBound == StandardTypes.getObjectType()) {
                 types = NncUtils.filterByType(query0(
                         new QueryTypeRequest(null, request.categories(), request.isTemplate(),
-                                request.isParameterized(), request.includeBuiltin(), 1, 20),
+                                request.includeParameterized(), request.includeBuiltin(), null, 1, 20),
                         context
                 ).data(), ClassType.class);
             } else {
@@ -585,7 +493,7 @@ public class TypeManager {
                     if (t.isAssignableFrom(lowerBound)) {
                         if (t.isTemplate() == request.isTemplate()
                                 && categories.contains(t.category)
-                                && t.isParameterized() == request.isParameterized()) {
+                                && t.isParameterized() == request.includeParameterized()) {
                             if (downwards) {
                                 typeList.add(t);
                             } else {
@@ -626,7 +534,7 @@ public class TypeManager {
                         .build();
             } else {
                 instance = (ClassInstance) instanceContext.get(instanceDTO.id());
-                var ordinalField = type.getFieldByCode("ordinal");
+                var ordinalField = type.findFieldByCode("ordinal");
                 int ordinal = instance.getLongField(ordinalField).getValue().intValue();
                 instanceDTO = setOrdinal(instanceDTO, ordinal, type);
                 var field = type.getStaticFieldByName(instance.getTitle());
@@ -639,7 +547,7 @@ public class TypeManager {
     }
 
     private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, ClassType type) {
-        var ordinalField = type.getFieldByCode("ordinal");
+        var ordinalField = type.findFieldByCode("ordinal");
         var param = (ClassInstanceParam) instanceDTO.param();
         return instanceDTO.copyWithParam(
                 param.copyWithNewField(
@@ -670,104 +578,6 @@ public class TypeManager {
         }
     }
 
-    private static class DTOVisitor {
-        private final IdentitySet<BaseDTO> visited = new IdentitySet<>();
-        private final IdentitySet<BaseDTO> visiting = new IdentitySet<>();
-        private final List<BaseDTO> result = new ArrayList<>();
-        private final Map<RefDTO, BaseDTO> map = new HashMap<>();
-
-        public DTOVisitor(List<TypeDTO> typeDTOs) {
-            for (TypeDTO typeDTO : typeDTOs) {
-                map.put(typeDTO.getRef(), typeDTO);
-                if (TypeCategory.getByCode(typeDTO.category()).isPojo()) {
-                    var param = typeDTO.getClassParam();
-                    if (param.flows() != null) {
-                        for (FlowDTO flow : param.flows()) {
-                            map.put(flow.getRef(), flow);
-                            for (FlowDTO flowTmpInst : flow.templateInstances()) {
-                                map.put(flowTmpInst.getRef(), flowTmpInst);
-                            }
-                        }
-                    }
-                }
-            }
-            for (BaseDTO baseDTO : map.values()) {
-                visit(baseDTO);
-            }
-        }
-
-        public void visitRef(RefDTO ref) {
-            if (ref == null || ref.isEmpty()) {
-                return;
-            }
-            var baseDTO = map.get(ref);
-            if (baseDTO != null) {
-                visit(baseDTO);
-            }
-        }
-
-        private void visit(BaseDTO baseDTO) {
-            if (baseDTO.getRef().id() != null) {
-                return;
-            }
-            if (visiting.contains(baseDTO)) {
-                throw new InternalException("Circular reference");
-            }
-            if (visited.contains(baseDTO)) {
-                return;
-            }
-            visiting.add(baseDTO);
-            getDependencies(baseDTO).forEach(this::visitRef);
-            result.add(baseDTO);
-            visiting.remove(baseDTO);
-            visited.add(baseDTO);
-        }
-
-        private Set<RefDTO> getDependencies(BaseDTO baseDTO) {
-            Set<RefDTO> dependencies = new HashSet<>();
-            switch (baseDTO) {
-                case TypeDTO typeDTO -> getDependencies(typeDTO, dependencies);
-                case FlowDTO flowDTO -> getDependencies(flowDTO, dependencies);
-                default -> throw new IllegalStateException("Unexpected value: " + baseDTO);
-            }
-            return dependencies;
-        }
-
-        private void getDependencies(TypeDTO typeDTO, Set<RefDTO> dependencies) {
-            var category = TypeCategory.getByCode(typeDTO.category());
-            if (category.isPojo()) {
-                var param = typeDTO.getClassParam();
-                dependencies.add(param.templateRef());
-                if (param.typeParameterRefs() != null) {
-                    dependencies.addAll(param.typeParameterRefs());
-                }
-            } else if (category.isArray()) {
-                var param = typeDTO.getArrayTypeParam();
-                dependencies.add(param.elementTypeRef());
-            } else if (category == TypeCategory.UNION) {
-                var param = typeDTO.getUnionParam();
-                dependencies.addAll(param.memberRefs());
-            } else if (category == TypeCategory.FUNCTION) {
-                var param = typeDTO.getFunctionTypeParam();
-                dependencies.addAll(param.parameterTypeRefs());
-                dependencies.add(param.returnTypeRef());
-            } else if (category == TypeCategory.UNCERTAIN) {
-                var param = (UncertainTypeParam) typeDTO.param();
-                dependencies.add(param.lowerBoundRef());
-                dependencies.add(param.upperBoundRef());
-            }
-        }
-
-        private void getDependencies(FlowDTO flowDTO, Set<RefDTO> dependencies) {
-            dependencies.add(flowDTO.declaringTypeRef());
-            dependencies.add(flowDTO.templateRef());
-            dependencies.add(flowDTO.typeRef());
-            dependencies.add(flowDTO.staticTypeRef());
-            dependencies.addAll(flowDTO.typeParameterRefs());
-        }
-
-    }
-
     @Transactional
     public void batchRemove(List<Long> typeIds) {
         try (var context = newContext()) {
@@ -784,14 +594,17 @@ public class TypeManager {
     public ClassType createType(TypeDTO classDTO, boolean withContent, IEntityContext context) {
         NncUtils.requireNonNull(classDTO.name(), "类型名称不能为空");
         ensureClassNameAvailable(classDTO, context);
-        var type = TypeUtils.saveClasType(classDTO, withContent, context);
+        var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
+        var batch = SaveTypeBatch.create(context, List.of(classDTO));
+        var type = TypeUtils.saveClasType(classDTO, stage, batch);
         createOverridingFlows(type, context);
         return type;
     }
 
     public ClassType updateType(TypeDTO typeDTO, ClassType type, IEntityContext context) {
         NncUtils.requireNonNull(typeDTO.name(), "类型名称不能为空");
-        TypeUtils.saveClasType(typeDTO, true, context);
+        var batch = SaveTypeBatch.create(context, List.of(typeDTO));
+        TypeUtils.saveClasType(typeDTO, ResolutionStage.DECLARATION, batch);
         retransformClassTypeIfRequired(type, context);
         createOverridingFlows(type, context);
         return type;
@@ -821,7 +634,7 @@ public class TypeManager {
         IEntityContext context = newContext();
         Field field = saveField(fieldDTO, context);
         context.finish();
-        return field != null ? field.getIdRequired() : 0L;
+        return NncUtils.getOrElse(field, Entity::getIdRequired, 0L);
     }
 
     public void saveFields(List<FieldDTO> fieldDTOs, ClassType declaringClass, IEntityContext context) {
@@ -838,6 +651,7 @@ public class TypeManager {
         List<Field> toRemove = NncUtils.filter(
                 declaringClass.getAllFields(), f -> f.getId() != null && !fieldIds.contains(f.getId()));
         toRemove.forEach(declaringClass::removeField);
+
     }
 
     public Field saveField(FieldDTO fieldDTO, IEntityContext context) {
@@ -970,7 +784,7 @@ public class TypeManager {
                         null,
                         page,
                         pageSize,
-                        List.of(EntityQueryField.create(Constraint.class, "declaringType", type))
+                        List.of(new EntityQueryField("declaringType", type))
                 ),
                 context
         );

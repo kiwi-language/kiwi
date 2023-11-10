@@ -1,10 +1,7 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.meta.persistence.ConstraintPO;
 import tech.metavm.object.meta.rest.dto.ConstraintDTO;
 import tech.metavm.util.ContextUtil;
@@ -13,7 +10,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 
 @EntityType("约束")
-public abstract class Constraint extends Entity {
+public abstract class Constraint extends Element {
 
     @EntityField("所属类型")
     private final ClassType declaringType;

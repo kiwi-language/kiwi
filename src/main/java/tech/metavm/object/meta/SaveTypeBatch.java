@@ -1,0 +1,189 @@
+package tech.metavm.object.meta;
+
+import tech.metavm.dto.BaseDTO;
+import tech.metavm.dto.RefDTO;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.flow.Flow;
+import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.object.meta.rest.dto.*;
+import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
+import java.util.*;
+
+public class SaveTypeBatch {
+
+    public static SaveTypeBatch create(IEntityContext context, List<TypeDTO> types) {
+        var batch = new SaveTypeBatch(context, types);
+        batch.execute();
+        return batch;
+    }
+
+    private final IEntityContext context;
+    // Order matters! Don't use HashMap
+    private final Map<RefDTO, TypeDTO> map = new LinkedHashMap<>();
+    private final Map<TypeKey, TypeDTO> typeKey2TypeDTO = new HashMap<>();
+    private final Map<RefDTO, FlowDTO> flowMap = new HashMap<>();
+    private final List<ClassType> newClasses = new ArrayList<>();
+
+    private SaveTypeBatch(IEntityContext context, List<TypeDTO> types) {
+        this.context = context;
+        for (TypeDTO typeDTO : sortByTopology(types)) {
+            map.put(typeDTO.getRef(), typeDTO);
+            var typeKey = typeDTO.getTypeKey();
+            if (typeKey != null)
+                typeKey2TypeDTO.put(typeKey, typeDTO);
+        }
+    }
+
+    private void execute() {
+        for (ResolutionStage stage : ResolutionStage.values()) {
+            for (TypeDTO typeDTO : map.values())
+                save(typeDTO, stage);
+        }
+    }
+
+    public IEntityContext getContext() {
+        return context;
+    }
+
+    public Flow getFlow(RefDTO ref) {
+        var existing = context.getFlow(ref);
+        if (existing != null) {
+            return existing;
+        } else {
+            var flowDTO = NncUtils.requireNonNull(flowMap.get(ref), "Flow '" + ref + " not available");
+            return TypeUtils.saveFlow(flowDTO, this);
+        }
+    }
+
+    public Type get(RefDTO ref) {
+        var existing = context.getType(ref);
+        if (existing != null)
+            return existing;
+        var typeDTO = NncUtils.requireNonNull(map.get(ref),
+                "Type '" + ref + "' not available");
+        return save(typeDTO, ResolutionStage.INIT);
+    }
+
+    public ClassType getClassType(RefDTO ref) {
+        return (ClassType) get(ref);
+    }
+
+    public TypeVariable getTypeVariable(RefDTO ref) {
+        return (TypeVariable) get(ref);
+    }
+
+    private Type save(TypeDTO typeDTO, ResolutionStage stage) {
+        var type = TypeUtils.saveType(typeDTO, stage, this);
+        if (type instanceof ClassType classType && context.isNewEntity(classType))
+            newClasses.add(classType);
+        return type;
+    }
+
+    public List<TypeDTO> getClassTypeDTOs() {
+        return NncUtils.filter(this.map.values(), t -> t.param() instanceof ClassTypeParam);
+    }
+
+    private List<TypeDTO> sortByTopology(Collection<TypeDTO> typeDTOs) {
+        return new DTOVisitor(typeDTOs).result;
+    }
+
+    private static class DTOVisitor {
+        private final IdentitySet<BaseDTO> visited = new IdentitySet<>();
+        private final IdentitySet<BaseDTO> visiting = new IdentitySet<>();
+        private final List<TypeDTO> result = new ArrayList<>();
+        private final Map<RefDTO, TypeDTO> map = new HashMap<>();
+
+        public DTOVisitor(Collection<TypeDTO> typeDTOs) {
+            for (TypeDTO typeDTO : typeDTOs) {
+                map.put(typeDTO.getRef(), typeDTO);
+            }
+            for (TypeDTO typeDTO : map.values()) {
+                visit(typeDTO);
+            }
+        }
+
+        public void visitRef(RefDTO ref) {
+            if (ref == null || ref.isEmpty()) {
+                return;
+            }
+            var baseDTO = map.get(ref);
+            if (baseDTO != null) {
+                visit(baseDTO);
+            }
+        }
+
+        private void visit(TypeDTO typeDTO) {
+            if (typeDTO.getRef().id() != null) {
+                return;
+            }
+            if (visiting.contains(typeDTO)) {
+                throw new InternalException("Circular reference");
+            }
+            if (visited.contains(typeDTO)) {
+                return;
+            }
+            visiting.add(typeDTO);
+            getDependencies(typeDTO).forEach(this::visitRef);
+            result.add(typeDTO);
+            visiting.remove(typeDTO);
+            visited.add(typeDTO);
+        }
+
+        private Set<RefDTO> getDependencies(TypeDTO typeDTO) {
+            Set<RefDTO> dependencies = new HashSet<>();
+            getDependencies(typeDTO, dependencies);
+            return dependencies;
+        }
+
+        private void getDependencies(TypeDTO typeDTO, Set<RefDTO> dependencies) {
+            var category = TypeCategory.getByCode(typeDTO.category());
+            if (category.isPojo()) {
+                var param = typeDTO.getClassParam();
+                dependencies.add(param.templateRef());
+                if (param.typeParameterRefs() != null) {
+                    dependencies.addAll(param.typeParameterRefs());
+                }
+            } else if (category.isArray()) {
+                var param = typeDTO.getArrayTypeParam();
+                dependencies.add(param.elementTypeRef());
+            } else if (category == TypeCategory.UNION) {
+                var param = typeDTO.getUnionParam();
+                dependencies.addAll(param.memberRefs());
+            } else if (category == TypeCategory.FUNCTION) {
+                var param = typeDTO.getFunctionTypeParam();
+                dependencies.addAll(param.parameterTypeRefs());
+                dependencies.add(param.returnTypeRef());
+            } else if (category == TypeCategory.UNCERTAIN) {
+                var param = (UncertainTypeParam) typeDTO.param();
+                dependencies.add(param.lowerBoundRef());
+                dependencies.add(param.upperBoundRef());
+            }
+        }
+    }
+
+    public @Nullable Long getTmpId(TypeKey typeKey) {
+        return NncUtils.get(getTypeDTO(typeKey), TypeDTO::tmpId);
+    }
+
+    public @Nullable TypeDTO getTypeDTO(TypeKey typeKey) {
+        return typeKey2TypeDTO.get(typeKey);
+    }
+
+    public @Nullable FlowDTO getFlowDTO(Flow flow) {
+        var typeDTO = getTypeDTO(flow.getDeclaringType().getRef());
+        return NncUtils.get(typeDTO, t -> t.getClassParam().findFlowBySignature(flow.getSignature()));
+    }
+
+    public @Nullable TypeDTO getTypeDTO(RefDTO ref) {
+        return map.get(ref);
+    }
+
+    public static SaveTypeBatch empty(IEntityContext context) {
+        return new SaveTypeBatch(context, List.of());
+    }
+
+}

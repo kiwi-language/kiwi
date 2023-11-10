@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueParamDTO;
@@ -59,5 +60,10 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
     @Override
     public void execute(MetaFrame frame) {
         frame.setResult(value.evaluate(frame));
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitValueNode(this);
     }
 }

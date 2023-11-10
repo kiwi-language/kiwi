@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
@@ -8,10 +9,8 @@ import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
-
 @EntityType("分支")
-public class Branch extends Entity {
+public class Branch extends Element {
 
     private static final long PRESELECTED_BRANCH_ID = 10000;
 
@@ -112,13 +111,6 @@ public class Branch extends Entity {
         }
     }
 
-    @Override
-    public List<Object> beforeRemove(IEntityContext context) {
-        owner.deleteBranch(this);
-        return List.of();
-    }
-
-
     public void setCondition(Value condition) {
         this.condition = condition;
     }
@@ -135,4 +127,8 @@ public class Branch extends Entity {
         return !isEmpty();
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitBranch(this);
+    }
 }

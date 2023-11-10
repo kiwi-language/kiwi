@@ -180,7 +180,7 @@ public class ExpressionResolver {
                 Field field;
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
                     ClassType klass = (ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass));
-                    field = klass.getStaticFieldByCode(psiField.getName());
+                    field = klass.findStaticFieldByCode(psiField.getName());
                     return new StaticFieldExpression(field);
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
@@ -416,7 +416,7 @@ public class ExpressionResolver {
                 param -> typeResolver.resolveDeclaration(param.getType())
         );
         var tempalteFlow = template.getFlowByCodeAndParamTypes(method.getName(), rawParamTypes);
-        Flow piFlow = template != declaringType ? declaringType.getFlowByTemplate(tempalteFlow) : tempalteFlow;
+        Flow piFlow = template != declaringType ? declaringType.getFlowByRootTemplate(tempalteFlow) : tempalteFlow;
         Flow flow;
         if (piFlow.getTypeParameters().isEmpty()) {
             flow = piFlow;
@@ -546,7 +546,7 @@ public class ExpressionResolver {
                 }
                 ClassType instanceType = (ClassType) flowBuilder.getExpressionType(self);
                 typeResolver.ensureDeclared(instanceType);
-                Field field = instanceType.getFieldByCodeRequired(psiField.getName());
+                Field field = instanceType.getFieldByCode(psiField.getName());
                 UpdateObjectNode node = flowBuilder.createUpdateObject();
                 node.setObjectId(new ExpressionValue(self));
                 node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(assignment));
@@ -645,7 +645,7 @@ public class ExpressionResolver {
     private Parameter resolveParameter(PsiParameter psiParameter) {
         return new Parameter(
                 null, TranspileUtil.getFlowParamName(psiParameter), psiParameter.getName(),
-                typeResolver.resolveDeclaration(psiParameter.getType()), null
+                typeResolver.resolveDeclaration(psiParameter.getType()), null, null
         );
     }
 
@@ -664,13 +664,15 @@ public class ExpressionResolver {
             var branch1 = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
             branchNode.addDefaultBranch();
 
-            flowBuilder.enterScope(branch1.getScope());
+            flowBuilder.enterCondSection(branchNode);
+            flowBuilder.enterBranch(branch1);
+//            flowBuilder.enterScope(branch1.getScope());
             constructBool(first, !negated, branchNode, context);
             constructBool(second, !negated, branchNode, context);
             flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
-            flowBuilder.exitScope();
-
-            flowBuilder.createMerge();
+//            flowBuilder.exitScope();
+            flowBuilder.exitBranch();
+            flowBuilder.exitCondSection(flowBuilder.createMerge(), List.of());
         } else {
             var expr = resolveBinary(psiBinaryExpression, context);
             flowBuilder.createCheck(expr, parent);

@@ -151,18 +151,22 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return (FunctionTypeContext) getCompositeTypeContext(TypeCategory.FUNCTION);
     }
 
-    UncertainTypeContext getUncertainTypeContext() {
+    @Override
+    public UncertainTypeContext getUncertainTypeContext() {
         return (UncertainTypeContext) getCompositeTypeContext(TypeCategory.UNCERTAIN);
     }
 
-    ArrayTypeContext getArrayTypeContext(ArrayKind kind) {
+    @Override
+    public ArrayTypeContext getArrayTypeContext(ArrayKind kind) {
         return (ArrayTypeContext) getCompositeTypeContext(kind.category());
     }
 
-    UnionTypeContext getUnionTypeContext() {
+    @Override
+    public UnionTypeContext getUnionTypeContext() {
         return (UnionTypeContext) getCompositeTypeContext(TypeCategory.UNION);
     }
 
+    @Override
     public IntersectionTypeContext getIntersectionTypeContext() {
         return (IntersectionTypeContext) getCompositeTypeContext(TypeCategory.INTERSECTION);
     }
@@ -552,10 +556,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             newTypes.addAll(ctx.getNewTypes());
         }
         return newTypes;
-    }
-
-    public Type substitueType(Type type, List<TypeVariable> typeParameters, List<Type> typeArguments) {
-        return genericContext.substitute(type, new TypeArgumentMap(zip(typeParameters, typeArguments)));
     }
 
     private Set<Object> getChildEntities(Object entity) {

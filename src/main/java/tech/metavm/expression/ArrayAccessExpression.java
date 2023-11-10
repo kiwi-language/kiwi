@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Type;
 
@@ -37,7 +38,7 @@ public class ArrayAccessExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(array, index);
     }
 
@@ -50,7 +51,7 @@ public class ArrayAccessExpression extends Expression {
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new ArrayAccessExpression(children.get(0), children.get(1));
     }
 
@@ -64,5 +65,10 @@ public class ArrayAccessExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(array, index);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitArrayAccessExpression(this);
     }
 }

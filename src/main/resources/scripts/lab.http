@@ -111,7 +111,7 @@ Content-Type: application/json
 GET http://localhost:8080/instance/7205760425393226
 
 ###
-DELETE http://localhost:8080/instance/1247304949
+DELETE http://localhost:8080/instance/1075001532
 
 ###
 POST http://localhost:8080/instance/load-by-tree
@@ -273,7 +273,7 @@ DELETE http://localhost:8080/type/1234004690
 <> 2023-02-20T200039.200.json
 <> 2023-02-20T200015.200.json
 ###
-GET http://localhost:8080/instance/1008000163
+GET http://localhost:8080/instance/1072401449
 
 <> 2023-02-22T200907.200.json
 <> 2023-02-22T195546.200.json
@@ -313,7 +313,7 @@ DELETE http://localhost:8080/flow/node/1242404897
 
 
 ###
-DELETE http://localhost:8080/instance/7836264356524685
+DELETE http://localhost:8080/instance/1075301517
 
 ###
 DELETE http://localhost:8080/flow/node/1139802809
@@ -325,13 +325,16 @@ GET http://localhost:8080/type/12004
 GET http://localhost:8080/instance/1175503532
 
 ###
-GET http://localhost:8080/instance/reference-chain/1022100456?rootMode=1
+GET http://localhost:8080/instance/reference-chain/1073501481?rootMode=1
 
 ###
-GET http://localhost:8080/instance/reference-chain/1020500429?rootMode=2
+GET http://localhost:8080/instance/reference-chain/1073501481?rootMode=2
 
 ###
 GET http://localhost:8080/type/primitives
+
+###
+POST http://localhost:8080/debug/init-test
 
 ###
 POST http://localhost:8080/type/get-by-range

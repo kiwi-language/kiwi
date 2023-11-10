@@ -4,8 +4,8 @@ import org.springframework.web.bind.annotation.*;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.Page;
 import tech.metavm.dto.Result;
-import tech.metavm.object.meta.ArrayKind;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.meta.ArrayKind;
 import tech.metavm.object.meta.TypeManager;
 import tech.metavm.object.meta.rest.dto.*;
 
@@ -66,8 +66,8 @@ public class TypeController {
     }
 
     @PostMapping("/batch")
-    public Result<List<Long>> batchSave(@RequestBody List<TypeDTO> typeDTOs) {
-        return Result.success(typeManager.batchSave(typeDTOs));
+    public Result<List<Long>> batchSave(@RequestBody BatchSaveRequest request) {
+        return Result.success(typeManager.batchSave(request));
     }
 
     @PostMapping("/batch-delete")

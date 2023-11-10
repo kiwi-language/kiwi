@@ -223,7 +223,7 @@ public class SearchBuilder {
             if (type == null) {
                 return column.name();
             } else {
-                return "l" + (type.getClassHierarchy().size()-1) + "." + column.name();
+                return "l" + (type.getAncestorClasses().size()-1) + "." + column.name();
             }
         }
 
@@ -231,7 +231,7 @@ public class SearchBuilder {
             if (type == null) {
                 return column.fuzzyName();
             } else {
-                return "l" + (type.getClassHierarchy().size()-1) + "." + column.fuzzyName();
+                return "l" + (type.getAncestorClasses().size()-1) + "." + column.fuzzyName();
             }
         }
 

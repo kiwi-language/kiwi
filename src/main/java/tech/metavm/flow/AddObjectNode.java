@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.AddObjectParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
@@ -11,9 +12,11 @@ import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.function.Function;
 
 @EntityType("新增记录节点")
 public class AddObjectNode extends ScopeNode<AddObjectParam> {
@@ -28,11 +31,11 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> {
         return node;
     }
 
-    @ChildEntity("主对象")
+    @ChildEntity("父对象")
     @Nullable
     private ParentRef parent;
 
-    @EntityField("初始化子数组")
+    @EntityField("初始化子对象数组")
     private boolean initializeArrayChildren;
 
     @ChildEntity("字段列表")
@@ -64,6 +67,18 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> {
                     bodyScope.toDTO(true)
             );
         }
+    }
+
+    @Override
+    public String check0() {
+        var fieldParamMap = NncUtils.toMap(fields, FieldParam::getField, Function.identity());
+        ErrorBuilder errorBuffer = new ErrorBuilder();
+        for (Field field : getType().getAllFields()) {
+            if(field.getType().isNotNull() && !fieldParamMap.containsKey(field)) {
+                errorBuffer.addError(String.format("必填字段'%s'未配置", field.getName()));
+            }
+        }
+        return errorBuffer.getMessage();
     }
 
     public void setField(long fieldId, Value value) {
@@ -104,8 +119,11 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> {
     @Override
     public void execute(MetaFrame frame) {
         var instance = new ClassInstance(getType(), NncUtils.get(parent, p -> p.evaluate(frame)));
-        for (FieldParam field : fields) {
-            instance.initField(field.getField(), field.evaluate(frame));
+        var fieldParamMap = NncUtils.toMap(fields, FieldParam::getField, Function.identity());
+        for (Field field : getType().getAllFields()) {
+            var fieldParam = fieldParamMap.get(field);
+            instance.initField(field,
+                    NncUtils.getOrElse(fieldParam, fp -> fp.evaluate(frame), InstanceUtils.nullInstance()));
         }
         if(initializeArrayChildren) {
             for (Field field : getType().getAllFields()) {
@@ -123,4 +141,8 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> {
         }
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitAddObjectNode(this);
+    }
 }

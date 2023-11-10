@@ -62,7 +62,7 @@ public class InstanceQueryService {
 
     public Page<Long> query(long typeId, Expression expression, boolean includeBuiltin, int page, int pageSize, IInstanceContext context) {
         Type type = context.getType(typeId);
-        Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getTypeIdsInHierarchy() :
+        Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
                 Set.of(typeId);
         SearchQuery searchQuery = new SearchQuery(
                 context.getTenantId(),

@@ -1,6 +1,8 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.meta.rest.dto.TypeKey;
+import tech.metavm.object.meta.rest.dto.UncertainTypeKey;
 import tech.metavm.object.meta.rest.dto.UncertainTypeParam;
 
 import java.util.List;
@@ -29,6 +31,11 @@ public class UncertainType extends CompositeType implements LoadAware  {
 
     private static String createName(Type lowerBound, Type upperBound) {
         return "[" + lowerBound.getName() + "," + upperBound.getName() + "]";
+    }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new UncertainTypeKey(lowerBound.getRef(), upperBound.getRef());
     }
 
     @Override
@@ -85,5 +92,10 @@ public class UncertainType extends CompositeType implements LoadAware  {
     @Override
     public List<Type> getComponentTypes() {
         return List.of(lowerBound, upperBound);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUncertainType(this);
     }
 }

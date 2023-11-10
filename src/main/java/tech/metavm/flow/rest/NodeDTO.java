@@ -8,6 +8,8 @@ import tech.metavm.flow.NodeKind;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 
+import javax.annotation.Nullable;
+
 public record NodeDTO(
         Long tmpId,
         Long id,
@@ -20,11 +22,12 @@ public record NodeDTO(
         @JsonTypeIdResolver(NodeParamTypeIdResolver.class)
         Object param,
         TypeDTO outputType,
-        Long scopeId
+        Long scopeId,
+        @Nullable  String error
 ) implements BaseDTO {
 
     public static NodeDTO create(String name, NodeKind kind) {
-        return new NodeDTO(null, null, null, name, kind.code(), null, null, null, null, null);
+        return new NodeDTO(null, null, null, name, kind.code(), null, null, null, null, null, null);
     }
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId) {
@@ -33,7 +36,7 @@ public record NodeDTO(
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId, Object param, long scopeId) {
         return new NodeDTO(
-                null, null, flowId, name, type, RefDTO.ofId(prevId), null, param, null, scopeId
+                null, null, flowId, name, type, RefDTO.ofId(prevId), null, param, null, scopeId, null
         );
     }
 
@@ -48,7 +51,8 @@ public record NodeDTO(
                 outputTypeRef,
                 newParam,
                 outputType,
-                scopeId
+                scopeId,
+                null
         );
     }
 
@@ -63,7 +67,8 @@ public record NodeDTO(
                 new RefDTO(type.id(), type.tmpId()),
                 param,
                 type,
-                scopeId
+                scopeId,
+                null
         );
     }
 
@@ -78,7 +83,8 @@ public record NodeDTO(
                 new RefDTO(type.id(), type.tmpId()),
                 param,
                 type,
-                scopeId
+                scopeId,
+                null
         );
     }
 

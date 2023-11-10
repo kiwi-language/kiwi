@@ -1,16 +1,13 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
+import tech.metavm.entity.*;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
 @EntityType("属性")
-public abstract class Property extends Entity {
+public abstract class Property extends Element {
 
     public static final IndexDef<Property> INDEX_TYPE = new IndexDef<>(Property.class, false,"type");
 

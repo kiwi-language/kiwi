@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CallParam;
 import tech.metavm.flow.rest.NewObjectParam;
@@ -31,7 +32,7 @@ public class NewObjectNode extends CallNode<NewObjectParam> {
     }
 
 
-    @ChildEntity("主对象")
+    @ChildEntity("父对象")
     @Nullable
     private ParentRef parent;
 
@@ -89,4 +90,8 @@ public class NewObjectNode extends CallNode<NewObjectParam> {
         this.ephemeral = ephemeral;
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitNewObjectNode(this);
+    }
 }

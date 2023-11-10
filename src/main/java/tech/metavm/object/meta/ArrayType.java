@@ -1,14 +1,19 @@
 package tech.metavm.object.meta;
 
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.instance.ReferenceKind;
+import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
+import tech.metavm.object.meta.rest.dto.ArrayTypeKey;
 import tech.metavm.object.meta.rest.dto.ArrayTypeParam;
+import tech.metavm.object.meta.rest.dto.TypeKey;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashSet;
@@ -53,6 +58,11 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
+    public TypeKey getTypeKey() {
+        return new ArrayTypeKey(kind.code(), elementType.getRef());
+    }
+
+    @Override
     public Type getConcreteType() {
         return elementType.getConcreteType();
     }
@@ -60,9 +70,19 @@ public class ArrayType extends CompositeType {
     @Override
     protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ArrayType arrayType) {
-            return kind.isAssignableFrom(arrayType.kind) && elementType.isWithinRange(arrayType.elementType);
+            return kind.isAssignableFrom(arrayType.kind) && elementType.contains(arrayType.elementType);
         } else {
             return false;
+        }
+    }
+
+    @Override
+    public SQLType getSQLType() {
+        if(isChildArray()) {
+            return elementType.getSQLType();
+        }
+        else {
+            return super.getSQLType();
         }
     }
 
@@ -138,4 +158,8 @@ public class ArrayType extends CompositeType {
         };
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitArrayType(this);
+    }
 }

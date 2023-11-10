@@ -21,7 +21,8 @@ public class TranspileTestTools {
     public static final Logger LOGGER = LoggerFactory.getLogger(TranspileTestTools.class);
 
     private static final String BASE_MOD = "/Users/leen/Library/Java/JavaVirtualMachines/openjdk-18.0.2/Contents/Home/jmods/java.base.jmod";
-    private static final String SOURCE_ROOT = "/Users/leen/workspace/object/src/test/java/";
+    private static final String TEST_SOURCE_ROOT = "/Users/leen/workspace/object/src/test/java/";
+    private static final String SOURCE_ROOT = "/Users/leen/workspace/object/src/main/java/";
 
     private static final IrCoreApplicationEnvironment APP_ENV;
     private static final IrCoreProjectEnvironment PROJECT_ENV;
@@ -36,6 +37,7 @@ public class TranspileTestTools {
         var javaBaseDir = APP_ENV.getJarFileSystem().findFileByPath(BASE_MOD + "!/classes");
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(javaBaseDir));
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(SOURCE_ROOT)));
+        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TEST_SOURCE_ROOT)));
         PROJECT = PROJECT_ENV.getProject();
         TranspileUtil.setElementFactory(PROJECT.getService(PsiElementFactory.class));
     }
@@ -74,7 +76,7 @@ public class TranspileTestTools {
     }
 
     private static String getClassFilePath(Class<?> klass) {
-        return SOURCE_ROOT + klass.getName().replace('.', '/') + ".java";
+        return TEST_SOURCE_ROOT + klass.getName().replace('.', '/') + ".java";
     }
 
     public static void executeCommand(Runnable command) {
@@ -98,7 +100,7 @@ public class TranspileTestTools {
     }
 
     private static String getPackagePath(Package pkg) {
-        return SOURCE_ROOT + pkg.getName().replace('.', '/');
+        return TEST_SOURCE_ROOT + pkg.getName().replace('.', '/');
     }
 
     public static PsiJavaFile getPsiJavaFile(String path) {

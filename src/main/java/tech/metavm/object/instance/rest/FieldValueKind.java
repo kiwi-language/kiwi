@@ -5,10 +5,10 @@ import tech.metavm.util.NncUtils;
 public enum FieldValueKind {
 
     PRIMITIVE(1, PrimitiveFieldValue.class),
-    REFERENCE(2, ReferenceFieldValueDTO.class),
-    ARRAY(3, ArrayFieldValueDTO.class),
-    INSTANCE_DTO(4, InstanceFieldValueDTO.class),
-    EXPRESSION(5, ExpressionFieldValueDTO.class)
+    REFERENCE(2, ReferenceFieldValue.class),
+    ARRAY(3, ArrayFieldValue.class),
+    INSTANCE_DTO(4, InstanceFieldValue.class),
+    EXPRESSION(5, ExpressionFieldValue.class)
     ;
 
     private final int code;

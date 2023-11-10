@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.rest.dto.ParameterizedTypeDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
@@ -24,7 +25,7 @@ public class SerializeContext implements Closeable {
     private boolean includingCode;
     private boolean includeBuiltinTypes;
     private final Set<Type> writtenTypes = new IdentitySet<>();
-    private final List<TypeDTO> types = new ArrayList<>();
+    private final Map<Type, TypeDTO> types = new HashMap<>();
     private final Map<Long, TypeDTO> typeMap = new HashMap<>();
 
     private SerializeContext() {
@@ -82,10 +83,14 @@ public class SerializeContext implements Closeable {
         }
         writtenTypes.add(type);
         var typeDTO = type.toDTO();
-        types.add(typeDTO);
+        types.put(type, typeDTO);
         if(type.getId() != null) {
             typeMap.put(type.getIdRequired(), typeDTO);
         }
+    }
+
+    public Set<Type> getWrittenTypes() {
+        return Collections.unmodifiableSet(writtenTypes);
     }
 
     private void writeChildTypes() {
@@ -185,12 +190,12 @@ public class SerializeContext implements Closeable {
         return getTypes(t -> true);
     }
 
-    public List<TypeDTO> getTypes(Predicate<TypeDTO> filter) {
-        return NncUtils.filter(types, filter);
+    public List<TypeDTO> getTypes(Predicate<Type> filter) {
+        return NncUtils.filterAndMap(types.entrySet(), e -> filter.test(e.getKey()), Map.Entry::getValue);
     }
 
     public List<TypeDTO> getTypesExclude(Type type) {
-        return NncUtils.filter(types, t -> !Objects.equals(t.getRef(), getRef(type)));
+        return NncUtils.filter(types.values(), t -> !Objects.equals(t.getRef(), getRef(type)));
     }
 
     public TypeDTO getType(long id) {

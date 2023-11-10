@@ -25,7 +25,7 @@ public class ExpressionResolver {
             case VariablePathExpression variablePathExpression -> resolveVariablePath(variablePathExpression);
             case AllMatchExpression allMatchExpression -> resolveAllMatch(allMatchExpression);
             case ArrayExpression arrayExpression -> resoleArray(arrayExpression, assignedType);
-            default -> expression.cloneWithNewChildren(
+            default -> expression.substituteChildren(
                     NncUtils.map(expression.getChildren(), child -> resolve(child, assignedType))
             );
         };

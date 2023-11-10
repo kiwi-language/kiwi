@@ -1,8 +1,11 @@
 package tech.metavm.object.meta.rest.dto;
 
+import tech.metavm.dto.ErrorDTO;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.flow.rest.FlowSignatureDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -24,11 +27,30 @@ public record ClassTypeParam(
         RefDTO templateRef,
         List<RefDTO> typeArgumentRefs,
         List<RefDTO> dependencyRefs,
-        boolean hasSubTypes
+        boolean hasSubTypes,
+        List<ErrorDTO> errors
 ) implements TypeParam {
 
     @Override
     public int getType() {
         return 1;
     }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public TypeKey getTypeKey() {
+        return templateRef != null ? new ParameterizedTypeKey(templateRef, typeArgumentRefs) : null;
+    }
+
+    public FieldDTO findFieldByName(String name) {
+        var field = NncUtils.find(fields, f -> f.name().equals(name));
+        if(field != null)
+            return field;
+        return NncUtils.find(staticFields, f -> f.name().equals(name));
+    }
+
+    public FlowDTO findFlowBySignature(FlowSignatureDTO signature) {
+        return NncUtils.find(flows, f -> f.signature().equals(signature));
+    }
+
 }

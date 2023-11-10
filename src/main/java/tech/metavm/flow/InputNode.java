@@ -1,7 +1,7 @@
 package tech.metavm.flow;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
@@ -15,11 +15,10 @@ import tech.metavm.object.meta.Field;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @EntityType("输入节点")
-public class InputNode extends NodeRT<InputParamDTO> {
+public class InputNode extends ChildTypeNode<InputParamDTO> {
 
     public static InputNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         return new InputNode(nodeDTO, context.getClassType(nodeDTO.outputTypeRef()), prev, scope);
@@ -47,15 +46,9 @@ public class InputNode extends NodeRT<InputParamDTO> {
     @Override
     protected InputParamDTO getParam(boolean persisting) {
         return new InputParamDTO(
-                getType().getId(),
+                getType().getIdRequired(),
                 NncUtils.map(getType().getFields(), this::toInputFieldDTO)
         );
-    }
-
-    @Override
-    @NotNull
-    public ClassType getType() {
-        return (ClassType) NncUtils.requireNonNull(super.getType());
     }
 
     private InputFieldDTO toInputFieldDTO(Field field) {
@@ -83,15 +76,15 @@ public class InputNode extends NodeRT<InputParamDTO> {
     }
 
     @Override
-    protected List<Object> nodeBeforeRemove() {
-        return List.of(getType());
-    }
-
-    @Override
     public void execute(MetaFrame frame) {
         Map<Field, Instance> fieldValues = new HashMap<>();
         NncUtils.biForEach(getType().getFields(), frame.getArguments(), fieldValues::put);
         var instance = new ClassInstance(fieldValues, getType());
         frame.setResult(instance);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitInputNode(this);
     }
 }

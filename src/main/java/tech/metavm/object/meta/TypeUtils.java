@@ -1,10 +1,12 @@
 package tech.metavm.object.meta;
 
+import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
+import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.meta.generic.TypeArgumentMap;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -126,7 +128,7 @@ public class TypeUtils {
             return type2;
         return switch (type1) {
             case ClassType classType -> NncUtils.orElse(
-                    classType.findAncestor(anc -> anc.isAssignableFrom(type2)),
+                    classType.getClosure().find(anc -> anc.isAssignableFrom(type2)),
                     StandardTypes.getObjectType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
@@ -160,7 +162,7 @@ public class TypeUtils {
                 .overriden(List.of(sam))
                 .build();
 
-        var selfNode = new SelfNode(null, "当前记录", SelfNode.getSelfType(flow, context), null, flow.getRootScope());
+        var selfNode = new SelfNode(null, "当前对象", SelfNode.getSelfType(flow, context), null, flow.getRootScope());
         var inputType = ClassBuilder.newBuilder("流程输入", "InputType").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
@@ -216,9 +218,31 @@ public class TypeUtils {
         return TYPE_FACTORY.createClassType(typeDTO, context);
     }
 
-    public static ClassType saveClasType(TypeDTO classDTO, boolean withContent,
-                                         IEntityContext context) {
-        return TYPE_FACTORY.saveClassType(classDTO, withContent, context);
+    public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        var category = TypeCategory.getByCode(typeDTO.category());
+        if (category.isPojo()) {
+            return TYPE_FACTORY.saveClassType(typeDTO, stage, batch);
+        } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
+            return TYPE_FACTORY.saveTypeVariable(typeDTO, stage, batch);
+        } else if (category.isArray()) {
+            return TYPE_FACTORY.saveArrayType(typeDTO, stage, batch);
+        } else if (typeDTO.category() == TypeCategory.UNION.code()) {
+            return TYPE_FACTORY.saveUnionType(typeDTO, stage, batch);
+        } else if (typeDTO.category() == TypeCategory.UNCERTAIN.code()) {
+            return TYPE_FACTORY.saveUncertainType(typeDTO, stage, batch);
+        } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
+            return TYPE_FACTORY.saveFunctionType(typeDTO, stage, batch);
+        } else {
+            throw new InternalException("Invalid type category: " + typeDTO.category());
+        }
+    }
+
+    public static ClassType saveClasType(TypeDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveClassType(classDTO, stage, batch);
+    }
+
+    public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveFlow(flowDTO, batch);
     }
 
     public static Field createFieldAndBind(ClassType type, FieldDTO fieldDTO, IEntityContext context) {
@@ -355,6 +379,16 @@ public class TypeUtils {
             return templateName;
         }
         return parameterizedName(templateName, NncUtils.map(typeArguments, TypeUtils::getTypeArgumentName));
+    }
+
+    public static String renameAnonymousType(String name) {
+        int index = name.indexOf('_');
+        if(index >= 0) {
+            return name.substring(0, index + 1) + NncUtils.random();
+        }
+        else {
+            return name + "_" + NncUtils.random();
+        }
     }
 
     public static String getParameterizedCode(String templateCode, Type... typeArguments) {

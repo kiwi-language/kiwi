@@ -61,10 +61,18 @@ public class EntityProxyFactory {
         }
     }
 
-    public static <T extends Entity> T makeDummy(Class<T> type, long id) {
+    public static Object makeDummy(Class<?> type) {
         Class<?> proxyClass = getProxyClass(type);
         try {
-            ProxyObject proxyInstance = (ProxyObject) ReflectUtils.getUnsafe().allocateInstance(proxyClass);
+            return ReflectUtils.getUnsafe().allocateInstance(proxyClass);
+        } catch (InstantiationException e) {
+            throw new RuntimeException("fail to create proxy instance", e);
+        }
+    }
+
+    public static <T extends Entity> T makeEntityDummy(Class<T> type, long id) {
+        try {
+            ProxyObject proxyInstance = (ProxyObject) makeDummy(type);
             FIELD_ID.set(proxyInstance, id);
             FIELD_PERSISTED.set(proxyInstance, true);
             return type.cast(proxyInstance);

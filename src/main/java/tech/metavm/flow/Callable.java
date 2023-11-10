@@ -16,6 +16,10 @@ public interface Callable {
 
     Parameter getParameterByName(String name);
 
+    default Parameter getParameterByTemplate(Parameter template) {
+        return NncUtils.findRequired(getParameters(), p -> p.getTemplate() == template);
+    }
+
     FunctionType getFunctionType();
 
     void setFunctionType(FunctionType functionType);

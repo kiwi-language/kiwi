@@ -102,7 +102,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
                 type
         );
         instance.setField(
-                type.getFieldByCodeRequired("name"),
+                type.getFieldByCode("name"),
                 new StringInstance(
                         ReflectUtils.getMetaEnumConstantName(value),
                         stringType

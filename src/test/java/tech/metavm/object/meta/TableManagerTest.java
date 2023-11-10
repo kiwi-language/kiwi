@@ -109,7 +109,7 @@ public class TableManagerTest extends TestCase {
                 List.of(
                         new ColumnDTO(
                                 null, "bars", TableManager.ColumnType.TABLE.code(),
-                                Access.GLOBAL.code(), null,
+                                Access.PUBLIC.code(), null,
                                 bar.id(), null, true, true, false,
                                  false, null, null
                         )

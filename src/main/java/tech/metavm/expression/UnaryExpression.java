@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
@@ -57,12 +58,12 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(operand);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 1);
         return new UnaryExpression(operator, children.get(0));
     }
@@ -82,5 +83,10 @@ public class UnaryExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(operator, operand);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUnaryExpression(this);
     }
 }

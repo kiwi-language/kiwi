@@ -7,7 +7,7 @@ import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.rest.ArrayParamDTO;
-import tech.metavm.object.instance.rest.InstanceFieldValueDTO;
+import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.meta.ArrayKind;
 import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Field;
@@ -136,9 +136,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     public Instance remove(int index) {
-        if(index < 0 || index >= elements.size()) {
-            throw new BusinessException(ErrorCode.INDEX_OUT_OF_BOUND);
-        }
+        checkIndex(index);
         var removed = elements.remove(index);
         onRemove(removed);
         return removed;
@@ -162,9 +160,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private void checkIndex(int index) {
-        if (index < 0 || index >= elements.size()) {
-            throw new BusinessException(ErrorCode.INDEX_OUT_OF_BOUND);
-        }
+        NncUtils.assertTrue(index >= 0 && index < elements.size(), ErrorCode.INDEX_OUT_OF_BOUND);
     }
 
     private boolean addInternally(Instance element) {
@@ -197,7 +193,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private void onRemove(Instance instance) {
-        if(instance.getType().isReference()) {
+        if (instance.getType().isReference()) {
             getOutgoingReference(instance, null).clear();
         }
         for (ArrayListener listener : listeners) {
@@ -304,7 +300,8 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @Override
     public String getTitle() {
-        return "";
+        List<Instance> first = elements.subList(0, Math.min(3, elements.size()));
+        return NncUtils.join(first, Instance::getTitle, ",") + (elements.size() > 3 ? "..." : "");
     }
 
     @Override
@@ -313,7 +310,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
             return new ArrayParamDTO(
                     true,
                     NncUtils.map(elements, e ->
-                            new InstanceFieldValueDTO(
+                            new InstanceFieldValue(
                                     e.getTitle(), e.toDTO()
                             )
                     )
@@ -396,8 +393,8 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     @Override
-    public InstanceFieldValueDTO toFieldValueDTO() {
-        return new InstanceFieldValueDTO(getTitle(), toDTO());
+    public InstanceFieldValue toFieldValueDTO() {
+        return new InstanceFieldValue(getTitle(), toDTO());
     }
 
     public void clear() {

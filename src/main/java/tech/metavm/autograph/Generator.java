@@ -39,12 +39,10 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitClass(PsiClass psiClass) {
-        var stage = NncUtils.requireNonNull(psiClass.getUserData(Keys.RESOLVE_STAGE));
-        if(stage == 2) {
-            return;
-        }
-        psiClass.putUserData(Keys.RESOLVE_STAGE, 2);
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.META_CLASS));
+        if(klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
+            return;
+        klass.setStage(ResolutionStage.DEFINITION);
         klass.setCode(TranspileUtil.getClassCode(psiClass));
 
         var initFlow = klass.getFlowByCodeAndParamTypes("<init>", List.of());
@@ -79,7 +77,7 @@ public class Generator extends VisitorBase {
             constructorGen.exitScope();
         }
         exitClass();
-        klass.setStage(ResolutionStage.GENERATED);
+        klass.setStage(ResolutionStage.DEFINITION);
     }
 
     @Override
@@ -169,7 +167,7 @@ public class Generator extends VisitorBase {
 
         var exceptionExpr = new PropertyExpression(
                 new NodeExpression(tryEndNode),
-                tryEndNode.getType().getFieldByCodeRequired("exception")
+                tryEndNode.getType().getFieldByCode("exception")
         );
 
         if (statement.getCatchSections().length > 0) {
@@ -292,12 +290,12 @@ public class Generator extends VisitorBase {
                                 klass.getFieldByCode("name"),
                                 new PropertyExpression(
                                         new NodeExpression(inputNode),
-                                        inputNode.getType().getFieldByCode("name")
+                                        inputNode.getType().findFieldByCode("name")
                                 ),
                                 klass.getFieldByCode("ordinal"),
                                 new PropertyExpression(
                                         new NodeExpression(inputNode),
-                                        inputNode.getType().getFieldByCode("ordinal")
+                                        inputNode.getType().findFieldByCode("ordinal")
                                 )
                         )
                 );
@@ -438,7 +436,7 @@ public class Generator extends VisitorBase {
     }
 
     private void processParameter(PsiParameter parameter, InputNode inputNode) {
-        var field = inputNode.getType().getFieldByCode(parameter.getName());
+        var field = inputNode.getType().findFieldByCode(parameter.getName());
         builder().setVariable(
                 parameter.getName(),
                 new PropertyExpression(new NodeExpression(inputNode), field)
@@ -499,7 +497,7 @@ public class Generator extends VisitorBase {
         List<String> outputVars = NncUtils.map(outputVariables, Objects::toString);
         var condOutputs = builder().exitCondSection(mergeNode, outputVars);
         for (var qn : outputVariables) {
-            var field = mergeNode.getType().getFieldByCodeRequired(qn.toString());
+            var field = mergeNode.getType().getFieldByCode(qn.toString());
             var mergeField = new MergeNodeField(field, mergeNode);
             for (var entry2 : condOutputs.entrySet()) {
                 var branch = entry2.getKey();

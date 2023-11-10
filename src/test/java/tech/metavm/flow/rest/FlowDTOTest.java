@@ -27,7 +27,8 @@ public class FlowDTOTest extends TestCase {
                 null,
                 List.of(),
                 null,
-                List.of()
+                List.of(),
+                false
         );
         String jsonStr = NncUtils.toJSONString(flowDTO);
         FlowDTO deserialized = NncUtils.readJSONString(jsonStr, FlowDTO.class);

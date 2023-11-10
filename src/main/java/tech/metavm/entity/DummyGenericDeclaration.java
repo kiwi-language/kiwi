@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.dto.RefDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeVariable;
 
@@ -9,6 +10,7 @@ import java.util.function.Function;
 
 @EntityType("DummyGenericDeclaration")
 public enum DummyGenericDeclaration implements GenericDeclaration {
+
 
     INSTANCE
 
@@ -37,5 +39,10 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     @Override
     public String getCode() {
         return "DUMMY";
+    }
+
+    @Override
+    public RefDTO getRef() {
+        return new RefDTO(-1L, 0L);
     }
 }

@@ -6,7 +6,7 @@ import tech.metavm.flow.rest.ArgumentDTO;
 import tech.metavm.object.instance.core.Instance;
 
 @EntityType("实参")
-public class Argument extends Entity {
+public class Argument extends Element {
 
     @EntityField("形参")
     private final Parameter parameter;
@@ -39,5 +39,10 @@ public class Argument extends Entity {
         try(var context = SerializeContext.enter()) {
             return new ArgumentDTO(null, context.getRef(parameter), value.toDTO(false));
         }
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitArgument(this);
     }
 }

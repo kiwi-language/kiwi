@@ -13,12 +13,13 @@ import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 
 @EntityType("节点")
-public abstract class NodeRT<P> extends Entity {
+public abstract class NodeRT<P> extends Element {
 
     @EntityField(value = "名称", asTitle = true)
     private String name;
@@ -35,6 +36,9 @@ public abstract class NodeRT<P> extends Entity {
     @EntityField("后继")
     @Nullable
     private NodeRT<?> successor;
+    @EntityField("错误")
+    @Nullable
+    private String error;
 
     private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
 
@@ -53,8 +57,7 @@ public abstract class NodeRT<P> extends Entity {
         if (previous != null) {
             previous.insertAfter(this);
             setExpressionTypes(previous.getExpressionTypes());
-        }
-        else {
+        } else {
             setExpressionTypes(scope.getExpressionTypes());
         }
         this.scope.addNode(this);
@@ -111,7 +114,7 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     public void insertBefore(NodeRT<?> prev) {
-        if(this.predecessor != null) {
+        if (this.predecessor != null) {
             prev.setPredecessor(this.predecessor);
             this.predecessor.setSuccessor(prev);
         }
@@ -121,7 +124,10 @@ public abstract class NodeRT<P> extends Entity {
 
     @Override
     public final List<Object> beforeRemove(IEntityContext context) {
-        var cascade = nodeBeforeRemove();
+        var cascade = new ArrayList<>(nodeBeforeRemove());
+        if (kind.isOutputTypeAsChild() && outputType != null) {
+            cascade.add(outputType);
+        }
         if (this.predecessor != null) {
             this.predecessor.setSuccessor(this.successor);
         }
@@ -132,6 +138,24 @@ public abstract class NodeRT<P> extends Entity {
         this.successor = null;
         scope.removeNode(this);
         return cascade;
+    }
+
+    public Callable getEnclosingCallable() {
+        return accept(new EnclosingNodesVisitor<>() {
+
+            @Override
+            public Callable defaultValue() {
+                return getFlow();
+            }
+
+            @Override
+            public Callable visitNode(NodeRT<?> node) {
+                if (node instanceof Callable c)
+                    return c;
+                else
+                    return super.visitNode(node);
+            }
+        });
     }
 
     protected List<Object> nodeBeforeRemove() {
@@ -151,9 +175,9 @@ public abstract class NodeRT<P> extends Entity {
         this.outputType = outputType;
     }
 
-    public final NodeDTO toDTO() {
+    public NodeDTO toDTO() {
         try (var context = SerializeContext.enter()) {
-            if(getType() != null && context.isIncludingNodeOutputType()) {
+            if (getType() != null && context.isIncludingNodeOutputType()) {
                 context.writeType(getType());
             }
             return new NodeDTO(
@@ -163,10 +187,11 @@ public abstract class NodeRT<P> extends Entity {
                     name,
                     kind.code(),
                     NncUtils.get(predecessor, context::getRef),
-                    NncUtils.get(outputType, context::getRef),
+                    NncUtils.get(getType(), context::getRef),
                     getParam(false),
                     kind.isOutputTypeAsChild() ? getTypeDTO() : null,
-                    scope.getId()
+                    scope.getId(),
+                    error
             );
         }
     }
@@ -203,6 +228,23 @@ public abstract class NodeRT<P> extends Entity {
     }
 
     protected abstract P getParam(boolean persisting);
+
+    public final void check() {
+        setError(check0());
+    }
+
+    protected String check0() {
+        return null;
+    }
+
+    @Nullable
+    public String getError() {
+        return error;
+    }
+
+    void setError(@Nullable String error) {
+        this.error = error;
+    }
 
     protected abstract void setParam(P param, IEntityContext context);
 

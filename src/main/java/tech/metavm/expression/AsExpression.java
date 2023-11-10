@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
@@ -32,12 +33,12 @@ public class AsExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(expression);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 1);
         return new AsExpression(children.get(0), alias);
     }
@@ -60,5 +61,10 @@ public class AsExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(expression, alias);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitAsExpression(this);
     }
 }

@@ -2,11 +2,11 @@ package tech.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ExpressionFieldValueDTO extends FieldValue {
+public class ExpressionFieldValue extends FieldValue {
 
     private final String expression;
 
-    public ExpressionFieldValueDTO(@JsonProperty("expression") String expression) {
+    public ExpressionFieldValue(@JsonProperty("expression") String expression) {
         super(FieldValueKind.EXPRESSION.code(),"");
         this.expression = expression;
     }

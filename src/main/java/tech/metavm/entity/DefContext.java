@@ -37,7 +37,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             Map.entry(Float.class, Double.class)
     );
 
-    public DefContext(Function<Object, Long> getId, FileColumnStore columnStore) {
+    public DefContext(Function<Object, Long> getId, ColumnStore columnStore) {
         this(getId, null, columnStore);
     }
 

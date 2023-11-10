@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -35,11 +36,22 @@ public class NncUtils {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
 
+
+    private static final ObjectMapper OBJECT_MAPPER_IGNORE_NULL = new ObjectMapper()
+            .enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
+
+
     static {
         OBJECT_MAPPER.registerModule(new Jdk8Module());
         OBJECT_MAPPER.registerModule(new JavaTimeModule());
         OBJECT_MAPPER.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
         OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
+        OBJECT_MAPPER_IGNORE_NULL.registerModule(new Jdk8Module());
+        OBJECT_MAPPER_IGNORE_NULL.registerModule(new JavaTimeModule());
+        OBJECT_MAPPER_IGNORE_NULL.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
+        OBJECT_MAPPER_IGNORE_NULL.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        OBJECT_MAPPER_IGNORE_NULL.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
     public static void requireLength(Collection<?> collection, int expectedSize) {
@@ -49,13 +61,21 @@ public class NncUtils {
         }
     }
 
+    public static void writeFile(String filePath, String content) {
+        try(var fileWriter = new FileWriter(filePath)) {
+            fileWriter.write(content);
+        } catch (IOException e) {
+            throw new InternalException("Fail to write to file '" + filePath + "'", e);
+        }
+    }
+
 
     public static Runnable noop() {
         return () -> {
         };
     }
 
-    public static <K, V> Map<K, V> zip(Iterable<K> keys, Iterable<V> values) {
+    public static <K, V> Map<K, V> zip(Iterable<? extends K> keys, Iterable<? extends V> values) {
         Map<K, V> map = new HashMap<>();
         biForEach(keys, values, map::put);
         return map;
@@ -76,8 +96,8 @@ public class NncUtils {
         }
     }
 
-    public static <T> List<T> concatList(List<T> list, List<T> values) {
-        var copy = new ArrayList<>(list);
+    public static <T> List<T> concatList(List<? extends T> list, List<? extends T> values) {
+        List<T> copy = new ArrayList<>(list);
         copy.addAll(values);
         return copy;
     }
@@ -143,6 +163,14 @@ public class NncUtils {
     public static String toJSONString(Object object) {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to write JSON string, object: " + object, e);
+        }
+    }
+
+    public static String toJSONStringIgnoreNull(Object object) {
+        try {
+            return OBJECT_MAPPER_IGNORE_NULL.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Fail to write JSON string, object: " + object, e);
         }
@@ -1163,6 +1191,8 @@ public class NncUtils {
         requireTrue(value, "Value must be true");
     }
 
+
+
     public static void requireTrue(boolean value, String message) {
         requireTrue(value, () -> new InternalException(message));
     }
@@ -1196,6 +1226,14 @@ public class NncUtils {
     @NotNull
     public static <T> Collection<T> requireNotEmpty(Collection<T> collection) {
         return requireNotEmpty(collection, "集合不能为空");
+    }
+
+    @NotNull
+    public static <T> Collection<T> requireEmpty(Collection<T> collection, String message) {
+        if (isNotEmpty(collection)) {
+            throw BusinessException.invalidParams(message);
+        }
+        return collection;
     }
 
     public static <T> Collection<T> requireNotEmpty(Collection<T> collection, String message) {

@@ -11,7 +11,8 @@ public record FlowSummaryDTO(
     List<ParameterDTO> parameters,
     RefDTO returnTypeRef,
     boolean inputRequired,
-    boolean isConstructor
+    boolean isConstructor,
+    boolean error
 ) {
 
 }

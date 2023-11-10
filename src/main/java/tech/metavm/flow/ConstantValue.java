@@ -1,11 +1,12 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
+import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InstanceUtils;
@@ -50,8 +51,8 @@ public class ConstantValue extends Value {
         };
     }
 
-    private ArrayFieldValueDTO toArrayFieldValue(ArrayExpression arrayExpression) {
-        return new ArrayFieldValueDTO(
+    private ArrayFieldValue toArrayFieldValue(ArrayExpression arrayExpression) {
+        return new ArrayFieldValue(
                 null,
                 false,
                 NncUtils.map(arrayExpression.getExpressions(), this::toFieldValue)
@@ -78,4 +79,13 @@ public class ConstantValue extends Value {
         return new ConstantValue(expression.copy());
     }
 
+    @Override
+    public ConstantValue substituteExpression(Expression expression) {
+        return new ConstantValue(expression);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitConstantValue(this);
+    }
 }

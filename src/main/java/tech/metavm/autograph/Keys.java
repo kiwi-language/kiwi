@@ -62,8 +62,6 @@ public class Keys {
 
     public static final Key<Field> FIELD = createKey("Field");
 
-    public static final Key<Integer> RESOLVE_STAGE = createKey("ResolveStage");
-
     public static final Key<Integer> SYNTHETIC_VAR_CNT = createKey("SyntheticVarCnt");
 
     public static final Key<Document> META_CACHED_DOC = createKey("MetaCachedDoc");

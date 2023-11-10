@@ -31,7 +31,7 @@ public class FlowBuilder {
     private List<Flow> overriden = new ArrayList<>();
     private FlowDTO flowDTO;
     private Type returnType;
-    private List<Parameter> parameters;
+    private List<Parameter> parameters = List.of();
     private PrimitiveType nullType;
     private List<TypeVariable> typeParameters = List.of();
     private Flow template;
@@ -156,7 +156,6 @@ public class FlowBuilder {
                     staticType
             );
         } else {
-            existing.setTmpId(effectiveTmpId);
             existing.setName(name);
             existing.setCode(code);
             existing.setParameters(parameters);

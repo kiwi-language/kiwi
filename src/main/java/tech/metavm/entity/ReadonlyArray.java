@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;

@@ -1,18 +1,17 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateStaticParamDTO;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
+@EntityType("更新静态字段节点")
 public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
 
     public static UpdateStaticNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
@@ -94,5 +93,10 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
         for (UpdateField field : fields) {
             field.execute(null, frame, getFlow().isConstructor(), frame.getStack().getContext());
         }
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUpdateStaticNode(this);
     }
 }

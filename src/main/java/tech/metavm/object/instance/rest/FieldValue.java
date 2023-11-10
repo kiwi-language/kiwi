@@ -9,10 +9,10 @@ import java.util.Objects;
 @JsonSubTypes(
         {
                 @JsonSubTypes.Type(value = PrimitiveFieldValue.class, name = "1"),
-                @JsonSubTypes.Type(value = ReferenceFieldValueDTO.class, name = "2"),
-                @JsonSubTypes.Type(value = ArrayFieldValueDTO.class, name = "3"),
-                @JsonSubTypes.Type(value = InstanceFieldValueDTO.class, name = "4"),
-                @JsonSubTypes.Type(value = ExpressionFieldValueDTO.class, name = "5"),
+                @JsonSubTypes.Type(value = ReferenceFieldValue.class, name = "2"),
+                @JsonSubTypes.Type(value = ArrayFieldValue.class, name = "3"),
+                @JsonSubTypes.Type(value = InstanceFieldValue.class, name = "4"),
+                @JsonSubTypes.Type(value = ExpressionFieldValue.class, name = "5"),
         }
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)

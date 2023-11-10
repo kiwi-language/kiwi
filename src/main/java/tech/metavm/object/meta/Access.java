@@ -8,12 +8,12 @@ import java.util.Arrays;
 
 @EntityType("可见范围")
 public enum Access {
-    @EnumConstant("全局")
-    GLOBAL(1),
-    @EnumConstant("模块")
+    @EnumConstant("公开")
+    PUBLIC(1),
+    @EnumConstant("模块内可见")
     MODULE(2),
-    @EnumConstant("类型")
-    CLASS(3)
+    @EnumConstant("隐藏")
+    PRIVATE(3)
 
     ;
 

@@ -1,6 +1,9 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.object.meta.rest.dto.TypeKey;
+import tech.metavm.object.meta.rest.dto.TypeVariableKey;
 import tech.metavm.object.meta.rest.dto.TypeVariableParam;
 import tech.metavm.util.NncUtils;
 
@@ -19,6 +22,8 @@ public class TypeVariable extends Type {
     private GenericDeclaration genericDeclaration;
 
     private transient IntersectionType intersection;
+
+    private ResolutionStage stage = ResolutionStage.INIT;
 
     public TypeVariable(Long tmpId, String name, @Nullable String code, GenericDeclaration genericDeclarator) {
         super(name, false, false, TypeCategory.VARIABLE);
@@ -55,6 +60,14 @@ public class TypeVariable extends Type {
     }
 
     @Override
+    public TypeKey getTypeKey() {
+        return new TypeVariableKey(
+                genericDeclaration.getRef(),
+                genericDeclaration.getTypeParameters().indexOf(this)
+        );
+    }
+
+    @Override
     protected boolean isAssignableFrom0(Type that) {
         return this == that;
     }
@@ -83,7 +96,11 @@ public class TypeVariable extends Type {
     protected TypeVariableParam getParam() {
         try(var context = SerializeContext.enter()) {
             getBounds().forEach(context::writeType);
-            return new TypeVariableParam(context.getRef(genericDeclaration), NncUtils.map(bounds, context::getRef));
+            return new TypeVariableParam(
+                    context.getRef(genericDeclaration),
+                    genericDeclaration.getTypeParameters().indexOf(this),
+                    NncUtils.map(bounds, context::getRef)
+            );
         }
     }
 
@@ -98,4 +115,16 @@ public class TypeVariable extends Type {
         return copy;
     }
 
+    public ResolutionStage getStage() {
+        return stage;
+    }
+
+    public void setStage(ResolutionStage stage) {
+        this.stage = stage;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitTypeVariable(this);
+    }
 }

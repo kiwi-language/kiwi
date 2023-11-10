@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.DeleteObjectParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueDTO;
@@ -48,5 +49,10 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
     @Override
     public void execute(MetaFrame frame) {
         frame.deleteInstance(objectId.evaluate(frame));
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitDeleteObjectNode(this);
     }
 }

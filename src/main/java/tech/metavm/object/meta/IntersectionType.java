@@ -1,6 +1,8 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.meta.rest.dto.IntersectionTypeKey;
+import tech.metavm.object.meta.rest.dto.TypeKey;
 import tech.metavm.object.meta.rest.dto.TypeParam;
 import tech.metavm.util.NncUtils;
 
@@ -23,6 +25,11 @@ public class IntersectionType extends CompositeType {
 
     private static String makeName(Iterable<Type> types) {
         return NncUtils.join(types, Type::getName, "&");
+    }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, Entity::getRef)));
     }
 
     @Override
@@ -63,4 +70,8 @@ public class IntersectionType extends CompositeType {
         return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparingLong(Entity::getIdRequired)));
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitIntersectionType(this);
+    }
 }

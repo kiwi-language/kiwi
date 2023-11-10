@@ -28,7 +28,6 @@ public class ClassBuilder {
     private ClassType existing;
     private boolean done;
     private Long suffix;
-    private String collectName;
     private ClassType template;
     private List<ClassType> dependencies;
     private List<TypeVariable> typeParameters = List.of();
@@ -121,11 +120,6 @@ public class ClassBuilder {
         return typeParameters(List.of(typeParameters));
     }
 
-    public ClassBuilder collectionName(String collectionName) {
-        this.collectName = collectionName;
-        return this;
-    }
-
     public ClassBuilder typeArguments(List<Type> typeArguments) {
         this.typeArguments = typeArguments;
         return this;
@@ -151,7 +145,7 @@ public class ClassBuilder {
     private ClassType create() {
         if(NncUtils.isNotEmpty(typeParameters)) {
             isTemplate = true;
-            typeArguments = new ArrayList<>(typeParameters);
+            NncUtils.requireEmpty(typeArguments, "Can not add type arguments to a template class");
         }
         ClassType classType;
         String effectiveName = suffix != null ? name + "_" + suffix : name;
@@ -168,7 +162,6 @@ public class ClassBuilder {
                     anonymous,
                     ephemeral,
                     desc,
-                    collectName,
                     isTemplate,
                     template,
                     typeArguments
@@ -176,7 +169,6 @@ public class ClassBuilder {
         }
         else {
             classType = existing;
-            existing.setTmpId(tmpId);
             existing.setName(effectiveName);
             existing.setCode(effectiveCode);
             existing.setSuperClass(superType);

@@ -16,7 +16,7 @@ public class ListNative extends NativeBase {
 
     public ListNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getType().getFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByCode("array"));
         if(instance.isFieldInitialized(arrayField)) {
             array = (ArrayInstance) instance.getField(arrayField);
         }

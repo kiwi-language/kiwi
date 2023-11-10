@@ -28,7 +28,7 @@ public record ColumnDTO(
                                             boolean unique,
                                             boolean asTitle) {
         return new ColumnDTO(
-                null, name, type, Access.GLOBAL.code(), null, null,
+                null, name, type, Access.PUBLIC.code(), null, null,
                 null, required, false, unique, asTitle,
                 null, null
         );

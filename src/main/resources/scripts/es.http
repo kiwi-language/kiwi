@@ -1,4 +1,4 @@
-GET http://localhost:9200/instance/_search?routing=1031100623
+GET http://localhost:9200/instance/_search?routing=1065201305
 Accept: application/json
 Content-Type: application/json
 Authorization: Basic elastic 85263670
@@ -6,7 +6,7 @@ Authorization: Basic elastic 85263670
 {
   "query": {
     "query_string": {
-      "query": "(tenantId:1031100623)"
+      "query": "tenantId:1065201305"
     }
   }
 }

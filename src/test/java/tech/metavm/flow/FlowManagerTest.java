@@ -87,7 +87,7 @@ public class FlowManagerTest extends TestCase {
                 null, null, flowId, "UpdateUser", NodeKind.UPDATE_OBJECT.code(),
                 RefDTO.ofId(selfNodeId), null,
                 new UpdateObjectParamDTO(
-                    ValueDTO.refValue("当前记录"),
+                    ValueDTO.refValue("当前对象"),
                     List.of(
                             new UpdateFieldDTO(
                                     RefDTO.ofId(userNameField.getId()),
@@ -99,7 +99,8 @@ public class FlowManagerTest extends TestCase {
                     )
                 ),
                 null,
-                rootScope.id()
+                rootScope.id(),
+                null
         );
 
         flowManager.createNode(updateNode);
@@ -126,7 +127,7 @@ public class FlowManagerTest extends TestCase {
                 null, null, flowId, "UpdateState", NodeKind.UPDATE_OBJECT.code(),
                 RefDTO.ofId(selfNode.id()), null,
                 new UpdateObjectParamDTO(
-                        ValueDTO.refValue("当前记录"),
+                        ValueDTO.refValue("当前对象"),
                         List.of(
                                 new UpdateFieldDTO(
                                         RefDTO.ofId(couponStateField.getId()),
@@ -138,7 +139,8 @@ public class FlowManagerTest extends TestCase {
                         )
                 ),
                 null,
-                flowDTO.rootScope().id()
+                flowDTO.rootScope().id(),
+                null
         );
 
         flowManager.createNode(updateNode);
@@ -159,7 +161,7 @@ public class FlowManagerTest extends TestCase {
                 RefDTO.ofId(userType.getId()),  null, null,
                 null, null,null,
                  null, null, List.of(),
-                null, List.of());
+                null, List.of(), false);
         long flowId = flowManager.save(flowDTO).getIdRequired();
         Page<FlowSummaryDTO> dataPage = flowManager.list(userType.getIdRequired(), 1, 20, null);
         Assert.assertEquals(1, dataPage.total());

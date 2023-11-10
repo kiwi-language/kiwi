@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.LambdaNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -25,7 +26,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         var parameters = NncUtils.map(
                 param.getParameters(),
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                        context.getType(paramDTO.typeRef()), null)
+                        context.getType(paramDTO.typeRef()))
         );
         var parameterTypes = NncUtils.map(parameters, Parameter::getType);
         var returnType = context.getType(param.getReturnTypeRef());
@@ -104,7 +105,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
                     NncUtils.map(
                             param.getParameters(),
                             paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                                    context.getType(paramDTO.typeRef()), null)
+                                    context.getType(paramDTO.typeRef()))
                     )
             );
         }
@@ -140,9 +141,13 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
             var funcClass = TypeUtils.createFunctionalClass(
                     functionalInterface,
                     frame.getStack().getContext().getEntityContext());
-            var funcField = funcClass.getFieldByCodeRequired("func");
+            var funcField = funcClass.getFieldByCode("func");
             frame.setResult(new ClassInstance(Map.of(funcField, func), funcClass));
         }
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitLambdaNode(this);
+    }
 }

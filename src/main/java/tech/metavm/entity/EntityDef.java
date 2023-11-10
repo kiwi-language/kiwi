@@ -1,10 +1,13 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EntityDef<T extends Entity> extends PojoDef<T> {
 

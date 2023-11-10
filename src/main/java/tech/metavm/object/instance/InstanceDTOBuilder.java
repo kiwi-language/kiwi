@@ -12,30 +12,30 @@ import tech.metavm.util.NncUtils;
 public class InstanceDTOBuilder {
 
     public static InstanceDTO buildDTO(Instance instance, int depth) {
-        if(depth <= 0) {
+        if (depth <= 0) {
             throw new IllegalArgumentException("depth must be positive");
         }
-        InstanceFieldValueDTO fieldValue = (InstanceFieldValueDTO) build(instance, depth, true);
+        InstanceFieldValue fieldValue = (InstanceFieldValue) build(instance, depth, true);
         return fieldValue.getInstance();
     }
 
     private static FieldValue build(Instance instance, int depth, boolean isChild) {
+        try (var serContext = SerializeContext.enter()) {
+            serContext.writeType(instance.getType());
+        }
         return switch (instance) {
             case ClassInstance classInstance -> buildForClassInstance(classInstance, depth, isChild);
             case ArrayInstance arrayInstance -> buildForArray(arrayInstance, depth, isChild);
             case PrimitiveInstance primitiveInstance -> buildForPrimitive(primitiveInstance);
-            case null, default ->
-                    throw new InternalException("Unrecognized instance: " + instance);
+            case null, default -> throw new InternalException("Unrecognized instance: " + instance);
         };
     }
 
     private static FieldValue buildForClassInstance(ClassInstance instance, int depth, boolean isChild) {
-        if(depth <= 0 && !isChild) {
-            return instance.toFieldValueDTO();
-        }
-        else {
-            try(var context = SerializeContext.enter()) {
-                context.forceWriteType(instance.getType());
+        try (var context = SerializeContext.enter()) {
+            if (depth <= 0 && !isChild) {
+                return instance.toFieldValueDTO();
+            } else {
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getId(),
                         context.getRef(instance.getType()),
@@ -54,17 +54,16 @@ public class InstanceDTOBuilder {
                                 )
                         )
                 );
-                return new InstanceFieldValueDTO(instance.getTitle(), instanceDTO);
+                return new InstanceFieldValue(instance.getTitle(), instanceDTO);
             }
         }
     }
 
     private static FieldValue buildForArray(ArrayInstance array, int depth, boolean isChild) {
-        if(depth <= 0 && !isChild) {
+        if (depth <= 0 && !isChild) {
             return array.toFieldValueDTO();
-        }
-        else {
-            try(var context = SerializeContext.enter()) {
+        } else {
+            try (var context = SerializeContext.enter()) {
                 context.forceWriteType(array.getType());
                 InstanceDTO instanceDTO = new InstanceDTO(
                         array.getId(),
@@ -79,7 +78,7 @@ public class InstanceDTOBuilder {
                                 )
                         )
                 );
-                return new InstanceFieldValueDTO(array.getTitle(), instanceDTO);
+                return new InstanceFieldValue(array.getTitle(), instanceDTO);
             }
         }
     }

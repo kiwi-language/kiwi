@@ -37,14 +37,12 @@ public class EntityQueryService {
                 entityQuery.includeBuiltin(),
                 entityQuery.page(),
                 entityQuery.pageSize(),
-                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(f, context))
+                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context))
         );
     }
 
-    private InstanceQueryField convertToInstanceQueryField(EntityQueryField entityQueryField, IEntityContext context) {
-        ClassType declaringType = ModelDefRegistry.getClassType(entityQueryField.field().getDeclaringClass());
-        var entityDef = ModelDefRegistry.getEntityDef(declaringType);
-        Field field = entityDef.getFieldByJavaFieldName(entityQueryField.field().getName());
+    private InstanceQueryField convertToInstanceQueryField(EntityDef<?> entityDef, EntityQueryField entityQueryField, IEntityContext context) {
+        Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
         Object instanceValue = convertValue(entityQueryField.value(), context);
         return new InstanceQueryField(field, instanceValue);
     }

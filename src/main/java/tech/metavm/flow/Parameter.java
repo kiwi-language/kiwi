@@ -8,7 +8,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 
 @EntityType("参数")
-public class Parameter extends Entity {
+public class Parameter extends Element {
     @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField("编号")
@@ -20,11 +20,20 @@ public class Parameter extends Entity {
     @Nullable
     private Value condition;
 
-    public Parameter(Long tmpId, String name, @Nullable String code, Type type, @Nullable Value condition) {
+    private final @Nullable Parameter template;
+
+    public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
+        this(tmpId, name, code, type, null, null);
+    }
+
+    public Parameter(Long tmpId, String name, @Nullable String code, Type type,
+                     @Nullable Value condition,
+                     @Nullable Parameter template) {
         setTmpId(tmpId);
         this.name = name;
         this.code = code;
         this.type = type;
+        this.template = template;
         this.condition = condition;
     }
 
@@ -54,7 +63,7 @@ public class Parameter extends Entity {
     }
 
     public Parameter copy() {
-        return new Parameter(null, name, code, type, condition);
+        return new Parameter(null, name, code, type, condition, null);
     }
 
     public ParameterDTO toDTO() {
@@ -65,9 +74,15 @@ public class Parameter extends Entity {
                     name,
                     code,
                     context.getRef(type),
-                    NncUtils.get(condition, v -> v.toDTO(false))
+                    NncUtils.get(condition, v -> v.toDTO(false)),
+                    NncUtils.get(template, context::getRef)
             );
         }
+    }
+
+    @Nullable
+    public Parameter getTemplate() {
+        return template;
     }
 
     public @Nullable Value getCondition() {
@@ -76,5 +91,10 @@ public class Parameter extends Entity {
 
     public void setCondition(@Nullable Value condition) {
         this.condition = condition;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitParameter(this);
     }
 }

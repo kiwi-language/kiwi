@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Flow;
@@ -46,12 +47,17 @@ public class FuncExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return null;
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return null;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitFuncExpression(this);
     }
 }

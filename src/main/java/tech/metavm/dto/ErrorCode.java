@@ -25,7 +25,7 @@ public enum ErrorCode {
     TOO_MAY_FIELDS(309, "字段数量超出限制"),
     OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES(209, "复写流程不支持修改参数数量或参数类型"),
     ORDINAL_OUT_OF_BOUND(310, "属性序号超出范围"),
-    CAN_NOT_ASSIGN__CHILD_FIELD(311, "从对象字段不支持更新"),
+    CAN_NOT_ASSIGN__CHILD_FIELD(311, "子对象字段不支持更新"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "实例不存在(id: {})"),
@@ -65,13 +65,16 @@ public enum ErrorCode {
     INCORRECT_FUNCTION_ARGUMENT(426, "函数'{}'调用参数错误"),
     CONFLICTING_FLOW(427, "流程签名冲突：流程名称和参数类型相同，但编号不同"),
     OVERRIDE_FLOW_RETURN_TYPE_INCORRECT(428, "复写流程返回类型不正确"),
-    NOT_A_CHILD_FIELD(429, "字段'{}'不是从对象字段"),
-    MASTER_FIELD_REQUIRED(430, "主对象字段必填"),
-    MASTER_FIELD_SHOULD_BE_NULL(430, "主对象为数组时，不能设置主对象字段"),
-    INVALID_MASTER(431, "'{}'不能作为主对象"),
+    NOT_A_CHILD_FIELD(429, "字段'{}'不是子对象字段"),
+    MASTER_FIELD_REQUIRED(430, "父对象字段必填"),
+    MASTER_FIELD_SHOULD_BE_NULL(430, "父对象为数组时，不能设置父对象字段"),
+    INVALID_MASTER(431, "'{}'不能作为父对象"),
     INCORRECT_FIELD_VALUE(432, "字段值'{}'赋值错误"),
     INVALID_ADD_OBJECT_CHILD(433, "节点'{}'不能作为新建记录节点的子节点"),
     FIELD_NOT_INITIALIZED(433, "{}创建失败，{}未初始化"),
+    MODIFYING_READ_ONLY_ARRAY(433, "只读数组不支持修改"),
+    ADD_ELEMENT_NOT_SUPPORTED(433, "当前数组不支持添加元素"),
+    MISSING_REQUIRED_ARGUMENT(434, "未配置必填参数'{}'"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),

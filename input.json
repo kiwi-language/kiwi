@@ -14,7 +14,7 @@
       {
         "id": 1006000122,
         "flowId": 1006200126,
-        "name": "当前记录",
+        "name": "当前对象",
         "kind": 0,
         "outputTypeId": 1004700100,
         "outputType": {
@@ -389,7 +389,7 @@
           "objectId": {
             "kind": 2,
             "value": {
-              "expression": "当前记录",
+              "expression": "当前对象",
               "type": 5,
               "displayValue": ""
             },

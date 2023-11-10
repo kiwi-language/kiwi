@@ -1,6 +1,7 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.IndexKeyRT;
@@ -126,8 +127,8 @@ public class Index extends Constraint {
         );
     }
 
-    public ChildArray<IndexField> getFields() {
-        return fields;
+    public List<IndexField> getFields() {
+        return fields.toList();
     }
 
     public boolean isFieldIndex(Field field) {
@@ -163,4 +164,8 @@ public class Index extends Constraint {
         return index;
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitIndex(this);
+    }
 }

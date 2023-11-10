@@ -1,11 +1,12 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Type;
 
@@ -17,7 +18,7 @@ public class ReferenceValue extends Value {
 
     public ReferenceValue(ValueDTO valueDTO, ParsingContext parsingContext) {
         super(ValueKind.REFERENCE);
-        ExpressionFieldValueDTO exprValue = (ExpressionFieldValueDTO) valueDTO.value();
+        ExpressionFieldValue exprValue = (ExpressionFieldValue) valueDTO.value();
         expression = ExpressionParser.parse(exprValue.getExpression(), parsingContext);
     }
 
@@ -28,7 +29,7 @@ public class ReferenceValue extends Value {
 
     @Override
     protected FieldValue getDTOValue(boolean persisting) {
-        return new ExpressionFieldValueDTO(expression.buildSelf(persisting ? VarType.ID : VarType.NAME));
+        return new ExpressionFieldValue(expression.buildSelf(persisting ? VarType.ID : VarType.NAME));
     }
 
     @Override
@@ -46,8 +47,17 @@ public class ReferenceValue extends Value {
     }
 
     @Override
+    public ReferenceValue substituteExpression(Expression expression) {
+        return new ReferenceValue(expression);
+    }
+
+    @Override
     public Instance evaluate(EvaluationContext context) {
         return ExpressionEvaluator.evaluate(expression, context);
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitReferenceValue(this);
+    }
 }

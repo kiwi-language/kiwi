@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.dto.RefDTO;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.TypeVariable;
 
@@ -18,5 +19,7 @@ public interface GenericDeclaration {
     String getName();
 
     @Nullable String getCode();
+
+    RefDTO getRef();
 
 }

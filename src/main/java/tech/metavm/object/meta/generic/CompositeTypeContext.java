@@ -22,6 +22,10 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
     }
 
     public T get(List<Type> componentTypes) {
+        return get(componentTypes, null);
+    }
+
+    public T get(List<Type> componentTypes, Long tmpId) {
         checkComponentTypes(componentTypes);
         var match = NncUtils.find(newTypes, t -> componentTypesEquals(t.getComponentTypes(), componentTypes));
         if (match != null) {
@@ -39,7 +43,7 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
                 return existing;
             }
         }
-        T type = create(componentTypes);
+        T type = create(componentTypes, tmpId);
         newTypes.add(type);
         if(context != null && context.isBindSupported()) {
             context.bind(type);
@@ -66,6 +70,6 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
         newTypes.add(type);
     }
 
-    protected abstract T create(List<Type> componentTypes);
+    protected abstract T create(List<Type> componentTypes, Long tmpId);
 
 }

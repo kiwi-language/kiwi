@@ -14,7 +14,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.meta.*;
@@ -47,12 +47,16 @@ public class FlowManager {
             if (flow == null) {
                 return null;
             }
-            try (var serContext = SerializeContext.enter()) {
-                serContext.setIncludingNodeOutputType(true);
-                var flowDTO = flow.toDTO(request.includeNodes());
-                serContext.writeDependencies();
-                return new GetFlowResponse(flowDTO, serContext.getTypes());
-            }
+            return makeFlowResponse(flow, request.includeNodes());
+        }
+    }
+
+    private GetFlowResponse makeFlowResponse(Flow flow, boolean includeNodes) {
+        try (var serContext = SerializeContext.enter()) {
+            serContext.setIncludingNodeOutputType(true);
+            var flowDTO = flow.toDTO(includeNodes);
+            serContext.writeDependencies();
+            return new GetFlowResponse(flowDTO, serContext.getTypes());
         }
     }
 
@@ -160,6 +164,7 @@ public class FlowManager {
                 recreateOverrideFlows(flow, context);
             }
         }
+        flow.check();
         return flow;
     }
 
@@ -175,8 +180,7 @@ public class FlowManager {
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
                     parameterDTO.code(),
-                    context.getType(parameterDTO.typeRef()),
-                    null
+                    context.getType(parameterDTO.typeRef())
             );
         }
     }
@@ -250,7 +254,7 @@ public class FlowManager {
 
     private void retransformFlowIfRequired(Flow flow, IEntityContext context) {
         if (flow.getDeclaringType().isTemplate() && context.isPersisted(flow.getDeclaringType())) {
-            new FlowAnalyzer().visitFlow(flow);
+            flow.analyze();
             var templateInstances = context.getTemplateInstances(flow.getDeclaringType());
             for (ClassType templateInstance : templateInstances) {
                 context.getGenericContext().retransformFlow(flow, templateInstance);
@@ -262,7 +266,7 @@ public class FlowManager {
         if (flow.getDeclaringType().isTemplate() && context.isPersisted(flow.getDeclaringType())) {
             var templateInstances = context.getTemplateInstances(flow.getDeclaringType());
             for (ClassType templateInstance : templateInstances) {
-                var flowTi = templateInstance.getFlowByTemplate(flow);
+                var flowTi = templateInstance.getFlowByRootTemplate(flow);
                 templateInstance.removeFlow(flowTi);
                 context.remove(flowTi);
             }
@@ -290,7 +294,7 @@ public class FlowManager {
     private SelfNode createSelfNode(Flow flow, IEntityContext context) {
         NodeDTO selfNodeDTO = NodeDTO.newNode(
                 0L,
-                "当前记录",
+                "当前对象",
                 NodeKind.SELF.code(),
                 null
         );
@@ -371,10 +375,11 @@ public class FlowManager {
 
     private NodeRT<?> createNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
         nodeDTO = beforeNodeChange(nodeDTO, null, scope, context);
-        new FlowAnalyzer().visitFlow(scope.getFlow());
+        scope.getFlow().analyze();
         var node = NodeFactory.create(nodeDTO, scope, context);
         afterNodeChange(nodeDTO, node, context);
         retransformFlowIfRequired(scope.getFlow(), context);
+        node.getFlow().check();
         return node;
     }
 
@@ -439,11 +444,12 @@ public class FlowManager {
             throw BusinessException.nodeNotFound(nodeDTO.id());
         }
         var scope = context.getScope(nodeDTO.scopeId());
-        new FlowAnalyzer().visitFlow(scope.getFlow());
+        scope.getFlow().analyze();
         nodeDTO = beforeNodeChange(nodeDTO, node, scope, context);
         node.update(nodeDTO, context);
         afterNodeChange(nodeDTO, node, context);
         retransformFlowIfRequired(scope.getFlow(), context);
+        node.getFlow().check();
         return node;
     }
 
@@ -551,10 +557,10 @@ public class FlowManager {
         FieldDTO excetpionFieldDTO;
         if (node != null) {
             var outputType = node.getType();
-            excetpionFieldDTO = outputType.getFieldByCodeRequired("exception").toDTO();
+            excetpionFieldDTO = outputType.getFieldByCode("exception").toDTO();
         } else {
             excetpionFieldDTO = new FieldDTO(
-                    null, null, "异常", "exception", Access.GLOBAL.code(),
+                    null, null, "异常", "exception", Access.PUBLIC.code(),
                     null, false, false, null,
                     StandardTypes.getNullableThrowableType().getRef(), false, false
             );
@@ -623,9 +629,20 @@ public class FlowManager {
                         null,
                         List.of(),
                         List.of(),
-                        false
+                        false,
+                        List.of()
                 )
         );
+    }
+
+    @Transactional
+    public GetFlowResponse check(long id) {
+        try(var context = newContext(true)) {
+            var flow = context.getFlow(id);
+            flow.check();
+            context.finish();
+            return makeFlowResponse(flow, true);
+        }
     }
 
     private NodeDTO preprocessForeachNode(NodeDTO nodeDTO, @Nullable NodeRT<?> node, ScopeRT scope, IEntityContext context) {
@@ -637,7 +654,7 @@ public class FlowManager {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var arrayValue = ValueFactory.create(param.getArray(), parsingContext);
         Field arrayField, indexField;
-        if (currentType != null && (arrayField = currentType.getFieldByCode("array")) != null) {
+        if (currentType != null && (arrayField = currentType.findFieldByCode("array")) != null) {
             fields.add(arrayField.toDTO());
         } else {
             fields.add(new FieldDTO(
@@ -645,7 +662,7 @@ public class FlowManager {
                     null,
                     "数组",
                     "array",
-                    Access.GLOBAL.code(),
+                    Access.PUBLIC.code(),
                     null,
                     false,
                     false,
@@ -655,7 +672,7 @@ public class FlowManager {
                     false
             ));
         }
-        if (currentType != null && (indexField = currentType.getFieldByCode("index")) != null) {
+        if (currentType != null && (indexField = currentType.findFieldByCode("index")) != null) {
             fields.add(indexField.toDTO());
         } else {
             fields.add(new FieldDTO(
@@ -663,7 +680,7 @@ public class FlowManager {
                     null,
                     "索引",
                     "index",
-                    Access.GLOBAL.code(),
+                    Access.PUBLIC.code(),
                     null,
                     false,
                     false,
@@ -688,11 +705,12 @@ public class FlowManager {
                     new ValueParamDTO(
                             new ValueDTO(
                                     ValueKind.EXPRESSION.code(),
-                                    new ExpressionFieldValueDTO(
+                                    new ExpressionFieldValue(
                                             nodeDTO.name() + ".array[" + nodeDTO.name() + ".index]"
                                     )
                             )
                     ),
+                    null,
                     null,
                     null
             );
@@ -734,7 +752,7 @@ public class FlowManager {
             var parameter = callable.getParameterByName(field.getName());
             if (parameter == null) {
                 parameters.add(
-                        new Parameter(null, field.getName(), field.getCode(), field.getType(), cond)
+                        new Parameter(null, field.getName(), field.getCode(), field.getType(), cond, null)
                 );
             } else {
                 parameters.add(parameter);
@@ -810,7 +828,7 @@ public class FlowManager {
                 ref.id(),
                 name,
                 null,
-                Access.GLOBAL.code(),
+                Access.PUBLIC.code(),
                 defaultValue,
                 false,
                 false,

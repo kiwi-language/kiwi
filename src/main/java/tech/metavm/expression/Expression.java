@@ -1,6 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.Entity;
+import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EntityType("表达式")
-public abstract class Expression extends Entity {
+public abstract class Expression extends Element {
 
     public abstract String buildSelf(VarType symbolType);
 
@@ -23,7 +23,7 @@ public abstract class Expression extends Entity {
 
     public abstract Type getType();
 
-    protected abstract List<Expression> getChildren();
+    public abstract List<Expression> getChildren();
 
     public Expression getVariableChild() {
         for (Expression child : getChildren()) {
@@ -47,7 +47,7 @@ public abstract class Expression extends Entity {
         return getChild(ConstantExpression.class);
     }
 
-    public abstract Expression cloneWithNewChildren(List<Expression> children);
+    public abstract Expression substituteChildren(List<Expression> children);
 
     public PropertyExpression getFieldChild() {
         return getChild(PropertyExpression.class);
@@ -81,7 +81,7 @@ public abstract class Expression extends Entity {
 
     public Expression copy() {
         var children = getChildren();
-        return cloneWithNewChildren(NncUtils.map(children, Expression::copy));
+        return substituteChildren(NncUtils.map(children, Expression::copy));
     }
 
 }

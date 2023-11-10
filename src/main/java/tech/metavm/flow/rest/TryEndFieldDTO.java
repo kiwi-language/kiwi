@@ -32,7 +32,7 @@ public record TryEndFieldDTO(
                 fieldRef.id(),
                 name,
                 null,
-                Access.GLOBAL.code(),
+                Access.PUBLIC.code(),
                 null,
                 false,
                 false,

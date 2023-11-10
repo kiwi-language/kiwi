@@ -30,7 +30,7 @@ public enum TypeCategory {
     READ_WRITE_ARRAY(6, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("只读数组")
     READ_ONLY_ARRAY(7, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    @EnumConstant("从对象数组")
+    @EnumConstant("子对象数组")
     CHILD_ARRAY(8, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("并集")
     UNION(9, SQLType.UNION, UnionTypeParam.class, 5),
@@ -201,6 +201,18 @@ public enum TypeCategory {
 
     public boolean isPojo() {
         return this == INTERFACE || this == CLASS || this == ENUM;
+    }
+
+    public boolean isFunction() {
+        return this == FUNCTION;
+    }
+
+    public boolean isUncertain() {
+        return this == UNCERTAIN;
+    }
+
+    public boolean isIntersection() {
+        return this == INTERSECTION;
     }
 
     public static Set<TypeCategory> all() {

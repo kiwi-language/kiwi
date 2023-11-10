@@ -2,10 +2,11 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.meta.ClassType;
 
-@EntityType("当前记录节点")
+@EntityType("当前对象节点")
 public class SelfNode extends NodeRT<Void> {
 
     public static ClassType getSelfType(Flow flow, IEntityContext context) {
@@ -34,5 +35,10 @@ public class SelfNode extends NodeRT<Void> {
     @Override
     public void execute(MetaFrame frame) {
         frame.setResult(frame.getSelf());
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitSelfNode(this);
     }
 }

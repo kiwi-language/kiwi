@@ -30,8 +30,8 @@ public class TryEndField extends Entity {
         tryEndNode.addField(this);
     }
 
-    public ReadonlyArray<TryEndValue> getValues() {
-        return values;
+    public List<TryEndValue> getValues() {
+        return values.toList();
     }
 
     public Value getDefaultValue() {

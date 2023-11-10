@@ -10,8 +10,8 @@ import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.ClassInstanceParam;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.instance.rest.InstanceFieldValueDTO;
-import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
+import tech.metavm.object.instance.rest.InstanceFieldValue;
+import tech.metavm.object.instance.rest.ReferenceFieldValue;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Index;
@@ -301,12 +301,12 @@ public class ClassInstance extends Instance {
     @Override
     public FieldValue toFieldValueDTO() {
         if (isValue()) {
-            return new InstanceFieldValueDTO(
+            return new InstanceFieldValue(
                     getTitle(),
                     toDTO()
             );
         } else {
-            return new ReferenceFieldValueDTO(
+            return new ReferenceFieldValue(
                     getTitle(),
                     NncUtils.requireNonNull(getId(), "Id required")
             );

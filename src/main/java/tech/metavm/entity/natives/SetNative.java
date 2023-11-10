@@ -1,6 +1,5 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.entity.CollectionKind;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -23,7 +22,7 @@ public class SetNative extends NativeBase {
 
     public SetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getType().getFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByCode("array"));
         if (instance.isFieldInitialized(arrayField)) {
             array = (ArrayInstance) instance.getField(arrayField);
             for (int i = 0; i < array.getElements().size(); i++) {

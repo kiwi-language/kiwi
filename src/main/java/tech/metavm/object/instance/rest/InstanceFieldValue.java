@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-public class InstanceFieldValueDTO extends FieldValue {
+public class InstanceFieldValue extends FieldValue {
 
     private final InstanceDTO instance;
 
-    public InstanceFieldValueDTO(@JsonProperty("displayValue") String displayValue,
-                                 @JsonProperty("instance") InstanceDTO instance) {
+    public InstanceFieldValue(@JsonProperty("displayValue") String displayValue,
+                              @JsonProperty("instance") InstanceDTO instance) {
         super(FieldValueKind.INSTANCE_DTO.code(), displayValue);
         this.instance = instance;
     }
@@ -23,7 +23,7 @@ public class InstanceFieldValueDTO extends FieldValue {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        InstanceFieldValueDTO that = (InstanceFieldValueDTO) o;
+        InstanceFieldValue that = (InstanceFieldValue) o;
         return Objects.equals(instance, that.instance);
     }
 

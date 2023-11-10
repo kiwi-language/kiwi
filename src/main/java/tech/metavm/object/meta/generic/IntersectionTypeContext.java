@@ -32,7 +32,7 @@ public class IntersectionTypeContext extends CompositeTypeContext<IntersectionTy
     }
 
     @Override
-    protected IntersectionType create(List<Type> componentTypes) {
-        return new IntersectionType(null, new HashSet<>(componentTypes));
+    protected IntersectionType create(List<Type> componentTypes, Long tmpId) {
+        return new IntersectionType(tmpId, new HashSet<>(componentTypes));
     }
 }

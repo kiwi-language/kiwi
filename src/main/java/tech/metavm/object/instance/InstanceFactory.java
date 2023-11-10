@@ -140,11 +140,11 @@ public class InstanceFactory {
                 );
             }
             return InstanceUtils.resolvePrimitiveValue(type, primitiveFieldValue.getValue());
-        } else if (rawValue instanceof ReferenceFieldValueDTO referenceFieldValue) {
+        } else if (rawValue instanceof ReferenceFieldValue referenceFieldValue) {
             return context.get(referenceFieldValue.getId());
-        } else if (rawValue instanceof InstanceFieldValueDTO instanceFieldValue) {
+        } else if (rawValue instanceof InstanceFieldValue instanceFieldValue) {
             return save(instanceFieldValue.getInstance(), getType, parentRef, context);
-        } else if (rawValue instanceof ArrayFieldValueDTO arrayFieldValue) {
+        } else if (rawValue instanceof ArrayFieldValue arrayFieldValue) {
             if (arrayFieldValue.getId() != null && arrayFieldValue.getId() != 0) {
                 ArrayInstance arrayInstance = (ArrayInstance) context.get(arrayFieldValue.getId());
                 arrayInstance.clear();

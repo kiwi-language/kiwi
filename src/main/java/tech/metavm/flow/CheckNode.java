@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CheckNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -69,5 +70,10 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
 
     public BranchNode getExit() {
         return exit;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitCheckNode(this);
     }
 }

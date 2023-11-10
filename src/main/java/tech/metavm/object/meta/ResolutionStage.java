@@ -2,11 +2,13 @@ package tech.metavm.object.meta;
 
 public enum ResolutionStage {
 
-    CREATED(0),
+    INIT(0),
 
-    DECLARED(1),
+    SIGNATURE(2),
 
-    GENERATED(2);
+    DECLARATION(3),
+
+    DEFINITION(4);
 
     private final int code;
 

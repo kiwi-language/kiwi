@@ -41,7 +41,7 @@ public record OutputFieldDTO(
                 NncUtils.get(fieldRef, RefDTO::id),
                 name,
                 null,
-                Access.GLOBAL.code(),
+                Access.PUBLIC.code(),
                 null,
                 false,
                 false,

@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.Type;
@@ -73,12 +74,12 @@ public class AllMatchExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(array, condition);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 2);
         return new AllMatchExpression(children.get(0), children.get(1), null);
     }
@@ -93,5 +94,10 @@ public class AllMatchExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(array, condition, cursor);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitAllMatchExpression(this);
     }
 }

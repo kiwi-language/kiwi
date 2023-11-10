@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Type;
@@ -58,12 +59,12 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(first, second);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 2);
         return new BinaryExpression(operator, children.get(0), children.get(1));
     }
@@ -83,5 +84,10 @@ public class BinaryExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(operator, first, second);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitBinaryExpression(this);
     }
 }

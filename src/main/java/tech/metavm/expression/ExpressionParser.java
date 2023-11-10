@@ -8,6 +8,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.antlr.InstacodeLexer;
 import tech.metavm.expression.antlr.InstacodeParser;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.query.OperatorTypes;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.StandardTypes;
@@ -185,7 +186,7 @@ public class ExpressionParser {
                     parse(expression.expression(2))
             );
             default -> new BinaryExpression(
-                    Operator.getByOp(bop.getText()),
+                    Operator.getByOp(bop.getText(), OperatorTypes.BINARY),
                     parse(expression.expression(0)),
                     parse(expression.expression(1))
             );

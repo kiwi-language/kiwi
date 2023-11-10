@@ -1,11 +1,13 @@
 package tech.metavm.object.meta;
 
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.object.meta.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.meta.rest.dto.PrimitiveTypeParam;
+import tech.metavm.object.meta.rest.dto.TypeKey;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -19,6 +21,11 @@ public class PrimitiveType extends Type {
         super(kind.getName(), false, true, kind.getTypeCategory());
         setCode(kind.name());
         this.kind = kind;
+    }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new PrimitiveTypeKey(kind.getCode());
     }
 
     @Override
@@ -56,5 +63,10 @@ public class PrimitiveType extends Type {
     @Override
     public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
         return kind.getJavaClass().getName();
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitPrimitiveType(this);
     }
 }

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.ArrayExpression;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NewArrayParam;
 import tech.metavm.flow.rest.NodeDTO;
@@ -95,4 +96,17 @@ public class NewArrayNode extends NodeRT<NewArrayParam> {
         frame.setResult(array);
     }
 
+    public Value getValue() {
+        return value;
+    }
+
+    @Nullable
+    public ParentRef getParentRef() {
+        return parentRef;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitNewArrayNode(this);
+    }
 }

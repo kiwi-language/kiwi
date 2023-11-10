@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementTransformer;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
@@ -401,13 +402,13 @@ public class ExpressionUtil {
                 return value.toString();
             }
         }
-        if (fieldValue instanceof ReferenceFieldValueDTO refFieldValue) {
+        if (fieldValue instanceof ReferenceFieldValue refFieldValue) {
             return Constants.CONSTANT_ID_PREFIX + refFieldValue.getId();
         }
-        if (fieldValue instanceof ArrayFieldValueDTO arrayFieldValue) {
+        if (fieldValue instanceof ArrayFieldValue arrayFieldValue) {
             return "[" + NncUtils.join(arrayFieldValue.getElements(), ExpressionUtil::constantToExpression) + "]";
         }
-        if (fieldValue instanceof ExpressionFieldValueDTO exprFieldValue) {
+        if (fieldValue instanceof ExpressionFieldValue exprFieldValue) {
             return exprFieldValue.getExpression();
         }
         throw new InternalException("Can not convert value '" + fieldValue + "' to expression");

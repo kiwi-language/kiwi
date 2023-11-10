@@ -11,7 +11,7 @@ import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.PrimitiveInstance;
-import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.util.BusinessException;
@@ -117,11 +117,11 @@ public class ExpressionService extends EntityContextBean {
             }
         }
         if(value.kind() == ValueKind.REFERENCE.code()) {
-            ExpressionFieldValueDTO exprValue = (ExpressionFieldValueDTO) value.value();
+            ExpressionFieldValue exprValue = (ExpressionFieldValue) value.value();
             return exprValue.getExpression().replaceAll("-", ".") + " = true";
         }
         else {
-            return ((ExpressionFieldValueDTO) value.value()).getExpression();
+            return ((ExpressionFieldValue) value.value()).getExpression();
         }
     }
 

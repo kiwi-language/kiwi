@@ -4,6 +4,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
@@ -70,4 +71,8 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
     }
 
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitSubFlowNode(this);
+    }
 }

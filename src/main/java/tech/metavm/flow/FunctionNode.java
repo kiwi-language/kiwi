@@ -4,6 +4,7 @@ import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.FunctionNodeParamDTO;
@@ -14,6 +15,7 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @EntityType("函数节点")
@@ -36,11 +38,10 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
         super(tmpId, name,
                 ((FunctionType) FlowUtils.getExpressionType(func.getExpression(), previous, scope)).getReturnType(),
                 previous, scope);
+        check(func, arguments);
         this.func = func;
         this.arguments.addChildren(arguments);
-        check();
     }
-
 
     @Override
     protected FunctionNodeParamDTO getParam(boolean persisting) {
@@ -53,18 +54,20 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
     @Override
     protected void setParam(FunctionNodeParamDTO param, IEntityContext context) {
         var parsingContext = getParsingContext(context);
+        var func = this.func;
+        List<Value> arguments = new ArrayList<>(this.arguments.toList());
         if (param.func() != null) {
-            this.func = ValueFactory.create(param.func(), parsingContext);
+            func = ValueFactory.create(param.func(), parsingContext);
         }
         if (param.arguments() != null) {
-            this.arguments.resetChildren(
-                    NncUtils.map(param.arguments(), argDTO -> ValueFactory.create(argDTO, parsingContext))
-            );
+            arguments = NncUtils.map(param.arguments(), argDTO -> ValueFactory.create(argDTO, parsingContext));
         }
-        check();
+        check(func, arguments);
+        this.func = func;
+        this.arguments.resetChildren(arguments);
     }
 
-    private void check() throws BusinessException {
+    private void check(Value func, List<Value> arguments) throws BusinessException {
         var funcType = ((FunctionType) FlowUtils.getExpressionType(func.getExpression(), getPredecessor(), getScope()));
         if (funcType instanceof FunctionType functionType) {
             if (arguments.size() != functionType.getParameterTypes().size()) {
@@ -85,5 +88,10 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
         var funcInst = (FunctionInstance) func.evaluate(frame);
         var subFrame = funcInst.createFrame(frame.getStack(), NncUtils.map(arguments, arg -> arg.evaluate(frame)));
         frame.getStack().push(subFrame);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitFunctionNode(this);
     }
 }

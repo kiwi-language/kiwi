@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -73,4 +74,8 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
         return constraint.createIndexKey(NncUtils.map(values, fp -> fp.evaluate(frame)));
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitGetUniqueNode(this);
+    }
 }

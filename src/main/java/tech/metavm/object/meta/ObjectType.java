@@ -1,6 +1,10 @@
 package tech.metavm.object.meta;
 
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.object.meta.rest.dto.ObjectTypeKey;
+import tech.metavm.object.meta.rest.dto.TypeKey;
 import tech.metavm.object.meta.rest.dto.TypeParam;
 
 import java.util.function.Function;
@@ -11,6 +15,16 @@ public class ObjectType extends Type {
     public ObjectType() {
         super("对象",  false, false, TypeCategory.OBJECT);
         setCode("Object");
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitObjectType(this);
+    }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new ObjectTypeKey();
     }
 
     @Override

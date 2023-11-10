@@ -35,7 +35,7 @@ public record FieldDTO(
 
     public static FieldDTO create(Long id, String name, Long declaringTypeId, long typeId) {
         return new FieldDTO(
-                null, id, name, null,  Access.GLOBAL.code(),
+                null, id, name, null,  Access.PUBLIC.code(),
                 null, false, false, declaringTypeId,
                 RefDTO.ofId(typeId), false, false
         );

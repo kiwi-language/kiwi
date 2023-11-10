@@ -10,4 +10,9 @@ public record ArrayTypeParam(
     public int getType() {
         return 2;
     }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new ArrayTypeKey(kind, elementTypeRef);
+    }
 }

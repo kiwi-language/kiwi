@@ -129,14 +129,14 @@ public class MetaFrame implements EvaluationContext, Frame {
     }
 
     private void checkAccess(Field field) {
-        if (field.getAccess() == Access.GLOBAL) {
+        if (field.getAccess() == Access.PUBLIC) {
             return;
         }
         if (field.getAccess() == Access.MODULE) {
             return;
         }
 
-        if (field.getAccess() == Access.CLASS) {
+        if (field.getAccess() == Access.PRIVATE) {
             if (!field.getDeclaringType().equals(owner)) {
                 throw BusinessException.illegalAccess();
             }

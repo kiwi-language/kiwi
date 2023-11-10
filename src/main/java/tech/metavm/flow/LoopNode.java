@@ -1,9 +1,8 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.LoopFieldDTO;
@@ -13,9 +12,6 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.entity.ChildArray;
-import tech.metavm.entity.ReadonlyArray;
 
 import java.util.*;
 
@@ -26,10 +22,13 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
     private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
     @ChildEntity("条件")
     private Value condition;
+    @ChildEntity("节点类型")
+    private final ClassType nodeType;
 
-    protected LoopNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous,
+    protected LoopNode(Long tmpId, String name, @Nullable ClassType outputType, NodeRT<?> previous,
                        ScopeRT scope, Value condition) {
-        super(tmpId, name, outputType, previous, scope, true);
+        super(tmpId, name, null, previous, scope, true);
+        this.nodeType = outputType;
         this.condition = condition;
     }
 
@@ -143,20 +142,10 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         this.condition = condition;
     }
 
-
-    public ScopeRT getBodyScope() {
-        return bodyScope;
-    }
-
     @Override
+    @NotNull
     public ClassType getType() {
-        return (ClassType) super.getType();
+        return nodeType;
     }
-
-    @Override
-    protected List<Object> nodeBeforeRemove() {
-        return List.of(getType());
-    }
-
 
 }

@@ -10,7 +10,9 @@ import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.expression.ConstantExpression;
 import tech.metavm.flow.ExpressionValue;
 import tech.metavm.flow.ValueNode;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.FieldBuilder;
+import tech.metavm.object.meta.StandardTypes;
 import tech.metavm.object.meta.mocks.GenericFoo;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.MockIdProvider;
@@ -18,7 +20,6 @@ import tech.metavm.util.MockRegistry;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
-import java.util.Map;
 
 public class GenericTransformerTest extends TestCase {
 
@@ -42,13 +43,11 @@ public class GenericTransformerTest extends TestCase {
 
 
         var typeParam = foo.getTypeParameters().get(0);
-        var typeArgumentMap = new TypeArgumentMap(Map.of(
-                typeParam,
-                StandardTypes.getStringType()
-        ));
-        var transformer = new GenericTransformer(typeArgumentMap, ResolutionStage.GENERATED, context, null);
-        var transformed = transformer.transformClassType(foo);
-        var valueField = transformed.getFieldByCode("value");
+        var transformer = SubstitutorBuilder
+                .newBuilder(foo.getTypeParameters(), List.of(StandardTypes.getStringType()), context.getGenericContext())
+                .build();
+        var transformed = transformer.substituteClassType(foo);
+        var valueField = transformed.findFieldByCode("value");
         var getValueFlow = transformed.getFlowByCodeAndParamTypes("getValue", List.of());
         var setValueFlow = transformed.getFlowByCodeAndParamTypes("setValue", List.of(StandardTypes.getStringType()));
 
@@ -64,20 +63,24 @@ public class GenericTransformerTest extends TestCase {
                 new ExpressionValue(new ConstantExpression(InstanceUtils.longInstance(1L)))
         );
 
-        var transformer2 = new GenericTransformer(typeArgumentMap, ResolutionStage.GENERATED, context, transformed);
-        var transformed2 = transformer2.transformClassType(foo);
+        var transformer2 = SubstitutorBuilder
+                .newBuilder(foo.getTypeParameters(), List.of(StandardTypes.getStringType()), context.getGenericContext())
+                .existing(transformed)
+                .build();
+
+        var transformed2 = transformer2.substituteClassType(foo);
         var getValueFlow2 = transformed2.getFlowByCodeAndParamTypes("getValue", List.of());
         var setValueFlow2 = transformed2.getFlowByCodeAndParamTypes("setValue", List.of(StandardTypes.getStringType()));
 
         Assert.assertSame(transformed, transformed2);
         Assert.assertSame(transformed, transformed2);
-        Assert.assertSame(valueField, transformed2.getFieldByCode("value"));
+        Assert.assertSame(valueField, transformed2.findFieldByCode("value"));
         Assert.assertSame(getValueFlow, getValueFlow2);
         Assert.assertSame(setValueFlow, setValueFlow2);
         Assert.assertSame(setValueFlow.getParameters().get(0), setValueFlow2.getParameters().get(0));
         Assert.assertTrue(setValueFlow2.getRootScope().getLastNode() instanceof ValueNode);
 
-        Assert.assertNotNull(transformed2.getFieldByCode(value2.getCode()));
+        Assert.assertNotNull(transformed2.findFieldByCode(value2.getCode()));
 
     }
 }

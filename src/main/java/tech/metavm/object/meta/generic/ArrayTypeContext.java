@@ -19,7 +19,11 @@ public class ArrayTypeContext extends CompositeTypeContext<ArrayType>  {
     }
 
     public ArrayType get(Type elementType) {
-        return get(List.of(elementType));
+        return get(elementType, null);
+    }
+
+    public ArrayType get(Type elementType, Long tmpId) {
+        return get(List.of(elementType), tmpId);
     }
 
     @Override
@@ -35,8 +39,8 @@ public class ArrayTypeContext extends CompositeTypeContext<ArrayType>  {
     }
 
     @Override
-    protected ArrayType create(List<Type> componentTypes) {
+    protected ArrayType create(List<Type> componentTypes, Long tmpId) {
         NncUtils.requireTrue(componentTypes.size() == 1);
-        return new ArrayType(null, componentTypes.get(0), kind);
+        return new ArrayType(tmpId, componentTypes.get(0), kind);
     }
 }

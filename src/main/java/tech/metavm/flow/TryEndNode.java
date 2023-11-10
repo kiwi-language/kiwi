@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
@@ -22,7 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TryEndNode extends NodeRT<TryEndParamDTO> {
+@EntityType("尝试结束节点")
+public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
 
     public static TryEndNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         var node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(),
@@ -41,12 +44,6 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
     @Override
     protected TryEndParamDTO getParam(boolean persisting) {
         return new TryEndParamDTO(NncUtils.map(fields, TryEndField::toDTO));
-    }
-
-    @Override
-    @NotNull
-    public ClassType getType() {
-        return (ClassType) NncUtils.requireNonNull(super.getType());
     }
 
     @Override
@@ -85,15 +82,19 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
         }
     }
 
-    void addField(TryEndField field) {
+    public void addField(TryEndField field) {
         this.fields.addChild(field);
+    }
+
+    public List<TryEndField> getFields() {
+        return fields.toList();
     }
 
     @Override
     public void execute(MetaFrame frame) {
         NncUtils.requireTrue(frame.exitTrySection() == getPredecessor());
         var exceptionInfo = frame.getExceptionInfo(getPredecessor());
-        var exceptionField = getType().getFieldByCodeRequired("exception");
+        var exceptionField = getType().getFieldByCode("exception");
         Instance exception;
         NodeRT<?> raiseNode;
         if (exceptionInfo != null) {
@@ -109,5 +110,10 @@ public class TryEndNode extends NodeRT<TryEndParamDTO> {
         ));
         fieldValues.put(exceptionField, exception);
         frame.setResult(new ClassInstance(fieldValues, getType()));
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitTryEndNode(this);
     }
 }

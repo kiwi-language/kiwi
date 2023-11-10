@@ -4,12 +4,15 @@ import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 
+import javax.annotation.Nullable;
+
 public record ParameterDTO(
         Long tmpId,
         Long id,
         String name,
         String code,
         RefDTO typeRef,
-        ValueDTO condition
+        ValueDTO condition,
+        @Nullable RefDTO templateRef
 ) implements BaseDTO {
 }

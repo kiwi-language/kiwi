@@ -6,6 +6,7 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.meta.rest.dto.TypeKey;
 import tech.metavm.object.meta.rest.dto.TypeParam;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
@@ -18,7 +19,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("类型")
-public abstract class Type extends Entity implements LoadAware {
+public abstract class Type extends Element implements LoadAware {
 
     @SuppressWarnings("StaticInitializerReferencesSubClass")
     public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
@@ -34,9 +35,17 @@ public abstract class Type extends Entity implements LoadAware {
     protected final boolean ephemeral;
     @EntityField("类别")
     protected TypeCategory category;
+    @EntityField("错误")
+    private boolean error = false;
+
+    //<editor-fold desc="search flags">
+    @SuppressWarnings("unused")
+    private boolean templateFlag = false;
+    //</editor-fold>
+
 
     @Nullable
-    private transient Closure closure;
+    private transient Closure<? extends Type> closure;
     @Nullable
     private transient List<Type> superTypesCheckpoint;
 
@@ -47,6 +56,10 @@ public abstract class Type extends Entity implements LoadAware {
         this.anonymous = anonymous;
         this.ephemeral = ephemeral;
         this.category = category;
+    }
+
+    protected void setTemplateFlag(boolean templateFlag) {
+        this.templateFlag = templateFlag;
     }
 
     @Override
@@ -86,6 +99,8 @@ public abstract class Type extends Entity implements LoadAware {
     public boolean isEphemeral() {
         return ephemeral;
     }
+
+    public abstract TypeKey getTypeKey();
 
     @SuppressWarnings("unused")
     public boolean isPersistent() {
@@ -145,6 +160,14 @@ public abstract class Type extends Entity implements LoadAware {
 
     protected abstract boolean isAssignableFrom0(Type that);
 
+    public boolean isError() {
+        return error;
+    }
+
+    public void setError(boolean error) {
+        this.error = error;
+    }
+
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitType(this, s);
     }
@@ -198,10 +221,18 @@ public abstract class Type extends Entity implements LoadAware {
         return ancestorChangeListeners;
     }
 
-    public final Closure getClosure() {
+    public Closure<? extends Type> getClosure() {
         if (closure == null)
-            closure = new Closure(this);
+            closure = createClosure(getClosureElementJavaClass());
         return closure;
+    }
+
+    private <T extends Type> Closure<T> createClosure(Class<T> closureElementClass) {
+        return new Closure<>(closureElementClass.cast(this), closureElementClass);
+    }
+
+    protected Class<? extends Type> getClosureElementJavaClass() {
+        return Type.class;
     }
 
     @Override
@@ -231,7 +262,7 @@ public abstract class Type extends Entity implements LoadAware {
         return false;
     }
 
-    public final boolean isWithinRange(Type that) {
+    public final boolean contains(Type that) {
         return getUpperBound().isAssignableFrom(that.getUpperBound()) &&
                 that.getLowerBound().isAssignableFrom(getLowerBound());
     }
@@ -254,10 +285,6 @@ public abstract class Type extends Entity implements LoadAware {
 
     public boolean isInstance(Instance value) {
         return isAssignableFrom(value.getType());
-    }
-
-    public boolean contains(Type that) {
-        return this == that;
     }
 
     public boolean isInt() {
@@ -401,4 +428,5 @@ public abstract class Type extends Entity implements LoadAware {
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
     }
+
 }

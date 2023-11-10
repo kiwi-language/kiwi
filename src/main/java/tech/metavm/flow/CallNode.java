@@ -1,21 +1,19 @@
 package tech.metavm.flow;
 
 import tech.metavm.dto.RefDTO;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.flow.rest.ArgumentDTO;
 import tech.metavm.flow.rest.CallParam;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
-import tech.metavm.entity.ChildArray;
+import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
-import tech.metavm.entity.ReadonlyArray;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 @EntityType("调用节点")
 public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
@@ -75,17 +73,35 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
         this.arguments.resetChildren(arguments);
     }
 
-    public ReadonlyArray<Argument> getArguments() {
-        return arguments;
+    public List<Argument> getArguments() {
+        return arguments.toList();
     }
 
     protected abstract Instance getSelf(MetaFrame frame);
 
     @Override
+    protected String check0() {
+        var argMap = NncUtils.toMap(arguments, Argument::getParameter, Function.identity());
+        for (Parameter parameter : subFlow.getParameters()) {
+            if (parameter.getType().isNotNull() && argMap.get(parameter) == null)
+                return String.format("必填参数'%s'未配置", parameter.getName());
+        }
+        return null;
+    }
+
+    @Override
     public void execute(MetaFrame frame) {
         FlowStack stack = frame.getStack();
         var self = getSelf(frame);
-        var args = NncUtils.map(arguments,arg -> arg.evaluate(frame));
+        List<Instance> args = new ArrayList<>();
+        var argMap = NncUtils.toMap(arguments, Argument::getParameter, Function.identity());
+        for (Parameter param : subFlow.getParameters()) {
+            var arg = argMap.get(param);
+            if (arg != null)
+                args.add(arg.evaluate(frame));
+            else
+                args.add(InstanceUtils.nullInstance());
+        }
         var flow = subFlow;
         if (flow.isAbstract()) {
             flow = ((ClassType) self.getType()).getOverrideFlowRequired(flow);

@@ -14,7 +14,7 @@ import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.persistence.mappers.*;
 import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.meta.rest.dto.BatchSaveRequest;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -122,8 +122,8 @@ public class GeneratorTest extends TestCase {
 
     private void build(List<Class<?>> classes) {
         clean();
-        var typeDTOs = compile(classes);
-        deploy(typeDTOs);
+        var request = compile(classes);
+        deploy(request);
     }
 
     public void test_switch() {
@@ -172,13 +172,12 @@ public class GeneratorTest extends TestCase {
     }
 
     private void deploy() {
-        List<TypeDTO> typeDTOs = TestUtils.readJson(OUTPUT_FILE, new TypeReference<>() {
-        });
-        deploy(typeDTOs);
+        var request = TestUtils.readJson(OUTPUT_FILE, BatchSaveRequest.class);
+        deploy(request);
     }
 
-    private void deploy(List<TypeDTO> typeDTOs) {
-        var resp = HttpUtils.post("/type/batch", typeDTOs, new TypeReference<Result<List<Long>>>() {
+    private void deploy(BatchSaveRequest request) {
+        var resp = HttpUtils.post("/type/batch", request, new TypeReference<Result<List<Long>>>() {
         });
         if (resp.code() != 0) {
             throw new InternalException("Deploy failed: " + resp.message());
@@ -197,7 +196,7 @@ public class GeneratorTest extends TestCase {
         });
     }
 
-    private List<TypeDTO> compile(List<Class<?>> classes) {
+    private BatchSaveRequest compile(List<Class<?>> classes) {
         return doInSession(entityContext -> {
             List<PsiClassType> psiTypes = NncUtils.map(classes, TranspileTestTools::getPsiClassType);
             NncUtils.map(psiTypes, k -> (ClassType) typeResolver.resolve(k));
@@ -220,10 +219,11 @@ public class GeneratorTest extends TestCase {
                     }
                 }
                 context.writeDependencies();
-                var result = context.getTypes();
-                writeJson(OUTPUT_FILE, result);
+                var typeDTOs = context.getTypes();
                 System.out.println("Compile succeeded");
-                return result;
+                var request = new BatchSaveRequest(typeDTOs);
+                writeJson(OUTPUT_FILE, request);
+                return request;
             }
         });
     }

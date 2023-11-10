@@ -38,12 +38,12 @@ public class InstanceOfExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(operand);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new InstanceOfExpression(children.get(0), targetType);
     }
 
@@ -65,5 +65,10 @@ public class InstanceOfExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(operand, targetType);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitInstanceOfExpression(this);
     }
 }

@@ -16,12 +16,12 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("主对象引用")
-public class ParentRef extends Entity {
+@EntityType("父对象引用")
+public class ParentRef extends Element {
 
-    public static ParentRef create(ParentRefDTO masterRefDTO, ParsingContext parsingContext, @Nullable Type childType) {
-        var master = ValueFactory.create(masterRefDTO.parent(), parsingContext);
-        var field = NncUtils.get(masterRefDTO.fieldRef(),
+    public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, @Nullable Type childType) {
+        var master = ValueFactory.create(parentRefDTO.parent(), parsingContext);
+        var field = NncUtils.get(parentRefDTO.fieldRef(),
                 Objects.requireNonNull(parsingContext.getEntityContext())::getField);
         var masterRef = new ParentRef(master, field);
         if (childType != null) {
@@ -30,15 +30,16 @@ public class ParentRef extends Entity {
         return masterRef;
     }
 
-    @ChildEntity("主对象")
+    @ChildEntity("父对象")
     private final Value parent;
-    @EntityField("主对象字段")
-    private final @Nullable Field field;
+    @EntityField("父对象字段")
+    @Nullable
+    private final Field field;
 
-    public ParentRef(Value master, @Nullable Field masterField) {
-        check(master, masterField);
-        this.parent = master;
-        this.field = masterField;
+    public ParentRef(Value parent, @Nullable Field parentField) {
+        check(parent, parentField);
+        this.parent = parent;
+        this.field = parentField;
     }
 
     public InstanceParentRef evaluate(EvaluationContext context) {
@@ -72,9 +73,14 @@ public class ParentRef extends Entity {
         return parent;
     }
 
+
     @Nullable
     public Field getField() {
         return field;
+    }
+
+    public boolean isEmpty() {
+        return parent == null;
     }
 
     private static void check(Value master, Field masterField) {
@@ -93,4 +99,8 @@ public class ParentRef extends Entity {
         }
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitParentRef(this);
+    }
 }

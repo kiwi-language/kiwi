@@ -3,10 +3,13 @@ package tech.metavm.object.meta.rest.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
+import tech.metavm.flow.rest.GenericDeclarationDTO;
 import tech.metavm.object.meta.ClassSource;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
 
 public record TypeDTO(
@@ -18,7 +21,7 @@ public record TypeDTO(
         boolean ephemeral,
         boolean anonymous,
         TypeParam param
-) implements BaseDTO {
+) implements BaseDTO, GenericDeclarationDTO {
 
     public static TypeDTO createClass(String name, List<FieldDTO> fieldDTOs) {
         return createClass(null, name, fieldDTOs);
@@ -34,7 +37,7 @@ public record TypeDTO(
                         ClassSource.RUNTIME.code(),
                         fieldDTOs, List.of(), List.of(), List.of(),  null, null,
                         List.of(), false, List.of(), List.of(), null, List.of(), List.of(),
-                        false
+                        false, List.of()
                 )
         );
     }
@@ -73,7 +76,8 @@ public record TypeDTO(
                         null,
                         List.of(),
                         List.of(),
-                        false
+                        false,
+                        List.of()
                 )
         );
     }
@@ -101,6 +105,23 @@ public record TypeDTO(
     @JsonIgnore
     public UncertainTypeParam getUncertainTypeParam() {
         return (UncertainTypeParam) param;
+    }
+
+    @JsonIgnore
+    @Override
+    public List<RefDTO> typeParameterRefs() {
+        if(param instanceof ClassTypeParam classTypeParam)
+            return classTypeParam.typeParameterRefs();
+        else
+            throw new InternalException("Not a generic declaration");
+    }
+
+    public IntersectionTypeParam getIntersectionParam() {
+        return (IntersectionTypeParam) param;
+    }
+
+    public @Nullable TypeKey getTypeKey() {
+        return param.getTypeKey();
     }
 
 }

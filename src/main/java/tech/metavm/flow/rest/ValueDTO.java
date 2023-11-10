@@ -2,7 +2,7 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.flow.ValueKind;
-import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 
@@ -16,11 +16,11 @@ public record ValueDTO (
     }
 
     public static ValueDTO refValue(String ref) {
-        return new ValueDTO(ValueKind.REFERENCE.code(), new ExpressionFieldValueDTO(ref));
+        return new ValueDTO(ValueKind.REFERENCE.code(), new ExpressionFieldValue(ref));
     }
 
     public static ValueDTO exprValue(String expr) {
-        return new ValueDTO(ValueKind.EXPRESSION.code(), new ExpressionFieldValueDTO(expr));
+        return new ValueDTO(ValueKind.EXPRESSION.code(), new ExpressionFieldValue(expr));
     }
 
     @JsonIgnore

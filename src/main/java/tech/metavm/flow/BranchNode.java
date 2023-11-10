@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -195,5 +196,10 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     public Branch getDefaultBranch() {
         return NncUtils.requireNonNull(branches.get(Branch::isPreselected, true),
                 "Default branch is missing in branch node " + getName() + "(" + getId() + ")");
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitBranchNode(this);
     }
 }

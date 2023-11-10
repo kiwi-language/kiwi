@@ -1,8 +1,10 @@
 package tech.metavm.flow.rest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -25,14 +27,22 @@ public record FlowDTO(
         @Nullable RefDTO templateRef,
         List<RefDTO> typeArgumentRefs,
         List<RefDTO> overriddenRefs,
-        List<FlowDTO> templateInstances
-) implements BaseDTO {
+        List<FlowDTO> templateInstances,
+        boolean error
+) implements BaseDTO, GenericDeclarationDTO {
 
     public static FlowDTO create(String name, long declaringTypeId) {
         return new FlowDTO(
                 null, null, name, null,false, false, false,
                 RefDTO.ofId(declaringTypeId), null,  null, null,
-                 null, null,  null,  null, List.of(),null, List.of()
+                 null, null,  null,  null, List.of(),null, List.of(), false
+        );
+    }
+
+    @JsonIgnore
+    public FlowSignatureDTO signature() {
+        return new FlowSignatureDTO(
+                name, NncUtils.map(parameters, ParameterDTO::typeRef)
         );
     }
 
@@ -40,6 +50,11 @@ public record FlowDTO(
         if (id == null) {
             throw BusinessException.invalidParams("objectId is required");
         }
+    }
+
+    @JsonIgnore
+    public ParameterDTO findParameterByName(String name) {
+        return NncUtils.find(parameters, param -> param.name().equals(name));
     }
 
 }

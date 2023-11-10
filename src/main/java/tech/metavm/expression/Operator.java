@@ -114,8 +114,12 @@ public enum Operator {
     }
 
     public static Operator getByOp(String op) {
+        return getByOp(op, null);
+    }
+
+    public static Operator getByOp(String op, Integer type) {
         return Arrays.stream(values())
-                .filter(operator -> operator.op.equalsIgnoreCase(op))
+                .filter(operator -> operator.op.equalsIgnoreCase(op) && (type == null || type == operator.type))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Invalid operator '" + op + "'"));
     }

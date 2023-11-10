@@ -78,6 +78,14 @@ public class TestUtils {
         }
     }
 
+    public static <R> R readJson(String path, Class<R> klass) {
+        try {
+            return OBJECT_MAPPER.readValue(readEntireFile(path), klass);
+        } catch (JsonProcessingException e) {
+            throw new InternalException("JSON deserialization failed", e);
+        }
+    }
+
     public static <R> R readJson(String path, com.fasterxml.jackson.core.type.TypeReference<R> typeRef) {
         try {
             return OBJECT_MAPPER.readValue(readEntireFile(path), typeRef);

@@ -8,9 +8,9 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.rest.ArrayFieldValueDTO;
+import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.instance.rest.ReferenceFieldValueDTO;
+import tech.metavm.object.instance.rest.ReferenceFieldValue;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
@@ -72,7 +72,8 @@ public class TableManager {
                         null,
                         List.of(),
                         List.of(),
-                        false
+                        false,
+                        List.of()
                 )
         );
         ClassType type = typeManager.saveType(typeDTO, context);
@@ -144,7 +145,7 @@ public class TableManager {
             EnumEditContext enumEditContext = saveEnum(declaringType, column, context);
             type = getType(column, enumEditContext.getType(), context);
             defaultValue = column.multiValued() ?
-                    new ArrayFieldValueDTO(
+                    new ArrayFieldValue(
                             null,
                             false,
                             NncUtils.map(enumEditContext.getDefaultOptions(), EnumConstantRT::toFieldValue)
@@ -264,12 +265,12 @@ public class TableManager {
     }
 
     private boolean isPreselected(EnumConstantRT enumConstant, FieldValue fieldDefaultValue) {
-        if(fieldDefaultValue instanceof ReferenceFieldValueDTO ref) {
+        if(fieldDefaultValue instanceof ReferenceFieldValue ref) {
             return ref.getId() == enumConstant.getId();
         }
-        if(fieldDefaultValue instanceof ArrayFieldValueDTO array) {
+        if(fieldDefaultValue instanceof ArrayFieldValue array) {
             for (FieldValue element : array.getElements()) {
-                if(element instanceof ReferenceFieldValueDTO ref) {
+                if(element instanceof ReferenceFieldValue ref) {
                     if(ref.getId() == enumConstant.getId()) {
                         return true;
                     }
@@ -315,7 +316,7 @@ public class TableManager {
         IEntityContext context = newContext();
         var request = new QueryTypeRequest(
                 searchText, List.of(TypeCategory.CLASS.code(), TypeCategory.VALUE.code()),
-                false, false, false, page, pageSize
+                false, false, false, null, page, pageSize
         );
         Page<TypeDTO> typePage = typeManager.query(request);
         return new Page<>(

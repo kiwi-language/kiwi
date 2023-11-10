@@ -33,7 +33,8 @@ public class NodeDTOTest extends TestCase {
                         null
                 ),
                 null,
-                1L
+                1L,
+                null
         );
         TestUtils.logJSON(LOGGER, nodeDTO);
         String json = NncUtils.toJSONString(nodeDTO);

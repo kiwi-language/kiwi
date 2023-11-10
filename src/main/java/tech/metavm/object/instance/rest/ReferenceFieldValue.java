@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-public class ReferenceFieldValueDTO extends FieldValue {
+public class ReferenceFieldValue extends FieldValue {
 
     private final long id;
 
-    public ReferenceFieldValueDTO(@JsonProperty("displayValue") String displayValue,
-                                  @JsonProperty("id") long id) {
+    public ReferenceFieldValue(@JsonProperty("displayValue") String displayValue,
+                               @JsonProperty("id") long id) {
         super(FieldValueKind.REFERENCE.code(), displayValue);
         this.id = id;
     }
@@ -23,7 +23,7 @@ public class ReferenceFieldValueDTO extends FieldValue {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        ReferenceFieldValueDTO that = (ReferenceFieldValueDTO) o;
+        ReferenceFieldValue that = (ReferenceFieldValue) o;
         return id == that.id;
     }
 

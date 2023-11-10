@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
@@ -25,7 +26,7 @@ public class Field extends Property implements UpdateAware {
     private boolean asTitle;
     @EntityField("列")
     private final Column column;
-    @EntityField("是否从对象字段")
+    @EntityField("是否子对象字段")
     private final boolean isChildField;
     @EntityField(value = "是否静态", code = "static")
     private boolean _static;
@@ -103,6 +104,10 @@ public class Field extends Property implements UpdateAware {
         setUnique(update.unique());
     }
 
+    public Field getEffectiveTemplate() {
+        return template != null ? template : this;
+    }
+
     public boolean isReady() {
         return true;
     }
@@ -140,9 +145,6 @@ public class Field extends Property implements UpdateAware {
         for (Index fieldIndex : fieldIndices) {
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
-        }
-        if (getType().isAnonymous()) {
-            cascades.add(getType());
         }
         if (declaringType.isEnumConstantField(this)) {
             cascades.add(staticValue);
@@ -354,4 +356,8 @@ public class Field extends Property implements UpdateAware {
         }
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitField(this);
+    }
 }

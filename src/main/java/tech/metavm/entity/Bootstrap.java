@@ -53,11 +53,10 @@ public class Bootstrap implements InitializingBean {
         standardInstanceContext.setDefContext(defContext);
         standardInstanceContext.setEntityContext(defContext);
         ModelDefRegistry.setDefContext(defContext);
-
-        ReflectUtils.getModelClasses()
-                .stream()
-                .filter(k -> !ReadonlyArray.class.isAssignableFrom(k))
-                .forEach(defContext::getDef);
+        for (Class<?> entityClass : ReflectUtils.getModelClasses()) {
+            if(!ReadonlyArray.class.isAssignableFrom(entityClass))
+                defContext.getDef(entityClass);
+        }
         defContext.flushAndWriteInstances();
         ModelDefRegistry.setDefContext(defContext);
 

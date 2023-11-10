@@ -29,6 +29,9 @@ public enum NodeKind {
     TRY_END(24, TryEndNode.class, true),
     FUNC(25, FunctionNode.class),
     LAMBDA(26, LambdaNode.class),
+    ADD_ELEMENT(27, AddElementNode.class),
+    DELETE_ELEMENT(28, DeleteElementNode.class),
+    GET_ELEMENT(29, GetElementNode.class),
 
     ;
 

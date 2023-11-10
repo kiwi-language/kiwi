@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.meta.Type;
 
 import java.util.List;
@@ -39,12 +40,12 @@ public class VariablePathExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(qualifier, field);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new VariablePathExpression(children.get(0), (VariableExpression) children.get(1));
     }
 
@@ -58,5 +59,10 @@ public class VariablePathExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(qualifier, field);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitVariablePathExpression(this);
     }
 }

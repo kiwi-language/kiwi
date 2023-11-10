@@ -12,4 +12,9 @@ public record FunctionTypeParam(
     public int getType() {
         return 6;
     }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new FunctionTypeKey(parameterTypeRefs, returnTypeRef);
+    }
 }

@@ -1,0 +1,47 @@
+package tech.metavm.entity;
+
+import tech.metavm.expression.StructuralVisitor;
+import tech.metavm.util.ReflectUtils;
+
+import javax.annotation.Nullable;
+
+public abstract class Element extends Entity {
+
+    public Element() {
+    }
+
+    public Element(Long tmpId) {
+        super(tmpId);
+    }
+
+    public Element(Long tmpId, @Nullable EntityParentRef parentRef) {
+        super(tmpId, parentRef);
+    }
+
+    public abstract <R> R accept(ElementVisitor<R> visitor);
+
+    public void acceptChildren(StructuralVisitor<?> visitor) {
+        var desc = DescStore.get(getClass());
+        for (EntityProp prop : desc.getPropsWithAnnotation(ChildEntity.class)) {
+            var fieldValue = ReflectUtils.get(this, prop.getField());
+            if (fieldValue instanceof Entity child) {
+                visitor.pushParentRef(new EntityParentRef(this, prop.getField()));
+                acceptChild(child, visitor);
+                visitor.popParentRef();
+            }
+        }
+    }
+
+    private static void acceptChild(Entity value, StructuralVisitor<?> visitor) {
+        if (value instanceof Element element) {
+            element.accept(visitor);
+        }
+        if (value instanceof ChildArray<?> array) {
+            visitor.pushParentRef(new EntityParentRef(array, null));
+            for (Entity e : array)
+                acceptChild(e, visitor);
+            visitor.popParentRef();
+        }
+    }
+
+}

@@ -24,7 +24,7 @@ public class IndexSourceBuilder {
         source.put(TYPE_ID, type.getId());
         source.put(ID, instance.getId());
 
-        List<ClassType> hierarchy = type.getClassHierarchy();
+        List<ClassType> hierarchy = type.getAncestorClasses();
         for (int lev = 0; lev < hierarchy.size(); lev++) {
             Map<String, Object> subSource = new HashMap<>();
             source.put("l" + lev, subSource);

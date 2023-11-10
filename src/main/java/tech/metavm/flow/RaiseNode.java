@@ -6,6 +6,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.natives.ExceptionNative;
 import tech.metavm.entity.natives.NativeInvoker;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.ExceptionParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -110,5 +111,10 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
     @Override
     public boolean isExit() {
         return true;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitRaiseNode(this);
     }
 }

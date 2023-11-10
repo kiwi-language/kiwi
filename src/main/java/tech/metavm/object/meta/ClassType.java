@@ -1,16 +1,19 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Var;
+import tech.metavm.flow.Error;
+import tech.metavm.flow.ErrorLevel;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.FlowChecker;
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.meta.rest.dto.ClassTypeParam;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -72,8 +75,10 @@ public class ClassType extends Type implements GenericDeclaration {
     private final ReadWriteArray<ClassType> dependencies = addChild(new ReadWriteArray<>(ClassType.class), "dependencies");
     @Nullable
     private String parameterizedTypeKey;
+    @ChildEntity("错误列表")
+    private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
 
-    private transient ResolutionStage stage = ResolutionStage.CREATED;
+    private transient ResolutionStage stage = ResolutionStage.INIT;
 
     private transient FlowTable flowTable;
 
@@ -93,7 +98,6 @@ public class ClassType extends Type implements GenericDeclaration {
             boolean anonymous,
             boolean ephemeral,
             @Nullable String desc,
-            @Nullable String templateName,
             boolean isTemplate,
             @Nullable ClassType template,
             List<Type> typeArguments
@@ -110,7 +114,8 @@ public class ClassType extends Type implements GenericDeclaration {
         this.typeArguments.addAll(typeArguments);
         this.template = template;
         flowTable.rebuild();
-        NncUtils.requireTrue(getClassHierarchy().size() <= Constants.MAX_INHERITANCE_DEPTH,
+        setTemplateFlag(isTemplate);
+        NncUtils.requireTrue(getAncestorClasses().size() <= Constants.MAX_INHERITANCE_DEPTH,
                 "Inheritance depth of class " + name + "  exceeds limit: " + Constants.MAX_INHERITANCE_DEPTH);
     }
 
@@ -180,50 +185,45 @@ public class ClassType extends Type implements GenericDeclaration {
 
     //<editor-fold desc="hierarchy">
 
-    private void resetRankAndClosure() {
-        rank = 0;
-    }
-
-    public ClassType findAncestorRequired(Predicate<ClassType> predicate) {
-        return NncUtils.requireNonNull(findAncestor(predicate));
-    }
-
-    @Nullable
-    public ClassType findAncestor(Predicate<ClassType> predicate) {
-        Queue<ClassType> queue = new OfferOnceQueue<>();
-        queue.offer(this);
-        while (!queue.isEmpty()) {
-            var t = queue.poll();
-            if (predicate.test(t))
-                return t;
-            if (t.superClass != null)
-                queue.offer(t.superClass);
-            t.getInterfaces().forEach(queue::offer);
-        }
-        return null;
-    }
-
-    public List<ClassType> getClassHierarchy() {
+    public List<ClassType> getAncestorClasses() {
         List<ClassType> result = new ArrayList<>();
-        getClassHierarchy0(result);
+        accept(new VoidElementVisitor() {
+            @Override
+            public Void visitClassType(ClassType type) {
+                if (type.superClass != null)
+                    type.superClass.accept(this);
+                result.add(type);
+                return super.visitClassType(type);
+            }
+        });
         return result;
     }
 
-    private void getClassHierarchy0(List<ClassType> result) {
-        if (superClass != null)
-            superClass.getClassHierarchy0(result);
-        result.add(this);
+    @Override
+    public Closure<ClassType> getClosure() {
+        return super.getClosure().cast(ClassType.class);
+    }
+
+    @Override
+    protected Class<ClassType> getClosureElementJavaClass() {
+        return ClassType.class;
     }
 
     public List<ClassType> getSubTypes() {
         return subTypes.toList();
     }
 
-    public Set<Long> getTypeIdsInHierarchy() {
+    public Set<Long> getSubTypeIds() {
         Set<Long> typeIds = new HashSet<>();
-        typeIds.add(this.id);
-        for (ClassType subType : subTypes)
-            typeIds.addAll(subType.getTypeIdsInHierarchy());
+        accept(new VoidElementVisitor() {
+            @Override
+            public Void visitClassType(ClassType type) {
+                typeIds.add(type.getIdRequired());
+                for (ClassType subType : type.subTypes)
+                    subType.accept(this);
+                return super.visitClassType(type);
+            }
+        });
         return typeIds;
     }
 
@@ -232,6 +232,25 @@ public class ClassType extends Type implements GenericDeclaration {
             rank = NncUtils.maxInt(getSuperTypes(), Type::getRank, 0) + 1;
         }
         return rank;
+    }
+
+    public ParameterizedTypeKey getParameterizedKey() {
+        NncUtils.requireNonNull(template);
+        return new ParameterizedTypeKey(template.getRef(), NncUtils.map(typeArguments, Entity::getRef));
+    }
+
+    public List<Error> getErrors() {
+        return errors.toList();
+    }
+
+    public void clearElementErrors(Element element) {
+        errors.removeIf(e -> e.getElement() == element);
+        setError(!errors.isEmpty());
+    }
+
+    public void addError(Element element, ErrorLevel level, String message) {
+        errors.addChild(new Error(element, level, message));
+        setError(true);
     }
 
     //</editor-fold>
@@ -253,8 +272,8 @@ public class ClassType extends Type implements GenericDeclaration {
         return flowTable;
     }
 
-    public ReadonlyArray<Flow> getFlows() {
-        return flows;
+    public List<Flow> getFlows() {
+        return flows.toList();
     }
 
     public List<Flow> getAllFlows() {
@@ -312,8 +331,12 @@ public class ClassType extends Type implements GenericDeclaration {
         return getFlow(Property::getCode, code);
     }
 
-    public Flow getFlowByTemplate(Flow template) {
+    public Flow getFlowByRootTemplate(Flow template) {
         return getFlow(Flow::getRootTemplate, template);
+    }
+
+    public Flow findFlow(Predicate<Flow> predicate) {
+        return NncUtils.find(flows.toList(), predicate);
     }
 
     public <T> Flow getFlow(IndexMapper<Flow, T> property, T value) {
@@ -362,7 +385,7 @@ public class ClassType extends Type implements GenericDeclaration {
             throw BusinessException.invalidField(field, "字段名称'" + field.getName() + "'已存在");
         }
         if (field.getCode() != null &&
-                (getFieldByCode(field.getCode()) != null || getStaticFieldByCode(field.getCode()) != null)) {
+                (findFieldByCode(field.getCode()) != null || findStaticFieldByCode(field.getCode()) != null)) {
             throw BusinessException.invalidField(field, "字段编号" + field.getCode() + "已存在");
         }
         if (field.isAsTitle() && getTileField() != null) {
@@ -373,6 +396,12 @@ public class ClassType extends Type implements GenericDeclaration {
         } else {
             fields.addChild(field);
         }
+    }
+
+    @Override
+    public void onLoad() {
+        stage = ResolutionStage.INIT;
+        super.onLoad();
     }
 
     public List<Index> getFieldIndices(Field field) {
@@ -428,6 +457,10 @@ public class ClassType extends Type implements GenericDeclaration {
             return field;
         }
         throw new InternalException("Field '" + fieldId + "' does not exist or is not ready");
+    }
+
+    public Field findField(Predicate<Field> predicate) {
+        return NncUtils.find(fields, predicate);
     }
 
     private List<Field> readyFields() {
@@ -493,38 +526,39 @@ public class ClassType extends Type implements GenericDeclaration {
         throw new InternalException("Field '" + id + "' does not exist or is not ready");
     }
 
-    public Field getFieldByCode(String code) {
+    @Nullable
+    public Field findFieldByCode(String code) {
         var field = fields.get(Field::getCode, code);
         if (field != null) {
             return field;
         }
         if (superClass != null) {
-            return superClass.getFieldByCode(code);
+            return superClass.findFieldByCode(code);
         }
         return null;
     }
 
     public Property getAttributeByVar(Var var) {
         return switch (var.getType()) {
-            case NAME -> getAttributeByName(var.getName());
-            case ID -> getAttribute(var.getId());
+            case NAME -> getPropertyByName(var.getName());
+            case ID -> getProperty(var.getId());
         };
     }
 
-    public Property getAttribute(long id) {
-        return NncUtils.requireNonNull(getAttribute(Entity::getId, id),
+    public Property getProperty(long id) {
+        return NncUtils.requireNonNull(getProperty(Entity::getId, id),
                 "Can not find attribute with id: " + id + " in type " + this);
     }
 
-    public Property getAttributeByCode(String code) {
-        return getAttribute(Property::getCode, code);
+    public Property getPropertyByCode(String code) {
+        return getProperty(Property::getCode, code);
     }
 
-    public Property getAttributeByName(String name) {
-        return getAttribute(Property::getName, name);
+    public Property getPropertyByName(String name) {
+        return getProperty(Property::getName, name);
     }
 
-    private <T> Property getAttribute(IndexMapper<Property, T> property, T value) {
+    private <T> Property getProperty(IndexMapper<Property, T> property, T value) {
         var field = fields.get(property, value);
         if (field != null) {
             return field;
@@ -534,19 +568,24 @@ public class ClassType extends Type implements GenericDeclaration {
             return flow;
         }
         if (superClass != null) {
-            return superClass.getAttribute(property, value);
+            return superClass.getProperty(property, value);
         }
         return null;
     }
 
-    public Field getFieldByCodeRequired(String code) {
-        return NncUtils.requireNonNull(getFieldByCode(code),
-                "在类型'" + getName() + "'中未找到编号为'" + code + "'的字段");
+    public List<Property> getProperties() {
+        return NncUtils.concatList(fields.toList(), flows.toList());
     }
 
-    public Field getStaticFieldByCode(String code) {
+    public Field getFieldByCode(String code) {
+        return NncUtils.requireNonNull(findFieldByCode(code),
+                String.format("Can not find field with code '%s' in type '%s'", code, name));
+    }
+
+    @Nullable
+    public Field findStaticFieldByCode(String code) {
         if (superClass != null) {
-            Field superField = superClass.getStaticFieldByCode(code);
+            Field superField = superClass.findStaticFieldByCode(code);
             if (superField != null) {
                 return superField;
             }
@@ -578,6 +617,10 @@ public class ClassType extends Type implements GenericDeclaration {
 
     public boolean checkColumnAvailable(Column column) {
         return NncUtils.find(fields, f -> f.getColumn() == column) == null;
+    }
+
+    public boolean check() {
+        return accept(new FlowChecker());
     }
 
     Column allocateColumn(Field field) {
@@ -631,22 +674,24 @@ public class ClassType extends Type implements GenericDeclaration {
         if (equals(that)) {
             return true;
         }
-        if (that instanceof ClassType thatType) {
+        if (that instanceof ClassType thatClass) {
             if (template != null) {
-                var s = ((ClassType) that).getSuperByTemplate(template);
+                var s = thatClass.findAncestorType(template);
                 if (s != null) {
-                    return NncUtils.biAllMatch(typeArguments, s.typeArguments, Type::isWithinRange);
+                    return NncUtils.biAllMatch(typeArguments, s.typeArguments, Type::contains);
                 } else {
                     return false;
                 }
             }
-            if (thatType.getSuperClass() != null && isAssignableFrom(thatType.getSuperClass())) {
-                return true;
-            }
-            if (isInterface()) {
-                for (ClassType it : thatType.interfaces) {
-                    if (isAssignableFrom(it)) {
-                        return true;
+            else {
+                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass())) {
+                    return true;
+                }
+                if (isInterface()) {
+                    for (ClassType it : thatClass.interfaces) {
+                        if (isAssignableFrom(it)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -654,26 +699,13 @@ public class ClassType extends Type implements GenericDeclaration {
         return false;
     }
 
-    private ClassType getSuperByTemplate(ClassType template) {
-        Queue<ClassType> supers = new LinkedList<>();
-        supers.add(this);
-        while (!supers.isEmpty()) {
-            var s = supers.poll();
-            if (s.getTemplate() == template) {
-                return s;
-            }
-            supers.addAll(s.getSuperTypes());
-        }
-        return null;
-    }
-
     @Nullable
     public ClassType getSuperClass() {
         return superClass;
     }
 
-    public ReadonlyArray<ClassType> getInterfaces() {
-        return interfaces;
+    public List<ClassType> getInterfaces() {
+        return Collections.unmodifiableList(interfaces);
     }
 
     @Override
@@ -682,7 +714,15 @@ public class ClassType extends Type implements GenericDeclaration {
             superTypes = superClass != null ?
                     NncUtils.prepend(superClass, interfaces.toList()) : interfaces.toList();
         }
-        return superTypes;
+        return Collections.unmodifiableList(superTypes);
+    }
+
+    public ClassType getAncestorType(ClassType targetType) {
+        return NncUtils.requireNonNull(findAncestorType(targetType));
+    }
+
+    public ClassType findAncestorType(ClassType targetType) {
+        return getClosure().find(t -> t.templateEquals(targetType));
     }
 
     @Override
@@ -729,7 +769,8 @@ public class ClassType extends Type implements GenericDeclaration {
                     NncUtils.get(template, context::getRef),
                     NncUtils.map(typeArguments, context::getRef),
                     NncUtils.map(dependencies, context::getRef),
-                    !subTypes.isEmpty()
+                    !subTypes.isEmpty(),
+                    NncUtils.map(errors, Error::toDTO)
             );
         }
     }
@@ -857,7 +898,7 @@ public class ClassType extends Type implements GenericDeclaration {
                 if (type.getTemplate() == template) {
                     var flowTemplate = NncUtils.requireNonNull(flowRef.getRootTemplate());
                     if (flowTemplate.getTypeParameters().isEmpty()) {
-                        flowRef = NncUtils.requireNonNull(type.getFlowByTemplate(flowTemplate));
+                        flowRef = NncUtils.requireNonNull(type.getFlowByRootTemplate(flowTemplate));
                         break;
                     } else {
                         // TODO support flow template instance
@@ -984,7 +1025,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
     protected void onAncestorChanged0() {
         getFlowTable().rebuild();
-        resetRankAndClosure();
+        rank = 0;
     }
 
     public void addDependency(ClassType dependency) {
@@ -1004,6 +1045,10 @@ public class ClassType extends Type implements GenericDeclaration {
 
     public Type getDependency(ClassType template) {
         return NncUtils.findRequired(dependencies, dep -> Objects.equals(dep.getTemplate(), template));
+    }
+
+    public void clearTypeParameters() {
+        this.typeParameters.clear();
     }
 
     public void setTypeParameters(List<TypeVariable> typeParameters) {
@@ -1046,11 +1091,16 @@ public class ClassType extends Type implements GenericDeclaration {
         this.constraints.resetChildren(constraints);
     }
 
+    public void setFlows(List<Flow> flows) {
+        requireTrue(allMatch(flows, f -> f.getDeclaringType() == this));
+        this.flows.resetChildren(flows);
+    }
+
     @Override
     protected boolean afterContextInitIdsInternal() {
-        if (template != null) {
+        if (template != null || isTemplate) {
             if (parameterizedTypeKey == null) {
-                parameterizedTypeKey = pTypeKey(template, typeArguments);
+                parameterizedTypeKey = pTypeKey(getEffectiveTemplate(), typeArguments);
             }
         }
         return true;
@@ -1060,7 +1110,14 @@ public class ClassType extends Type implements GenericDeclaration {
         return isParameterized;
     }
 
-    public static String pTypeKey(ClassType template, Iterable<Type> typeArguments) {
+    @Override
+    public TypeKey getTypeKey() {
+        return template != null ?
+                new ParameterizedTypeKey(template.getRef(), NncUtils.map(typeArguments, Entity::getRef))
+                : new ClassTypeKey(getRef());
+    }
+
+    public static String pTypeKey(ClassType template, Iterable<? extends Type> typeArguments) {
         return toBase64(template.getIdRequired()) + "-"
                 + NncUtils.join(typeArguments, typeArg -> toBase64(typeArg.getIdRequired()), "-");
     }
@@ -1073,7 +1130,7 @@ public class ClassType extends Type implements GenericDeclaration {
         for (ClassType anInterface : interfaces) {
             anInterface.removeSubType(this);
         }
-        if(isTemplate)
+        if (isTemplate)
             return context.selectByKey(ClassType.TEMPLATE_IDX, this);
         else
             return List.of();
@@ -1085,7 +1142,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
     public ResolutionStage getStage() {
         if (stage == null) {
-            stage = ResolutionStage.GENERATED;
+            stage = ResolutionStage.DEFINITION;
         }
         return stage;
     }
@@ -1094,5 +1151,9 @@ public class ClassType extends Type implements GenericDeclaration {
         getFlowTable().rebuild();
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitClassType(this);
+    }
 }
 

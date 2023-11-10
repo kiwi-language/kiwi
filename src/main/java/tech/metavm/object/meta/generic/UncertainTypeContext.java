@@ -15,7 +15,11 @@ public class UncertainTypeContext extends CompositeTypeContext<UncertainType> {
     }
 
     public UncertainType get(Type lowerBound, Type upperBound) {
-        return get(List.of(lowerBound, upperBound));
+        return get(lowerBound, upperBound, null);
+    }
+
+    public UncertainType get(Type lowerBound, Type upperBound, Long tmpId) {
+        return get(List.of(lowerBound, upperBound), tmpId);
     }
 
     @Override
@@ -26,8 +30,8 @@ public class UncertainTypeContext extends CompositeTypeContext<UncertainType> {
     }
 
     @Override
-    protected UncertainType create(List<Type> componentTypes) {
+    protected UncertainType create(List<Type> componentTypes, Long tmpId) {
         NncUtils.requireTrue(componentTypes.size() == 2);
-        return new UncertainType(null, componentTypes.get(0), componentTypes.get(1));
+        return new UncertainType(tmpId, componentTypes.get(0), componentTypes.get(1));
     }
 }

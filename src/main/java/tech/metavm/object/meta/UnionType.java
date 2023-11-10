@@ -1,8 +1,11 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.meta.rest.dto.TypeKey;
+import tech.metavm.object.meta.rest.dto.UnionTypeKey;
 import tech.metavm.object.meta.rest.dto.UnionTypeParam;
-import tech.metavm.util.*;
+import tech.metavm.util.NncUtils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -32,8 +35,8 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public boolean contains(Type that) {
-        return members.contains(that);
+    public TypeKey getTypeKey() {
+        return new UnionTypeKey(NncUtils.mapUnique(members, Entity::getRef));
     }
 
     @Override
@@ -110,6 +113,20 @@ public class UnionType extends CompositeType {
         return String.join("|", memberCanonicalNames);
     }
 
+    public boolean isBinaryNullable() {
+        return members.size() == 2 && isNullable();
+    }
+
+    @Override
+    public SQLType getSQLType() {
+        if(isBinaryNullable()) {
+            return getUnderlyingType().getSQLType();
+        }
+        else {
+            return super.getSQLType();
+        }
+    }
+
     @Override
     public List<? extends Type> getSuperTypes() {
         return List.of(TypeUtils.getLeastUpperBound(members));
@@ -127,5 +144,10 @@ public class UnionType extends CompositeType {
     @Override
     public List<Type> getComponentTypes() {
         return members.toList();
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUnionType(this);
     }
 }

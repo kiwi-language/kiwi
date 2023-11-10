@@ -1,15 +1,9 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.entity.ConstraintDef;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.expression.BinaryExpression;
-import tech.metavm.expression.PropertyExpression;
-import tech.metavm.expression.UnaryExpression;
+import tech.metavm.entity.*;
+import tech.metavm.expression.*;
 import tech.metavm.flow.Value;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.util.InstanceUtils;
 
 @EntityType("校验约束")
@@ -74,5 +68,10 @@ public class CheckConstraint extends Constraint {
 
     public void setConstraintDef(ConstraintDef<?> constraintDef) {
         this.constraintDef = constraintDef;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitCheckConstraint(this);
     }
 }

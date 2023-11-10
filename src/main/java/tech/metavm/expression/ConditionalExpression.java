@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.meta.Type;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class ConditionalExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of(condition, trueValue, falseValue);
     }
 
@@ -52,7 +53,7 @@ public class ConditionalExpression extends Expression {
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new ConditionalExpression(children.get(0), children.get(1), children.get(2));
     }
 
@@ -66,5 +67,10 @@ public class ConditionalExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(condition, trueValue, falseValue);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitConditionalExpression(this);
     }
 }

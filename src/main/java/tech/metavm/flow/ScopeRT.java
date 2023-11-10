@@ -5,6 +5,7 @@ import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.autograph.TypeNarrower;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.persistence.ScopePO;
 import tech.metavm.flow.rest.ScopeDTO;
 import tech.metavm.util.*;
@@ -13,7 +14,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType("流程范围")
-public class ScopeRT extends Entity {
+public class ScopeRT extends Element {
 
     @EntityField("所属流程")
     private final Flow flow;
@@ -22,7 +23,7 @@ public class ScopeRT extends Entity {
     private final NodeRT<?> owner;
     @ChildEntity("节点列表")
     private final ChildArray<NodeRT<?>> nodes = addChild(new ChildArray<>(new TypeReference<>() {}), "nodes");
-    @ChildEntity("是否未循环体")
+    @EntityField("是否未循环体")
     private final boolean withBackEdge;
     @EntityField("所属分支")
     @Nullable
@@ -186,4 +187,8 @@ public class ScopeRT extends Entity {
         this.expressionTypes = getExpressionTypes().merge(expressionTypes);
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitScope(this);
+    }
 }

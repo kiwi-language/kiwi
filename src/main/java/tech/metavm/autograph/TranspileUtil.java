@@ -10,6 +10,7 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.TypeUtils;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -239,11 +240,29 @@ public class TranspileUtil {
     }
 
     public static PsiClassType getSuperType(PsiType type, Class<?> superClass) {
-        if (matchType(type, superClass)) {
-            return (PsiClassType) type;
+        Queue<PsiType> queue = new LinkedList<>(List.of(type));
+        while (!queue.isEmpty()) {
+            var t = queue.poll();
+            if(matchType(t, superClass))
+                return (PsiClassType) t;
+            for (PsiType s : t.getSuperTypes())
+                queue.offer(s);
         }
-        var superTypes = type.getSuperTypes();
-        return (PsiClassType) NncUtils.findRequired(superTypes, superType -> matchType(superType, superClass));
+        throw new InternalException("Can not find super type '" +superClass.getName()
+                + "' in the hierarchy of '" + type.getCanonicalText() + "'");
+    }
+
+    private static class UpwardsClassVisitor extends JavaElementVisitor {
+
+        @Override
+        public void visitClass(PsiClass aClass) {
+            if(aClass.getSuperClass() != null)
+                aClass.getSuperClass().accept(this);
+            for (PsiClass it : aClass.getInterfaces())
+                it.accept(this);
+            super.visitClass(aClass);
+        }
+
     }
 
     public static PsiClassType getSuperType(PsiClass psiClass, PsiClass superClass) {

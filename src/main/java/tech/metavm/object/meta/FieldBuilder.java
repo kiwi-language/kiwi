@@ -16,10 +16,9 @@ public class FieldBuilder {
     private final @Nullable String code;
     private final ClassType declaringType;
     private final Type type;
-    private Integer ordinal;
     private Column column;
     private Long tmpId;
-    private Access access = Access.GLOBAL;
+    private Access access = Access.PUBLIC;
     private boolean unique = false;
     private boolean asTitle = false;
     private PrimitiveType nullType;
@@ -59,11 +58,6 @@ public class FieldBuilder {
 
     public FieldBuilder column(Column column) {
         this.column = column;
-        return this;
-    }
-
-    public FieldBuilder ordinal(int ordinal) {
-        this.ordinal = ordinal;
         return this;
     }
 

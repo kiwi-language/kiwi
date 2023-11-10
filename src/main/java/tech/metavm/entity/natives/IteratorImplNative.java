@@ -19,7 +19,7 @@ public class IteratorImplNative extends NativeBase {
     }
 
     public Instance IteratorImpl(ClassInstance collection) {
-        var listArrayField = collection.getType().getFieldByCodeRequired("array");
+        var listArrayField = collection.getType().getFieldByCode("array");
         array = (ArrayInstance) collection.getField(listArrayField);
         size = array.size();
         return instance;

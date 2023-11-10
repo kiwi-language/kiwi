@@ -17,7 +17,11 @@ public class FunctionTypeContext extends CompositeTypeContext<FunctionType> {
     }
 
     public FunctionType get(List<Type> parameterTypes, Type returnType) {
-        return get(NncUtils.append(parameterTypes, returnType));
+        return get(parameterTypes, returnType, null);
+    }
+
+    public FunctionType get(List<Type> parameterTypes, Type returnType, Long tmpId) {
+        return get(NncUtils.append(parameterTypes, returnType), tmpId);
     }
 
     @Override
@@ -28,10 +32,10 @@ public class FunctionTypeContext extends CompositeTypeContext<FunctionType> {
     }
 
     @Override
-    protected FunctionType create(List<Type> componentTypes) {
+    protected FunctionType create(List<Type> componentTypes, Long tmpId) {
         NncUtils.requireTrue(!componentTypes.isEmpty());
         return new FunctionType(
-                null,
+                tmpId,
                 componentTypes.subList(0, componentTypes.size() - 1),
                 componentTypes.get(componentTypes.size() - 1)
         );

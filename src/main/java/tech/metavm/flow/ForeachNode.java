@@ -5,6 +5,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
@@ -13,9 +14,9 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.FieldBuilder;
-import tech.metavm.object.meta.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -31,10 +32,10 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
         ForEachParamDTO param = nodeDTO.getParam();
         var array = ValueFactory.create(param.getArray(), parsingContext);
         Value extraCond = new ExpressionValue(ExpressionUtil.trueExpression());
-        if(outputType.getFieldByCode("array") == null) {
+        if(outputType.findFieldByCode("array") == null) {
             FieldBuilder.newBuilder("数组", "array", outputType, array.getType()).build();
         }
-        if(outputType.getFieldByCode("index") == null) {
+        if(outputType.findFieldByCode("index") == null) {
             FieldBuilder.newBuilder("索引", "index", outputType, ModelDefRegistry.getType(Long.class)).build();
         }
         // IMPORTANT COMMENT DON"T REMOVE:
@@ -50,7 +51,7 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
     @ChildEntity("数组")
     private Value array;
 
-    public ForeachNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous, ScopeRT scope,
+    public ForeachNode(Long tmpId, String name, @Nullable ClassType outputType, NodeRT<?> previous, ScopeRT scope,
                        Value array, Value condition) {
         super(tmpId, name, outputType, previous, scope, condition);
         this.array = array;
@@ -80,26 +81,30 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
         var arrayValue = array.evaluate(frame);
         var index = InstanceUtils.longInstance(0);
         return new HashMap<>(Map.of(
-                getType().getFieldByCode("array"), arrayValue,
-                getType().getFieldByCode("index"), index
+                getType().findFieldByCode("array"), arrayValue,
+                getType().findFieldByCode("index"), index
         ));
     }
 
     @Override
     protected void updateExtraFields(ClassInstance instance, MetaFrame frame) {
         instance.setField(
-                getType().getFieldByCode("index"),
-                instance.getLongField(getType().getFieldByCode("index")).inc(1)
+                getType().findFieldByCode("index"),
+                instance.getLongField(getType().findFieldByCode("index")).inc(1)
         );
     }
 
     @Override
     protected boolean checkExtraCondition(ClassInstance loopObject, MetaFrame frame) {
-        var arrayField = getType().getFieldByCode("array");
-        var indexField = getType().getFieldByCode("index");
+        var arrayField = getType().findFieldByCode("array");
+        var indexField = getType().findFieldByCode("index");
         var array = (ArrayInstance) loopObject.getField(arrayField);
         var index = loopObject.getLongField(indexField);
         return index.getValue() < array.length();
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitForeachNode(this);
+    }
 }

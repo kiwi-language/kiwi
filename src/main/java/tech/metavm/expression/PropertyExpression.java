@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.meta.Property;
@@ -35,12 +36,12 @@ public class PropertyExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return List.of();
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new PropertyExpression(instance, property);
     }
 
@@ -83,5 +84,10 @@ public class PropertyExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(instance, property);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitPropertyExpression(this);
     }
 }

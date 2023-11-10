@@ -6,7 +6,7 @@ import tech.metavm.util.Constants;
 public record RefDTO(Long id, Long tmpId) {
 
     public RefDTO {
-        if(id != null) tmpId = null;
+        if (id != null) tmpId = null;
     }
 
     @JsonIgnore
@@ -37,4 +37,8 @@ public record RefDTO(Long id, Long tmpId) {
         return !isEmpty();
     }
 
+    @Override
+    public String toString() {
+        return tmpId != null ? "tmpId-" + tmpId : "id-" + id;
+    }
 }

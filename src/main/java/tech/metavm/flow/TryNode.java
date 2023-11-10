@@ -1,12 +1,15 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.TryNodeParamDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
+@EntityType("尝试节点")
 public class TryNode extends ScopeNode<TryNodeParamDTO> {
 
     public static TryNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
@@ -47,5 +50,10 @@ public class TryNode extends ScopeNode<TryNodeParamDTO> {
         else {
             return List.of();
         }
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitTryNode(this);
     }
 }

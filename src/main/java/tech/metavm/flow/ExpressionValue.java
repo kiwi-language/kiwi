@@ -1,14 +1,18 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityParentRef;
 import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.rest.ExpressionFieldValueDTO;
+import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
 
 @EntityType("表达式值")
 public class ExpressionValue extends Value {
@@ -17,7 +21,7 @@ public class ExpressionValue extends Value {
     private final Expression expression;
 
     public ExpressionValue(ValueDTO valueDTO, ParsingContext parsingContext) {
-        this(ExpressionParser.parse(((ExpressionFieldValueDTO) valueDTO.value()).getExpression(), parsingContext));
+        this(ExpressionParser.parse(((ExpressionFieldValue) valueDTO.value()).getExpression(), parsingContext));
     }
 
     public ExpressionValue(Expression expression) {
@@ -27,7 +31,7 @@ public class ExpressionValue extends Value {
 
     @Override
     protected FieldValue getDTOValue(boolean persisting) {
-        return new ExpressionFieldValueDTO(expression.buildSelf(persisting ? VarType.ID : VarType.NAME));
+        return new ExpressionFieldValue(expression.buildSelf(persisting ? VarType.ID : VarType.NAME));
     }
 
     @Override
@@ -47,5 +51,15 @@ public class ExpressionValue extends Value {
     @Override
     public ExpressionValue copy() {
         return new ExpressionValue(expression.copy());
+    }
+
+    @Override
+    public ExpressionValue substituteExpression(Expression expression) {
+        return new ExpressionValue(expression);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitExpressionValue(this);
     }
 }

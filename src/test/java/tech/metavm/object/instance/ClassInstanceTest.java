@@ -26,8 +26,8 @@ public class ClassInstanceTest extends TestCase {
         ClassInstance foo = MockRegistry.getFooInstance();
         FieldValue fieldValueDTO = foo.toFieldValueDTO();
         Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
-        Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValueDTO);
-        ReferenceFieldValueDTO refFieldValueDTO = (ReferenceFieldValueDTO) fieldValueDTO;
+        Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
+        ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
         Assert.assertEquals((long) foo.getId(), refFieldValueDTO.getId());
     }
 
@@ -37,13 +37,13 @@ public class ClassInstanceTest extends TestCase {
         FieldValue fieldValueDTO = bar.toFieldValueDTO();
         Assert.assertEquals(bar.getTitle(), fieldValueDTO.getDisplayValue());
         if(bar.isValue()) {
-            Assert.assertTrue(fieldValueDTO instanceof InstanceFieldValueDTO);
-            InstanceFieldValueDTO instFieldValueDTO = (InstanceFieldValueDTO) fieldValueDTO;
+            Assert.assertTrue(fieldValueDTO instanceof InstanceFieldValue);
+            InstanceFieldValue instFieldValueDTO = (InstanceFieldValue) fieldValueDTO;
             MatcherAssert.assertThat(instFieldValueDTO.getInstance(), PojoMatcher.of(bar.toDTO()));
         }
         else {
-            Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValueDTO);
-            ReferenceFieldValueDTO refFieldValueDTO = (ReferenceFieldValueDTO) fieldValueDTO;
+            Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
+            ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
             Assert.assertEquals((long)bar.getId(), refFieldValueDTO.getId());
         }
     }

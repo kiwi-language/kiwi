@@ -6,7 +6,7 @@ import java.util.List;
 public record GetByRangeRequest(
         long lowerBoundId,
         long upperBoundId,
-        boolean isParameterized,
+        boolean includeParameterized,
         boolean isTemplate,
         boolean includeBuiltin,
         @Nullable List<Integer> categories

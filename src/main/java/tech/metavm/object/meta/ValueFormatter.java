@@ -156,7 +156,7 @@ public class ValueFormatter {
         }
     }
 
-    public static Instance parseReference(ReferenceFieldValueDTO referenceDTO, IInstanceContext context) {
+    public static Instance parseReference(ReferenceFieldValue referenceDTO, IInstanceContext context) {
         return context.get(referenceDTO.getId());
     }
 

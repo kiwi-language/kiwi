@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.MergeParamDTO;
@@ -17,7 +18,7 @@ import tech.metavm.util.*;
 import java.util.*;
 
 @EntityType("合并节点")
-public class MergeNode extends NodeRT<MergeParamDTO> {
+public class MergeNode extends ChildTypeNode<MergeParamDTO> {
 
     public static MergeNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         var outputType = context.getEntity(ClassType.class, nodeDTO.outputTypeRef());
@@ -105,12 +106,6 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
         }
     }
 
-    @Override
-    @NotNull
-    public ClassType getType() {
-        return (ClassType) NncUtils.requireNonNull(super.getType());
-    }
-
     public BranchNode getBranchNode() {
         return (BranchNode) getPredecessor();
     }
@@ -131,10 +126,10 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
     @Override
     protected List<Object> nodeBeforeRemove() {
         if (getPredecessor() instanceof BranchNode branchNode) {
-            return List.of(branchNode, getType());
+            return List.of(branchNode);
         }
         else {
-            return List.of(getType());
+            return List.of();
         }
     }
 
@@ -150,5 +145,10 @@ public class MergeNode extends NodeRT<MergeParamDTO> {
 
     public ReadonlyArray<MergeNodeField> getFields() {
         return fields;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitMergeNode(this);
     }
 }

@@ -47,7 +47,7 @@ public class ArrayExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        return NncUtils.join(expressions, expr -> expr.buildSelf(symbolType), ", ");
+        return "[" + NncUtils.join(expressions, expr -> expr.buildSelf(symbolType), ", ") + "]";
     }
 
     @Override
@@ -64,12 +64,12 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return NncUtils.listOf(expressions);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         return new ArrayExpression(children, type);
     }
 
@@ -88,5 +88,10 @@ public class ArrayExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(expressions);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitArrayExpression(this);
     }
 }

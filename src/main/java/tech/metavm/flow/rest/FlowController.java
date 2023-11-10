@@ -38,12 +38,17 @@ public class FlowController {
         return Result.success(flowManager.list(typeId, page, pageSize, searchText));
     }
 
+    @PostMapping("/{id:[0-9]+}/check")
+    public Result<GetFlowResponse> check(@PathVariable long id) {
+        return Result.success(flowManager.check(id));
+    }
+
     @PostMapping
     public Result<Long> save(@RequestBody FlowDTO flow) {
         return Result.success(flowManager.save(flow).getIdRequired());
     }
 
-    @DeleteMapping("{id:[0-9]+}")
+    @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
         flowManager.delete(id);
         return Result.success(null);

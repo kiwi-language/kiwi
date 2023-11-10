@@ -64,11 +64,15 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     UncertainType getUncertainType(Type lowerBound, Type upperBound);
 
+    UncertainTypeContext getUncertainTypeContext();
+
+    UnionTypeContext getUnionTypeContext();
+
+    ArrayTypeContext getArrayTypeContext(ArrayKind kind);
+
     UnionType getNullableType(Type type);
 
     Set<CompositeType> getNewCompositeTypes();
-
-    Type substitueType(Type type, List<TypeVariable> typeParameters, List<Type> typeArguments);
 
     <T> T getEntity(Class<T> entityType, long id);
 
@@ -103,6 +107,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     UnionType getUnionType(Set<Type> members);
 
     IntersectionType getIntersectionType(Set<Type> types);
+
+    IntersectionTypeContext getIntersectionTypeContext();
 
     ArrayType getArrayType(Type elementType, ArrayKind kind);
 
@@ -183,6 +189,15 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     }
 
     void initIds();
+
+    default boolean tryBind(Object entity) {
+        if(isBindSupported() && isNewEntity(entity)) {
+            bind(entity);
+            return true;
+        }
+        else
+            return false;
+    }
 
     void bind(Object entity);
 

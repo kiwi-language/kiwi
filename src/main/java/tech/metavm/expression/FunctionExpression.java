@@ -1,10 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.object.meta.Type;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
@@ -61,12 +58,12 @@ public class FunctionExpression extends Expression {
     }
 
     @Override
-    protected List<Expression> getChildren() {
+    public List<Expression> getChildren() {
         return NncUtils.listOf(arguments);
     }
 
     @Override
-    public Expression cloneWithNewChildren(List<Expression> children) {
+    public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, this.arguments.size());
         return new FunctionExpression(function, children);
     }
@@ -86,5 +83,10 @@ public class FunctionExpression extends Expression {
     @Override
     public int hashCode() {
         return Objects.hash(function, arguments);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitFunctionExpression(this);
     }
 }

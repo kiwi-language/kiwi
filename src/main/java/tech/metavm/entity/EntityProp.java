@@ -111,7 +111,7 @@ public class EntityProp {
         return ReflectUtils.get(object, field);
     }
 
-    public void set(Object object, Field field, Object fieldValue) {
+    public void set(Object object, Object fieldValue) {
         ReflectUtils.set(object, field, fieldValue);
     }
 

@@ -27,8 +27,8 @@ public class MapNative extends NativeBase {
     public MapNative(ClassInstance instance) {
         this.instance = instance;
         ClassType type = instance.getType();
-        keyArrayField = type.getFieldByCode("keyArray");
-        valueArrayField = type.getFieldByCode("valueArray");
+        keyArrayField = type.findFieldByCode("keyArray");
+        valueArrayField = type.findFieldByCode("valueArray");
         keyType = ((ArrayType) keyArrayField.getType()).getElementType();
         valueType = ((ArrayType) valueArrayField.getType()).getElementType();
         if (instance.isFieldInitialized(keyArrayField)) {

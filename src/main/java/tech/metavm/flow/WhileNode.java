@@ -3,11 +3,13 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.WhileParamDTO;
+import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
 
@@ -28,8 +30,8 @@ public class WhileNode extends LoopNode<WhileParamDTO> {
         return node;
     }
 
-    public WhileNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous,
-                        ScopeRT scope, Value condition) {
+    public WhileNode(Long tmpId, String name, @Nullable ClassType outputType, NodeRT<?> previous,
+                     ScopeRT scope, Value condition) {
         super(tmpId, name, outputType, previous, scope, condition);
     }
 
@@ -47,4 +49,8 @@ public class WhileNode extends LoopNode<WhileParamDTO> {
         setLoopParam(param, context);
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitWhileNode(this);
+    }
 }

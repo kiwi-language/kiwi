@@ -4,6 +4,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
@@ -109,5 +110,10 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
                 updateField.execute(instance, frame, inConstructor, frame.getStack().getContext());
             }
         }
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUpdateObjectNode(this);
     }
 }

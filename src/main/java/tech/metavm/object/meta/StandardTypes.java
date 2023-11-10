@@ -98,11 +98,11 @@ public class StandardTypes {
     }
 
     public static Field getEnumNameField(ClassType classType) {
-        return classType.getFieldByCodeRequired("name");
+        return classType.getFieldByCode("name");
     }
 
     public static Field getEnumOrdinalField(ClassType classType) {
-        return classType.getFieldByCodeRequired("ordinal");
+        return classType.getFieldByCode("ordinal");
     }
 
     public static ClassType getListType() {
