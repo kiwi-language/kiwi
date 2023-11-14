@@ -40,7 +40,7 @@ public class InstanceContextTest extends TestCase {
     private MemIndexEntryMapper indexItemMapper;
     private TypeResolver typeResolver;
     private MockIdProvider idProvider;
-    private InstanceContext context;
+    private IInstanceContext context;
     private MockModelInstanceMap modelInstanceMap;
 
     @Override
@@ -54,36 +54,30 @@ public class InstanceContextTest extends TestCase {
         modelInstanceMap = new MockModelInstanceMap(MockRegistry.getDefContext());
     }
 
-    private InstanceContext newContext() {
+    private IInstanceContext newContext() {
         return newContext(null, typeResolver);
     }
 
-    private InstanceContext newContext(IInstanceContext parent) {
+    private IInstanceContext newContext(IInstanceContext parent) {
         return newContext(parent, typeResolver);
     }
 
-    private InstanceContext newContextWithIndexSupport() {
+    private IInstanceContext newContextWithIndexSupport() {
         return newContext(
                 MockRegistry.getInstanceContext(), typeResolver,
                 List.of(new IndexConstraintPlugin(indexItemMapper))
         );
     }
 
-    private InstanceContext newContext(IInstanceContext parent, TypeResolver typeResolver) {
+    private IInstanceContext newContext(IInstanceContext parent, TypeResolver typeResolver) {
         return newContext(parent, typeResolver, List.of());
     }
 
-    private InstanceContext newContext(IInstanceContext parent, TypeResolver typeResolver, List<ContextPlugin> plugins) {
-        return new InstanceContext(
-                TENANT_ID,
-                instanceStore,
-                idProvider,
-                Executors.newSingleThreadExecutor(),
-                false,
-                plugins,
-                parent,
-                typeResolver
-        );
+    private IInstanceContext newContext(IInstanceContext parent, TypeResolver typeResolver, List<ContextPlugin> plugins) {
+        return new InstanceContextBuilder(instanceStore, Executors.newSingleThreadExecutor(), parent, idProvider)
+                .tenantId(TENANT_ID)
+                .plugins(plugins)
+                .typeResolver(typeResolver).buildInstanceContext();
     }
 
     public void testSmoking() {
@@ -92,7 +86,7 @@ public class InstanceContextTest extends TestCase {
         context.finish();
 
         assertPersisted(instance);
-        InstanceContext context2 = newContext();
+        IInstanceContext context2 = newContext();
 
         Instance loadedInstance = context2.get(instance.getId());
         Assert.assertFalse(EntityUtils.isPojoDifferent(instance.toPO(TENANT_ID), loadedInstance.toPO(TENANT_ID)));
@@ -112,7 +106,7 @@ public class InstanceContextTest extends TestCase {
 
         long fooId = instance.getId();
 
-        InstanceContext context2 = newContext();
+        IInstanceContext context2 = newContext();
 
         Instance loaded = context2.get(fooId);
         Assert.assertTrue(context2.containsInstance(loaded));
@@ -135,7 +129,7 @@ public class InstanceContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        InstanceContext context1 = newContext();
+        IInstanceContext context1 = newContext();
         Instance loadedFoo = context1.get(foo.getId());
         // should be lazily initialized
         Assert.assertFalse(InstanceUtils.isInitialized(loadedFoo));
@@ -149,7 +143,7 @@ public class InstanceContextTest extends TestCase {
 
         long fooId = instance.getId();
 
-        InstanceContext childContext = newContext(context);
+        IInstanceContext childContext = newContext(context);
 
         Assert.assertTrue(childContext.containsInstance(instance));
         Assert.assertSame(instance, childContext.get(fooId));
@@ -165,7 +159,7 @@ public class InstanceContextTest extends TestCase {
 
     public void testTypeResolution() {
         ModelDef<Foo, ?> fooDef = MockRegistry.getDef(Foo.class);
-        InstanceContext context1 = newContext(null, typeResolver);
+        IInstanceContext context1 = newContext(null, typeResolver);
 
         Foo foo = new Foo("big foo", new Bar("little bar"));
         Instance fooInstance = fooDef.createInstance(foo, modelInstanceMap);
@@ -174,8 +168,8 @@ public class InstanceContextTest extends TestCase {
 
         assertPersisted(fooInstance);
 
-        foo.initId(fooInstance.getId());
-        InstanceContext context2 = newContext(null, typeResolver);
+        foo.initId(fooInstance.getIdRequired());
+        IInstanceContext context2 = newContext(null, typeResolver);
         Instance loadedFooInstance = context2.get(foo.getId());
         Foo loadedFoo = modelInstanceMap.getModel(Foo.class, loadedFooInstance);
         MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
@@ -186,7 +180,7 @@ public class InstanceContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        InstanceContext context2 = newContext();
+        IInstanceContext context2 = newContext();
         Instance loadedFoo = context2.get(foo.getId());
         MatcherAssert.assertThat(loadedFoo, InstanceMatcher.of(foo));
     }
@@ -196,7 +190,7 @@ public class InstanceContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        InstanceContext context2 = newContext();
+        IInstanceContext context2 = newContext();
         ClassInstance loadedFoo = (ClassInstance) context2.get(foo.getId());
 
         Field fooNameField = MockRegistry.getField(Foo.class, "name");
@@ -215,7 +209,7 @@ public class InstanceContextTest extends TestCase {
         loadedBar.setField(barCodeField, stringInstance("Bar1001"));
         context2.finish();
 
-        InstanceContext context3 = newContext();
+        IInstanceContext context3 = newContext();
         Instance reloadedFoo = context3.get(foo.getId());
         MatcherAssert.assertThat(reloadedFoo, InstanceMatcher.of(loadedFoo));
     }
@@ -225,11 +219,11 @@ public class InstanceContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        InstanceContext context2 = newContext(MockRegistry.getInstanceContext());
+        IInstanceContext context2 = newContext(MockRegistry.getInstanceContext());
         context2.remove(context2.get(foo.getId()));
         context2.finish();
 
-        InstanceContext context3 = newContext();
+        IInstanceContext context3 = newContext();
         try {
             Instance loaded = context3.get(foo.getId());
             loaded.getTitle();
@@ -245,34 +239,33 @@ public class InstanceContextTest extends TestCase {
 
         // new instance with a strong reference
         {
-            InstanceContext context1 = newContext();
+            IInstanceContext context1 = newContext();
             ClassInstance foo = MockRegistry.getNewFooInstance();
             context1.bind(foo);
             try {
                 context1.remove(foo.getField(fooBarField));
                 Assert.fail("Can not remove a strongly referenced instance");
-            }
-            catch (BusinessException e) {
+            } catch (BusinessException e) {
                 Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, e.getErrorCode());
             }
         }
 
         // new instance with a weak reference
         {
-            InstanceContext context1 = newContext();
+            IInstanceContext context1 = newContext();
             ClassInstance foo = MockRegistry.getNewFooInstance();
             context1.bind(foo);
             context1.remove(foo.getField(fooQuxField));
             context1.finish();
 
-            InstanceContext context2 = newContext();
+            IInstanceContext context2 = newContext();
             foo = (ClassInstance) context2.get(foo.getId());
             Assert.assertTrue(foo.getField(fooQuxField).isNull());
         }
 
         // new instance with a strong reference from an array
         {
-            InstanceContext context1 = newContext();
+            IInstanceContext context1 = newContext();
             ClassInstance foo = MockRegistry.getNewFooInstance();
             context1.bind(foo);
             ArrayInstance bazList = foo.getInstanceArray(fooBazListField);
@@ -280,8 +273,7 @@ public class InstanceContextTest extends TestCase {
             try {
                 context1.remove(baz);
                 Assert.fail("Can not remove a strongly referenced instance (by array)");
-            }
-                catch (BusinessException e) {
+            } catch (BusinessException e) {
                 Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, e.getErrorCode());
             }
             bazList.remove(baz);
@@ -289,7 +281,7 @@ public class InstanceContextTest extends TestCase {
             context1.remove(baz);
             context1.finish();
 
-            InstanceContext context2 = newContext();
+            IInstanceContext context2 = newContext();
             ArrayInstance loadedBazList = (ArrayInstance) context2.get(bazList.getId());
             Assert.assertEquals(bazList.size(), loadedBazList.size());
         }
@@ -305,21 +297,20 @@ public class InstanceContextTest extends TestCase {
 
         // old instance with strong references
         try {
-            InstanceContext context2 = newContext(MockRegistry.getInstanceContext());
+            IInstanceContext context2 = newContext(MockRegistry.getInstanceContext());
             context2.remove(context2.get(barId));
             context2.finish();
             Assert.fail("Can not a remove instance with strong reference pointing to it");
-        }
-        catch (BusinessException e) {
+        } catch (BusinessException e) {
             Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, e.getErrorCode());
         }
 
         // old instance with weak references
         {
-            InstanceContext context3 = newContext(MockRegistry.getInstanceContext());
+            IInstanceContext context3 = newContext(MockRegistry.getInstanceContext());
             context3.remove(context3.get(quxId));
             context3.finish();
-            InstanceContext context4 = newContext();
+            IInstanceContext context4 = newContext();
             foo = (ClassInstance) context4.get(foo.getId());
             Assert.assertTrue(foo.getField(fooQuxField).isNull());
         }
@@ -331,7 +322,7 @@ public class InstanceContextTest extends TestCase {
                 MockRegistry.getDefContext(), idProvider, MockRegistry.getDefContext()
         );
 
-        InstanceContext context = newContext(
+        InstanceContext context = (InstanceContext) newContext(
                 MockRegistry.getInstanceContext(),
                 typeResolver,
                 List.of(
@@ -360,7 +351,7 @@ public class InstanceContextTest extends TestCase {
         context.bind(foo);
         context.finish();
 
-        InstanceContext context2 = newContext();
+        IInstanceContext context2 = newContext();
         Instance loadedFoo = context2.get(foo.getId());
         Assert.assertFalse(InstanceUtils.isInitialized(loadedFoo));
         context2.finish();
@@ -368,7 +359,7 @@ public class InstanceContextTest extends TestCase {
 
     public void testInstanceLog() {
         MockInstanceLogService mockInstanceLogService = new MockInstanceLogService();
-        InstanceContext context = newContext(
+        var context = newContext(
                 null, typeResolver, List.of(new ChangeLogPlugin(mockInstanceLogService))
         );
 
@@ -404,7 +395,7 @@ public class InstanceContextTest extends TestCase {
         InstanceArrayPO barsArrayPO = (InstanceArrayPO) instanceStore.get(barsArrayId);
         MatcherAssert.assertThat(bazInst.getInstanceField(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArrayPO));
 
-        InstanceContext context2 = newContext();
+        IInstanceContext context2 = newContext();
 
         Instance loadedBazInst = context2.get(bazInst.getId());
         ArrayInstance barsArray = (ArrayInstance) context2.get(barsArrayId);
@@ -449,8 +440,7 @@ public class InstanceContextTest extends TestCase {
         try {
             context.get(100000000000000L);
             Assert.fail();
-        }
-        catch (InternalException e) {
+        } catch (InternalException e) {
             Assert.assertEquals(InternalErrorCode.INVALID_ID, e.getErrorCode());
         }
     }

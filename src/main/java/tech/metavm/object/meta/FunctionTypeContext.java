@@ -2,6 +2,7 @@ package tech.metavm.object.meta;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IndexDef;
+import tech.metavm.expression.Function;
 import tech.metavm.object.meta.generic.CompositeTypeContext;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
@@ -12,8 +13,8 @@ import java.util.*;
 
 public class FunctionTypeContext extends CompositeTypeContext<FunctionType> {
 
-    public FunctionTypeContext(IEntityContext context) {
-        super(context, FunctionType.KEY_IDX);
+    public FunctionTypeContext(IEntityContext context, @Nullable FunctionTypeContext parent) {
+        super(context, FunctionType.KEY_IDX, parent);
     }
 
     public FunctionType get(List<Type> parameterTypes, Type returnType) {

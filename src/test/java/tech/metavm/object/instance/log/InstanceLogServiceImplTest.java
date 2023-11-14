@@ -33,14 +33,8 @@ public class InstanceLogServiceImplTest extends TestCase {
                 TENANT_ID, fooInstance.getId(), ChangeType.INSERT, 1L
         ));
 
-        IInstanceContextFactory instanceContextFactory = new MockInstanceContextFactory(tenantId ->
-                new MemInstanceContext(
-                        tenantId,
-                        idProvider,
-                        instanceStore,
-                        null
-                ).initData(List.of(fooInstance))
-        );
+        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore);
+        instanceContextFactory.setIdService(idProvider);
 
         MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
         InstanceLogServiceImpl instanceLogService = new InstanceLogServiceImpl(

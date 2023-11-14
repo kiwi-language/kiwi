@@ -1,7 +1,9 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.object.meta.generic.CompositeTypeContext;
 import tech.metavm.object.meta.rest.dto.TypeParam;
 import tech.metavm.util.NncUtils;
 
@@ -22,6 +24,15 @@ public abstract class CompositeType extends Type {
     }
 
     public abstract List<Type> getComponentTypes();
+
+    @Override
+    public void onBind(IEntityContext context) {
+        super.onBind(context);
+        //noinspection rawtypes
+        CompositeTypeContext typeContext = context.getCompositeTypeContext(category);
+        //noinspection unchecked
+        typeContext.addNewType(this);
+    }
 
     @Override
     public boolean isUncertain() {

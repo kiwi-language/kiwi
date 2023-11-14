@@ -19,11 +19,11 @@ public record RefDTO(Long id, Long tmpId) {
         return id != null;
     }
 
-    public static RefDTO ofId(Long id) {
+    public static RefDTO fromId(Long id) {
         return new RefDTO(id, null);
     }
 
-    public static RefDTO ofTmpId(Long tmpId) {
+    public static RefDTO fromTmpId(Long tmpId) {
         return new RefDTO(null, tmpId);
     }
 

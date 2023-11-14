@@ -19,6 +19,14 @@ public abstract class FunctionInstance extends Instance {
     }
 
     @Override
+    public void acceptReferences(InstanceVisitor visitor) {
+    }
+
+    @Override
+    public void acceptChildren(InstanceVisitor visitor) {
+    }
+
+    @Override
     public FunctionType getType() {
         return (FunctionType) super.getType();
     }

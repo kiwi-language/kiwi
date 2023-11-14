@@ -32,10 +32,12 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         var returnType = context.getType(param.getReturnTypeRef());
         var funcInterface = NncUtils.get(param.getFunctionalInterfaceRef(), context::getClassType);
         var funcType = context.getFunctionTypeContext().get(parameterTypes, returnType);
-        return new LambdaNode(
+        var node = new LambdaNode(
                 nodeDTO.tmpId(), nodeDTO.name(), prev, scope, parameters, returnType,
                 funcType, funcInterface
         );
+
+        return node;
     }
 
     @ChildEntity("参数列表")
@@ -49,13 +51,14 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
 
     @Nullable
     @EntityField("函数接口")
-    private ClassType functionalInterface;
+    private final ClassType functionalInterface;
 
     public LambdaNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope,
-                      List<Parameter> parameters, Type returnType,
+                      List<Parameter> parameters,
+                      Type returnType,
                       FunctionType functionType, @Nullable ClassType functionalInterface) {
         super(tmpId, name, functionalInterface != null ? functionalInterface : functionType, previous, scope, false);
-        this.parameters.addChildren(parameters);
+        setParameters(parameters);
         this.returnType = returnType;
         this.functionType = functionType;
         this.functionalInterface = functionalInterface;
@@ -124,6 +127,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
     }
 
     public void setParameters(List<Parameter> parameters) {
+        NncUtils.forEach(parameters, p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
     }
 

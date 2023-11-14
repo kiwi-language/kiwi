@@ -42,7 +42,7 @@ public class Bootstrap implements InitializingBean {
 
     public void boot() {
         ContextUtil.setContextInfo(ROOT_TENANT_ID, -1L);
-        InstanceContext standardInstanceContext = instanceContextFactory.newContext(
+        InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newContext(
                 ROOT_TENANT_ID, false, new BootIdProvider(stdAllocators), null, null
         );
         InstanceContextFactory.setStdContext(standardInstanceContext);

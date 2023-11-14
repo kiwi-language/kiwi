@@ -27,4 +27,8 @@ public class FlowInstance extends FunctionInstance {
                 new MetaFrame(flow, self, actualArgs, stack);
     }
 
+    @Override
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitFlowInstance(this);
+    }
 }

@@ -21,12 +21,18 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
         return List.of();
     }
 
+    @Nullable
+    @Override
+    public GenericDeclaration getTemplate() {
+        return null;
+    }
+
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
         return "DummyGenericDeclaration";
     }
 

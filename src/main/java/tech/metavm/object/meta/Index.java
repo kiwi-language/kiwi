@@ -13,13 +13,15 @@ import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 @EntityType("索引")
-public class Index extends Constraint {
+public class Index extends Constraint implements GlobalKey {
 
     @ChildEntity("索引字段列表")
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
@@ -121,8 +123,8 @@ public class Index extends Constraint {
     }
 
     @Override
-    protected UniqueConstraintParamDTO getParam(boolean forPersistence) {
-        return new UniqueConstraintParamDTO(
+    protected IndexParam getParam(boolean forPersistence) {
+        return new IndexParam(
                 NncUtils.map(fields, item -> item.toDTO(forPersistence))
         );
     }
@@ -167,5 +169,22 @@ public class Index extends Constraint {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIndex(this);
+    }
+
+    @Override
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        NncUtils.requireNonNull(getIndexDef(),
+                String.format("Can not create model id for unique constraint '%s' because" +
+                        " indexDef is not present", this)
+        );
+        Class<?> javaClass = (Class<?>) getJavaType.apply(getDeclaringType());
+        for (java.lang.reflect.Field indexDefField : ReflectUtils.getIndexDefFields(javaClass)) {
+            IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
+            if (indexDef == getIndexDef()) {
+                return ReflectUtils.getFieldQualifiedName(indexDefField);
+            }
+        }
+        throw new InternalException(
+                String.format("Can not find a indexDef field for UniqueConstraint '%s'", this));
     }
 }

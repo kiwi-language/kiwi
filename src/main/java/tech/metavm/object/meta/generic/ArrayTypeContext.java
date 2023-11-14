@@ -7,14 +7,15 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ArrayTypeContext extends CompositeTypeContext<ArrayType>  {
 
     private final ArrayKind kind;
 
-    public ArrayTypeContext(IEntityContext context, ArrayKind kind) {
-        super(context, ArrayType.KEY_IDX);
+    public ArrayTypeContext(IEntityContext context, ArrayKind kind, @Nullable ArrayTypeContext parent) {
+        super(context, ArrayType.KEY_IDX, parent);
         this.kind = kind;
     }
 

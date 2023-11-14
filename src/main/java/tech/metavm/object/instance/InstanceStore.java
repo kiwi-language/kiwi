@@ -99,14 +99,20 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     protected List<InstancePO> loadInternally(StoreLoadRequest request, IInstanceContext context) {
-        if(NncUtils.isEmpty(request.ids())) {
-            return List.of();
+        try (var entry = context.getProfiler().enter("InstanceStore.loadInternally")) {
+            entry.addMessage("numInstances", request.ids().size());
+            if (entry.isVerbose()) {
+                entry.addMessage("ids", request.ids());
+            }
+            if (NncUtils.isEmpty(request.ids())) {
+                return List.of();
+            }
+            List<InstancePO> records = instanceMapperGateway.selectByIds(context.getTenantId(), request.ids(),
+                    context.getLockMode().code());
+            Set<Long> typeIds = NncUtils.mapUnique(records, InstancePO::getTypeId);
+            context.preload(typeIds, LoadingOption.ENUM_CONSTANTS_LAZY_LOADING);
+            return records;
         }
-        List<InstancePO> records = instanceMapperGateway.selectByIds(context.getTenantId(), request.ids(),
-                context.getLockMode().code());
-        Set<Long> typeIds = NncUtils.mapUnique(records, InstancePO::getTypeId);
-        context.preload(typeIds, LoadingOption.ENUM_CONSTANTS_LAZY_LOADING);
-        return records;
     }
 
     @Override
@@ -115,10 +121,10 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     public void loadTitles(List<Long> ids, IInstanceContext context) {
-        if(NncUtils.isEmpty(ids)) {
+        if (NncUtils.isEmpty(ids)) {
             return;
         }
-        List<InstanceTitlePO> titlePOs =  instanceMapperGateway.selectTitleByIds(context.getTenantId(), ids);
+        List<InstanceTitlePO> titlePOs = instanceMapperGateway.selectTitleByIds(context.getTenantId(), ids);
         Map<Long, String> currentTitleMap = context.getAttribute(ContextAttributeKey.INSTANCE_TITLES);
         currentTitleMap.putAll(
                 NncUtils.toMap(titlePOs, InstanceTitlePO::id, InstanceTitlePO::title)
@@ -141,7 +147,7 @@ public class InstanceStore extends BaseInstanceStore {
     public String getTitle(Long id, InstanceContext context) {
         Map<Long, String> titleMap = context.getAttribute(ContextAttributeKey.INSTANCE_TITLES);
         String title = titleMap.get(id);
-        if(title != null) {
+        if (title != null) {
             return title;
         }
         return context.get(id).getTitle();

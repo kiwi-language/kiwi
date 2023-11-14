@@ -1,5 +1,8 @@
 package tech.metavm.object.meta;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class IdConstants {
 
     public static final long MAX_ID = 9007199254740991L;

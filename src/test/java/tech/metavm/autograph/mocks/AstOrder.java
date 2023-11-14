@@ -4,7 +4,9 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EntityField;
+import tech.metavm.util.InstaUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @EntityType(value = "AST订单", compiled = true)
@@ -33,7 +35,7 @@ public class AstOrder extends Entity {
         this.price = price;
         this.product = product;
         this.amount = amount;
-        this.coupons = coupons;
+        this.coupons = new ArrayList<>(coupons);
         this.state = 0;
     }
 

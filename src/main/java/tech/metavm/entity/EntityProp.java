@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.util.ReflectUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -72,7 +73,7 @@ public class EntityProp {
         if(!isEntity() && !isEntityList()) {
             return false;
         }
-        return field.getClass().isAnnotationPresent(ChildEntity.class);
+        return field.isAnnotationPresent(ChildEntity.class);
     }
 
     public Entity getEntity(Object object) {
@@ -105,6 +106,10 @@ public class EntityProp {
 
     public Field getField() {
         return field;
+    }
+
+    public boolean hasAnnotation(Class<? extends Annotation> annotationClass) {
+        return field.isAnnotationPresent(annotationClass);
     }
 
     public Object get(Object object) {

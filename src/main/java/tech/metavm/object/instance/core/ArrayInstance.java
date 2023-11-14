@@ -16,7 +16,7 @@ import tech.metavm.util.*;
 
 import java.util.*;
 
-public class ArrayInstance extends Instance implements Collection<Instance> {
+public class ArrayInstance extends Instance implements Iterable<Instance> /*implements Collection<Instance>*/ {
 
     public static ArrayInstance allocate(ArrayType type) {
         return new ArrayInstance(type);
@@ -50,9 +50,15 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
 
     @NoProxy
     public void reload(List<Instance> elements) {
-        clear();
+        clearInternal();
         for (Instance element : elements) {
             addInternally(element);
+        }
+    }
+
+    private void clearInternal() {
+        for (Instance instance : new ArrayList<>(elements)) {
+            remove(instance);
         }
     }
 
@@ -82,17 +88,17 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return elements.get(i);
     }
 
-    @Override
+//    @Override
     public int size() {
         return elements.size();
     }
 
-    @Override
+//    @Override
     public boolean isEmpty() {
         return elements.isEmpty();
     }
 
-    @Override
+//    @Override
     public boolean contains(Object o) {
         return elements.contains(o);
     }
@@ -102,24 +108,24 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     @NotNull
-    @Override
+//    @Override
     public Iterator<Instance> iterator() {
         return elements.iterator();
     }
 
     @NotNull
-    @Override
+//    @Override
     public Object @NotNull [] toArray() {
         return elements.toArray();
     }
 
     @NotNull
-    @Override
+//    @Override
     public <T> T @NotNull [] toArray(@NotNull T @NotNull [] a) {
         return elements.toArray(a);
     }
 
-    @Override
+//    @Override
     public boolean add(Instance element) {
         NncUtils.requireFalse(isChildArray(),
                 () -> new BusinessException(ErrorCode.CAN_NOT_ASSIGN__CHILD_FIELD));
@@ -164,6 +170,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     private boolean addInternally(Instance element) {
+        checkElement(element);
         new ReferenceRT(this, element, null);
         elements.add(element);
         onAdd(element);
@@ -177,7 +184,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         this.addAll(elements);
     }
 
-    @Override
+//    @Override
     public boolean remove(Object element) {
         return removeInternally(element);
     }
@@ -201,19 +208,19 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         }
     }
 
-    public void onAdd(Instance instance) {
+    private void onAdd(Instance instance) {
         for (ArrayListener listener : listeners) {
             listener.onAdd(instance);
         }
     }
 
-    @Override
+//    @Override
     public boolean containsAll(@NotNull Collection<?> c) {
         //noinspection SlowListContainsAll
         return elements.containsAll(c);
     }
 
-    @Override
+//    @Override
     public boolean addAll(@NotNull Collection<? extends Instance> c) {
         return addAll((Iterable<? extends Instance>) c);
     }
@@ -223,7 +230,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return true;
     }
 
-    @Override
+//    @Override
     public boolean removeAll(@NotNull Collection<?> c) {
         boolean anyChange = false;
         for (Object o : c) {
@@ -234,7 +241,7 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         return anyChange;
     }
 
-    @Override
+//    @Override
     public boolean retainAll(@NotNull Collection<?> c) {
         List<Object> toRemove = new ArrayList<>();
         for (Object o : c) {
@@ -323,6 +330,25 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
         }
     }
 
+    @Override
+    @NoProxy
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitArrayInstance(this);
+    }
+
+    @Override
+    public void acceptReferences(InstanceVisitor visitor) {
+        for (Instance element : elements)
+            element.accept(visitor);
+    }
+
+    @Override
+    public void acceptChildren(InstanceVisitor visitor) {
+        if(isChildArray()) {
+            acceptReferences(visitor);
+        }
+    }
+
     private static Object elementToPO(long tenantId, Instance element, IdentitySet<Instance> visited) {
         if (element.isNull()) {
             return null;
@@ -398,20 +424,11 @@ public class ArrayInstance extends Instance implements Collection<Instance> {
     }
 
     public void clear() {
-        for (Instance instance : new ArrayList<>(elements)) {
-            remove(instance);
-        }
+        clearInternal();
     }
 
     public void addListener(ArrayListener listener) {
         listeners.add(listener);
-    }
-
-    @Override
-    public String toString() {
-        return "InstanceArray{" +
-                "elements=" + elements +
-                '}';
     }
 
 }

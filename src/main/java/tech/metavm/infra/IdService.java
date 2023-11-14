@@ -55,7 +55,7 @@ public class IdService implements EntityIdProvider {
                 BlockRT::new
         );
         Map<Long, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
-        List<Type> residualTypes = NncUtils.filterNot(types, t -> result.containsKey(t.getId()));
+        List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getId()));
         if(!residualTypes.isEmpty()) {
             createBlocks(tenantId, residualTypes).forEach(block -> result.put(block.getTypeId(), block));
         }

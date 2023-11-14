@@ -14,11 +14,13 @@ public class CopyVisitor extends ElementVisitor<Element> {
             "id", "version", "syncVersion", "persisted"
     );
 
+    public final Object root;
     private final Map<Object, Object> map = new IdentityHashMap<>();
     private final Set<Object> descendants = new IdentitySet<>();
     private final Map<Object, List<Consumer<Object>>> valueListeners = new HashMap<>();
 
     public CopyVisitor(Object root) {
+        this.root = root;
         if (root instanceof Entity entity)
             descendants.addAll(entity.getDescendants());
         else
@@ -33,6 +35,16 @@ public class CopyVisitor extends ElementVisitor<Element> {
                 listener.accept(copy);
             }
         }
+    }
+
+    public void check() {
+        if(!valueListeners.isEmpty()) {
+            throw new InternalException("Unprocessed children");
+        }
+    }
+
+    Object getRoot() {
+        return root;
     }
 
     @Override
@@ -79,7 +91,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
         return switch (entity) {
             case ChildArray<?> childArray -> {
                 var copy = new ChildArray<>(childArray.getElementType());
-                map.put(entity, copy);
+                addCopy(entity, copy);
                 for (Entity child : childArray)
                     copy.addChild((Entity) copy(child));
                 yield copy;
@@ -87,7 +99,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
             //noinspection rawtypes
             case ReadWriteArray readWriteArray -> {
                 var copy = new ReadWriteArray<>(readWriteArray.getElementType());
-                map.put(entity, copy);
+                addCopy(entity, copy);
                 for (int i = 0; i < readWriteArray.size(); i++) {
                     final int _i = i;
                     //noinspection unchecked
@@ -99,7 +111,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
             default -> {
                 var entityType = EntityUtils.getRealType(entity.getClass());
                 var copy = existing != null ? existing : ReflectUtils.allocateInstance(entityType);
-                map.put(entity, copy);
+                addCopy(entity, copy);
                 var desc = DescStore.get(entityType);
                 for (EntityProp prop : desc.getNonTransientProps()) {
                     if (PROP_NAME_BLACKLIST.contains(prop.getName()))
@@ -108,7 +120,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                     if (prop.isChildEntity())
                         fieldValue = copy(prop.get(entity));
                     else
-                        fieldValue = getValue(prop.get(entity), v -> prop.set(entity, v));
+                        fieldValue = getValue(prop.get(entity), v -> prop.set(copy, v));
                     prop.set(copy, fieldValue);
                 }
                 yield copy;

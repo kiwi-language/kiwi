@@ -51,12 +51,12 @@ public class TimeInstance extends PrimitiveInstance {
     }
 
     @Override
-    public String toString() {
-        return "DateInstance " + value + ":" + getType().getName();
+    public String getTitle() {
+        return DF.format(new Date(value));
     }
 
     @Override
-    public String getTitle() {
-        return DF.format(new Date(value));
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitTimeInstance(this);
     }
 }

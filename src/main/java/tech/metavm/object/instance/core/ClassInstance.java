@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.NoProxy;
@@ -21,8 +23,12 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class ClassInstance extends Instance {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(ClassInstance.class);
 
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<DirtyField> dirtyFields = new ReadWriteArray<>(DirtyField.class);
@@ -78,6 +84,12 @@ public class ClassInstance extends Instance {
             ref.clear();
         }
         this.fields.clear();
+    }
+
+    public void forEachField(BiConsumer<Field, Instance> action) {
+        for (InstanceField field : fields) {
+            action.accept(field.getField(), field.getValue());
+        }
     }
 
     public List<IndexEntryPO> getIndexEntries(IEntityContext entityContext) {
@@ -228,6 +240,10 @@ public class ClassInstance extends Instance {
         return fields.get(InstanceField::getField, field) != null;
     }
 
+    private boolean isFieldInitialized0(Field field) {
+        return fields.get(InstanceField::getField, field) != null;
+    }
+
     public void initField(Field field, Instance value) {
         NncUtils.requireFalse(field.isChildField());
         initFieldInternal(field, value);
@@ -235,7 +251,7 @@ public class ClassInstance extends Instance {
 
     private void initFieldInternal(Field field, Instance value) {
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
-        NncUtils.requireFalse(isFieldInitialized(field));
+        NncUtils.requireFalse(isFieldInitialized0(field));
         addField(new InstanceField(this, field, value));
     }
 
@@ -296,6 +312,28 @@ public class ClassInstance extends Instance {
         return new ClassInstanceParam(
                 NncUtils.map(fields, InstanceField::toDTO)
         );
+    }
+
+    @Override
+    @NoProxy
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitClassInstance(this);
+    }
+
+    @Override
+    public void acceptReferences(InstanceVisitor visitor) {
+        for (InstanceField field : fields)
+            field.getValue().accept(visitor);
+        for (DirtyField dirtyField : dirtyFields)
+            dirtyField.getValue().accept(visitor);
+    }
+
+    @Override
+    public void acceptChildren(InstanceVisitor visitor) {
+        for (InstanceField field : fields) {
+            if (field.getField().isChildField())
+                field.getValue().accept(visitor);
+        }
     }
 
     @Override

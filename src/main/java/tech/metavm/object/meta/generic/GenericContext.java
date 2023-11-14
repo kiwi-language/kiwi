@@ -8,6 +8,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ParameterizedTypeImpl;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +22,12 @@ public class GenericContext {
     private final IEntityContext entityContext;
     private final TypeFactory typeFactory;
     private final SaveTypeBatch emptyBatch;
+    private final GenericContext parent;
 
-    public GenericContext(IEntityContext entityContext, TypeFactory typeFactory) {
+    public GenericContext(IEntityContext entityContext, TypeFactory typeFactory, @Nullable  GenericContext parent) {
         this.entityContext = entityContext;
         this.typeFactory = typeFactory;
+        this.parent = parent;
         emptyBatch = SaveTypeBatch.empty(entityContext);
     }
 
@@ -42,7 +45,9 @@ public class GenericContext {
 
     public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
         var existing = getExisting(template, typeArguments);
-        if(existing != null)
+        if (existing == template)
+            return template;
+        if (existing != null && existing.getStage().isAfterOrAt(stage))
             return existing;
         var transformer = new SubstitutorV2(
                 template, this, template.getTypeParameters(), typeArguments, stage, batch,
@@ -68,7 +73,7 @@ public class GenericContext {
 
     public Flow retransformFlow(Flow flowTemplate, ClassType parameterizedType) {
         var transformer = new SubstitutorV2(flowTemplate, this,
-                flowTemplate.getDeclaringType().getTypeParameters(),parameterizedType.getTypeArguments(),
+                flowTemplate.getDeclaringType().getTypeParameters(), parameterizedType.getTypeArguments(),
                 DEFINITION,
                 SaveTypeBatch.empty(entityContext), typeFactory);
         transformer.enterElement(parameterizedType);
@@ -95,11 +100,19 @@ public class GenericContext {
         return subst;
     }
 
-    public ClassType getExisting(ClassType template, List<? extends Type> typeArguments) {
-        var existing = map.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
-        if (existing != null) {
-            return existing;
+    private ClassType getNew(ClassType template, List<? extends Type> typeArguments) {
+        if(parent != null) {
+            var t = parent.getNew(template, typeArguments);
+            if(t != null)
+                return t;
         }
+        return map.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
+    }
+
+    public ClassType getExisting(ClassType template, List<? extends Type> typeArguments) {
+        var existing = getNew(template, typeArguments);
+        if (existing != null)
+            return existing;
         if (template.getId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.getId() != null)) {
             var loaded = load(template, typeArguments);
             if (loaded != null) {
@@ -120,8 +133,8 @@ public class GenericContext {
         );
     }
 
-    void addType(ClassType classType) {
-        var template = classType.getTemplate();
+    public void addType(ClassType classType) {
+        var template = classType.getEffectiveTemplate();
         if (template == null) {
             return;
         }
@@ -157,12 +170,12 @@ public class GenericContext {
         if (declaringType.getStage().isAfterOrAt(ResolutionStage.DECLARATION)) {
             return;
         }
-        if (template.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
+        if (template.getStage().isBefore(ResolutionStage.DECLARATION)) {
             throw new InternalException("Template declarations not generated yet");
         }
         var transformer = new SubstitutorV2(
                 template, this, template.getTypeParameters(), declaringType.getTypeArguments(),
-                DEFINITION, SaveTypeBatch.empty(entityContext), typeFactory);
+                ResolutionStage.DECLARATION, SaveTypeBatch.empty(entityContext), typeFactory);
         template.accept(transformer);
     }
 
@@ -188,15 +201,19 @@ public class GenericContext {
         if (declaringType.getStage().isAfterOrAt(DEFINITION)) {
             return;
         }
-        if (template.getStage().isBeforeOrAt(ResolutionStage.DECLARATION)) {
+        if (template.getStage().isBefore(ResolutionStage.DEFINITION)) {
             throw new InternalException("Template code not generated yet");
         }
-        var substitutor = new SubstitutorV2(template,this, template.getTypeParameters(),
+        var substitutor = new SubstitutorV2(template, this, template.getTypeParameters(),
                 declaringType.getTypeArguments(), DEFINITION, SaveTypeBatch.empty(entityContext), typeFactory);
         template.accept(substitutor);
     }
 
     public Flow getParameterizedFlow(Flow template, List<Type> typeArguments) {
+        return getParameterizedFlow(template, typeArguments, DEFINITION, emptyBatch);
+    }
+
+    public Flow getParameterizedFlow(Flow template, List<Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
         NncUtils.requireTrue(template.isTemplate(), "Not a flow template");
         if (template.getTypeParameters().isEmpty()) {
             return template;
@@ -206,8 +223,8 @@ public class GenericContext {
             return ti;
         }
         var substitutor = new SubstitutorV2(
-                template, this, template.getTypeParameters(), typeArguments, DEFINITION,
-                SaveTypeBatch.empty(entityContext), typeFactory
+                template, this, template.getTypeParameters(), typeArguments, stage,
+                batch, typeFactory
         );
         substitutor.enterElement(template.getDeclaringType());
         var transformed = (Flow) template.accept(substitutor);

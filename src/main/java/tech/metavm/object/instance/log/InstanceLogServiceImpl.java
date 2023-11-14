@@ -69,8 +69,10 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                 InstanceLog::getId
         );
         Set<Long> insertIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
-        try (var context = instanceContextFactory.newContext(tenantId)) {
-            List<ClassInstance> toIndex = NncUtils.filterByType(context.batchGet(idsToLoad), ClassInstance.class);
+        try (var context = instanceContextFactory.newBuilder()
+                .tenantId(tenantId).build()) {
+            var instanceContext = context.getInstanceContext();
+            List<ClassInstance> toIndex = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
             ClassType taskType = ModelDefRegistry.getClassType(Task.class);
             List<ClassInstance> taskInstances = NncUtils.filter(
                     toIndex, inst -> insertIds.contains(inst.getId()) && taskType.isInstance(inst)
@@ -84,7 +86,9 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                     InstanceLog::getId
             );
             if (NncUtils.isNotEmpty(toIndex) || NncUtils.isNotEmpty(toDelete)) {
-                instanceSearchService.bulk(tenantId, toIndex, toDelete);
+                try(var ignored = context.getProfiler().enter("bulk")) {
+                    instanceSearchService.bulk(tenantId, toIndex, toDelete);
+                }
             }
             instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));
         }

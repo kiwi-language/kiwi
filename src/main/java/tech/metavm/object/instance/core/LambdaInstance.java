@@ -26,4 +26,9 @@ public class LambdaInstance extends FunctionInstance {
                 arguments, stack, containingFrame
         );
     }
+
+    @Override
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitLambdaInstance(this);
+    }
 }

@@ -94,9 +94,9 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return "(" + NncUtils.join(parameterTypes, paramType -> paramType.getCanonicalName(getJavaType)) + ")"
-                + "->" + returnType.getCanonicalName(getJavaType);
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return "(" + NncUtils.join(parameterTypes, paramType -> paramType.getKey(getJavaType)) + ")"
+                + "->" + returnType.getKey(getJavaType);
     }
 
     @Override

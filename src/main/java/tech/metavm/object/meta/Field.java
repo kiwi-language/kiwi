@@ -2,7 +2,6 @@ package tech.metavm.object.meta;
 
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
@@ -12,11 +11,12 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 @EntityType("字段")
-public class Field extends Property implements UpdateAware {
+public class Field extends Property implements UpdateAware, GlobalKey {
 
     @EntityField("可见范围")
     private Access access;
@@ -24,6 +24,8 @@ public class Field extends Property implements UpdateAware {
     private Instance defaultValue;
     @EntityField("是否作为标题")
     private boolean asTitle;
+    @EntityField("懒加载")
+    private boolean lazy;
     @EntityField("列")
     private final Column column;
     @EntityField("是否子对象字段")
@@ -49,6 +51,7 @@ public class Field extends Property implements UpdateAware {
             Instance defaultValue,
             boolean isChildField,
             boolean isStatic,
+            boolean lazy,
             Instance staticValue,
             @Nullable Field template,
             @Nullable Column column
@@ -72,6 +75,7 @@ public class Field extends Property implements UpdateAware {
             setUnique(unique);
         }
         this._static = isStatic;
+        this.lazy = lazy;
         this.staticValue = staticValue;
         this.template = template;
         declaringType.addField(this);
@@ -123,6 +127,14 @@ public class Field extends Property implements UpdateAware {
     public Instance getStaticValue() {
         if (isStatic()) return staticValue;
         else throw new InternalException("Can not get static value from an instance field");
+    }
+
+    public boolean isLazy() {
+        return lazy;
+    }
+
+    public void setLazy(boolean lazy) {
+        this.lazy = lazy;
     }
 
     public void setUnique(boolean unique) {
@@ -207,10 +219,10 @@ public class Field extends Property implements UpdateAware {
 
     @Override
     public void onBind(IEntityContext context) {
-        if (isNullable() || getDefaultValue().isNotNull() || isChildField() && getType().isArray()) {
+        if (isNullable() || isStatic() || getDefaultValue().isNotNull() || isChildField() && getType().isArray()) {
             return;
         }
-        if (Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType)) {
+        if (Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType, true)) {
             throw BusinessException.notNullFieldWithoutDefaultValue(this);
         }
     }
@@ -322,7 +334,9 @@ public class Field extends Property implements UpdateAware {
                     declaringType.getId(),
                     context.getRef(getType()),
                     isChildField,
-                    _static
+                    _static,
+                    lazy,
+                    NncUtils.get(staticValue, Instance::toDTO)
             );
         }
     }
@@ -332,7 +346,7 @@ public class Field extends Property implements UpdateAware {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return "Field " + getDesc();
     }
 
@@ -359,5 +373,10 @@ public class Field extends Property implements UpdateAware {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitField(this);
+    }
+
+    @Override
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return getDeclaringType().getKey(getJavaType) + "." + getCodeRequired();
     }
 }

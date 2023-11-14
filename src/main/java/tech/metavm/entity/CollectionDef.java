@@ -53,12 +53,15 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
                         e -> modelInstanceMap.getModel(elementDef.getJavaClass(), e)
                 )
         );
+        model.initParent(
+                NncUtils.get(instance.getParent(), p -> modelInstanceMap.getModel(Entity.class, p)),
+                NncUtils.get(instance.getParentField(), defContext::getJavaField));
     }
 
     @Override
     public void updateModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
 //        model.clear();
-//        initModel(model, instance, modelInstanceMap);
+        initModel(model, instance, modelInstanceMap);
     }
 
     @Override

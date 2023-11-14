@@ -61,12 +61,12 @@ public class LongInstance extends NumberInstance {
     }
 
     @Override
-    public String toString() {
-        return "LongInstance " + value + ":" + getType().getName();
+    public String getTitle() {
+        return Long.toString(value);
     }
 
     @Override
-    public String getTitle() {
-        return Long.toString(value);
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitLongInstance(this);
     }
 }

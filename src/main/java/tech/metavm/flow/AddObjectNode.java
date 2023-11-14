@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import java.util.function.Function;
 
 @EntityType("新增记录节点")
-public class AddObjectNode extends ScopeNode<AddObjectParam> {
+public class AddObjectNode extends ScopeNode<AddObjectParam> implements NewNode {
 
     public static AddObjectNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         AddObjectParam param = nodeDTO.getParam();
@@ -144,5 +144,15 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitAddObjectNode(this);
+    }
+
+    @Override
+    public void setParent(@Nullable ParentRef parentRef) {
+        this.parent = parentRef;
+    }
+
+    @Override
+    public @Nullable ParentRef getParentRef() {
+        return parent;
     }
 }

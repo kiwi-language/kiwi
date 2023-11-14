@@ -5,6 +5,7 @@ import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.*;
+import tech.metavm.object.meta.rest.dto.InstanceParentRef;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -44,19 +45,11 @@ public class MapNative extends NativeBase {
     }
 
     public Instance Map() {
-        instance.reload(
-                Map.of(
-                        keyArrayField,
-                        keyArray = new ArrayInstance(
-                                (ArrayType) keyArrayField.getType()
-                        ),
-                        valueArrayField,
-                        valueArray = new ArrayInstance(
-                                (ArrayType) valueArrayField.getType()
-                        )
-                ),
-                0L,
-                0L
+        keyArray = new ArrayInstance(
+                (ArrayType) keyArrayField.getType(), new InstanceParentRef(instance, keyArrayField)
+        );
+        valueArray = new ArrayInstance(
+                (ArrayType) valueArrayField.getType(), new InstanceParentRef(instance, valueArrayField)
         );
         return instance;
     }

@@ -1,6 +1,5 @@
 package tech.metavm.object.meta;
 
-import tech.metavm.flow.ValueKind;
 import tech.metavm.flow.rest.ValueDTO;
 
 public record UniqueConstraintItemInfo(
@@ -8,8 +7,8 @@ public record UniqueConstraintItemInfo(
         ValueDTO value
 ) {
 
-    public UniqueConstraintItemDTO toDTO() {
-        return new UniqueConstraintItemDTO(null, name, value);
+    public IndexFieldDTO toDTO() {
+        return new IndexFieldDTO(null, name, null, value);
     }
 
 }

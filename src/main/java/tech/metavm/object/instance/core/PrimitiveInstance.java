@@ -31,6 +31,14 @@ public abstract class PrimitiveInstance extends Instance {
     }
 
     @Override
+    public void acceptReferences(InstanceVisitor visitor) {
+    }
+
+    @Override
+    public void acceptChildren(InstanceVisitor visitor) {
+    }
+
+    @Override
     public Set<Instance> getRefInstances() {
         return Set.of();
     }

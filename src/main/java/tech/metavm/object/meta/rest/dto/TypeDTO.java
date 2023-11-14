@@ -9,7 +9,6 @@ import tech.metavm.object.meta.TypeCategory;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
-import java.util.HashSet;
 import java.util.List;
 
 public record TypeDTO(
@@ -60,7 +59,7 @@ public record TypeDTO(
                 id, tmpId, name, null, TypeCategory.CLASS.code(),
                 ephemeral, anonymous,
                 new ClassTypeParam(
-                        RefDTO.ofId(superTypeId),
+                        RefDTO.fromId(superTypeId),
                         List.of(),
                         ClassSource.RUNTIME.code(),
                         fieldDTOs,
@@ -116,10 +115,12 @@ public record TypeDTO(
             throw new InternalException("Not a generic declaration");
     }
 
+    @JsonIgnore
     public IntersectionTypeParam getIntersectionParam() {
         return (IntersectionTypeParam) param;
     }
 
+    @JsonIgnore
     public @Nullable TypeKey getTypeKey() {
         return param.getTypeKey();
     }

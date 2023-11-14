@@ -45,10 +45,7 @@ public class InputNode extends ChildTypeNode<InputParamDTO> {
 
     @Override
     protected InputParamDTO getParam(boolean persisting) {
-        return new InputParamDTO(
-                getType().getIdRequired(),
-                NncUtils.map(getType().getFields(), this::toInputFieldDTO)
-        );
+        return new InputParamDTO(NncUtils.map(getType().getFields(), this::toInputFieldDTO));
     }
 
     private InputFieldDTO toInputFieldDTO(Field field) {
@@ -67,10 +64,9 @@ public class InputNode extends ChildTypeNode<InputParamDTO> {
     public Value getFieldCondition(Field field) {
         var type = getType();
         var constraints = type.getFieldCheckConstraints(field);
-        if(constraints.isEmpty()) {
+        if (constraints.isEmpty()) {
             return null;
-        }
-        else {
+        } else {
             return constraints.get(0).getCondition();
         }
     }

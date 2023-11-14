@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.*;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CheckNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;

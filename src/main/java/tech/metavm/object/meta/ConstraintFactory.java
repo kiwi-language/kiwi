@@ -40,16 +40,17 @@ public class ConstraintFactory {
         throw new InternalException("Invalid constraint kind: " + constraintDTO.kind());
     }
 
-    public static Index createIndexConstraint(UniqueConstraintParamDTO param,
+    public static Index createIndexConstraint(IndexParam param,
                                               ClassType type,
                                               String message,
                                               ParsingContext parsingContext) {
         Index index = new Index(type, true, message);
-        for (UniqueConstraintItemDTO itemDTO : param.items()) {
+        for (IndexFieldDTO fieldDTO : param.fields()) {
             new IndexField(
                     index,
-                    itemDTO.name(),
-                    ValueFactory.create(itemDTO.value(), parsingContext)
+                    fieldDTO.name(),
+                    fieldDTO.code(),
+                    ValueFactory.create(fieldDTO.value(), parsingContext)
             );
         }
         return index;
@@ -69,24 +70,25 @@ public class ConstraintFactory {
                 Objects.requireNonNull(entityContext.getInstanceContext()));
         constraint.update(constraintDTO);
         if(constraint instanceof Index indexConstraint) {
-            updateIndexConstraint(indexConstraint, constraintDTO.getParam(), parsingContext);
+            updateIndex(indexConstraint, constraintDTO.getParam(), parsingContext);
         }
         else if(constraint instanceof CheckConstraint checkConstraint) {
             updateCheckConstraint(checkConstraint, constraintDTO.getParam(), parsingContext);
         }
     }
 
-    public static void updateIndexConstraint(Index indexConstraint,
-                                             UniqueConstraintParamDTO param,
-                                             ParsingContext parsingContext) {
-        for (UniqueConstraintItemDTO itemDTO : param.items()) {
-            Value value = ValueFactory.create(itemDTO.value(), parsingContext);
-            if(itemDTO.id() == null) {
-                new IndexField(indexConstraint, itemDTO.name(), value);
+    public static void updateIndex(Index index,
+                                   IndexParam param,
+                                   ParsingContext parsingContext) {
+        for (IndexFieldDTO fieldDTO : param.fields()) {
+            Value value = ValueFactory.create(fieldDTO.value(), parsingContext);
+            if(fieldDTO.id() == null) {
+                new IndexField(index, fieldDTO.name(), fieldDTO.code(), value);
             }
             else {
-                IndexField item = indexConstraint.getField(itemDTO.id());
-                item.setName(itemDTO.name());
+                IndexField item = index.getField(fieldDTO.id());
+                item.setName(fieldDTO.name());
+                item.setCode(fieldDTO.code());
                 item.setValue(value);
             }
         }

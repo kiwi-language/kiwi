@@ -4,7 +4,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.infra.persistence.RegionMapper;
 import tech.metavm.infra.persistence.RegionPO;
+import tech.metavm.object.meta.IdConstants;
 import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -62,6 +64,15 @@ public class RegionManager {
     private static void create(TypeCategory typeCategory, long start, long end) {
         RegionInfo region = new RegionInfo(typeCategory, start, end);
         VALUE_MAP.put(typeCategory, region);
+    }
+
+    public static boolean isSystemId(long id) {
+        for (RegionInfo region : VALUE_MAP.values()) {
+            if(region.contains(id)) {
+                return id - region.start() <= SYSTEM_RESERVE_PER_REGION;
+            }
+        }
+        throw new InternalException(String.format("Invalid id: %d", id));
     }
 
     public static @Nullable RegionInfo getRegionStatic(TypeCategory typeCategory) {

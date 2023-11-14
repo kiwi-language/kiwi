@@ -6,12 +6,13 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.UnionType;
 import tech.metavm.util.InternalException;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 
 public class IntersectionTypeContext extends CompositeTypeContext<IntersectionType>  {
-    public IntersectionTypeContext(IEntityContext context) {
-        super(context, IntersectionType.KEY_IDX);
+    public IntersectionTypeContext(IEntityContext context, @Nullable IntersectionTypeContext parent) {
+        super(context, IntersectionType.KEY_IDX, parent);
     }
 
     @Override

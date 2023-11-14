@@ -52,7 +52,7 @@ public class NativeInvoker {
     }
 
     private static Class<?> tryGetNativeClass(ClassType type) {
-        var def = ModelDefRegistry.getDef(type.getTemplate());
+        var def = ModelDefRegistry.getDef(type.getEffectiveTemplate());
         if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
             return directDef.getNativeClass();
         else

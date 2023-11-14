@@ -209,15 +209,6 @@ public class TypeUtils {
         throw new InternalException("type " + type + " is not an array type");
     }
 
-    public static TypeVariable createTypeVariable(TypeDTO typeDTO,
-                                                  boolean withBounds, IEntityContext context) {
-        return TYPE_FACTORY.createTypeVariable(typeDTO, withBounds, context);
-    }
-
-    public static ClassType createClassType(TypeDTO typeDTO, IEntityContext context) {
-        return TYPE_FACTORY.createClassType(typeDTO, context);
-    }
-
     public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var category = TypeCategory.getByCode(typeDTO.category());
         if (category.isPojo()) {
@@ -242,7 +233,7 @@ public class TypeUtils {
     }
 
     public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveFlow(flowDTO, batch);
+        return TYPE_FACTORY.saveFlow(flowDTO, ResolutionStage.DEFINITION, batch);
     }
 
     public static Field createFieldAndBind(ClassType type, FieldDTO fieldDTO, IEntityContext context) {

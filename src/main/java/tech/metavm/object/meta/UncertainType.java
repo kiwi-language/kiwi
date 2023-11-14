@@ -84,9 +84,9 @@ public class UncertainType extends CompositeType implements LoadAware  {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return "[" + lowerBound.getCanonicalName(getJavaType) +
-                "," + upperBound.getCanonicalName(getJavaType) + "]";
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return "[" + lowerBound.getKey(getJavaType) +
+                "," + upperBound.getKey(getJavaType) + "]";
     }
 
     @Override

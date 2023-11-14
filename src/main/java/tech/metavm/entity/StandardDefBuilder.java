@@ -1,12 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.entity.natives.IteratorImplNative;
-import tech.metavm.entity.natives.ListNative;
-import tech.metavm.entity.natives.MapNative;
-import tech.metavm.entity.natives.SetNative;
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.FlowBuilder;
-import tech.metavm.flow.Parameter;
+import tech.metavm.entity.natives.*;
+import tech.metavm.flow.*;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -26,6 +21,8 @@ public class StandardDefBuilder {
 
     private ObjectTypeDef<Object> objectDef;
 
+    private ClassType entityType;
+
     private ValueDef<Enum<?>> enumDef;
 
     private FieldDef enumNameDef;
@@ -33,6 +30,10 @@ public class StandardDefBuilder {
     private FieldDef enumOrdinalDef;
 
     private Map<Class<?>, PrimitiveType> primitiveTypeMap;
+
+    private ObjectType objectType;
+
+    private NothingType nothingType;
 
     private PrimitiveType longType;
 
@@ -62,7 +63,10 @@ public class StandardDefBuilder {
             MetaSet.class, SetNative.class,
             MetaList.class, ListNative.class,
             MetaMap.class, MapNative.class,
-            IteratorImpl.class, IteratorImplNative.class
+            IteratorImpl.class, IteratorImplNative.class,
+            Throwable.class, ThrowableNative.class,
+            Exception.class, ExceptionNative.class,
+            RuntimeException.class, RuntimeExceptionNative.class
     );
 
     public StandardDefBuilder(DefContext defContext) {
@@ -70,14 +74,14 @@ public class StandardDefBuilder {
     }
 
     public void initRootTypes() {
-        ObjectType objectType = new ObjectType();
+        objectType = new ObjectType();
 
         objectDef = new ObjectTypeDef<>(
                 Object.class,
                 objectType
         );
 
-        NothingType nothingType = new NothingType();
+        nothingType = new NothingType();
         var notingDef = new DirectDef<>(Nothing.class, nothingType);
         defContext.addDef(notingDef);
 
@@ -139,12 +143,14 @@ public class StandardDefBuilder {
         );
         defContext.addDef(recordDef);
 
+
+        entityType = ClassBuilder.newBuilder("实体", Entity.class.getSimpleName())
+                .source(ClassSource.BUILTIN)
+                .build();
         EntityDef<Entity> entityDef = createEntityDef(
                 Entity.class,
                 Entity.class,
-                ClassBuilder.newBuilder("实体", Entity.class.getSimpleName())
-                        .source(ClassSource.BUILTIN)
-                        .build(),
+                entityType,
                 defContext
         );
 
@@ -250,13 +256,15 @@ public class StandardDefBuilder {
                 .source(ClassSource.BUILTIN).build();
 
         createExceptionFlows(exceptionType);
-        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
+//        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
+        defContext.addDef(new DirectDef<>(Exception.class, exceptionType, ExceptionNative.class));
 
         var runtimeExceptionType = ClassBuilder.newBuilder("运行时异常", RuntimeException.class.getSimpleName())
                 .superClass(exceptionType)
                 .source(ClassSource.BUILTIN).build();
         createRuntimeExceptionFlows(runtimeExceptionType);
-        defContext.addDef(createValueDef(RuntimeException.class, RuntimeException.class, runtimeExceptionType, defContext));
+        defContext.addDef(new DirectDef<>(
+                RuntimeException.class, runtimeExceptionType, RuntimeExceptionNative.class));
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -535,7 +543,6 @@ public class StandardDefBuilder {
                 .build();
 
         var nullableElementType = defContext.getUnionType(Set.of(elementType, nullType));
-
         FlowBuilder.newBuilder(listType, "按索引删除", "removeAt", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .parameters(new Parameter(null, "索引", "index", longType))
@@ -551,12 +558,20 @@ public class StandardDefBuilder {
                 .build();
     }
 
-    private void createChildListFlows(ClassType listType, TypeVariable elementType) {
-        createCollectionFlows(listType, elementType, false);
-    }
+    private void createOrdinaryListFlows(ClassType listType, TypeVariable elementType, ClassType pCollectionType) {
+        createOverridingFlows(listType, pCollectionType);
 
-    private void createOrdinaryListFlows(ClassType listType, TypeVariable elementType, ClassType collectionType) {
-        createOverridingFlows(listType, collectionType);
+        var uncertainType = defContext.getUncertainType(nothingType, elementType);
+        var uncertainCollType = defContext.getParameterizedType(collectionType, uncertainType);
+        FlowBuilder.newBuilder(listType, listType.getName(), listType.getCode(), defContext.getFunctionTypeContext())
+                .nullType(getNullType())
+                .isConstructor(true)
+                .isNative(true)
+                .parameters(
+                        new Parameter(null, "collection", "collection", uncertainCollType)
+                )
+                .returnType(listType)
+                .build();
 
         var nullableElementType = defContext.getUnionType(Set.of(elementType, nullType));
         FlowBuilder.newBuilder(listType, "写入", "set", defContext.getFunctionTypeContext())
@@ -659,7 +674,7 @@ public class StandardDefBuilder {
         FlowBuilder.newBuilder(mapType, "添加", "put", defContext.getFunctionTypeContext())
                 .nullType(getNullType())
                 .isNative(true)
-                .returnType(valueType)
+                .returnType(nullableValueType)
                 .parameters(new Parameter(null, "键", "key", keyType),
                         new Parameter(null, "值", "value", valueType))
                 .build();

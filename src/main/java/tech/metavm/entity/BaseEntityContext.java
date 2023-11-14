@@ -1,11 +1,14 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.dto.InternalErrorCode;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.IndexKeyRT;
+import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
@@ -19,39 +22,52 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static tech.metavm.entity.EntityUtils.*;
-import static tech.metavm.util.NncUtils.zip;
 
 public abstract class BaseEntityContext implements CompositeTypeFactory, IEntityContext {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseEntityContext.class);
+
     private final Map<Long, Object> entityMap = new HashMap<>();
-    private final @Nullable IInstanceContext instanceContext;
+    private final IInstanceContext instanceContext;
     private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
     private final IEntityContext parent;
     private final GenericContext genericContext;
     private final Map<TypeCategory, CompositeTypeContext<?>> compositeTypeContexts = new IdentityHashMap<>();
 
-    public BaseEntityContext(@Nullable IInstanceContext instanceContext, IEntityContext parent) {
+    public BaseEntityContext(IInstanceContext instanceContext,
+                             IEntityContext parent) {
         this.instanceContext = instanceContext;
         this.parent = parent;
         initCompositeTypeContexts();
-        genericContext = new GenericContext(this, getTypeFactory());
+        genericContext = new GenericContext(this, getTypeFactory(),
+                NncUtils.get(parent, IEntityContext::getGenericContext));
         if (instanceContext != null) {
             instanceContext.addListener(this::onInstanceIdInitialized);
             instanceContext.addRemovalListener(this::onInstanceRemoved);
+            instanceContext.addInitializationListener(this::onInstanceInitialized);
         }
     }
 
     protected abstract TypeFactory getTypeFactory();
 
     private void initCompositeTypeContexts() {
-        compositeTypeContexts.put(TypeCategory.READ_WRITE_ARRAY, new ArrayTypeContext(this, ArrayKind.READ_WRITE));
-        compositeTypeContexts.put(TypeCategory.READ_ONLY_ARRAY, new ArrayTypeContext(this, ArrayKind.READ_ONLY));
-        compositeTypeContexts.put(TypeCategory.CHILD_ARRAY, new ArrayTypeContext(this, ArrayKind.CHILD));
-        compositeTypeContexts.put(TypeCategory.UNCERTAIN, new UncertainTypeContext(this));
-        compositeTypeContexts.put(TypeCategory.FUNCTION, new FunctionTypeContext(this));
-        compositeTypeContexts.put(TypeCategory.UNION, new UnionTypeContext(this));
-        compositeTypeContexts.put(TypeCategory.INTERSECTION, new IntersectionTypeContext(this));
+        compositeTypeContexts.put(TypeCategory.READ_WRITE_ARRAY,
+                new ArrayTypeContext(this, ArrayKind.READ_WRITE,
+                        NncUtils.get(parent, p -> p.getArrayTypeContext(ArrayKind.READ_WRITE))));
+        compositeTypeContexts.put(TypeCategory.READ_ONLY_ARRAY,
+                new ArrayTypeContext(this, ArrayKind.READ_ONLY,
+                        NncUtils.get(parent, p -> p.getArrayTypeContext(ArrayKind.READ_ONLY))));
+        compositeTypeContexts.put(TypeCategory.CHILD_ARRAY, new ArrayTypeContext(this, ArrayKind.CHILD,
+                NncUtils.get(parent, p -> p.getArrayTypeContext(ArrayKind.CHILD))));
+        compositeTypeContexts.put(TypeCategory.UNCERTAIN, new UncertainTypeContext(this,
+                        NncUtils.get(parent, IEntityContext::getUncertainTypeContext)));
+        compositeTypeContexts.put(TypeCategory.FUNCTION, new FunctionTypeContext(this,
+                NncUtils.get(parent, IEntityContext::getFunctionTypeContext)));
+        compositeTypeContexts.put(TypeCategory.UNION, new UnionTypeContext(this,
+                NncUtils.get(parent, IEntityContext::getUnionTypeContext)));
+        compositeTypeContexts.put(TypeCategory.INTERSECTION, new IntersectionTypeContext(this,
+                NncUtils.get(parent, IEntityContext::getIntersectionTypeContext)));
     }
 
     @Override
@@ -103,6 +119,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
+    @Override
+    public Profiler getProfiler() {
+        return instanceContext.getProfiler();
+    }
+
     private void onInstanceIdInitialized(Instance instance) {
         Object model = instance2model.get(instance);
         if (model != null) {
@@ -111,6 +132,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 NncUtils.requireNull(idInitializing.getId());
                 idInitializing.initId(instance.getIdRequired());
             }
+        }
+    }
+
+    private void onInstanceInitialized(Instance instance) {
+        Object model = instance2model.get(instance);
+        if (model != null) {
+            var def = getDefContext().getDefByModel(model);
+            initializeModel0(model, instance, def);
         }
     }
 
@@ -181,6 +210,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return getFunctionTypeContext().get(parameterTypes, returnType);
     }
 
+    @Override
     public CompositeTypeContext<?> getCompositeTypeContext(TypeCategory category) {
         return NncUtils.requireNonNull(
                 compositeTypeContexts.get(category),
@@ -227,17 +257,27 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public void afterContextIntIds() {
-        for (Object mode : new ArrayList<>(instance2model.values())) {
-            if (mode instanceof Entity entity) {
-                if (entity.afterContextInitIds()) {
-                    updateInstance(mode, getInstance(mode));
+        try (var ignored = getProfiler().enter("afterContextIntIds", true)) {
+            for (Object model : new ArrayList<>(instance2model.values())) {
+                if (isNewEntity(model) && (model instanceof Entity entity)) {
+                    if (entity.afterContextInitIds()) {
+                        updateInstance(model, getInstance(model));
+                    }
                 }
             }
         }
     }
 
     private void initializeModel(Object model, Instance instance, ModelDef<?, ?> def) {
+        EntityUtils.ensureProxyInitialized(instance);
+        if (!EntityUtils.isModelInitialized(model)) {
+            initializeModel0(model, instance, def);
+        }
+    }
+
+    private void initializeModel0(Object model, Instance instance, ModelDef<?, ?> def) {
         def.initModelHelper(model, instance, this);
+        EntityUtils.setProxyState(model, EntityMethodHandler.State.INITIALIZED);
     }
 
     public void bind(Object model) {
@@ -245,10 +285,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (containsModel(model)) {
             return;
         }
-        if (model instanceof BindAware bindAware) {
-            bindAware.onBind(this);
-        }
-        createInstanceFromModel(model);
+        newInstance(model);
     }
 
     public void initIdManually(Object model, long id) {
@@ -328,19 +365,32 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return klass.cast(getEntity(klass, id));
     }
 
+
+    private Profiler.Entry enter(String name) {
+        return getProfiler().enter(name);
+    }
+
     public void initIds() {
-        NncUtils.requireNonNull(instanceContext);
-        flushAndWriteInstances();
-        instanceContext.initIds();
+        try (var ignored = enter("initIds")) {
+            NncUtils.requireNonNull(instanceContext);
+            flushAndWriteInstances();
+            instanceContext.initIds();
+        }
     }
 
     public void finish() {
-        NncUtils.requireNonNull(instanceContext);
-        flush();
-        updateInstances();
-        validateInstances();
-        writeInstances(instanceContext);
-        instanceContext.finish();
+        try (var ignored = enter("entityContext.finish")) {
+            NncUtils.requireNonNull(instanceContext);
+            try (var ignored1 = getProfiler().enter("flush")) {
+                flush();
+            }
+            updateInstances();
+//            validateInstances();
+            try (var ignored1 = getProfiler().enter("writeInstances")) {
+                writeInstances(instanceContext);
+            }
+            instanceContext.finish();
+        }
     }
 
     public void close() {
@@ -371,16 +421,21 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private void updateInstances() {
-        new IdentityHashMap<>(model2instance).forEach(this::updateInstance);
-    }
-
-    private void validateInstances() {
-        for (Object model : new ArrayList<>(model2instance.keySet())) {
-            if (model instanceof Entity entity) {
-                entity.validate();
-            }
+        try (var ignored = getProfiler().enter("updateInstances")) {
+            new IdentityHashMap<>(model2instance).forEach(this::updateInstance);
         }
     }
+
+//    validation is migrated to InstanceContext.finishInternal
+//    private void validateInstances() {
+//        try(var ignored = getProfiler().enter("validateInstances", true)) {
+//            for (Object model : new ArrayList<>(model2instance.keySet())) {
+//                if (model instanceof Entity entity) {
+//                    entity.validate();
+//                }
+//            }
+//        }
+//    }
 
     private void updateInstance(Object model, Instance instance) {
         if (isModelInitialized(model)) {
@@ -392,19 +447,23 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef,
                                                   Object... values) {
-        NncUtils.requireNonNull(instanceContext, "instanceContext required");
-        IndexKeyRT indexKey = createIndexKey(indexDef, values);
-        List<Instance> instances = instanceContext.selectByKey(indexKey);
-        return createEntityList(indexDef.getType(), instances);
+        try (var ignored = enter("selectByKey")) {
+            NncUtils.requireNonNull(instanceContext, "instanceContext required");
+            IndexKeyRT indexKey = createIndexKey(indexDef, values);
+            List<Instance> instances = instanceContext.selectByKey(indexKey);
+            return createEntityList(indexDef.getType(), instances);
+        }
     }
 
     @Nullable
     @Override
     public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object... values) {
-        NncUtils.requireNonNull(instanceContext, "instanceContext required");
-        IndexKeyRT indexKey = createIndexKey(indexDef, values);
-        Instance instance = instanceContext.selectByUniqueKey(indexKey);
-        return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).get(0);
+        try (var ignored = enter("selectByUniqueKey")) {
+            NncUtils.requireNonNull(instanceContext, "instanceContext required");
+            IndexKeyRT indexKey = createIndexKey(indexDef, values);
+            Instance instance = instanceContext.selectByUniqueKey(indexKey);
+            return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).get(0);
+        }
     }
 
     @Override
@@ -486,14 +545,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void batchRemove(List<?> entities) {
         if (parent != null) {
             List<?> parentEntities = NncUtils.filter(entities, parent::containsModel);
-            parent.batchRemove(parentEntities);
-            entities = NncUtils.filterNot(entities, parent::containsModel);
+            if (!parentEntities.isEmpty()) {
+                parent.batchRemove(parentEntities);
+                entities = NncUtils.exclude(entities, parent::containsModel);
+            }
         }
         Set<Instance> instances = beforeRemove(entities);
-        updateInstances();
-        if (NncUtils.isEmpty(instances)) {
+//        updateInstances();
+        if (NncUtils.isEmpty(instances))
             return;
-        }
         if (instanceContext != null) {
             instanceContext.batchRemove(instances);
         } else {
@@ -525,14 +585,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         instancesToRemove.add(instance);
         Set<Object> cascades = new IdentitySet<>(getChildEntities(model));
         if (model instanceof Entity entity && entity.getParentEntity() != null) {
-            if (entity.getParentEntity() instanceof ChildArray<?> array) {
-                array.remove(entity);
-            } else {
-                ReflectUtils.set(
-                        entity.getParentEntity(),
-                        NncUtils.requireNonNull(entity.getParentEntityField()),
-                        null
-                );
+            var parentInst = getInstance(entity.getParentEntity());
+            if(!instancesToRemove.contains(parentInst)) {
+                if (entity.getParentEntity() instanceof ChildArray<?> array) {
+                    array.remove(entity);
+                } else {
+                    ReflectUtils.set(
+                            entity.getParentEntity(),
+                            NncUtils.requireNonNull(entity.getParentEntityField()),
+                            null
+                    );
+                }
+                updateInstance(entity.getParentEntity(), parentInst);
             }
         }
         if (model instanceof RemovalAware removalAware) {
@@ -578,7 +642,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return childModels;
     }
 
-    public @Nullable IInstanceContext getInstanceContext() {
+    public IInstanceContext getInstanceContext() {
         return instanceContext;
     }
 
@@ -617,7 +681,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
         Instance instance = model2instance.get(model);
         if (instance == null) {
-            instance = createInstanceFromModel(model);
+            instance = newInstance(model);
         }
         return instance;
     }
@@ -626,20 +690,46 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return (ClassInstance) getInstance(entity);
     }
 
-    private Instance createInstanceFromModel(Object model) {
+    /**
+     * Bind a new entity to the context with the mapped instance
+     */
+    protected final void addBinding(Object model, Instance instance) {
+        addMapping(model, instance);
+        if (model instanceof BindAware bindAware) {
+            bindAware.onBind(this);
+        }
+    }
+
+    private Instance newInstance(Object model) {
         ModelDef<?, ?> def = getDefContext().getDefByModel(model);
         if (def.isProxySupported()) {
             Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), tryGetId(model));
-            addMapping(model, instance);
+            addBinding(model, instance);
             def.initInstanceHelper(instance, model, this);
             updateMemIndex(instance);
             return instance;
         } else {
             Instance instance = def.createInstanceHelper(model, this);
-            addMapping(model, instance);
+            addBinding(model, instance);
             updateMemIndex(instance);
             return instance;
         }
+        /*
+        if (def.isProxySupported()) {
+            Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType());
+            if (id != null) {
+                instance.initId(id);
+            }
+            addMapping(model, instance);
+            def.initInstanceHelper(instance, model, this);
+        } else {
+            Instance instance = def.createInstanceHelper(model, this);
+            if (id != null && instance.getId() == null) {
+                instance.initId(id);
+            }
+            addMapping(model, instance);
+        }
+         */
     }
 
     private final Map<String, UnionType> unionTypeMap = new HashMap<>();
@@ -650,32 +740,22 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return instance2model.keySet();
     }
 
+    /*
+        Add a mapping between an entity and an instance. Client shouldn't call this method directly if the
+        entity is new, use addBinding instead.
+         */
     protected void addMapping(Object model, Instance instance) {
-//        if(model instanceof UnionType unionType) {
-//            var existing = unionTypeMap.get(unionType.getName());
-//            if(existing != null) {
-//                throw new InternalException("UnionType " + unionType + " is already added to the context");
-//            }
-//            unionTypeMap.put(unionType.getName(), unionType);
-//        }
-//        if(model instanceof ArrayType arrayType) {
-//            var existing = arrayTypeMap.get(arrayType.getName());
-//            if(existing != null) {
-//                throw new InternalException("ArrayType " + arrayType + " is already added to the context");
-//            }
-//            arrayTypeMap.put(arrayType.getName(), arrayType);
-//        }
         instance2model.put(instance, model);
         model2instance.put(model, instance);
         if (model instanceof Entity entity && entity.getTmpId() != null) {
             instance.setTmpId(entity.getTmpId());
         }
-        if (model instanceof CompositeType compositeType) {
-            //noinspection rawtypes
-            CompositeTypeContext typeContext = getCompositeTypeContext(compositeType.getCategory());
-            //noinspection unchecked
-            typeContext.add(compositeType);
-        }
+//        if (model instanceof CompositeType compositeType) {
+//            //noinspection rawtypes
+//            CompositeTypeContext typeContext = getCompositeTypeContext(compositeType.getCategory());
+//            //noinspection unchecked
+//            typeContext.addNewType(compositeType);
+//        }
         if (instance.getId() != null) {
             entityMap.put(instance.getIdRequired(), model);
         }

@@ -14,7 +14,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-public class NewArrayNode extends NodeRT<NewArrayParam> {
+public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
 
     public static NewArrayNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
@@ -100,8 +100,12 @@ public class NewArrayNode extends NodeRT<NewArrayParam> {
         return value;
     }
 
-    @Nullable
-    public ParentRef getParentRef() {
+    @Override
+    public void setParent(@Nullable ParentRef parentRef) {
+        this.parentRef = parentRef;
+    }
+
+    public @Nullable ParentRef getParentRef() {
         return parentRef;
     }
 

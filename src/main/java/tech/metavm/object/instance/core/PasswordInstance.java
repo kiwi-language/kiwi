@@ -28,12 +28,12 @@ public class PasswordInstance extends PrimitiveInstance {
     }
 
     @Override
-    public String toString() {
-        return "PasswordInstance " + value + ":" + getType().getName();
+    public String getTitle() {
+        return value;
     }
 
     @Override
-    public String getTitle() {
-        return value;
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitPasswordInstance(this);
     }
 }

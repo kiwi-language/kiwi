@@ -205,9 +205,9 @@ public class FlowGenerator {
                         new ExpressionValue(condition), exit)
         );
         var narrower = new TypeNarrower(checkNode.getExpressionTypes()::getType);
-        var branchEntry = checkNode.getExpressionTypes().merge(narrower.narrowType(ExpressionUtil.not(condition)));
         checkNode.mergeExpressionTypes(narrower.narrowType(condition));
-        variableTable.addBranchEntry(branchEntry, exit);
+        var exitExprTypes = checkNode.getExpressionTypes().merge(narrower.narrowType(ExpressionUtil.not(condition)));
+        variableTable.addBranchEntry(exitExprTypes, exit);
         return checkNode;
     }
 
@@ -302,7 +302,7 @@ public class FlowGenerator {
                 (param, arg) -> new Argument(null, param, new ExpressionValue(arg))
         );
         return setNodeExprTypes(new NewObjectNode(null, nextName(flow.getName()), flow, args,
-                scope().getLastNode(), scope()));
+                scope().getLastNode(), scope(), null));
     }
 
     ExpressionResolver getExpressionResolver() {

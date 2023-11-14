@@ -50,6 +50,8 @@ public class TypeResolverImpl implements TypeResolver {
     private final IEntityContext context;
 
     private static final Map<Class<?>, Supplier<Type>> STANDARD_CLASSES = Map.of(
+            Object.class, StandardTypes::getObjectType,
+            Entity.class, StandardTypes::getEntityType,
             Enum.class, StandardTypes::getEnumType,
             Throwable.class, StandardTypes::getThrowableType,
             Exception.class, StandardTypes::getExceptionType,
@@ -289,6 +291,10 @@ public class TypeResolverImpl implements TypeResolver {
         psiClass.putUserData(Keys.META_CLASS, metaClass);
         psiClassMap.put(metaClass, psiClass);
         generatedTypes.add(metaClass);
+        for (PsiTypeParameter typeParameter : psiClass.getTypeParameters()) {
+            resolveTypeVariable(typeParameter).setGenericDeclaration(metaClass);
+        }
+        context.bind(metaClass);
         if (psiClass.getSuperClass() != null &&
                 !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
             metaClass.setSuperClass((ClassType) resolveTypeOnly(TranspileUtil.getSuperClassType(psiClass)));
@@ -299,9 +305,6 @@ public class TypeResolverImpl implements TypeResolver {
                         it -> (ClassType) resolveTypeOnly(it)
                 )
         );
-        for (PsiTypeParameter typeParameter : psiClass.getTypeParameters()) {
-            resolveTypeVariable(typeParameter).setGenericDeclaration(metaClass);
-        }
         compiler.transform(psiClass);
         return metaClass;
     }
@@ -342,22 +345,20 @@ public class TypeResolverImpl implements TypeResolver {
         if (stage == INIT) {
             return;
         }
-        for (ClassType superType : metaClass.getSuperTypes()) {
+        for (PsiClassType superType : psiClass.getSuperTypes())
+            resolve(superType, stage);
+        for (ClassType superType : metaClass.getSuperTypes())
             procesClassType(superType, stage);
-        }
-        if (metaClass.getStage().isBefore(DECLARATION)) {
+        if (stage.isAfterOrAt(DECLARATION) && metaClass.getStage().isBefore(DECLARATION)) {
             compiler.generateDecl(psiClass, this);
             context.getGenericContext().generateDeclarations(metaClass);
         }
         if (stage.isAfterOrAt(DEFINITION) && metaClass.getStage().isBefore(DEFINITION) && !metaClass.isInterface()) {
-            for (PsiClassType superType : psiClass.getSuperTypes())
-                resolveDeclaration(superType);
             compiler.generateCode(psiClass, this);
             context.getGenericContext().generateCode(metaClass);
         }
-        metaClass.setStage(stage);
+//        metaClass.setStage(stage);
     }
-
 
     private static class MyTypeFactory extends TypeFactory {
 

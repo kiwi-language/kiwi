@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.dto.RefDTO;
 import tech.metavm.flow.Flow;
+import tech.metavm.infra.RegionManager;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.ParameterizedTypeDTO;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
@@ -22,11 +23,13 @@ public class SerializeContext implements Closeable {
     private int level;
     private boolean includingValueType = false;
     private boolean includingNodeOutputType;
+    private boolean includeExpressionType;
     private boolean includingCode;
     private boolean includeBuiltinTypes;
     private final Set<Type> writtenTypes = new IdentitySet<>();
     private final Map<Type, TypeDTO> types = new HashMap<>();
     private final Map<Long, TypeDTO> typeMap = new HashMap<>();
+    private final Set<ClassType> writingCodeTypes = new IdentitySet<>();
 
     private SerializeContext() {
     }
@@ -39,6 +42,14 @@ public class SerializeContext implements Closeable {
         }
         context.level++;
         return context;
+    }
+
+    public void addWritingCodeType(ClassType type) {
+        this.writingCodeTypes.add(type);
+    }
+
+    public boolean shouldWriteCode(ClassType type) {
+        return this.writingCodeTypes.contains(type);
     }
 
     public Long getTmpId(Object model) {
@@ -66,6 +77,10 @@ public class SerializeContext implements Closeable {
         return type instanceof PrimitiveType || type instanceof ObjectType || type instanceof  NothingType;
     }
 
+    public boolean isIncludeExpressionType() {
+        return includeExpressionType;
+    }
+
     public void writeType(Type type) {
         writeType(type, false);
     }
@@ -91,6 +106,10 @@ public class SerializeContext implements Closeable {
 
     public Set<Type> getWrittenTypes() {
         return Collections.unmodifiableSet(writtenTypes);
+    }
+
+    public void setIncludeExpressionType(boolean includeExpressionType) {
+        this.includeExpressionType = includeExpressionType;
     }
 
     private void writeChildTypes() {
@@ -192,6 +211,10 @@ public class SerializeContext implements Closeable {
 
     public List<TypeDTO> getTypes(Predicate<Type> filter) {
         return NncUtils.filterAndMap(types.entrySet(), e -> filter.test(e.getKey()), Map.Entry::getValue);
+    }
+
+    public List<TypeDTO> getNonSystemTypes() {
+        return getTypes(t -> t.isIdNull() || !RegionManager.isSystemId(t.getIdRequired()));
     }
 
     public List<TypeDTO> getTypesExclude(Type type) {

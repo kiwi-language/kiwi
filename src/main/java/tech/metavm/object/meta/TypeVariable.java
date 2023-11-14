@@ -19,7 +19,11 @@ public class TypeVariable extends Type {
 
     @ChildEntity("类型上界")
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
+    @EntityField("范型声明")
     private GenericDeclaration genericDeclaration;
+    @EntityField("模板")
+    @Nullable
+    private TypeVariable template;
 
     private transient IntersectionType intersection;
 
@@ -54,6 +58,11 @@ public class TypeVariable extends Type {
         onSuperTypesChanged();
     }
 
+    public void setTemplate(TypeVariable template) {
+        NncUtils.requireTrue(template.getGenericDeclaration() == genericDeclaration.getTemplate());
+        this.template = template;
+    }
+
     @Override
     public boolean isAssignableFrom(Type that) {
         return that == this || super.isAssignableFrom(that);
@@ -83,6 +92,10 @@ public class TypeVariable extends Type {
         return intersection = new IntersectionType(null, new HashSet<>(bounds));
     }
 
+    public TypeVariable getTemplate() {
+        return template;
+    }
+
     @Override
     public List<? extends Type> getSuperTypes() {
         return Collections.unmodifiableList(bounds);
@@ -105,8 +118,8 @@ public class TypeVariable extends Type {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return genericDeclaration.getCanonicalName(getJavaType) + "-" + getJavaType.apply(this).getTypeName();
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return genericDeclaration.getKey(getJavaType) + "." + getJavaType.apply(this).getTypeName();
     }
 
     public TypeVariable copy() {
@@ -119,8 +132,10 @@ public class TypeVariable extends Type {
         return stage;
     }
 
-    public void setStage(ResolutionStage stage) {
+    public ResolutionStage setStage(ResolutionStage stage) {
+        var origStage = this.stage;
         this.stage = stage;
+        return origStage;
     }
 
     @Override

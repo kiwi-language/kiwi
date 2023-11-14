@@ -23,6 +23,19 @@ Content-Type: application/json
 }
 
 ###
+POST http://localhost:8081/api/instance/batch-get
+Accept: application/json
+Cookie: __token__=BabUSMOGGUIppY7oHVI7VU0oL0eqDma0JsdAXjQ5+9rC6TQnu0RkXk9Kp8u76tJqhBe6SMzsCbK/aDZz/b//x35rFoMBPXq67QpgXz/M6bVdFXF7aJkdoChEoSdwChyvcEMsafb23wTokdtaW7aYwhtJf6Tll+t9JIkVf2O1Nix9rJZbwV/oPDsNESTHqDRLgTi3ugjCbZF6JqDjv1YXJ8XYKsfHt1O0sdVZMz0EoOeYHXrrjoG/EwWuNv/k+6C+8Vh97x5p5SAga6xjiWTT+qZCeUPwBaASgZ/Bytd0YZEgmmg5vDu/s51F544/4/vREbRn/g3YRJVzRlylM1UudrjoUksbkG14Dkk4/SOC4KGHS9dC6EDbyu6THc63o3RV0bT1+GnPrpzgNHDnIfH4wM3rc3mgNZ5LeJg1sr8Y0O0a5l+IBHJxuScRvgScs+IkukNg6JBGvUmEOEieD5yno0QHZaCvVRX9/QlSLvGBGxHcVPTzvtKyWm2NYPF95Idpdcezt0yflGxWmlf+OawzkxnfNewCGvuNtrMGLFdzGb6bAMBnXxi0VA7tdcqdf2rRxFrzdFjh8P5yhoDHQvbPAxYeVUNuHDmz8xupRawtD9Qw9joEDp9B7vNRTtPuk/NGvidhtj206lwOKpEQH2AzP+T1Pb5L5o55KGK69o4idBH+savKNXWUWVpNQ+ybdK1d+7gvAJAT0SWtQ2Caflr4sRbMZKazPryX5n8WJ32UTcu+s4VOobngZK+upFJMpq4UTO6+pb1eCDNC6QmHG024P++J9QIbUPqdqNtgOCokCXzMLdX1D3QymkIxZelwrx+RhT5OhxgXuSCyOsxCvzZnplJ3tCy3ynv0kfcJp1A0Rwfkl3/4mVnf4cao5mKg7/AcH9+p5hgO9znCZNtyiTI6RgRkuIE1Chl6nnpDJRIN2/qfinGGEyAl1SWugv5S6jJV0B7s4gDgAO3NVAIzpP7VoN89nBZuM9YtJQEppMIJL6Yh0oavKf3eA9PaIJo5/Mv4ZcWHV5FELoMRyspKPN+N4jVha7SMmQQaU8VfPjrsupE84SZLlxZEIISIyH99L+JA1UY08ZeqIQJaHvAz6ZJqa2Sxxcycjizg9ug1l7oMh0IjBzwYp/w84/gteSlDrKsCTiZIujcXlGj/44tm6ld7u/osq72WTammL5rbBZPjhwr9UBUpqPE2Zb9lk2liJwebX4LU3INDo5WoQaFFdpvi5jQMhAzBd6HOhM+0gUNuzhmfiSKRSBpeGZI0oWjaGZqXbYzFI3cvrDjl4IBuJatFgRNMXnmMDBOZYK+uV47Za18NVKEpzNiuW7Wm
+Content-Type: application/json
+
+{
+  "ids": [
+    1110702215
+  ],
+  "depth": 1
+}
+
+###
 
 POST http://localhost:8080/type/get-parameterized-type
 Accept: application/json
@@ -188,7 +201,13 @@ GET http://localhost:8080/instance?typeId=13021&searchText=$$1004700100%20=%20th
 GET http://localhost:8080/instance?typeId=13021&searchText=$$1004700100 = this AND $$1004700100 = this
 
 ###
-GET http://localhost:8080/type/10001
+POST http://localhost:8080/type/get
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1079001644
+}
 
 ###
 GET http://localhost:8080/instance/1025100504
@@ -200,7 +219,78 @@ GET http://localhost:8080/instance/1025100504
 <> 2023-02-19T225448.200.json
 
 ###
-GET http://localhost:8080/flow/1006200126
+POST http://localhost:8080/flow/get
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1158103177,
+  "includeNodes": true
+}
+
+###
+POST http://localhost:8081/api/flow/execute
+Accept: application/json
+Content-Type: application/json
+
+{
+  "flowId": 1158103260,
+  "instanceId": 1159503191,
+  "arguments": [
+    {
+      "type": 1,
+      "value": 1,
+      "primitiveKind": 1
+    },
+    {
+      "elementAsChild": false,
+      "type": 3,
+      "elements": [
+        {
+          "type": 2,
+          "id": 1159903199
+        }
+      ]
+    },
+    {
+      "elementAsChild": false,
+      "type": 3,
+      "elements": [
+        {
+          "type": 1,
+          "value": 10,
+          "primitiveKind": 1
+        }
+      ]
+    }
+  ]
+}
+
+
+###
+GET http://localhost:8080/instance/1080101603
+
+###
+POST http://localhost:8080/flow/execute
+Accept: application/json
+Cookie: __token__=BxAoeYwaNtnRKEOfFeQPHpvPlMjCiz8t9tqkFiQQqEQzreF1g6qbN28amJplp+UU25g1wsDrpj367bFs33s0Hihzom+hHndITfagj38ZorL383KB6YkY1496ur/efMvg9DUZti66QIPkagLRG5G4xXVmaRu8U3peAekzquKlbU1ZbMH6u3tlDi/8v/X2/FfYVm1zs+D2yXQFim7HvmejEMxfrkbP7Bs57+u2/kmO+fMAMoCznkalBoKAJq62RLpn/A8+caHIR8T1MvGATnzQIMxrzhpjCw6afXyzgh86EvQGkUT+VNUBzVGeaxsFgEGiLZZIiDwZc5Mx58ESMltAWl6KVAa/KCA2p9qN2svlCE12IdQDHtCl4ESkUgPyHwLq/8qVevQqcc1QKnZdCXuTinmjD0be8mA6h0HaD/ZTEiVrd2EXRyRuz/+FWeH10owTgB5rtv9y3jY2wgsKEA0LUwleUjALfUKcUIZf2AehMn1H2kXsOT8miPV8yMYjBGrrZDviTeB3Br6jJ/okppg19pidyCDPbEO6Vqd+avua7S2HXwZ8SmcYQx362jZBQjiMmFXkUF/PaRkPUgxFpe+3/LVAFwlNvEjcbiK6jxK4qSBV7MlEhNO02UQefLHcCt9plQLjRtrVpmXdcMsKLHGATWaJ7YN/IbqIDti4Jqx08xH7IIZVe010ZKgNbGubUpfQbHokiWY8DkIUtcV1u/Ya/JEv20QsKoxDMZTW29cDtTlehXnjvS1RmIAkLiSveaRIIBG+2RON1CXywJKifS74O4ocVGxjX0HZejoDsRY9b/RRCRsxq4EPwuMP8nC1YG8Pwo6Z52ER5uiTmWbY6ewGgzD2QER9Te7m5Mz5poHzxZv1KOQD8E5mzdYy3QHRtNNxATE4jUKByd2xabRn+g+Cg3aOvTJ3giWM9iLymFAneSXgtjPcGmrMwlQbGBoeuKLZqpX1uspnAAItylgFZEW8rVSEFbblZTZqaH0LF5hWDg2/yp2rxMp0sIEjVJYMuCAj5km0fQWCvMQjEH5r5Z1Cgv0Cq494Z5WFqFE2vCx3Dml33SEmlB0TI9b+Mjxo/inAAUqwuwVDxzHaiUr5LL7fzTxEDnumkAtK27b179Bbi0diQC+PKgiqJEdsCMv3XJfVbQWcpmzYMxMMvPrvuJ7+ojVgroWdMYBqYHDXuN8e7SJMA7sXzSKc8UI/CFK7/qxavHKIX5EnuoaVyyXdbNCvr2297ZaOcsmKFUuSVyotj8Kf7EW3H5Y8n90ZfFGzBHIZoap2CZdypeEJy7bCAXFrQvxDN0X70c2it5xDbWM06AmHLdyVXIs4fRTZ
+Content-Type: application/json
+
+{
+  "flowId": 1077401631,
+  "instanceId": 1080101603,
+  "arguments": [
+    {
+      "type": 1,
+      "value": 1,
+      "primitiveKind": 1
+    }
+  ]
+}
+
+###
+
+
 
 ###
 POST http://localhost:8080/instance/load-by-paths
@@ -325,16 +415,13 @@ GET http://localhost:8080/type/12004
 GET http://localhost:8080/instance/1175503532
 
 ###
-GET http://localhost:8080/instance/reference-chain/1073501481?rootMode=1
+GET http://localhost:8080/instance/reference-chain/1162503251?rootMode=1
 
 ###
 GET http://localhost:8080/instance/reference-chain/1073501481?rootMode=2
 
 ###
 GET http://localhost:8080/type/primitives
-
-###
-POST http://localhost:8080/debug/init-test
 
 ###
 POST http://localhost:8080/type/get-by-range

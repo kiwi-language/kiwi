@@ -6,15 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.ChangeLogPlugin;
+import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.*;
+import tech.metavm.util.Column;
+import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.TestContext;
 
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import static tech.metavm.util.Constants.ROOT_TENANT_ID;
 
@@ -43,6 +46,7 @@ public class BootstrapTest extends TestCase {
                 instanceContextFactory,
                 instanceStore
         );
+        instanceContextFactory.setIdService(mockIdProvider);
         instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
     }
 
@@ -55,36 +59,30 @@ public class BootstrapTest extends TestCase {
         Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
 
-        InstanceContext context = new InstanceContext(
-                ROOT_TENANT_ID,
-                instanceStore,
-                mockIdProvider,
-                Executors.newSingleThreadExecutor(),
-                true,
-                List.of(),
-                InstanceContextFactory.getStdContext(),
-                (txt, typeId) -> txt.getEntityContext().getType(typeId)
-        );
+        try(var context = instanceContextFactory.newBuilder()
+                .tenantId(ROOT_TENANT_ID)
+                .typeResolver((ctx, typeId) -> ctx.getEntityContext().getType(typeId))
+                .build()) {
 
-        ClassType typeType = ModelDefRegistry.getClassType(ClassType.class);
-        Type longType = ModelDefRegistry.getType(Long.class);
-        Assert.assertNotNull(typeType.getId());
-        Assert.assertTrue(instanceSearchService.contains(typeType.getId()));
-        Assert.assertTrue(instanceSearchService.contains(longType.getId()));
+            ClassType typeType = ModelDefRegistry.getClassType(ClassType.class);
+            Type longType = ModelDefRegistry.getType(Long.class);
+            Assert.assertNotNull(typeType.getId());
+            Assert.assertTrue(instanceSearchService.contains(typeType.getId()));
+            Assert.assertTrue(instanceSearchService.contains(longType.getIdRequired()));
 
-        IEntityContext entityContext = context.getEntityContext();
-        Foo foo = new Foo("大傻", new Bar("巴巴巴巴"));
-        entityContext.bind(foo);
+            Foo foo = new Foo("大傻", new Bar("巴巴巴巴"));
+            context.bind(foo);
 
-        ClassType testType = ClassBuilder.newBuilder("Test Type", null).build();
-        Field titleField = FieldBuilder
-                .newBuilder("title", null, testType, StandardTypes.getStringType())
-                .asTitle(true)
-                .build();
-        entityContext.bind(testType);
-        entityContext.bind(titleField);
+            ClassType testType = ClassBuilder.newBuilder("Test Type", null).build();
+            Field titleField = FieldBuilder
+                    .newBuilder("title", null, testType, StandardTypes.getStringType())
+                    .asTitle(true)
+                    .build();
+            context.bind(testType);
+            context.bind(titleField);
 
-        entityContext.finish();
+            context.finish();
+        }
     }
 
     public void testRepeatBoot() {

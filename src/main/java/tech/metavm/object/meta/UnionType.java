@@ -98,16 +98,16 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         List<String> memberNames = NncUtils.mapAndSort(members, Type::getName, String::compareTo);
         return "UnionType " + String.join("|", memberNames);
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
         List<String> memberCanonicalNames = NncUtils.mapAndSort(
                 members,
-                m -> m.getCanonicalName(getJavaType),
+                m -> m.getKey(getJavaType),
                 String::compareTo
         );
         return String.join("|", memberCanonicalNames);

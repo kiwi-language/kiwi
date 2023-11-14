@@ -26,6 +26,10 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         this.batch = batch;
     }
 
+    public void addMapping(TypeVariable from, Type to) {
+        variableMap.put(from, to);
+    }
+
     @Override
     public Type visitElement(Element element) {
         throw new UnsupportedOperationException();

@@ -8,6 +8,7 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import tech.metavm.autograph.mocks.*;
 import tech.metavm.dto.Result;
 import tech.metavm.entity.*;
+import tech.metavm.infra.RegionManager;
 import tech.metavm.object.instance.ChangeLogPlugin;
 import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.object.instance.MemInstanceSearchService;
@@ -15,8 +16,12 @@ import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.persistence.mappers.*;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.BatchSaveRequest;
+import tech.metavm.object.meta.rest.dto.GetTypesRequest;
+import tech.metavm.object.meta.rest.dto.GetTypesResponse;
+import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -67,6 +72,10 @@ public class GeneratorTest extends TestCase {
 //    public void test_lambda() {
 //        build(List.of(FuncType.class, AstLambdaFoo.class));
 //    }
+
+    public void test_branch() {
+        build(List.of(AstBranchFoo.class, AstProductState.class));
+    }
 
     public void test_product_coupon_order() {
         build(
@@ -136,10 +145,6 @@ public class GeneratorTest extends TestCase {
         System.out.println(file.getText());
     }
 
-    public void test_branch() {
-        build(List.of(AstBranchFoo.class));
-    }
-
     public void test_clean() {
         clean();
     }
@@ -148,8 +153,16 @@ public class GeneratorTest extends TestCase {
         List<Long> ids = TestUtils.readJson(ID_FILE, new TypeReference<>() {
         });
         if (!ids.isEmpty()) {
+            var result = HttpUtils.post("/type/batch-get",
+                    new GetTypesRequest(ids, false),
+                    new TypeReference<Result<GetTypesResponse>>() {});
+            List<Long> nonEnumIds = new ArrayList<>();
+            for (TypeDTO type : result.data().types()) {
+                if(type.category() != TypeCategory.ENUM.code())
+                    nonEnumIds.add(type.id());
+            }
             var deleteInstanceResp = HttpUtils.post("/instance/delete-by-types",
-                    ids, new TypeReference<Result<Void>>() {
+                    nonEnumIds, new TypeReference<Result<Void>>() {
                     });
             if (deleteInstanceResp.code() != 0) {
                 throw new InternalException("Fail to remove instances: " + deleteInstanceResp.message());
@@ -200,26 +213,32 @@ public class GeneratorTest extends TestCase {
         return doInSession(entityContext -> {
             List<PsiClassType> psiTypes = NncUtils.map(classes, TranspileTestTools::getPsiClassType);
             NncUtils.map(psiTypes, k -> (ClassType) typeResolver.resolve(k));
+
             try (SerializeContext context = SerializeContext.enter()) {
                 context.setIncludingCode(true);
                 context.setIncludingNodeOutputType(false);
                 context.setIncludingValueType(false);
                 var generatedTypes = typeResolver.getGeneratedTypes();
                 for (Type metaType : generatedTypes) {
-                    if (metaType instanceof ClassType classType) {
+                    if(metaType instanceof ClassType classType) {
                         typeResolver.ensureCodeGenerated(classType);
-                    }
-                    context.writeType(metaType);
-                    var collTypeNames = TypeUtils.getCollectionTypeNames(metaType);
-                    for (String collTypeName : collTypeNames) {
-                        var collType = entityContext.selectByUniqueKey(ClassType.UNIQUE_NAME, collTypeName);
-                        if (collType != null) {
-                            context.writeType(collType);
-                        }
+                        context.addWritingCodeType(classType);
                     }
                 }
+                for (Type metaType : generatedTypes) {
+                    if (metaType instanceof ClassType classType)
+                        typeResolver.ensureCodeGenerated(classType);
+                    context.writeType(metaType);
+//                    var collTypeNames = TypeUtils.getCollectionTypeNames(metaType);
+//                    for (String collTypeName : collTypeNames) {
+//                        var collType = entityContext.selectByUniqueKey(ClassType.UNIQUE_NAME, collTypeName);
+//                        if (collType != null) {
+//                            context.writeType(collType);
+//                        }
+//                    }
+                }
                 context.writeDependencies();
-                var typeDTOs = context.getTypes();
+                var typeDTOs = context.getNonSystemTypes();
                 System.out.println("Compile succeeded");
                 var request = new BatchSaveRequest(typeDTOs);
                 writeJson(OUTPUT_FILE, request);

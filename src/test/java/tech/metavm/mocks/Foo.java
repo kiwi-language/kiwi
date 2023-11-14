@@ -107,7 +107,7 @@ public class Foo extends Entity {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return "Foo{" +
                 "name='" + name + '\'' +
                 ", bar=" + bar +

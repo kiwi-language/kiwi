@@ -2,6 +2,7 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -12,13 +13,21 @@ import java.util.List;
 @EntityType("表达式")
 public abstract class Expression extends Element {
 
-    public abstract String buildSelf(VarType symbolType);
+    protected abstract String buildSelf(VarType symbolType);
 
     public abstract int precedence();
 
-    public final String build(VarType symbolType, boolean withParenthesis) {
-        String expr = buildSelf(symbolType);
-        return withParenthesis ? "(" + expr + ")" : expr;
+    public final String build(VarType symbolType) {
+        return build(symbolType, false);
+    }
+
+    protected final String build(VarType symbolType, boolean withParenthesis) {
+        try (var context = SerializeContext.enter()) {
+            if (context.isIncludeExpressionType())
+                context.writeType(getType());
+            String expr = buildSelf(symbolType);
+            return withParenthesis ? "(" + expr + ")" : expr;
+        }
     }
 
     public abstract Type getType();
@@ -27,7 +36,7 @@ public abstract class Expression extends Element {
 
     public Expression getVariableChild() {
         for (Expression child : getChildren()) {
-            if(child instanceof PropertyExpression || child instanceof ThisExpression) {
+            if (child instanceof PropertyExpression || child instanceof ThisExpression) {
                 return child;
             }
         }
@@ -36,7 +45,7 @@ public abstract class Expression extends Element {
 
     public <E extends Expression> E getChild(Class<E> type) {
         for (Expression child : getChildren()) {
-            if(type.isInstance(child)) {
+            if (type.isInstance(child)) {
                 return type.cast(child);
             }
         }
@@ -58,7 +67,7 @@ public abstract class Expression extends Element {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return getClass().getSimpleName() + ": " + buildSelf(VarType.NAME);
     }
 
@@ -68,14 +77,14 @@ public abstract class Expression extends Element {
 
     public <T extends Expression> List<T> extractExpressions(Class<T> klass) {
         List<T> results = new ArrayList<>();
-        if(klass.isInstance(this)) {
+        if (klass.isInstance(this)) {
             results.add(klass.cast(this));
         }
         results.addAll(extractExpressionsRecursively(klass));
         return results;
     }
 
-    protected  <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
+    protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return List.of();
     }
 

@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.meta.ArrayKind;
 import tech.metavm.object.meta.ArrayType;
@@ -49,6 +50,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         objectDef = stdBuilder.getObjectDef();
         enumDef = stdBuilder.getEnumDef();
         this.columnStore = columnStore;
+        SQLType.columns().forEach(this::writeEntity);
     }
 
     public void createCompositeTypes(Type javaType, tech.metavm.object.meta.Type type) {
@@ -247,10 +249,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
         javaType2Def.put(def.getJavaType(), def);
         if(def.getType() instanceof ArrayType arrayType) {
-            getArrayTypeContext(arrayType.getKind()).add(arrayType);
+            getArrayTypeContext(arrayType.getKind()).addNewType(arrayType);
         }
         else if(def.getType() instanceof UnionType unionType) {
-            getUnionTypeContext().add(unionType);
+            getUnionTypeContext().addNewType(unionType);
         }
         if (!(def instanceof InstanceDef) && !(def instanceof InstanceCollectionDef<?, ?>)) {
             existing = type2Def.get(def.getType());
@@ -276,7 +278,21 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (def.getType() instanceof ClassType classType) {
             initializedClassTypes.add(classType);
         }
-        Map<Object, ModelIdentity> identityMap = identityContext.getIdentityMap(def.getType());
+        writeEntity(def.getType());
+        def.getInstanceMapping().forEach((javaConstruct, instance) -> {
+            if (!instance.isValue() && instance.getId() == null) {
+                Long id = getId.apply(javaConstruct);
+                if (id != null) {
+                    instance.initId(id);
+                }
+            }
+            addToContext(javaConstruct, instance);
+        });
+        instanceMapping.putAll(def.getInstanceMapping());
+    }
+
+    private void writeEntity(Object entity) {
+        Map<Object, ModelIdentity> identityMap = identityContext.getIdentityMap(entity);
         identityMap.forEach((model, modelId) -> {
             if ((model instanceof IdInitializing idInitializing) && idInitializing.getId() == null) {
                 Long id = getId.apply(modelId);
@@ -288,17 +304,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 pendingModels.add(model);
             }
         });
-
-        def.getInstanceMapping().forEach((javaConstruct, instance) -> {
-            if (!instance.isValue() && instance.getId() == null) {
-                Long id = getId.apply(javaConstruct);
-                if (id != null) {
-                    instance.initId(id);
-                }
-            }
-            addMapping(javaConstruct, instance);
-        });
-        instanceMapping.putAll(def.getInstanceMapping());
     }
 
     @SuppressWarnings("unused")
@@ -387,15 +392,24 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             if (id != null) {
                 instance.initId(id);
             }
-            addMapping(model, instance);
+            addToContext(model, instance);
             def.initInstanceHelper(instance, model, this);
         } else {
             Instance instance = def.createInstanceHelper(model, this);
             if (id != null && instance.getId() == null) {
                 instance.initId(id);
             }
-            addMapping(model, instance);
+            addToContext(model, instance);
         }
+    }
+
+    private void addToContext(Object model, Instance instance) {
+        if(instance.getId() == null)
+            // onBind will get invoked
+            addBinding(model, instance);
+        else
+            // add to context without calling onBind
+            addMapping(model, instance);
     }
 
     @Override
@@ -440,7 +454,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     protected void writeInstances(IInstanceContext instanceContext) {
-        instanceContext.replace(NncUtils.filterNot(instances(), Instance::isValue));
+        instanceContext.replace(NncUtils.exclude(instances(), Instance::isValue));
     }
 
     @SuppressWarnings("unused")

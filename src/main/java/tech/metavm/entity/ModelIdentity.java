@@ -7,6 +7,7 @@ import tech.metavm.object.meta.Constraint;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Index;
 import tech.metavm.object.meta.UnionType;
+import tech.metavm.util.Column;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
 
@@ -62,13 +63,13 @@ public record ModelIdentity(
                                      Function<tech.metavm.object.meta.Type, Type> getJavaType) {
         return new ModelIdentity(
                 type.getClass(),
-                type.getCanonicalName(getJavaType)
+                type.getKey(getJavaType)
         );
     }
 
     public static ModelIdentity field(Field field, Function<tech.metavm.object.meta.Type, Type> getJavaType,
                                       Function<Field, java.lang.reflect.Field> getJavaField) {
-        String name = field.getDeclaringType().getCanonicalName(getJavaType) + "."
+        String name = field.getDeclaringType().getKey(getJavaType) + "."
                 + getJavaField.apply(field).getName();
         return new ModelIdentity(Field.class, name);
     }
@@ -78,6 +79,10 @@ public record ModelIdentity(
                 Index.class,
                 ReflectUtils.getFieldQualifiedName(javaField)
         );
+    }
+
+    public static ModelIdentity column(Column column) {
+        return new ModelIdentity(Column.class, column.name());
     }
 
     @Override

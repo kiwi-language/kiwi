@@ -1,7 +1,10 @@
 package tech.metavm.object.meta;
 
 import tech.metavm.entity.*;
+import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.PropertyExpression;
+import tech.metavm.expression.ThisExpression;
 import tech.metavm.flow.ExpressionValue;
 import tech.metavm.flow.ReferenceValue;
 import tech.metavm.flow.Value;
@@ -9,12 +12,11 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
-import tech.metavm.expression.Expression;
-import tech.metavm.expression.ExpressionUtil;
-import tech.metavm.expression.ThisExpression;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
 
 @EntityType("唯一约束项")
 public class IndexField extends Entity {
@@ -23,22 +25,27 @@ public class IndexField extends Entity {
         return new IndexField(
                 constraint,
                 field.getName(),
+                field.getCode(),
                 new ReferenceValue(ExpressionUtil.attributeExpr(field))
         );
     }
 
     @EntityField("唯一约束")
-    private final Index constraint;
+    private final Index index;
     @EntityField("名称")
     private String name;
+    @EntityField(value = "编号", asKey = true)
+    @Nullable
+    private String code;
     @ChildEntity("值")
     private Value value;
 
-    public IndexField(Index constraint, String name, Value value) {
+    public IndexField(Index index, String name,@Nullable String code, Value value) {
         setName(name);
-        this.constraint = constraint;
+        setCode(code);
+        this.index = index;
         setValue(value);// ;ValueFactory.getValue(valueDTO, new TypeParsingContext(constraint.getDeclaringType())));
-        constraint.addField(this);
+        index.addField(this);
     }
 
     public String getName() {
@@ -55,6 +62,10 @@ public class IndexField extends Entity {
 
     public void setValue(Value value) {
         this.value = value;
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = code;
     }
 
     public Field getField() {
@@ -80,10 +91,11 @@ public class IndexField extends Entity {
         return null;
     }
 
-    public UniqueConstraintItemDTO toDTO(boolean forPersistence) {
-        return new UniqueConstraintItemDTO(
+    public IndexFieldDTO toDTO(boolean forPersistence) {
+        return new IndexFieldDTO(
                 id,
                 name,
+                code,
                 value.toDTO(forPersistence)
         );
     }
@@ -105,7 +117,7 @@ public class IndexField extends Entity {
             }
         }
         else {
-            int index = constraint.getItemIndex(this);
+            int index = this.index.getItemIndex(this);
             Object indexValue;
             if(fieldValue.isNull()) {
                 indexValue = null;
@@ -125,12 +137,12 @@ public class IndexField extends Entity {
             return key.isColumnXPresent();
         }
         else {
-            return key.getColumn(constraint.getItemIndex(this)).equals(IndexKeyPO.NULL);
+            return key.getColumn(index.getItemIndex(this)).equals(IndexKeyPO.NULL);
         }
     }
 
     public boolean isColumnX() {
-        return (value.getType().isLong() || value.getType().isInt()) && constraint.isLastItem(this);
+        return (value.getType().isLong() || value.getType().isInt()) && index.isLastItem(this);
     }
 
     public Instance convertModelToInstance(Object model, IEntityContext entityContext) {

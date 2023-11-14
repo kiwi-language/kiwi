@@ -1,19 +1,19 @@
 package tech.metavm.object.meta.generic;
 
-import org.elasticsearch.action.search.SearchTask;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.UnionType;
 import tech.metavm.util.InternalException;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class UnionTypeContext extends CompositeTypeContext<UnionType>  {
-    public UnionTypeContext(IEntityContext context) {
-        super(context, UnionType.KEY_IDX);
+    public UnionTypeContext(IEntityContext context, @Nullable UnionTypeContext parent) {
+        super(context, UnionType.KEY_IDX, parent);
     }
 
     @Override

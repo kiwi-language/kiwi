@@ -646,15 +646,15 @@ public class NncUtils {
         return list;
     }
 
-    public static <T, R> void biForEachWithIndex(Collection<T> list1, Collection<R> list2, TriConsumer<T, R, Integer> action) {
-        if (list1.size() != list2.size()) {
-            throw new RuntimeException("Both lists must have the same size");
-        }
+    public static <T, R> void biForEachWithIndex(Iterable<T> list1, Iterable<R> list2, TriConsumer<T, R, Integer> action) {
         Iterator<T> it1 = list1.iterator();
         Iterator<R> it2 = list2.iterator();
         int index = 0;
         while (it1.hasNext() && it2.hasNext()) {
             action.accept(it1.next(), it2.next(), index++);
+        }
+        if (it1.hasNext() || it2.hasNext()) {
+            throw new RuntimeException("Both lists must have the same size");
         }
     }
 
@@ -757,7 +757,7 @@ public class NncUtils {
 
     public static <T> void splitAndForEach(Collection<T> collection, Predicate<T> test, Consumer<List<T>> action1, Consumer<List<T>> action2) {
         List<T> list1 = filter(collection, test);
-        List<T> list2 = filterNot(collection, test);
+        List<T> list2 = exclude(collection, test);
         if (isNotEmpty(list1)) {
             action1.accept(list1);
         }
@@ -1005,6 +1005,18 @@ public class NncUtils {
         return new ArrayList<>(new HashSet<>(list));
     }
 
+    public static <T,K> List<T> deduplicate(List<T> list, Function<T, K> keyMapper) {
+        Set<K> set = new HashSet<>();
+        List<T> result = new ArrayList<>();
+        for (T t : list) {
+            var key = keyMapper.apply(t);
+            if(set.add(key))
+                result.add(t);
+        }
+        return result;
+    }
+
+
     public static <T, R> List<R> flatMap(Iterable<T> list, Function<T, Collection<R>> mapping) {
         return flatMapAndFilter(list, mapping, e -> true);
     }
@@ -1035,7 +1047,7 @@ public class NncUtils {
         return object == null ? "" : object.toString();
     }
 
-    public static <T> List<T> filterNot(Iterable<T> iterable, Predicate<T> filter) {
+    public static <T> List<T> exclude(Iterable<T> iterable, Predicate<T> filter) {
         if (iterable == null) {
             return List.of();
         }
@@ -1191,8 +1203,6 @@ public class NncUtils {
         requireTrue(value, "Value must be true");
     }
 
-
-
     public static void requireTrue(boolean value, String message) {
         requireTrue(value, () -> new InternalException(message));
     }
@@ -1340,7 +1350,7 @@ public class NncUtils {
                                                Function<List<T>, List<R>> loader1,
                                                Function<List<T>, List<R>> loader2) {
         List<T> list1 = filter(source, test);
-        List<T> list2 = filterNot(source, test);
+        List<T> list2 = exclude(source, test);
         List<R> result1 = isNotEmpty(list1) ? loader1.apply(list1) : List.of();
         List<R> result2 = isNotEmpty(list2) ? loader2.apply(list2) : List.of();
         return union(result1, result2);

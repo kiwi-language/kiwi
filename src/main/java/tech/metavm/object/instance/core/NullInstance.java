@@ -16,13 +16,13 @@ public class NullInstance extends PrimitiveInstance {
     }
 
     @Override
-    public String toString() {
-        return "NullInstance null:" + getType().getName();
+    public String getTitle() {
+        return "空";
     }
 
     @Override
-    public String getTitle() {
-        return "空";
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitNullInstance(this);
     }
 
     @Override

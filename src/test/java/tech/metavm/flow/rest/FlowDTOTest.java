@@ -17,7 +17,7 @@ public class FlowDTOTest extends TestCase {
                 false,
                 false,
                 false,
-                RefDTO.ofId(1001L),
+                RefDTO.fromId(1001L),
                 null,
                 null,
                 null,

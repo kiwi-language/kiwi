@@ -16,10 +16,10 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType("创建对象节点")
-public class NewObjectNode extends CallNode<NewObjectParam> {
+public class NewObjectNode extends CallNode<NewObjectParam> implements NewNode{
 
     public static NewObjectNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        CallParam param = nodeDTO.getParam();
+        NewObjectParam param = nodeDTO.getParam();
         Flow subFlow = getFlow(param, context);
         FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
         List<Argument> arguments = NncUtils.biMap(
@@ -28,7 +28,9 @@ public class NewObjectNode extends CallNode<NewObjectParam> {
                 (parameter, argDTO) -> new Argument(argDTO.tmpId(), parameter,
                         ValueFactory.create(argDTO.value(), parsingContext))
         );
-        return new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), subFlow, arguments, prev, scope);
+        var parentRef = NncUtils.get(param.getParent(),
+                p ->ParentRef.create(p, parsingContext, subFlow.getReturnType()));
+        return new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), subFlow, arguments, prev, scope, parentRef);
     }
 
 
@@ -42,8 +44,9 @@ public class NewObjectNode extends CallNode<NewObjectParam> {
 
     public NewObjectNode(Long tmpId, String name, Flow subFlow,
                          List<Argument> arguments,
-                         NodeRT<?> prev, ScopeRT scope) {
+                         NodeRT<?> prev, ScopeRT scope, @Nullable ParentRef parentRef) {
         super(tmpId, name, prev, scope, arguments, subFlow);
+        setParent(parentRef);
     }
 
     @Override
@@ -93,5 +96,15 @@ public class NewObjectNode extends CallNode<NewObjectParam> {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitNewObjectNode(this);
+    }
+
+    @Override
+    public void setParent(@Nullable ParentRef parentRef) {
+        this.parent = parentRef;
+    }
+
+    @Override
+    public @Nullable ParentRef getParentRef() {
+        return parent;
     }
 }

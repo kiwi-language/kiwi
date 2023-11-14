@@ -40,7 +40,7 @@ public class ExpressionTypeResolverTest extends TestCase {
                 new TypeParsingContext(fooType, context)
         );
         Assert.assertNotNull(expression);
-        Assert.assertEquals(exprString, expression.buildSelf(VarType.NAME));
+        Assert.assertEquals(exprString, expression.build(VarType.NAME));
     }
 
     public void testAllMatch() {
@@ -51,7 +51,7 @@ public class ExpressionTypeResolverTest extends TestCase {
                 str, new TypeParsingContext(listViewType, context)
         );
         Assert.assertTrue(expression instanceof AllMatchExpression);
-        LOGGER.info(expression.buildSelf(VarType.NAME));
+        LOGGER.info(expression.build(VarType.NAME));
     }
 
 }

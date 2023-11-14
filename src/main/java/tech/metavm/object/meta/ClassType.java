@@ -1,7 +1,6 @@
 package tech.metavm.object.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Var;
@@ -19,6 +18,7 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -156,6 +156,18 @@ public class ClassType extends Type implements GenericDeclaration {
         } else {
             return readyFields();
         }
+    }
+
+    public void forEachField(Consumer<Field> action) {
+        if(superClass != null)
+            superClass.forEachField(action);
+        this.fields.stream().filter(Field::isReady).forEach(action);
+    }
+
+    @Override
+    public void onBind(IEntityContext context) {
+        if(isTemplate)
+            context.getGenericContext().addType(this);
     }
 
     public List<Field> getFieldsByPath(List<String> path) {
@@ -400,8 +412,8 @@ public class ClassType extends Type implements GenericDeclaration {
 
     @Override
     public void onLoad() {
-        stage = ResolutionStage.INIT;
         super.onLoad();
+        stage = ResolutionStage.INIT;
     }
 
     public List<Index> getFieldIndices(Field field) {
@@ -538,7 +550,7 @@ public class ClassType extends Type implements GenericDeclaration {
         return null;
     }
 
-    public Property getAttributeByVar(Var var) {
+    public Property getPropertyByVar(Var var) {
         return switch (var.getType()) {
             case NAME -> getPropertyByName(var.getName());
             case ID -> getProperty(var.getId());
@@ -704,6 +716,28 @@ public class ClassType extends Type implements GenericDeclaration {
         return superClass;
     }
 
+    public ClassType asSuper(ClassType template) {
+        NncUtils.requireTrue(template.isTemplate);
+        ClassType sup = accept(new ElementVisitor<>() {
+            @Override
+            public ClassType visitClassType(ClassType type) {
+                if(type.getEffectiveTemplate() == template)
+                    return type;
+                ClassType found;
+                if(superClass != null && (found = superClass.accept(this)) != null)
+                    return found;
+                for (ClassType anInterface : interfaces) {
+                    if((found = anInterface.accept(this)) != null)
+                        return found;
+                }
+                return null;
+            }
+        });
+        return NncUtils.requireNonNull(sup,
+                String.format("Can not find a super type of type '%s' with template '%s'",
+                        this.name, template.name));
+    }
+
     public List<ClassType> getInterfaces() {
         return Collections.unmodifiableList(interfaces);
     }
@@ -726,7 +760,7 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
         if (template == null) {
             java.lang.reflect.Type javaType = NncUtils.requireNonNull(
                     getJavaType.apply(this), "Can not get java type for type '" + this + "'");
@@ -735,7 +769,7 @@ public class ClassType extends Type implements GenericDeclaration {
             java.lang.reflect.Type javaType = NncUtils.requireNonNull(
                     getJavaType.apply(template), "Can not get java type for type '" + this + "'");
             return javaType.getTypeName() + "<"
-                    + NncUtils.join(typeArguments, arg -> arg.getCanonicalName(getJavaType))
+                    + NncUtils.join(typeArguments, arg -> arg.getKey(getJavaType))
                     + ">";
         }
     }
@@ -752,14 +786,14 @@ public class ClassType extends Type implements GenericDeclaration {
             if (template != null) {
                 context.writeType(template);
             }
-            return new ClassTypeParam(
+            var param = new ClassTypeParam(
                     NncUtils.get(superClass, context::getRef),
                     NncUtils.map(interfaces, context::getRef),
                     source.code(),
                     NncUtils.map(fields, Field::toDTO),
                     NncUtils.map(staticFields, Field::toDTO),
                     NncUtils.map(constraints, Constraint::toDTO),
-                    NncUtils.map(flows, f -> f.toDTO(false)),
+                    NncUtils.map(flows, f -> f.toDTO(context.shouldWriteCode(this))),
                     desc,
                     getExtra(),
                     isEnum() ? NncUtils.map(getEnumConstants(), ClassInstance::toDTO) : List.of(),
@@ -772,6 +806,7 @@ public class ClassType extends Type implements GenericDeclaration {
                     !subTypes.isEmpty(),
                     NncUtils.map(errors, Error::toDTO)
             );
+            return param;
         }
     }
 
@@ -920,6 +955,7 @@ public class ClassType extends Type implements GenericDeclaration {
     @Override
     public void validate() {
         super.validate();
+        rebuildFlowTable();
         if (!isInterface()) {
             for (ClassType it : interfaces) {
                 for (Flow flow : it.getFlows()) {
@@ -987,7 +1023,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return "ClassType " + name + " (id:" + id + ")";
     }
 
@@ -1136,8 +1172,10 @@ public class ClassType extends Type implements GenericDeclaration {
             return List.of();
     }
 
-    public void setStage(ResolutionStage stage) {
+    public ResolutionStage setStage(ResolutionStage stage) {
+        var origStage = this.stage;
         this.stage = stage;
+        return origStage;
     }
 
     public ResolutionStage getStage() {

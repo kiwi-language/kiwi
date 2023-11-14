@@ -85,12 +85,12 @@ public class FlowManagerTest extends TestCase {
 
         NodeDTO updateNode = new NodeDTO(
                 null, null, flowId, "UpdateUser", NodeKind.UPDATE_OBJECT.code(),
-                RefDTO.ofId(selfNodeId), null,
+                RefDTO.fromId(selfNodeId), null,
                 new UpdateObjectParamDTO(
                     ValueDTO.refValue("当前对象"),
                     List.of(
                             new UpdateFieldDTO(
-                                    RefDTO.ofId(userNameField.getId()),
+                                    RefDTO.fromId(userNameField.getId()),
                                     UpdateOp.SET.code(),
                                     ValueDTO.constValue(
                                             InstanceUtils.stringInstance("lyq").toFieldValueDTO()
@@ -125,12 +125,12 @@ public class FlowManagerTest extends TestCase {
         NodeDTO selfNode = flowDTO.rootScope().nodes().get(1);
         NodeDTO updateNode = new NodeDTO(
                 null, null, flowId, "UpdateState", NodeKind.UPDATE_OBJECT.code(),
-                RefDTO.ofId(selfNode.id()), null,
+                RefDTO.fromId(selfNode.id()), null,
                 new UpdateObjectParamDTO(
                         ValueDTO.refValue("当前对象"),
                         List.of(
                                 new UpdateFieldDTO(
-                                        RefDTO.ofId(couponStateField.getId()),
+                                        RefDTO.fromId(couponStateField.getId()),
                                         UpdateOp.SET.code(),
                                         ValueDTO.constValue(
                                                 usedStateInstance.toFieldValueDTO()
@@ -158,7 +158,7 @@ public class FlowManagerTest extends TestCase {
         ClassType userType = MockRegistry.getClassType(UserRT.class);
         FlowDTO flowDTO = new FlowDTO(null, null, "Flow1", null, false,
                 false, false,
-                RefDTO.ofId(userType.getId()),  null, null,
+                RefDTO.fromId(userType.getId()),  null, null,
                 null, null,null,
                  null, null, List.of(),
                 null, List.of(), false);

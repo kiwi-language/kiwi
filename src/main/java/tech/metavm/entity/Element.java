@@ -38,7 +38,7 @@ public abstract class Element extends Entity {
         }
         if (value instanceof ChildArray<?> array) {
             visitor.pushParentRef(new EntityParentRef(array, null));
-            for (Entity e : array)
+            for (Entity e : array.toList())
                 acceptChild(e, visitor);
             visitor.popParentRef();
         }

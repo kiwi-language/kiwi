@@ -20,6 +20,8 @@ public class DebugController {
 
     private static final String TENANT_ID_FILE = "/Users/leen/workspace/front/src/user/Tenant.json";
 
+    public static final String RESULT_JSON_FILE = "/Users/leen/workspace/object/result.json";
+
     private static final String TENANT_NAME = "test";
 
     private static final String ADMIN_NANE = "admin";
@@ -50,6 +52,7 @@ public class DebugController {
         String json = NncUtils.toJSONStringIgnoreNull(typeManager.getPrimitiveTypes());
         NncUtils.writeFile(PRIM_JSON_FILE, json);
         NncUtils.writeFile(TENANT_ID_FILE, String.format("{\"tenantId\": %d}", tenantId));
+        NncUtils.writeFile(RESULT_JSON_FILE, "[]");
         return Result.voidSuccess();
     }
 

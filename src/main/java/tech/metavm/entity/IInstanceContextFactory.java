@@ -12,6 +12,8 @@ public interface IInstanceContextFactory {
 
     IInstanceContext newRootContext();
 
+    InstanceContextBuilder newBuilder();
+
     IEntityContext newEntityContext(long tenantId, boolean asyncProcessing);
 
     default IEntityContext newEntityContext(boolean asyncProcessing) {

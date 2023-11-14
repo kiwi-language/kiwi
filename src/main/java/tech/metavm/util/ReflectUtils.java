@@ -624,6 +624,7 @@ public class ReflectUtils {
 
     public static void set(Object object, Field field, Object value) {
         try {
+            field.trySetAccessible();
             field.set(object, value);
         } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new RuntimeException("Fail to set field " + field, e);
@@ -966,6 +967,8 @@ public class ReflectUtils {
         if (type instanceof TypeVariable<?>) {
             return type;
         }
+        if(type instanceof WildcardType)
+            return type;
         if (type instanceof ParameterizedType parameterizedType) {
             Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
             if (RuntimeGeneric.class.isAssignableFrom(rawClass) || List.class.isAssignableFrom(rawClass)) {
@@ -1069,13 +1072,13 @@ public class ReflectUtils {
     }
 
     public static Class<?> getRawClass(Type type) {
-        if (type instanceof Class<?> klass) {
-            return klass;
-        }
-        if (type instanceof ParameterizedType parameterizedType) {
-            return getRawClass(parameterizedType.getRawType());
-        }
-        throw new InternalException("Can not get raw type for: " + type);
+        return switch (type) {
+            case Class<?> klass -> klass;
+            case ParameterizedType parameterizedType -> getRawClass(parameterizedType.getRawType());
+            case WildcardType wildcardType -> getRawClass(wildcardType.getUpperBounds()[0]);
+            case TypeVariable<?> typeVariable -> getRawClass(typeVariable.getBounds()[0]);
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        };
     }
 
     public static List<Field> getInstanceFields(Class<?> klass, Class<? extends Annotation> annotationClass) {

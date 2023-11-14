@@ -104,7 +104,7 @@ public class InstanceMapperGateway {
                 InstanceArrayPO.class::isInstance,
                 InstanceArrayPO.class::cast
         );
-        List<InstancePO> instancePOs = NncUtils.filterNot(
+        List<InstancePO> instancePOs = NncUtils.exclude(
                 records,
                 InstanceArrayPO.class::isInstance
         );
@@ -121,7 +121,7 @@ public class InstanceMapperGateway {
     }
 
     public int updateSyncVersion(List<VersionPO> versions) {
-        List<VersionPO> objectVersions = NncUtils.filterNot(versions, v -> isArrayId(v.id()));
+        List<VersionPO> objectVersions = NncUtils.exclude(versions, v -> isArrayId(v.id()));
         if(NncUtils.isNotEmpty(objectVersions)) {
             return instanceMapper.updateSyncVersion(objectVersions);
         }

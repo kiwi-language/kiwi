@@ -43,7 +43,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
             FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext()).build();
         }
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
-        if(!hashConstructor) {
+        if(!metaClass.isInterface() && !hashConstructor) {
             String constructorName = metaClass.getEffectiveTemplate().getName();
             String constructorCode = metaClass.getEffectiveTemplate().getCode();
             FlowBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())

@@ -29,7 +29,7 @@ public class MemInstanceContext extends BaseInstanceContext {
                               EntityIdProvider idProvider,
                               IInstanceStore instanceStore,
                               IInstanceContext parent) {
-        super(tenantId, idProvider, instanceStore, MockRegistry.getDefContext(), parent);
+        super(tenantId, idProvider, instanceStore, MockRegistry.getDefContext(), parent, -1L);
         typeProvider = typeId -> getEntityContext().getType(typeId);
         setCreateJob(job -> getEntityContext().bind(job));
     }

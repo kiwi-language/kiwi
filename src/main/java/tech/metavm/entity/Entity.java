@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
@@ -52,6 +53,16 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     @Nullable
     public final Long getId() {
         return id;
+    }
+
+    @NoProxy
+    public boolean idEquals(long id) {
+        return Objects.equals(this.id, id);
+    }
+
+    @NoProxy
+    public boolean isIdNotNull() {
+        return id != null;
     }
 
     public final RefDTO getRef() {
@@ -178,6 +189,32 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     public boolean afterContextInitIds() {
         return false;
+    }
+
+
+    @Override
+    @NoProxy
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    @NoProxy
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    @NoProxy
+    public final String toString() {
+        if(EntityUtils.isModelInitialized(this))
+            return toString0();
+        else
+            return String.format("Uninitialized entity, id: %s", id);
+    }
+
+    protected String toString0() {
+        return String.format("Entity, id: %s", id);
     }
 
 }

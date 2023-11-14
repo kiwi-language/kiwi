@@ -6,12 +6,13 @@ import tech.metavm.object.meta.UncertainType;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class UncertainTypeContext extends CompositeTypeContext<UncertainType> {
 
-    public UncertainTypeContext(IEntityContext context) {
-        super(context, UncertainType.KEY_IDX);
+    public UncertainTypeContext(IEntityContext context, @Nullable UncertainTypeContext parent) {
+        super(context, UncertainType.KEY_IDX, parent);
     }
 
     public UncertainType get(Type lowerBound, Type upperBound) {

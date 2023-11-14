@@ -18,23 +18,25 @@ public class NodeFactory {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static NodeRT<?> create(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        NodeKind nodeType = NodeKind.getByCodeRequired(nodeDTO.kind());
-        Class<? extends NodeRT<?>> klass = nodeType.getKlass();
-        Method createMethod = tryGetStaticMethod(
-                klass, "create", NodeDTO.class, NodeRT.class, ScopeRT.class, IEntityContext.class);
-        NodeRT<?> prev = nodeDTO.prevRef() != null ? context.getNode(nodeDTO.prevRef()) : scope.getLastNode();
-        NodeRT node;
-        if (createMethod != null) {
-            node = (NodeRT<?>) ReflectUtils.invoke(null, createMethod, nodeDTO, prev, scope, context);
-        } else {
-            Constructor<?> constructor = getConstructor(klass, NodeDTO.class, ScopeRT.class);
-            node = (NodeRT) newInstance(constructor, nodeDTO, scope);
-            if (nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
+        try(var ignored = context.getProfiler().enter("NodeFactory.create")) {
+            NodeKind nodeType = NodeKind.getByCodeRequired(nodeDTO.kind());
+            Class<? extends NodeRT<?>> klass = nodeType.getKlass();
+            Method createMethod = tryGetStaticMethod(
+                    klass, "create", NodeDTO.class, NodeRT.class, ScopeRT.class, IEntityContext.class);
+            NodeRT<?> prev = nodeDTO.prevRef() != null ? context.getNode(nodeDTO.prevRef()) : scope.getLastNode();
+            NodeRT node;
+            if (createMethod != null) {
+                node = (NodeRT<?>) ReflectUtils.invoke(null, createMethod, nodeDTO, prev, scope, context);
+            } else {
+                Constructor<?> constructor = getConstructor(klass, NodeDTO.class, ScopeRT.class);
+                node = (NodeRT) newInstance(constructor, nodeDTO, scope);
+                if (nodeDTO.param() != null) node.setParam(nodeDTO.param(), context);
+            }
+            var prevExprTypes = prev != null ? prev.getExpressionTypes() : ExpressionTypeMap.EMPTY;
+            node.mergeExpressionTypes(prevExprTypes);
+            context.bind(node);
+            return node;
         }
-        var prevExprTypes = prev != null ? prev.getExpressionTypes() : ExpressionTypeMap.EMPTY;
-        node.mergeExpressionTypes(prevExprTypes);
-        context.bind(node);
-        return node;
     }
 
     public static NodeRT<?> create(NodePO nodePO, InstanceContext context) {

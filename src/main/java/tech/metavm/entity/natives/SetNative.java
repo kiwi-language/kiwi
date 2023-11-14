@@ -7,6 +7,7 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.object.meta.rest.dto.InstanceParentRef;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -32,8 +33,8 @@ public class SetNative extends NativeBase {
     }
 
     public Instance Set() {
-        array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initField(arrayField, array);
+        array = new ArrayInstance((ArrayType) arrayField.getType(),
+                new InstanceParentRef(instance, arrayField));
         return instance;
     }
 

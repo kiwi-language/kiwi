@@ -3,9 +3,6 @@ package tech.metavm.entity;
 import javassist.util.proxy.MethodHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.dto.InternalErrorCode;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
@@ -16,7 +13,7 @@ public final class EntityMethodHandler<T> implements MethodHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityMethodHandler.class);
 
-    private enum State {
+    public enum State {
         UNINITIALIZED,
         INITIALIZING,
         INITIALIZED
@@ -24,11 +21,17 @@ public final class EntityMethodHandler<T> implements MethodHandler {
 
     private final Class<T> type;
     private final Consumer<T> initializer;
-    private State state;
+    private Consumer<T> directInitializer;
+    private State state = State.UNINITIALIZED;
 
     public EntityMethodHandler(Class<T> type, Consumer<T> initializer) {
         this.type = type;
         this.initializer = initializer;
+    }
+
+
+    public State getState() {
+        return state;
     }
 
     @Override
@@ -46,6 +49,10 @@ public final class EntityMethodHandler<T> implements MethodHandler {
            return;
         }
         if(state == State.INITIALIZING) {
+            if(directInitializer != null) {
+                directInitializer.accept(type.cast(self));
+                state = State.INITIALIZED;
+            }
 //            if(LOGGER.isDebugEnabled()) {
 //                LOGGER.debug("Call method '" + ReflectUtils.getMethodQualifiedName(thisMethod) + "' while initializing proxy");
 //            }
@@ -69,4 +76,17 @@ public final class EntityMethodHandler<T> implements MethodHandler {
     public boolean isInitialized() {
         return state == State.INITIALIZED;
     }
+
+    public void setDirectInitializer(Consumer<T> directInitializer) {
+        this.directInitializer = directInitializer;
+    }
+
+    public boolean isUninitialized() {
+        return state == State.UNINITIALIZED;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
 }

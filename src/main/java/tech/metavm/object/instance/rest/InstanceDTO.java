@@ -20,7 +20,7 @@ public record InstanceDTO(
 ) {
 
     public static InstanceDTO valueOf(@Nullable Long id, long typeId, String title, List<InstanceFieldDTO> fields){
-        return new InstanceDTO(id, RefDTO.ofId(typeId), null, title, new ClassInstanceParam(fields));
+        return new InstanceDTO(id, RefDTO.fromId(typeId), null, title, new ClassInstanceParam(fields));
     }
 
     public static InstanceDTO valueOf(long typeId, List<InstanceFieldDTO> fields) {
@@ -30,7 +30,7 @@ public record InstanceDTO(
     public static InstanceDTO valueOf(@Nullable Long id, long typeId, List<InstanceFieldDTO> fields) {
         return new InstanceDTO(
                 id,
-                RefDTO.ofId(typeId),
+                RefDTO.fromId(typeId),
                 null,
                 null,
                 new ClassInstanceParam(fields)
@@ -40,7 +40,7 @@ public record InstanceDTO(
     public static InstanceDTO createArray(Long id, long typeId, List<FieldValue> elements){
         return new InstanceDTO(
                 id,
-                RefDTO.ofId(typeId),
+                RefDTO.fromId(typeId),
                 null,
                 null,
                 new ArrayParamDTO(false, elements)

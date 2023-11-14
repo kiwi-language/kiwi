@@ -1,5 +1,6 @@
 package tech.metavm.object.meta.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -22,6 +23,7 @@ public interface TypeParam {
 
     int getType();
 
+    @JsonIgnore
     @Nullable TypeKey getTypeKey();
 
 }

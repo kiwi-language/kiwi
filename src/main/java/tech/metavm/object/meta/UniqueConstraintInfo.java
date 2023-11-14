@@ -25,8 +25,8 @@ public record UniqueConstraintInfo(
         );
     }
 
-    public UniqueConstraintParamDTO getParam() {
-        return new UniqueConstraintParamDTO(
+    public IndexParam getParam() {
+        return new IndexParam(
                 NncUtils.map(items, UniqueConstraintItemInfo::toDTO)
         );
     }

@@ -1,6 +1,5 @@
 package tech.metavm.object.meta;
 
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
@@ -132,8 +131,8 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return kind.getEntityClass().getName() + "<" + elementType.getCanonicalName(getJavaType) + ">";
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return kind.getEntityClass().getName() + "<" + elementType.getKey(getJavaType) + ">";
     }
 
     public ArrayKind getKind() {

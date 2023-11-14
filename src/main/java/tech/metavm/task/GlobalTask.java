@@ -17,7 +17,7 @@ public abstract class GlobalTask extends EntityScanTask<TenantRT> {
     @Override
     protected void processModels(IInstanceContext context, List<TenantRT> tenants) {
         for (TenantRT tenant : tenants) {
-            IEntityContext tenantContext = context.newContext(tenant.getId()).getEntityContext();
+            IEntityContext tenantContext = context.newContext(tenant.getIdRequired()).getEntityContext();
             processTenant(tenantContext, tenant);
             tenantContext.finish();
         }

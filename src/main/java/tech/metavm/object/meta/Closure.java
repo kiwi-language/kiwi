@@ -62,7 +62,7 @@ public class Closure<T extends Type> {
                     skips.add(type);
             }
         }
-        var types = NncUtils.filterNot(this.types, skips::contains);
+        var types = NncUtils.exclude(this.types, skips::contains);
         return new Closure<>(types, new HashSet<>(types), elementJavaClass);
     }
 

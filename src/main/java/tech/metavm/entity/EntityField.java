@@ -15,6 +15,8 @@ public @interface EntityField {
 
     boolean asTitle() default false;
 
+    boolean asKey() default false;
+
     boolean eager() default false;
 
     String code() default "";

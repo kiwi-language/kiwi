@@ -24,7 +24,7 @@ public enum NodeKind {
     FOREACH(19, ForeachNode.class, true),
     WHILE(20, WhileNode.class, true),
     NEW_ARRAY(21, NewArrayNode.class),
-    EXIT_BRANCH(22, CheckNode.class),
+    CHECK(22, CheckNode.class),
     TRY(23, TryNode.class),
     TRY_END(24, TryEndNode.class, true),
     FUNC(25, FunctionNode.class),

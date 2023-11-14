@@ -26,7 +26,7 @@ public class EntityDesc {
     }
 
     public List<EntityProp> getNonTransientProps() {
-        return NncUtils.filterNot(props, EntityProp::isTransient);
+        return NncUtils.exclude(props, EntityProp::isTransient);
     }
 
     public List<EntityProp> getPropsWithAnnotation(Class<? extends Annotation> annotationClass) {

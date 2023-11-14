@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.Type;
 
@@ -17,11 +18,16 @@ public class StaticFieldExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        return switch (symbolType) {
-            case NAME -> field.getDeclaringType().getName() + "." + field.getName();
-            case ID -> idVarName(field.getDeclaringType().getIdRequired()) + "." +
-                    idVarName(field.getIdRequired());
-        };
+        try(var context = SerializeContext.enter()) {
+            if(context.isIncludeExpressionType()) {
+                context.writeType(field.getDeclaringType());
+            }
+            return switch (symbolType) {
+                case NAME -> field.getDeclaringType().getName() + "." + field.getName();
+                case ID -> idVarName(field.getDeclaringType().getIdRequired()) + "." +
+                        idVarName(field.getIdRequired());
+            };
+        }
     }
 
     @Override

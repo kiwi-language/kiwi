@@ -35,13 +35,13 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     @Override
-    public String toString() {
-        return "StringInstance " + value + ":" + getType().getName();
+    public String getTitle() {
+        return value;
     }
 
     @Override
-    public String getTitle() {
-        return value;
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitStringInstance(this);
     }
 
 }

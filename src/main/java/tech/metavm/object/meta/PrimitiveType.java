@@ -56,12 +56,12 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return "PrimitiveType " + kind.getName();
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
         return kind.getJavaClass().getName();
     }
 

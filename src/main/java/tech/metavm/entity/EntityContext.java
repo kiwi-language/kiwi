@@ -14,7 +14,8 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
         this(instanceContext, parent, ModelDefRegistry.getDefContext());
     }
 
-    public EntityContext(@Nullable IInstanceContext instanceContext, IEntityContext parent, DefContext defContext) {
+    public EntityContext(@Nullable IInstanceContext instanceContext, IEntityContext parent,
+                         DefContext defContext) {
         super(instanceContext, parent);
         this.defContext = defContext;
     }

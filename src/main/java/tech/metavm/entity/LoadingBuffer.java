@@ -60,9 +60,11 @@ public class LoadingBuffer {
         return identityResultMap.get(id);
     }
 
-    public void flush() {
-        flushIdRequests();
-        flushByTypeRequests();
+    public List<InstancePO> flush() {
+        List<InstancePO> results = new ArrayList<>();
+        flushIdRequests(results);
+        flushByTypeRequests(new ArrayList<>());
+        return NncUtils.deduplicate(results, InstancePO::getId);
     }
 
     public List<InstancePO> scan(long startId, long limit) {
@@ -108,17 +110,19 @@ public class LoadingBuffer {
             int index = NncUtils.binarySearch(queries, instancePO.getId(), (q, id) -> Long.compare(q.startId(), id));
             RangeQuery query = index >= 0 ? queries.get(index) : queries.get(-index - 1);
             result.computeIfAbsent(query, k -> new ArrayList<>()).add(
-                    new IdAndValue<>(instancePO.getId(), instancePO.getId())
+                    new IdAndValue<>(instancePO.getIdRequired(), instancePO.getId())
             );
         }
         return result;
     }
 
-    private void flushIdRequests() {
+    private void flushIdRequests(List<InstancePO> results) {
         if (identityRequests.isEmpty()) {
             return;
         }
-        for (InstancePO instancePO : loadInstancePOs(identityRequests)) {
+        var loaded = loadInstancePOs(identityRequests);
+        results.addAll(loaded);
+        for (InstancePO instancePO : loaded) {
             identityResultMap.put(instancePO.getId(), instancePO);
         }
         identityRequests.clear();
@@ -143,7 +147,7 @@ public class LoadingBuffer {
                 extractRefIdsFromObject(instancePO, refIds);
             }
         }
-        refIds = new HashSet<>(NncUtils.filterNot(refIds, identityResultMap::containsKey));
+        refIds = new HashSet<>(NncUtils.exclude(refIds, identityResultMap::containsKey));
         aliveIds.addAll(instanceStore.getAliveInstanceIds(context.getTenantId(), refIds));
     }
 
@@ -169,12 +173,13 @@ public class LoadingBuffer {
         return null;
     }
 
-    private void flushByTypeRequests() {
+    private void flushByTypeRequests(List<InstancePO> results) {
         if (byTypeRequests.isEmpty()) {
             return;
         }
         List<InstancePO> instancePOs =
                 instanceStore.getByTypeIds(NncUtils.map(byTypeRequests, Entity::getId), context);
+        results.addAll(instancePOs);
         Map<Long, List<InstancePO>> typeId2InstancePOs = NncUtils.toMultiMap(instancePOs, InstancePO::getTypeId);
         for (ClassType byTypeRequest : byTypeRequests) {
             byTypeResultMap.put(

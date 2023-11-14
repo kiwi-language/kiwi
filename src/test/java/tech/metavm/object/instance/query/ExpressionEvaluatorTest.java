@@ -38,7 +38,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                 str, new TypeParsingContext(fooType, id -> {throw new UnsupportedOperationException();})
         );
 
-        LOGGER.info(expression.buildSelf(VarType.NAME));
+        LOGGER.info(expression.build(VarType.NAME));
 
         Foo foo = new Foo("Big Foo", new Bar("001"));
         foo.setBazList(List.of(

@@ -71,8 +71,8 @@ public class DoubleInstance extends NumberInstance {
     }
 
     @Override
-    public String toString() {
-        return "DoubleInstance " + value + ":" + getType().getName();
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitDoubleInstance(this);
     }
 
 }

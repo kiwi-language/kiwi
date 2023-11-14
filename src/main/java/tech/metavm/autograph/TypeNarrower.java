@@ -2,6 +2,7 @@ package tech.metavm.autograph;
 
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.*;
+import tech.metavm.object.meta.NothingType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.object.meta.UnionType;
 import tech.metavm.util.NncUtils;
@@ -77,16 +78,21 @@ public class TypeNarrower {
                         result.put(second, intersection);
                     }
                 }
-            } else {
-                if (ExpressionUtil.isNotConstant(first)) {
+            }
+            else {
+                if (ExpressionUtil.isNotConstant(first) && isSingleValuedType(second.getType())) {
                     result.put(first, typeDiff(getType(first), getType(second)));
                 }
-                if (ExpressionUtil.isNotConstant(second)) {
+                if (ExpressionUtil.isNotConstant(second) && isSingleValuedType(first.getType())) {
                     result.put(second, typeDiff(getType(second), getType(first)));
                 }
             }
         }
         return result;
+    }
+
+    private boolean isSingleValuedType(Type type) {
+        return type.isNull();
     }
 
     public static Map<Expression, Type> mergeResults(Map<Expression, Type> firstResult, Map<Expression, Type> secondResult) {
@@ -186,7 +192,7 @@ public class TypeNarrower {
 
     private static Type createTypeFromSet(Set<Type> set) {
         if (set.isEmpty()) {
-            return null;
+            return new NothingType();
         }
         if (set.size() == 1) {
             return set.iterator().next();

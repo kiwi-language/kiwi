@@ -281,11 +281,17 @@ public class Scheduler {
     }
 
     private IEntityContext newRootContext() {
-        return instanceContextFactory.newEntityContext(Constants.ROOT_TENANT_ID, true);
+        return instanceContextFactory.newBuilder()
+                .tenantId(-1L)
+                .asyncLogProcessing(true)
+                .build();
     }
 
     private IEntityContext newContext(long tenantId) {
-        return instanceContextFactory.newEntityContext(tenantId, true);
+        return instanceContextFactory.newBuilder()
+                .tenantId(tenantId)
+                .asyncLogProcessing(true)
+                .build();
     }
 
     public void waitForJobDone(Task task, int maxSchedules) {

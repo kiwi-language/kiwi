@@ -33,7 +33,6 @@ public class InstanceContext extends BaseInstanceContext {
     private final Executor executor;
     private IEntityContext entityContext;
     private final TypeResolver typeResolver;
-    private DefContext defContext;
 
     public InstanceContext(long tenantId,
                            IInstanceStore instanceStore,
@@ -41,10 +40,12 @@ public class InstanceContext extends BaseInstanceContext {
                            Executor executor,
                            boolean asyncPostProcessing,
                            List<ContextPlugin> plugins,
-                           IInstanceContext parent
+                           IInstanceContext parent,
+                           long profileLogThreshold
     ) {
         this(tenantId, instanceStore, idService, executor, asyncPostProcessing, plugins, parent,
-                new DefaultTypeResolver()
+                new DefaultTypeResolver(),
+                profileLogThreshold
         );
     }
 
@@ -55,11 +56,12 @@ public class InstanceContext extends BaseInstanceContext {
                            boolean asyncPostProcessing,
                            List<ContextPlugin> plugins,
                            IInstanceContext parent,
-                           TypeResolver typeResolver
+                           TypeResolver typeResolver,
+                           long profileLogThreshold
     ) {
         this(tenantId, instanceStore, idService, executor, asyncPostProcessing, plugins,
                 ModelDefRegistry.getDefContext(),
-                parent, typeResolver);
+                parent, typeResolver, profileLogThreshold);
     }
 
     public InstanceContext(long tenantId,
@@ -70,9 +72,10 @@ public class InstanceContext extends BaseInstanceContext {
                            List<ContextPlugin> plugins,
                            DefContext defContext,
                            IInstanceContext parent,
-                           TypeResolver typeResolver
+                           TypeResolver typeResolver,
+                           long profileLogThreshold
     ) {
-        super(tenantId, idService, instanceStore, defContext, parent);
+        super(tenantId, idService, instanceStore, defContext, parent, profileLogThreshold);
         this.asyncPostProcessing = asyncPostProcessing;
         this.plugins = plugins;
         this.executor = executor;
@@ -83,7 +86,6 @@ public class InstanceContext extends BaseInstanceContext {
                 NncUtils.get(parent, IInstanceContext::getEntityContext),
                 defContext
         );
-        this.defContext = defContext;
         setCreateJob(job -> getEntityContext().bind(job));
     }
 
@@ -148,20 +150,43 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void initializeInstance(Instance instance) {
-        InstancePO instancePO = loadingBuffer.getInstancePO(instance.getIdRequired());
-        if (instancePO == null) {
-            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
+        try (var entry = profiler.enter("initializeInstance")) {
+            entry.addMessage("id", instance.getIdRequired());
+            loadForest(List.of(instance), 0);
         }
-        headContext.add(EntityUtils.copyPojo(instancePO), instance.getType());
-        clearStaleReferences(instancePO);
-        initializeInstance(instance, instancePO);
+
+//        preload(instance.getIdRequired());
+//        List<InstancePO> loaded = NncUtils.exclude(
+//                loadingBuffer.flush(), i -> instance.idEquals(i.getIdRequired()));
+//        InstancePO instancePO = loadingBuffer.getInstancePO(instance.getIdRequired());
+//        if (instancePO == null)
+//            throw new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, instance.getId());
+//        initializeInstance(instance, instancePO);
+//        loadForest(List.of(instance));
+//        batchInitialize(loaded);
     }
 
+    private void batchInitialize(List<InstancePO> instancePOs) {
+        for (InstancePO instancePO : instancePOs) {
+            var instance = get(instancePO.getIdRequired());
+            if (EntityUtils.isModelUninitialized(instance)) {
+                initializeInstance(instance, instancePO);
+            } else
+                LOGGER.warn(String.format("Instance %s/%d is already initialized, state: %s",
+                        instance.getType().getName(), instance.getIdRequired(),
+                        EntityUtils.getProxyState(instance)));
+        }
+    }
+
+//    private final IdentitySet<Instance> initializing = new IdentitySet<>();
+
     private void initializeInstance(Instance instance, InstancePO instancePO) {
-        if(instancePO.getParentId() != null) {
+        headContext.add(EntityUtils.copyPojo(instancePO), instance.getType());
+        clearStaleReferences(instancePO);
+        if (instancePO.getParentId() != null) {
             var parent = get(instancePO.getParentId());
             Field parentField = null;
-            if(instancePO.getParentFieldId() != null) {
+            if (instancePO.getParentFieldId() != null) {
                 var parentType = ((ClassInstance) parent).getType();
                 parentField = parentType.getField(instancePO.getParentFieldId());
             }
@@ -180,6 +205,52 @@ public class InstanceContext extends BaseInstanceContext {
                     instancePO.getVersion(), instancePO.getSyncVersion()
             );
         }
+        EntityUtils.setProxyState(instance, EntityMethodHandler.State.INITIALIZED);
+        onInstanceInitialized(instance);
+//        for (Instance child : instance.getChildren()) {
+//            if (!EntityUtils.isModelInitialized(child))
+//                preload(child.getIdRequired());
+//        }
+    }
+
+    private void loadForest(List<Instance> instances, int depth) {
+        if (instances.isEmpty())
+            return;
+        try (var entry = profiler.enter("loadForest", true)) {
+            entry.addMessage("depth", depth);
+            List<Instance> descendants = new ArrayList<>();
+            var visitor = new StructuralVisitor() {
+                @Override
+                public void visitInstance(Instance instance) {
+                    if (EntityUtils.isModelInitialized(instance))
+                        super.visitInstance(instance);
+                    else {
+                        preload(instance.getIdRequired());
+                        descendants.add(instance);
+                    }
+                }
+
+                @Override
+                public void visitClassInstance(ClassInstance instance) {
+                    if (EntityUtils.isModelInitialized(instance)) {
+                        instance.forEachField((field, value) -> {
+                            if (field.isChildField() && !field.isLazy())
+                                value.accept(this);
+                        });
+                    } else {
+                        preload(instance.getIdRequired());
+                        descendants.add(instance);
+                    }
+                }
+            };
+            for (Instance instance : instances) {
+                visitor.visit(instance);
+            }
+            for (Instance descendant : descendants) {
+                initializeInstance(descendant, loadingBuffer.getInstancePO(descendant.getIdRequired()));
+            }
+            loadForest(descendants, depth + 1);
+        }
     }
 
     private Map<Field, Instance> getInstanceFields(InstancePO instancePO, ClassType type) {
@@ -190,11 +261,6 @@ public class InstanceContext extends BaseInstanceContext {
             );
         }
         return data;
-    }
-
-    @Override
-    protected boolean isPersisted(long id) {
-        return headContext.get(id) != null;
     }
 
     private Instance resolveColumnValue(Type fieldType, Object columnValue) {
@@ -212,12 +278,8 @@ public class InstanceContext extends BaseInstanceContext {
             initializeInstance(instance, instancePO);
             return instance;
         } else {
-            return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue, defContext::getType);
+            return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue, getDefContext()::getType);
         }
-    }
-
-    public void setDefContext(DefContext defContext) {
-        this.defContext = defContext;
     }
 
     @Override
@@ -240,7 +302,9 @@ public class InstanceContext extends BaseInstanceContext {
         processUpdate(difference.getEntityChange(), bufferedPOs);
         processRemoval(difference.getEntityChange());
         processEntityChangeHelper(difference.getEntityChange());
-        instanceStore.saveReferences(difference.getReferenceChange().toChangeList());
+        try (var ignored = profiler.enter("saveReferences")) {
+            instanceStore.saveReferences(difference.getReferenceChange().toChangeList());
+        }
         headContext.clear();
         for (InstancePO instancePO : bufferedPOs.keySet()) {
             headContext.add(EntityUtils.copyPojo(instancePO), getType(instancePO.getTypeId()));
@@ -248,7 +312,9 @@ public class InstanceContext extends BaseInstanceContext {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             registerTransactionSynchronization();
         } else {
-            postProcess();
+            try (var ignored = profiler.enter("postProcess")) {
+                postProcess();
+            }
         }
         finished = true;
     }
@@ -283,33 +349,40 @@ public class InstanceContext extends BaseInstanceContext {
 
     private void processUpdate(EntityChange<InstancePO> entityChange,
                                IdentityHashMap<InstancePO, Instance> bufferedInstancePOs) {
-        List<InstancePO> insertOrUpdate = NncUtils.union(entityChange.inserts(), entityChange.updates());
-        for (InstancePO instancePO : insertOrUpdate) {
-            Instance instance = bufferedInstancePOs.get(instancePO);
-            if (instance instanceof ClassInstance classInstance) {
-                var model = entityContext.getModel(Object.class, instance);
-                if (model instanceof UpdateAware updateAware) {
-                    updateAware.onUpdate(classInstance);
+        try (var ignored = profiler.enter("processUpdate")) {
+            List<InstancePO> insertOrUpdate = NncUtils.union(entityChange.inserts(), entityChange.updates());
+            for (InstancePO instancePO : insertOrUpdate) {
+                Instance instance = bufferedInstancePOs.get(instancePO);
+                if (instance instanceof ClassInstance classInstance) {
+                    var model = entityContext.getModel(Object.class, instance);
+                    if (model instanceof UpdateAware updateAware) {
+                        updateAware.onUpdate(classInstance);
+                    }
+                    if (model instanceof Entity entity) {
+                        entity.validate();
+                    }
                 }
             }
         }
     }
 
     private void processRemoval(EntityChange<InstancePO> entityChange) {
-        if (NncUtils.isEmpty(entityChange.deletes())) {
-            return;
-        }
-        Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
-        Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
-        List<ReferencePO> references = instanceStore.getFirstStrongReferences(
-                tenantId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
-        );
-        if (NncUtils.isNotEmpty(references)) {
-            Map<Instance, Instance> refMap = new HashMap<>();
-            for (ReferencePO reference : references) {
-                refMap.put(get(reference.getSourceId()), getRemoved(reference.getTargetId()));
+        try (var ignored = profiler.enter("processRemoval")) {
+            if (NncUtils.isEmpty(entityChange.deletes())) {
+                return;
             }
-            throw BusinessException.strongReferencesPreventRemoval(refMap);
+            Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
+            Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
+            List<ReferencePO> references = instanceStore.getFirstStrongReferences(
+                    tenantId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
+            );
+            if (NncUtils.isNotEmpty(references)) {
+                Map<Instance, Instance> refMap = new HashMap<>();
+                for (ReferencePO reference : references) {
+                    refMap.put(get(reference.getSourceId()), getRemoved(reference.getTargetId()));
+                }
+                throw BusinessException.strongReferencesPreventRemoval(refMap);
+            }
         }
     }
 
@@ -400,9 +473,11 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void processEntityChangeHelper(EntityChange<InstancePO> change) {
-        plugins.forEach(p -> p.beforeSaving(change, this));
-        instanceStore.save(change.toChangeList());
-        plugins.forEach(p -> p.afterSaving(change, this));
+        try (var ignored = profiler.enter("processEntityChangeHelper")) {
+            plugins.forEach(p -> p.beforeSaving(change, this));
+            instanceStore.save(change.toChangeList());
+            plugins.forEach(p -> p.afterSaving(change, this));
+        }
     }
 
     private Function<Map<Type, Integer>, Map<Type, List<Long>>> getIdGenerator() {
@@ -440,7 +515,8 @@ public class InstanceContext extends BaseInstanceContext {
                 executor,
                 asyncPostProcessing,
                 plugins,
-                getParent()
+                getParent(),
+                getProfilerLogThreshold()
         );
     }
 

@@ -1,9 +1,14 @@
 package tech.metavm.object.instance.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.dto.ErrorCode;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.*;
+import tech.metavm.object.instance.ByTypeQuery;
+import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.IndexKeyRT;
+import tech.metavm.object.instance.ScanQuery;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -21,6 +26,9 @@ import static tech.metavm.util.NncUtils.getFirst;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 public abstract class BaseInstanceContext implements IInstanceContext, Closeable {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(BaseInstanceContext.class);
+
     protected final long tenantId;
     protected final EntityIdProvider idService;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
@@ -31,30 +39,36 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Set<Instance> removed = new HashSet<>();
     protected final IInstanceStore instanceStore;
     private LockMode lockMode = LockMode.NONE;
+    protected final Profiler profiler = new Profiler();
 
     private final IInstanceContext parent;
     private final Set<InstanceIdInitListener> listeners = new LinkedHashSet<>();
     private final Set<Consumer<Instance>> removalListeners = new LinkedHashSet<>();
+    private final Set<Consumer<Instance>> initializationListeners = new LinkedHashSet<>();
     private Consumer<Task> createJob;
     private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
     private final Map<ClassInstance, List<IndexKeyRT>> indexKeys = new HashMap<>();
     private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
     private boolean closed;
+    private final long profilerLogThreshold;
+    private DefContext defContext;
 
     public BaseInstanceContext(long tenantId,
                                EntityIdProvider idService,
                                IInstanceStore instanceStore,
-                               DefContext defContext, IInstanceContext parent) {
+                               DefContext defContext, IInstanceContext parent, long profilerLogThreshold) {
         this.tenantId = tenantId;
         this.instanceStore = instanceStore;
+        this.profilerLogThreshold = profilerLogThreshold;
+        this.defContext = defContext;
         this.idService = new WrappedIdProvider(
-                id -> interceptGetTypeId(defContext, id),
+                this::interceptGetTypeId,
                 idService
         );
         this.parent = parent;
     }
 
-    private Long interceptGetTypeId(DefContext defContext, long id) {
+    private Long interceptGetTypeId(long id) {
         return id == -1L ? defContext.getType(TenantRT.class).getId() : null;
     }
 
@@ -75,6 +89,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         replaceActually(persistedInstances);
     }
 
+    public Profiler getProfiler() {
+        return profiler;
+    }
+
     @Override
     public void setLockMode(LockMode lockMode) {
         this.lockMode = lockMode;
@@ -86,7 +104,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private void replaceActually(List<Instance> persistedInstances) {
         List<Instance> parentInstances = NncUtils.filter(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
-        List<Instance> selfInstances = NncUtils.filterNot(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
+        List<Instance> selfInstances = NncUtils.exclude(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
 
         if (NncUtils.isNotEmpty(parentInstances)) {
             parent.replace(parentInstances);
@@ -99,6 +117,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             }
             add(instance);
         }
+    }
+
+    public long getProfilerLogThreshold() {
+        return profilerLogThreshold;
+    }
+
+    public DefContext getDefContext() {
+        return defContext;
+    }
+
+    public void setDefContext(DefContext defContext) {
+        this.defContext = defContext;
     }
 
     public void updateMemoryIndex(ClassInstance instance) {
@@ -141,7 +171,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             return batchGetSelf(ids);
         } else {
             Collection<Long> parentIds = NncUtils.filter(ids, parent::containsId);
-            Collection<Long> selfIds = NncUtils.filterNot(ids, parent::containsId);
+            Collection<Long> selfIds = NncUtils.exclude(ids, parent::containsId);
             return NncUtils.union(
                     parent.batchGet(parentIds),
                     batchGetSelf(selfIds)
@@ -189,8 +219,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (closed) {
             throw new IllegalStateException("Context closed");
         }
-        finishInternal();
-        newInstances.clear();
+        try (var ignored = profiler.enter("finish")) {
+            finishInternal();
+            newInstances.clear();
+        }
     }
 
     @Override
@@ -203,6 +235,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
                 ref.clear();
             }
+        }
+        var profilerResult = profiler.finish();
+        if (profilerLogThreshold != -1L && profilerResult.duration() > profilerLogThreshold) {
+            LOGGER.info(profilerResult.output());
         }
     }
 
@@ -220,34 +256,36 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public abstract boolean isFinished();
 
     public void initIds() {
-        Function<Map<Type, Integer>, Map<Type, List<Long>>> idGenerator = getIdGenerator();
-        List<Instance> instancesToInitId = NncUtils.filter(instances, inst -> inst.getId() == null);
-        if (instancesToInitId.isEmpty()) {
-            return;
-        }
-        Map<Type, Integer> countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
-        Map<Type, List<Long>> idMap = idGenerator.apply(countMap);
-        Map<Type, List<Instance>> type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
-        Map<Long, Instance> allocatedMap = new HashMap<>();
-        type2instances.forEach((type, instances) -> {
-            List<Long> ids = idMap.get(type);
-            for (Long id : ids) {
-                boolean contains1 = allocatedMap.containsKey(id);
-                if (contains1) {
-                    throw new InternalException();
-                }
-                boolean contains = instanceMap.containsKey(id);
-                if (contains) {
-                    throw new InternalException();
-                }
+        try (var ignored = profiler.enter("initIds")) {
+            Function<Map<Type, Integer>, Map<Type, List<Long>>> idGenerator = getIdGenerator();
+            List<Instance> instancesToInitId = NncUtils.filter(instances, inst -> inst.getId() == null);
+            if (instancesToInitId.isEmpty()) {
+                return;
             }
-            for (Instance instance : instances) {
-                allocatedMap.put(instance.getId(), instance);
+            Map<Type, Integer> countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
+            Map<Type, List<Long>> idMap = idGenerator.apply(countMap);
+            Map<Type, List<Instance>> type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
+            Map<Long, Instance> allocatedMap = new HashMap<>();
+            type2instances.forEach((type, instances) -> {
+                List<Long> ids = idMap.get(type);
+                for (Long id : ids) {
+                    boolean contains1 = allocatedMap.containsKey(id);
+                    if (contains1) {
+                        throw new InternalException();
+                    }
+                    boolean contains = instanceMap.containsKey(id);
+                    if (contains) {
+                        throw new InternalException();
+                    }
+                }
+                for (Instance instance : instances) {
+                    allocatedMap.put(instance.getId(), instance);
+                }
+                NncUtils.biForEach(instances, ids, Instance::initId);
+            });
+            for (Instance instance : instancesToInitId) {
+                onIdInitialized(instance);
             }
-            NncUtils.biForEach(instances, ids, Instance::initId);
-        });
-        for (Instance instance : instancesToInitId) {
-            onIdInitialized(instance);
         }
     }
 
@@ -366,8 +404,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public void addRemovalListener(Consumer<Instance> removalListener) {
-        removalListeners.add(removalListener);
+    public void addRemovalListener(Consumer<Instance> listener) {
+        removalListeners.add(listener);
     }
 
     private void getRemovalBatch0(Instance instance, Set<Instance> result) {
@@ -391,16 +429,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        }
     }
 
-    private boolean isPersisted(Instance instance) {
-        if (instance.getId() == null) {
-            return false;
-        }
-        return isPersisted(instance.getId());
+    @Override
+    public boolean isPersistedInstance(Instance instance) {
+        return !isNewInstance(instance);
+//        if (instance.getId() == null) {
+//            return false;
+//        }
+//        return isPersisted(instance.getId());
     }
 
-    protected boolean isPersisted(long id) {
-        return true;
-    }
+//    protected boolean isPersisted(long id) {
+//        return true;
+//    }
 
     public void bind(Instance instance) {
         NncUtils.requireNull(instance.getId(), "Can not bind a persisted instance");
@@ -415,9 +455,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void rebind() {
-        for (Instance inst : getAllNewInstances(instances)) {
-            if (inst.getId() == null && !containsInstance(inst)) {
-                add(inst);
+        try (var entry = profiler.enter("rebind")) {
+            var newInstances = getAllNewInstances(instances);
+            entry.addMessage("numNewInstances", newInstances.size());
+            for (Instance inst : newInstances) {
+                if (inst.getId() == null && !containsInstance(inst)) {
+                    add(inst);
+                }
             }
         }
     }
@@ -436,6 +480,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
+    @Override
+    public void addInitializationListener(Consumer<Instance> listener) {
+        initializationListeners.add(listener);
+    }
+
+    protected void onInstanceInitialized(Instance instance) {
+        for (Consumer<Instance> listener : initializationListeners) {
+            listener.accept(instance);
+        }
+    }
+
+    @Override
     public boolean isNewInstance(Instance instance) {
         return newInstances.contains(instance);
     }
@@ -460,22 +516,29 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    private Set<Instance> getAllNewInstances(Collection<Instance> instances) {
-        Set<Instance> result = new IdentitySet<>();
-        getAllNewInstances(instances, result, new IdentitySet<>());
-        return result;
-    }
-
-    private void getAllNewInstances(Collection<Instance> instances, Set<Instance> result, Set<Instance> visited) {
-        instances = NncUtils.filterNot(instances, visited::contains);
-        visited.addAll(instances);
-        List<Instance> newInstances = NncUtils.filter(instances,
-                inst -> !containsInstance(inst) && !result.contains(inst) && !inst.isValue()
-        );
-        result.addAll(newInstances);
-        Set<Instance> refInstances = new IdentitySet<>(NncUtils.flatMap(instances, Instance::getRefInstances));
-        if (!refInstances.isEmpty()) {
-            getAllNewInstances(refInstances, result, visited);
+    private List<Instance> getAllNewInstances(Collection<Instance> instances) {
+        try(var entry = profiler.enter("getAllNewInstances")) {
+            var result = new ArrayList<Instance>();
+            var visitor = new GraphVisitor() {
+                @Override
+                public void visitInstance(Instance instance) {
+                    if(!EntityUtils.isModelInitialized(instance))
+                        return;
+                    if(parent != null && parent.containsInstance(instance))
+                        return;
+                    if ((instance instanceof ClassInstance || instance instanceof ArrayInstance)
+                            && !instance.isValue() && !containsInstance(instance)) {
+                        result.add(instance);
+                    }
+                    super.visitInstance(instance);
+                }
+            };
+            for (Instance instance : instances) {
+                if(EntityUtils.isModelInitialized(instance))
+                    visitor.visit(instance);
+            }
+            entry.addMessage("numCalls", visitor.numCalls);
+            return result;
         }
     }
 
@@ -559,23 +622,44 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         );
     }
 
-    @Override
-    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
-        if (startExclusive == null) {
-            startExclusive = InstanceUtils.nullInstance();
-        }
-        List<InstancePO> instancePOs = instanceStore.queryByTypeIds(
+    //<editor-fold desc="getByType">
+    // TODO loadByType should be implemented by a dedicated buffer.
+    //  TODO The caching strategy requires optimization.
+    private record LoadByTypeRequest(Type type, Instance startExclusive, long limit) {
+    }
+
+    private final Map<LoadByTypeRequest, List<InstancePO>> loadByTypeCache = new HashMap<>();
+
+    private List<InstancePO> loadByType(LoadByTypeRequest request) {
+        var cachedResult = loadByTypeCache.get(request);
+        if (cachedResult != null)
+            return cachedResult;
+        var result = instanceStore.queryByTypeIds(
                 List.of(
                         new ByTypeQuery(
-                                NncUtils.requireNonNull(type.getId(), "Type id is not initialized"),
-                                startExclusive.isNull() ? -1L : startExclusive.getIdRequired() + 1L,
-                                limit
+                                NncUtils.requireNonNull(request.type().getId(), "Type id is not initialized"),
+                                request.startExclusive().isNull() ? -1L : request.startExclusive().getIdRequired() + 1L,
+                                request.limit()
                         )
                 ),
                 this
         );
+        loadByTypeCache.put(request, result);
+        return result;
+    }
+
+    @Override
+    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
+        return getByType(type, startExclusive, limit, false);
+    }
+
+    private List<Instance> getByType(Type type, Instance startExclusive, long limit, boolean persistedOnly) {
+        if (startExclusive == null) {
+            startExclusive = InstanceUtils.nullInstance();
+        }
+        List<InstancePO> instancePOs = loadByType(new LoadByTypeRequest(type, startExclusive, limit));
         List<Instance> persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getIdRequired()));
-        if (persistedResult.size() >= limit) {
+        if (persistedResult.size() >= limit || persistedOnly) {
             return persistedResult;
         }
         Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, Instance::getId);
@@ -586,7 +670,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return result;
     }
 
-    public List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit, Set<Long> persistedIds) {
+    private List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit, Set<Long> persistedIds) {
         List<Instance> typeInstances = NncUtils.filter(
                 new ArrayList<>(instances),
                 i -> type.isInstance(i) && !persistedIds.contains(i.getId())
@@ -601,6 +685,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         );
     }
 
+    //</editor-fold>
+
     @Override
     public List<Instance> scan(Instance startExclusive, long limit) {
         return NncUtils.map(
@@ -612,11 +698,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public boolean existsInstances(Type type) {
-        if (NncUtils.anyMatch(instances, type::isInstance)) {
+    public boolean existsInstances(Type type, boolean persistedOnly) {
+        if (NncUtils.anyMatch(instances, i -> type.isInstance(i) && (!persistedOnly || isPersistedInstance(i)))) {
             return true;
         }
-        return type.getId() != null && NncUtils.isNotEmpty(getByType(type, null, 1));
+        return type.getId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
     }
 
     @Override

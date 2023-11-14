@@ -110,9 +110,9 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
 
     public ChangeList<T> filterNot(Predicate<T> filter) {
         return new ChangeList<>(
-                NncUtils.filterNot(inserts, filter),
-                NncUtils.filterNot(updates, filter),
-                NncUtils.filterNot(deletes, filter)
+                NncUtils.exclude(inserts, filter),
+                NncUtils.exclude(updates, filter),
+                NncUtils.exclude(deletes, filter)
         );
     }
 

@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.function.Function;
 
 @EntityType("流程")
-public class Flow extends Property implements GenericDeclaration, Callable {
+public class Flow extends Property implements GenericDeclaration, Callable, GlobalKey {
 
     @EntityField("是否构造函数")
     private boolean isConstructor;
@@ -29,7 +29,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     private Type returnType;
     @ChildEntity("被复写流程")
     private final ReadWriteArray<Flow> overridden = addChild(new ReadWriteArray<>(Flow.class), "overridden");
-    @ChildEntity("根流程范围")
+    @ChildEntity(value = "根流程范围", lazy = true)
     private ScopeRT rootScope;
     @EntityField("版本")
     private Long version = 1L;
@@ -57,7 +57,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
                 boolean isConstructor,
                 boolean isAbstract,
                 boolean isNative,
-                @Nullable List<Parameter> parameters,
+                List<Parameter> parameters,
                 Type returnType,
                 List<Flow> overridden,
                 List<TypeVariable> typeParameters,
@@ -70,9 +70,6 @@ public class Flow extends Property implements GenericDeclaration, Callable {
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         this.isNative = isNative;
-        if (parameters != null) {
-            this.parameters.addChildren(parameters);
-        }
         this.returnType = returnType;
         this.overridden.addAll(overridden);
         this.scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -83,6 +80,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
         this.typeParameters.addChildren(typeParameters);
         this.typeArguments.addAll(typeArguments);
         this.staticType = staticType;
+        setParameters(parameters);
         if (template != null && template.declaringType == declaringType) {
             template.addTemplateInstance(this);
         }
@@ -91,10 +89,10 @@ public class Flow extends Property implements GenericDeclaration, Callable {
         }
     }
 
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return declaringType.getCanonicalName(getJavaType) + "."
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return declaringType.getKey(getJavaType) + "."
                 + getCodeRequired() + "("
-                + NncUtils.join(getParameterTypes(), type -> type.getCanonicalName(getJavaType))
+                + NncUtils.join(getParameterTypes(), type -> type.getKey(getJavaType))
                 + ")";
     }
 
@@ -162,12 +160,14 @@ public class Flow extends Property implements GenericDeclaration, Callable {
 
     public FlowDTO toDTO(boolean includingCode) {
         try (var context = SerializeContext.enter()) {
-            context.writeType(declaringType);
-            getTypeParameters().forEach(context::writeType);
-            context.writeType(getType());
-            context.writeType(getStaticType());
-            context.writeType(returnType);
-            return new FlowDTO(
+            if(includingCode) {
+                context.writeType(declaringType);
+                getTypeParameters().forEach(context::writeType);
+                context.writeType(getType());
+                context.writeType(getStaticType());
+                context.writeType(returnType);
+            }
+            var dto =  new FlowDTO(
                     context.getTmpId(this),
                     id,
                     getName(),
@@ -176,7 +176,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
                     isAbstract,
                     isNative,
                     context.getRef(getDeclaringType()),
-                    rootScope.toDTO(includingCode || context.isIncludingCode()),
+                    includingCode ? rootScope.toDTO(true) : null,
                     context.getRef(getReturnType()),
                     NncUtils.map(parameters, Parameter::toDTO),
                     context.getRef(getType()),
@@ -188,6 +188,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
                     NncUtils.map(templateInstances, ti -> ti.toDTO(false)),
                     error
             );
+            return dto;
         }
     }
 
@@ -216,11 +217,6 @@ public class Flow extends Property implements GenericDeclaration, Callable {
                     error
             );
         }
-    }
-
-    public void update(FlowDTO flowDTO) {
-        setName(flowDTO.name());
-        isConstructor = flowDTO.isConstructor();
     }
 
     public InputNode getInputNode() {
@@ -330,11 +326,32 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     }
 
     public void setParameters(List<Parameter> parameters) {
-        var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        if (!overridden.isEmpty() && !paramTypes.equals(overridden.get(0).getParameterTypes())) {
-            throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
-        }
+        setParameters(parameters, true);
+    }
+
+    private void setParameters(List<Parameter> parameters, boolean check) {
+        if(check)
+            check(overridden, parameters, returnType, getType(), staticType);
+        parameters.forEach(p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
+    }
+
+    private void check(List<Flow> overridden, List<Parameter> parameters, Type returnType,
+                       FunctionType type, FunctionType staticType) {
+        var paramTypes = NncUtils.map(parameters, Parameter::getType);
+        for (Flow overriddenFlow : overridden) {
+            if (!paramTypes.equals(overriddenFlow.getParameterTypes())) {
+                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
+            }
+            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
+                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
+            }
+        }
+        if(!type.getParameterTypes().equals(paramTypes) || !type.getReturnType().equals(returnType))
+            throw new InternalException("Incorrect function type: " + type);
+        if(!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType, paramTypes))
+                || !staticType.getReturnType().equals(returnType))
+            throw new InternalException("Incorrect static function type: " + staticType);
     }
 
     @Override
@@ -367,11 +384,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     }
 
     public void setReturnType(Type returnType) {
-        for (Flow overriddenFlow : overridden) {
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
-            }
-        }
+        check(overridden, parameters.toList(), returnType, getType(), staticType);
         this.returnType = returnType;
     }
 
@@ -408,9 +421,33 @@ public class Flow extends Property implements GenericDeclaration, Callable {
         isNative = aNative;
     }
 
+    public void update(List<Flow> overridden,
+                       List<Parameter> parameters,
+                       Type returnType,
+                       FunctionType type,
+                       FunctionType staticType
+    ) {
+        check(overridden, parameters, returnType, type, staticType);
+        this.overridden.reset(overridden);
+        this.returnType = returnType;
+        super.setType(type);
+        this.staticType = staticType;
+        setParameters(parameters, false);
+    }
+
+    @Override
+    public void setType(Type type) {
+        if(type instanceof FunctionType funcType) {
+            check(overridden, parameters.toList(), returnType, funcType, staticType);
+            super.setType(type);
+        }
+        else
+            throw new InternalException("Not a function type");
+    }
+
     public void setOverridden(List<Flow> overridden) {
-        this.overridden.clear();
-        this.overridden.addAll(overridden);
+        check(overridden, parameters.toList(), returnType, getType(), staticType);
+        this.overridden.reset(overridden);
     }
 
     public void removeOverriden(Flow overriden) {
@@ -419,12 +456,15 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     }
 
     public void addOverriden(Flow overridden) {
+        check(List.of(overridden), parameters.toList(), returnType, getType(), staticType);
         this.overridden.add(overridden);
         declaringType.rebuildFlowTable();
     }
 
-    public void addOverriden(List<Flow> overriden) {
-        this.overridden.addAll(overriden);
+    public void addOverriden(List<Flow> overridden) {
+        check(overridden, parameters.toList(), returnType, getType(), staticType);
+        this.overridden.addAll(overridden);
+        declaringType.rebuildFlowTable();
     }
 
     public void addTemplateInstance(Flow templateInstance) {
@@ -462,7 +502,7 @@ public class Flow extends Property implements GenericDeclaration, Callable {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return declaringType.getName() + "." + getName();
     }
 

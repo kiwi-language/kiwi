@@ -26,7 +26,12 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     private @Nullable Value value;
 
     public ReturnNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
+        this(tmpId, name, prev, scope, null);
+    }
+
+    public ReturnNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, @Nullable Value value) {
         super(tmpId, name, null, prev, scope);
+        this.value = value;
     }
 
     public void setValue(@Nullable Value value) {
@@ -54,9 +59,8 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
 
     @Override
     public void execute(MetaFrame frame) {
-        if(!getType().isVoid()) {
-            frame.ret(Objects.requireNonNull(value).evaluate(frame));
-        }
+        var retValue = getType().isVoid() ? null : Objects.requireNonNull(value).evaluate(frame);
+        frame.ret(retValue);
     }
 
     @Override

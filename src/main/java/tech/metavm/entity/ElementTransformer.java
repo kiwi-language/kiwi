@@ -325,7 +325,8 @@ public class ElementTransformer {
                 parameter.getCode(),
                 transformTypeReference(parameter.getType()),
                 NncUtils.get(parameter.getCondition(), this::transformValue),
-                parameter
+                parameter,
+                null
         );
     }
 
@@ -661,7 +662,8 @@ public class ElementTransformer {
                 transformedSubFlow,
                 arguments,
                 getTransformedNode(node.getPredecessor()),
-                scope()
+                scope(),
+                NncUtils.get(node.getParentRef(), this::transformParentRef)
         );
     }
 

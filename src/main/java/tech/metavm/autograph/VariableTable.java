@@ -96,7 +96,7 @@ public class VariableTable {
         }
 
         Expression getVariable(String name) {
-            return variables.get(name);
+            return NncUtils.get(variables.get(name), Expression::copy);
         }
 
         void setVariable(String name, Expression value) {

@@ -33,6 +33,7 @@ public class FlowBuilder {
     private Type returnType;
     private List<Parameter> parameters = List.of();
     private PrimitiveType nullType;
+    private PrimitiveType voidType;
     private List<TypeVariable> typeParameters = List.of();
     private Flow template;
     private List<Type> typeArguments = List.of();
@@ -96,6 +97,11 @@ public class FlowBuilder {
         return this;
     }
 
+    public FlowBuilder voidType(PrimitiveType voidType) {
+        this.voidType = voidType;
+        return this;
+    }
+
     public FlowBuilder template(Flow template) {
         this.template = template;
         return this;
@@ -126,7 +132,7 @@ public class FlowBuilder {
             if (isConstructor) {
                 returnType = declaringType;
             } else {
-                returnType = StandardTypes.getVoidType();
+                returnType = voidType != null ? voidType : StandardTypes.getVoidType();
             }
         }
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
@@ -137,6 +143,7 @@ public class FlowBuilder {
             staticType = functionTypeContext.get(NncUtils.prepend(declaringType, paramTypes), returnType);
         }
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
+        Flow flow;
         if (existing == null) {
             return new Flow(
                     effectiveTmpId,

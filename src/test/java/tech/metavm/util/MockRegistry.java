@@ -42,20 +42,18 @@ public class MockRegistry {
         ID_PROVIDER = idProvider;
         CONTEXT_FACTORY = new InstanceContextFactory(instanceStore);
         INSTANCE_STORE = instanceStore;
-        INSTANCE_CONTEXT = new InstanceContext(
-                ROOT_TENANT_ID, instanceStore, idProvider, EXECUTOR,
-                false,
-                List.of(
-                        new CheckConstraintPlugin(),
-                        new IndexConstraintPlugin(instanceStore.getIndexEntryMapper())
-                ),
-                null
-        );
+        INSTANCE_CONTEXT = (InstanceContext)
+                new InstanceContextBuilder(instanceStore, EXECUTOR, null, idProvider)
+                        .plugins(List.of(
+                                new CheckConstraintPlugin(),
+                                new IndexConstraintPlugin(instanceStore.getIndexEntryMapper())
+                        ))
+                        .tenantId(ROOT_TENANT_ID)
+                        .buildInstanceContext();
         java.util.function.Function<Object, Long> getIdFunc;
-        if(idProvider instanceof BootIdProvider bootIdProvider) {
+        if (idProvider instanceof BootIdProvider bootIdProvider) {
             getIdFunc = bootIdProvider::getId;
-        }
-        else getIdFunc = o -> null;
+        } else getIdFunc = o -> null;
         DEF_CONTEXT = new DefContext(getIdFunc, INSTANCE_CONTEXT, new MemColumnStore());
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
         INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
@@ -70,21 +68,17 @@ public class MockRegistry {
     }
 
     private static void initJobScheduler() {
-        IEntityContext rootContext = new InstanceContext(
-                ROOT_TENANT_ID,
-                INSTANCE_STORE,
-                ID_PROVIDER,
-                EXECUTOR,
-                false,
-                List.of(
-                        new CheckConstraintPlugin(),
-                        new IndexConstraintPlugin(INSTANCE_STORE.getIndexEntryMapper())
-                ),
-                INSTANCE_CONTEXT
-        ).getEntityContext();
-        rootContext.bind(new JobSchedulerStatus());
-        rootContext.bind(new TaskSignal(TENANT_ID));
-        rootContext.finish();
+        try (IEntityContext rootContext =
+                     new InstanceContextBuilder(INSTANCE_STORE, EXECUTOR, INSTANCE_CONTEXT, ID_PROVIDER)
+                             .tenantId(ROOT_TENANT_ID)
+                             .plugins(List.of(
+                                     new CheckConstraintPlugin(),
+                                     new IndexConstraintPlugin(INSTANCE_STORE.getIndexEntryMapper())
+                             )).build()) {
+            rootContext.bind(new JobSchedulerStatus());
+            rootContext.bind(new TaskSignal(TENANT_ID));
+            rootContext.finish();
+        }
     }
 
     public static void initIds() {
@@ -133,7 +127,7 @@ public class MockRegistry {
                 )
         );
         ClassInstance instance = getEntityDef(Foo.class).createInstance(foo, MODEL_INSTANCE_MAP);
-        if(initId) {
+        if (initId) {
             initInstanceIds(instance);
         }
         return instance;
@@ -155,7 +149,7 @@ public class MockRegistry {
     private static ClassInstance getCouponInstance(boolean initId) {
         Coupon coupon = getCoupon();
         ClassInstance instance = getEntityDef(Coupon.class).createInstance(coupon, MODEL_INSTANCE_MAP);
-        if(initId) {
+        if (initId) {
             initInstanceIds(instance);
         }
         INSTANCE_CONTEXT.replace(instance);
@@ -164,7 +158,7 @@ public class MockRegistry {
 
     private static void initInstanceIds(Instance instance) {
         for (Instance inst : InstanceUtils.getAllNonValueInstances(List.of(instance))) {
-            if(inst.getId() == null) {
+            if (inst.getId() == null) {
                 inst.initId(ID_PROVIDER.allocateOne(TENANT_ID, inst.getType()));
             }
         }
@@ -205,11 +199,11 @@ public class MockRegistry {
     }
 
     private static void initIdRecursively(Instance instance, EntityIdProvider idProvider, IdentitySet<Instance> visited) {
-        if(visited.contains(instance)) {
+        if (visited.contains(instance)) {
             return;
         }
         visited.add(instance);
-        if(instance.getId() == null && !instance.getType().isValue()) {
+        if (instance.getId() == null && !instance.getType().isValue()) {
             instance.initId(idProvider.allocateOne(TENANT_ID, instance.getType()));
         }
         for (Instance refInstance : instance.getRefInstances()) {
@@ -217,16 +211,16 @@ public class MockRegistry {
         }
     }
 
-    public static <T> ModelDef<T,?> getDef(Class<T> javaType) {
-        ModelDef<T,?> def = DEF_CONTEXT.getDef(javaType);
+    public static <T> ModelDef<T, ?> getDef(Class<T> javaType) {
+        ModelDef<T, ?> def = DEF_CONTEXT.getDef(javaType);
         initIds();
         return def;
     }
 
     public static <T extends Entity> EntityDef<T> getEntityDef(Class<T> javaType) {
-         EntityDef<T> def = DEF_CONTEXT.getEntityDef(javaType);
-         initIds();
-         return def;
+        EntityDef<T> def = DEF_CONTEXT.getEntityDef(javaType);
+        initIds();
+        return def;
     }
 
     public static Instance getInstance(Object model) {
@@ -265,7 +259,7 @@ public class MockRegistry {
     }
 
     private static void initTypeAndFieldIds(Type type, EntityIdProvider idProvider, IdentitySet<Type> visited) {
-        if(visited.contains(type)) {
+        if (visited.contains(type)) {
             return;
         }
         visited.add(type);
@@ -273,10 +267,10 @@ public class MockRegistry {
         ClassType typeType = getClassType(ClassType.class);
         ClassType fieldType = getClassType(Field.class);
 
-        if(type.getId() == null) {
+        if (type.getId() == null) {
             type.initId(idProvider.allocateOne(TENANT_ID, typeType));
         }
-        if(type instanceof ClassType t) {
+        if (type instanceof ClassType t) {
             if (t.getSuperClass() != null) {
                 initTypeAndFieldIds(t.getSuperClass(), idProvider, visited);
             }

@@ -13,13 +13,13 @@ import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.flow.rest.*;
-import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.meta.*;
 import tech.metavm.object.meta.rest.dto.ClassTypeParam;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.meta.rest.dto.FieldDTOBuilder;
 import tech.metavm.object.meta.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -42,7 +42,7 @@ public class FlowManager {
     }
 
     public GetFlowResponse get(GetFlowRequest request) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             Flow flow = context.getEntity(Flow.class, request.id());
             if (flow == null) {
                 return null;
@@ -53,20 +53,19 @@ public class FlowManager {
 
     private GetFlowResponse makeFlowResponse(Flow flow, boolean includeNodes) {
         try (var serContext = SerializeContext.enter()) {
-            serContext.setIncludingNodeOutputType(true);
+            if(includeNodes) {
+                serContext.setIncludingNodeOutputType(true);
+                serContext.setIncludeExpressionType(true);
+            }
             var flowDTO = flow.toDTO(includeNodes);
             serContext.writeDependencies();
             return new GetFlowResponse(flowDTO, serContext.getTypes());
         }
     }
 
-    public Flow saveDeclaration(FlowDTO flowDTO, IEntityContext context) {
-        return save(flowDTO, true, context);
-    }
-
     @Transactional
     public List<NodeDTO> createTryNode(NodeDTO nodeDTO) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             var scope = context.getScope(nodeDTO.scopeId());
             TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
             TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束",
@@ -86,7 +85,7 @@ public class FlowManager {
 
     @Transactional
     public List<NodeDTO> createBranchNode(NodeDTO nodeDTO) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             var scope = context.getScope(nodeDTO.scopeId());
             BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
             MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并",
@@ -111,7 +110,7 @@ public class FlowManager {
     }
 
     public Flow save(FlowDTO flowDTO) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             var flow = save(flowDTO, context);
             context.finish();
             return flow;
@@ -327,7 +326,7 @@ public class FlowManager {
 
     @Transactional
     public void delete(long id) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             Flow flow = context.getEntity(Flow.class, id);
             delete(flow, context);
             context.finish();
@@ -362,7 +361,7 @@ public class FlowManager {
 
     @Transactional
     public NodeDTO createNode(NodeDTO nodeDTO) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             Flow flow = context.getEntity(Flow.class, nodeDTO.flowId());
             if (flow == null) {
                 throw BusinessException.flowNotFound(nodeDTO.flowId());
@@ -374,13 +373,19 @@ public class FlowManager {
     }
 
     private NodeRT<?> createNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
-        nodeDTO = beforeNodeChange(nodeDTO, null, scope, context);
-        scope.getFlow().analyze();
-        var node = NodeFactory.create(nodeDTO, scope, context);
-        afterNodeChange(nodeDTO, node, context);
-        retransformFlowIfRequired(scope.getFlow(), context);
-        node.getFlow().check();
-        return node;
+        try (var ignored = context.getProfiler().enter("createNode")) {
+            nodeDTO = beforeNodeChange(nodeDTO, null, scope, context);
+            try (var ignored1 = context.getProfiler().enter("Flow.analyze", true)) {
+                scope.getFlow().analyze();
+            }
+            var node = NodeFactory.create(nodeDTO, scope, context);
+            afterNodeChange(nodeDTO, node, context);
+            retransformFlowIfRequired(scope.getFlow(), context);
+            try (var ignored1 = context.getProfiler().enter("Flow.check")) {
+                node.getFlow().check();
+            }
+            return node;
+        }
     }
 
     private void saveBranchNodeContent(NodeDTO nodeDTO, BranchNode branchNode, IEntityContext context) {
@@ -408,11 +413,11 @@ public class FlowManager {
 
     private void saveAddObjectChildren(NodeDTO nodeDTO, AddObjectNode node, IEntityContext context) {
         AddObjectParam param = nodeDTO.getParam();
-        if(param.getBodyScope() != null) {
+        if (param.getBodyScope() != null) {
             for (NodeDTO childNodeDTO : param.getBodyScope().nodes()) {
                 NodeKind kind = NodeKind.getByCodeRequired(childNodeDTO.kind());
                 NncUtils.assertTrue(NodeKind.CREATING_KINDS.contains(kind),
-                    ErrorCode.INVALID_ADD_OBJECT_CHILD, childNodeDTO.name());
+                        ErrorCode.INVALID_ADD_OBJECT_CHILD, childNodeDTO.name());
             }
             var childrenScope = node.getScope();
             childrenScope.clearNodes();
@@ -422,7 +427,7 @@ public class FlowManager {
     }
 
     public NodeDTO getNode(long id) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             NodeRT<?> node = context.getEntity(NodeRT.class, id);
             return NncUtils.get(node, NodeRT::toDTO);
         }
@@ -430,7 +435,7 @@ public class FlowManager {
 
     @Transactional
     public NodeDTO updateNode(NodeDTO nodeDTO) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             var node = updateNode(nodeDTO, context);
             context.finish();
             return node.toDTO();
@@ -449,19 +454,23 @@ public class FlowManager {
         node.update(nodeDTO, context);
         afterNodeChange(nodeDTO, node, context);
         retransformFlowIfRequired(scope.getFlow(), context);
-        node.getFlow().check();
+        try (var ignored = context.getProfiler().enter("Flow.check")) {
+            node.getFlow().check();
+        }
         return node;
     }
 
     private NodeDTO beforeNodeChange(NodeDTO nodeDTO, @Nullable NodeRT<?> node, ScopeRT scope, IEntityContext context) {
-        if (!FlowSavingContext.skipPreprocessing()) {
-            nodeDTO = preprocess(nodeDTO, node, scope, context);
+        try (var ignored = context.getProfiler().enter("FlowManager.beforeNodeChange")) {
+            if (!FlowSavingContext.skipPreprocessing()) {
+                nodeDTO = preprocess(nodeDTO, node, scope, context);
+            }
+            NodeKind kind = NodeKind.getByCodeRequired(nodeDTO.kind());
+            if (kind.isOutputTypeAsChild()) {
+                typeManager.saveTypeWithContent(nodeDTO.outputType(), context);
+            }
+            return nodeDTO;
         }
-        NodeKind kind = NodeKind.getByCodeRequired(nodeDTO.kind());
-        if (kind.isOutputTypeAsChild()) {
-            typeManager.saveTypeWithContent(nodeDTO.outputType(), context);
-        }
-        return nodeDTO;
     }
 
     private NodeDTO preprocess(NodeDTO nodeDTO, NodeRT<?> node, ScopeRT scope, IEntityContext context) {
@@ -537,7 +546,7 @@ public class FlowManager {
                 null
         );
         return nodeDTO.copyWithParamAndType(
-                new InputParamDTO(NncUtils.get(node, n -> n.getType().getId()), inputFields),
+                new InputParamDTO(inputFields),
                 typeDTO);
     }
 
@@ -559,11 +568,9 @@ public class FlowManager {
             var outputType = node.getType();
             excetpionFieldDTO = outputType.getFieldByCode("exception").toDTO();
         } else {
-            excetpionFieldDTO = new FieldDTO(
-                    null, null, "异常", "exception", Access.PUBLIC.code(),
-                    null, false, false, null,
-                    StandardTypes.getNullableThrowableType().getRef(), false, false
-            );
+            excetpionFieldDTO = FieldDTOBuilder
+                    .newBuilder("异常", "exception", StandardTypes.getNullableThrowableType().getRef())
+                    .build();
         }
         fieldDTOs = NncUtils.prepend(excetpionFieldDTO, fieldDTOs);
         var outputTypeDTO = createNodeTypeDTO("TryEndOutput",
@@ -589,7 +596,7 @@ public class FlowManager {
         return NncUtils.map(
                 fields,
                 field -> field.fieldRef() != null && field.fieldRef().isNotEmpty() ?
-                        field : field.copyWithFieldRef(RefDTO.ofTmpId(NncUtils.random()))
+                        field : field.copyWithFieldRef(RefDTO.fromTmpId(NncUtils.random()))
         );
     }
 
@@ -637,7 +644,7 @@ public class FlowManager {
 
     @Transactional
     public GetFlowResponse check(long id) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             var flow = context.getFlow(id);
             flow.check();
             context.finish();
@@ -657,38 +664,21 @@ public class FlowManager {
         if (currentType != null && (arrayField = currentType.findFieldByCode("array")) != null) {
             fields.add(arrayField.toDTO());
         } else {
-            fields.add(new FieldDTO(
-                    NncUtils.random(),
-                    null,
-                    "数组",
-                    "array",
-                    Access.PUBLIC.code(),
-                    null,
-                    false,
-                    false,
-                    null,
-                    arrayValue.getType().getRef(),
-                    false,
-                    false
-            ));
+            fields.add(
+                    FieldDTOBuilder.newBuilder("数组", "array", arrayValue.getType().getRef())
+                            .tmpId(NncUtils.random())
+                            .build()
+            );
         }
         if (currentType != null && (indexField = currentType.findFieldByCode("index")) != null) {
             fields.add(indexField.toDTO());
         } else {
-            fields.add(new FieldDTO(
-                    NncUtils.random(),
-                    null,
-                    "索引",
-                    "index",
-                    Access.PUBLIC.code(),
-                    null,
-                    false,
-                    false,
-                    null,
-                    ModelDefRegistry.getType(Long.class).getRef(),
-                    false,
-                    false
-            ));
+            fields.add(
+                    FieldDTOBuilder
+                            .newBuilder("索引", "index", ModelDefRegistry.getType(Long.class).getRef())
+                            .tmpId(NncUtils.random())
+                            .build()
+            );
         }
         TypeDTO type = createNodeTypeDTO("ForeachOutput", currentType, fields);
         ScopeDTO loopScope;
@@ -726,20 +716,22 @@ public class FlowManager {
     }
 
     private void afterNodeChange(NodeDTO nodeDTO, NodeRT<?> node, IEntityContext context) {
-        if (node instanceof InputNode inputNode) {
-            updateParameters(inputNode, context);
-        }
-        if (node instanceof BranchNode branchNode) {
-            saveBranchNodeContent(nodeDTO, branchNode, context);
-        }
-        if (node instanceof ScopeNode<?> scopeNode) {
-            saveScopeNodeContent(nodeDTO, scopeNode, context);
-        }
-        if (node instanceof LoopNode<?> loopNode) {
-            updateLoopFields(nodeDTO, loopNode, context);
-        }
-        if(node instanceof AddObjectNode addObjectNode) {
-            saveAddObjectChildren(nodeDTO, addObjectNode, context);
+        try (var ignored = context.getProfiler().enter("afterNodeChange")) {
+            if (node instanceof InputNode inputNode) {
+                updateParameters(inputNode, context);
+            }
+            if (node instanceof BranchNode branchNode) {
+                saveBranchNodeContent(nodeDTO, branchNode, context);
+            }
+            if (node instanceof ScopeNode<?> scopeNode) {
+                saveScopeNodeContent(nodeDTO, scopeNode, context);
+            }
+            if (node instanceof LoopNode<?> loopNode) {
+                updateLoopFields(nodeDTO, loopNode, context);
+            }
+            if (node instanceof AddObjectNode addObjectNode) {
+                saveAddObjectChildren(nodeDTO, addObjectNode, context);
+            }
         }
     }
 
@@ -752,7 +744,15 @@ public class FlowManager {
             var parameter = callable.getParameterByName(field.getName());
             if (parameter == null) {
                 parameters.add(
-                        new Parameter(null, field.getName(), field.getCode(), field.getType(), cond, null)
+                        new Parameter(
+                                null,
+                                field.getName(),
+                                field.getCode(),
+                                field.getType(),
+                                cond,
+                                null,
+                                callable
+                        )
                 );
             } else {
                 parameters.add(parameter);
@@ -815,7 +815,7 @@ public class FlowManager {
 
     @Transactional
     public void moveFlow(long id, int ordinal) {
-        try(var context = newContext(true)) {
+        try (var context = newContext(true)) {
             var flow = context.getFlow(id);
             flow.getDeclaringType().moveFlow(flow, ordinal);
             context.finish();
@@ -823,25 +823,17 @@ public class FlowManager {
     }
 
     private FieldDTO convertToFieldDTO(RefDTO ref, Long declaringTypeId, String name, FieldValue defaultValue, RefDTO typeRef) {
-        return new FieldDTO(
-                ref.tmpId(),
-                ref.id(),
-                name,
-                null,
-                Access.PUBLIC.code(),
-                defaultValue,
-                false,
-                false,
-                declaringTypeId,
-                typeRef,
-                false,
-                false
-        );
+        return FieldDTOBuilder.newBuilder(name, null, typeRef)
+                .tmpId(ref.tmpId())
+                .id(ref.id())
+                .defaultValue(defaultValue)
+                .declaringTypeId(declaringTypeId)
+                .build();
     }
 
     @Transactional
     public void deleteNode(long nodeId) {
-        try(var context = newContext()) {
+        try (var context = newContext(true)) {
             NodeRT<?> node = context.getEntity(NodeRT.class, nodeId);
             if (node == null) {
                 return;
@@ -857,7 +849,7 @@ public class FlowManager {
     }
 
     public Page<FlowSummaryDTO> list(long typeId, int page, int pageSize, String searchText) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             ClassType type = context.getClassType(typeId);
             var flows = type.getAllFlows();
             if (searchText != null) {
@@ -877,7 +869,7 @@ public class FlowManager {
 
     @Transactional
     public BranchDTO createBranch(BranchDTO branchDTO) {
-        try(var context = newContext()) {
+        try (var context = newContext(true)) {
             NodeRT<?> nodeRT = context.getEntity(NodeRT.class, branchDTO.ownerId());
             if (nodeRT instanceof BranchNode branchNode) {
                 Branch branch = branchNode.addBranch(branchDTO, context);
@@ -893,7 +885,7 @@ public class FlowManager {
     @Transactional
     public BranchDTO updateBranch(BranchDTO branchDTO) {
         NncUtils.requireNonNull(branchDTO.index(), "分支序号必填");
-        try(var context = newContext()) {
+        try (var context = newContext(true)) {
             NodeRT<?> owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
             if (owner == null) {
                 throw BusinessException.nodeNotFound(branchDTO.ownerId());
@@ -914,7 +906,7 @@ public class FlowManager {
 
     @Transactional
     public void deleteBranch(long ownerId, long branchId) {
-        try(var context = newContext()) {
+        try (var context = newContext(true)) {
             NodeRT<?> owner = context.getEntity(NodeRT.class, ownerId);
             if (owner instanceof BranchNode branchNode) {
                 Branch branch = branchNode.getBranchByIndex(branchId);

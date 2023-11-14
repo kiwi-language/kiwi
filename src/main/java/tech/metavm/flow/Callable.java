@@ -2,6 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.object.meta.FunctionType;
 import tech.metavm.object.meta.Type;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

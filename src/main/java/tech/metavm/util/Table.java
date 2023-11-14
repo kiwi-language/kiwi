@@ -81,6 +81,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     @NoProxy
     public void initialize(Collection<? extends T> data) {
+        clear();
         for (T datum : data) {
             addLast0(datum);
         }

@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class EntityUtils {
 
@@ -192,6 +193,45 @@ public class EntityUtils {
             EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
             handler.ensureInitialized(object);
         }
+    }
+
+    public static boolean isModelUninitialized(Object object) {
+        if(object instanceof ProxyObject proxyObject) {
+            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            return handler.isUninitialized();
+        }
+        else{
+            return false;
+        }
+    }
+
+    public static EntityMethodHandler.State getProxyState(Object object) {
+        if(object instanceof ProxyObject proxyObject) {
+            var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            return handler.getState();
+        }
+        else
+            throw new InternalException(String.format("%s is not a proxy object", object));
+    }
+
+    public static void setProxyState(Object object, EntityMethodHandler.State state) {
+        if(object instanceof ProxyObject proxyObject) {
+            var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            handler.setState(state);
+        }
+        else
+            throw new InternalException(String.format("%s is not a proxy object", object));
+    }
+
+    public static void setDirectInitializer(Object object, Consumer<?> directInitializer) {
+        if(object instanceof ProxyObject proxyObject) {
+            //noinspection rawtypes
+            EntityMethodHandler handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            //noinspection unchecked
+            handler.setDirectInitializer(directInitializer);
+        }
+        else
+            throw new InternalException(String.format("%s is not a proxy object", object));
     }
 
     public static boolean isModelInitialized(Object object) {

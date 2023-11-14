@@ -3,7 +3,9 @@ package tech.metavm.object.meta.rest.dto;
 import tech.metavm.dto.BaseDTO;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.meta.Access;
+import tech.metavm.object.instance.rest.InstanceDTO;
+
+import javax.annotation.Nullable;
 
 public record FieldDTO(
         Long tmpId,
@@ -17,7 +19,9 @@ public record FieldDTO(
         Long declaringTypeId,
         RefDTO typeRef,
         boolean isChild,
-        boolean isStatic
+        boolean isStatic,
+        boolean lazy,
+        @Nullable InstanceDTO staticValue
 ) implements BaseDTO {
 
     public Long typeId() {
@@ -34,33 +38,10 @@ public record FieldDTO(
 
 
     public static FieldDTO create(Long id, String name, Long declaringTypeId, long typeId) {
-        return new FieldDTO(
-                null, id, name, null,  Access.PUBLIC.code(),
-                null, false, false, declaringTypeId,
-                RefDTO.ofId(typeId), false, false
-        );
-    }
-
-    public static FieldDTO createSimple(Long id,
-                                        String name,
-                                        int access,
-                                        FieldValue defaultValue,
-                                        Long declaringTypeId,
-                                        long typeId) {
-        return new FieldDTO(
-                null,
-                id,
-                name,
-                null,
-                access,
-                defaultValue,
-                false,
-                false,
-                declaringTypeId,
-                RefDTO.ofId(typeId),
-                false,
-                false
-        );
+        return FieldDTOBuilder.newBuilder(name, null, RefDTO.fromId(typeId))
+                .id(id)
+                .declaringTypeId(declaringTypeId)
+                .build();
     }
 
 }

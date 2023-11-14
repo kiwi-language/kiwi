@@ -31,7 +31,7 @@ public class ExpressionValue extends Value {
 
     @Override
     protected FieldValue getDTOValue(boolean persisting) {
-        return new ExpressionFieldValue(expression.buildSelf(persisting ? VarType.ID : VarType.NAME));
+        return new ExpressionFieldValue(expression.build(persisting ? VarType.ID : VarType.NAME));
     }
 
     @Override

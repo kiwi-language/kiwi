@@ -36,8 +36,7 @@ public class TypeVariableParser implements DefParser<Object, ClassInstance, Type
                 null,
                 declaringType.getName() + "-" + ReflectUtils.getMetaTypeVariableName(javaTypeVariable),
                 declaringType.getCodeRequired() + "-" + javaTypeVariable.getName(),
-                declaringType
-        );
+                declaringType);
     }
 
     @Override

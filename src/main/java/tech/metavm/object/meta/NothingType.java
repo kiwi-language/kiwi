@@ -38,7 +38,7 @@ public class NothingType extends Type {
     }
 
     @Override
-    public String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
         return "Nothing";
     }
 }

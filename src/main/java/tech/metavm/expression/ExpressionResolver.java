@@ -24,14 +24,14 @@ public class ExpressionResolver {
             case VariableExpression variableExpression -> resolveVariable(variableExpression);
             case VariablePathExpression variablePathExpression -> resolveVariablePath(variablePathExpression);
             case AllMatchExpression allMatchExpression -> resolveAllMatch(allMatchExpression);
-            case ArrayExpression arrayExpression -> resoleArray(arrayExpression, assignedType);
+            case ArrayExpression arrayExpression -> resolveArray(arrayExpression, assignedType);
             default -> expression.substituteChildren(
                     NncUtils.map(expression.getChildren(), child -> resolve(child, assignedType))
             );
         };
     }
 
-    private Expression resoleArray(ArrayExpression array, @Nullable Type assignedType) {
+    private Expression resolveArray(ArrayExpression array, @Nullable Type assignedType) {
         var assignedElementType = assignedType instanceof ArrayType arrayType ? arrayType.getElementType() : null;
         var elements = NncUtils.map(array.getExpressions(), expr -> resolve(expr, assignedElementType));
         var types = NncUtils.map(elements, Expression::getType);
@@ -58,7 +58,7 @@ public class ExpressionResolver {
         } else {
             var qualifier = context.getDefaultExpr();
             var qualifierType = (ClassType) qualifier.getType();
-            var attr = qualifierType.getAttributeByVar(Var.parse(expr.getVariable()));
+            var attr = qualifierType.getPropertyByVar(Var.parse(expr.getVariable()));
             return new PropertyExpression(qualifier, attr);
         }
     }
@@ -77,7 +77,7 @@ public class ExpressionResolver {
         }
         var qualifier = resolve(expression.getQualifier(), null);
         var qualifierType = (ClassType) context.getExpressionType(qualifier);
-        var attr = qualifierType.getAttributeByVar(Var.parse(expression.getField().getVariable()));
+        var attr = qualifierType.getPropertyByVar(Var.parse(expression.getField().getVariable()));
         return new PropertyExpression(qualifier, attr);
     }
 

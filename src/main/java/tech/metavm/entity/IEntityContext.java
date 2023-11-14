@@ -14,6 +14,7 @@ import tech.metavm.object.meta.generic.*;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Profiler;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
@@ -34,6 +35,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     default <T extends Entity> T getEntity(TypeReference<T> typeReference, RefDTO ref) {
         return getEntity(typeReference.getType(), ref);
     }
+
+    Profiler getProfiler();
 
     DefContext getDefContext();
 
@@ -172,7 +175,6 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     void finish();
 
-    @Nullable
     IInstanceContext getInstanceContext();
 
     <T> List<T> query(EntityIndexQuery<T> query);
@@ -204,5 +206,7 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     boolean isBindSupported();
 
     void initIdManually(Object model, long id);
+
+    CompositeTypeContext<?> getCompositeTypeContext(TypeCategory category);
 
 }

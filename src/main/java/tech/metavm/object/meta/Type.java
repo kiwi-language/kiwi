@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 @EntityType("类型")
-public abstract class Type extends Element implements LoadAware {
+public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     @SuppressWarnings("StaticInitializerReferencesSubClass")
     public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
@@ -58,13 +58,12 @@ public abstract class Type extends Element implements LoadAware {
         this.category = category;
     }
 
-    protected void setTemplateFlag(boolean templateFlag) {
-        this.templateFlag = templateFlag;
-    }
-
     @Override
     public void onLoad() {
-        onSuperTypesChanged();
+    }
+
+    protected void setTemplateFlag(boolean templateFlag) {
+        this.templateFlag = templateFlag;
     }
 
     public String getName() {
@@ -176,33 +175,15 @@ public abstract class Type extends Element implements LoadAware {
         return transformer.visitType(this, null);
     }
 
-    public int getRank() {
-        return 1;
-    }
-
-    protected final void onSuperTypesChanged() {
-        if (superTypesCheckpoint != null) {
-            for (Type oldSuperType : superTypesCheckpoint) {
-                oldSuperType.removeAncestorChangeListener(this::onAncestorChanged);
-            }
-        }
-        onAncestorChanged();
-        var superTypes = getSuperTypes();
-        for (Type superType : superTypes) {
-            superType.addAncestorChangeListener(this::onAncestorChanged);
-        }
-        this.superTypesCheckpoint = new ArrayList<>(superTypes);
-    }
-
     public List<? extends Type> getSuperTypes() {
         return List.of();
     }
 
-    private void onAncestorChanged() {
-        closure = null;
-        onAncestorChanged0();
-        ancestorChangeListeners().forEach(Runnable::run);
+    public int getRank() {
+        return 1;
     }
+
+    //<editor-fold desc="closure related">
 
     protected void onAncestorChanged0() {
     }
@@ -215,13 +196,46 @@ public abstract class Type extends Element implements LoadAware {
         ancestorChangeListeners().remove(listener);
     }
 
+    protected final void onSuperTypesChanged() {
+        if (superTypesCheckpoint != null) {
+            for (Type oldSuperType : superTypesCheckpoint) {
+                oldSuperType.removeAncestorChangeListener(this::onAncestorChanged);
+            }
+        }
+        onAncestorChanged();
+        resetSuperTypeListeners();
+    }
+
+    private void resetSuperTypeListeners() {
+        var superTypes = getSuperTypes();
+        for (Type superType : superTypes) {
+            superType.addAncestorChangeListener(this::onAncestorChanged);
+        }
+        this.superTypesCheckpoint = new ArrayList<>(superTypes);
+    }
+
+    private void onAncestorChanged() {
+        closure = null;
+        onAncestorChanged0();
+        ancestorChangeListeners().forEach(Runnable::run);
+    }
+
     protected List<Runnable> ancestorChangeListeners() {
         if(ancestorChangeListeners == null)
             ancestorChangeListeners = new ArrayList<>();
         return ancestorChangeListeners;
     }
 
+    private void ensureListenersInitialized() {
+        if(superTypesCheckpoint == null) {
+            for (Type superType : getSuperTypes())
+                superType.ensureListenersInitialized();
+            resetSuperTypeListeners();
+        }
+    }
+
     public Closure<? extends Type> getClosure() {
+        ensureListenersInitialized();
         if (closure == null)
             closure = createClosure(getClosureElementJavaClass());
         return closure;
@@ -230,6 +244,7 @@ public abstract class Type extends Element implements LoadAware {
     private <T extends Type> Closure<T> createClosure(Class<T> closureElementClass) {
         return new Closure<>(closureElementClass.cast(this), closureElementClass);
     }
+    //</editor-fold>
 
     protected Class<? extends Type> getClosureElementJavaClass() {
         return Type.class;
@@ -419,11 +434,12 @@ public abstract class Type extends Element implements LoadAware {
     }
 
     @Override
-    public String toString() {
+    protected String toString0() {
         return "Type " + name + " (id: " + getId() + ")";
     }
 
-    public abstract String getCanonicalName(Function<Type, java.lang.reflect.Type> getJavaType);
+    @Override
+    public abstract String getKey(Function<Type, java.lang.reflect.Type> getJavaType);
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;

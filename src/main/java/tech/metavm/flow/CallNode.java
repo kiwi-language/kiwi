@@ -1,5 +1,7 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeInvoker;
@@ -8,6 +10,7 @@ import tech.metavm.flow.rest.CallParam;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.meta.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -29,7 +32,7 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
 
     public CallNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, List<Argument> arguments,
                     Flow subFlow) {
-        super(tmpId, name, subFlow.getReturnType(), prev, scope);
+        super(tmpId, name, null, prev, scope);
         this.arguments.addChildren(arguments);
         this.subFlow = subFlow;
     }
@@ -56,6 +59,12 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
     }
 
     protected void setExtraParam(CallParam paramDTO, IEntityContext context) {
+    }
+
+    @NotNull
+    @Override
+    public Type getType() {
+        return subFlow.getReturnType();
     }
 
     @Override

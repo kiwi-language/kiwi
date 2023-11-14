@@ -7,6 +7,7 @@ import tech.metavm.object.meta.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public abstract class CompositeTypeContext<T extends CompositeType> {
@@ -14,26 +15,35 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
     private final IEntityContext context;
     private final Set<T> newTypes = new IdentitySet<>();
     private final Map<String, T> persistedTypes = new HashMap<>();
+    private final @Nullable CompositeTypeContext<T> parent;
     protected final IndexDef<T> indexDef;
 
-    protected CompositeTypeContext(IEntityContext context, IndexDef<T> indexDef) {
+    protected CompositeTypeContext(IEntityContext context, IndexDef<T> indexDef, @Nullable CompositeTypeContext<T> parent) {
         this.context = context;
         this.indexDef = indexDef;
+        this.parent = parent;
     }
 
     public T get(List<Type> componentTypes) {
         return get(componentTypes, null);
     }
 
+    private T getNew(List<Type> componentTypes) {
+        if(parent != null) {
+            var t = parent.getNew(componentTypes);
+            if(t != null)
+                return t;
+        }
+        return NncUtils.find(newTypes, t -> componentTypesEquals(t.getComponentTypes(), componentTypes));
+    }
+
     public T get(List<Type> componentTypes, Long tmpId) {
         checkComponentTypes(componentTypes);
-        var match = NncUtils.find(newTypes, t -> componentTypesEquals(t.getComponentTypes(), componentTypes));
-        if (match != null) {
-            return match;
-        }
+        var existing = getNew(componentTypes);
+        if (existing != null)
+            return existing;
         if (context != null && NncUtils.allMatch(componentTypes, context::isPersisted)) {
             String key = getKey(componentTypes);
-            T existing;
             if ((existing = persistedTypes.get(key)) != null) {
                 return existing;
             }
@@ -66,7 +76,7 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
         return Collections.unmodifiableSet(newTypes);
     }
 
-    public void add(T type) {
+    public void addNewType(T type) {
         newTypes.add(type);
     }
 

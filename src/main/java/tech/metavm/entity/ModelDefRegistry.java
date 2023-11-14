@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.ModelInstanceMap;
@@ -118,7 +119,7 @@ public class ModelDefRegistry {
         return DEF_CONTEXT.getDef(type);
     }
 
-    public InstanceContext newContext() {
+    public IInstanceContext newContext() {
         return instanceContextFactory.newContext();
     }
 

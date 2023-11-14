@@ -322,7 +322,7 @@ public class EntityContextTest extends TestCase {
                                         ConstraintKind.UNIQUE.code(),
                                         fooType.getIdRequired(),
                                         null,
-                                        UniqueConstraintParamDTO.create(
+                                        IndexParam.create(
                                                 "名称唯一",
                                                 ValueDTO.refValue("名称")
                                         )
@@ -451,10 +451,10 @@ public class EntityContextTest extends TestCase {
     }
 
     private EntityContext newEntityContextWitIntegration() {
-        InstanceContext instanceContext = new InstanceContext(
-                TENANT_ID, instanceStore, idProvider, Executors.newSingleThreadExecutor(),
-                false, List.of(), MockRegistry.getInstanceContext()
-        );
+        InstanceContext instanceContext = (InstanceContext) new InstanceContextBuilder(
+                instanceStore, Executors.newSingleThreadExecutor(),
+                MockRegistry.getInstanceContext(), idProvider)
+                .buildInstanceContext();
         EntityContext entityContext =
                 new EntityContext(instanceContext, MockRegistry.getDefContext(), MockRegistry.getDefContext());
         instanceContext.setEntityContext(entityContext);

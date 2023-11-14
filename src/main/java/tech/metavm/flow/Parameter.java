@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 public class Parameter extends Element {
     @EntityField(value = "名称", asTitle = true)
     private String name;
-    @EntityField("编号")
+    @EntityField(value = "编号", asKey = true)
     @Nullable
     private String code;
     @EntityField("类型")
@@ -19,22 +19,38 @@ public class Parameter extends Element {
     @ChildEntity("条件")
     @Nullable
     private Value condition;
-
+    @EntityField("可调用")
+    private Callable callable;
+    @EntityField("模板")
     private final @Nullable Parameter template;
 
     public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
-        this(tmpId, name, code, type, null, null);
+        this(tmpId, name, code, type, null, null, DummyCallable.INSTANCE);
     }
 
     public Parameter(Long tmpId, String name, @Nullable String code, Type type,
                      @Nullable Value condition,
-                     @Nullable Parameter template) {
+                     @Nullable Parameter template,
+                     Callable callable) {
         setTmpId(tmpId);
+        this.callable = callable;
         this.name = name;
         this.code = code;
         this.type = type;
         this.template = template;
         this.condition = condition;
+    }
+
+    public Callable getCallable() {
+        return callable;
+    }
+
+    public void setCallable(Callable callable) {
+        if(callable == this.callable)
+            return;
+        NncUtils.requireTrue(this.callable == DummyCallable.INSTANCE,
+                "Callable already set");
+        this.callable = callable;
     }
 
     public void setName(String name) {
@@ -63,7 +79,7 @@ public class Parameter extends Element {
     }
 
     public Parameter copy() {
-        return new Parameter(null, name, code, type, condition, null);
+        return new Parameter(null, name, code, type, condition, null, DummyCallable.INSTANCE);
     }
 
     public ParameterDTO toDTO() {
@@ -75,7 +91,8 @@ public class Parameter extends Element {
                     code,
                     context.getRef(type),
                     NncUtils.get(condition, v -> v.toDTO(false)),
-                    NncUtils.get(template, context::getRef)
+                    NncUtils.get(template, context::getRef),
+                    context.getRef(callable)
             );
         }
     }

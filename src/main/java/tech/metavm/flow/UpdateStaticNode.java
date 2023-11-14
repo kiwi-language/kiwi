@@ -23,7 +23,7 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
     }
 
     @SuppressWarnings("FieldCanBeLocal")
-    @ChildEntity("更新类型")
+    @EntityField("更新类型")
     private ClassType type;
 
     @ChildEntity("更新字段")

@@ -5,7 +5,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
-import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
@@ -21,11 +20,13 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     private static volatile IInstanceContext STD_CONTEXT;
 
+    private static final long DEFAULT_PROFILE_LOG_THRESHOLD = 50L;
+
     private EntityIdProvider idService;
 
     private final IInstanceStore instanceStore;
 
-    private List<ContextPlugin> plugins;
+    private List<ContextPlugin> plugins = List.of();
 
     private ApplicationContext applicationContext;
 
@@ -35,19 +36,17 @@ public class InstanceContextFactory implements IInstanceContextFactory {
             16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000)
     );
 
-    public InstanceContextFactory(IInstanceStore instanceStore/*, List<ContextPlugin> plugins*/) {
-//        this.idService = idService;
+    public InstanceContextFactory(IInstanceStore instanceStore) {
         this.instanceStore = instanceStore;
-//        this.plugins = plugins;
     }
 
     @Override
-    public InstanceContext newContext(long tenantId) {
+    public IInstanceContext newContext(long tenantId) {
         return newContext(tenantId, defaultAsyncProcessing, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
     }
 
     @Override
-    public InstanceContext newContext(long tenantId, boolean asyncProcessLogs) {
+    public IInstanceContext newContext(long tenantId, boolean asyncProcessLogs) {
         return newContext(tenantId, asyncProcessLogs, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
     }
 
@@ -56,20 +55,24 @@ public class InstanceContextFactory implements IInstanceContextFactory {
         return newContext(tenantId, asyncProcessing).getEntityContext();
     }
 
-    public InstanceContext newContext(long tenantId,
+    public InstanceContextBuilder newBuilder() {
+        return new InstanceContextBuilder(instanceStore, executor, STD_CONTEXT, idService)
+                .plugins(plugins)
+                .profileLogThreshold(DEFAULT_PROFILE_LOG_THRESHOLD);
+    }
+
+    public IInstanceContext newContext(long tenantId,
                                       boolean asyncProcessLogs,
                                       EntityIdProvider idProvider,
                                       IInstanceContext parent,
                                       DefContext defContext) {
-        return new InstanceContext(
-                tenantId,
-                instanceStore,
-                idProvider,
-                executor,
-                asyncProcessLogs,
-                getPlugins(),
-                parent
-        );
+        return newBuilder()
+                .tenantId(tenantId)
+                .asyncLogProcessing(asyncProcessLogs)
+                .idProvider(idProvider)
+                .parent(parent)
+                .defContext(defContext)
+                .buildInstanceContext();
     }
 
     private List<ContextPlugin> getPlugins() {
@@ -88,7 +91,7 @@ public class InstanceContextFactory implements IInstanceContextFactory {
         return this;
     }
 
-    public InstanceContext newContext() {
+    public IInstanceContext newContext() {
         return newContext(ContextUtil.getTenantId());
     }
 

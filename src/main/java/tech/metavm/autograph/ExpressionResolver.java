@@ -455,18 +455,21 @@ public class ExpressionResolver {
 
     private Expression resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
         var type = NncUtils.requireNonNull(expression.getType());
-        var psiClass = requireNonNull(((PsiClassType) type).resolve());
+//        var psiClass = requireNonNull(((PsiClassType) type).resolve());
         var psiListType = TranspileUtil.createType(List.class);
         if (psiListType.isAssignableFrom(type)) {
             var listType = (ClassType) typeResolver.resolve(type);
-            var subFlow = listType.getFlowByCode("List");
-            return getSingleValue(flowBuilder.createNew(subFlow, List.of()));
+            var signature = resolveMethodSignature(expression);
+            var subFlow = listType.getFlowByCodeAndParamTypes("List", signature.parameterTypes);
+            return getSingleValue(flowBuilder.createNew(subFlow,
+                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context)));
         }
         var psiMapType = TranspileUtil.createType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = (ClassType) typeResolver.resolve(type);
             var subFlow = mapType.getFlowByCode("Map");
-            return getSingleValue(flowBuilder.createNew(subFlow, List.of()));
+            return getSingleValue(flowBuilder.createNew(subFlow,
+                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context)));
         }
         if (expression.getType() instanceof PsiClassType psiClassType) {
             var klass = (ClassType) typeResolver.resolve(psiClassType);
@@ -479,6 +482,29 @@ public class ExpressionResolver {
             // TODO support new array instance
             throw new InternalException("Unsupported NewExpression: " + expression);
         }
+    }
+
+    private record MethodSignature(String name, List<Type> parameterTypes, @Nullable Type returnType) {
+    }
+
+    private MethodSignature resolveMethodSignature(PsiCallExpression callExpression) {
+        var methodGenerics = callExpression.resolveMethodGenerics();
+        var substitutor = methodGenerics.getSubstitutor();
+        var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
+        var psiParamTypes = NncUtils.map(
+                requireNonNull(method.getParameterList()).getParameters(),
+                p -> substitutor.substitute(p.getType())
+        );
+        var psiReturnType = substitutor.substitute(method.getReturnType());
+        return new MethodSignature(
+                method.getName(),
+                NncUtils.map(psiParamTypes, typeResolver::resolveDeclaration),
+                NncUtils.get(psiReturnType, typeResolver::resolveDeclaration)
+        );
+    }
+
+    private List<Expression> resolveExpressionList(PsiExpressionList expressionList, ResolutionContext context) {
+        return NncUtils.map(expressionList.getExpressions(), expression -> resolve(expression, context));
     }
 
     public Expression newInstance(ClassType declaringType, List<Expression> arguments,
@@ -547,9 +573,14 @@ public class ExpressionResolver {
                 ClassType instanceType = (ClassType) flowBuilder.getExpressionType(self);
                 typeResolver.ensureDeclared(instanceType);
                 Field field = instanceType.getFieldByCode(psiField.getName());
-                UpdateObjectNode node = flowBuilder.createUpdateObject();
-                node.setObjectId(new ExpressionValue(self));
-                node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(assignment));
+                if(field.isChildField()) {
+                    processChildAssignment(self, field, assignment, context);
+                }
+                else {
+                    UpdateObjectNode node = flowBuilder.createUpdateObject();
+                    node.setObjectId(new ExpressionValue(self));
+                    node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(assignment));
+                }
             } else {
                 variableTable.set(
                         variable.getName(),
@@ -560,6 +591,22 @@ public class ExpressionResolver {
             throw new InternalException("Invalid assignment target " + target);
         }
         return assignment;
+    }
+
+    private void processChildAssignment(Expression self, Field field,
+                                              Expression assignment, ResolutionContext context) {
+        NncUtils.requireTrue(field.isChildField());
+        NncUtils.requireTrue(assignment instanceof NodeExpression);
+        var node = ((NodeExpression) assignment).getNode();
+        if(node instanceof NewNode newNode) {
+            newNode.setParent(new ParentRef(new ExpressionValue(self), field));
+        }
+        else {
+            throw new InternalException(
+                    String.format("Only new objects are allowed to be assigned to a child field. field: %s",
+                            field.getName())
+            );
+        }
     }
 
     private Operator resolveOperator(PsiJavaToken psiOp) {
@@ -645,7 +692,7 @@ public class ExpressionResolver {
     private Parameter resolveParameter(PsiParameter psiParameter) {
         return new Parameter(
                 null, TranspileUtil.getFlowParamName(psiParameter), psiParameter.getName(),
-                typeResolver.resolveDeclaration(psiParameter.getType()), null, null
+                typeResolver.resolveDeclaration(psiParameter.getType())
         );
     }
 
@@ -661,22 +708,42 @@ public class ExpressionResolver {
             constructBool(second, negated, parent, context);
         } else if (op == Operator.OR) {
             var branchNode = flowBuilder.createBranchNode(false);
-            var branch1 = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
-            branchNode.addDefaultBranch();
+//            var branch1 = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
+//            branchNode.addDefaultBranch();
 
             flowBuilder.enterCondSection(branchNode);
-            flowBuilder.enterBranch(branch1);
-//            flowBuilder.enterScope(branch1.getScope());
-            constructBool(first, !negated, branchNode, context);
-            constructBool(second, !negated, branchNode, context);
-            flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
-//            flowBuilder.exitScope();
+
+            flowBuilder.enterBranch(branchNode.addBranch(trueValue()));
+            constructBool(first, negated, branchNode, context);
             flowBuilder.exitBranch();
+
+            flowBuilder.enterBranch(branchNode.addBranch(trueValue()));
+            constructBool(second, negated, branchNode, context);
+            flowBuilder.exitBranch();
+
+            flowBuilder.enterBranch(branchNode.addDefaultBranch());
+            flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
+            flowBuilder.exitBranch();
+
+//            flowBuilder.enterScope(branch1.getScope());
+//            constructBool(first, !negated, branchNode, context);
+//            constructBool(second, !negated, branchNode, context);
+//            flowBuilder.createCheck(ExpressionUtil.falseExpression(), parent);
+//            flowBuilder.exitScope();
+//            flowBuilder.exitBranch();
             flowBuilder.exitCondSection(flowBuilder.createMerge(), List.of());
         } else {
             var expr = resolveBinary(psiBinaryExpression, context);
             flowBuilder.createCheck(expr, parent);
         }
+    }
+
+    private Value trueValue() {
+        return new ConstantValue(ExpressionUtil.trueExpression());
+    }
+
+    private Value falseValue() {
+        return new ConstantValue(ExpressionUtil.falseExpression());
     }
 
     public void constructPolyadicBool(PsiPolyadicExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {

@@ -54,7 +54,7 @@ public class InstanceFactory {
                                 @Nullable InstanceParentRef parentRef,
                                 IInstanceContext context) {
         if (instanceDTO.id() != null && instanceDTO.id() != 0L) {
-            var instance = context.get(RefDTO.ofId(instanceDTO.id()));
+            var instance = context.get(RefDTO.fromId(instanceDTO.id()));
             NncUtils.requireTrue(
                     Objects.equals(instance.getParentRef(), parentRef),
                     "Trying to change parent. instance id: " + instanceDTO.id());

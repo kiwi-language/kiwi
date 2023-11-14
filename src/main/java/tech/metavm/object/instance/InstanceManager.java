@@ -3,21 +3,20 @@ package tech.metavm.object.instance;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.dto.Page;
-import tech.metavm.entity.*;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.ConstantExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.query.GraphQueryExecutor;
 import tech.metavm.object.instance.query.InstanceNode;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
-import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
@@ -50,7 +49,7 @@ public class InstanceManager {
     }
 
     public Page<InstanceDTO[]> select(SelectRequestDTO request) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             ClassType type = context.getClassType(request.typeId());
             SearchQuery searchQuery = new SearchQuery(
                     ContextUtil.getTenantId(),
@@ -93,7 +92,7 @@ public class InstanceManager {
 
     @Transactional
     public void update(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
-        try(var context = newContext(asyncLogProcessing)) {
+        try (var context = newContext(asyncLogProcessing)) {
             if (instanceDTO.id() == null) {
                 throw BusinessException.invalidParams("实例ID为空");
             }
@@ -104,10 +103,9 @@ public class InstanceManager {
 
 
     public void save(InstanceDTO instanceDTO, IInstanceContext context) {
-        if(instanceDTO.id() != null) {
+        if (instanceDTO.id() != null) {
             update(instanceDTO, context);
-        }
-        else {
+        } else {
             create(instanceDTO, context);
         }
     }
@@ -118,7 +116,7 @@ public class InstanceManager {
 
     @Transactional
     public long create(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
-        try(var context = newContext(asyncLogProcessing)) {
+        try (var context = newContext(asyncLogProcessing)) {
             Instance instance = create(instanceDTO, context);
             context.finish();
             return instance.getIdRequired();
@@ -190,9 +188,9 @@ public class InstanceManager {
     }
 
     public QueryInstancesResponse query(InstanceQuery query) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             Type type = context.getType(query.typeId());
-            if(type instanceof ClassType classType) {
+            if (type instanceof ClassType classType) {
                 Expression expression =
                         query.searchText() != null ?
                                 ExpressionParser.parse(classType, query.searchText(), context) :
@@ -230,15 +228,14 @@ public class InstanceManager {
                 } else {
                     return new QueryInstancesResponse(page, List.of());
                 }
-            }
-            else {
+            } else {
                 return new QueryInstancesResponse(new Page<>(List.of(), 0L), List.of());
             }
         }
     }
 
     public List<InstanceDTO> loadByPaths(LoadInstancesByPathsRequest request) {
-        try(var context = newContext()) {
+        try (var context = newContext()) {
             List<Path> paths = NncUtils.map(request.paths(), Path::create);
             Map<Instance, InstanceNode<?>> instance2node = buildObjectTree(paths, context);
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
@@ -285,19 +282,19 @@ public class InstanceManager {
         throw new InternalException("Path item '" + pathItem + "' does not represent an identity");
     }
 
-    private InstanceContext newContext() {
+    private IInstanceContext newContext() {
         return newContext(ContextUtil.getTenantId(), true);
     }
 
-    private InstanceContext newContext(long tenantId) {
-        return newContext(tenantId, true);
+    private IInstanceContext newContext(long tenantId) {
+        return instanceContextFactory.newContext(tenantId);
     }
 
-    private InstanceContext newContext(boolean asyncLogProcessing) {
-        return newContext(ContextUtil.getTenantId(), asyncLogProcessing);
+    private IInstanceContext newContext(boolean asyncLogProcessing) {
+        return instanceContextFactory.newContext(ContextUtil.getTenantId(), asyncLogProcessing);
     }
 
-    private InstanceContext newContext(long tenantId, boolean asyncLogProcessing) {
+    private IInstanceContext newContext(long tenantId, @SuppressWarnings("SameParameterValue") boolean asyncLogProcessing) {
         return instanceContextFactory.newContext(tenantId, asyncLogProcessing);
     }
 

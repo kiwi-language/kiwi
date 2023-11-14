@@ -1,8 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.entity.IdInitializing;
-import tech.metavm.entity.NoProxy;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValue;
@@ -17,10 +15,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Instance implements IdInitializing {
 
@@ -164,6 +159,21 @@ public abstract class Instance implements IdInitializing {
         return NncUtils.requireNonNull(getId());
     }
 
+    @NoProxy
+    public boolean idEquals(long id) {
+        return Objects.equals(this.id, id);
+    }
+
+    @NoProxy
+    public boolean isIdNull() {
+        return id == null;
+    }
+
+    @NoProxy
+    public boolean isIdNotNull() {
+        return id != null;
+    }
+
     @Override
     @NoProxy
     public void initId(long id) {
@@ -253,6 +263,10 @@ public abstract class Instance implements IdInitializing {
 
     public abstract String getTitle();
 
+    public String getQualifiedTitle() {
+        return getType().getName() + "/" + getTitle();
+    }
+
     public String getDescription() {
         if (id != null && getTitle().equals(id.toString())) {
             return type.getName() + "/" + getTitle();
@@ -293,28 +307,47 @@ public abstract class Instance implements IdInitializing {
 
     protected abstract InstanceParamDTO getParam();
 
+    @NoProxy
     public void incVersion() {
         version++;
     }
 
+    @NoProxy
     public void setVersion(long version) {
         this.version = version;
     }
 
+    @NoProxy
     public void setSyncVersion(long syncVersion) {
         this.syncVersion = syncVersion;
     }
 
+    @NoProxy
     public Object getNativeObject() {
         return nativeObject;
     }
 
+    @NoProxy
     public void setNativeObject(Object nativeObject) {
         this.nativeObject = nativeObject;
     }
 
+    @NoProxy
+    public abstract void accept(InstanceVisitor visitor);
+
+    public abstract void acceptReferences(InstanceVisitor visitor);
+
+    public abstract void acceptChildren(InstanceVisitor visitor);
+
+    @NoProxy
     @Override
-    public String toString() {
-        return getType().getName() + "-" + getTitle();
+    public final String toString() {
+        if(EntityUtils.isModelInitialized(this)) {
+            return getType().getName() + "-" + getTitle();
+        }
+        else {
+            return String.format("Uninitialized instance, id: %s", id);
+        }
     }
+
 }

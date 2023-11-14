@@ -71,15 +71,15 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
         var funcType = ((FunctionType) FlowUtils.getExpressionType(func.getExpression(), getPredecessor(), getScope()));
         if (funcType instanceof FunctionType functionType) {
             if (arguments.size() != functionType.getParameterTypes().size()) {
-                throw new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_MISMATCH);
+                throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
             }
             for (int i = 0; i < arguments.size(); i++) {
                 if (!functionType.getParameterTypes().get(i).isAssignableFrom(arguments.get(i).getType())) {
-                    throw new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_MISMATCH);
+                    throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
                 }
             }
         } else {
-            throw new BusinessException(ErrorCode.NOT_A_FUNCTION, func.getExpression().buildSelf(VarType.NAME));
+            throw new BusinessException(ErrorCode.NOT_A_FUNCTION, func.getExpression().build(VarType.NAME));
         }
     }
 

@@ -37,13 +37,13 @@ public class BooleanInstance extends PrimitiveInstance {
     }
 
     @Override
-    public String toString() {
-        return "BooleanInstance " + value + ":" + getType().getName();
+    public String getTitle() {
+        return value ? "是" : "否";
     }
 
     @Override
-    public String getTitle() {
-        return value ? "是" : "否";
+    public void accept(InstanceVisitor visitor) {
+        visitor.visitBooleanInstance(this);
     }
 
 }

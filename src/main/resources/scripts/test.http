@@ -3,6 +3,9 @@ Accept: application/json
 Content-Type: application/json
 
 ###
+POST http://localhost:8080/debug/init-test
+
+###
 POST https://www.metavm.tech/api/bootstrap/region
 
 ###
@@ -18,7 +21,6 @@ POST http://localhost:8080/bootstrap/save
 
 ###
 POST http://localhost:8080/bootstrap/region
-
 
 ###
 POST http://localhost:8080/bootstrap/scheduler

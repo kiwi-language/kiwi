@@ -3,6 +3,7 @@ package tech.metavm.flow.rest;
 import tech.metavm.dto.RefDTO;
 import tech.metavm.object.meta.Access;
 import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.meta.rest.dto.FieldDTOBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,20 +28,10 @@ public record TryEndFieldDTO(
     }
 
     public FieldDTO toFieldDTO() {
-        return new FieldDTO(
-                fieldRef.tmpId(),
-                fieldRef.id(),
-                name,
-                null,
-                Access.PUBLIC.code(),
-                null,
-                false,
-                false,
-                null,
-                typeRef,
-                false,
-                false
-        );
+        return FieldDTOBuilder.newBuilder(name, null, typeRef)
+                .tmpId(fieldRef().tmpId())
+                .id(fieldRef.id())
+                .build();
     }
 
 }

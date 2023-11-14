@@ -6,6 +6,7 @@ import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Type;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Profiler;
 
 import java.io.Closeable;
 import java.util.*;
@@ -31,13 +32,15 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     Instance get(RefDTO ref);
 
+    Profiler getProfiler();
+
     List<Instance> batchGet(Collection<Long> ids);
 
     List<Instance> getByType(Type type, Instance startExclusive, long limit);
 
     List<Instance> scan(Instance startExclusive, long limit);
 
-    boolean existsInstances(Type type);
+    boolean existsInstances(Type type, boolean persistedOnly);
 
     IEntityContext getEntityContext();
 
@@ -49,7 +52,9 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     void preload(Collection<Long> ids, LoadingOption...options);
 
-    void addRemovalListener(Consumer<Instance> removalListener);
+    void addRemovalListener(Consumer<Instance> listener);
+
+    void addInitializationListener(Consumer<Instance> listener);
 
     void close();
 
@@ -84,6 +89,8 @@ public interface IInstanceContext extends InstanceSink, Closeable {
     <E> E getAttribute(ContextAttributeKey<E> key);
 
     boolean isNewInstance(Instance instance);
+
+    boolean isPersistedInstance(Instance instance);
 
     void initIdManually(Instance instance, long id);
 

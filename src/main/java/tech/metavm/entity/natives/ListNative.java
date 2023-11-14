@@ -1,10 +1,13 @@
 package tech.metavm.entity.natives;
 
+import tech.metavm.dto.ErrorCode;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.meta.ArrayType;
 import tech.metavm.object.meta.ClassType;
 import tech.metavm.object.meta.Field;
 import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -23,9 +26,22 @@ public class ListNative extends NativeBase {
     }
 
     public Instance List() {
-        array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initField(arrayField, array);
+        array = new ArrayInstance((ArrayType) arrayField.getType(),
+                new InstanceParentRef(instance, arrayField));
         return instance;
+    }
+
+    public Instance List(Instance c) {
+        if(c instanceof ClassInstance collection) {
+            var thatArrayField = collection.getType().getFieldByCode("array");
+            var thatArray = (ArrayInstance) collection.getField(thatArrayField);
+            array = new ArrayInstance((ArrayType) arrayField.getType(),
+                    new InstanceParentRef(instance, arrayField));
+            array.addAll(thatArray);
+            return instance;
+        }
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
     public ClassInstance iterator() {

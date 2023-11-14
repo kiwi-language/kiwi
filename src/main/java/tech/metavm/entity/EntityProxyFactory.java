@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 
@@ -61,10 +62,14 @@ public class EntityProxyFactory {
         }
     }
 
+    public final static IdentitySet<Object> DUMMIES = new IdentitySet<>();
+
     public static Object makeDummy(Class<?> type) {
         Class<?> proxyClass = getProxyClass(type);
         try {
-            return ReflectUtils.getUnsafe().allocateInstance(proxyClass);
+            var dummy = ReflectUtils.getUnsafe().allocateInstance(proxyClass);
+            DUMMIES.add(dummy);
+            return dummy;
         } catch (InstantiationException e) {
             throw new RuntimeException("fail to create proxy instance", e);
         }

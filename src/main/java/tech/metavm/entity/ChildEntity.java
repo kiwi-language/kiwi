@@ -11,4 +11,6 @@ public @interface ChildEntity {
 
     String value();
 
+    boolean lazy() default false;
+
 }

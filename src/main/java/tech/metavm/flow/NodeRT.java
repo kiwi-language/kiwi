@@ -28,6 +28,9 @@ public abstract class NodeRT<P> extends Element {
     @EntityField("输出类型")
     @Nullable
     private Type outputType;
+    // Reference flow directly to avoid scope loading
+    @EntityField("所属流程")
+    private final Flow flow;
     @EntityField("所属范围")
     private final ScopeRT scope;
     @EntityField("前驱")
@@ -52,6 +55,7 @@ public abstract class NodeRT<P> extends Element {
         super(tmpId);
         setName(name);
         this.scope = scope;
+        this.flow = scope.getFlow();
         this.outputType = outputType;
         this.kind = NodeKind.getByNodeClass(this.getClass());
         if (previous != null) {
@@ -65,7 +69,7 @@ public abstract class NodeRT<P> extends Element {
 
     @JsonIgnore
     public Flow getFlow() {
-        return scope.getFlow();
+        return flow;
     }
 
     public void setName(String name) {
@@ -183,7 +187,7 @@ public abstract class NodeRT<P> extends Element {
             return new NodeDTO(
                     context.getTmpId(this),
                     id,
-                    getFlow().getId(),
+                    flow.getId(),
                     name,
                     kind.code(),
                     NncUtils.get(predecessor, context::getRef),
@@ -266,4 +270,8 @@ public abstract class NodeRT<P> extends Element {
         this.expressionTypes = getExpressionTypes().merge(expressionTypes);
     }
 
+    @Override
+    protected String toString0() {
+        return name;
+    }
 }

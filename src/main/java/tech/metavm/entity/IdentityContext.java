@@ -1,19 +1,24 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.meta.*;
-import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static tech.metavm.entity.EntityUtils.getRealType;
 import static tech.metavm.util.NncUtils.allMatch;
 
 public class IdentityContext {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(IdentityContext.class);
 
     private final Map<Object, ModelIdentity> model2identity = new IdentityHashMap<>();
     private final Map<ModelIdentity, Object> identity2model = new HashMap<>();
@@ -63,14 +68,23 @@ public class IdentityContext {
             return;
         }
         switch (model) {
-            case tech.metavm.object.meta.Type type when isBuiltinType(type) ->
-                    putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
-            case Field field when field.getDeclaringType().isFromReflection() ->
-                    putModelId(model, ModelIdentity.field(field, this::getJavaType, this::getJavaField), result);
-            case Flow flow when isBuiltinType(flow.getDeclaringType()) ->
-                    putModelId(model, new ModelIdentity(Flow.class, flow.getCanonicalName(getJavaType)), result);
-            case Index index when index.getDeclaringType().isFromReflection() ->
-                    putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(index)), result);
+            case GlobalKey globalKey -> putModelId(model,
+                    new ModelIdentity(ReflectUtils.getType(model), globalKey.getKey(getJavaType)), result);
+//            case tech.metavm.object.meta.Type type when isBuiltinType(type) ->
+//                    putModelId(model, ModelIdentity.type(type, this::getJavaType), result);
+//            case Field field when field.getDeclaringType().isFromReflection() ->
+//                    putModelId(model, ModelIdentity.field(field, this::getJavaType, this::getJavaField), result);
+//            case Flow flow when isBuiltinType(flow.getDeclaringType()) ->
+//                    putModelId(model, new ModelIdentity(Flow.class, flow.getKey(getJavaType)), result);
+//            case Parameter param
+//                    when ((param.getCallable() instanceof Flow flow) && isBuiltinType(flow.getDeclaringType())) ->
+//                    putModelId(param, new ModelIdentity(Parameter.class,
+//                            flow.getKey(getJavaType) + ".parameters." + requireNonNull(param.getCode())), result);
+//            case Index index when index.getDeclaringType().isFromReflection() ->
+//                    putModelId(model, ModelIdentity.uniqueConstraint(getIndexDefField(index)), result);
+//            case Column column -> putModelId(column, ModelIdentity.column(column), result);
+//            case DynamicKey dynamicKey -> putModelId(dynamicKey,
+//                    new ModelIdentity(ReflectUtils.getType(model), dynamicKey.getKey(getJavaType)), result);
             default -> {
                 Reference ref = getIncomingReference(model);
                 ModelIdentity sourceId = NncUtils.requireNonNull(
@@ -86,11 +100,22 @@ public class IdentityContext {
         }
         if (model instanceof ReadonlyArray<?> array) {
             int index = 0;
-            for (Object item : array) {
-                if (item != null) {
-                    addToInvertedIndex(array, Integer.toString(index), item);
-                    path.addLast(index + "");
-                    getIdentityMap0(item, result, path);
+            for (Object element : array) {
+                if (element != null
+                        && (array instanceof ChildArray<?> || element instanceof GlobalKey)) {
+                    String childKey = getKey(element);
+                    if (childKey == null) {
+                        if (!(element instanceof GlobalKey)) {
+                            LOGGER.warn(
+                                    String.format("Child array element doesn't provide a key. Element: %s",
+                                            element.getClass().getName())
+                            );
+                        }
+                        childKey = index + "";
+                    }
+                    path.addLast(childKey);
+                    addToInvertedIndex(array, childKey, element);
+                    getIdentityMap0(element, result, path);
                     path.removeLast();
                 }
                 index++;
@@ -98,7 +123,8 @@ public class IdentityContext {
         } else if (!ValueUtil.isEnumConstant(model)) {
             for (EntityProp prop : DescStore.get(model.getClass()).getNonTransientProps()) {
                 Object fieldValue = prop.get(model);
-                if (fieldValue != null) {
+                if (fieldValue != null
+                        && (prop.hasAnnotation(ChildEntity.class) || fieldValue instanceof GlobalKey)) {
                     addToInvertedIndex(model, prop.getField().getName(), fieldValue);
                     path.addLast(prop.getName());
                     getIdentityMap0(fieldValue, result, path);
@@ -108,6 +134,22 @@ public class IdentityContext {
         }
     }
 
+    private static String getKey(Object entity) {
+        var desc = DescStore.get(entity.getClass());
+        for (EntityProp prop : desc.getPropsWithAnnotation(EntityField.class)) {
+            if (prop.getField().getAnnotation(EntityField.class).asKey()) {
+                var value = prop.get(entity);
+                if (value instanceof String str)
+                    return str;
+                else
+                    throw new InternalException(
+                            String.format("Invalid key for entity %s, expecting a string value but got %s",
+                                    entity, value)
+                    );
+            }
+        }
+        return null;
+    }
 
     private boolean isBuiltinType(tech.metavm.object.meta.Type type) {
         return switch (type) {

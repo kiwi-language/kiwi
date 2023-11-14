@@ -1,19 +1,22 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.GlobalKey;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.meta.Type;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Function;
 
 @ValueType("列")
 public record Column(
         @EntityField(value = "列名", asTitle = true) String name,
         @EntityField("列类型") SQLType type
-) {
+) implements GlobalKey {
 
     public static final Column ID = new Column("id", SQLType.INT64);
 
@@ -30,7 +33,7 @@ public record Column(
         if (columns.isEmpty()) {
             throw BusinessException.tooManyFields();
         }
-        return columns.poll().copy();
+        return columns.poll();/*.copy();*/
     }
 
     public String fuzzyName() {
@@ -65,4 +68,8 @@ public record Column(
                 "type=" + type + ']';
     }
 
+    @Override
+    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+        return name;
+    }
 }

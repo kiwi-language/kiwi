@@ -29,6 +29,8 @@ class NameTracker {
     }
 
     String getMappedName(String name) {
+        if(methodInfoStack.isEmpty())
+            return null;
         return currentMethodInfo().getMappedName(name);
     }
 

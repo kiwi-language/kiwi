@@ -12,6 +12,7 @@ import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -28,31 +29,28 @@ public class FlowExecutionService {
 
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
-        InstanceContext context = newContext();
-        IEntityContext entityContext = context.getEntityContext();
-        Flow flow = entityContext.getEntity(Flow.class, request.flowId());
-        ClassInstance self = (ClassInstance) context.get(request.instanceId());
-
+        try(IInstanceContext context = newContext()) {
+            IEntityContext entityContext = context.getEntityContext();
+            Flow flow = entityContext.getEntity(Flow.class, request.flowId());
+            ClassInstance self = (ClassInstance) context.get(request.instanceId());
 //        DON'T REMOVE!!!!!!
 //        var argument =
 //                InstanceFactory.create(
 //                createArgument(flow.getInputType().getIdRequired(), request.fields()),
 //                context);
 //        DON'T REMOVE!!!!!!
-
-
-        List<Instance> arguments = new ArrayList<>();
-        NncUtils.biForEach(
-                request.arguments(),
-                flow.getParameterTypes(),
-                (arg, paramType) -> arguments.add(
-                        InstanceFactory.resolveValue(arg, paramType, entityContext)
-                )
-        );
-
-        Instance result = executeInternal(flow, self, arguments, context);
-        context.finish();
-        return NncUtils.get(result, Instance::toDTO);
+            List<Instance> arguments = new ArrayList<>();
+            NncUtils.biForEach(
+                    request.arguments(),
+                    flow.getParameterTypes(),
+                    (arg, paramType) -> arguments.add(
+                            InstanceFactory.resolveValue(arg, paramType, entityContext)
+                    )
+            );
+            Instance result = executeInternal(flow, self, arguments, context);
+            context.finish();
+            return NncUtils.get(result, Instance::toDTO);
+        }
     }
 
     public Instance executeInternal(Flow flow, ClassInstance self, List<Instance> arguments, IInstanceContext context) {
@@ -83,8 +81,8 @@ public class FlowExecutionService {
         return fieldValueDTO;
     }
 
-    private InstanceContext newContext() {
-        return instanceContextFactory.newContext();
+    private IInstanceContext newContext() {
+        return instanceContextFactory.newContext(ContextUtil.getTenantId(), true);
     }
 
 }

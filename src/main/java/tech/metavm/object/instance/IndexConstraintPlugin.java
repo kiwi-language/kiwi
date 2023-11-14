@@ -59,7 +59,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                 e -> oldInstanceIds.contains(e.getInstanceId())
         );
 
-        List<IndexEntryPO> conflictingEntries = NncUtils.filterNot(
+        List<IndexEntryPO> conflictingEntries = NncUtils.exclude(
                 oldAndConflictingItems,
                 e -> oldInstanceIds.contains(e.getInstanceId())
         );

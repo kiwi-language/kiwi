@@ -18,7 +18,7 @@ public record FlowDTO(
         boolean isAbstract,
         boolean isNative,
         RefDTO declaringTypeRef,
-        ScopeDTO rootScope,
+        @Nullable ScopeDTO rootScope,
         RefDTO returnTypeRef,
         List<ParameterDTO> parameters,
         RefDTO typeRef,
@@ -34,7 +34,7 @@ public record FlowDTO(
     public static FlowDTO create(String name, long declaringTypeId) {
         return new FlowDTO(
                 null, null, name, null,false, false, false,
-                RefDTO.ofId(declaringTypeId), null,  null, null,
+                RefDTO.fromId(declaringTypeId), null,  null, null,
                  null, null,  null,  null, List.of(),null, List.of(), false
         );
     }

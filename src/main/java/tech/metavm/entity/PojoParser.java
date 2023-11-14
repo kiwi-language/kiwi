@@ -196,10 +196,12 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         boolean unique = annotation != null && annotation.unique();
         boolean asTitle = annotation != null && annotation.asTitle();
         boolean isChild = reflectField.isAnnotationPresent(ChildEntity.class);
+        boolean lazy = isChild && reflectField.getAnnotation(ChildEntity.class).lazy();
         var field = FieldBuilder.newBuilder(
                 ReflectUtils.getMetaFieldName(reflectField),
                 reflectField.getName(), declaringTypeDef.getType(), fieldType)
                 .unique(unique)
+                .lazy(lazy)
                 .column(columnStore.getColumn(javaType, reflectField, fieldType.getSQLType()))
                 .asTitle(asTitle)
                 .defaultValue(new NullInstance(typeFactory.getNullType()))

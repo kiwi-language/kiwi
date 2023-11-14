@@ -36,7 +36,7 @@ public record NodeDTO(
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId, Object param, long scopeId) {
         return new NodeDTO(
-                null, null, flowId, name, type, RefDTO.ofId(prevId), null, param, null, scopeId, null
+                null, null, flowId, name, type, RefDTO.fromId(prevId), null, param, null, scopeId, null
         );
     }
 

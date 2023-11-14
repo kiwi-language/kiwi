@@ -26,6 +26,7 @@ public class FieldBuilder {
     private boolean isChild;
     private boolean isStatic = false;
     private Instance staticValue;
+    private boolean lazy;
     private Field template;
     private Field existing;
 
@@ -53,6 +54,11 @@ public class FieldBuilder {
 
     public FieldBuilder unique(boolean unique) {
         this.unique = unique;
+        return this;
+    }
+
+    public FieldBuilder lazy(boolean lazy) {
+        this.lazy = lazy;
         return this;
     }
 
@@ -112,6 +118,7 @@ public class FieldBuilder {
                     effectiveDefaultValue,
                     isChild,
                     isStatic,
+                    lazy,
                     effectiveStaticValue,
                     template,
                     column
@@ -125,6 +132,7 @@ public class FieldBuilder {
             existing.setType(type);
             existing.setAccess(access);
             existing.setUnique(unique);
+            existing.setLazy(lazy);
             existing.setAsTitle(asTitle);
             existing.setDefaultValue(effectiveDefaultValue);
             existing.setStaticValue(effectiveStaticValue);

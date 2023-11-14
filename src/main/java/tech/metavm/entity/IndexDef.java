@@ -98,6 +98,7 @@ public class IndexDef<T> {
             new IndexField(
                     index,
                     field.getName(),
+                    field.getCode(),
                     new ReferenceValue(ExpressionUtil.attributeExpr(field))
             );
         }

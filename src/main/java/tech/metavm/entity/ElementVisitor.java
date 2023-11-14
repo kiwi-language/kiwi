@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import org.apache.commons.lang3.NotImplementedException;
 import tech.metavm.expression.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
@@ -19,7 +20,9 @@ public abstract class ElementVisitor<R> {
         return visitElement(constraint);
     }
 
-    public abstract R visitElement(Element element);
+    public R visitElement(Element element) {
+        throw new NotImplementedException();
+    }
 
     public R visitIndex(Index index) {
         return visitConstraint(index);

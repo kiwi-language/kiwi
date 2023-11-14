@@ -191,6 +191,9 @@ public class PersistenceUtil {
                 case TIME -> new TimePO(wrap.getLong(KEY_VALUE));
             };
         }
+        else if(columnValue instanceof Integer integer) {
+            return integer.longValue();
+        }
         else {
             return columnValue;
         }

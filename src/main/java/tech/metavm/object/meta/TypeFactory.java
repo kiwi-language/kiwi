@@ -13,12 +13,12 @@ import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.meta.rest.dto.*;
 import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,41 +32,20 @@ public abstract class TypeFactory {
         return type;
     }
 
-    public ClassType createClassType(TypeDTO typeDTO, IEntityContext context) {
-        ClassTypeParam param = typeDTO.getClassParam();
-        var type = ClassBuilder.newBuilder(typeDTO.name(), typeDTO.code())
-                .category(TypeCategory.getByCode(typeDTO.category()))
-                .ephemeral(typeDTO.ephemeral())
-                .anonymous(typeDTO.anonymous())
-                .isTemplate(param.isTemplate())
-                .typeParameters(NncUtils.map(param.typeParameterRefs(), context::getTypeVariable))
-                .template(param.templateRef() != null ? context.getClassType(param.templateRef()) : null)
-                .source(ClassSource.getByCode(param.source()))
-                .tmpId(typeDTO.tmpId()).build();
-        context.bind(type);
-        return type;
-    }
-
     public TypeVariable saveTypeVariable(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var param = typeDTO.getTypeVariableParam();
         var context = batch.getContext();
         var type = batch.getContext().getTypeVariable(typeDTO.getRef());
         if (type == null) {
             type = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(), DummyGenericDeclaration.INSTANCE);
+            context.bind(type);
         } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
             type.setName(typeDTO.name());
             type.setCode(typeDTO.code());
         }
-        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && type.getStage().isBefore(ResolutionStage.DECLARATION)) {
-//            if (context.isNewEntity(type)) {
-//                type.setGenericDeclaration(
-//                        context.getEntity(GenericDeclaration.class, param.genericDeclarationRef())
-//                );
-//            }
-//            var genericDecl = context.getEntity(GenericDeclaration.class, param.genericDeclarationRef());
-//            type.setGenericDeclaration(genericDecl);
+        var curStage = type.setStage(stage);
+        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
             type.setBounds(NncUtils.map(param.boundRefs(), batch::get));
-            type.setStage(ResolutionStage.DECLARATION);
         }
         return type;
     }
@@ -123,27 +102,28 @@ public abstract class TypeFactory {
                     .category(TypeCategory.getByCode(typeDTO.category()))
                     .ephemeral(typeDTO.ephemeral())
                     .anonymous(typeDTO.anonymous())
+                    .typeParameters(NncUtils.map(param.typeParameterRefs(), batch::getTypeVariable))
                     .isTemplate(param.isTemplate())
+                    .desc(param.desc())
                     .source(ClassSource.getByCode(param.source()))
-                    .tmpId(typeDTO.tmpId()).build();
+                    .tmpId(typeDTO.tmpId())
+                    .build();
             context.bind(type);
         } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
             type.setCode(typeDTO.code());
             type.setName(typeDTO.name());
-        }
-        if (stage.isBeforeOrAt(ResolutionStage.INIT)) {
             type.setDesc(param.desc());
         }
-        if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && type.getStage().isBefore(ResolutionStage.SIGNATURE)) {
-            var typeVars = NncUtils.map(param.typeParameterRefs(), batch::getTypeVariable);
-            type.clearTypeParameters();
-            for (TypeVariable typeVar : typeVars) {
-                if (typeVar.getGenericDeclaration() == DummyGenericDeclaration.INSTANCE)
-                    typeVar.setGenericDeclaration(type);
-                else
-                    throw new InternalException("Type variable " + typeVar + " is not defined in type " + type.getName());
+        var curStage = type.setStage(stage);
+        if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
+            if(type.isEnum()) {
+                var enumSuperClass = context.getGenericContext().getParameterizedType(
+                        StandardTypes.getEnumType(), List.of(type), ResolutionStage.DEFINITION, batch
+                );
+                type.setSuperClass(enumSuperClass);
             }
-            type.setSuperClass(NncUtils.get(param.superClassRef(), batch::getClassType));
+            else
+                type.setSuperClass(NncUtils.get(param.superClassRef(), batch::getClassType));
             type.setInterfaces(NncUtils.map(param.interfaceRefs(), batch::getClassType));
             if (!type.isTemplate())
                 type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
@@ -151,7 +131,7 @@ public abstract class TypeFactory {
                 type.setDependencies(NncUtils.map(param.dependencyRefs(), context::getClassType));
             type.setStage(ResolutionStage.SIGNATURE);
         }
-        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && type.getStage().isBefore(ResolutionStage.DECLARATION)) {
+        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
             var declaringType = type;
             if (param.fields() != null) {
                 type.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
@@ -163,7 +143,7 @@ public abstract class TypeFactory {
                 type.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
             }
             if (param.flows() != null) {
-                type.setFlows(NncUtils.map(param.flows(), f -> saveFlow(f, batch)));
+                type.setFlows(NncUtils.map(param.flows(), f -> saveFlow(f, stage, batch)));
             }
             type.setStage(ResolutionStage.DECLARATION);
         }
@@ -215,36 +195,52 @@ public abstract class TypeFactory {
         return field;
     }
 
-    public Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
+    public Flow saveFlow(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var context = batch.getContext();
         var flow = context.getFlow(flowDTO.getRef());
         if (flow == null) {
             var declaringType = batch.getClassType(flowDTO.declaringTypeRef());
             flow = FlowBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code(), context.getFunctionTypeContext())
+                    .tmpId(flowDTO.tmpId())
                     .build();
+            context.bind(flow);
         } else {
             flow.setName(flowDTO.name());
             flow.setCode(flowDTO.code());
         }
-        flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), batch::getTypeVariable));
-        flow.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
+        flow.setNative(flowDTO.isNative());
         flow.setAbstract(flowDTO.isAbstract());
-        flow.setOverridden(NncUtils.map(flowDTO.overriddenRefs(), batch::getFlow));
-        flow.setReturnType(batch.get(flowDTO.returnTypeRef()));
-        flow.setType(
+        flow.setConstructor(flowDTO.isConstructor());
+        flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), batch::getTypeVariable));
+        var parameters = NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch));
+        var paramTypes = NncUtils.map(parameters, Parameter::getType);
+        var returnType = batch.get(flowDTO.returnTypeRef());
+        flow.update(
+                NncUtils.map(flowDTO.overriddenRefs(), batch::getFlow),
+                parameters,
+                returnType,
                 context.getFunctionTypeContext().get(
-                        flow.getParameterTypes(),
-                        flow.getReturnType(),
+                        paramTypes,
+                        returnType,
                         NncUtils.get(flowDTO.typeRef(), RefDTO::tmpId)
-                )
-        );
-        flow.setStaticType(
+                ),
                 context.getFunctionTypeContext().get(
-                        NncUtils.prepend(flow.getDeclaringType(), flow.getParameterTypes()),
-                        flow.getReturnType(),
+                        NncUtils.prepend(flow.getDeclaringType(), paramTypes),
+                        returnType,
                         NncUtils.get(flowDTO.staticTypeRef(), RefDTO::tmpId)
                 )
         );
+        flow.setAbstract(flowDTO.isAbstract());
+        if(flowDTO.templateInstances() != null) {
+            for (FlowDTO templateInstance : flowDTO.templateInstances()) {
+                context.getGenericContext().getParameterizedFlow(
+                        flow,
+                        NncUtils.map(templateInstance.typeArgumentRefs(), batch::get),
+                        stage,
+                        batch
+                );
+            }
+        }
         return flow;
     }
 
@@ -256,9 +252,7 @@ public abstract class TypeFactory {
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
                     parameterDTO.code(),
-                    batch.get(parameterDTO.typeRef()),
-                    null,
-                    null
+                    batch.get(parameterDTO.typeRef())
             );
         } else {
             param.setName(parameterDTO.name());

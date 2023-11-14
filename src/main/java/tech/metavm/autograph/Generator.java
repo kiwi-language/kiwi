@@ -71,9 +71,8 @@ public class Generator extends VisitorBase {
             var constructor = klass.getDefaultConstructor();
             var constructorGen = new FlowGenerator(constructor, typeResolver, entityContext, this);
             constructorGen.enterScope(constructor.getRootScope());
-            var self = new NodeExpression(constructorGen.createSelf());
-            constructorGen.createSubFlow(self, initFlow, List.of());
-            constructorGen.createReturn(self);
+            constructorGen.createSubFlow(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
+            constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
             constructorGen.exitScope();
         }
         exitClass();
@@ -268,11 +267,12 @@ public class Generator extends VisitorBase {
         builder.setVariable("this", new NodeExpression(selfNode));
         processParameters(method.getParameterList(), flow);
         if (method.isConstructor()) {
-            var superType = currentClass().getSuperClass();
-            if (superType != null && !isEnumType(superType) && !isSuperCallPresent(method)) {
+            var superClass = currentClass().getSuperClass();
+            if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
+                    && !isSuperCallPresent(method)) {
                 builder().createSubFlow(
                         builder().getVariable("this"),
-                        superType.getFlowByCodeAndParamTypes(superType.getCodeRequired(), List.of()),
+                        superClass.getFlowByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
                         List.of()
                 );
             }
@@ -313,6 +313,10 @@ public class Generator extends VisitorBase {
 
     private boolean isEnumType(ClassType classType) {
         return classType.getTemplate() != null && classType.getTemplate() == StandardTypes.getEnumType();
+    }
+
+    private boolean isEntityType(ClassType classType) {
+        return classType == StandardTypes.getEntityType();
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {
@@ -628,6 +632,7 @@ public class Generator extends VisitorBase {
                     });
         } else {
             var collType = (ClassType) iteratedExpr.getType();
+            typeResolver.ensureDeclared(collType);
             var itNode = builder().createSubFlow(
                     iteratedExpr, collType.getFlowByCode("iterator"),
                     List.of()
@@ -693,10 +698,6 @@ public class Generator extends VisitorBase {
             return;
         }
         resolveExpression(statement.getExpression());
-    }
-
-    private Expression selfExpression() {
-        return builder().getVariable("this");
     }
 
     private Expression resolveExpression(PsiExpression expression) {

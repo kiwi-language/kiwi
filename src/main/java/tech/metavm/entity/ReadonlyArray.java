@@ -9,6 +9,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeGeneric, Iterable<T> {
 
@@ -186,6 +187,10 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
 
     public List<T> toList() {
         return Collections.unmodifiableList(table);
+    }
+
+    public Stream<T> stream() {
+        return table.stream();
     }
 
 }

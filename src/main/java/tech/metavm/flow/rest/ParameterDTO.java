@@ -13,6 +13,7 @@ public record ParameterDTO(
         String code,
         RefDTO typeRef,
         ValueDTO condition,
-        @Nullable RefDTO templateRef
+        @Nullable RefDTO templateRef,
+        RefDTO callableRef
 ) implements BaseDTO {
 }

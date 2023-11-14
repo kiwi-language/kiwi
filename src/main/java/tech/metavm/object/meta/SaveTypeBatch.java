@@ -5,13 +5,17 @@ import tech.metavm.dto.RefDTO;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.meta.rest.dto.*;
+import tech.metavm.object.meta.rest.dto.ClassTypeParam;
+import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.meta.rest.dto.TypeKey;
+import tech.metavm.object.meta.rest.dto.UncertainTypeParam;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Function;
 
 public class SaveTypeBatch {
 
@@ -30,18 +34,41 @@ public class SaveTypeBatch {
 
     private SaveTypeBatch(IEntityContext context, List<TypeDTO> types) {
         this.context = context;
-        for (TypeDTO typeDTO : sortByTopology(types)) {
+        for (TypeDTO typeDTO : types) {
             map.put(typeDTO.getRef(), typeDTO);
             var typeKey = typeDTO.getTypeKey();
             if (typeKey != null)
                 typeKey2TypeDTO.put(typeKey, typeDTO);
+            if(typeDTO.param() instanceof ClassTypeParam classParam) {
+                if(classParam.flows() != null) {
+                    for (FlowDTO flowDTO : classParam.flows())
+                        flowMap.put(flowDTO.getRef(), flowDTO);
+                }
+            }
         }
     }
 
+    private record SaveStage(
+            ResolutionStage stage,
+            Function<TypeDTO, Set<RefDTO>> getDependencies
+    ) {
+
+        List<TypeDTO> sort(Collection<TypeDTO> typeDTOs) {
+            return Sorter.sort(typeDTOs, getDependencies);
+        }
+
+    }
+
     private void execute() {
-        for (ResolutionStage stage : ResolutionStage.values()) {
-            for (TypeDTO typeDTO : map.values())
-                save(typeDTO, stage);
+        List<SaveStage> stages = List.of(
+                new SaveStage(ResolutionStage.INIT, this::initDependencies),
+                new SaveStage(ResolutionStage.SIGNATURE, this::noDependencies),
+                new SaveStage(ResolutionStage.DECLARATION, this::declarationDependencies),
+                new SaveStage(ResolutionStage.DEFINITION, this::noDependencies)
+        );
+        for (var stage : stages) {
+            for (TypeDTO typeDTO : stage.sort(map.values()))
+                save(typeDTO, stage.stage);
         }
     }
 
@@ -55,7 +82,8 @@ public class SaveTypeBatch {
             return existing;
         } else {
             var flowDTO = NncUtils.requireNonNull(flowMap.get(ref), "Flow '" + ref + " not available");
-            return TypeUtils.saveFlow(flowDTO, this);
+            var declaringType = getClassType(flowDTO.declaringTypeRef());
+            return NncUtils.requireNonNull(declaringType.findFlow(f -> f.getRef().equals(ref)));
         }
     }
 
@@ -87,17 +115,63 @@ public class SaveTypeBatch {
         return NncUtils.filter(this.map.values(), t -> t.param() instanceof ClassTypeParam);
     }
 
-    private List<TypeDTO> sortByTopology(Collection<TypeDTO> typeDTOs) {
-        return new DTOVisitor(typeDTOs).result;
+    public Set<RefDTO> noDependencies(TypeDTO typeDTO) {
+        return Set.of();
     }
 
-    private static class DTOVisitor {
+    public Set<RefDTO> initDependencies(TypeDTO typeDTO) {
+        var dependencies = new HashSet<RefDTO>();
+        var category = TypeCategory.getByCode(typeDTO.category());
+        if (category.isPojo()) {
+            var param = typeDTO.getClassParam();
+            dependencies.add(param.templateRef());
+            if (param.typeParameterRefs() != null)
+                dependencies.addAll(param.typeParameterRefs());
+        } else if (category.isArray()) {
+            var param = typeDTO.getArrayTypeParam();
+            dependencies.add(param.elementTypeRef());
+        } else if (category == TypeCategory.UNION) {
+            var param = typeDTO.getUnionParam();
+            dependencies.addAll(param.memberRefs());
+        } else if (category == TypeCategory.FUNCTION) {
+            var param = typeDTO.getFunctionTypeParam();
+            dependencies.addAll(param.parameterTypeRefs());
+            dependencies.add(param.returnTypeRef());
+        } else if (category == TypeCategory.UNCERTAIN) {
+            var param = (UncertainTypeParam) typeDTO.param();
+            dependencies.add(param.lowerBoundRef());
+            dependencies.add(param.upperBoundRef());
+        }
+        return dependencies;
+    }
+
+    private Set<RefDTO> declarationDependencies(TypeDTO typeDTO) {
+        var dependencies = new HashSet<RefDTO>();
+        if (typeDTO.param() instanceof ClassTypeParam classParam) {
+            if (classParam.superClassRef() != null)
+                dependencies.add(classParam.superClassRef());
+            if(classParam.interfaceRefs() != null)
+                dependencies.addAll(classParam.interfaceRefs());
+        }
+        return dependencies;
+    }
+
+    private static class Sorter {
+
+        public static List<TypeDTO> sort(Collection<TypeDTO> typeDTOs,
+                                         Function<TypeDTO, Set<RefDTO>> getDependencies) {
+            var sorter = new Sorter(typeDTOs, getDependencies);
+            return sorter.result;
+        }
+
         private final IdentitySet<BaseDTO> visited = new IdentitySet<>();
         private final IdentitySet<BaseDTO> visiting = new IdentitySet<>();
         private final List<TypeDTO> result = new ArrayList<>();
         private final Map<RefDTO, TypeDTO> map = new HashMap<>();
+        private final Function<TypeDTO, Set<RefDTO>> getDependencies;
 
-        public DTOVisitor(Collection<TypeDTO> typeDTOs) {
+        public Sorter(Collection<TypeDTO> typeDTOs, Function<TypeDTO, Set<RefDTO>> getDependencies) {
+            this.getDependencies = getDependencies;
             for (TypeDTO typeDTO : typeDTOs) {
                 map.put(typeDTO.getRef(), typeDTO);
             }
@@ -134,35 +208,9 @@ public class SaveTypeBatch {
         }
 
         private Set<RefDTO> getDependencies(TypeDTO typeDTO) {
-            Set<RefDTO> dependencies = new HashSet<>();
-            getDependencies(typeDTO, dependencies);
-            return dependencies;
+            return getDependencies.apply(typeDTO);
         }
 
-        private void getDependencies(TypeDTO typeDTO, Set<RefDTO> dependencies) {
-            var category = TypeCategory.getByCode(typeDTO.category());
-            if (category.isPojo()) {
-                var param = typeDTO.getClassParam();
-                dependencies.add(param.templateRef());
-                if (param.typeParameterRefs() != null) {
-                    dependencies.addAll(param.typeParameterRefs());
-                }
-            } else if (category.isArray()) {
-                var param = typeDTO.getArrayTypeParam();
-                dependencies.add(param.elementTypeRef());
-            } else if (category == TypeCategory.UNION) {
-                var param = typeDTO.getUnionParam();
-                dependencies.addAll(param.memberRefs());
-            } else if (category == TypeCategory.FUNCTION) {
-                var param = typeDTO.getFunctionTypeParam();
-                dependencies.addAll(param.parameterTypeRefs());
-                dependencies.add(param.returnTypeRef());
-            } else if (category == TypeCategory.UNCERTAIN) {
-                var param = (UncertainTypeParam) typeDTO.param();
-                dependencies.add(param.lowerBoundRef());
-                dependencies.add(param.upperBoundRef());
-            }
-        }
     }
 
     public @Nullable Long getTmpId(TypeKey typeKey) {
