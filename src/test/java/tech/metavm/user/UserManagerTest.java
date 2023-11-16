@@ -26,7 +26,7 @@ public class UserManagerTest extends TestCase {
         MockIdProvider idProvider = new MockIdProvider();
         MockRegistry.setUp(idProvider);
 
-        ContextUtil.setContextInfo(1L, 1L);
+        ContextUtil.setLoginInfo(1L, 1L);
 
         InstanceSearchService instanceSearchService = new MemInstanceSearchService();
         IInstanceStore instanceStore = new MemInstanceStore();

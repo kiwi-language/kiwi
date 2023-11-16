@@ -10,8 +10,8 @@ import tech.metavm.flow.rest.LoopParamDTO;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 
 import java.util.*;
 

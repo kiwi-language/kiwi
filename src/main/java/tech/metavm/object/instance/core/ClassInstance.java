@@ -2,7 +2,7 @@ package tech.metavm.object.instance.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
@@ -14,17 +14,16 @@ import tech.metavm.object.instance.rest.ClassInstanceParam;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Index;
-import tech.metavm.object.meta.Property;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Index;
+import tech.metavm.object.type.Property;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class ClassInstance extends Instance {
 
@@ -403,7 +402,7 @@ public class ClassInstance extends Instance {
                 }
             }
             if (!subMap.isEmpty()) {
-                rawData.put(NncUtils.toBase64(type.getIdRequired()), subMap);
+                rawData.put(NncUtils.encondeBase64(type.getIdRequired()), subMap);
             }
             type = type.getSuperClass();
         }

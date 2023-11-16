@@ -2,7 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 
 import java.util.List;
 

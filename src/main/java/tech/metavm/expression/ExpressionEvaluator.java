@@ -1,11 +1,10 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.flow.ParentRef;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.query.ObjectNode;
-import tech.metavm.object.meta.TypeCategory;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.TypeCategory;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import java.util.List;

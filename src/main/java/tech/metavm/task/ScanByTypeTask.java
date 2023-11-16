@@ -3,7 +3,7 @@ package tech.metavm.task;
 import tech.metavm.entity.EntityField;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.List;
 

@@ -5,8 +5,9 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.instance.core.StringInstance;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.Null;
 import tech.metavm.util.ReflectUtils;
 
 import java.util.*;
@@ -20,17 +21,18 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final ClassType type;
     private final PrimitiveType nullType;
     private final PrimitiveType stringType;
+    private final DefContext defContext;
 
-    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type,
-                   PrimitiveType nullType, PrimitiveType stringType) {
+    public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type, DefContext defContext) {
         super(enumType, Instance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
         this.type = type;
-        this.nullType = nullType;
-        this.stringType = stringType;
+        this.defContext = defContext;
+        this.nullType = (PrimitiveType) defContext.getType(Null.class);
+        this.stringType = (PrimitiveType) defContext.getType(String.class);
     }
 
     void addEnumConstantDef(EnumConstantDef<T> enumConstantDef) {
@@ -98,7 +100,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
     EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField) {
         ClassInstance instance = new ClassInstance(
-                parentDef.getInstanceFields(value, new EmptyModelInstanceMap()),
+                parentDef.getInstanceFields(value, new PrimitiveInstanceMap(defContext)),
                 type
         );
         instance.setField(

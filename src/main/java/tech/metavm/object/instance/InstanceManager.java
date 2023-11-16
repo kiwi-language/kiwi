@@ -1,8 +1,10 @@
 package tech.metavm.object.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.ConstantExpression;
@@ -20,16 +22,18 @@ import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.ValueFormatter;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.util.*;
 
 import java.util.*;
 
 @Component
 public class InstanceManager {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceManager.class);
 
     private final InstanceStore instanceStore;
 
@@ -45,7 +49,7 @@ public class InstanceManager {
 
     public GetInstanceResponse get(long id, int depth) {
         var batchResp = batchGet(List.of(id), depth);
-        return new GetInstanceResponse(batchResp.instances().get(0), batchResp.contextTypes());
+        return new GetInstanceResponse(batchResp.instances().get(0));
     }
 
     public Page<InstanceDTO[]> select(SelectRequestDTO request) {
@@ -76,16 +80,19 @@ public class InstanceManager {
     }
 
     public GetInstancesResponse batchGet(List<Long> ids, int depth) {
-        return batchGet(ContextUtil.getTenantId(), ids, depth);
+        var start = System.currentTimeMillis();
+        var resp = batchGet(ContextUtil.getTenantId(), ids, depth);
+        long elapsed = System.currentTimeMillis() - start;
+        LOGGER.info("batchGet time: {}", elapsed);
+        return resp;
     }
 
     public GetInstancesResponse batchGet(long tenantId, List<Long> ids, int depth) {
         try (var context = newContext(tenantId)) {
             var instances = context.batchGet(ids);
-            try (var serContext = SerializeContext.enter()) {
+            try (var ignored = SerializeContext.enter()) {
                 var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth));
-                serContext.writeDependencies();
-                return new GetInstancesResponse(instanceDTOs, serContext.getTypes());
+                return new GetInstancesResponse(instanceDTOs);
             }
         }
     }

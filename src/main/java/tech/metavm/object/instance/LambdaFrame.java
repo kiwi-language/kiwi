@@ -2,7 +2,7 @@ package tech.metavm.object.instance;
 
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 import java.util.List;
 

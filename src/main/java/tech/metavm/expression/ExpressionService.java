@@ -13,7 +13,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.EntityContextBean;
 import tech.metavm.util.NncUtils;

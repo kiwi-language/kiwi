@@ -5,9 +5,11 @@ import tech.metavm.entity.EntityMethodHandler;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.persistence.PasswordPO;
 import tech.metavm.object.instance.persistence.TimePO;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -100,49 +102,98 @@ public class InstanceUtils {
         return false;
     }
 
-    public static Instance resolveValue(Type fieldType, Object columnValue) {
-        if (columnValue instanceof Instance instance) {
+    public static PrimitiveInstance serializeEntityPrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+        return NncUtils.requireNonNull(trySerializeEntityPrimitive(value, getTypeFunc),
+                () -> new InternalException(String.format("Can not resolve primitive value '%s", value)));
+    }
+
+    public static boolean isPrimitiveEntityValue(Object value) {
+        return value == null || value instanceof Date || value instanceof String ||
+                value instanceof Boolean || value instanceof Password ||
+                ValueUtil.isInteger(value) || ValueUtil.isFloat(value);
+    }
+
+    public static @Nullable PrimitiveInstance trySerializeEntityPrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+        if (value == null)
+            return InstanceUtils.nullInstance(getTypeFunc);
+        if (ValueUtil.isInteger(value))
+            return InstanceUtils.longInstance(((Number) value).longValue(), getTypeFunc);
+        if (ValueUtil.isFloat(value))
+            return InstanceUtils.doubleInstance(((Number) value).doubleValue(), getTypeFunc);
+        if (value instanceof Boolean bool)
+            return InstanceUtils.booleanInstance(bool, getTypeFunc);
+        if (value instanceof String str)
+            return InstanceUtils.stringInstance(str, getTypeFunc);
+        if (value instanceof Password password)
+            return InstanceUtils.passwordInstance(password.getPassword(), getTypeFunc);
+        if (value instanceof Date date)
+            return InstanceUtils.timeInstance(date.getTime(), getTypeFunc);
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T deserializeEntityPrimitive(PrimitiveInstance instance, Class<T> javaClass) {
+        javaClass = (Class<T>) ReflectUtils.getBoxedClass(javaClass);
+        if (instance.isNull()) {
+            return null;
+        }
+        if (instance instanceof LongInstance longInstance) {
+            if (javaClass == int.class || javaClass == Integer.class)
+                return (T) Integer.valueOf(longInstance.getValue().intValue());
+            else if (javaClass == short.class || javaClass == Short.class)
+                return (T) Short.valueOf(longInstance.getValue().shortValue());
+            else if (javaClass == byte.class || javaClass == Byte.class)
+                return (T) Byte.valueOf(longInstance.getValue().byteValue());
+            else
+                return javaClass.cast(longInstance.getValue());
+        }
+        if (instance instanceof DoubleInstance doubleInstance) {
+            if (javaClass == float.class || javaClass == Float.class)
+                return (T) Float.valueOf(doubleInstance.getValue().floatValue());
+            else if (javaClass == double.class || javaClass == Double.class)
+                return javaClass.cast(doubleInstance.getValue());
+        }
+        if (instance instanceof PasswordInstance passwordInstance) {
+            return javaClass.cast(new Password(passwordInstance));
+        }
+        if (instance instanceof TimeInstance timeInstance) {
+            return javaClass.cast(new Date(timeInstance.getValue()));
+        }
+        return javaClass.cast(instance.getValue());
+    }
+
+    public static Instance resolvePersistedValue(Object value) {
+        if (value instanceof Instance instance) {
             return instance;
         }
-        NncUtils.requireTrue(fieldType.getUnderlyingType().isPrimitive(),
-                "Can not resolve value '" + columnValue + "' for type " + fieldType);
-        return resolvePrimitiveValue(fieldType.getUnderlyingType(), columnValue);
+//        NncUtils.requireTrue(fieldType.getUnderlyingType().isPrimitive(),
+//                "Can not resolve value '" + columnValue + "' for type " + fieldType);
+        return resolvePersistedPrimitive(value);
     }
 
-    public static PrimitiveInstance resolvePrimitiveValue(Type fieldType, Object columnValue) {
-        return resolvePrimitiveValue(fieldType, columnValue, JAVA_CLASS_TO_BASIC_TYPE::get);
+    public static PrimitiveInstance resolvePersistedPrimitive(Object persistedValue) {
+        return resolvePersistedPrimitive(persistedValue, JAVA_CLASS_TO_BASIC_TYPE::get);
     }
 
-    public static PrimitiveInstance resolvePrimitiveValue(Type fieldType,
-                                                          Object columnValue,
-                                                          Function<Class<?>, Type> getTypeFunc) {
-        if (columnValue == null) {
+    public static PrimitiveInstance resolvePersistedPrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+        if (value == null) {
             return InstanceUtils.nullInstance(getTypeFunc);
         }
-        if (columnValue instanceof TimePO timePO) {
+        if (value instanceof TimePO timePO) {
             return InstanceUtils.timeInstance(timePO.time(), getTypeFunc);
         }
-        if (ValueUtil.isInteger(columnValue)) {
-            if (fieldType.isDouble()) {
-                return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
-            } else if (fieldType.isTime()) {
-                return timeInstance(((Number) columnValue).longValue(), getTypeFunc);
-            } else {
-                return longInstance(((Number) columnValue).longValue(), getTypeFunc);
-            }
-        } else if (ValueUtil.isFloat(columnValue)) {
-            return doubleInstance(((Number) columnValue).doubleValue(), getTypeFunc);
-        } else if (columnValue instanceof Boolean bool) {
+        if (ValueUtil.isInteger(value)) {
+            return longInstance(((Number) value).longValue(), getTypeFunc);
+        } else if (ValueUtil.isFloat(value)) {
+            return doubleInstance(((Number) value).doubleValue(), getTypeFunc);
+        } else if (value instanceof Boolean bool) {
             return booleanInstance(bool, getTypeFunc);
-        } else if (columnValue instanceof String str) {
-            if (fieldType.isPassword()) {
-                return passwordInstance(str, getTypeFunc);
-            }
+        } else if (value instanceof PasswordPO passwordPO) {
+            return InstanceUtils.passwordInstance(passwordPO.value(), getTypeFunc);
+        } else if (value instanceof String str) {
             return stringInstance(str, getTypeFunc);
-        } else if (columnValue instanceof Password password) {
-            return passwordInstance(password.getPassword(), getTypeFunc);
         }
-        throw new InternalException("Can not resolve column value '" + columnValue + "' for type " + fieldType);
+        throw new InternalException(String.format("Can not resolve column value '%s'", value));
     }
 
     public static PrimitiveInstance primitiveInstance(Object value) {

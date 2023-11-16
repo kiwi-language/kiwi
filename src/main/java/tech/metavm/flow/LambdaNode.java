@@ -7,10 +7,10 @@ import tech.metavm.flow.rest.LambdaNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.LambdaInstance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.FunctionType;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeUtils;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.FunctionType;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Types;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
@@ -142,7 +142,7 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         if (functionalInterface == null) {
             frame.setResult(func);
         } else {
-            var funcClass = TypeUtils.createFunctionalClass(
+            var funcClass = Types.createFunctionalClass(
                     functionalInterface,
                     frame.getStack().getContext().getEntityContext());
             var funcField = funcClass.getFieldByCode("func");

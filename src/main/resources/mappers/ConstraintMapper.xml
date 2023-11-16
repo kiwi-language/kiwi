@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="tech.metavm.object.meta.persistence.mappers.ConstraintMapper">
+<mapper namespace="tech.metavm.object.type.persistence.mappers.ConstraintMapper">
 
-  <resultMap id="BaseResultMap" type="tech.metavm.object.meta.persistence.ConstraintPO">
+  <resultMap id="BaseResultMap" type="tech.metavm.object.type.persistence.ConstraintPO">
     <!--@mbg.generated-->
     <!--@Table `constraint`-->
     <id column="id" jdbcType="BIGINT" property="id" />

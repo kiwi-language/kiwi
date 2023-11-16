@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.ParsingContext;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceUtils;
 
 import javax.annotation.Nullable;

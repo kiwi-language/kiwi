@@ -5,7 +5,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowBuilder;
 import tech.metavm.flow.Parameter;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
 

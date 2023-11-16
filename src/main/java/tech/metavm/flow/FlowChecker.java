@@ -2,7 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.Element;
 import tech.metavm.expression.StructuralVisitor;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 public class FlowChecker extends StructuralVisitor<Boolean> {
 

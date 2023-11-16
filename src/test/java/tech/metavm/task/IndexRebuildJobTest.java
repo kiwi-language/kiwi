@@ -8,7 +8,7 @@ import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.TestConstants;

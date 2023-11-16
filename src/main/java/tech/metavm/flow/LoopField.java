@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.LoopFieldDTO;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 
 @EntityType("循环字段")
 public class LoopField extends Entity {

@@ -5,7 +5,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 
 public class ParameterParsingContext implements ParsingContext {

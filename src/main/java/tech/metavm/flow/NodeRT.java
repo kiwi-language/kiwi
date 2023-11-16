@@ -7,8 +7,8 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.NameUtils;
 import tech.metavm.util.NncUtils;
 

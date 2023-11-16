@@ -2,7 +2,6 @@ package tech.metavm.object.instance.core;
 
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import tech.metavm.dto.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
@@ -11,10 +10,11 @@ import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -86,7 +86,7 @@ public class InstanceContext extends BaseInstanceContext {
                 NncUtils.get(parent, IInstanceContext::getEntityContext),
                 defContext
         );
-        setCreateJob(job -> getEntityContext().bind(job));
+        setBindHook(job -> getEntityContext().bind(job));
     }
 
     @Override
@@ -150,7 +150,7 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void initializeInstance(Instance instance) {
-        try (var entry = profiler.enter("initializeInstance")) {
+        try (var entry = getProfiler().enter("initializeInstance")) {
             entry.addMessage("id", instance.getIdRequired());
             loadForest(List.of(instance), 0);
         }
@@ -196,7 +196,7 @@ public class InstanceContext extends BaseInstanceContext {
             InstanceArrayPO arrayPO = (InstanceArrayPO) instancePO;
             List<Instance> elements = NncUtils.map(
                     arrayPO.getElements(),
-                    e -> resolveColumnValue(TypeUtils.getElementType(arrayInstance.getType()), e)
+                    e -> resolveColumnValue(Types.getElementType(arrayInstance.getType()), e)
             );
             arrayInstance.reload(elements);
         } else if (instance instanceof ClassInstance classInstance) {
@@ -216,7 +216,7 @@ public class InstanceContext extends BaseInstanceContext {
     private void loadForest(List<Instance> instances, int depth) {
         if (instances.isEmpty())
             return;
-        try (var entry = profiler.enter("loadForest", true)) {
+        try (var entry = getProfiler().enter("loadForest", true)) {
             entry.addMessage("depth", depth);
             List<Instance> descendants = new ArrayList<>();
             var visitor = new StructuralVisitor() {
@@ -278,7 +278,7 @@ public class InstanceContext extends BaseInstanceContext {
             initializeInstance(instance, instancePO);
             return instance;
         } else {
-            return InstanceUtils.resolvePrimitiveValue(fieldType, columnValue, getDefContext()::getType);
+            return InstanceUtils.resolvePersistedPrimitive(columnValue, getDefContext()::getType);
         }
     }
 
@@ -287,36 +287,69 @@ public class InstanceContext extends BaseInstanceContext {
         if (finished) {
             throw new IllegalStateException("Already finished");
         }
-        rebind();
-        initIds();
-        entityContext.afterContextIntIds();
-        IdentityHashMap<InstancePO, Instance> bufferedPOs = getBufferedInstancePOs();
-        ContextDifference difference = buildDifference(bufferedPOs.keySet());
-        Set<Instance> orphans = getOrphans(difference);
+        var patch = buildPatch(null);
+        Set<Instance> orphans = getOrphans(patch);
         if (!orphans.isEmpty()) {
             batchRemove(orphans);
-            initIds();
-            bufferedPOs = getBufferedInstancePOs();
-            difference = buildDifference(bufferedPOs.keySet());
+            patch = buildPatch(patch);
         }
-        processUpdate(difference.getEntityChange(), bufferedPOs);
-        processRemoval(difference.getEntityChange());
-        processEntityChangeHelper(difference.getEntityChange());
-        try (var ignored = profiler.enter("saveReferences")) {
-            instanceStore.saveReferences(difference.getReferenceChange().toChangeList());
-        }
+        processUpdate(patch);
+        processRemoval(patch.entityChange);
+        patch = beforeSaving(patch);
+        saveInstances(patch.entityChange);
+        afterSaving(patch);
+        saveReferences(patch.referenceChange);
         headContext.clear();
-        for (InstancePO instancePO : bufferedPOs.keySet()) {
+        for (InstancePO instancePO : patch.instancePOs.keySet()) {
             headContext.add(EntityUtils.copyPojo(instancePO), getType(instancePO.getTypeId()));
         }
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             registerTransactionSynchronization();
         } else {
-            try (var ignored = profiler.enter("postProcess")) {
+            try (var ignored = getProfiler().enter("postProcess")) {
                 postProcess();
             }
         }
         finished = true;
+    }
+
+    private ContextPatch buildPatch(@Nullable ContextPatch prevPatch) {
+        rebind();
+        initIds();
+        var instancePOs = getBufferedInstancePOs();
+        var difference = buildDifference(instancePOs.keySet());
+        var entityChange = difference.getEntityChange();
+        var refChange = difference.getReferenceChange();
+        if(prevPatch == null)
+            entityContext.afterContextIntIds();
+        else {
+            prevPatch.entityChange.getAttributes().forEach((key, value) -> {
+                //noinspection rawtypes,unchecked
+                entityChange.setAttribute((DifferenceAttributeKey) key, value);
+            });
+        }
+        return new ContextPatch(instancePOs, entityChange, refChange);
+    }
+
+    private record ContextPatch(IdentityHashMap<InstancePO, Instance> instancePOs,
+                                EntityChange<InstancePO> entityChange,
+                                EntityChange<ReferencePO> referenceChange) {}
+
+    private ContextPatch beforeSaving(ContextPatch patch) {
+        try(var ignored = getProfiler().enter("beforeSaving")) {
+            for (ContextPlugin plugin : plugins) {
+                if(plugin.beforeSaving(patch.entityChange, this)) {
+                    patch = buildPatch(patch);
+                }
+            }
+        }
+        return patch;
+    }
+
+    private void afterSaving(ContextPatch patch) {
+        try(var ignored = getProfiler().enter("afterSaving")) {
+            plugins.forEach(plugin -> plugin.afterSaving(patch.entityChange, this));
+        }
     }
 
     private Set<Instance> getInstancesToPersist() {
@@ -347,12 +380,11 @@ public class InstanceContext extends BaseInstanceContext {
         return difference;
     }
 
-    private void processUpdate(EntityChange<InstancePO> entityChange,
-                               IdentityHashMap<InstancePO, Instance> bufferedInstancePOs) {
-        try (var ignored = profiler.enter("processUpdate")) {
-            List<InstancePO> insertOrUpdate = NncUtils.union(entityChange.inserts(), entityChange.updates());
+    private void processUpdate(ContextPatch patch) {
+        try (var ignored = getProfiler().enter("processUpdate")) {
+            List<InstancePO> insertOrUpdate = NncUtils.union(patch.entityChange.inserts(), patch.entityChange.updates());
             for (InstancePO instancePO : insertOrUpdate) {
-                Instance instance = bufferedInstancePOs.get(instancePO);
+                Instance instance = patch.instancePOs.get(instancePO);
                 if (instance instanceof ClassInstance classInstance) {
                     var model = entityContext.getModel(Object.class, instance);
                     if (model instanceof UpdateAware updateAware) {
@@ -367,7 +399,7 @@ public class InstanceContext extends BaseInstanceContext {
     }
 
     private void processRemoval(EntityChange<InstancePO> entityChange) {
-        try (var ignored = profiler.enter("processRemoval")) {
+        try (var ignored = getProfiler().enter("processRemoval")) {
             if (NncUtils.isEmpty(entityChange.deletes())) {
                 return;
             }
@@ -386,10 +418,10 @@ public class InstanceContext extends BaseInstanceContext {
         }
     }
 
-    private Set<Instance> getOrphans(ContextDifference difference) {
-        Set<Long> removed = NncUtils.mapUnique(difference.getEntityChange().deletes(), InstancePO::getId);
+    private Set<Instance> getOrphans(ContextPatch patch) {
+        Set<Long> removed = NncUtils.mapUnique(patch.entityChange().deletes(), InstancePO::getId);
         Set<Instance> orphans = new HashSet<>();
-        for (ReferencePO removedRef : difference.getReferenceChange().deletes()) {
+        for (ReferencePO removedRef : patch.referenceChange().deletes()) {
             if (isChildReference(removedRef) && !removed.contains(removedRef.getTargetId())) {
                 orphans.add(get(removedRef.getTargetId()));
             }
@@ -472,11 +504,15 @@ public class InstanceContext extends BaseInstanceContext {
         }
     }
 
-    private void processEntityChangeHelper(EntityChange<InstancePO> change) {
-        try (var ignored = profiler.enter("processEntityChangeHelper")) {
-            plugins.forEach(p -> p.beforeSaving(change, this));
+    private void saveInstances(EntityChange<InstancePO> change) {
+        try (var ignored = getProfiler().enter("processEntityChangeHelper")) {
             instanceStore.save(change.toChangeList());
-            plugins.forEach(p -> p.afterSaving(change, this));
+        }
+    }
+
+    private void saveReferences(EntityChange<ReferencePO> referenceChange) {
+        try (var ignored = getProfiler().enter("saveReferences")) {
+            instanceStore.saveReferences(referenceChange.toChangeList());
         }
     }
 

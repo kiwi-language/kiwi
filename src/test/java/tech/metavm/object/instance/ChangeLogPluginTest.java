@@ -23,7 +23,7 @@ public class ChangeLogPluginTest extends TestCase {
         InstancePO instancePO = new InstancePO(
                 -1L, 1000L, 100L, "Big Foo",
                 Map.of(
-                        NncUtils.toBase64(100L),
+                        NncUtils.encondeBase64(100L),
                         Map.of("s0", "Big Foo")
                 ),
                 null, null,

@@ -8,8 +8,8 @@ import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeUtils;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
@@ -64,7 +64,7 @@ public class TranspileUtil {
         return switch (type) {
             case PsiClassType classType -> {
                 var klass = NncUtils.requireNonNull(classType.resolve());
-                yield TypeUtils.parameterizedName(
+                yield Types.parameterizedName(
                         getClassCanonicalName(klass),
                         NncUtils.map(
                                 classType.getParameters(),

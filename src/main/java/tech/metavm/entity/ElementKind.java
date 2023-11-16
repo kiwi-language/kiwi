@@ -4,8 +4,8 @@ import tech.metavm.expression.Expression;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.Value;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 @EntityType("元素类型")

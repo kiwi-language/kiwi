@@ -10,7 +10,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateObjectParamDTO;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 import tech.metavm.entity.ReadonlyArray;
@@ -60,13 +60,24 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
             fieldParams.resetChildren(
                     NncUtils.map(
                             param.fields(),
-                            fieldParamDTO -> new UpdateField(
-                                    entityContext.getField(fieldParamDTO.fieldRef()),
-                                    UpdateOp.getByCode(fieldParamDTO.opCode()),
-                                    ValueFactory.create(fieldParamDTO.value(), parsingContext)
-                            )
+                            updateFieldDTO -> saveField(updateFieldDTO, parsingContext, entityContext)
                     )
             );
+        }
+    }
+
+    private UpdateField saveField(UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
+        var field = entityContext.getField(updateFieldDTO.fieldRef());
+        var op = UpdateOp.getByCode(updateFieldDTO.opCode());
+        var value = ValueFactory.create(updateFieldDTO.value(), parsingContext);
+        var existing = fieldParams.get(UpdateField::getField, field);
+        if(existing != null) {
+            existing.setOp(op);
+            existing.setValue(value);
+            return existing;
+        }
+        else {
+            return new UpdateField(field, op, value);
         }
     }
 

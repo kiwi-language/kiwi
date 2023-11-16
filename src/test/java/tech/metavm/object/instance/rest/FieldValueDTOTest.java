@@ -5,7 +5,7 @@ import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.meta.PrimitiveKind;
+import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.util.PojoMatcher;
 import tech.metavm.util.TestUtils;
 

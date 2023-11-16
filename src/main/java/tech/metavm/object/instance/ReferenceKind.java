@@ -1,6 +1,6 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 public enum ReferenceKind {
 

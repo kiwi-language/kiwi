@@ -2,7 +2,7 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
@@ -13,7 +13,7 @@ import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.LoadInstancesByPathsRequest;
 import tech.metavm.object.instance.rest.SelectRequestDTO;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.Constants;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;

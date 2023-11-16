@@ -1,16 +1,15 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.flow.rest.ArgumentDTO;
 import tech.metavm.flow.rest.CallParam;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 

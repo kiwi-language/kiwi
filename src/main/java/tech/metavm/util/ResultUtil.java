@@ -1,8 +1,7 @@
 package tech.metavm.util;
 
-import tech.metavm.dto.ErrorCode;
-import tech.metavm.dto.InternalErrorCode;
-import tech.metavm.dto.Result;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.common.InternalErrorCode;
 
 import java.util.Objects;
 

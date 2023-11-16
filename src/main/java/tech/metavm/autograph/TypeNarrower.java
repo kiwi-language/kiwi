@@ -2,9 +2,9 @@ package tech.metavm.autograph;
 
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.expression.*;
-import tech.metavm.object.meta.NothingType;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.UnionType;
+import tech.metavm.object.type.NothingType;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.UnionType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 

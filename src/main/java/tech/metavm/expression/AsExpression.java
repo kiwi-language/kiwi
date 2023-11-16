@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

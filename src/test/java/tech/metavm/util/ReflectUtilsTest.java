@@ -5,11 +5,10 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.meta.Constraint;
+import tech.metavm.object.type.Constraint;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.sql.Ref;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

@@ -1,16 +1,17 @@
 package tech.metavm.entity;
 
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.generic.*;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.generic.*;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.NncUtils;
@@ -19,6 +20,7 @@ import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -40,12 +42,14 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     DefContext getDefContext();
 
-    <T> List<T> getByType(Class<T> type, T startExclusive, long limit);
+    <T> List<T> getByType(Class<? extends T> type, T startExclusive, long limit);
 
     default List<ClassType> getTemplateInstances(ClassType template) {
         NncUtils.requireTrue(template.isTemplate());
         return selectByKey(ClassType.TEMPLATE_IDX,template);
     }
+
+    <T> List<T> getAllCachedEntities(Class<T> entityClass);
 
     void close();
 
@@ -88,6 +92,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     }
 
     boolean isNewEntity(Object entity);
+
+    <T> T getRemoved(Class<T> entityClass, long id);
 
     boolean isPersisted(Object entity);
 
@@ -209,4 +215,7 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     CompositeTypeContext<?> getCompositeTypeContext(TypeCategory category);
 
+    Collection<CompositeTypeContext<?>> getCompositeTypeContexts();
+
+    boolean isRemoved(Object entity);
 }

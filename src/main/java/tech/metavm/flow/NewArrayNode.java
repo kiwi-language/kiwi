@@ -9,7 +9,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NewArrayParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

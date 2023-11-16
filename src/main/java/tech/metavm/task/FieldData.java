@@ -3,11 +3,11 @@ package tech.metavm.task;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.rest.dto.CreatingFieldDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.type.Access;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.rest.dto.CreatingFieldDTO;
+import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.util.Column;
 import tech.metavm.util.InstanceUtils;
 

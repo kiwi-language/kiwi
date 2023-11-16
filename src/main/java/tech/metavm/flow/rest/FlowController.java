@@ -2,13 +2,13 @@ package tech.metavm.flow.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import tech.metavm.dto.ErrorCode;
-import tech.metavm.dto.Page;
-import tech.metavm.dto.Result;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.common.Page;
+import tech.metavm.common.Result;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.meta.rest.dto.MovePropertyRequest;
+import tech.metavm.object.type.rest.dto.MovePropertyRequest;
 import tech.metavm.util.FlowExecutionException;
 
 import java.util.List;
@@ -50,7 +50,7 @@ public class FlowController {
 
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
-        flowManager.delete(id);
+        flowManager.remove(id);
         return Result.success(null);
     }
 

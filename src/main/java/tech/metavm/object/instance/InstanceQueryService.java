@@ -1,25 +1,26 @@
 package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
 
-import static tech.metavm.util.InstanceUtils.resolveValue;
+import static tech.metavm.util.InstanceUtils.resolvePersistedValue;
 
 @Component
 public class InstanceQueryService {
@@ -81,16 +82,16 @@ public class InstanceQueryService {
         );
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition;
-            if(queryField.value() instanceof Collection<?> values) {
-                List<Instance> instanceValues = NncUtils.map(
-                    values, v -> resolveValue(queryField.field().getType(), v)
-                );
-                fieldCondition = ExpressionUtil.fieldIn(queryField.field(), instanceValues);
+            if(queryField.value() instanceof ArrayInstance array) {
+//                List<Instance> instanceValues = NncUtils.map(
+//                    values, v -> resolvePersistedValue(queryField.field().getType(), v)
+//                );
+                fieldCondition = ExpressionUtil.fieldIn(queryField.field(), array.getElements());
             }
             else {
-                Instance fieldValue =
-                        resolveValue(queryField.field().getType(), queryField.value());
-                fieldCondition = ExpressionUtil.fieldEq(queryField.field(), fieldValue);
+//                Instance fieldValue =
+//                        resolvePersistedValue(queryField.field().getType(), queryField.value());
+                fieldCondition = ExpressionUtil.fieldEq(queryField.field(), queryField.value());
             }
             condition = condition != null ?
                     ExpressionUtil.and(condition, fieldCondition) : fieldCondition;

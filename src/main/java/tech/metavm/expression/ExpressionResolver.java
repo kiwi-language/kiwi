@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -41,7 +41,7 @@ public class ExpressionResolver {
                 elementType = StandardTypes.getNothingType();
             }
             else {
-                elementType = TypeUtils.getLeastUpperBound(types);
+                elementType = Types.getLeastUpperBound(types);
             }
         }
         return new ArrayExpression(

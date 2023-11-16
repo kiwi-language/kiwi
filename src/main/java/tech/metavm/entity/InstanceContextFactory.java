@@ -50,6 +50,10 @@ public class InstanceContextFactory implements IInstanceContextFactory {
         return newContext(tenantId, asyncProcessLogs, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
     }
 
+    public IEntityContext newEntityContext(long tenantId) {
+        return newEntityContext(tenantId, defaultAsyncProcessing);
+    }
+
     public IEntityContext newEntityContext(long tenantId, boolean asyncProcessing) {
         //noinspection resource
         return newContext(tenantId, asyncProcessing).getEntityContext();

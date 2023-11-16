@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 

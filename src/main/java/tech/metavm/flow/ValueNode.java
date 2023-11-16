@@ -8,7 +8,7 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ValueParamDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 @EntityType("计算节点")

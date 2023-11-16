@@ -8,7 +8,7 @@ import tech.metavm.flow.NodeKind;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.PojoMatcher;
 import tech.metavm.util.TestUtils;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 
 import java.util.List;
 

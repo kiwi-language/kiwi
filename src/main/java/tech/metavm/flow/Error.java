@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.dto.ErrorDTO;
+import tech.metavm.common.ErrorDTO;
 import tech.metavm.entity.*;
 
 @EntityType("错误")

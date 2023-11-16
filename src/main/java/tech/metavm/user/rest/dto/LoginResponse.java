@@ -1,9 +1,10 @@
 package tech.metavm.user.rest.dto;
 
+import tech.metavm.user.Token;
+
 public record LoginResponse(
         boolean successful,
-        String token
+        Token token
 ) {
-
 
 }

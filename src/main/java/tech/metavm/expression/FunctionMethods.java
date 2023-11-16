@@ -1,13 +1,12 @@
 package tech.metavm.expression;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.natives.IteratorImplNative;
 import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
-import java.awt.datatransfer.StringSelection;
 import java.util.List;
 
 public class FunctionMethods {

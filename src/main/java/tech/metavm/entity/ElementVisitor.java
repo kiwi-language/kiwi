@@ -4,7 +4,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import tech.metavm.expression.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 
 public abstract class ElementVisitor<R> {
 

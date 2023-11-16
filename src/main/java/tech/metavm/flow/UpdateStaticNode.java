@@ -5,8 +5,8 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateStaticParamDTO;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

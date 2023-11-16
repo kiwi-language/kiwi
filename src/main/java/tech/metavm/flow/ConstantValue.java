@@ -8,7 +8,7 @@ import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 

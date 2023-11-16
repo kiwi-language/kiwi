@@ -2,7 +2,7 @@ package tech.metavm.object.instance.query;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;

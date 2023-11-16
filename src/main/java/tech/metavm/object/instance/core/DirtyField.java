@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.Entity;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.Column;
 
 public class DirtyField extends Entity {

@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.UnionType;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.UnionType;
 import tech.metavm.util.RuntimeGeneric;
 import tech.metavm.util.TypeReference;
 
@@ -14,7 +14,7 @@ public interface DefMap {
 
     boolean containsDef(Type javaType);
 
-    boolean containsDef(tech.metavm.object.meta.Type type);
+    boolean containsDef(tech.metavm.object.type.Type type);
 
     default ModelDef<?,?> getDefByModel(Object model) {
         if(model instanceof RuntimeGeneric runtimeGeneric) {
@@ -25,9 +25,9 @@ public interface DefMap {
         }
     }
 
-    tech.metavm.object.meta.Type internType(tech.metavm.object.meta.Type type);
+    tech.metavm.object.type.Type internType(tech.metavm.object.type.Type type);
 
-    ModelDef<?, ?> getDef(tech.metavm.object.meta.Type type);
+    ModelDef<?, ?> getDef(tech.metavm.object.type.Type type);
 
     void preAddDef(ModelDef<?,?> def);
 
@@ -35,9 +35,9 @@ public interface DefMap {
 
     void afterDefInitialized(ModelDef<?,?> def);
 
-    ArrayType getArrayType(tech.metavm.object.meta.Type type, ArrayKind kind);
+    ArrayType getArrayType(tech.metavm.object.type.Type type, ArrayKind kind);
 
-    UnionType getNullableType(tech.metavm.object.meta.Type type);
+    UnionType getNullableType(tech.metavm.object.type.Type type);
 
     boolean containsJavaType(Type javaType);
 
@@ -75,11 +75,11 @@ public interface DefMap {
         );
     }
 
-    default tech.metavm.object.meta.Type getType(Class<?> javaClass) {
+    default tech.metavm.object.type.Type getType(Class<?> javaClass) {
         return getDef(javaClass).getType();
     }
 
-    default tech.metavm.object.meta.Type getType(Type javaType) {
+    default tech.metavm.object.type.Type getType(Type javaType) {
         return getDef(javaType).getType();
     }
 

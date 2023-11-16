@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -15,6 +15,11 @@ public class StringInstance extends PrimitiveInstance {
 
     @Override
     public String getValue() {
+        return value;
+    }
+
+    @Override
+    public Object toColumnValue() {
         return value;
     }
 

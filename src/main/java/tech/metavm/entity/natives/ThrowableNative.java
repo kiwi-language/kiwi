@@ -4,7 +4,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.instance.core.StringInstance;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 

@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.ReflectUtils;
 
@@ -12,12 +12,12 @@ import java.lang.reflect.Field;
 public class ClassFieldDef implements IFieldDef {
 
     private final PojoDef<?> declaringTypeDef;
-    private final tech.metavm.object.meta.Field field;
+    private final tech.metavm.object.type.Field field;
     private final Field javaField;
     private final DefMap defMap;
 
     public ClassFieldDef(PojoDef<?> declaringTypeDef,
-                         tech.metavm.object.meta.Field field,
+                         tech.metavm.object.type.Field field,
                          Field javaField,
                          DefMap defMap) {
         this.declaringTypeDef = declaringTypeDef;
@@ -56,7 +56,7 @@ public class ClassFieldDef implements IFieldDef {
     }
 
     @Override
-    public tech.metavm.object.meta.Field getField() {
+    public tech.metavm.object.type.Field getField() {
         return field;
     }
 

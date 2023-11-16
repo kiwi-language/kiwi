@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.FieldParamDTO;
 import tech.metavm.flow.rest.ValueDTO;
@@ -8,7 +8,7 @@ import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
 import java.util.Objects;

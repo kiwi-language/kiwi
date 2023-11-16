@@ -2,9 +2,9 @@ package tech.metavm.expression;
 
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 

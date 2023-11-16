@@ -11,7 +11,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.ExceptionParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.object.type.StandardTypes;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

@@ -2,8 +2,8 @@ package tech.metavm.tenant.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import tech.metavm.dto.Page;
-import tech.metavm.dto.Result;
+import tech.metavm.common.Page;
+import tech.metavm.common.Result;
 import tech.metavm.tenant.TenantManager;
 import tech.metavm.tenant.rest.dto.TenantCreateRequest;
 import tech.metavm.tenant.rest.dto.TenantDTO;

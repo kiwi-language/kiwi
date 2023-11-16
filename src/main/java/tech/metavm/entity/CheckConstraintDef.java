@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.CheckConstraint;
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.type.CheckConstraint;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;

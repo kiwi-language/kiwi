@@ -1,12 +1,12 @@
 package tech.metavm.entity.natives;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.StandardTypes;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.StandardTypes;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;

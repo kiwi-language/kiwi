@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.dto.BaseDTO;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.BaseDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.TypeReference;

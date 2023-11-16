@@ -12,10 +12,10 @@ public class FieldDef implements IFieldDef {
     private final Field javaField;
     private final boolean nullable;
     private final PojoDef<?> declaringTypeDef;
-    private final tech.metavm.object.meta.Field field;
+    private final tech.metavm.object.type.Field field;
     private final ModelDef<?, ?> targetDef;
 
-    public FieldDef(tech.metavm.object.meta.Field field,
+    public FieldDef(tech.metavm.object.type.Field field,
                     boolean nullable,
                     Field javaField,
                     PojoDef<?> declaringTypeDef,
@@ -37,43 +37,16 @@ public class FieldDef implements IFieldDef {
     @Override
     public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
         Instance fieldValue = instance.getField(field);
-        if(fieldValue instanceof PrimitiveInstance primitiveInstance) {
-            if(primitiveInstance.isNull()) {
-                return null;
-            }
-            if(primitiveInstance instanceof  LongInstance longInstance &&
-                    (javaField.getType() == int.class || javaField.getType() == Integer.class)) {
-                return longInstance.getValue().intValue();
-            }
-            if(primitiveInstance instanceof PasswordInstance passwordInstance) {
-                return new Password(passwordInstance);
-            }
-            return primitiveInstance.getValue();
-        }
         if(targetDef instanceof InstanceDef<?> || targetDef instanceof InstanceCollectionDef<?,?>) {
-            return modelInstanceMap.getModel(Object.class, fieldValue, targetDef);
+            return modelInstanceMap.getModel(javaField.getType(), fieldValue, targetDef);
         }
-        return modelInstanceMap.getModel(Object.class, fieldValue);
+        return modelInstanceMap.getModel(javaField.getType(), fieldValue);
     }
 
     @Override
     public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
         EntityUtils.ensureProxyInitialized(model);
-        Object fieldValue = ReflectUtils.get(model, javaField);
-        if(fieldValue == null) {
-            if(nullable) {
-                return InstanceUtils.nullInstance();
-            }
-            throw new InternalException("Field " + fieldName() + " can not be null");
-        }
-        if(ValueUtil.isPrimitiveType(fieldValue.getClass())) {
-            return InstanceUtils.resolvePrimitiveValue(
-                    field.getType(),
-                    fieldValue,
-                    declaringTypeDef.getDefMap()::getType
-            );
-        }
-        return instanceMap.getInstance(fieldValue);
+        return instanceMap.getInstance(ReflectUtils.get(model, javaField));
     }
 
     @Override
@@ -93,7 +66,7 @@ public class FieldDef implements IFieldDef {
     }
 
     @Override
-    public tech.metavm.object.meta.Field getField() {
+    public tech.metavm.object.type.Field getField() {
         return field;
     }
 

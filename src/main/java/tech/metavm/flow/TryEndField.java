@@ -5,10 +5,9 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.TryEndFieldDTO;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.entity.ReadonlyArray;
 
 import javax.annotation.Nullable;
 import java.util.List;

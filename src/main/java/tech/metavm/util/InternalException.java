@@ -1,6 +1,6 @@
 package tech.metavm.util;
 
-import tech.metavm.dto.InternalErrorCode;
+import tech.metavm.common.InternalErrorCode;
 
 public class InternalException extends RuntimeException {
 

@@ -4,7 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.rest.ScopeNodeParamDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 @EntityType("范围节点")
 public abstract class ScopeNode<P extends ScopeNodeParamDTO> extends NodeRT<P> {

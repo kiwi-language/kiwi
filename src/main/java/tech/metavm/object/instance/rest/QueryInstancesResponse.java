@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.rest;
 
-import tech.metavm.dto.Page;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.common.Page;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 
 import java.util.List;
 

@@ -3,11 +3,10 @@ package tech.metavm.autograph;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeVariable;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeVariable;
 
 import java.util.Set;
 

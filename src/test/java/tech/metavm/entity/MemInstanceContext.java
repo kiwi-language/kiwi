@@ -5,7 +5,7 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -31,7 +31,7 @@ public class MemInstanceContext extends BaseInstanceContext {
                               IInstanceContext parent) {
         super(tenantId, idProvider, instanceStore, MockRegistry.getDefContext(), parent, -1L);
         typeProvider = typeId -> getEntityContext().getType(typeId);
-        setCreateJob(job -> getEntityContext().bind(job));
+        setBindHook(job -> getEntityContext().bind(job));
     }
 
     public MemInstanceContext initData(Collection<Instance> instances) {

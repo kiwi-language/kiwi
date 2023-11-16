@@ -23,7 +23,7 @@ public abstract class EntityScanTask<T> extends ScanTask {
 
     @Override
     protected List<Instance> scan(IInstanceContext context, Instance cursor, long limit) {
-        tech.metavm.object.meta.Type metaType = ModelDefRegistry.getType(entityType);
+        tech.metavm.object.type.Type metaType = ModelDefRegistry.getType(entityType);
         return context.getByType(metaType, cursor, limit);
     }
 

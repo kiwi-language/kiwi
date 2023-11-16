@@ -1,6 +1,6 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 
 import javax.annotation.Nullable;

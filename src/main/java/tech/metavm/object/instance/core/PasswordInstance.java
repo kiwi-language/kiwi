@@ -1,8 +1,9 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.instance.persistence.PasswordPO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
-import tech.metavm.object.meta.PrimitiveKind;
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveKind;
+import tech.metavm.object.type.PrimitiveType;
 
 public class PasswordInstance extends PrimitiveInstance {
 
@@ -16,6 +17,11 @@ public class PasswordInstance extends PrimitiveInstance {
     @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public PasswordPO toColumnValue() {
+        return new PasswordPO(value);
     }
 
     @Override

@@ -1,11 +1,11 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.ObjectType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ObjectType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;

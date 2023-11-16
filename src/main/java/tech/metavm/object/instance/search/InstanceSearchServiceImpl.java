@@ -10,7 +10,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.SearchHit;
 import org.springframework.stereotype.Component;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.util.NncUtils;
 

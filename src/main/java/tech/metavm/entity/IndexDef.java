@@ -2,10 +2,10 @@ package tech.metavm.entity;
 
 import tech.metavm.flow.ReferenceValue;
 import tech.metavm.expression.ExpressionUtil;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Index;
-import tech.metavm.object.meta.IndexField;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Index;
+import tech.metavm.object.type.IndexField;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;

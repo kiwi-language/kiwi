@@ -1,8 +1,8 @@
 package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.dto.BaseDTO;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.BaseDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 

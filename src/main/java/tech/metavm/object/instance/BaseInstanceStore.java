@@ -5,10 +5,10 @@ import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

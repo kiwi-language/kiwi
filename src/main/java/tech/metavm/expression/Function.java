@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.ValueUtil;
 
 import java.util.Arrays;

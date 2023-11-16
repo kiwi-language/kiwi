@@ -2,11 +2,10 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.flow.FlowStack;
 import tech.metavm.flow.Frame;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParamDTO;
-import tech.metavm.object.meta.FunctionType;
+import tech.metavm.object.type.FunctionType;
 import tech.metavm.util.IdentitySet;
 
 import java.util.List;

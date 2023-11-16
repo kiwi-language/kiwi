@@ -6,7 +6,7 @@ import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;

@@ -1,15 +1,11 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PasswordInstance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -133,13 +129,13 @@ public class InstanceFactory {
             type = type.getUnderlyingType();
         }
         if (rawValue instanceof PrimitiveFieldValue primitiveFieldValue) {
-            if (type.isPassword()) {
-                return new PasswordInstance(
-                        EncodingUtils.md5((String) primitiveFieldValue.getValue()),
-                        StandardTypes.getPasswordType()
-                );
-            }
-            return InstanceUtils.resolvePrimitiveValue(type, primitiveFieldValue.getValue());
+//            if (type.isPassword()) {
+//                return new PasswordInstance(
+//                        EncodingUtils.md5((String) primitiveFieldValue.getValue()),
+//                        StandardTypes.getPasswordType()
+//                );
+//            }
+            return resolvePrimitiveValue(primitiveFieldValue);
         } else if (rawValue instanceof ReferenceFieldValue referenceFieldValue) {
             return context.get(referenceFieldValue.getId());
         } else if (rawValue instanceof InstanceFieldValue instanceFieldValue) {
@@ -170,6 +166,21 @@ public class InstanceFactory {
             }
         }
         throw new InternalException("Can not resolve field value: " + rawValue);
+    }
+
+    private static PrimitiveInstance resolvePrimitiveValue(PrimitiveFieldValue fieldValue) {
+        var kind = PrimitiveKind.getByCode(fieldValue.getPrimitiveKind());
+        var value = fieldValue.getValue();
+        return switch (kind) {
+            case LONG -> InstanceUtils.longInstance(((Number) value).longValue());
+            case DOUBLE -> InstanceUtils.doubleInstance(((Number) value).doubleValue());
+            case BOOLEAN -> InstanceUtils.booleanInstance((Boolean) value);
+            case PASSWORD -> InstanceUtils.passwordInstance((String) value);
+            case STRING -> InstanceUtils.stringInstance((String) value);
+            case TIME -> InstanceUtils.timeInstance(((Number) value).longValue());
+            case NULL -> InstanceUtils.nullInstance();
+            case VOID -> throw new InternalException("Invalid primitive kind 'void'");
+        };
     }
 
 }

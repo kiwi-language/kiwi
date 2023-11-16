@@ -1,13 +1,13 @@
 package tech.metavm.flow;
 
-import tech.metavm.dto.ErrorCode;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.BranchDTO;
 import tech.metavm.flow.rest.BranchParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.*;
 
 import java.util.*;

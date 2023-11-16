@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.ChildEntity;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 public abstract class ChildTypeNode<P> extends NodeRT<P> {
 

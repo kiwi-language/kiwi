@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 
 import java.util.List;
 

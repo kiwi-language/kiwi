@@ -2,8 +2,8 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

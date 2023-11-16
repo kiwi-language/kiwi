@@ -1,11 +1,11 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.BusinessException;
 
 @EntityType("数组操作节点")

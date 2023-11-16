@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -13,13 +15,13 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 @Component
-@Order(2)
+@Order(3)
 public class VerificationFilter extends OncePerRequestFilter {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(VerificationFilter.class);
 
     @Autowired
     private LoginService loginService;
@@ -28,26 +30,18 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/tenant",
             "/login",
             "/bootstrap",
-            "/lab"
+            "/debug",
+            "/lab",
+            "/is-logged-in"
     );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        if(!shouldPass(request)) {
-            Token token = loginService.verify(request);
-            if(token != null) {
-                ContextUtil.setContextInfo(token.tenantId(), token.userId());
-            }
-            else {
-                throw BusinessException.verificationFailed();
-            }
+        if (!shouldPass(request)) {
+            var result = loginService.verify(Tokens.getToken(request));
+            ContextUtil.setLoginInfo(result.tenantId(), result.userId());
         }
-        try {
-            filterChain.doFilter(request, response);
-        }
-        finally {
-            ContextUtil.clearContextInfo();
-        }
+        filterChain.doFilter(request, response);
     }
 
     private boolean shouldPass(HttpServletRequest request) {

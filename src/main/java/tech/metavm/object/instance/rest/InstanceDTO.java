@@ -2,7 +2,7 @@ package tech.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 
 import javax.annotation.Nullable;

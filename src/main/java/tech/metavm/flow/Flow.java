@@ -1,13 +1,13 @@
 package tech.metavm.flow;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.VoidStructuralVisitor;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSignatureDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -331,13 +331,13 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
 
     private void setParameters(List<Parameter> parameters, boolean check) {
         if(check)
-            check(overridden, parameters, returnType, getType(), staticType);
+            checkTypes(overridden, parameters, returnType, getType(), staticType);
         parameters.forEach(p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
     }
 
-    private void check(List<Flow> overridden, List<Parameter> parameters, Type returnType,
-                       FunctionType type, FunctionType staticType) {
+    private void checkTypes(List<Flow> overridden, List<Parameter> parameters, Type returnType,
+                            FunctionType type, FunctionType staticType) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         for (Flow overriddenFlow : overridden) {
             if (!paramTypes.equals(overriddenFlow.getParameterTypes())) {
@@ -384,7 +384,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     public void setReturnType(Type returnType) {
-        check(overridden, parameters.toList(), returnType, getType(), staticType);
+        checkTypes(overridden, parameters.toList(), returnType, getType(), staticType);
         this.returnType = returnType;
     }
 
@@ -427,7 +427,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
                        FunctionType type,
                        FunctionType staticType
     ) {
-        check(overridden, parameters, returnType, type, staticType);
+        checkTypes(overridden, parameters, returnType, type, staticType);
         this.overridden.reset(overridden);
         this.returnType = returnType;
         super.setType(type);
@@ -438,7 +438,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     @Override
     public void setType(Type type) {
         if(type instanceof FunctionType funcType) {
-            check(overridden, parameters.toList(), returnType, funcType, staticType);
+            checkTypes(overridden, parameters.toList(), returnType, funcType, staticType);
             super.setType(type);
         }
         else
@@ -446,7 +446,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     public void setOverridden(List<Flow> overridden) {
-        check(overridden, parameters.toList(), returnType, getType(), staticType);
+        checkTypes(overridden, parameters.toList(), returnType, getType(), staticType);
         this.overridden.reset(overridden);
     }
 
@@ -456,13 +456,13 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     public void addOverriden(Flow overridden) {
-        check(List.of(overridden), parameters.toList(), returnType, getType(), staticType);
+        checkTypes(List.of(overridden), parameters.toList(), returnType, getType(), staticType);
         this.overridden.add(overridden);
         declaringType.rebuildFlowTable();
     }
 
     public void addOverriden(List<Flow> overridden) {
-        check(overridden, parameters.toList(), returnType, getType(), staticType);
+        checkTypes(overridden, parameters.toList(), returnType, getType(), staticType);
         this.overridden.addAll(overridden);
         declaringType.rebuildFlowTable();
     }

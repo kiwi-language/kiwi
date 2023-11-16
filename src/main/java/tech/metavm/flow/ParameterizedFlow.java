@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.List;
 

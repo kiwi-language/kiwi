@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tech.metavm.dto.ErrorCode;
-import tech.metavm.dto.Result;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.common.Result;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

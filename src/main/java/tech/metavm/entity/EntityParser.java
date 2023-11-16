@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 
 import java.lang.reflect.Type;
 

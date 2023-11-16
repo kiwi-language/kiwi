@@ -2,8 +2,8 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.SerializeContext;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 
 import java.util.List;
 import java.util.Objects;

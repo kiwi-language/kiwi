@@ -2,11 +2,11 @@ package tech.metavm.tenant;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.infra.IdService;
+import tech.metavm.management.IdService;
 import tech.metavm.task.TaskSignal;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQuery;
@@ -165,7 +165,7 @@ public class TenantManager {
     }
 
     private void setupContextInfo(long tenantId) {
-        ContextUtil.setContextInfo(tenantId, -1L);
+        ContextUtil.setLoginInfo(tenantId, -1L);
     }
 
 }

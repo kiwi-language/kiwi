@@ -10,11 +10,11 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.expression.ConstantExpression;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import java.util.List;

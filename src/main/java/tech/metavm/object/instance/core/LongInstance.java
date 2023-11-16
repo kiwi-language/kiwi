@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceUtils;
 
 public class LongInstance extends NumberInstance {
@@ -13,6 +13,11 @@ public class LongInstance extends NumberInstance {
     }
 
     public Long getValue() {
+        return value;
+    }
+
+    @Override
+    public Long toColumnValue() {
         return value;
     }
 

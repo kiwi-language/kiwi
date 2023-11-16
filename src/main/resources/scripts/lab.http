@@ -1,3 +1,40 @@
+###
+POST http://localhost:8080/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "tenantId": 1174703495,
+  "loginName": "admin",
+  "password": "123456"
+}
+
+###
+POST http://localhost:8080/logout
+Accept: application/json
+Content-Type: application/json
+
+###
+GET http://localhost:8080/is-logged-in
+Accept: application/json
+Content-Type: application/json
+
+###
+POST http://localhost:8080/instance/batch-get
+Accept: application/json
+Content-Type: application/json
+
+{
+  "ids": [
+    1175103505
+  ],
+  "depth": 1
+}
+
+###
+
+
+
 POST http://localhost:8081/api/table/column
 Accept: application/json
 Content-Type: application/json
@@ -22,6 +59,7 @@ Content-Type: application/json
   ]
 }
 
+
 ###
 POST http://localhost:8081/api/instance/batch-get
 Accept: application/json
@@ -34,6 +72,11 @@ Content-Type: application/json
   ],
   "depth": 1
 }
+
+###
+GET http://localhost:8080/type/load-all
+Accept: application/json
+Content-Type: application/json
 
 ###
 
@@ -184,6 +227,7 @@ Accept: application/json
 POST http://localhost:8080/type/query
 Accept: application/json
 Content-Type: application/json
+MetaVersion: 0
 
 {
   "categories": [13],

@@ -3,9 +3,9 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TypeReference;
 

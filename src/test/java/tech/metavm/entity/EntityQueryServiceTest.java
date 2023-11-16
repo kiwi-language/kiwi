@@ -2,11 +2,11 @@ package tech.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 

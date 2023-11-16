@@ -2,7 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.ParameterDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

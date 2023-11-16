@@ -1,11 +1,10 @@
 package tech.metavm.entity;
 
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
-import tech.metavm.infra.RegionManager;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.ParameterizedTypeDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.management.RegionManager;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
@@ -16,6 +15,15 @@ import java.util.function.Predicate;
 public class SerializeContext implements Closeable {
 
     public static final ThreadLocal<SerializeContext> THREAD_LOCAL = new ThreadLocal<>();
+
+    public static List<TypeDTO> forceWriteTypes(List<Type> types) {
+        try(var serContext = SerializeContext.enter()) {
+            for (Type type : types) {
+                serContext.forceWriteType(type);
+            }
+            return serContext.getTypes();
+        }
+    }
 
     private final Map<Object, Long> tmpIdMap = new HashMap<>();
     private final Set<Object> visited = new IdentitySet<>();

@@ -1,6 +1,6 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.object.instance.core.ClassInstance;

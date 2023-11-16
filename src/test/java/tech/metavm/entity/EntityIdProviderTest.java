@@ -2,14 +2,14 @@ package tech.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.infra.IdService;
-import tech.metavm.infra.MemBlockMapper;
-import tech.metavm.infra.MemRegionMapper;
-import tech.metavm.infra.RegionManager;
+import tech.metavm.management.IdService;
+import tech.metavm.management.MemBlockMapper;
+import tech.metavm.management.MemRegionMapper;
+import tech.metavm.management.RegionManager;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import java.util.HashSet;

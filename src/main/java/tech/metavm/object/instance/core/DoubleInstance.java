@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceUtils;
 
 import java.text.DecimalFormat;
@@ -18,6 +18,11 @@ public class DoubleInstance extends NumberInstance {
 
     @Override
     public Double getValue() {
+        return value;
+    }
+
+    @Override
+    public Double toColumnValue() {
         return value;
     }
 

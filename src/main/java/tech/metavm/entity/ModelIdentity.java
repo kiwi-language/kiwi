@@ -2,11 +2,11 @@ package tech.metavm.entity;
 
 
 import tech.metavm.flow.Flow;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.Constraint;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Index;
-import tech.metavm.object.meta.UnionType;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Constraint;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Index;
+import tech.metavm.object.type.UnionType;
 import tech.metavm.util.Column;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectUtils;
@@ -59,15 +59,15 @@ public record ModelIdentity(
         );
     }
 
-    public static ModelIdentity type(tech.metavm.object.meta.Type type,
-                                     Function<tech.metavm.object.meta.Type, Type> getJavaType) {
+    public static ModelIdentity type(tech.metavm.object.type.Type type,
+                                     Function<tech.metavm.object.type.Type, Type> getJavaType) {
         return new ModelIdentity(
                 type.getClass(),
                 type.getKey(getJavaType)
         );
     }
 
-    public static ModelIdentity field(Field field, Function<tech.metavm.object.meta.Type, Type> getJavaType,
+    public static ModelIdentity field(Field field, Function<tech.metavm.object.type.Type, Type> getJavaType,
                                       Function<Field, java.lang.reflect.Field> getJavaField) {
         String name = field.getDeclaringType().getKey(getJavaType) + "."
                 + getJavaField.apply(field).getName();

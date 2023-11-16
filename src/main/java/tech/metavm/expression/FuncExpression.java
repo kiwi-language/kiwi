@@ -5,7 +5,7 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.List;
 

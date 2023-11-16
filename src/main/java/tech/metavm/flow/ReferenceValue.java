@@ -8,7 +8,7 @@ import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 @EntityType("引用值")
 public class ReferenceValue extends Value {

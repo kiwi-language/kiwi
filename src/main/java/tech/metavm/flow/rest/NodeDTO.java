@@ -2,10 +2,10 @@ package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
-import tech.metavm.dto.BaseDTO;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.BaseDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.flow.NodeKind;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;

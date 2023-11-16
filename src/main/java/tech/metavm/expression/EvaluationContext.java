@@ -2,7 +2,7 @@ package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.generic.MetaSubstitutor;
+import tech.metavm.object.type.generic.MetaSubstitutor;
 
 import javax.annotation.Nullable;
 

@@ -3,9 +3,9 @@ package tech.metavm.flow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.dto.ErrorCode;
-import tech.metavm.dto.Page;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.common.Page;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
@@ -16,11 +16,12 @@ import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.ClassTypeParam;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTOBuilder;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.ClassTypeParam;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
+import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.version.Versions;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
@@ -109,8 +110,9 @@ public class FlowManager {
         }
     }
 
+    @Transactional
     public Flow save(FlowDTO flowDTO) {
-        try (var context = newContext()) {
+        try (var context = newContext(true)) {
             var flow = save(flowDTO, context);
             context.finish();
             return flow;
@@ -138,15 +140,19 @@ public class FlowManager {
         Type oldFuncType = flow.getType();
         Type returnType = getReturnType(flowDTO, declaringType, context);
         flow.setConstructor(flowDTO.isConstructor());
-        flow.setOverridden(overriden);
         flow.setAbstract(declaringType.isInterface() || flowDTO.isAbstract());
         flow.setNative(flowDTO.isNative());
         flow.setTypeArguments(NncUtils.map(flowDTO.typeArgumentRefs(), context::getType));
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), context::getTypeVariable));
-        flow.setReturnType(returnType);
-        flow.setType(context.getFunctionType(flow.getParameterTypes(), returnType));
-        flow.setStaticType(context.getFunctionType(NncUtils.prepend(declaringType, flow.getParameterTypes()), returnType));
-        flow.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, context)));
+        var parameters = NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, context));
+        var parameterTypes = NncUtils.map(parameters, Parameter::getType);
+        flow.update(
+                overriden,
+                parameters,
+                returnType,
+                context.getFunctionType(parameterTypes, returnType),
+                context.getFunctionType(NncUtils.prepend(declaringType, parameterTypes), returnType)
+        );
         if (flowDTO.templateInstances() != null) {
             for (FlowDTO templateInstance : flowDTO.templateInstances()) {
                 save(templateInstance, declarationOnly, context);
@@ -325,15 +331,15 @@ public class FlowManager {
     }
 
     @Transactional
-    public void delete(long id) {
+    public void remove(long id) {
         try (var context = newContext()) {
             Flow flow = context.getEntity(Flow.class, id);
-            delete(flow, context);
+            remove(flow, context);
             context.finish();
         }
     }
 
-    public void delete(Flow flow, IEntityContext context) {
+    public void remove(Flow flow, IEntityContext context) {
         removeTransformedFlowsIfRequired(flow, context);
         for (ClassType subType : flow.getDeclaringType().getSubTypes()) {
             detachOverrideFlows(flow, subType);

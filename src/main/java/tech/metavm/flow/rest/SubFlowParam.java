@@ -1,7 +1,7 @@
 package tech.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 
 import javax.annotation.Nullable;
 import java.util.List;

@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -10,7 +10,7 @@ import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.FunctionNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.FunctionInstance;
-import tech.metavm.object.meta.FunctionType;
+import tech.metavm.object.type.FunctionType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
@@ -36,7 +36,7 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
 
     public FunctionNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value func, List<Value> arguments) {
         super(tmpId, name,
-                ((FunctionType) FlowUtils.getExpressionType(func.getExpression(), previous, scope)).getReturnType(),
+                ((FunctionType) Flows.getExpressionType(func.getExpression(), previous, scope)).getReturnType(),
                 previous, scope);
         check(func, arguments);
         this.func = func;
@@ -68,7 +68,7 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
     }
 
     private void check(Value func, List<Value> arguments) throws BusinessException {
-        var funcType = ((FunctionType) FlowUtils.getExpressionType(func.getExpression(), getPredecessor(), getScope()));
+        var funcType = ((FunctionType) Flows.getExpressionType(func.getExpression(), getPredecessor(), getScope()));
         if (funcType instanceof FunctionType functionType) {
             if (arguments.size() != functionType.getParameterTypes().size()) {
                 throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);

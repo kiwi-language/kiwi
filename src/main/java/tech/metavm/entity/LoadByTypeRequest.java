@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 public record LoadByTypeRequest (
     Type type,

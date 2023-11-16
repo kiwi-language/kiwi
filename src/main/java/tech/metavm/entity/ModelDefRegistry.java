@@ -2,12 +2,11 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Index;
 import tech.metavm.util.ReflectUtils;
 
 public class ModelDefRegistry {

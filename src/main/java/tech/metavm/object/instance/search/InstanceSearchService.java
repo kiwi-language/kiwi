@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.search;
 
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.object.instance.core.ClassInstance;
 
 import java.util.List;

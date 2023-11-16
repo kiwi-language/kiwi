@@ -1,6 +1,6 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.dto.BaseDTO;
+import tech.metavm.common.BaseDTO;
 
 import java.util.List;
 

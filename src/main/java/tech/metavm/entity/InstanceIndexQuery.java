@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.persistence.IndexQueryPO;
-import tech.metavm.object.meta.IndexField;
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.type.IndexField;
+import tech.metavm.object.type.Index;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 

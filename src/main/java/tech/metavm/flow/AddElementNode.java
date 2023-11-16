@@ -1,14 +1,14 @@
 package tech.metavm.flow;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.AddElementParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 

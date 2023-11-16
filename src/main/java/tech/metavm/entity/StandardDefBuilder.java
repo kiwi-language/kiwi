@@ -7,14 +7,14 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
 
-import static tech.metavm.object.meta.TypeUtils.getParameterizedCode;
-import static tech.metavm.object.meta.TypeUtils.getParameterizedName;
+import static tech.metavm.object.type.Types.getParameterizedCode;
+import static tech.metavm.object.type.Types.getParameterizedName;
 import static tech.metavm.util.ReflectUtils.*;
 
 public class StandardDefBuilder {
@@ -295,7 +295,7 @@ public class StandardDefBuilder {
         );
     }
 
-    private tech.metavm.object.meta.Field createField(Field javaField,
+    private tech.metavm.object.type.Field createField(Field javaField,
                                                       boolean asTitle,
                                                       Type type,
                                                       Access access,
@@ -326,7 +326,7 @@ public class StandardDefBuilder {
     }
 
     private FieldDef createFieldDef(Field reflectField,
-                                    tech.metavm.object.meta.Field field,
+                                    tech.metavm.object.type.Field field,
                                     PojoDef<?> declaringTypeDef
     ) {
         return new FieldDef(
@@ -356,11 +356,11 @@ public class StandardDefBuilder {
         return enumDef.getType();
     }
 
-    public tech.metavm.object.meta.Field getEnumNameField() {
+    public tech.metavm.object.type.Field getEnumNameField() {
         return enumNameDef.getField();
     }
 
-    public tech.metavm.object.meta.Field getEnumOrdinalField() {
+    public tech.metavm.object.type.Field getEnumOrdinalField() {
         return enumOrdinalDef.getField();
     }
 

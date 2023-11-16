@@ -3,7 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 import java.util.List;
 import java.util.Objects;

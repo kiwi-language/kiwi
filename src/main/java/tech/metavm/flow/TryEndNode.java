@@ -1,7 +1,7 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
@@ -15,8 +15,8 @@ import tech.metavm.flow.rest.TryEndFieldDTO;
 import tech.metavm.flow.rest.TryEndValueDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.*;
 
 import java.util.ArrayList;

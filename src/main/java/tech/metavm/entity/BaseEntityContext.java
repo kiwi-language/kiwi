@@ -2,8 +2,8 @@ package tech.metavm.entity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.dto.InternalErrorCode;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.InternalErrorCode;
+import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
@@ -12,8 +12,9 @@ import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.generic.*;
+import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.generic.*;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.*;
@@ -31,6 +32,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private final IInstanceContext instanceContext;
     private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
     private final IdentityHashMap<Instance, Object> instance2model = new IdentityHashMap<>();
+    private final IdentitySet<Object> removedEntities = new IdentitySet<>();
+    private final Map<Long, Object> removedEntityMap = new HashMap<>();
     private final IEntityContext parent;
     private final GenericContext genericContext;
     private final Map<TypeCategory, CompositeTypeContext<?>> compositeTypeContexts = new IdentityHashMap<>();
@@ -71,7 +74,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> List<T> getByType(Class<T> javaType, T startExclusive, long limit) {
+    public <T> List<T> getByType(Class<? extends T> javaType, T startExclusive, long limit) {
         NncUtils.requireNonNull(instanceContext);
         Instance startInstance = NncUtils.get(startExclusive, this::getInstance);
         Type type = getDefContext().getType(javaType);
@@ -91,6 +94,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?, ?> def) {
+        if(instance instanceof PrimitiveInstance primitiveInstance) {
+            return InstanceUtils.deserializeEntityPrimitive(primitiveInstance, klass);
+        }
         if (!getDefContext().containsNonDirectDef(instance.getType())) {
             // If there's no java type for the instance type, return the instance
             return klass.cast(instance);
@@ -117,6 +123,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                     EntityUtils.getRealType(model).getName()
             );
         }
+    }
+
+    @Override
+    public <T> List<T> getAllCachedEntities(Class<T> entityClass) {
+        return NncUtils.filterByType(model2instance.keySet(), entityClass);
     }
 
     @Override
@@ -147,10 +158,23 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         Object model = instance2model.remove(instance);
         if (model != null) {
             model2instance.remove(model);
+            removedEntities.add(model);
+            if(instance.getId() != null)
+                removedEntityMap.put(instance.getIdRequired(), model);
             if (instance.getId() != null) {
                 entityMap.remove(instance.getIdRequired());
             }
         }
+    }
+
+    @Override
+    public boolean isRemoved(Object entity) {
+        return removedEntities.contains(entity);
+    }
+
+    @Override
+    public <T> T getRemoved(Class<T> entityClass, long id) {
+        return entityClass.cast(removedEntityMap.get(id));
     }
 
     @Override
@@ -219,6 +243,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
+    public Collection<CompositeTypeContext<?>> getCompositeTypeContexts() {
+        return Collections.unmodifiableCollection(compositeTypeContexts.values());
+    }
+
+    @Override
     public boolean containsInstance(Instance instance) {
         return instance2model.containsKey(instance) || parent != null && parent.containsInstance(instance);
     }
@@ -257,7 +286,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public void afterContextIntIds() {
-        try (var ignored = getProfiler().enter("afterContextIntIds", true)) {
+        try (var ignored = getProfiler().enter("BaseEntityContext.afterContextIntIds", true)) {
             for (Object model : new ArrayList<>(instance2model.values())) {
                 if (isNewEntity(model) && (model instanceof Entity entity)) {
                     if (entity.afterContextInitIds()) {
@@ -502,18 +531,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         Field field = type.getFieldByJavaField(ReflectUtils.getField(javaClass, queryItem.fieldName()));
         return new InstanceIndexQueryItem(
                 indexConstraint.getFieldByTypeField(field),
-                resolveInstance(field.getType(), queryItem.value())
+                resolveInstance(queryItem.value())
         );
     }
 
-    private Instance resolveInstance(Type type, Object value) {
+    private Instance resolveInstance(Object value) {
         if (value == null) {
             return InstanceUtils.nullInstance();
         }
         if (containsModel(value)) {
             return getInstance(value);
         }
-        return InstanceUtils.resolveValue(type, value);
+        return InstanceUtils.resolvePersistedValue(value);
     }
 
     private <T> List<T> createEntityList(Class<T> javaType, List<Instance> instances) {
@@ -676,6 +705,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public Instance getInstance(Object model) {
+        Instance primitiveInst = InstanceUtils.trySerializeEntityPrimitive(model, getDefContext()::getType);
+        if(primitiveInst != null)
+            return primitiveInst;
         if (parent != null && parent.containsModel(model)) {
             return parent.getInstance(model);
         }

@@ -2,13 +2,13 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 
@@ -44,7 +44,7 @@ public class InstanceQueryServiceTest extends TestCase {
         Instance baz = foo.getInstanceArray(fooBazListField).getInstance(0);
 
         InstanceQuery query = new InstanceQuery(
-                fooType.getId(),
+                fooType.getIdRequired(),
                 null,
                 List.of(),
                 false,
@@ -79,7 +79,7 @@ public class InstanceQueryServiceTest extends TestCase {
         ClassInstance foo = addInstance(MockRegistry.getNewFooInstance());
 
         InstanceQuery query2 = new InstanceQuery(
-                fooType.getId(),
+                fooType.getIdRequired(),
                 null,
                 List.of(),
                 false,
@@ -88,9 +88,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 List.of(
                         new InstanceQueryField(
                                 fooNameField,
-                                List.of(
-                                        foo.getStringField(fooNameField)
-                                )
+                                foo.getField(fooNameField)
                         )
                 )
         );

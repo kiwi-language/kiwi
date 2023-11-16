@@ -4,8 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.dto.Page;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.Page;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.*;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -17,9 +17,9 @@ import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.search.InstanceSearchService;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.TypeManager;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeManager;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.*;
@@ -177,7 +177,7 @@ public class FlowManagerTest extends TestCase {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
         FlowDTO flowDTO = FlowDTO.create("test", fooType.getIdRequired());
         long flowId = flowManager.save(flowDTO).getIdRequired();
-        flowManager.delete(flowId);
+        flowManager.remove(flowId);
     }
 
 }

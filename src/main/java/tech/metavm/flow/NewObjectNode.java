@@ -9,7 +9,7 @@ import tech.metavm.flow.rest.NewObjectParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

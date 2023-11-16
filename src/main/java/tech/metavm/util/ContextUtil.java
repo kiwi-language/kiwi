@@ -1,33 +1,67 @@
 package tech.metavm.util;
 
+import tech.metavm.common.ErrorCode;
+
 public class ContextUtil {
 
-    public static class ContextInfo {
-        private final long tenantId;
-        private final long userId;
+    private static class ContextInfo {
+        private Long metaVersion;
+        LoginInfo loginInfo;
+        private final Profiler profiler = new Profiler();
+    }
 
-        public ContextInfo(long tenantId, long userId) {
-            this.tenantId = tenantId;
-            this.userId = userId;
-        }
+    private record LoginInfo(long tenantId, long userId) {
     }
 
     private static final ThreadLocal<ContextInfo> THREAD_LOCAL = new ThreadLocal<>();
 
     public static long getTenantId() {
-        return getContextInfo().tenantId;
+        return getLoginInfo().tenantId;
     }
 
     public static long getUserId() {
-        return getContextInfo().userId;
+        return getLoginInfo().userId;
+    }
+
+    public static Long getMetaVersion() {
+        return getContextInfo().metaVersion;
+    }
+
+    public static void setMetaVersion(long metaVersion) {
+        getContextInfo().metaVersion = metaVersion;
+    }
+
+    public static boolean isLoggedIn() {
+        return getContextInfo().loginInfo != null;
     }
 
     private static ContextInfo getContextInfo() {
-        return NncUtils.requireNonNull(THREAD_LOCAL.get(), "用户未登录");
+        var contextInfo = THREAD_LOCAL.get();
+        if(contextInfo == null) {
+            contextInfo = new ContextInfo();
+            THREAD_LOCAL.set(contextInfo);
+        }
+        return contextInfo;
     }
 
-    public static void setContextInfo(long tenantId, long userId) {
-        THREAD_LOCAL.set(new ContextInfo(tenantId, userId));
+    public static Profiler getProfiler() {
+        return getContextInfo().profiler;
+    }
+
+    private static LoginInfo getLoginInfo() {
+        return NncUtils.assertNonNull(getContextInfo().loginInfo, ErrorCode.VERIFICATION_FAILED);
+    }
+
+    public static boolean isContextAvailable() {
+        return THREAD_LOCAL.get() != null;
+    }
+
+    public static void initContextInfo() {
+        THREAD_LOCAL.set(new ContextInfo());
+    }
+
+    public static void setLoginInfo(long tenantId, long userId) {
+        getContextInfo().loginInfo = new LoginInfo(tenantId, userId);
     }
 
     public static void clearContextInfo() {

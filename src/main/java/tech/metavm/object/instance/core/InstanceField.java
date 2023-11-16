@@ -1,12 +1,8 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.ReferenceRT;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
@@ -37,7 +33,7 @@ public class InstanceField {
     }
 
     String getColumnName() {
-        if(field.getColumn() == null) {
+        if (field.getColumn() == null) {
             throw new InternalException("Field " + field + " doesn't have a column");
         }
         return field.getColumn().name();
@@ -45,21 +41,20 @@ public class InstanceField {
 
     void setValue(Instance value) {
         value = checkValue(value);
-        if(!this.value.isNull()) {
+        if (!this.value.isNull()) {
             owner.getOutgoingReference(this.value, field).clear();
         }
-        if(!value.isNull()) {
+        if (!value.isNull()) {
             new ReferenceRT(owner, value, field);
         }
         this.value = value;
     }
 
     Instance checkValue(Instance value) {
-        if(field.getType().isInstance(value)) {
+        if (field.getType().isInstance(value)) {
             return value;
-        }
-        else {
-            throw new InternalException("Value '" + value + "' is not assignable to '" + field + "'");
+        } else {
+            throw new InternalException(String.format("Value '%s' is not assignable to %s", value, field));
         }
     }
 
@@ -77,7 +72,7 @@ public class InstanceField {
     }
 
     public String getDisplayValue() {
-        if(field.getType().isArray()) {
+        if (field.getType().isArray()) {
             return "";
         }
         return field.getDisplayValue(value);
@@ -92,7 +87,7 @@ public class InstanceField {
         return field.getType().isArray();
     }
 
-    public InstanceFieldDTO toDTO () {
+    public InstanceFieldDTO toDTO() {
         return new InstanceFieldDTO(
                 field.getId(),
                 field.getName(),

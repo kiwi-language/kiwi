@@ -4,9 +4,9 @@ package tech.metavm.autograph;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.TypeVariable;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.TypeVariable;
 
 import java.util.HashSet;
 import java.util.List;

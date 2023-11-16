@@ -2,7 +2,7 @@ package tech.metavm.expression.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import tech.metavm.dto.Result;
+import tech.metavm.common.Result;
 import tech.metavm.expression.ExpressionService;
 import tech.metavm.expression.dto.BoolExprDTO;
 import tech.metavm.expression.dto.BoolExprParseRequest;

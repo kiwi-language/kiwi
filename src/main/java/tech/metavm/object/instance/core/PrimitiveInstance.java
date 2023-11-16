@@ -3,7 +3,7 @@ package tech.metavm.object.instance.core;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveParamDTO;
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.IdentitySet;
 
 import java.util.Objects;
@@ -45,7 +45,7 @@ public abstract class PrimitiveInstance extends Instance {
 
     @Override
     public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return getValue();
+        return toColumnValue();
     }
 
     @Override
@@ -79,6 +79,8 @@ public abstract class PrimitiveInstance extends Instance {
                 getValue()
         );
     }
+
+    protected abstract Object toColumnValue();
 
     @Override
     public InstancePO toPO(long tenantId) {

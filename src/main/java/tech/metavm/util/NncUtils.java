@@ -14,7 +14,7 @@ import com.intellij.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityPO;
 import tech.metavm.entity.Identifiable;
@@ -498,7 +498,7 @@ public class NncUtils {
         return value;
     }
 
-    public static String toBase64(long l) {
+    public static String encondeBase64(long l) {
         return Base64.getEncoder().encodeToString(toBytes(l));
     }
 
@@ -688,6 +688,16 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
+    public static <T> void filterAndForeach(Iterable<T> source, Predicate<T> filter, Consumer<T> action) {
+        if (source == null) {
+            return;
+        }
+        streamOf(source)
+                .filter(filter)
+                .forEach(action);
+    }
+
+
     public static <T, R> List<R> filterByType(Iterable<T> source, Class<R> type) {
         return filterAndMap(source, type::isInstance, type::cast);
     }
@@ -742,6 +752,10 @@ public class NncUtils {
 
     public static <T> @Nullable T find(T[] array, Predicate<T> filter) {
         return Arrays.stream(array).filter(filter).findAny().orElse(null);
+    }
+
+    public static <T> @Nullable T findByType(Object[] array, Class<T> type) {
+        return type.cast(find(array, type::isInstance));
     }
 
     @SuppressWarnings("unused")
@@ -1211,6 +1225,13 @@ public class NncUtils {
         if (!condition) {
             throw new BusinessException(errorCode, params);
         }
+    }
+
+    public static <T> T assertNonNull(@Nullable T value, ErrorCode errorCode, Object... params) {
+        if (value == null) {
+            throw new BusinessException(errorCode, params);
+        }
+        return value;
     }
 
     public static void requireTrue(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {

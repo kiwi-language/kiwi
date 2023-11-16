@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 
 import java.util.HashSet;

@@ -74,7 +74,7 @@ public class InstancePO implements Identifiable {
     }
 
     private Map<String, @org.jetbrains.annotations.Nullable Object> getSubMap(long typeId) {
-        return data.computeIfAbsent(NncUtils.toBase64(typeId), k -> new HashMap<>());
+        return data.computeIfAbsent(NncUtils.encondeBase64(typeId), k -> new HashMap<>());
     }
 
     public void set(long typeId, String column, @Nullable Object value) {

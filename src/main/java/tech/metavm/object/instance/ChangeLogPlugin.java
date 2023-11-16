@@ -1,5 +1,6 @@
 package tech.metavm.object.instance;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.object.instance.core.IInstanceContext;
@@ -14,6 +15,7 @@ import java.util.List;
 import static tech.metavm.entity.ContextAttributeKey.CHANGE_LOGS;
 
 @Component
+@Order(100)
 public class ChangeLogPlugin implements ContextPlugin {
 
     private final InstanceLogService instanceLogService;
@@ -23,22 +25,23 @@ public class ChangeLogPlugin implements ContextPlugin {
     }
 
     @Override
-    public void beforeSaving(EntityChange<InstancePO> changes, IInstanceContext context) {
+    public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
         List<InstanceLog> logs = new ArrayList<>();
-        for (InstancePO instance : changes.inserts()) {
+        for (InstancePO instance : change.inserts()) {
             logs.add(InstanceLog.insert(instance));
         }
-        for (InstancePO instance : changes.updates()) {
+        for (InstancePO instance : change.updates()) {
             logs.add(InstanceLog.update(instance));
         }
-        for (InstancePO delete : changes.deletes()) {
+        for (InstancePO delete : change.deletes()) {
             logs.add(InstanceLog.delete(delete.nextVersion()));
         }
         context.getAttribute(CHANGE_LOGS).addAll(logs);
+        return false;
     }
 
     @Override
-    public void afterSaving(EntityChange<InstancePO> changes, IInstanceContext context) {
+    public void afterSaving(EntityChange<InstancePO> change, IInstanceContext context) {
         // TODO save change logs
     }
 

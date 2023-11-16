@@ -11,7 +11,7 @@ import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.Column;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.ReflectUtils;

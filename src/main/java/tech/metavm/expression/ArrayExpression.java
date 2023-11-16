@@ -1,9 +1,9 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.TypeUtils;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.Objects;
 public class ArrayExpression extends Expression {
 
     public static ArrayExpression create(List<Expression> expressions, IEntityContext entityContext) {
-        var type = entityContext.getArrayType(TypeUtils.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
+        var type = entityContext.getArrayType(Types.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
         return new ArrayExpression(expressions, type);
     }
 

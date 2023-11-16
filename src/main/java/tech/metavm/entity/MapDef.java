@@ -7,8 +7,8 @@ import tech.metavm.entity.natives.SetNative;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.TypeReference;
 
 import java.util.HashMap;

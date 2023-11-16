@@ -3,7 +3,7 @@ package tech.metavm.flow;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.autograph.ExpressionTypeMap;
 import tech.metavm.autograph.TypeNarrower;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.persistence.ScopePO;

@@ -6,6 +6,27 @@ Content-Type: application/json
 POST http://localhost:8080/debug/init-test
 
 ###
+POST http://localhost:8080/type/query
+Accept: application/json
+Content-Type: application/json
+
+{
+  "metaVersion": 0,
+  "page": 1,
+  "pageSize": 20,
+  "categories": [
+    0,
+    2,
+    3,
+    1
+  ]
+}
+
+###
+
+
+
+###
 POST https://www.metavm.tech/api/bootstrap/region
 
 ###
@@ -46,10 +67,15 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "tenantId": 1048300967,
+  "tenantId": 1174703495,
   "loginName": "admin",
   "password": "123456"
 }
+
+###
+POST http://localhost:8080/logout
+Accept: application/json
+Content-Type: application/json
 
 ###
 GET http://localhost:8080/user

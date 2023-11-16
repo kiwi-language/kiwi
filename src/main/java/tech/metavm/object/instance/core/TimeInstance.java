@@ -1,10 +1,11 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.instance.persistence.TimePO;
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InstanceUtils;
 
+import java.sql.Time;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -48,6 +49,11 @@ public class TimeInstance extends PrimitiveInstance {
     @Override
     public Long getValue() {
         return value;
+    }
+
+    @Override
+    public TimePO toColumnValue() {
+        return new TimePO(value);
     }
 
     @Override

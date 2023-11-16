@@ -1,7 +1,7 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
@@ -11,7 +11,7 @@ import tech.metavm.flow.rest.GetElementParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.LongInstance;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.NncUtils;
 
 @SuppressWarnings("unused")

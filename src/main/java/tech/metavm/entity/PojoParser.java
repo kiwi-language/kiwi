@@ -7,7 +7,7 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -120,7 +120,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         if(Instance.class.isAssignableFrom(javaField.getType())) {
             Type fieldType = javaField.getType() == ArrayInstance.class ?
                     defContext.getType(ReadWriteArray.class) : defContext.getType(Object.class);
-            tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, fieldType);
+            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new InstanceFieldDef(
                     javaField,
                     field,
@@ -128,7 +128,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
             );
         }
         else if(Class.class == javaField.getType()) {
-            tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, defContext.getType(ClassType.class));
+            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, defContext.getType(ClassType.class));
             new ClassFieldDef(
                     declaringTypeDef,
                     field,
@@ -138,7 +138,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         }
         else {
             ModelDef<?, ?> targetDef = defContext.getDef(evaluateFieldType(javaField));
-            tech.metavm.object.meta.Field field = createField(javaField, declaringTypeDef, getFieldType(javaField, targetDef));
+            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, getFieldType(javaField, targetDef));
             new FieldDef(
                     field,
                     typeFactory.isNullable(field.getType()),
@@ -184,12 +184,12 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         );
     }
 
-    private tech.metavm.object.meta.Field getFiled(String javaFieldName) {
+    private tech.metavm.object.type.Field getFiled(String javaFieldName) {
         Field field = ReflectUtils.getField(javaClass, javaFieldName);
         return def.getFieldDef(field).getField();
     }
 
-    protected tech.metavm.object.meta.Field createField(Field reflectField,
+    protected tech.metavm.object.type.Field createField(Field reflectField,
                                                         PojoDef<?> declaringTypeDef,
                                                         Type fieldType) {
         EntityField annotation = reflectField.getAnnotation(EntityField.class);
@@ -230,7 +230,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass) : null;
         PojoDef<? super T> superDef = getSuperDef();
         List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
-        return ClassBuilder.newBuilder(TypeUtils.getTypeName(javaType), TypeUtils.getTypeCode(javaType))
+        return ClassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .category(getTypeCategory())
                 .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getType))

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
 
@@ -24,10 +24,10 @@ public class IdentityContext {
     private final Map<ModelIdentity, Object> identity2model = new HashMap<>();
     private final Map<Object, List<Reference>> invertedIndex = new IdentityHashMap<>();
     private final Predicate<ClassType> isClassTypeInitialized;
-    private final Function<tech.metavm.object.meta.Type, Type> getJavaType;
+    private final Function<tech.metavm.object.type.Type, Type> getJavaType;
 
     public IdentityContext(Predicate<ClassType> isClassTypeInitialized,
-                           Function<tech.metavm.object.meta.Type, Type> getJavaType) {
+                           Function<tech.metavm.object.type.Type, Type> getJavaType) {
         this.isClassTypeInitialized = isClassTypeInitialized;
         this.getJavaType = getJavaType;
     }
@@ -151,7 +151,7 @@ public class IdentityContext {
         return null;
     }
 
-    private boolean isBuiltinType(tech.metavm.object.meta.Type type) {
+    private boolean isBuiltinType(tech.metavm.object.type.Type type) {
         return switch (type) {
             case PrimitiveType ignored1 -> true;
             case ObjectType ignored2 -> true;
@@ -215,7 +215,7 @@ public class IdentityContext {
         );
     }
 
-    private Type getJavaType(tech.metavm.object.meta.Type type) {
+    private Type getJavaType(tech.metavm.object.type.Type type) {
         return getJavaType.apply(type);
     }
 

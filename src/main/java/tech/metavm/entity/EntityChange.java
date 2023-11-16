@@ -1,14 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
@@ -111,4 +108,7 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
         return key.getType().cast(attributes.get(key));
     }
 
+    public Map<DifferenceAttributeKey<?>, Object> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
+    }
 }

@@ -6,9 +6,9 @@ import tech.metavm.object.instance.persistence.InstancePO;
 
 public interface ContextPlugin {
 
-    void beforeSaving(EntityChange<InstancePO> changes, IInstanceContext context);
+    boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context);
 
-    void afterSaving(EntityChange<InstancePO> changes, IInstanceContext context);
+    void afterSaving(EntityChange<InstancePO> change, IInstanceContext context);
 
     default void postProcess(IInstanceContext context) {}
 

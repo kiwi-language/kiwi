@@ -1,7 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.object.instance.SQLType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.*;
 

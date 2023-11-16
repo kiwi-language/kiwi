@@ -7,7 +7,7 @@ import tech.metavm.flow.rest.GetUniqueParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.type.Index;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 

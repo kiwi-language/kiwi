@@ -2,8 +2,8 @@ package tech.metavm.object.instance.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import tech.metavm.dto.Page;
-import tech.metavm.dto.Result;
+import tech.metavm.common.Page;
+import tech.metavm.common.Result;
 import tech.metavm.object.instance.InstanceManager;
 
 import java.util.List;
@@ -48,7 +48,7 @@ public class InstanceController {
 
     @PostMapping("/batch-get")
     public Result<GetInstancesResponse> batchGet(@RequestBody GetInstancesRequest request) {
-        return Result.success(instanceManager.batchGet(request.ids(), request.depth()));
+        return Result.success(instanceManager.batchGet(request.getIds(), request.getDepth()));
     }
 
     @PostMapping("/delete-by-types")

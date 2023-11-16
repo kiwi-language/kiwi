@@ -2,7 +2,7 @@ package tech.metavm.view;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.*;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.view.rest.dto.ListViewDTO;
 

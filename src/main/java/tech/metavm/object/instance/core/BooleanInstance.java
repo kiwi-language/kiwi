@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 
 public class BooleanInstance extends PrimitiveInstance {
 
@@ -13,6 +13,11 @@ public class BooleanInstance extends PrimitiveInstance {
 
     @Override
     public Boolean getValue() {
+        return value;
+    }
+
+    @Override
+    public Object toColumnValue() {
         return value;
     }
 

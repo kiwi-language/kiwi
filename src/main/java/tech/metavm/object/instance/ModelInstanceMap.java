@@ -2,10 +2,10 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.ModelDef;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.EnumConstantRT;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.EnumConstantRT;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 

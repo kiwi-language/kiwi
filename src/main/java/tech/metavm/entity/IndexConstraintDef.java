@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.type.Index;
 import tech.metavm.util.ReflectUtils;
 
 import java.lang.reflect.Field;

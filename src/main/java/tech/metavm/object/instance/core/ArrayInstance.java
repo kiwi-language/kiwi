@@ -2,16 +2,16 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.rest.ArrayParamDTO;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.rest.dto.InstanceParentRef;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import java.util.*;
@@ -291,7 +291,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
                 getType().getIdRequired(),
                 tenantId,
                 elements.size(),
-                NncUtils.map(elements, e -> elementToPO(tenantId, e, visited)),
+                NncUtils.map(elements, e -> e.toColumnValue(tenantId, visited)),
                 NncUtils.get(getParent(), Instance::getId),
                 NncUtils.get(getParentField(), Field::getId),
                 getVersion(),
@@ -346,21 +346,6 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     public void acceptChildren(InstanceVisitor visitor) {
         if(isChildArray()) {
             acceptReferences(visitor);
-        }
-    }
-
-    private static Object elementToPO(long tenantId, Instance element, IdentitySet<Instance> visited) {
-        if (element.isNull()) {
-            return null;
-        }
-        if (element instanceof PrimitiveInstance primitiveInstance) {
-            return primitiveInstance.getValue();
-        } else {
-            if (element.isValue()) {
-                return element.toPO(tenantId, visited);
-            } else {
-                return element.toIdentityPO();
-            }
         }
     }
 

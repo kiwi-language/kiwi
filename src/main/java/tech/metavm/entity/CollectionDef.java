@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.RuntimeGeneric;

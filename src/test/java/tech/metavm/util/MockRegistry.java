@@ -6,8 +6,8 @@ import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 import tech.metavm.mocks.*;
 import tech.metavm.object.instance.*;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.Index;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Date;
@@ -63,7 +63,7 @@ public class MockRegistry {
                 .forEach(DEF_CONTEXT::getDef);
         DEF_CONTEXT.finish();
         InstanceContextFactory.setStdContext(INSTANCE_CONTEXT);
-        ContextUtil.setContextInfo(TENANT_ID, TENANT_ID);
+        ContextUtil.setLoginInfo(TENANT_ID, TENANT_ID);
         initJobScheduler();
     }
 

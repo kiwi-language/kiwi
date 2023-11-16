@@ -9,7 +9,7 @@ import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.expression.*;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.TestUtils;

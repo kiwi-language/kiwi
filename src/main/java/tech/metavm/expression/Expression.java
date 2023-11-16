@@ -3,7 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 

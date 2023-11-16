@@ -12,10 +12,10 @@ import java.lang.reflect.Field;
 public class InstanceFieldDef implements IFieldDef {
 
     private final Field javaField;
-    private final tech.metavm.object.meta.Field field;
+    private final tech.metavm.object.type.Field field;
     private final PojoDef<?> declaringTypeDef;
 
-    public InstanceFieldDef(Field javaField, tech.metavm.object.meta.Field field, PojoDef<?> declaringTypeDef) {
+    public InstanceFieldDef(Field javaField, tech.metavm.object.type.Field field, PojoDef<?> declaringTypeDef) {
         this.javaField = javaField;
         this.field = field;
         this.declaringTypeDef = declaringTypeDef;
@@ -48,7 +48,7 @@ public class InstanceFieldDef implements IFieldDef {
     }
 
     @Override
-    public tech.metavm.object.meta.Field getField() {
+    public tech.metavm.object.type.Field getField() {
         return field;
     }
 

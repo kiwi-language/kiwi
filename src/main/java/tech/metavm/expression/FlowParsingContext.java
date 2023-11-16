@@ -7,7 +7,7 @@ import tech.metavm.flow.LoopNode;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 

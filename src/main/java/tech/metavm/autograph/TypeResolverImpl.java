@@ -4,9 +4,9 @@ import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
-import tech.metavm.object.meta.ArrayKind;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.ArrayKind;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
 import static java.util.Objects.requireNonNull;
-import static tech.metavm.object.meta.ResolutionStage.*;
+import static tech.metavm.object.type.ResolutionStage.*;
 
 public class TypeResolverImpl implements TypeResolver {
 
@@ -59,11 +59,11 @@ public class TypeResolverImpl implements TypeResolver {
     );
 
     private static final List<KeyValue<Class<?>, BiFunction<Type, IEntityContext, ClassType>>> COLLECTION_CLASSES = List.of(
-            new KeyValue<>(IteratorImpl.class, TypeUtils::getIteratorImplType),
-            new KeyValue<>(Iterator.class, TypeUtils::getIteratorType),
-            new KeyValue<>(List.class, TypeUtils::getListType),
-            new KeyValue<>(Set.class, TypeUtils::getSetType),
-            new KeyValue<>(Collection.class, TypeUtils::getCollectionType)
+            new KeyValue<>(IteratorImpl.class, Types::getIteratorImplType),
+            new KeyValue<>(Iterator.class, Types::getIteratorType),
+            new KeyValue<>(List.class, Types::getListType),
+            new KeyValue<>(Set.class, Types::getSetType),
+            new KeyValue<>(Collection.class, Types::getCollectionType)
     );
 
     public TypeResolverImpl(IEntityContext context) {
@@ -148,7 +148,7 @@ public class TypeResolverImpl implements TypeResolver {
                 return StandardTypes.getObjectType();
             } else if (TranspileUtil.createType(Map.class).isAssignableFrom(classType)) {
                 var mapType = TranspileUtil.getSuperType(classType, Map.class);
-                return TypeUtils.getMapType(
+                return Types.getMapType(
                         resolve(mapType.getParameters()[0], stage),
                         resolve(mapType.getParameters()[1], stage),
                         context

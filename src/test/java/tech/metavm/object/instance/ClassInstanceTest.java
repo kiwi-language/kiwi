@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import java.util.Map;

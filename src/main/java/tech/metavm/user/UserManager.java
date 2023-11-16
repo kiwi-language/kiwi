@@ -2,7 +2,7 @@ package tech.metavm.user;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
@@ -10,7 +10,6 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 @Component

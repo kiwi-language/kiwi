@@ -4,8 +4,8 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.meta.Property;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Property;
+import tech.metavm.object.type.Type;
 
 import java.util.List;
 import java.util.Objects;

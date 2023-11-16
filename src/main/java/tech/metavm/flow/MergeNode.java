@@ -1,8 +1,7 @@
 package tech.metavm.flow;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.autograph.ExpressionTypeMap;
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
@@ -11,8 +10,8 @@ import tech.metavm.flow.rest.MergeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.*;
 
 import java.util.*;

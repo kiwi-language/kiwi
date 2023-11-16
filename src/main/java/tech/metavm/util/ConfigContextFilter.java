@@ -13,7 +13,7 @@ import tech.metavm.flow.FlowSavingContext;
 import java.io.IOException;
 
 @Component
-@Order(2)
+@Order(1)
 public class ConfigContextFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest request,

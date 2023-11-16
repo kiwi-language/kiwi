@@ -1,132 +1,137 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="tech.metavm.object.instance.persistence.mappers.ReferenceMapper">
-  <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.ReferencePO">
-    <!--@mbg.generated-->
-    <!--@Table reference-->
-    <result property="tenantId" jdbcType="BIGINT" column="tenant_id"/>
-    <result property="sourceId" jdbcType="BIGINT" column="source_id"/>
-    <result property="targetId" jdbcType="BIGINT" column="target_id"/>
-    <result property="fieldId" jdbcType="BIGINT" column="field_id"/>
-    <result property="kind" jdbcType="INTEGER" column="kind"/>
-  </resultMap>
+    <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.ReferencePO">
+        <!--@mbg.generated-->
+        <!--@Table reference-->
+        <result property="tenantId" jdbcType="BIGINT" column="tenant_id"/>
+        <result property="sourceId" jdbcType="BIGINT" column="source_id"/>
+        <result property="targetId" jdbcType="BIGINT" column="target_id"/>
+        <result property="fieldId" jdbcType="BIGINT" column="field_id"/>
+        <result property="kind" jdbcType="INTEGER" column="kind"/>
+    </resultMap>
 
-  <sql id="Base_Column_List">
-    <!--@mbg.generated-->
-    tenant_id, source_id, target_id, field_id, kind
-  </sql>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        tenant_id,
+        source_id,
+        target_id,
+        field_id,
+        kind
+    </sql>
 
-  <delete id="batchDelete">
-    <!--@mbg.generated-->
-    delete from reference
-    where (tenant_id, source_id, target_id, field_id) in
-    <foreach collection="collection" item="item" open="(" close=")" separator=",">
-      (#{item.tenantId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId})
-    </foreach>
-  </delete>
+    <delete id="batchDelete">
+        <!--@mbg.generated-->
+        delete
+        from reference
+        where (tenant_id, source_id, target_id, field_id) in
+        <foreach collection="collection" item="item" open="(" close=")" separator=",">
+            (#{item.tenantId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId})
+        </foreach>
+    </delete>
 
-  <insert id="batchInsert" useGeneratedKeys="true">
-    <!--@mbg.generated-->
-    insert into reference (tenant_id, source_id, target_id, field_id, kind)
-    values
-    <foreach collection="collection" item="item" separator=",">
-      (#{item.tenantId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId}, #{item.kind})
-    </foreach>
-  </insert>
+    <insert id="batchInsert" useGeneratedKeys="true">
+        <!--@mbg.generated-->
+        insert into reference (tenant_id, source_id, target_id, field_id, kind)
+        values
+        <foreach collection="collection" item="item" separator=",">
+            (#{item.tenantId}, #{item.sourceId}, #{item.targetId}, #{item.fieldId}, #{item.kind})
+        </foreach>
+    </insert>
 
-  <update id="batchUpdate">
-    <!--@mbg.generated-->
-    <foreach collection="collection" item="item" separator=";">
-      update reference
-      <set>
-        <if test="item.kind != null">
-          kind = #{item.kind},
+    <update id="batchUpdate">
+        <!--@mbg.generated-->
+        <foreach collection="collection" item="item" separator=";">
+            update reference
+            <set>
+                <if test="item.kind != null">
+                    kind = #{item.kind},
+                </if>
+            </set>
+            where tenant_id = #{item.tenantId}
+              and source_id = #{item.sourceId}
+              and target_id = #{item.targetId}
+              and kind = #{item.kind}
+        </foreach>
+    </update>
+
+    <select id="selectByTargetsWithKind" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from reference
+        where
+            (tenant_id, target_id, kind) in
+        <foreach collection="collection" item="item" open="(" close=")" separator=",">
+            (#{item.tenantId}, #{item.targetId}, #{item.kind})
+        </foreach>
+    </select>
+
+
+    <select id="selectByTargetsWithField" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from reference
+        where
+            (tenant_id, target_id, field_id) in
+        <foreach collection="collection" item="item" open="(" close=")" separator=",">
+            (#{item.tenantId}, #{item.targetId}, #{item.fieldId})
+        </foreach>
+    </select>
+
+    <select id="selectFirstStrongReferences" resultMap="BaseResultMap">
+        select r1.tenant_id as tenant_id,
+               r1.source_id as source_id,
+               r1.target_id as target_id,
+               r1.field_id  as field_id,
+               r1.kind      as kind
+        from reference r1
+            inner join
+        (select min(id) as id
+         from reference
+                  use index (target_idx)
+        where tenant_id = #{tenantId}
+          and kind = 1
+          and target_id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
+            and source_id not in
+            <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
         </if>
-      </set>
-      where tenant_id = #{item.tenantId} and source_id = #{item.sourceId} and target_id = #{item.targetId}
-      and kind = #{item.kind}
-    </foreach>
-  </update>
+        group by target_id) as r2
+        on r1.id = r2.id
+    </select>
 
-  <select id="selectByTargetsWithKind" resultMap="BaseResultMap">
-    select
-      <include refid="Base_Column_List"/>
-    from
-        reference
-    where
-    (tenant_id, target_id, kind) in
-    <foreach collection="collection" item="item" open="(" close=")" separator=",">
-      (#{item.tenantId}, #{item.targetId}, #{item.kind})
-    </foreach>
-  </select>
+    <select id="selectAllStrongReferences" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from reference
+                 use index (target_idx)
+        where tenant_id = #{tenantId}
+          and kind = 1
+          and target_id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
+            and source_id not in
+            <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+    </select>
 
-
-  <select id="selectByTargetsWithField" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List"/>
-    from
-    reference
-    where
-    (tenant_id, target_id, field_id) in
-    <foreach collection="collection" item="item" open="(" close=")" separator=",">
-      (#{item.tenantId}, #{item.targetId}, #{item.fieldId})
-    </foreach>
-  </select>
-
-  <select id="selectFirstStrongReferences" resultMap="BaseResultMap">
-      select
-      <include refid="Base_Column_List"/>
-      from reference
-      where id in
-      (
-      select min(id)
-      from reference
-      use index (target_idx)
-      where tenant_id = #{tenantId}
-        and kind = 1
-        and target_id in
-      <foreach collection="ids" item="id" separator="," open="(" close=")">
-          #{id}
-      </foreach>
-     <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
-       and source_id not in
-       <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
-         #{id}
-       </foreach>
-     </if>
-      group by target_id
-      )
-  </select>
-
-  <select id="selectAllStrongReferences" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List"/>
-    from reference
-    use index (target_idx)
-    where tenant_id = #{tenantId}
-    and kind = 1
-    and target_id in
-    <foreach collection="ids" item="id" separator="," open="(" close=")">
-      #{id}
-    </foreach>
-    <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
-      and source_id not in
-      <foreach collection="excludedSourceIds" item="id" open="(" close=")" separator=",">
-        #{id}
-      </foreach>
-    </if>
-  </select>
-
-  <select id="selectByTargetId" resultMap="BaseResultMap">
-    select
-      <include refid="Base_Column_List"/>
-    from reference
-    where
-    tenant_id = #{tenantId} and
-    target_id = #{targetId} and
-    source_id > #{startIdExclusive}
-    order by source_id
-    limit #{limit}
-  </select>
-
+    <select id="selectByTargetId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from reference
+        where tenant_id = #{tenantId}
+          and target_id = #{targetId}
+          and source_id > #{startIdExclusive}
+        order by source_id
+        limit #{limit}
+    </select>
 </mapper>

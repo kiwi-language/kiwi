@@ -8,10 +8,10 @@ import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.Access;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Access;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
 

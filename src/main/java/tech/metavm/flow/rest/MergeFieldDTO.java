@@ -1,8 +1,8 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.dto.RefDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTOBuilder;
+import tech.metavm.common.RefDTO;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;

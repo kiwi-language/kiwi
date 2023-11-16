@@ -2,8 +2,8 @@ package tech.metavm.object.instance.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.dto.ErrorCode;
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ByTypeQuery;
 import tech.metavm.object.instance.IInstanceStore;
@@ -12,11 +12,11 @@ import tech.metavm.object.instance.ScanQuery;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.*;
-import tech.metavm.task.Task;
+import tech.metavm.object.type.*;
 import tech.metavm.tenant.TenantRT;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
@@ -45,7 +45,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Set<InstanceIdInitListener> listeners = new LinkedHashSet<>();
     private final Set<Consumer<Instance>> removalListeners = new LinkedHashSet<>();
     private final Set<Consumer<Instance>> initializationListeners = new LinkedHashSet<>();
-    private Consumer<Task> createJob;
+    private @Nullable Consumer<Object> bindHook;
     private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
     private final Map<ClassInstance, List<IndexKeyRT>> indexKeys = new HashMap<>();
     private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
@@ -72,8 +72,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return id == -1L ? defContext.getType(TenantRT.class).getId() : null;
     }
 
-    public void setCreateJob(Consumer<Task> createJob) {
-        this.createJob = createJob;
+    @Nullable
+    public Consumer<Object> getBindHook() {
+        return bindHook;
+    }
+
+    public void setBindHook(@Nullable Consumer<Object> bindHook) {
+        this.bindHook = bindHook;
     }
 
     @Override
@@ -90,7 +95,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     public Profiler getProfiler() {
-        return profiler;
+        if(ContextUtil.isContextAvailable())
+            return ContextUtil.getProfiler();
+        else
+            return profiler;
     }
 
     @Override
@@ -219,7 +227,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (closed) {
             throw new IllegalStateException("Context closed");
         }
-        try (var ignored = profiler.enter("finish")) {
+        try (var ignored = getProfiler().enter("finish")) {
             finishInternal();
             newInstances.clear();
         }
@@ -236,15 +244,17 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 ref.clear();
             }
         }
-        var profilerResult = profiler.finish();
-        if (profilerLogThreshold != -1L && profilerResult.duration() > profilerLogThreshold) {
-            LOGGER.info(profilerResult.output());
+        if(getProfiler() == profiler) {
+            var profilerResult = getProfiler().finish();
+            if (profilerLogThreshold != -1L && profilerResult.duration() > profilerLogThreshold) {
+                LOGGER.info(profilerResult.output());
+            }
         }
     }
 
     protected abstract void finishInternal();
 
-    protected Instance getRemoved(long id) {
+    public Instance getRemoved(long id) {
         return NncUtils.requireNonNull(removedInstanceMap.get(id));
     }
 
@@ -256,7 +266,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public abstract boolean isFinished();
 
     public void initIds() {
-        try (var ignored = profiler.enter("initIds")) {
+        try (var ignored = getProfiler().enter("initIds")) {
             Function<Map<Type, Integer>, Map<Type, List<Long>>> idGenerator = getIdGenerator();
             List<Instance> instancesToInitId = NncUtils.filter(instances, inst -> inst.getId() == null);
             if (instancesToInitId.isEmpty()) {
@@ -455,7 +465,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void rebind() {
-        try (var entry = profiler.enter("rebind")) {
+        try (var entry = getProfiler().enter("rebind")) {
             var newInstances = getAllNewInstances(instances);
             entry.addMessage("numNewInstances", newInstances.size());
             for (Instance inst : newInstances) {
@@ -469,6 +479,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void add(Instance instance) {
         NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemeral instance");
         NncUtils.requireFalse(instance.isValue(), "Can not add a value instance");
+        NncUtils.requireFalse(removed.contains(instance),
+                () -> new InternalException(String.format("Trying to add a removed instance: %d", instance.getId())));
         instances.add(instance);
         if (instance.getTmpId() != null) {
             tmpId2Instance.put(instance.getTmpId(), instance);
@@ -517,7 +529,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private List<Instance> getAllNewInstances(Collection<Instance> instances) {
-        try(var entry = profiler.enter("getAllNewInstances")) {
+        try(var entry = getProfiler().enter("getAllNewInstances")) {
             var result = new ArrayList<Instance>();
             var visitor = new GraphVisitor() {
                 @Override

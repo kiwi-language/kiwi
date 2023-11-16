@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.meta.EnumConstantRT;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.EnumConstantRT;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
 
@@ -22,7 +22,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class EntityUtils {
 
@@ -35,7 +34,7 @@ public class EntityUtils {
     );
 
     public static final Set<Class<?>> ENTITY_CLASSES = Set.of(
-        ClassType.class, tech.metavm.object.meta.Field.class, Instance.class,
+        ClassType.class, tech.metavm.object.type.Field.class, Instance.class,
             EnumConstantRT.class
     );
 

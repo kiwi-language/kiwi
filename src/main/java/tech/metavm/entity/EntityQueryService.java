@@ -1,14 +1,16 @@
 package tech.metavm.entity;
 
 import org.springframework.stereotype.Component;
-import tech.metavm.dto.Page;
+import tech.metavm.common.Page;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.StandardTypes;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
 
 import java.util.Collection;
 
@@ -23,7 +25,7 @@ public class EntityQueryService {
 
     public <T extends Entity> Page<T> query(EntityQuery<T> query, IEntityContext context) {
         InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
-        Page<Long> instancePage =  instanceQueryService.query(instanceQuery, context.getInstanceContext());
+        Page<Long> instancePage = instanceQueryService.query(instanceQuery, context.getInstanceContext());
         return instancePage.map(id -> context.getEntity(query.entityType(), id));
     }
 
@@ -43,33 +45,28 @@ public class EntityQueryService {
 
     private InstanceQueryField convertToInstanceQueryField(EntityDef<?> entityDef, EntityQueryField entityQueryField, IEntityContext context) {
         Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
-        Object instanceValue = convertValue(entityQueryField.value(), context);
+        Instance instanceValue = convertValue(entityQueryField.value(), context);
         return new InstanceQueryField(field, instanceValue);
     }
 
-    private Object convertValue(Object value, IEntityContext context) {
-        if(context.containsModel(value)) {
+    private Instance convertValue(Object value, IEntityContext context) {
+        if (context.containsModel(value)) {
             return context.getInstance(value);
-        }
-        else if(value instanceof Collection<?> collection) {
-            return NncUtils.map(
-                    collection,
-                    item -> convertSingleValue(item, context)
+        } else if (value instanceof Collection<?> coll) {
+            return new ArrayInstance(
+                    StandardTypes.getObjectArrayType(),
+                    NncUtils.map(
+                            coll,
+                            item -> convertSingleValue(item, context)
+                    )
             );
-        }
-        else {
+        } else {
             return convertSingleValue(value, context);
         }
     }
 
-    private Object convertSingleValue(Object value, IEntityContext context) {
-        if(ValueUtil.isPrimitive(value)) {
-            return InstanceUtils.primitiveInstance(value);
-        }
-        if(context.containsModel(value)) {
-            return context.getInstance(value);
-        }
-        throw new InternalException("Can not convert query field value '" + value + "'");
+    private Instance convertSingleValue(Object value, IEntityContext context) {
+        return context.getInstance(value);
     }
 
 }

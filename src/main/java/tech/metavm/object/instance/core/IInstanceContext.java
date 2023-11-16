@@ -1,13 +1,14 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.dto.RefDTO;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Profiler;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
@@ -97,4 +98,8 @@ public interface IInstanceContext extends InstanceSink, Closeable {
     void increaseVersionsForAll();
 
     void updateMemoryIndex(ClassInstance instance);
+
+    @Nullable Consumer<Object> getBindHook();
+
+    Instance getRemoved(long id);
 }

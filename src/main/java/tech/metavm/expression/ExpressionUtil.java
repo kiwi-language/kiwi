@@ -4,10 +4,10 @@ import tech.metavm.entity.ElementTransformer;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.meta.Property;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Field;
-import tech.metavm.object.meta.StandardTypes;
+import tech.metavm.object.type.Property;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.StandardTypes;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;

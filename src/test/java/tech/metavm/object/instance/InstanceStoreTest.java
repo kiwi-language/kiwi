@@ -13,9 +13,9 @@ import tech.metavm.object.instance.persistence.mappers.InstanceMapperGateway;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceArrayMapper;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.StoreLoadRequestItem;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.StoreLoadRequestItem;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -53,7 +53,7 @@ public class InstanceStoreTest extends TestCase {
         InstancePO bar = new InstancePO(
                 TENANT_ID, barId, barType.getId(), "Bar001",
                 Map.of(
-                        NncUtils.toBase64(barType.getIdRequired()),
+                        NncUtils.encondeBase64(barType.getIdRequired()),
                         Map.of(
                                 "s0", "Bar001"
                         )),
@@ -68,7 +68,7 @@ public class InstanceStoreTest extends TestCase {
                         new InstancePO(
                                 TENANT_ID, fooId, fooType.getId(), "Big Foo",
                                 Map.of(
-                                        NncUtils.toBase64(fooType.getIdRequired()),
+                                        NncUtils.encondeBase64(fooType.getIdRequired()),
                                         Map.of(
                                                 "s0", "Big Foo",
                                                 "r1", barId,

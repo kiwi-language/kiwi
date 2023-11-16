@@ -5,9 +5,9 @@ import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 

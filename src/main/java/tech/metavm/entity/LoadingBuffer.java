@@ -5,7 +5,7 @@ import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.IdAndValue;
 import tech.metavm.util.NncUtils;
 

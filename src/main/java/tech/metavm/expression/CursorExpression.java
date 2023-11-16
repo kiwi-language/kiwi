@@ -1,8 +1,8 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.TypeUtils;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -40,7 +40,7 @@ public class CursorExpression extends Expression{
 
     @Override
     public ClassType getType() {
-        return TypeUtils.ensureClassArray(array.getType());
+        return Types.ensureClassArray(array.getType());
     }
 
     @Override

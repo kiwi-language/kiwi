@@ -1,8 +1,6 @@
 package tech.metavm.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import tech.metavm.dto.Result;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -14,7 +12,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 
 public class HttpUtils {
 

@@ -1,7 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
-import tech.metavm.object.meta.PrimitiveType;
+import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.Null;
 
 public class NullInstance extends PrimitiveInstance {
@@ -12,6 +12,11 @@ public class NullInstance extends PrimitiveInstance {
 
     @Override
     public Null getValue() {
+        return null;
+    }
+
+    @Override
+    public Object toColumnValue() {
         return null;
     }
 

@@ -7,7 +7,7 @@ import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;

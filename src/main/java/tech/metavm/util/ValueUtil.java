@@ -3,7 +3,7 @@ package tech.metavm.util;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
@@ -267,8 +267,8 @@ public class ValueUtil {
             return true;
         }
         if (from.isPrimitive() && to.isPrimitive()) {
-            if (TypeUtils.isDouble(to)) {
-                return TypeUtils.isLong(from);
+            if (Types.isDouble(to)) {
+                return Types.isLong(from);
             }
         }
         return false;

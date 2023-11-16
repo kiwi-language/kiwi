@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;

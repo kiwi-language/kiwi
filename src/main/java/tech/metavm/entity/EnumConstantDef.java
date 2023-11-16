@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.EnumConstantRT;
+import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.util.ReflectUtils;
 
 public class EnumConstantDef<T extends Enum<?>> {

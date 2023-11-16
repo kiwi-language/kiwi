@@ -7,7 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.ReturnParamDTO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

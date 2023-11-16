@@ -3,10 +3,10 @@ package tech.metavm.task;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.meta.ArrayType;
+import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 @EntityType("添加字段任务")
 public class AddFieldTask extends ScanByClassTask {

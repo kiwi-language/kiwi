@@ -9,8 +9,8 @@ import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.DoubleInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.generic.GenericContext;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.generic.GenericContext;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -386,7 +386,7 @@ public class ExpressionResolver {
             ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
         }
         Expression qualifier = getQualifier(psiSelf, context);
-        var selfType = TypeUtils.getClassType(flowBuilder.getExpressionType(qualifier));
+        var selfType = Types.getClassType(flowBuilder.getExpressionType(qualifier));
         Flow flow = resolveFlow(selfType, expression);
         List<Expression> args = NncUtils.map(
                 expression.getArgumentList().getExpressions(),

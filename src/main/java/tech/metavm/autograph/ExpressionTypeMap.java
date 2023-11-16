@@ -1,7 +1,7 @@
 package tech.metavm.autograph;
 
 import tech.metavm.expression.Expression;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.Collections;
 import java.util.HashMap;

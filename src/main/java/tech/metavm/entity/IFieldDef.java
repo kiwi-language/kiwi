@@ -22,7 +22,7 @@ public interface IFieldDef {
 
     java.lang.reflect.Field getJavaField();
 
-    tech.metavm.object.meta.Field getField();
+    tech.metavm.object.type.Field getField();
 
     String getName();
 }

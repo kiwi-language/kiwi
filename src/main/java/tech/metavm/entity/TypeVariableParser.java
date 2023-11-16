@@ -14,7 +14,7 @@ public class TypeVariableParser implements DefParser<Object, ClassInstance, Type
     private final TypeVariable<?> javaTypeVariable;
     private final Class<?> declaringClass;
     private final DefMap defMap;
-    private tech.metavm.object.meta.TypeVariable type;
+    private tech.metavm.object.type.TypeVariable type;
 
     public TypeVariableParser(TypeVariable<?> javaTypeVariable, DefMap defMap) {
         if(!(javaTypeVariable.getGenericDeclaration() instanceof Class<?>)) {
@@ -30,9 +30,9 @@ public class TypeVariableParser implements DefParser<Object, ClassInstance, Type
         return new TypeVariableDef(javaTypeVariable, createType());
     }
 
-    private tech.metavm.object.meta.TypeVariable createType() {
+    private tech.metavm.object.type.TypeVariable createType() {
         var declaringType = defMap.getPojoDef(declaringClass).getType();
-        return type = new tech.metavm.object.meta.TypeVariable(
+        return type = new tech.metavm.object.type.TypeVariable(
                 null,
                 declaringType.getName() + "-" + ReflectUtils.getMetaTypeVariableName(javaTypeVariable),
                 declaringType.getCodeRequired() + "-" + javaTypeVariable.getName(),

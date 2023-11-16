@@ -1,13 +1,8 @@
 package tech.metavm.user;
 
-public record Token (
+public record Token(
         long tenantId,
-        long userId,
-        long createdAt
+        String token
 ) {
 
-    @Override
-    public String toString() {
-        return tenantId+":"+userId + ":" + createdAt;
-    }
 }

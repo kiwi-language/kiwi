@@ -9,8 +9,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.WhileParamDTO;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
 @EntityType("While节点")

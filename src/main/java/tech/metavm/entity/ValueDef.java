@@ -1,8 +1,7 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.Nullable;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.util.TypeReference;
+import tech.metavm.object.type.ClassType;
 
 import java.lang.reflect.Type;
 

@@ -15,6 +15,13 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+
+server:
+  compression:
+    enabled: true
+    mime-types: text/html,text/plain,text/css,application/javascript,application/json
+    min-response-size: 1024
+
 management.health.elasticsearch.enabled: false
 
 mybatis:

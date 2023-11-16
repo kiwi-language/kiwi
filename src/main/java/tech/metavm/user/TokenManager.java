@@ -2,10 +2,7 @@ package tech.metavm.user;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.EncodingUtils;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.io.IOException;
 import java.security.KeyFactory;
@@ -31,36 +28,35 @@ public class TokenManager {
         return EncodingUtils.encrypt(signedToken, encryptPublicKey);
     }
 
-    public Token decodeToken(String tokenEncoding) {
-        try {
-            String decrypted = EncodingUtils.decrypt(tokenEncoding, encryptPrivateKey);
-            int idx = decrypted.lastIndexOf(":");
-            if (idx < 0) {
-                throw BusinessException.invalidToken();
-            }
-            String rawToken = decrypted.substring(0, idx);
-            String sign = decrypted.substring(idx + 1);
-            if (!EncodingUtils.verify(rawToken, sign, signPublicKey)) {
-                throw BusinessException.invalidToken();
-            }
-            String[] splits = rawToken.split(":");
-            if (splits.length != 3) {
-                throw BusinessException.invalidToken();
-            }
-
-            return new Token(Long.parseLong(splits[0]), Long.parseLong(splits[1]), Long.parseLong(splits[2]));
-        } catch (IllegalArgumentException e) {
-            throw BusinessException.invalidToken();
-        }
-    }
-
-    private String getSignature(String tokenEncoding) {
-        int idx = tokenEncoding.lastIndexOf(':');
-        if (idx < 0) {
-            return null;
-        }
-        return tokenEncoding.substring(idx + 1);
-    }
+//    public Token decodeToken(String tokenEncoding) {
+//        try(var ignored = ContextUtil.getProfiler().enter("TokenManager.decodeToken")) {
+//            String decrypted = EncodingUtils.decrypt(tokenEncoding, encryptPrivateKey);
+//            int idx = decrypted.lastIndexOf(":");
+//            if (idx < 0) {
+//                throw BusinessException.invalidToken();
+//            }
+//            String rawToken = decrypted.substring(0, idx);
+//            String sign = decrypted.substring(idx + 1);
+//            if (!EncodingUtils.verify(rawToken, sign, signPublicKey)) {
+//                throw BusinessException.invalidToken();
+//            }
+//            String[] splits = rawToken.split(":");
+//            if (splits.length != 3) {
+//                throw BusinessException.invalidToken();
+//            }
+//            return new Token(Long.parseLong(splits[0]), Long.parseLong(splits[1]), Long.parseLong(splits[2]));
+//        } catch (IllegalArgumentException e) {
+//            throw BusinessException.invalidToken();
+//        }
+//    }
+//
+//    private String getSignature(String tokenEncoding) {
+//        int idx = tokenEncoding.lastIndexOf(':');
+//        if (idx < 0) {
+//            return null;
+//        }
+//        return tokenEncoding.substring(idx + 1);
+//    }
 
     private String getRawToken(long tenantId, long userId) {
         return tenantId + ":" + userId + ":" + System.currentTimeMillis();

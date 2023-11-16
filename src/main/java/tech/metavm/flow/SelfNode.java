@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 @EntityType("当前对象节点")
 public class SelfNode extends NodeRT<Void> {

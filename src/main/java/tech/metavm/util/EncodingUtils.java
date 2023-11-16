@@ -47,7 +47,6 @@ public class EncodingUtils {
         }
     }
 
-
     public static String encrypt(String text, PublicKey publicKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -59,12 +58,24 @@ public class EncodingUtils {
     }
 
     public static String decrypt(String text, PrivateKey privateKey) {
+        try (var entry = ContextUtil.getProfiler().enter("decrypt")) {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            try(var entry1 = ContextUtil.getProfiler().enter("cipher.doFinal")) {
+                return new String(cipher.doFinal(decodeBase64(text)), StandardCharsets.UTF_8);
+            }
+        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Cipher createRsaCipher(PrivateKey privateKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            return new String(cipher.doFinal(Base64.getDecoder().decode(text)), StandardCharsets.UTF_8);
-        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException |
-                 BadPaddingException e) {
+            return cipher;
+        } catch (InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
@@ -74,11 +85,15 @@ public class EncodingUtils {
     }
 
     public static String encodeBase64(byte[] bytes) {
-        return Base64.getEncoder().encodeToString(bytes);
+        try(var ignored = ContextUtil.getProfiler().enter("encodeBase64")) {
+            return Base64.getEncoder().encodeToString(bytes);
+        }
     }
 
     public static byte[] decodeBase64(String text) {
-        return Base64.getDecoder().decode(text);
+        try(var ignored = ContextUtil.getProfiler().enter("decodeBase64")) {
+            return Base64.getDecoder().decode(text);
+        }
     }
 
 }

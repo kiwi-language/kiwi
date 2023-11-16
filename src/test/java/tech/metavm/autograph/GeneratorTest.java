@@ -6,19 +6,18 @@ import junit.framework.TestCase;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import tech.metavm.autograph.mocks.*;
-import tech.metavm.dto.Result;
+import tech.metavm.common.Result;
 import tech.metavm.entity.*;
-import tech.metavm.infra.RegionManager;
 import tech.metavm.object.instance.ChangeLogPlugin;
 import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.persistence.mappers.*;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.BatchSaveRequest;
-import tech.metavm.object.meta.rest.dto.GetTypesRequest;
-import tech.metavm.object.meta.rest.dto.GetTypesResponse;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.BatchSaveRequest;
+import tech.metavm.object.type.rest.dto.GetTypesRequest;
+import tech.metavm.object.type.rest.dto.GetTypesResponse;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.*;
 
 import java.util.ArrayList;
@@ -157,21 +156,21 @@ public class GeneratorTest extends TestCase {
                     new GetTypesRequest(ids, false),
                     new TypeReference<Result<GetTypesResponse>>() {});
             List<Long> nonEnumIds = new ArrayList<>();
-            for (TypeDTO type : result.data().types()) {
+            for (TypeDTO type : result.getData().types()) {
                 if(type.category() != TypeCategory.ENUM.code())
                     nonEnumIds.add(type.id());
             }
             var deleteInstanceResp = HttpUtils.post("/instance/delete-by-types",
                     nonEnumIds, new TypeReference<Result<Void>>() {
                     });
-            if (deleteInstanceResp.code() != 0) {
-                throw new InternalException("Fail to remove instances: " + deleteInstanceResp.message());
+            if (deleteInstanceResp.getCode() != 0) {
+                throw new InternalException("Fail to remove instances: " + deleteInstanceResp.getMessage());
             }
             var deleteTypeResp = HttpUtils.post("/type/batch-delete",
                     ids, new TypeReference<Result<Void>>() {
                     });
-            if (deleteTypeResp.code() != 0) {
-                throw new InternalException("Fail to remove types: " + deleteTypeResp.message());
+            if (deleteTypeResp.getCode() != 0) {
+                throw new InternalException("Fail to remove types: " + deleteTypeResp.getMessage());
             }
             writeJson(ID_FILE, List.of());
             System.out.println("Clean succeeded");
@@ -192,10 +191,10 @@ public class GeneratorTest extends TestCase {
     private void deploy(BatchSaveRequest request) {
         var resp = HttpUtils.post("/type/batch", request, new TypeReference<Result<List<Long>>>() {
         });
-        if (resp.code() != 0) {
-            throw new InternalException("Deploy failed: " + resp.message());
+        if (resp.getCode() != 0) {
+            throw new InternalException("Deploy failed: " + resp.getMessage());
         }
-        var ids = resp.data();
+        var ids = resp.getData();
         System.out.println("Deploy succeeded");
         writeJson(ID_FILE, ids);
         System.out.println("Deployed type ids: " + ids);

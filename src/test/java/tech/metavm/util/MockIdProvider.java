@@ -1,9 +1,9 @@
 package tech.metavm.util;
 
-import tech.metavm.dto.InternalErrorCode;
+import tech.metavm.common.InternalErrorCode;
 import tech.metavm.entity.EntityIdProvider;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeCategory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

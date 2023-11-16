@@ -4,9 +4,10 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.TaskGroup;
-import tech.metavm.object.meta.ClassType;
-import tech.metavm.object.meta.FieldBuilder;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.entity.ChildArray;
+import tech.metavm.object.version.Versions;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class AddFieldJobGroup extends TaskGroup {
     public List<Task> createJobs(IEntityContext context) {
         var type = data.getDeclaringType();
         List<Task> jobs = new ArrayList<>();
-        if(type.isTemplate()) {
+        if (type.isTemplate()) {
             var templateInstances = context.selectByKey(ClassType.TEMPLATE_IDX, type);
             for (ClassType templateInstance : templateInstances) {
                 var transformedData = context.getGenericContext().transformFieldData(
@@ -37,8 +38,7 @@ public class AddFieldJobGroup extends TaskGroup {
                 transformedFieldData.addChild(transformedData);
                 createJobsForType(templateInstance, transformedData, jobs);
             }
-        }
-        else {
+        } else {
             createJobsForType(type, data, jobs);
         }
         return jobs;
@@ -63,6 +63,7 @@ public class AddFieldJobGroup extends TaskGroup {
                     .column(data.getColumn())
                     .unique(data.isUnique())
                     .build();
+            Versions.create(field.getDeclaringType(), context);
             context.bind(field);
         }
     }

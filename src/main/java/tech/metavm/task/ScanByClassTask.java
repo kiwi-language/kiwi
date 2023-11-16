@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.meta.ClassType;
+import tech.metavm.object.type.ClassType;
 
 public abstract class ScanByClassTask extends ScanByTypeTask {
 

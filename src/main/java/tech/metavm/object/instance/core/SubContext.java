@@ -3,7 +3,7 @@ package tech.metavm.object.instance.core;
 import tech.metavm.entity.Value;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.*;
 

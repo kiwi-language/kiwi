@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.GlobalKey;
 import tech.metavm.entity.ValueType;
 import tech.metavm.object.instance.SQLType;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 
 import java.util.Map;
 import java.util.Objects;

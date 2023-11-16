@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.meta.BootIdProvider;
-import tech.metavm.object.meta.ColumnStore;
-import tech.metavm.object.meta.StdAllocators;
+import tech.metavm.object.type.BootIdProvider;
+import tech.metavm.object.type.ColumnStore;
+import tech.metavm.object.type.StdAllocators;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -41,7 +41,7 @@ public class Bootstrap implements InitializingBean {
     }
 
     public void boot() {
-        ContextUtil.setContextInfo(ROOT_TENANT_ID, -1L);
+        ContextUtil.setLoginInfo(ROOT_TENANT_ID, -1L);
         InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newContext(
                 ROOT_TENANT_ID, false, new BootIdProvider(stdAllocators), null, null
         );
@@ -64,6 +64,7 @@ public class Bootstrap implements InitializingBean {
         if (!idNullInstances.isEmpty()) {
             LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
         }
+        ContextUtil.clearContextInfo();
     }
 
     @Transactional
@@ -72,21 +73,22 @@ public class Bootstrap implements InitializingBean {
         if (defContext.isFinished()) {
             return;
         }
-        IEntityContext tempContext = instanceContextFactory.newContext(-1).getEntityContext();
-        InstanceContext instanceContext = NncUtils.requireNonNull(
-                (InstanceContext) defContext.getInstanceContext()
-        );
-        instanceContext.setCreateJob(tempContext::bind);
+        try(IEntityContext tempContext = instanceContextFactory.newEntityContext(-1)) {
+            InstanceContext instanceContext = NncUtils.requireNonNull(
+                    (InstanceContext) defContext.getInstanceContext()
+            );
+            instanceContext.setBindHook(tempContext::bind);
 
-        NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
-        defContext.finish();
+            NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
+            defContext.finish();
+            instanceContext.setBindHook(null);
 
-        defContext.getIdentityMap().forEach((model, javaConstruct) ->
-                stdAllocators.putId(javaConstruct, defContext.getInstance(model).getId())
-        );
-        defContext.getInstanceMapping().forEach((javaConstruct, instance) ->
-                stdAllocators.putId(javaConstruct, instance.getId())
-        );
+            defContext.getIdentityMap().forEach((model, javaConstruct) ->
+                    stdAllocators.putId(javaConstruct, defContext.getInstance(model).getIdRequired())
+            );
+            defContext.getInstanceMapping().forEach((javaConstruct, instance) ->
+                    stdAllocators.putId(javaConstruct, instance.getIdRequired())
+            );
 //        for (ModelDef<?, ?> def : defContext.getAllDefList()) {
 //            def.getEntityMapping().forEach((javaConstruct, entity) ->
 //                    stdAllocators.putId(javaConstruct, entity.getId())
@@ -95,12 +97,13 @@ public class Bootstrap implements InitializingBean {
 //                    stdAllocators.putId(javaConstruct, instance.getId())
 //            );
 //        }
-        if (saveIds) {
-            stdAllocators.save();
-            columnStore.save();
+            if (saveIds) {
+                stdAllocators.save();
+                columnStore.save();
+            }
+            check();
+            tempContext.finish();
         }
-        check();
-        tempContext.finish();
     }
 
     private void check() {

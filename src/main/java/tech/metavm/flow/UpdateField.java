@@ -4,13 +4,13 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-import static tech.metavm.object.meta.TypeUtils.*;
+import static tech.metavm.object.type.Types.*;
 
 @EntityType("更新字段")
 public class UpdateField extends Entity {

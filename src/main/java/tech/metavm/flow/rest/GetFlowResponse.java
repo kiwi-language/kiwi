@@ -1,6 +1,6 @@
 package tech.metavm.flow.rest;
 
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 
 import java.util.List;
 

@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
-import tech.metavm.dto.RefDTO;
-import tech.metavm.object.meta.Type;
-import tech.metavm.object.meta.TypeVariable;
+import tech.metavm.common.RefDTO;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;

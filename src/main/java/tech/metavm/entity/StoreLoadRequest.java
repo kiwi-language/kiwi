@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.meta.StoreLoadRequestItem;
-import tech.metavm.util.InternalException;
+import tech.metavm.object.type.StoreLoadRequestItem;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;

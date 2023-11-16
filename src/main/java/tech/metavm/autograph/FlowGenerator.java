@@ -7,8 +7,8 @@ import tech.metavm.expression.ArrayExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.flow.*;
-import tech.metavm.object.meta.ArrayType;
-import tech.metavm.object.meta.*;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 

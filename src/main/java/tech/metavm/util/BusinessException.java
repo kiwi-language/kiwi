@@ -1,14 +1,14 @@
 package tech.metavm.util;
 
-import tech.metavm.dto.ErrorCode;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.expression.Function;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.Index;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
+import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.FieldDTO;
 
 import java.util.List;
 import java.util.Map;

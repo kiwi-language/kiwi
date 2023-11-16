@@ -1,10 +1,10 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.FlowDTO;
-import tech.metavm.object.meta.*;
-import tech.metavm.object.meta.rest.dto.ClassTypeParam;
-import tech.metavm.object.meta.rest.dto.FieldDTO;
-import tech.metavm.object.meta.rest.dto.TypeDTO;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.ClassTypeParam;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;

@@ -1,6 +1,6 @@
 package tech.metavm.flow;
 
-import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.NameUtils;
 
 public class FlowParameter {

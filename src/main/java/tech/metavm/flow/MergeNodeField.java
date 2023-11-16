@@ -2,7 +2,7 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.MergeFieldDTO;
-import tech.metavm.object.meta.Field;
+import tech.metavm.object.type.Field;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 import tech.metavm.entity.ReadonlyArray;

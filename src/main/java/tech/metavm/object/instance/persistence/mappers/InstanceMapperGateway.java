@@ -7,7 +7,7 @@ import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.InstanceTitlePO;
 import tech.metavm.object.instance.persistence.VersionPO;
-import tech.metavm.object.meta.TypeCategory;
+import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 

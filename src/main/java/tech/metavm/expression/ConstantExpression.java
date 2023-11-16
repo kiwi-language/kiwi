@@ -6,7 +6,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.core.StringInstance;
-import tech.metavm.object.meta.Type;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
