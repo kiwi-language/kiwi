@@ -45,7 +45,7 @@ public class InputNode extends ChildTypeNode<InputParamDTO> {
 
     @Override
     protected InputParamDTO getParam(boolean persisting) {
-        return new InputParamDTO(NncUtils.map(getType().getFields(), this::toInputFieldDTO));
+        return new InputParamDTO(NncUtils.map(getType().getReadyFields(), this::toInputFieldDTO));
     }
 
     private InputFieldDTO toInputFieldDTO(Field field) {
@@ -74,7 +74,7 @@ public class InputNode extends ChildTypeNode<InputParamDTO> {
     @Override
     public void execute(MetaFrame frame) {
         Map<Field, Instance> fieldValues = new HashMap<>();
-        NncUtils.biForEach(getType().getFields(), frame.getArguments(), fieldValues::put);
+        NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
         var instance = new ClassInstance(fieldValues, getType());
         frame.setResult(instance);
     }

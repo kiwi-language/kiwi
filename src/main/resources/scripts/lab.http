@@ -38,13 +38,13 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/management/invalidate-cache/1293005863
+POST http://localhost:8080/management/invalidate-cache/1006000121
 
 ###
-GET http://localhost:8080/management/instance/1262205246
+GET http://localhost:8080/management/instance/1006000121
 
 ###
-GET http://localhost:8080/management/cache/1288705775
+GET http://localhost:8080/management/cache/1006000121
 
 ###
 POST http://localhost:8080/management/download-cache/1258405178
@@ -57,6 +57,23 @@ GET http://localhost:8080/perf/read-bytes/1258405178?runs=10
 
 ###
 GET http://localhost:8080/perf/skip-bytes/1256205279?runs=1
+
+###
+POST http://localhost:8081/api/type/field
+Accept: application/json
+Content-Type: application/json
+
+{
+  "declaringTypeId": 1006000121,
+  "name": "价格7",
+  "access": 1,
+  "typeRef": {
+    "id": 20005
+  },
+  "isChild": false,
+  "unique": false,
+  "asTitle": false
+}
 
 ###
 POST http://localhost:8080/logout
@@ -75,7 +92,7 @@ Content-Type: application/json
 
 {
   "ids": [
-    1175103505
+    1006000121
   ],
   "depth": 1
 }

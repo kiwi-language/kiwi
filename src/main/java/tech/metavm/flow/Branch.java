@@ -105,12 +105,12 @@ public class Branch extends Element {
 
     public void update(BranchDTO branchDTO, IEntityContext entityContext) {
         if(branchDTO.condition() != null) {
-            condition = ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext));
+            setCondition(ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext)));
         }
     }
 
     public void setCondition(Value condition) {
-        this.condition = condition;
+        this.condition = addChild(condition, "condition");
     }
 
     public boolean checkCondition(MetaFrame frame) {

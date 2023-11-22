@@ -31,6 +31,8 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     Instance get(RefDTO ref);
 
+    @Nullable Instance getBuffered(long id);
+
     Instance internalGet(long id);
 
     Instance getIfPresentByTmpId(long tmpId);

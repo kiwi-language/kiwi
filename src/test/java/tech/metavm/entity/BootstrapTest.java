@@ -12,10 +12,7 @@ import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.type.*;
-import tech.metavm.util.Column;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.TestContext;
+import tech.metavm.util.*;
 
 import java.util.List;
 
@@ -44,8 +41,8 @@ public class BootstrapTest extends TestCase {
         InstanceLogServiceImpl instanceLogService = new InstanceLogServiceImpl(
                 instanceSearchService,
                 instanceContextFactory,
-                instanceStore
-        );
+                instanceStore,
+                new MockTransactionOperations());
         instanceContextFactory.setIdService(mockIdProvider);
         instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
     }

@@ -54,8 +54,8 @@ public class GeneratorTest extends TestCase {
             InstanceLogServiceImpl instanceLogService = new InstanceLogServiceImpl(
                     instanceSearchService,
                     instanceContextFactory,
-                    instanceStore
-            );
+                    instanceStore,
+                    new MockTransactionOperations());
             instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
             var stdAllocators = new StdAllocators(allocatorStore);
             Bootstrap bootstrap = new Bootstrap(instanceContextFactory, stdAllocators, new MemColumnStore());

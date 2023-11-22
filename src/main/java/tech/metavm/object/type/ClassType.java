@@ -150,8 +150,12 @@ public class ClassType extends Type implements GenericDeclaration {
         return desc;
     }
 
-    public List<Field> getFields() {
+    public List<Field> getReadyFields() {
         return readyFields();
+    }
+
+    public List<Field> getFields() {
+        return fields.toList();
     }
 
     public List<Field> getAllFields() {

@@ -125,7 +125,7 @@ public class SerializeContext implements Closeable {
         Set<ClassType> added = new IdentitySet<>(classTypes);
         while (!classTypes.isEmpty()) {
             var type = classTypes.poll();
-            for (Field field : type.getFields()) {
+            for (Field field : type.getReadyFields()) {
                 if(field.isChild()) {
                     writeType(field.getType());
                     var concreteFieldType = field.getType().getConcreteType();

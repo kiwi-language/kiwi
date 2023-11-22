@@ -38,8 +38,8 @@ public class InstanceLogServiceImplTest extends TestCase {
 
         MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
         InstanceLogServiceImpl instanceLogService = new InstanceLogServiceImpl(
-                instanceSearchService, instanceContextFactory, instanceStore
-        );
+                instanceSearchService, instanceContextFactory, instanceStore,
+                new MockTransactionOperations());
 
         instanceLogService.process(logs);
         Assert.assertTrue(instanceSearchService.contains(fooInstance.getId()));

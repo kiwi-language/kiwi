@@ -742,7 +742,7 @@ public class FlowManager {
         var callable = inputNode.getScope().getOwner() == null ? inputNode.getFlow() :
                 (Callable) inputNode.getScope().getOwner();
         List<Parameter> parameters = new ArrayList<>();
-        for (var field : inputNode.getType().getFields()) {
+        for (var field : inputNode.getType().getReadyFields()) {
             var cond = NncUtils.get(inputNode.getFieldCondition(field), Value::copy);
             var parameter = callable.getParameterByName(field.getName());
             if (parameter == null) {

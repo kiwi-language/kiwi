@@ -174,7 +174,7 @@ public class Types {
                 new ExpressionValue(
                         new PropertyExpression(new NodeExpression(selfNode), funcField)
                 ),
-                NncUtils.map(inputType.getFields(),
+                NncUtils.map(inputType.getReadyFields(),
                         inputField ->
                                 new ExpressionValue(new PropertyExpression(new NodeExpression(inputNode), inputField))
                 )

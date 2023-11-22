@@ -170,6 +170,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public Instance get(RefDTO ref) {
+        if(ref.isEmpty())
+            return null;
         if (ref.isPersisted())
             return get(ref.id());
         else {
@@ -209,22 +211,28 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public Instance get(long id) {
         var found = internalGet(id);
-        if (found != null) {
-            if (found.isRemoved())
-                throw new InternalException(
-                        String.format("Can not get instance '%s' because it's already removed", found));
+        if (found.isRemoved())
+            throw new InternalException(
+                    String.format("Can not get instance '%s' because it's already removed", found));
+        return found;
+    }
+
+    @Override
+    public Instance internalGet(long id) {
+        var found = getBuffered(id);
+        if (found != null)
             return found;
-        } else {
+        else {
             buffer(id);
             return add(id);
         }
     }
 
     @Override
-    public Instance internalGet(long id) {
+    public @Nullable Instance getBuffered(long id) {
         var found = instanceMap.get(id);
         if (found == null && parent != null)
-            found = parent.internalGet(id);
+            found = parent.getBuffered(id);
         return found;
     }
 

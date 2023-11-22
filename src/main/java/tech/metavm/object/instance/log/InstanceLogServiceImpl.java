@@ -3,6 +3,7 @@ package tech.metavm.object.instance.log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.*;
 import tech.metavm.task.Task;
 import tech.metavm.task.TaskSignal;
@@ -32,6 +33,8 @@ public class InstanceLogServiceImpl implements InstanceLogService {
 
     private final IInstanceStore instanceStore;
 
+    private final TransactionOperations transactionOperations;
+
     private final Executor executor = new ThreadPoolExecutor(
             CORE_POOL_SIZE,
             MAX_POOL_SIZE,
@@ -42,10 +45,11 @@ public class InstanceLogServiceImpl implements InstanceLogService {
 
     public InstanceLogServiceImpl(InstanceSearchService instanceSearchService,
                                   IInstanceContextFactory instanceContextFactory,
-                                  IInstanceStore instanceStore) {
+                                  IInstanceStore instanceStore, TransactionOperations transactionOperations) {
         this.instanceSearchService = instanceSearchService;
         this.instanceContextFactory = instanceContextFactory;
         this.instanceStore = instanceStore;
+        this.transactionOperations = transactionOperations;
     }
 
     @Override
@@ -86,7 +90,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                     InstanceLog::getId
             );
             if (NncUtils.isNotEmpty(toIndex) || NncUtils.isNotEmpty(toDelete)) {
-                try(var ignored = context.getProfiler().enter("bulk")) {
+                try (var ignored = context.getProfiler().enter("bulk")) {
                     instanceSearchService.bulk(tenantId, toIndex, toDelete);
                 }
             }
@@ -95,12 +99,14 @@ public class InstanceLogServiceImpl implements InstanceLogService {
     }
 
     private void increaseUnfinishedTaskCount(long tenantId, int newJobCount) {
-        try (var rootContext = instanceContextFactory.newRootEntityContext(false)) {
-            TaskSignal signal = NncUtils.requireNonNull(rootContext.selectByUniqueKey(TaskSignal.IDX_TENANT_ID, tenantId));
-            signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
-            signal.setLastTaskCreatedAt(System.currentTimeMillis());
-            rootContext.finish();
-        }
+        transactionOperations.executeWithoutResult(s -> {
+            try (var rootContext = instanceContextFactory.newRootEntityContext(false)) {
+                TaskSignal signal = NncUtils.requireNonNull(rootContext.selectByUniqueKey(TaskSignal.IDX_TENANT_ID, tenantId));
+                signal.setUnfinishedCount(signal.getUnfinishedCount() + newJobCount);
+                signal.setLastTaskCreatedAt(System.currentTimeMillis());
+                rootContext.finish();
+            }
+        });
     }
 
 }

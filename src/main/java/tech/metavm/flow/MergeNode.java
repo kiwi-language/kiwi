@@ -79,7 +79,7 @@ public class MergeNode extends ChildTypeNode<MergeParamDTO> {
     @Override
     protected void setParam(MergeParamDTO param, IEntityContext context) {
         if (param.fields() != null) {
-            if (param.fields().size() != getType().getFields().size()) {
+            if (param.fields().size() != getType().getReadyFields().size()) {
                 throw new BusinessException(ErrorCode.MISSING_MERGE_NODE_FIELD_VALUE);
             }
             fields.clear();

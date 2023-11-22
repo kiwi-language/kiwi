@@ -184,8 +184,8 @@ public class TestUtils {
                 new ChangeLogPlugin(new InstanceLogServiceImpl(
                         instanceSearchService,
                         instanceContextFactory,
-                        instanceStore
-                ))
+                        instanceStore,
+                        new MockTransactionOperations()))
         ));
         return instanceContextFactory;
     }

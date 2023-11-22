@@ -28,7 +28,7 @@ public class IndexSourceBuilder {
         for (int lev = 0; lev < hierarchy.size(); lev++) {
             Map<String, Object> subSource = new HashMap<>();
             source.put("l" + lev, subSource);
-            for (Field field : hierarchy.get(lev).getFields()) {
+            for (Field field : hierarchy.get(lev).getReadyFields()) {
                 setEsValue(
                         instance.getField(field),
                         field,

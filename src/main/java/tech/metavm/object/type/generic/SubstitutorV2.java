@@ -100,7 +100,7 @@ public class SubstitutorV2 extends CopyVisitor {
         }
         if (stage.isAfterOrAt(DECLARATION) && curStage.isBefore(DEFINITION)) {
             enterElement(copy);
-            copy.setFields(NncUtils.map(type.getFields(), field -> (Field) copy(field)));
+            copy.setFields(NncUtils.map(type.getReadyFields(), field -> (Field) copy(field)));
             copy.setFlows(NncUtils.map(type.getFlows(), flow -> (Flow) copy(flow)));
             exitElement();
         }

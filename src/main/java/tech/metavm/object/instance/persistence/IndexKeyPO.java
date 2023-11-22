@@ -112,13 +112,13 @@ public class IndexKeyPO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IndexKeyPO that = (IndexKeyPO) o;
-        return constraintId == that.constraintId && Arrays.equals(columns, that.columns) && Objects.equals(columnX, that.columnX);
+        return constraintId == that.constraintId && Arrays.deepEquals(columns, that.columns) && Objects.equals(columnX, that.columnX);
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hash(constraintId, columnX);
-        result = 31 * result + Arrays.hashCode(columns);
+        result = 31 * result + Arrays.deepHashCode(columns);
         return result;
     }
 

@@ -46,15 +46,15 @@ public class ContextDifference {
                     entityChange.addToInsert(toInstancePO(t2, subtree)));
         } else if (t2 == null) {
             getSubTrees(t1).forEach(subtree ->
-                    entityChange.addToUpdate(toInstancePO(t1, subtree)));
+                    entityChange.addToDelete(toInstancePO(t1, subtree)));
         } else if (!Arrays.equals(t1.data(), t2.data())) {
             var firstSubtrees = getSubTrees(t1);
             var secondSubtrees = getSubTrees(t2);
             var ref = new Object() {
                 boolean rootChanged;
             };
-            var rootId = t2.id();
-            var newVersion = t2.version() + 1;
+            var rootId = t1.id();
+            var newVersion = t1.version() + 1;
             NncUtils.forEachPair(firstSubtrees, secondSubtrees, (s1, s2) -> {
                 if (s1 == null && s2 == null)
                     return;
@@ -62,7 +62,7 @@ public class ContextDifference {
                     entityChange.addToInsert(toInstancePO(t2, s2));
                 else if (s2 == null)
                     entityChange.addToDelete(toInstancePO(t1, s1));
-                else {
+                else if (!s1.equals(s2)) {
                     var updatePO = toInstancePO(t2, s2);
                     entityChange.addToUpdate(updatePO);
                     if (s2.id() == rootId) {

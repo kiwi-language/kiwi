@@ -53,7 +53,7 @@ public class ClassInstanceTest extends TestCase {
         InstanceDTO instanceDTO = foo.toDTO();
         Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
         ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
-        Assert.assertEquals(foo.getType().getFields().size(), paramDTO.fields().size());
+        Assert.assertEquals(foo.getType().getReadyFields().size(), paramDTO.fields().size());
         TestUtils.logJSON(LOGGER, instanceDTO);
     }
 

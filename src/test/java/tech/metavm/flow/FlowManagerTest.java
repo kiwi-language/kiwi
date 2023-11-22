@@ -1,27 +1,14 @@
 package tech.metavm.flow;
 
 import junit.framework.TestCase;
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.common.Page;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
-import tech.metavm.flow.rest.*;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.task.TaskManager;
-import tech.metavm.mocks.Coupon;
-import tech.metavm.mocks.CouponState;
-import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.search.InstanceSearchService;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.user.RoleRT;
-import tech.metavm.user.UserRT;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -54,8 +41,8 @@ public class FlowManagerTest extends TestCase {
                         new ChangeLogPlugin(new InstanceLogServiceImpl(
                                 instanceSearchService,
                                 instanceContextFactory,
-                                instanceStore
-                        ))
+                                instanceStore,
+                                new MockTransactionOperations()))
         ));
 
         EntityQueryService entityQueryService =

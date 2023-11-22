@@ -55,7 +55,7 @@ public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
     @Override
     protected void setParam(TryEndParamDTO param, IEntityContext context) {
         if (param.fields() != null) {
-            if (param.fields().size() != getType().getFields().size() - 1) {
+            if (param.fields().size() != getType().getReadyFields().size() - 1) {
                 throw new BusinessException(ErrorCode.NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH, this.getName());
             }
             this.fields.clear();

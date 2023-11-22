@@ -98,7 +98,7 @@ public class InstanceContext extends BaseInstanceContext {
     private void initializeInstance(Instance instance) {
         var tree = loadingBuffer.getTree(instance.getIdRequired());
         headContext.add(tree);
-        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::get);
+        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet);
         readInstance(input);
     }
 
@@ -131,9 +131,7 @@ public class InstanceContext extends BaseInstanceContext {
         processUpdate(patch);
         processRemoval(patch.entityChange);
         patch = beforeSaving(patch);
-        incPOVersions(patch);
         saveInstances(patch.entityChange);
-        incVersions(patch);
         afterSaving(patch);
         saveReferences(patch.referenceChange);
         headContext.clear();
@@ -299,7 +297,7 @@ public class InstanceContext extends BaseInstanceContext {
                     tenantId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
             );
             if (ref != null) {
-                throw BusinessException.strongReferencesPreventRemoval(get(ref.getSourceId()), getRemoved(ref.getTargetId()));
+                throw BusinessException.strongReferencesPreventRemoval(get(ref.getSourceId()), internalGet(ref.getTargetId()));
             }
         }
     }

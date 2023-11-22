@@ -16,7 +16,12 @@ public record RefDTO(Long id, Long tmpId) {
 
     @JsonIgnore
     public boolean isPersisted() {
-        return id != null;
+        return id != null && id != 0L;
+    }
+
+    @JsonIgnore
+    public boolean isEmpty() {
+        return (id == null || id == 0L) && tmpId == null;
     }
 
     public static RefDTO fromId(Long id) {
@@ -25,11 +30,6 @@ public record RefDTO(Long id, Long tmpId) {
 
     public static RefDTO fromTmpId(Long tmpId) {
         return new RefDTO(null, tmpId);
-    }
-
-    @JsonIgnore
-    public boolean isEmpty() {
-        return id == null && tmpId == null;
     }
 
     @JsonIgnore

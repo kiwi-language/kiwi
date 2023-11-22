@@ -554,7 +554,7 @@ public class TypeManager {
 
     @Transactional
     public long saveEnumConstant(InstanceDTO instanceDTO) {
-        try (var context = newContext()) {
+        try (var context = newContext(true)) {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
             var type = context.getClassType(instanceDTO.typeRef());
             ClassInstance instance;
@@ -601,7 +601,7 @@ public class TypeManager {
 
     @Transactional
     public void deleteEnumConstant(long id) {
-        try (var context = newContext()) {
+        try (var context = newContext(true)) {
             var instanceContext = NncUtils.requireNonNull(context.getInstanceContext());
             var instance = instanceContext.get(id);
             var type = (ClassType) instance.getType();

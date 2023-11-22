@@ -13,6 +13,7 @@ import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
+import tech.metavm.util.MockTransactionOperations;
 
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class UserManagerTest extends TestCase {
                 new IndexConstraintPlugin(new MemIndexEntryMapper()),
                 new CheckConstraintPlugin(),
                 new ChangeLogPlugin(
-                        new InstanceLogServiceImpl(instanceSearchService, instanceContextFactory, instanceStore)
+                        new InstanceLogServiceImpl(instanceSearchService, instanceContextFactory, instanceStore, new MockTransactionOperations())
                 )
         ));
 
