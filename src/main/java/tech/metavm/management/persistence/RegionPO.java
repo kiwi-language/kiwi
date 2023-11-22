@@ -2,18 +2,18 @@ package tech.metavm.management.persistence;
 
 public class RegionPO {
     private int typeCategory;
-    private long start;
-    private long end;
-    private long next;
+    private long startId;
+    private long endId;
+    private long nextId;
 
     public RegionPO() {
     }
 
-    public RegionPO(int typeCategory, long start, long end, long nextId) {
+    public RegionPO(int typeCategory, long startId, long endId, long nextId) {
         this.typeCategory = typeCategory;
-        this.start = start;
-        this.end = end;
-        this.next = nextId;
+        this.startId = startId;
+        this.endId = endId;
+        this.nextId = nextId;
     }
 
     public int getTypeCategory() {
@@ -24,27 +24,27 @@ public class RegionPO {
         this.typeCategory = typeCategory;
     }
 
-    public long getNext() {
-        return next;
+    public long getNextId() {
+        return nextId;
     }
 
-    public void setNext(long next) {
-        this.next = next;
+    public void setNextId(long nextId) {
+        this.nextId = nextId;
     }
 
-    public long getStart() {
-        return start;
+    public long getStartId() {
+        return startId;
     }
 
-    public void setStart(long start) {
-        this.start = start;
+    public void setStartId(long startId) {
+        this.startId = startId;
     }
 
-    public long getEnd() {
-        return end;
+    public long getEndId() {
+        return endId;
     }
 
-    public void setEnd(long end) {
-        this.end = end;
+    public void setEndId(long endId) {
+        this.endId = endId;
     }
 }

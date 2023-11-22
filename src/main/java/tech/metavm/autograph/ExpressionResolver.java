@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.BooleanInstance;
@@ -573,7 +574,7 @@ public class ExpressionResolver {
                 ClassType instanceType = (ClassType) flowBuilder.getExpressionType(self);
                 typeResolver.ensureDeclared(instanceType);
                 Field field = instanceType.getFieldByCode(psiField.getName());
-                if(field.isChildField()) {
+                if(field.isChild()) {
                     processChildAssignment(self, field, assignment, context);
                 }
                 else {
@@ -595,7 +596,7 @@ public class ExpressionResolver {
 
     private void processChildAssignment(Expression self, Field field,
                                               Expression assignment, ResolutionContext context) {
-        NncUtils.requireTrue(field.isChildField());
+        NncUtils.requireTrue(field.isChild());
         NncUtils.requireTrue(assignment instanceof NodeExpression);
         var node = ((NodeExpression) assignment).getNode();
         if(node instanceof NewNode newNode) {
@@ -634,7 +635,7 @@ public class ExpressionResolver {
         flowBuilder.exitCondSection(mergeNode, List.of());
 
         var valueField = FieldBuilder
-                .newBuilder("value", "value", mergeNode.getType(), StandardTypes.getBoolType())
+                .newBuilder("value", "value", mergeNode.getType(), StandardTypes.getBooleanType())
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
                 thenBranch, new ExpressionValue(ExpressionUtil.trueExpression()),

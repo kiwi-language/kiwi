@@ -109,7 +109,7 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> implements NewNode 
             ));
         }
         if (param.getParentRef() != null) {
-            parent = ParentRef.create(param.getParentRef(), parsingContext, getType());
+            setParent(ParentRef.create(param.getParentRef(), parsingContext, getType()));
         }
         if(param.isInitializeArrayChildren() != null) {
             initializeArrayChildren = param.isInitializeArrayChildren();
@@ -127,7 +127,7 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> implements NewNode 
         }
         if(initializeArrayChildren) {
             for (Field field : getType().getAllFields()) {
-                if(field.isChildField()
+                if(field.isChild()
                         && field.getType() instanceof ArrayType arrayType
                         && arrayType.getKind() != ArrayKind.READ_ONLY) {
                     new ArrayInstance(arrayType, new InstanceParentRef(instance, field));
@@ -148,7 +148,7 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> implements NewNode 
 
     @Override
     public void setParent(@Nullable ParentRef parentRef) {
-        this.parent = parentRef;
+        this.parent = NncUtils.get(parentRef, p -> addChild(p, "parent"));
     }
 
     @Override

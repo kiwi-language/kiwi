@@ -19,7 +19,7 @@ public record InstanceParentRef(
 
     @Nullable
     public static InstanceParentRef ofObject(ClassInstance object, Field field) {
-        return field.isChildField() ? new InstanceParentRef(object, field) : null;
+        return field.isChild() ? new InstanceParentRef(object, field) : null;
     }
 
 

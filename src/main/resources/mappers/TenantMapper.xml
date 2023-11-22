@@ -4,7 +4,7 @@
 
   <resultMap id="BaseResultMap" type="tech.metavm.tenant.persistence.TenantPO">
     <!--@mbg.generated-->
-    <!--@Table `tenant`-->
+    <!--@Table tenant-->
     <id column="id" jdbcType="BIGINT" property="id" />
     <result column="name" jdbcType="BIGINT" property="name"/>
   </resultMap>
@@ -18,29 +18,29 @@
     select
     <include refid="Base_Column_List"/>
     from
-    `tenant`
+    tenant
     where id = #{id}
     and deleted_at = 0
   </select>
 
   <insert id="insert">
     <!--@mbg.generated-->
-    insert into `tenant` (id, name) values (#{id}, #{name})
+    insert into tenant (id, name) values (#{id}, #{name})
   </insert>
 
   <update id="update">
     <!--@mbg.generated-->
-      update `tenant`
+      update tenant
       <set>
         <if test="name != null">
-          `name` = #{name}
+          name = #{name}
         </if>
       </set>
       where id = #{id} and deleted_at = 0
   </update>
 
   <update id="delete">
-    update `tenant`
+    update tenant
     set deleted_at = unix_timestamp() * 1000
     where
     deleted_at = 0 and
@@ -51,7 +51,7 @@
     select
     <include refid="Base_Column_List"/>
     from
-    `tenant`
+    tenant
     where deleted_at = 0
     <if test="searchText != null">
       and concat(',', name, ',') LIKE concat(',', #{searchText}, ',')
@@ -63,7 +63,7 @@
     select
     count(1)
     from
-    `tenant`
+    tenant
     where deleted_at = 0
     <if test="searchText != null">
       and concat(',', name, ',') LIKE concat(',', #{searchText}, ',')

@@ -56,7 +56,6 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
                             ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext)),
                             branchDTO.preselected(),
                             branchDTO.isExit(),
-                            new ScopeRT(getFlow(), this),
                             this
                     );
                     branch.setTmpId(branchDTO.tmpId());
@@ -114,7 +113,7 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
             }
         }
         branchId = maxIndex + 1;
-        Branch branch = new Branch(branchId, condition, false, false, new ScopeRT(getFlow(), this), this);
+        Branch branch = new Branch(branchId, condition, false, false, this);
         if (!branches.isEmpty() && branches.get(branches.size() - 1).isPreselected()) {
             branches.addChild(branches.size() - 1, branch);
         } else {

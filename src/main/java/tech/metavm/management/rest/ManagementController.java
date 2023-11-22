@@ -1,10 +1,10 @@
 package tech.metavm.management.rest;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tech.metavm.common.Result;
+import tech.metavm.management.CacheManager;
+import tech.metavm.management.StoreManager;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.tenant.TenantManager;
 import tech.metavm.tenant.rest.dto.TenantCreateRequest;
@@ -13,8 +13,8 @@ import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.util.NncUtils;
 
 @RestController
-@RequestMapping("/debug")
-public class DebugController {
+@RequestMapping("/management")
+public class ManagementController {
 
     private static final String PRIM_JSON_FILE = "/Users/leen/workspace/front/src/type/PrimitiveTypes.json";
 
@@ -36,12 +36,18 @@ public class DebugController {
 
     private final BootstrapController bootstrapController;
 
+    private final CacheManager cacheManager;
 
-    public DebugController(TypeManager typeManager, TenantManager tenantManager, LoginController loginController, BootstrapController bootstrapController) {
+    private final StoreManager storeManager;
+
+
+    public ManagementController(TypeManager typeManager, TenantManager tenantManager, LoginController loginController, BootstrapController bootstrapController, CacheManager cacheManager, StoreManager storeManager) {
         this.typeManager = typeManager;
         this.tenantManager = tenantManager;
         this.loginController = loginController;
         this.bootstrapController = bootstrapController;
+        this.cacheManager = cacheManager;
+        this.storeManager = storeManager;
     }
 
     @PostMapping("/init-test")
@@ -53,6 +59,34 @@ public class DebugController {
         NncUtils.writeFile(PRIM_JSON_FILE, json);
         NncUtils.writeFile(TENANT_ID_FILE, String.format("{\"tenantId\": %d}", tenantId));
         NncUtils.writeFile(RESULT_JSON_FILE, "[]");
+        return Result.voidSuccess();
+    }
+
+    @PostMapping("/invalidate-cache/{id:[0-9]+}")
+    public Result<Void> invalidateCache(@PathVariable("id") long id) {
+        cacheManager.invalidateCache(id);
+        return Result.voidSuccess();
+    }
+
+    @PostMapping("/clear-cache")
+    public Result<Void> clearCache() {
+        cacheManager.clearCache();
+        return Result.voidSuccess();
+    }
+
+    @GetMapping("/instance/{id:[0-9]+}")
+    public Result<Object> getInstance(@PathVariable("id") long id) {
+        return Result.success(storeManager.getInstance(id));
+    }
+
+    @GetMapping("/cache/{id:[0-9]+}")
+    public Result<Object> getCached(@PathVariable("id") long id) {
+        return Result.success(storeManager.getCached(id));
+    }
+
+    @PostMapping("/download-cache/{id:[0-9]+}")
+    public Result<Void> saveCacheBytes(@PathVariable("id") long id) {
+        cacheManager.saveCacheBytes(id);
         return Result.voidSuccess();
     }
 

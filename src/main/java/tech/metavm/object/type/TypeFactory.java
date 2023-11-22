@@ -1,10 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.common.RefDTO;
-import tech.metavm.entity.DummyGenericDeclaration;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.GenericDeclaration;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowBuilder;
 import tech.metavm.flow.Parameter;

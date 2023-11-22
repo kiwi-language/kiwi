@@ -7,7 +7,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
@@ -36,7 +36,7 @@ public class EsIndexCreator {
         properties.put(TYPE_ID, Map.of("type", "long"));
         properties.put(ID, Map.of("type", "long"));
         for (int level = 0; level < Constants.MAX_INHERITANCE_DEPTH; level++) {
-            for (SQLType columnType : SQLType.values()) {
+            for (ColumnKind columnType : ColumnKind.values()) {
                 for (int i = 0; i < columnType.count(); i++) {
                     if (columnType.esType() == null) {
                         continue;

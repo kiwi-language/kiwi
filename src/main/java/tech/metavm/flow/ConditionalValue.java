@@ -12,7 +12,7 @@ public class ConditionalValue extends Entity {
 
     public ConditionalValue(Branch branch, Value value) {
         this.branch = branch;
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public Branch getBranch() {
@@ -24,7 +24,7 @@ public class ConditionalValue extends Entity {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public ConditionalValueDTO toDTO(boolean persisting) {

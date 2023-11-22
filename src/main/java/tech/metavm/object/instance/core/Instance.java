@@ -1,23 +1,37 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.entity.*;
+import tech.metavm.entity.IdInitializing;
+import tech.metavm.entity.NoProxy;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.management.RegionManager;
 import tech.metavm.object.instance.persistence.IdentityPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceParamDTO;
+import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.TypeCategory;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 
 public abstract class Instance implements IdInitializing {
+
+    private transient boolean _new;
+    private transient boolean loaded;
+    transient boolean loadedFromCache;
+    transient boolean cacheEnabled;
+    private transient boolean removed;
+    private transient IInstanceContext context;
+    @Nullable
+    private transient Instance prev;
+    @Nullable
+    private transient Instance next;
+    private transient Object mappedEntity;
+    private transient boolean modified;
 
     @Nullable
     private Long id;
@@ -28,31 +42,37 @@ public abstract class Instance implements IdInitializing {
     private Instance parent;
     @Nullable
     private Field parentField;
+    private Instance root;
 
     private transient Long tmpId;
 
     private transient final Map<ReferenceRT, Integer> outgoingReferences = new HashMap<>();
-    private transient final Map<ReferenceRT, Integer> incomingReferences = new HashMap<>();
 
     private transient Object nativeObject;
+
+    private final @Nullable Consumer<Instance> load;
 
     public Instance(Type type) {
         this(type, null);
     }
 
     public Instance(Type type, @Nullable InstanceParentRef parentRef) {
-        this(null, type, parentRef, 0L, 0L);
+        this(null, type, parentRef, 0L, 0L, null);
     }
 
     public Instance(@Nullable Long id, Type type,
                     @Nullable InstanceParentRef parentRef,
-                    long version, long syncVersion) {
+                    long version, long syncVersion,
+                    @Nullable Consumer<Instance> load
+    ) {
         this.type = type;
         this.version = version;
         this.syncVersion = syncVersion;
-        if (id != null) {
+        this.load = load;
+        if (id != null)
             initId(id);
-        }
+        else
+            _new = true;
         if (parentRef != null) {
             switch (parentRef.parent()) {
                 case ClassInstance classParent ->
@@ -65,22 +85,82 @@ public abstract class Instance implements IdInitializing {
             }
             this.parent = parentRef.parent();
             this.parentField = parentRef.field();
+            root = parent.root;
+        }
+        else
+            root = this;
+    }
+
+    public Object getMappedEntity() {
+        return mappedEntity;
+    }
+
+    public void setMappedEntity(Object mappedEntity) {
+        this.mappedEntity = mappedEntity;
+    }
+
+    @NoProxy
+    public boolean isRemoved() {
+        return removed;
+    }
+
+    @NoProxy
+    public boolean isNew() {
+        return _new;
+    }
+
+    @NoProxy
+    public void setRemoved() {
+        if(removed)
+            throw new InternalException(String.format("Instance %s is already removed", this));
+        removed = true;
+    }
+
+    @NoProxy
+    public boolean isPersisted() {
+        return !isNew();
+    }
+
+    @NoProxy
+    public boolean isLoadedFromCache() {
+        return loadedFromCache;
+    }
+
+    void setLoadedFromCache(boolean loadedFromCache) {
+        this.loadedFromCache = loadedFromCache;
+    }
+
+    @NoProxy
+    public void resetParent(@Nullable InstanceParentRef parentRef) {
+        if(parentRef != null)
+            resetParent(parentRef.parent(), parentRef.field());
+        else
+            resetParent(null, null);
+    }
+
+    @NoProxy
+    public void resetParent(@Nullable Instance parent, @Nullable Field parentField) {
+        if (parent != null) {
+            this.parent = parent;
+            if (parent instanceof ClassInstance) {
+                this.parentField = NncUtils.requireNonNull(parentField);
+            } else {
+                NncUtils.requireNull(parentField);
+                this.parentField = null;
+            }
+            root = parent.root;
+        } else {
+            this.parent = null;
+            this.parentField = null;
+            root = this;
         }
     }
 
     @NoProxy
-    public void reloadParent(@Nullable InstanceParentRef parentRef) {
-        if (parentRef != null) {
-            this.parent = parentRef.parent();
-            if (parent instanceof ClassInstance) {
-                this.parentField = NncUtils.requireNonNull(parentRef.field());
-            } else {
-                NncUtils.requireNull(parentRef.field());
-                this.parentField = null;
-            }
-        } else {
-            this.parent = null;
-            this.parentField = null;
+    public void ensureLoaded() {
+        if (!loaded && load != null) {
+            load.accept(this);
+            loaded = true;
         }
     }
 
@@ -95,8 +175,31 @@ public abstract class Instance implements IdInitializing {
     }
 
     @NoProxy
+    public boolean isInitialized() {
+        return _new || loaded;
+    }
+
+    public boolean isRoot() {
+        return root == this;
+    }
+
+    @NoProxy
+    void setLoaded(boolean fromCache) {
+        if(loaded)
+            throw new InternalException(String.format("Instance %d is already loaded", getIdRequired()));
+        loaded = true;
+        _new = false;
+        loadedFromCache = fromCache;
+    }
+
+    @NoProxy
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    @NoProxy
     public boolean isNull() {
-        return type.isNull();
+        return false;
     }
 
     @NoProxy
@@ -107,6 +210,14 @@ public abstract class Instance implements IdInitializing {
     @NoProxy
     public boolean isPassword() {
         return type.isPassword();
+    }
+
+    public void setContext(IInstanceContext context) {
+        this.context = context;
+    }
+
+    public IInstanceContext getContext() {
+        return context;
     }
 
     @NoProxy
@@ -129,7 +240,15 @@ public abstract class Instance implements IdInitializing {
         return new IdentityPO(NncUtils.requireNonNull(getId()));
     }
 
-    public abstract Object toColumnValue(long tenantId, IdentitySet<Instance> visited);
+    @NoProxy
+    public boolean isPrimitive() {
+        return false;
+    }
+
+    @NoProxy
+    public boolean isNotPrimitive() {
+        return !isPrimitive();
+    }
 
     public abstract boolean isReference();
 
@@ -143,6 +262,14 @@ public abstract class Instance implements IdInitializing {
         throw new UnsupportedOperationException();
     }
 
+    public Instance getRoot() {
+        if(root == this)
+            return this;
+        else
+            return root = root.getRoot();
+    }
+
+    @NoProxy
     public Object toSearchConditionValue() {
         return NncUtils.requireNonNull(id);
     }
@@ -156,7 +283,10 @@ public abstract class Instance implements IdInitializing {
 
     @NoProxy
     public Long getIdRequired() {
-        return NncUtils.requireNonNull(getId());
+        if(id != null)
+            return id;
+        else
+            throw new InternalException("Instance id not initialized yet");
     }
 
     @NoProxy
@@ -177,13 +307,19 @@ public abstract class Instance implements IdInitializing {
     @Override
     @NoProxy
     public void initId(long id) {
-        if (this.id != null) {
+        if (this.id != null)
             throw new InternalException("id already initialized");
-        }
-        if (isArray() && NncUtils.noneMatch(TypeCategory.arrayCategories(), category -> category.idRangeContains(id))) {
-            throw new InternalException("Invalid id for array instance");
+        if (isArray()) {
+            if (!RegionManager.isArrayId(id))
+                throw new InternalException("Invalid id for array instance");
         }
         this.id = id;
+    }
+
+    @NoProxy
+    void ensureMutable() {
+        if (loadedFromCache)
+            throw new IllegalStateException(String.format("Instance %s is immutable", this));
     }
 
     @Override
@@ -193,10 +329,12 @@ public abstract class Instance implements IdInitializing {
     }
 
     public long getVersion() {
+        ensureLoaded();
         return version;
     }
 
     public long getSyncVersion() {
+        ensureLoaded();
         return syncVersion;
     }
 
@@ -205,6 +343,7 @@ public abstract class Instance implements IdInitializing {
     }
 
     public Set<Instance> getChildren() {
+        ensureLoaded();
         return Set.of();
     }
 
@@ -219,31 +358,22 @@ public abstract class Instance implements IdInitializing {
     }
 
     @NoProxy
-    public void addIncomingReference(ReferenceRT reference) {
-        incomingReferences.compute(reference, (k, c) -> c == null ? 1 : c + 1);
-    }
-
-    @NoProxy
-    public void removeIncomingReference(ReferenceRT reference) {
-        incomingReferences.compute(reference, (k, c) -> c == null || c <= 1 ? null : c - 1);
-    }
-
-    @NoProxy
-    public Set<ReferenceRT> getIncomingReferences() {
-        return Collections.unmodifiableSet(incomingReferences.keySet());
-    }
-
-    @NoProxy
     public Set<ReferenceRT> getOutgoingReferences() {
         return Collections.unmodifiableSet(outgoingReferences.keySet());
     }
 
     public ReferenceRT getOutgoingReference(Instance target, Field field) {
+        ensureLoaded();
         return NncUtils.findRequired(outgoingReferences.keySet(),
                 ref -> ref.target() == target && ref.field() == field);
     }
 
-    protected InstanceDTO toDTO(InstanceParamDTO param) {
+    public abstract void writeTo(InstanceOutput output, boolean includeChildren);
+
+    public abstract void readFrom(InstanceInput input);
+
+    protected InstanceDTO toDTO(InstanceParam param) {
+        ensureLoaded();
         try (var context = SerializeContext.enter()) {
             return new InstanceDTO(
                     NncUtils.orElse(id, () -> 0L),
@@ -255,6 +385,17 @@ public abstract class Instance implements IdInitializing {
         }
     }
 
+    @NoProxy
+    boolean isModified() {
+        return modified;
+    }
+
+    @NoProxy
+    void setModified() {
+        ensureMutable();
+        this.modified = true;
+    }
+
     public abstract FieldValue toFieldValueDTO();
 
     public InstanceDTO toDTO() {
@@ -264,7 +405,7 @@ public abstract class Instance implements IdInitializing {
     public abstract String getTitle();
 
     public String getQualifiedTitle() {
-        return getType().getName() + "/" + getTitle();
+        return getType().getName() + "-" + getTitle();
     }
 
     public String getDescription() {
@@ -281,16 +422,19 @@ public abstract class Instance implements IdInitializing {
 
     @Nullable
     public Instance getParent() {
+        ensureLoaded();
         return parent;
     }
 
     @Nullable
     public Field getParentField() {
+        ensureLoaded();
         return parentField;
     }
 
-    public InstanceParentRef getParentRef() {
-        return new InstanceParentRef(parent, parentField);
+    public @Nullable InstanceParentRef getParentRef() {
+        ensureLoaded();
+        return parent == null ? null : new InstanceParentRef(parent, parentField);
     }
 
     @Override
@@ -305,7 +449,7 @@ public abstract class Instance implements IdInitializing {
         return super.equals(obj);
     }
 
-    protected abstract InstanceParamDTO getParam();
+    protected abstract InstanceParam getParam();
 
     @NoProxy
     public void incVersion() {
@@ -342,12 +486,36 @@ public abstract class Instance implements IdInitializing {
     @NoProxy
     @Override
     public final String toString() {
-        if(EntityUtils.isModelInitialized(this)) {
+        if (this.isInitialized()) {
             return getType().getName() + "-" + getTitle();
-        }
-        else {
+        } else {
             return String.format("Uninitialized instance, id: %s", id);
         }
     }
 
+    void insertAfter(Instance instance) {
+        var next = this.next;
+        instance.next = next;
+        if(next != null)
+            next.prev = instance;
+        this.next = instance;
+        instance.prev = this;
+    }
+
+    void unlink() {
+        Instance next = this.next, prev = this.prev;
+        if(prev != null)
+            prev.next = next;
+        if(next != null)
+            next.prev = prev;
+        this.next = this.prev = null;
+    }
+
+    @Nullable Instance getNext() {
+        return next;
+    }
+
+    @Nullable Instance getPrev() {
+        return prev;
+    }
 }

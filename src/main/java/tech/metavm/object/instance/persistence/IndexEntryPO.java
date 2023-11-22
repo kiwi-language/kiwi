@@ -34,43 +34,43 @@ public class IndexEntryPO {
         key.setConstraintId(constraintId);
     }
 
-    public String getColumn0() {
+    public byte[] getColumn0() {
         return key.getColumn0();
     }
 
-    public void setColumn0(String column) {
+    public void setColumn0(byte[] column) {
         key.setColumn0(column);
     }
 
-    public String getColumn1() {
+    public byte[] getColumn1() {
         return key.getColumn1();
     }
 
-    public void setColumn1(String column) {
+    public void setColumn1(byte[] column) {
         key.setColumn1(column);
     }
 
-    public String getColumn2() {
+    public byte[] getColumn2() {
         return key.getColumn2();
     }
 
-    public void setColumn2(String column) {
+    public void setColumn2(byte[] column) {
         key.setColumn2(column);
     }
 
-    public String getColumn3() {
+    public byte[] getColumn3() {
         return key.getColumn3();
     }
 
-    public void setColumn3(String column) {
+    public void setColumn3(byte[] column) {
         key.setColumn3(column);
     }
 
-    public String getColumn4() {
+    public byte[] getColumn4() {
         return key.getColumn4();
     }
 
-    public void setColumn4(String column4) {
+    public void setColumn4(byte[] column4) {
         key.setColumn4(column4);
     }
 
@@ -86,7 +86,7 @@ public class IndexEntryPO {
         key.setColumnXPresent(columnXPresent);
     }
 
-    public String getColumn(int i) {
+    public byte[] getColumn(int i) {
         return key.getColumn(i);
     }
 

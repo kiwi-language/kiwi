@@ -5,6 +5,8 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.util.ReflectUtils;
 
+import java.util.function.Function;
+
 public class EnumConstantDef<T extends Enum<?>> {
     private final String name;
     private final int ordinal;
@@ -13,10 +15,10 @@ public class EnumConstantDef<T extends Enum<?>> {
     private final ClassInstance instance;
     private final EnumDef<T> enumDef;
 
-    public EnumConstantDef(T value, EnumDef<T> enumDef) {
+    public EnumConstantDef(T value, EnumDef<T> enumDef, Function<Object, Long> getId) {
         java.lang.reflect.Field enumField = ReflectUtils.getField(value.getClass(), value.name());
         this.enumDef = enumDef;
-        this.enumConstant = enumDef.createEnumConstant(value, enumField);
+        this.enumConstant = enumDef.createEnumConstant(value, enumField, getId);
         this.instance = enumConstant.getInstance();
         EnumConstant annotation = enumField.getAnnotation(EnumConstant.class);
         this.name = annotation != null ? annotation.value() : value.name();

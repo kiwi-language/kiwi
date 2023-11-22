@@ -16,6 +16,7 @@ import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.function.Consumer;
@@ -86,6 +87,9 @@ public class ClassType extends Type implements GenericDeclaration {
     private transient int rank;
 
     private transient List<ClassType> superTypes;
+
+    private transient volatile List<Field> sortedFields;
+
 
     public ClassType(
             Long tmpId,
@@ -159,14 +163,14 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public void forEachField(Consumer<Field> action) {
-        if(superClass != null)
+        if (superClass != null)
             superClass.forEachField(action);
         this.fields.stream().filter(Field::isReady).forEach(action);
     }
 
     @Override
     public void onBind(IEntityContext context) {
-        if(isTemplate)
+        if (isTemplate)
             context.getGenericContext().addType(this);
     }
 
@@ -271,6 +275,23 @@ public class ClassType extends Type implements GenericDeclaration {
 
     public Flow getDefaultConstructor() {
         return getFlowByCodeAndParamTypes(getEffectiveTemplate().getCode(), List.of());
+    }
+
+    public List<Field> getSortedFields() {
+        if(sortedFields == null) {
+            synchronized (this) {
+                if(sortedFields == null) {
+                    sortedFields = new ArrayList<>();
+                    forEachField(sortedFields::add);
+                    sortedFields.sort(Comparator.comparingLong(Field::getIdRequired));
+                }
+            }
+        }
+        return sortedFields;
+    }
+
+    private void resetFieldsMemoryDataStructures() {
+        this.sortedFields = null;
     }
 
     public void moveFlow(Flow flow, int index) {
@@ -408,6 +429,7 @@ public class ClassType extends Type implements GenericDeclaration {
         } else {
             fields.addChild(field);
         }
+        resetFieldsMemoryDataStructures();
     }
 
     @Override
@@ -437,7 +459,7 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public boolean isInterface() {
-        return category == TypeCategory.INTERFACE;
+        return category.isInterface();
     }
 
     public boolean isAbstract() {
@@ -460,15 +482,20 @@ public class ClassType extends Type implements GenericDeclaration {
         return isEnum() || isClass() || isArray();
     }
 
+    public Field findFieldById(long fieldId) {
+        Field found = NncUtils.find(fields, f -> f.idEquals(fieldId));
+        if (found != null) {
+            return found;
+        }
+        if (superClass != null)
+            return superClass.findFieldById(fieldId);
+        else
+            return null;
+    }
+
     public Field getField(long fieldId) {
-        if (superClass != null && superClass.containsField(fieldId)) {
-            return superClass.getField(fieldId);
-        }
-        Field field = fields.get(Entity::getId, fieldId);
-        if (field != null && field.isReady()) {
-            return field;
-        }
-        throw new InternalException("Field '" + fieldId + "' does not exist or is not ready");
+        return NncUtils.requireNonNull(findFieldById(fieldId),
+                () -> new InternalException(String.format("Field %d not found", fieldId)));
     }
 
     public Field findField(Predicate<Field> predicate) {
@@ -637,7 +664,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
     Column allocateColumn(Field field) {
         Type fieldType = field.getType();
-        if (fieldType.isNullable()) {
+        if (fieldType.isBinaryNullable()) {
             fieldType = fieldType.getUnderlyingType();
         }
         if (fieldType.getSQLType() == null) {
@@ -679,6 +706,7 @@ public class ClassType extends Type implements GenericDeclaration {
         } else {
             fields.remove(field);
         }
+        resetFieldsMemoryDataStructures();
     }
 
     @Override
@@ -694,8 +722,7 @@ public class ClassType extends Type implements GenericDeclaration {
                 } else {
                     return false;
                 }
-            }
-            else {
+            } else {
                 if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass())) {
                     return true;
                 }
@@ -711,6 +738,12 @@ public class ClassType extends Type implements GenericDeclaration {
         return false;
     }
 
+    @Override
+    public boolean isPojo() {
+        return category.isPojo();
+    }
+
+
     @Nullable
     public ClassType getSuperClass() {
         return superClass;
@@ -721,13 +754,13 @@ public class ClassType extends Type implements GenericDeclaration {
         ClassType sup = accept(new ElementVisitor<>() {
             @Override
             public ClassType visitClassType(ClassType type) {
-                if(type.getEffectiveTemplate() == template)
+                if (type.getEffectiveTemplate() == template)
                     return type;
                 ClassType found;
-                if(superClass != null && (found = superClass.accept(this)) != null)
+                if (superClass != null && (found = superClass.accept(this)) != null)
                     return found;
                 for (ClassType anInterface : interfaces) {
-                    if((found = anInterface.accept(this)) != null)
+                    if ((found = anInterface.accept(this)) != null)
                         return found;
                 }
                 return null;
@@ -864,20 +897,23 @@ public class ClassType extends Type implements GenericDeclaration {
     @Override
     public Set<ReferencePO> extractReferences(InstancePO instancePO) {
         Set<ReferencePO> refs = new HashSet<>();
-        for (Field field : getAllFields()) {
-            NncUtils.invokeIfNotNull(
-                    ReferencePO.convertToRefId(instancePO.get(
-                            field.getDeclaringType().getIdRequired(), field.getColumnName()), field.isReference()
-                    ),
-                    targetId -> refs.add(new ReferencePO(
+        new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
+            @Override
+            public void visitField() {
+                var field = getField(readLong());
+                var wireType = read();
+                if (wireType == WireTypes.REFERENCE) {
+                    refs.add(new ReferencePO(
                             instancePO.getTenantId(),
                             instancePO.getId(),
-                            targetId,
-                            field.getId(),
+                            readLong(),
+                            field.getIdRequired(),
                             ReferenceKind.getFromType(field.getType()).code()
-                    ))
-            );
-        }
+                    ));
+                } else
+                    super.visit(wireType);
+            }
+        }.visit();
         return refs;
     }
 
@@ -1192,6 +1228,10 @@ public class ClassType extends Type implements GenericDeclaration {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitClassType(this);
+    }
+
+    public ClassType findInClosure(long id) {
+        return getClosure().find(t -> Objects.equals(t.getId(), id));
     }
 }
 

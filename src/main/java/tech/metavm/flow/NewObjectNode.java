@@ -66,7 +66,7 @@ public class NewObjectNode extends CallNode<NewObjectParam> implements NewNode{
         var newParam = (NewObjectParam) paramDTO;
         var parsingContext = getParsingContext(context);
         if(newParam.getParent() != null) {
-            parent = ParentRef.create(newParam.getParent(), parsingContext, getType());
+            setParent(ParentRef.create(newParam.getParent(), parsingContext, getType()));
         }
     }
 
@@ -100,7 +100,7 @@ public class NewObjectNode extends CallNode<NewObjectParam> implements NewNode{
 
     @Override
     public void setParent(@Nullable ParentRef parentRef) {
-        this.parent = parentRef;
+        this.parent = NncUtils.get(parentRef, p -> addChild(p, "parent"));
     }
 
     @Override

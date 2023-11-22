@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.flow.Flow;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
@@ -10,6 +10,7 @@ import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -50,7 +51,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         objectDef = stdBuilder.getObjectDef();
         enumDef = stdBuilder.getEnumDef();
         this.columnStore = columnStore;
-        SQLType.columns().forEach(this::writeEntity);
+        ColumnKind.columns().forEach(this::writeEntity);
     }
 
     public void createCompositeTypes(Type javaType, tech.metavm.object.type.Type type) {
@@ -121,6 +122,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getDef(javaClass).getType();
     }
 
+    @Override
+    public void setLoadWithCache(Object entity) {
+    }
+
     public ClassType getClassType(Class<?> javaType) {
         return (ClassType) getType(javaType);
     }
@@ -159,7 +164,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public ModelDef<?, ?> getDef(tech.metavm.object.type.Type type) {
-        return NncUtils.requireNonNull(type2Def.get(type), () -> new InternalException("Can not find def for type " + type));
+        return NncUtils.requireNonNull(tryGetDef(type), () -> new InternalException("Can not find def for type " + type));
+    }
+
+    public @Nullable ModelDef<?,?> tryGetDef(tech.metavm.object.type.Type type) {
+        return type2Def.get(type);
     }
 
     private DefParser<?, ?, ?> getParser(Type javaType) {
@@ -198,7 +207,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 case ENUM -> new EnumParser<>(
                         javaClass.asSubclass(new TypeReference<Enum<?>>() {
                         }.getType()), enumDef,
-                        this);
+                        this, getId);
                 case CLASS -> new EntityParser<>(javaClass.asSubclass(Entity.class), javaType, this, columnStore);
                 case VALUE -> {
                     if (Record.class.isAssignableFrom(javaClass)) {
@@ -342,7 +351,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     public Instance getInstance(Object model) {
-        Instance primitiveInst = InstanceUtils.trySerializeEntityPrimitive(model, this::getType);
+        Instance primitiveInst = InstanceUtils.trySerializePrimitive(model, this::getType);
         if(primitiveInst != null)
             return primitiveInst;
         return getInstance(model, null);
@@ -391,17 +400,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         ModelIdentity identity = identityContext.getIdentity(model);
         Long id = identity != null ? getId.apply(identity) : null;
         if (def.isProxySupported()) {
-            Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType());
-            if (id != null) {
-                instance.initId(id);
-            }
+            Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), id);
             addToContext(model, instance);
             def.initInstanceHelper(instance, model, this);
         } else {
-            Instance instance = def.createInstanceHelper(model, this);
-            if (id != null && instance.getId() == null) {
-                instance.initId(id);
-            }
+            Instance instance = def.createInstanceHelper(model, this, id);
             addToContext(model, instance);
         }
     }

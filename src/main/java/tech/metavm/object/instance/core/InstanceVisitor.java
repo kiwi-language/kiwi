@@ -2,6 +2,10 @@ package tech.metavm.object.instance.core;
 
 public abstract class InstanceVisitor {
 
+    public void visit(Instance instance) {
+        instance.accept(this);
+    }
+
     public void visitInstance(Instance instance) {
     }
 

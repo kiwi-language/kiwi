@@ -27,8 +27,8 @@ public class MemBlockMapper implements BlockMapper {
         for (BlockPO blockPO : records) {
             NncUtils.requireNonNull(blockPO.getId());
             NncUtils.requireNonNull(blockPO.getTypeId());
-            NncUtils.requireNonNull(blockPO.getStart());
-            NncUtils.requireNonNull(blockPO.getEnd());
+            NncUtils.requireNonNull(blockPO.getStartId());
+            NncUtils.requireNonNull(blockPO.getEndId());
             NncUtils.requireNonNull(blockPO.getActive());
             map.put(blockPO.getId(), blockPO);
             typeId2blocks.computeIfAbsent(blockPO.getTypeId(), k -> new IdentitySet<>())
@@ -58,7 +58,7 @@ public class MemBlockMapper implements BlockMapper {
     @Override
     public BlockPO selectByPoint(long point) {
         for (BlockPO blockPO : map.values()) {
-            if(blockPO.getStart() <= point && blockPO.getEnd() > point) {
+            if(blockPO.getStartId() <= point && blockPO.getEndId() > point) {
                 return blockPO;
             }
         }
@@ -68,8 +68,8 @@ public class MemBlockMapper implements BlockMapper {
     @Override
     public void increaseNextId(long id, long inc) {
         BlockPO blockPO = map.get(id);
-        blockPO.setNext(blockPO.getNext() + inc);
-        NncUtils.requireTrue(blockPO.getNext() <= blockPO.getEnd(), "超出边界");
+        blockPO.setNextId(blockPO.getNextId() + inc);
+        NncUtils.requireTrue(blockPO.getNextId() <= blockPO.getEndId(), "超出边界");
     }
 
     @Override

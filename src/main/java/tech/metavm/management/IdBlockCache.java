@@ -1,39 +1,40 @@
 package tech.metavm.management;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.InternalErrorCode;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 
 public class IdBlockCache {
 
-    private final long maxSize;
     private final Function<Long, BlockRT> getById;
-    private final TreeMap<Long, BlockRT> index = new TreeMap<>();
+    private final ConcurrentSkipListMap<Long, BlockRT> index = new ConcurrentSkipListMap<>();
 
-    private final LinkedHashMap<Long, BlockRT> cache = new LinkedHashMap<>() {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<Long, BlockRT> eldest) {
-            boolean shouldRemove = size() > maxSize;
-            if(shouldRemove) {
-                onRemoveFromCache(eldest.getValue());
-                return true;
-            }
-            return false;
-        }
-    };
+    private final LoadingCache<Long, BlockRT> cache;
 
     private void onRemoveFromCache(BlockRT block) {
         index.remove(block.getStart());
     }
 
     public IdBlockCache(long maxSize, Function<Long, BlockRT> getById) {
-        this.maxSize = maxSize;
         this.getById = getById;
+        //noinspection DataFlowIssue
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(maxSize)
+                .removalListener(notification -> onRemoveFromCache((BlockRT) notification.getValue()))
+                .build(new CacheLoader<>() {
+                    @Override
+                    public @NotNull BlockRT load(@NotNull Long key) {
+                        return getById.apply(key);
+                    }
+                });
     }
 
     private void addToCache(BlockRT block) {
@@ -43,7 +44,7 @@ public class IdBlockCache {
 
     public BlockRT getById(long id) {
         BlockRT block = NncUtils.get(index.floorEntry(id), Map.Entry::getValue);
-        if(block == null || !block.contains(id)) {
+        if (block == null || !block.contains(id)) {
             block = this.getById.apply(id);
             NncUtils.requireTrue(block != null && block.contains(id),
                     () -> new InternalException(

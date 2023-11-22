@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.ModelDefRegistry;
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.*;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
@@ -10,26 +10,31 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+@EntityType("AllMatch表达式")
 public class AllMatchExpression extends Expression {
 
-//    private final CursorExpression cursor;
+    //    private final CursorExpression cursor;
+    @ChildEntity("数组")
     private final Expression array;
+    @ChildEntity("条件")
     private final Expression condition;
+    @Nullable
+    @EntityField("游标")
     private final CursorExpression cursor;
 
-    public AllMatchExpression(Expression array, Expression condition) {
+    public AllMatchExpression(@NotNull Expression array, @NotNull Expression condition) {
         this(array, condition, null);
     }
 
-    public AllMatchExpression(Expression array, Expression condition, CursorExpression cursor) {
+    public AllMatchExpression(@NotNull Expression array, @NotNull Expression condition, @Nullable CursorExpression cursor) {
 //        if(!(cursor.getArray().getType() instanceof ArrayType arrayType)) {
 //            throw new InternalException("array expression must has an array type");
 //        }
 //        if(!(arrayType.getElementType() instanceof ClassType)) {
 //            throw new InternalException("Only reference array is supported for AllMatchExpression right now");
 //        }
-        this.array = array;
-        this.condition = condition;
+        this.array = addChild(array.copy(), "array");
+        this.condition = addChild(condition.copy(), "condition");
         this.cursor = cursor;
     }
 

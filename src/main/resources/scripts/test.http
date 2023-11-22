@@ -3,7 +3,7 @@ Accept: application/json
 Content-Type: application/json
 
 ###
-POST http://localhost:8080/debug/init-test
+POST http://localhost:8080/management/init-test
 
 ###
 POST http://localhost:8080/type/query
@@ -67,7 +67,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "tenantId": 1174703495,
+  "tenantId": 1263605273,
   "loginName": "admin",
   "password": "123456"
 }

@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
@@ -21,9 +22,9 @@ public class ExpressionValue extends Value {
         this(ExpressionParser.parse(((ExpressionFieldValue) valueDTO.value()).getExpression(), parsingContext));
     }
 
-    public ExpressionValue(Expression expression) {
+    public ExpressionValue(@NotNull Expression expression) {
         super(ValueKind.EXPRESSION);
-        this.expression = NncUtils.requireNonNull(expression);
+        this.expression = addChild(expression.copy(), "expression");
     }
 
     @Override

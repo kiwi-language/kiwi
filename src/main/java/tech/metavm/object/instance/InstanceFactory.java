@@ -2,6 +2,7 @@ package tech.metavm.object.instance;
 
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
@@ -25,11 +26,13 @@ public class InstanceFactory {
     }
 
     public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Long id) {
-        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
-        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
-        if (id != null) {
-            instance.initId(id);
-        }
+        T instance;
+        if(type instanceof ArrayType arrayType)
+            instance =  instanceType.cast(new ArrayInstance(id, arrayType, null));
+        else
+            instance = instanceType.cast(new ClassInstance(id, (ClassType) type, null));
+//        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
+//        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
         return instance;
     }
 
@@ -82,10 +85,10 @@ public class InstanceFactory {
                             InstanceParentRef.ofObject(instance, field),
                             context
                     );
-                    if (!field.isChildField())
+                    if (!field.isChild())
                         instance.initField(field, fieldValue);
                 } else {
-                    if (!field.isChildField()) {
+                    if (!field.isChild()) {
                         instance.initField(field, InstanceUtils.nullInstance());
                     }
                 }
@@ -96,7 +99,7 @@ public class InstanceFactory {
             }
             return instance;
         } else if (type instanceof ArrayType arrayType) {
-            ArrayParamDTO param = (ArrayParamDTO) instanceDTO.param();
+            ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
             ArrayInstance array = new ArrayInstance(arrayType, parentRef);
             var elements = NncUtils.map(
                     param.elements(),
@@ -125,7 +128,7 @@ public class InstanceFactory {
         if (rawValue == null) {
             return InstanceUtils.nullInstance();
         }
-        if (type.isNullable()) {
+        if (type.isBinaryNullable()) {
             type = type.getUnderlyingType();
         }
         if (rawValue instanceof PrimitiveFieldValue primitiveFieldValue) {
@@ -160,8 +163,8 @@ public class InstanceFactory {
                         e -> resolveValue(e, StandardTypes.getObjectType(), getType,
                                 InstanceParentRef.ofArray(array), context)
                 );
-                array.reloadParent(parentRef);
-                array.reload(elements);
+                array.resetParent(parentRef);
+                array.reset(elements);
                 return array;
             }
         }

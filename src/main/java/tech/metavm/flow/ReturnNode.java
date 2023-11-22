@@ -31,17 +31,17 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
 
     public ReturnNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, @Nullable Value value) {
         super(tmpId, name, null, prev, scope);
-        this.value = value;
+        this.value = NncUtils.get(value, v -> addChild(v, "value"));
     }
 
     public void setValue(@Nullable Value value) {
-        this.value = value;
+        this.value = NncUtils.get(value, v -> addChild(v, "value"));
     }
 
     @Override
     protected void setParam(ReturnParamDTO param, IEntityContext context) {
         if(param.value() != null) {
-            value = ValueFactory.create(param.value(), getParsingContext(context));
+            setValue(ValueFactory.create(param.value(), getParsingContext(context)));
         }
     }
 

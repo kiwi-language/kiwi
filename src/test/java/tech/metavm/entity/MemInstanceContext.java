@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.BaseInstanceContext;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.core.BaseInstanceContext;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -29,7 +29,7 @@ public class MemInstanceContext extends BaseInstanceContext {
                               EntityIdProvider idProvider,
                               IInstanceStore instanceStore,
                               IInstanceContext parent) {
-        super(tenantId, idProvider, instanceStore, MockRegistry.getDefContext(), parent, -1L);
+        super(tenantId, idProvider, instanceStore, MockRegistry.getDefContext(), parent, false);
         typeProvider = typeId -> getEntityContext().getType(typeId);
         setBindHook(job -> getEntityContext().bind(job));
     }
@@ -44,7 +44,7 @@ public class MemInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    protected Instance createInstance(long id) {
+    protected Instance allocateInstance(long id) {
         throw new InternalException("Can not find instance for id " + id);
     }
 
@@ -54,11 +54,16 @@ public class MemInstanceContext extends BaseInstanceContext {
     }
 
     @Override
+    public void buffer(long id) {
+
+    }
+
+    @Override
     protected void finishInternal() {
         NncUtils.requireFalse(finished, "already finished");
         initIds();
         ChangeList<InstancePO> changeList = ChangeList.inserts(
-                NncUtils.map(instances, instance -> instance.toPO(ROOT_TENANT_ID))
+                NncUtils.map(this, instance -> instance.toPO(ROOT_TENANT_ID))
         );
         instanceStore.save(changeList);
         finished = true;
@@ -76,15 +81,11 @@ public class MemInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    protected boolean checkAliveInStore(long id) {
-        return instanceStore.load(
-                StoreLoadRequest.create(id),
-                this
-        ).size() > 0;
+    public void invalidateCache(Instance instance) {
     }
 
     @Override
-    public IInstanceContext newContext(long tenantId) {
+    public IInstanceContext createSame(long tenantId) {
         return new MemInstanceContext(
                 tenantId, idService, instanceStore, getParent()
         );

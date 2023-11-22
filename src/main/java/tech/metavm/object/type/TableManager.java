@@ -197,7 +197,7 @@ public class TableManager {
                 concreteType.isEnum() || concreteType.isClass() || concreteType.isValue() ?
                         concreteType.getId() : null,
                 type.isNotNull(),
-                type.isUnionNullable() ? type.getUnderlyingType().isArray() : type.isArray(),
+                type.isBinaryNullable() ? type.getUnderlyingType().isArray() : type.isArray(),
                 getChoiceOptions(concreteType, fieldDefaultValue)
         );
     }

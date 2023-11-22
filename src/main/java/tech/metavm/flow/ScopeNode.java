@@ -14,7 +14,7 @@ public abstract class ScopeNode<P extends ScopeNodeParamDTO> extends NodeRT<P> {
 
     protected ScopeNode(Long tmpId, String name, @Nullable Type outputType, NodeRT<?> previous, ScopeRT scope, boolean scopeWithBackEdge) {
         super(tmpId, name, outputType, previous, scope);
-        bodyScope = new ScopeRT(scope.getFlow(), this, scopeWithBackEdge);
+        bodyScope = addChild(new ScopeRT(scope.getFlow(), this, scopeWithBackEdge), "bodyScope");
     }
 
     public ScopeRT getBodyScope() {

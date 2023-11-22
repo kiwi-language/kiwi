@@ -36,12 +36,12 @@ public class Foo extends Entity {
 
     public Foo(String name, Bar bar) {
         this.name = name;
-        this.bar = bar;
+        this.bar = addChild(bar, "bar");
     }
 
     public Foo(String name, Bar bar, @Nullable Qux qux, @Nullable List<Baz> bazList) {
         this.name = name;
-        this.bar = bar;
+        this.bar = addChild(bar, "bar");
         this.qux = qux;
         this.bazList = addChild(new ReadWriteArray<>(Baz.class, bazList), "bazList");
     }

@@ -25,7 +25,7 @@ public class ArrayExpression extends Expression {
     private final ArrayType type;
 
     public ArrayExpression(Collection<Expression> expressions, ArrayType type) {
-        this.expressions.addChildren(expressions);
+        this.expressions.addChildren(NncUtils.map(expressions, Expression::copy));
         this.type = type;
     }
 

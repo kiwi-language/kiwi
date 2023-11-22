@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.EnumConstantRT;
 import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
 
@@ -34,7 +34,7 @@ public class EntityUtils {
     );
 
     public static final Set<Class<?>> ENTITY_CLASSES = Set.of(
-        ClassType.class, tech.metavm.object.type.Field.class, Instance.class,
+            ClassType.class, tech.metavm.object.type.Field.class, Instance.class,
             EnumConstantRT.class
     );
 
@@ -44,17 +44,16 @@ public class EntityUtils {
 
     public static void clearIdRecursively(Object model) {
         traverseModelGraph(model, (path, o) -> {
-            if(o instanceof IdInitializing idInitializing) {
+            if (o instanceof IdInitializing idInitializing) {
                 idInitializing.clearId();
             }
         });
     }
 
     public static Type getEntityRuntimeType(Object entity) {
-        if(entity instanceof RuntimeGeneric runtimeGeneric) {
+        if (entity instanceof RuntimeGeneric runtimeGeneric) {
             return runtimeGeneric.getGenericType();
-        }
-        else {
+        } else {
             return entity.getClass();
         }
     }
@@ -67,7 +66,7 @@ public class EntityUtils {
                                             BiConsumer<List<String>, Object> action,
                                             LinkedList<String> path,
                                             IdentitySet<Object> visited) {
-        if(model == null || visited.contains(model)
+        if (model == null || visited.contains(model)
                 || isPrimitive(model.getClass())) {
             return;
         }
@@ -76,7 +75,7 @@ public class EntityUtils {
         Class<?> realClass = getRealType(model.getClass());
         EntityDesc desc = DescStore.get(realClass);
         for (EntityProp prop : desc.getProps()) {
-            if(prop.isAccessible() && !prop.isTransient()) {
+            if (prop.isAccessible() && !prop.isTransient()) {
                 path.addLast(prop.getName());
                 traverseModelGraph0(prop.get(model), action, path, visited);
                 path.removeLast();
@@ -85,53 +84,46 @@ public class EntityUtils {
     }
 
     public static <T extends Entity> boolean entityEquals(T entity1, T entity2) {
-        if(entity1 == entity2) {
+        if (entity1 == entity2) {
             return true;
         }
-        if(entity1 == null || entity2 == null) {
+        if (entity1 == null || entity2 == null) {
             return false;
         }
-        if(entity1.getId() != null && entity2.getId() != null) {
+        if (entity1.getId() != null && entity2.getId() != null) {
             return entity1.getId().equals(entity2.getId());
         }
         return false;
     }
 
     private static boolean isDifferent(Object value1, Object value2, Map<Object, Object> visited) {
-        if(value1 == null && value2 == null) {
+        if (value1 == null && value2 == null) {
             return false;
-        }
-        else if(value1 == null || value2 == null) {
+        } else if (value1 == null || value2 == null) {
             return true;
-        }
-        else if(value1 instanceof Entity entity1) {
-            if(value2 instanceof Entity entity2) {
+        } else if (value1 instanceof Entity entity1) {
+            if (value2 instanceof Entity entity2) {
                 return isEntityDifferent(entity1, entity2, visited);
-            }
-            else {
+            } else {
                 return true;
             }
-        }
-        else if(value1 instanceof Map<?,?> map1) {
-            if((value2 instanceof Map<?,?> map2)) {
+        } else if (value1 instanceof Map<?, ?> map1) {
+            if ((value2 instanceof Map<?, ?> map2)) {
                 return isMapDifferent(map1, map2, visited);
-            }
-            else {
+            } else {
                 return true;
             }
-        }
-        else if(value1 instanceof Collection<?> coll1) {
-            if(value2 instanceof Collection<?> coll2) {
+        } else if (value1 instanceof Collection<?> coll1) {
+            if (value2 instanceof Collection<?> coll2) {
                 return isCollectionDifferent(coll1, coll2, visited);
-            }
-            else {
+            } else {
                 return true;
             }
-        }
-        else if(isPojo(value1.getClass())) {
+        } else if(value1 instanceof byte[] bytes1 && value2 instanceof byte[] bytes2) {
+            return !Arrays.equals(bytes1, bytes2);
+        } else if (isPojo(value1.getClass())) {
             return isPojoDifferent(value1, value2, visited);
-        }
-        else {
+        } else {
             return !Objects.equals(value1, value2);
         }
     }
@@ -145,11 +137,11 @@ public class EntityUtils {
     }
 
     private static boolean isPojoDifferent(Object pojo1, Object pojo2, Map<Object, Object> visited) {
-        if(visited.size() > MAXIMUM_DIFF_DEPTH) {
+        if (visited.size() > MAXIMUM_DIFF_DEPTH) {
             throw new InternalException("Diff depth exceeds maximum depth " + MAXIMUM_DIFF_DEPTH);
         }
         DiffPair diffPair = new DiffPair(pojo1, pojo2);
-        if(visited.containsKey(diffPair)) {
+        if (visited.containsKey(diffPair)) {
             return false;
 //            DiffState state = (DiffState) visited.get(diffPair);
 //            if(state == DiffState.DONE) {
@@ -157,14 +149,14 @@ public class EntityUtils {
 //            }
 //            throw new RuntimeException("Back reference of POJO is currently not supported");
         }
-        if(pojo1 == null && pojo2 == null) {
+        if (pojo1 == null && pojo2 == null) {
             return true;
         }
-        if(pojo1 == null || pojo2 == null) {
+        if (pojo1 == null || pojo2 == null) {
             return false;
         }
         Class<?> realClass = getRealClass(pojo1.getClass(), pojo2.getClass());
-        if(realClass == null) {
+        if (realClass == null) {
             return true;
         }
 
@@ -175,11 +167,11 @@ public class EntityUtils {
 //        Class<?> klass = pojo1.getClass();
         EntityDesc desc = DescStore.get(realClass);
         for (EntityProp prop : desc.getProps()) {
-            if(prop.isTransient()) {
+            if (prop.isTransient()) {
                 continue;
             }
             Object value1 = prop.get(pojo1), value2 = prop.get(pojo2);
-            if(isDifferent(value1, value2, visited)) {
+            if (isDifferent(value1, value2, visited)) {
                 return true;
             }
         }
@@ -188,72 +180,54 @@ public class EntityUtils {
     }
 
     public static void ensureProxyInitialized(Object object) {
-        if(object instanceof ProxyObject proxyObject) {
+        if (object instanceof ProxyObject proxyObject) {
             EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
             handler.ensureInitialized(object);
         }
     }
 
-    public static boolean isModelUninitialized(Object object) {
-        if(object instanceof ProxyObject proxyObject) {
-            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
-            return handler.isUninitialized();
-        }
-        else{
-            return false;
-        }
-    }
-
     public static EntityMethodHandler.State getProxyState(Object object) {
-        if(object instanceof ProxyObject proxyObject) {
+        if (object instanceof ProxyObject proxyObject) {
             var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
             return handler.getState();
-        }
-        else
+        } else
             throw new InternalException(String.format("%s is not a proxy object", object));
     }
 
     public static void setProxyState(Object object, EntityMethodHandler.State state) {
-        if(object instanceof ProxyObject proxyObject) {
-            var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
-            handler.setState(state);
-        }
-        else
+        if (!trySetProxyState(object, state))
             throw new InternalException(String.format("%s is not a proxy object", object));
     }
 
-    public static void setDirectInitializer(Object object, Consumer<?> directInitializer) {
-        if(object instanceof ProxyObject proxyObject) {
-            //noinspection rawtypes
-            EntityMethodHandler handler = (EntityMethodHandler<?>) proxyObject.getHandler();
-            //noinspection unchecked
-            handler.setDirectInitializer(directInitializer);
-        }
-        else
-            throw new InternalException(String.format("%s is not a proxy object", object));
+    public static boolean trySetProxyState(Object object, EntityMethodHandler.State state) {
+        if (object instanceof ProxyObject proxyObject) {
+            var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
+            handler.setState(state);
+            return true;
+        } else
+            return false;
     }
 
     public static boolean isModelInitialized(Object object) {
-        if(object instanceof ProxyObject proxyObject) {
+        if (object instanceof ProxyObject proxyObject) {
             EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
             return handler.isInitialized();
-        }
-        else{
+        } else {
             return true;
         }
     }
 
     private static Class<?> getRealClass(Class<?> klass1, Class<?> klass2) {
-        if(klass1 == klass2) {
+        if (klass1 == klass2) {
             return klass1;
         }
-        if(klass1 == klass2.getSuperclass()) {
-            if(ProxyObject.class.isAssignableFrom(klass2)) {
+        if (klass1 == klass2.getSuperclass()) {
+            if (ProxyObject.class.isAssignableFrom(klass2)) {
                 return klass1;
             }
         }
-        if(klass2 == klass1.getSuperclass()) {
-            if(ProxyObject.class.isAssignableFrom(klass1)) {
+        if (klass2 == klass1.getSuperclass()) {
+            if (ProxyObject.class.isAssignableFrom(klass1)) {
                 return klass2;
             }
         }
@@ -261,24 +235,23 @@ public class EntityUtils {
     }
 
     private static boolean isEntityDifferent(Entity entity1, Entity entity2, Map<Object, Object> visited) {
-        if(entity1.getId() != null && entity2.getId() != null) {
+        if (entity1.getId() != null && entity2.getId() != null) {
             return !Objects.equals(entity1.key(), entity2.key());
         }
-        if(entity1.getId() != null || entity2.getId() != null) {
+        if (entity1.getId() != null || entity2.getId() != null) {
             return false;
-        }
-        else {
+        } else {
             return isPojoDifferent(entity1, entity2, visited);
         }
     }
 
-    private static boolean isMapDifferent(Map<?,?> map1, Map<?,?> map2, Map<Object,Object> visited) {
-        if(map1.size() != map2.size()) {
+    private static boolean isMapDifferent(Map<?, ?> map1, Map<?, ?> map2, Map<Object, Object> visited) {
+        if (map1.size() != map2.size()) {
             return true;
         }
         List<Pair<Object>> pairs = NncUtils.buildPairsForMap(map1, map2);
         for (Pair<Object> pair : pairs) {
-            if(isDifferent(pair.first(), pair.second(), visited)) {
+            if (isDifferent(pair.first(), pair.second(), visited)) {
                 return true;
             }
         }
@@ -286,13 +259,13 @@ public class EntityUtils {
     }
 
     private static boolean isCollectionDifferent(Collection<?> coll1, Collection<?> coll2,
-                                                 Map<Object,Object> visited) {
-        if(coll1.size() != coll2.size()) {
+                                                 Map<Object, Object> visited) {
+        if (coll1.size() != coll2.size()) {
             return true;
         }
         List<Pair<Object>> pairs = NncUtils.buildPairs(coll1, coll2);
         for (Pair<Object> pair : pairs) {
-            if(isDifferent(pair.first(), pair.second(), visited)) {
+            if (isDifferent(pair.first(), pair.second(), visited)) {
                 return true;
             }
         }
@@ -318,7 +291,7 @@ public class EntityUtils {
     }
 
     public static Long tryGetId(Object object) {
-        if(object instanceof Identifiable identifiable) {
+        if (object instanceof Identifiable identifiable) {
             return identifiable.getId();
         }
         return null;
@@ -345,25 +318,23 @@ public class EntityUtils {
     }
 
     private static void traverse(Entity entity, Consumer<Entity> action, IdentitySet<Entity> visited) {
-        if(entity == null || visited.contains(entity)) {
+        if (entity == null || visited.contains(entity)) {
             return;
         }
         visited.add(entity);
         action.accept(entity);
         EntityDesc desc = DescStore.get(entity.getClass());
         for (EntityProp prop : desc.getProps()) {
-            if(prop.isNull(entity)) {
+            if (prop.isNull(entity)) {
                 continue;
             }
-            if(prop.isEntity(entity)) {
+            if (prop.isEntity(entity)) {
                 traverse(prop.getEntity(entity), action, visited);
-            }
-            else if(prop.isEntityList(entity)) {
+            } else if (prop.isEntityList(entity)) {
                 for (Entity ref : prop.getEntityList(entity)) {
                     traverse(ref, action, visited);
                 }
-            }
-            else if(prop.isEntityMap(entity)) {
+            } else if (prop.isEntityMap(entity)) {
                 for (Entity ref : prop.getEntityMap(entity).values()) {
                     traverse(ref, action, visited);
                 }
@@ -373,25 +344,28 @@ public class EntityUtils {
 
     @SuppressWarnings("unchecked")
     private static <T> T copy(T object, IdentityHashMap<Object, Object> copyMap) {
-        if(object == null) {
+        if (object == null) {
             return null;
         }
-        if(copyMap.containsKey(object)) {
+        if (copyMap.containsKey(object)) {
             return (T) copyMap.get(object);
         }
-        if(object instanceof List<?> list) {
+        if (object instanceof List<?> list) {
             return (T) copyList(list, copyMap);
         }
-        if(object instanceof Set<?> set) {
+        if (object instanceof Set<?> set) {
             return (T) copySet(set, copyMap);
         }
-        if(object instanceof Map<?,?> map) {
+        if (object instanceof Map<?, ?> map) {
             return (T) copyMap(map, copyMap);
         }
-        if(isShallow(object.getClass())) {
+        if (isShallow(object.getClass())) {
             return object;
         }
-        if(object instanceof Entity entity) {
+        if(object instanceof byte[] bytes) {
+            return (T) Arrays.copyOf(bytes, bytes.length);
+        }
+        if (object instanceof Entity entity) {
             return (T) makeDummyRef(getRealEntityType(entity), entity.id);
         }
         return (T) copyPojo(object, copyMap, false);
@@ -402,16 +376,16 @@ public class EntityUtils {
     }
 
     private static boolean isShallow(Class<?> klass) {
-        if(Enum.class.isAssignableFrom(klass)) {
+        if (Enum.class.isAssignableFrom(klass)) {
             return true;
         }
-        if(Record.class.isAssignableFrom(klass)) {
+        if (Record.class.isAssignableFrom(klass)) {
             return true;
         }
-        if(isContextClass(klass)) {
+        if (isContextClass(klass)) {
             return true;
         }
-        if(isPrimitive(klass)) {
+        if (isPrimitive(klass)) {
             return true;
         }
         return isSpringBean(klass);
@@ -430,17 +404,16 @@ public class EntityUtils {
     }
 
     public static Class<?> getRealType(Class<?> type) {
-        if(ProxyObject.class.isAssignableFrom(type)) {
+        if (ProxyObject.class.isAssignableFrom(type)) {
             return type.getSuperclass();
         }
         return type;
     }
 
     public static Class<?> getEntityType(Class<?> type) {
-        if(ProxyObject.class.isAssignableFrom(type)) {
+        if (ProxyObject.class.isAssignableFrom(type)) {
             return type.getSuperclass();
-        }
-        else {
+        } else {
             return type;
         }
 //        Class<?> tmp = type;
@@ -479,8 +452,8 @@ public class EntityUtils {
     }
 
     private static boolean isSpringBean(Class<?> klass) {
-        while(klass != Object.class && klass != null) {
-            if(isSpringBean0(klass)) {
+        while (klass != Object.class && klass != null) {
+            if (isSpringBean0(klass)) {
                 return true;
             }
             klass = klass.getSuperclass();
@@ -509,7 +482,7 @@ public class EntityUtils {
     public static void copyPojo(Object src, Object target, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
         List<Field> fields = ReflectUtils.getInstanceFields(src.getClass());
         for (Field field : fields) {
-            if(ignoreTransient && Modifier.isTransient(field.getModifiers())) {
+            if (ignoreTransient && Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
             ReflectUtils.set(
@@ -544,37 +517,32 @@ public class EntityUtils {
     }
 
     private static <T> List<T> newList(List<? extends T> prototype) {
-        if(prototype instanceof LinkedList) {
+        if (prototype instanceof LinkedList) {
             return new LinkedList<>();
         }
-        if(prototype instanceof java.util.LinkedList) {
+        if (prototype instanceof java.util.LinkedList) {
             return new java.util.LinkedList<>();
-        }
-        else {
+        } else {
             return new ArrayList<>();
         }
     }
 
     private static <K, V> Map<K, V> newMap(Map<? extends K, ? extends V> prototype) {
-        if(prototype instanceof TreeMap) {
+        if (prototype instanceof TreeMap) {
             return new TreeMap<>();
-        }
-        else if(prototype instanceof LinkedHashMap) {
+        } else if (prototype instanceof LinkedHashMap) {
             return new LinkedHashMap<>();
-        }
-        else {
+        } else {
             return new HashMap<>();
         }
     }
 
     private static <T> Set<T> newSet(Set<? extends T> prototype) {
-        if(prototype instanceof TreeSet) {
+        if (prototype instanceof TreeSet) {
             return new TreeSet<>();
-        }
-        else if(prototype instanceof LinkedHashSet) {
+        } else if (prototype instanceof LinkedHashSet) {
             return new LinkedHashSet<>();
-        }
-        else {
+        } else {
             return new HashSet<>();
         }
     }

@@ -4,6 +4,7 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.type.Access;
+import tech.metavm.object.type.MetadataState;
 
 public class FieldDTOBuilder {
 
@@ -25,6 +26,7 @@ public class FieldDTOBuilder {
     private boolean isStatic;
     private boolean lazy;
     private InstanceDTO staticValue;
+    private int state = MetadataState.READY.code();
 
     private FieldDTOBuilder(String name, String code, RefDTO typeRef) {
         this.name = name;
@@ -87,6 +89,11 @@ public class FieldDTOBuilder {
         return this;
     }
 
+    public FieldDTOBuilder state(int state) {
+        this.state = state;
+        return this;
+    }
+
     public FieldDTO build() {
         return new FieldDTO(
                 tmpId,
@@ -102,7 +109,8 @@ public class FieldDTOBuilder {
                 isChild,
                 isStatic,
                 lazy,
-                staticValue
+                staticValue,
+                state
         );
     }
 

@@ -24,7 +24,7 @@ public class PrimitiveType extends Type {
 
     @Override
     public TypeKey getTypeKey() {
-        return new PrimitiveTypeKey(kind.getCode());
+        return new PrimitiveTypeKey(kind.code());
     }
 
     @Override
@@ -40,6 +40,50 @@ public class PrimitiveType extends Type {
         return kind == that.kind;
     }
 
+    public boolean isPrimitive() {
+        return true;
+    }
+
+    @Override
+    public boolean isNull() {
+        return kind == PrimitiveKind.NULL;
+    }
+
+    @Override
+    public boolean isLong() {
+        return kind == PrimitiveKind.LONG;
+    }
+
+    @Override
+    public boolean isDouble() {
+        return kind == PrimitiveKind.DOUBLE;
+    }
+
+    @Override
+    public boolean isBoolean() {
+        return kind == PrimitiveKind.BOOLEAN;
+    }
+
+    @Override
+    public boolean isString() {
+        return kind == PrimitiveKind.STRING;
+    }
+
+    @Override
+    public boolean isVoid() {
+        return kind == PrimitiveKind.VOID;
+    }
+
+    @Override
+    public boolean isTime() {
+        return kind == PrimitiveKind.TIME;
+    }
+
+    @Override
+    public boolean isPassword() {
+        return kind == PrimitiveKind.PASSWORD;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(kind);
@@ -47,7 +91,7 @@ public class PrimitiveType extends Type {
 
     @Override
     protected PrimitiveTypeParam getParam() {
-        return new PrimitiveTypeParam(kind.getCode());
+        return new PrimitiveTypeParam(kind.code());
     }
 
     public PrimitiveKind getKind() {

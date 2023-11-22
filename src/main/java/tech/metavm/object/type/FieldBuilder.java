@@ -1,8 +1,10 @@
 package tech.metavm.object.type;
 
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.util.Column;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
@@ -26,6 +28,7 @@ public class FieldBuilder {
     private boolean isChild;
     private boolean isStatic = false;
     private Instance staticValue;
+    private MetadataState state;
     private boolean lazy;
     private Field template;
     private Field existing;
@@ -54,6 +57,11 @@ public class FieldBuilder {
 
     public FieldBuilder unique(boolean unique) {
         this.unique = unique;
+        return this;
+    }
+
+    public FieldBuilder state(MetadataState state) {
+        this.state = state;
         return this;
     }
 
@@ -102,11 +110,19 @@ public class FieldBuilder {
         return this;
     }
 
+    private PrimitiveType getNullType() {
+        return NncUtils.orElse(nullType, StandardTypes::getNullType);
+    }
+
     public Field build() {
-        var effectiveDefaultValue = defaultValue != null ? defaultValue : new NullInstance(nullType());
-        var effectiveStaticValue = staticValue != null ? staticValue : new NullInstance(nullType());
-        if(existing == null) {
-            var field = new Field(
+        if (existing == null) {
+            if(defaultValue == null)
+                defaultValue = new NullInstance(getNullType());
+            if(staticValue == null)
+                staticValue = new NullInstance(getNullType());
+            if (state == null)
+                state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
+            return new Field(
                     tmpId,
                     name,
                     code,
@@ -115,17 +131,16 @@ public class FieldBuilder {
                     access,
                     unique,
                     asTitle,
-                    effectiveDefaultValue,
+                    defaultValue,
                     isChild,
                     isStatic,
                     lazy,
-                    effectiveStaticValue,
+                    staticValue,
                     template,
-                    column
+                    column,
+                    state
             );
-            return field;
-        }
-        else {
+        } else {
             existing.setTmpId(tmpId);
             existing.setName(name);
             existing.setCode(code);
@@ -134,8 +149,12 @@ public class FieldBuilder {
             existing.setUnique(unique);
             existing.setLazy(lazy);
             existing.setAsTitle(asTitle);
-            existing.setDefaultValue(effectiveDefaultValue);
-            existing.setStaticValue(effectiveStaticValue);
+            if(defaultValue != null)
+                existing.setDefaultValue(defaultValue);
+            if(staticValue != null)
+                existing.setStaticValue(staticValue);
+            if (state != null)
+                existing.setState(state);
             return existing;
         }
     }

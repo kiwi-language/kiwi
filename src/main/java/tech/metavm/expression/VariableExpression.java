@@ -1,16 +1,19 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
 import java.util.Objects;
 
+@EntityType("变量表达式")
 public class VariableExpression extends Expression {
 
     private final String variable;
 
-    public VariableExpression(String variable) {
+    public VariableExpression(@NotNull String variable) {
         this.variable = variable;
     }
 

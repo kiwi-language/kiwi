@@ -7,7 +7,7 @@ import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.Property;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.StandardTypes;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -126,7 +126,7 @@ public class ExpressionUtil {
         return new FunctionExpression(
                 Function.STARTS_WITH,
                 List.of(
-                        attributeExpr(field),
+                        propertyExpr(field),
                         new ConstantExpression(strInstance)
                 )
         );
@@ -136,7 +136,7 @@ public class ExpressionUtil {
         return new FunctionExpression(
                 Function.CONTAINS,
                 List.of(
-                        attributeExpr(field),
+                        propertyExpr(field),
                         new ConstantExpression(strInstance)
                 )
         );
@@ -157,19 +157,19 @@ public class ExpressionUtil {
     public static Expression fieldEq(Field field, Instance value) {
         return new BinaryExpression(
                 Operator.EQ,
-                attributeExpr(field),
+                propertyExpr(field),
                 new ConstantExpression(value)
         );
     }
 
-    public static PropertyExpression attributeExpr(Property attribute) {
-        return new PropertyExpression(thisObject(attribute.getDeclaringType()), attribute);
+    public static PropertyExpression propertyExpr(Property property) {
+        return new PropertyExpression(thisObject(property.getDeclaringType()), property);
     }
 
     public static Expression fieldIn(Field field, Collection<? extends Instance> values) {
         return new BinaryExpression(
                 Operator.IN,
-                attributeExpr(field),
+                propertyExpr(field),
                 new ArrayExpression(
                         NncUtils.map(values, ConstantExpression::new),
                         StandardTypes.getObjectArrayType()
@@ -324,7 +324,6 @@ public class ExpressionUtil {
         }
     }
 
-
     public static boolean isConstantFalse(Expression expression) {
         if (expression instanceof ConstantExpression constantExpression) {
             return InstanceUtils.isFalse(constantExpression.getValue());
@@ -348,7 +347,6 @@ public class ExpressionUtil {
             return false;
         }
     }
-
 
     public static LongInstance castInteger(Instance value) {
         if (value instanceof LongInstance longInstance) {

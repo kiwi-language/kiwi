@@ -4,9 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
-import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
-import tech.metavm.object.instance.rest.ArrayParamDTO;
+import tech.metavm.object.instance.ArrayListener;
+import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.instance.rest.ArrayInstanceParam;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
@@ -15,6 +15,7 @@ import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class ArrayInstance extends Instance implements Iterable<Instance> /*implements Collection<Instance>*/ {
 
@@ -26,7 +27,11 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     private final transient List<ArrayListener> listeners = new ArrayList<>();
 
     public ArrayInstance(ArrayType type) {
-        this(type, List.of());
+        this(null, type, null);
+    }
+
+    public ArrayInstance(Long id, ArrayType type, @Nullable Consumer<Instance> load) {
+        super(id, type, null, 0, 0, load);
     }
 
     public ArrayInstance(ArrayType type, List<Instance> elements) {
@@ -38,22 +43,13 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         super(type, parentRef);
     }
 
-
-    public ArrayInstance(Long id,
-                         ArrayType type,
-                         @Nullable InstanceParentRef parentRef,
-                         long version,
-                         long syncVersion
-    ) {
-        super(id, type, parentRef, version, syncVersion);
-    }
-
     @NoProxy
-    public void reload(List<Instance> elements) {
+    public void reset(List<Instance> elements) {
         clearInternal();
-        for (Instance element : elements) {
+        for (Instance element : elements)
             addInternally(element);
-        }
+        if(!isNew() && !isLoaded())
+            setLoaded(false);
     }
 
     private void clearInternal() {
@@ -62,16 +58,19 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         }
     }
 
+    @NoProxy
     public boolean isChildArray() {
         return getType().getKind() == ArrayKind.CHILD;
     }
 
     @Override
     public boolean isChild(Instance instance) {
+        ensureLoaded();
         return isChildArray() && elements.contains(instance);
     }
 
     public Set<Instance> getChildren() {
+        ensureLoaded();
         if (getType().getKind() == ArrayKind.CHILD) {
             return NncUtils.filterUnique(elements, Instance::isNotNull);
         } else {
@@ -79,69 +78,95 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         }
     }
 
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        ensureLoaded();
+        output.writeInt(size());
+        boolean isChildArray = isChildArray();
+        for (Instance element : elements) {
+            if(isChildArray && includeChildren)
+                output.writeInstance(element);
+            else
+                output.writeReference(element);
+        }
+    }
+
+    @Override
+    @NoProxy
+    public void readFrom(InstanceInput input) {
+        setLoaded(input.isLoadedFromCache());
+        var parent = getParent();
+        var parentField = getParentField();
+        var elements = this.elements;
+        int len = input.readInt();
+        input.setParent(this, null);
+        for (int i = 0; i < len; i++) {
+            var element = input.readInstance();
+            elements.add(element);
+            if(element.isNotPrimitive())
+                new ReferenceRT(this, element, null);
+        }
+        input.setParent(parent, parentField);
+    }
+
     public Instance get(int index) {
+        ensureLoaded();
         checkIndex(index);
         return elements.get(index);
     }
 
     public Instance getInstance(int i) {
+        ensureLoaded();
         return elements.get(i);
     }
 
-//    @Override
     public int size() {
+        ensureLoaded();
         return elements.size();
     }
 
-//    @Override
     public boolean isEmpty() {
+        ensureLoaded();
         return elements.isEmpty();
     }
 
-//    @Override
     public boolean contains(Object o) {
+        ensureLoaded();
+        //noinspection SuspiciousMethodCalls
         return elements.contains(o);
     }
 
     public BooleanInstance instanceContains(Instance instance) {
+        ensureLoaded();
         return InstanceUtils.createBoolean(contains(instance));
     }
 
     @NotNull
-//    @Override
     public Iterator<Instance> iterator() {
+        ensureLoaded();
         return elements.iterator();
     }
 
-    @NotNull
-//    @Override
-    public Object @NotNull [] toArray() {
-        return elements.toArray();
-    }
-
-    @NotNull
-//    @Override
-    public <T> T @NotNull [] toArray(@NotNull T @NotNull [] a) {
-        return elements.toArray(a);
-    }
-
-//    @Override
     public boolean add(Instance element) {
+        ensureLoaded();
         NncUtils.requireFalse(isChildArray(),
                 () -> new BusinessException(ErrorCode.CAN_NOT_ASSIGN__CHILD_FIELD));
         return addInternally(element);
     }
 
     void addChild(Instance element) {
+        ensureLoaded();
         NncUtils.requireTrue(isChildArray());
         addInternally(element);
     }
 
     void removeChild(Instance element) {
+        ensureLoaded();
         removeInternally(element);
     }
 
     public Instance remove(int index) {
+        ensureLoaded();
         checkIndex(index);
         var removed = elements.remove(index);
         onRemove(removed);
@@ -149,12 +174,12 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     }
 
     public Instance set(int index, Instance element) {
+        ensureLoaded();
         checkIndex(index);
         checkElement(element);
         Instance removed = elements.set(index, element);
-        if (removed != null) {
+        if (removed != null)
             onRemove(removed);
-        }
         onAdd(element);
         return removed;
     }
@@ -171,21 +196,20 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     private boolean addInternally(Instance element) {
         checkElement(element);
-        new ReferenceRT(this, element, null);
         elements.add(element);
         onAdd(element);
         return true;
     }
 
     public void setElements(List<Instance> elements) {
-        for (Instance element : new ArrayList<>(this.elements)) {
+        ensureLoaded();
+        for (Instance element : new ArrayList<>(this.elements))
             remove(element);
-        }
         this.addAll(elements);
     }
 
-//    @Override
     public boolean remove(Object element) {
+        ensureLoaded();
         return removeInternally(element);
     }
 
@@ -200,74 +224,44 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     }
 
     private void onRemove(Instance instance) {
-        if (instance.getType().isReference()) {
+        setModified();
+        if (instance.isNotPrimitive())
             getOutgoingReference(instance, null).clear();
-        }
-        for (ArrayListener listener : listeners) {
+        for (ArrayListener listener : listeners)
             listener.onRemove(instance);
-        }
     }
 
     private void onAdd(Instance instance) {
-        for (ArrayListener listener : listeners) {
+        setModified();
+        if(instance.isNotPrimitive())
+            new ReferenceRT(this, instance, null);
+        for (ArrayListener listener : listeners)
             listener.onAdd(instance);
-        }
     }
 
-//    @Override
-    public boolean containsAll(@NotNull Collection<?> c) {
-        //noinspection SlowListContainsAll
-        return elements.containsAll(c);
-    }
-
-//    @Override
     public boolean addAll(@NotNull Collection<? extends Instance> c) {
         return addAll((Iterable<? extends Instance>) c);
     }
 
     public boolean addAll(Iterable<? extends Instance> c) {
+        ensureLoaded();
         c.forEach(this::add);
         return true;
     }
 
-//    @Override
-    public boolean removeAll(@NotNull Collection<?> c) {
-        boolean anyChange = false;
-        for (Object o : c) {
-            if (remove(o)) {
-                anyChange = true;
-            }
-        }
-        return anyChange;
-    }
-
-//    @Override
-    public boolean retainAll(@NotNull Collection<?> c) {
-        List<Object> toRemove = new ArrayList<>();
-        for (Object o : c) {
-            if (!contains(o)) {
-                toRemove.add(o);
-            }
-        }
-        if (toRemove.isEmpty()) {
-            return false;
-        }
-        for (Object o : toRemove) {
-            remove(o);
-        }
-        return true;
-    }
-
     public int length() {
+        ensureLoaded();
         return elements.size();
     }
 
     public List<Instance> getElements() {
+        ensureLoaded();
         return elements;
     }
 
     @Override
     public Set<Instance> getRefInstances() {
+        ensureLoaded();
         return new IdentitySet<>(
                 NncUtils.filter(elements, Instance::isReference)
         );
@@ -279,42 +273,39 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         return true;
     }
 
-    @Override
-    public InstanceArrayPO toPO(long tenantId) {
+    public InstancePO toPO(long tenantId) {
         return toPO(tenantId, new IdentitySet<>());
     }
 
     @Override
-    InstanceArrayPO toPO(long tenantId, IdentitySet<Instance> visited) {
-        return new InstanceArrayPO(
-                getId(),
-                getType().getIdRequired(),
+    public InstancePO toPO(long tenantId, IdentitySet<Instance> visited) {
+        ensureLoaded();
+        return new InstancePO(
                 tenantId,
-                elements.size(),
-                NncUtils.map(elements, e -> e.toColumnValue(tenantId, visited)),
-                NncUtils.get(getParent(), Instance::getId),
-                NncUtils.get(getParentField(), Field::getId),
+                getIdRequired(),
+                getTitle(),
+                getType().getIdRequired(),
+                InstanceOutput.toByteArray(this),
+                NncUtils.getOrElse(getParent(), Instance::getId, -1L),
+                NncUtils.getOrElse(getParentField(), Field::getId, -1L),
+                getRoot().getIdRequired(),
                 getVersion(),
                 getSyncVersion()
         );
     }
 
     @Override
-    @NoProxy
-    public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return toIdentityPO();
-    }
-
-    @Override
     public String getTitle() {
+        ensureLoaded();
         List<Instance> first = elements.subList(0, Math.min(3, elements.size()));
         return NncUtils.join(first, Instance::getTitle, ",") + (elements.size() > 3 ? "..." : "");
     }
 
     @Override
-    protected ArrayParamDTO getParam() {
+    protected ArrayInstanceParam getParam() {
+        ensureLoaded();
         if (isChildArray()) {
-            return new ArrayParamDTO(
+            return new ArrayInstanceParam(
                     true,
                     NncUtils.map(elements, e ->
                             new InstanceFieldValue(
@@ -323,7 +314,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
                     )
             );
         } else {
-            return new ArrayParamDTO(
+            return new ArrayInstanceParam(
                     false,
                     NncUtils.map(elements, Instance::toFieldValueDTO)
             );
@@ -338,13 +329,15 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     @Override
     public void acceptReferences(InstanceVisitor visitor) {
+        ensureLoaded();
         for (Instance element : elements)
             element.accept(visitor);
     }
 
     @Override
     public void acceptChildren(InstanceVisitor visitor) {
-        if(isChildArray()) {
+        ensureLoaded();
+        if (isChildArray()) {
             acceptReferences(visitor);
         }
     }
@@ -405,10 +398,12 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     @Override
     public InstanceFieldValue toFieldValueDTO() {
+        ensureLoaded();
         return new InstanceFieldValue(getTitle(), toDTO());
     }
 
     public void clear() {
+        ensureLoaded();
         clearInternal();
     }
 

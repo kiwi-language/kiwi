@@ -28,6 +28,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
 
     @ChildEntity("对象")
     private Value objectId;
+    
     @ChildEntity("更新字段")
     private final ChildArray<UpdateField> fieldParams = addChild(new ChildArray<>(UpdateField.class), "fieldParams");
 
@@ -47,7 +48,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     protected void setParam(UpdateObjectParamDTO param, IEntityContext entityContext) {
         ParsingContext parsingContext = getParsingContext(entityContext);
         if(param.objectId() != null) {
-            objectId = ValueFactory.create(param.objectId(), parsingContext);
+            setObjectId(ValueFactory.create(param.objectId(), parsingContext));
         }
         if(param.fields() != null) {
             for (UpdateFieldDTO field : param.fields()) {
@@ -88,7 +89,7 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     }
 
     public void setObjectId(Value objectId) {
-        this.objectId = objectId;
+        this.objectId = addChild(objectId, "objectId");
     }
 
 

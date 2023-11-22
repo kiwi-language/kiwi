@@ -1,7 +1,6 @@
 package tech.metavm.util;
 
-import javassist.util.proxy.ProxyObject;
-import tech.metavm.entity.EntityMethodHandler;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.*;
@@ -25,6 +24,10 @@ public class InstanceUtils {
 //    public static void resetGetTypeFunc() {
 //        getTypeFunc = ModelDefRegistry::getType;
 //    }
+
+    public static NullInstance nullInstance;
+    public static BooleanInstance trueInstance;
+    public static BooleanInstance falseInstance;
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
             Integer.class, new PrimitiveType(PrimitiveKind.LONG),
@@ -102,20 +105,20 @@ public class InstanceUtils {
         return false;
     }
 
-    public static PrimitiveInstance serializeEntityPrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
-        return NncUtils.requireNonNull(trySerializeEntityPrimitive(value, getTypeFunc),
+    public static PrimitiveInstance serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+        return NncUtils.requireNonNull(trySerializePrimitive(value, getTypeFunc),
                 () -> new InternalException(String.format("Can not resolve primitive value '%s", value)));
     }
 
-    public static boolean isPrimitiveEntityValue(Object value) {
+    public static boolean isPrimitive(Object value) {
         return value == null || value instanceof Date || value instanceof String ||
                 value instanceof Boolean || value instanceof Password ||
                 ValueUtil.isInteger(value) || ValueUtil.isFloat(value);
     }
 
-    public static @Nullable PrimitiveInstance trySerializeEntityPrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+    public static @Nullable PrimitiveInstance trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         if (value == null)
-            return InstanceUtils.nullInstance(getTypeFunc);
+            return InstanceUtils.nullInstance();
         if (ValueUtil.isInteger(value))
             return InstanceUtils.longInstance(((Number) value).longValue(), getTypeFunc);
         if (ValueUtil.isFloat(value))
@@ -132,7 +135,7 @@ public class InstanceUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T deserializeEntityPrimitive(PrimitiveInstance instance, Class<T> javaClass) {
+    public static <T> T deserializePrimitive(PrimitiveInstance instance, Class<T> javaClass) {
         javaClass = (Class<T>) ReflectUtils.getBoxedClass(javaClass);
         if (instance.isNull()) {
             return null;
@@ -177,7 +180,7 @@ public class InstanceUtils {
 
     public static PrimitiveInstance resolvePersistedPrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         if (value == null) {
-            return InstanceUtils.nullInstance(getTypeFunc);
+            return InstanceUtils.nullInstance();
         }
         if (value instanceof TimePO timePO) {
             return InstanceUtils.timeInstance(timePO.time(), getTypeFunc);
@@ -233,7 +236,7 @@ public class InstanceUtils {
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
-        return booleanInstance(value, defaultGetTypeFunc());
+        return new BooleanInstance(value, StandardTypes.getBooleanType());
     }
 
     public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
@@ -241,7 +244,7 @@ public class InstanceUtils {
     }
 
     public static DoubleInstance doubleInstance(double value) {
-        return doubleInstance(value, defaultGetTypeFunc());
+        return new DoubleInstance(value, StandardTypes.getDoubleType());
     }
 
     public static DoubleInstance doubleInstance(double value, Function<Class<?>, Type> getTypeFunc) {
@@ -253,27 +256,35 @@ public class InstanceUtils {
     }
 
     public static TimeInstance timeInstance(long value) {
-        return timeInstance(value, defaultGetTypeFunc());
+        return new TimeInstance(value, StandardTypes.getTimeType());
     }
 
     public static NullInstance nullInstance() {
-        return nullInstance(defaultGetTypeFunc());
+        return nullInstance;
     }
 
-    public static NullInstance nullInstance(Function<Class<?>, Type> getTypeFunc) {
-        return new NullInstance(getNullType(getTypeFunc));
+    public static void setNullInstance(NullInstance nullInstance) {
+        InstanceUtils.nullInstance = nullInstance;
     }
 
     public static BooleanInstance trueInstance() {
-        return booleanInstance(true);
+        return trueInstance;
     }
 
     public static BooleanInstance falseInstance() {
-        return booleanInstance(false);
+        return falseInstance;
+    }
+
+    public static void setTrueInstance(BooleanInstance trueInstance) {
+        InstanceUtils.trueInstance = trueInstance;
+    }
+
+    public static void setFalseInstance(BooleanInstance falseInstance) {
+        InstanceUtils.falseInstance = falseInstance;
     }
 
     public static PasswordInstance passwordInstance(String password) {
-        return passwordInstance(password, defaultGetTypeFunc());
+        return new PasswordInstance(password, StandardTypes.getPasswordType());
     }
 
     public static PasswordInstance passwordInstance(String password, Function<Class<?>, Type> getTypeFunc) {
@@ -281,7 +292,7 @@ public class InstanceUtils {
     }
 
     public static StringInstance stringInstance(String value) {
-        return stringInstance(value, defaultGetTypeFunc());
+        return new StringInstance(value, StandardTypes.getStringType());
     }
 
     public static StringInstance stringInstance(String value, Function<Class<?>, Type> getTypeFunc) {
@@ -342,15 +353,6 @@ public class InstanceUtils {
 
     public static DoubleInstance min(DoubleInstance a, DoubleInstance b) {
         return a.isLessThanOrEqualTo(b).getValue() ? a : b;
-    }
-
-    public static boolean isInitialized(Instance instance) {
-        if (instance instanceof ProxyObject proxyObject) {
-            EntityMethodHandler<?> handler = (EntityMethodHandler<?>) proxyObject.getHandler();
-            return handler.isInitialized();
-        } else {
-            return true;
-        }
     }
 
     public static StringInstance createString(String value) {

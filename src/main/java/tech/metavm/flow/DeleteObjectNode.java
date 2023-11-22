@@ -39,11 +39,11 @@ public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
     }
 
     public void setObjectId(ValueDTO objectId, IEntityContext entityContext) {
-        this.objectId = ValueFactory.create(objectId, getParsingContext(entityContext));
+        setObjectId(ValueFactory.create(objectId, getParsingContext(entityContext)));
     }
 
     public void setObjectId(Value objectId) {
-        this.objectId = objectId;
+        this.objectId = addChild(objectId, "objectId");
     }
 
     @Override

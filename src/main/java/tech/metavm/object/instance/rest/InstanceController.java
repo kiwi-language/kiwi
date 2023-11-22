@@ -27,15 +27,15 @@ public class InstanceController {
 
     @PutMapping
     public Result<Long> create(@RequestBody InstanceDTO instance) {
-        return Result.success(instanceManager.create(instance, false));
+        return Result.success(instanceManager.create(instance));
     }
 
     @PostMapping
     public Result<Long> save(@RequestBody InstanceDTO instance) {
         if (instance.id() == null || instance.id() == 0L) {
-            return Result.success(instanceManager.create(instance, false));
+            return Result.success(instanceManager.create(instance));
         } else {
-            instanceManager.update(instance, false);
+            instanceManager.update(instance);
             return Result.success(instance.id());
         }
     }
@@ -59,13 +59,13 @@ public class InstanceController {
 
     @DeleteMapping("/{id:[0-9]+}")
     public Result<Void> delete(@PathVariable("id") long id) {
-        instanceManager.delete(id, false);
+        instanceManager.delete(id);
         return Result.success(null);
     }
 
     @PostMapping("/batch-delete")
     public Result<Void> batchDelete(@RequestBody List<Long> ids) {
-        instanceManager.batchDelete(ids, false);
+        instanceManager.batchDelete(ids);
         return Result.success(null);
     }
 

@@ -1,4 +1,4 @@
-package tech.metavm.util;
+package tech.metavm.util.profile;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +69,7 @@ public class Profiler {
         private Entry(String name, boolean verbose) {
             this.name = name;
             this.verbose = verbose;
-            this.start = System.currentTimeMillis();
+            this.start = System.nanoTime();
         }
 
         private void addChild(Entry child) {
@@ -84,11 +84,11 @@ public class Profiler {
         public void close() {
             //noinspection resource
             stack.pop();
-            end = System.currentTimeMillis();
+            end = System.nanoTime();
         }
 
         long duration() {
-            return this.end - this.start;
+            return (this.end - this.start) / 1000;
         }
 
         @Override

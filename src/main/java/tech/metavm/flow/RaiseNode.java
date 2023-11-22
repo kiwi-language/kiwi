@@ -11,7 +11,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.ExceptionParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.type.StandardTypes;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -40,16 +40,16 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
     private RaiseParameterKind parameterKind;
 
     public RaiseNode(Long tmpId, String name, RaiseParameterKind parameterKind,
-                     @Nullable Value exception, @Nullable Value message,  NodeRT<?> prev, ScopeRT scope) {
+                     @Nullable Value exception, @Nullable Value message, NodeRT<?> prev, ScopeRT scope) {
         super(tmpId, name, null, prev, scope);
         this.parameterKind = parameterKind;
-        this.exception = checkException(exception);
-        this.message = checkMessage(message);
+        this.exception = NncUtils.get(checkException(exception), v -> addChild(v, "exception"));
+        this.message = NncUtils.get(checkMessage(message), v -> addChild(v, "message"));
     }
 
     @Override
     protected void setParam(ExceptionParamDTO param, IEntityContext entityContext) {
-        if(param.parameterKind() != null) {
+        if (param.parameterKind() != null) {
             parameterKind = RaiseParameterKind.getByCode(param.parameterKind());
             switch (parameterKind) {
                 case MESSAGE -> exception = null;
@@ -57,10 +57,16 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
             }
         }
         if (param.exception() != null) {
-            exception = checkException(ValueFactory.create(param.exception(), getParsingContext(entityContext)));
+            exception = NncUtils.get(
+                    checkException(ValueFactory.create(param.exception(), getParsingContext(entityContext))),
+                    v -> addChild(v, "exception")
+            );
         }
-        if(param.message() != null) {
-            message = checkMessage(ValueFactory.create(param.message(), getParsingContext(entityContext)));
+        if (param.message() != null) {
+            message = NncUtils.get(
+                    checkMessage(ValueFactory.create(param.message(), getParsingContext(entityContext))),
+                    v -> addChild(v, "message")
+            );
         }
     }
 
@@ -87,10 +93,9 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
 
     @Override
     public void execute(MetaFrame frame) {
-        if(exception != null) {
+        if (exception != null) {
             frame.exception((ClassInstance) this.exception.evaluate(frame));
-        }
-        else {
+        } else {
             NncUtils.requireNonNull(message);
             var exceptionInst = new ClassInstance(StandardTypes.getExceptionType());
             ExceptionNative nativeObj = (ExceptionNative) NativeInvoker.getNativeObject(exceptionInst);

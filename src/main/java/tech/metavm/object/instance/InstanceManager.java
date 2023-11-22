@@ -47,6 +47,7 @@ public class InstanceManager {
         this.instanceSearchService = instanceSearchService;
     }
 
+    @Transactional(readOnly = true)
     public GetInstanceResponse get(long id, int depth) {
         var batchResp = batchGet(List.of(id), depth);
         return new GetInstanceResponse(batchResp.instances().get(0));
@@ -75,22 +76,19 @@ public class InstanceManager {
         }
     }
 
+    @Transactional(readOnly = true)
     public GetInstancesResponse batchGet(List<Long> ids) {
-        return batchGet(ContextUtil.getTenantId(), ids, 1);
+        return batchGet(ids, 1);
     }
 
+    @Transactional(readOnly = true)
     public GetInstancesResponse batchGet(List<Long> ids, int depth) {
-        var start = System.currentTimeMillis();
-        var resp = batchGet(ContextUtil.getTenantId(), ids, depth);
-        long elapsed = System.currentTimeMillis() - start;
-        LOGGER.info("batchGet time: {}", elapsed);
-        return resp;
-    }
-
-    public GetInstancesResponse batchGet(long tenantId, List<Long> ids, int depth) {
-        try (var context = newContext(tenantId)) {
+        try (var context = newContext();
+             var ignored = ContextUtil.getProfiler().enter("batchGet")) {
             var instances = context.batchGet(ids);
-            try (var ignored = SerializeContext.enter()) {
+            context.buffer(ids);
+            instances.forEach(context::withCache);
+            try (var ignored1 = SerializeContext.enter()) {
                 var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth));
                 return new GetInstancesResponse(instanceDTOs);
             }
@@ -98,8 +96,8 @@ public class InstanceManager {
     }
 
     @Transactional
-    public void update(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
-        try (var context = newContext(asyncLogProcessing)) {
+    public void update(InstanceDTO instanceDTO) {
+        try (var context = newContext(true)) {
             if (instanceDTO.id() == null) {
                 throw BusinessException.invalidParams("实例ID为空");
             }
@@ -122,8 +120,8 @@ public class InstanceManager {
     }
 
     @Transactional
-    public long create(InstanceDTO instanceDTO, boolean asyncLogProcessing) {
-        try (var context = newContext(asyncLogProcessing)) {
+    public long create(InstanceDTO instanceDTO) {
+        try (var context = newContext(true)) {
             Instance instance = create(instanceDTO, context);
             context.finish();
             return instance.getIdRequired();
@@ -135,16 +133,16 @@ public class InstanceManager {
     }
 
     @Transactional
-    public void batchDelete(List<Long> ids, boolean asyncLogProcessing) {
-        try (var context = newContext(asyncLogProcessing)) {
+    public void batchDelete(List<Long> ids) {
+        try (var context = newContext(true)) {
             context.batchRemove(NncUtils.mapAndFilter(ids, context::get, Objects::nonNull));
             context.finish();
         }
     }
 
     @Transactional
-    public void delete(long id, boolean asyncLogProcessing) {
-        try (var context = newContext(asyncLogProcessing)) {
+    public void delete(long id) {
+        try (var context = newContext(true)) {
             Instance instance = context.get(id);
             if (instance != null) {
                 context.remove(instance);
@@ -195,7 +193,7 @@ public class InstanceManager {
     }
 
     public QueryInstancesResponse query(InstanceQuery query) {
-        try (var context = newContext()) {
+        try (var context = instanceContextFactory.newBuilder().childrenLazyLoading(true).buildInstanceContext()) {
             Type type = context.getType(query.typeId());
             if (type instanceof ClassType classType) {
                 Expression expression =
@@ -216,15 +214,23 @@ public class InstanceManager {
                         expression,
                         false,
                         query.page(),
-                        query.pageSize()
+                        query.pageSize() + NncUtils.getOrElse(query.removed(), List::size, 0)
                 );
                 Page<Long> idPage = instanceSearchService.search(searchQuery);
 
-                List<Instance> instances = context.batchGet(idPage.data());
-                instanceStore.loadTitles(NncUtils.map(instances, Instance::getId), context);
+                Set<Long> idSet = new HashSet<>(idPage.data());
+                if (query.created() != null && query.page() == 1)
+                    idSet.addAll(query.created());
+                if (query.removed() != null)
+                    query.removed().forEach(idSet::remove);
+                List<Long> ids = new ArrayList<>(idSet);
+                ids.sort((id1,id2) -> Long.compare(id2, id1));
+                ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
+                long total = idPage.total() + (idSet.size() - idPage.data().size());
+                List<Instance> instances = context.batchGet(ids);
                 var page = new Page<>(
                         NncUtils.map(instances, Instance::toDTO),
-                        idPage.total()
+                        total
                 );
                 if (query.includeContextTypes()) {
                     try (var serContext = SerializeContext.enter()) {

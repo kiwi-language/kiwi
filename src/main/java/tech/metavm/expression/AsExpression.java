@@ -1,19 +1,26 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Objects;
 
+@EntityType("别名表达式")
 public class AsExpression extends Expression {
 
+    @ChildEntity("表达式")
     private final Expression expression;
+    @EntityField("别名")
     private final String alias;
 
-    public AsExpression(Expression expression, String alias) {
-        this.expression = expression;
+    public AsExpression(@NotNull Expression expression, @NotNull String alias) {
+        this.expression = addChild(expression.copy(), "expression");
         this.alias = alias;
     }
 

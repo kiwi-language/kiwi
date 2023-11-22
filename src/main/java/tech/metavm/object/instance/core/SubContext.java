@@ -1,33 +1,38 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.entity.ReferenceExtractor;
+import tech.metavm.entity.Tree;
 import tech.metavm.entity.Value;
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.type.Type;
 
 import java.util.*;
 
 public final class SubContext {
     private final Set<Value> values = new LinkedHashSet<>();
-    private final IdentityHashMap<InstancePO, InstancePO> entities = new IdentityHashMap<>();
-    private final Map<Long, InstancePO> entityMap = new HashMap<>();
+    private final IdentityHashMap<Tree, Tree> entities = new IdentityHashMap<>();
+    private final Map<Long, Tree> entityMap = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
+    private final long tenantId;
 
-    public InstancePO get(long id) {
+    public SubContext(long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public Tree get(long id) {
         return entityMap.get(id);
     }
 
-    public void add(InstancePO instancePO, Type type) {
-        Objects.requireNonNull(instancePO);
-        if (instancePO.getId() != null) {
-            InstancePO existing = entityMap.remove(instancePO.getId());
-            if (existing != null) {
-                entities.remove(existing);
-            }
-            entityMap.put(instancePO.getId(), instancePO);
+    public void add(Tree tree) {
+        if(entities.containsKey(tree))
+            return;
+        Objects.requireNonNull(tree);
+        Tree existing = entityMap.remove(tree.id());
+        if (existing != null) {
+            entities.remove(existing);
         }
-        entities.put(instancePO, instancePO);
-        references.addAll(type.extractReferences(instancePO));
+        entityMap.put(tree.id(), tree);
+        entities.put(tree, tree);
+        new ReferenceExtractor(tree.openInput(), tenantId, references::add).visitMessage();
     }
 
     public Set<ReferencePO> getReferences() {
@@ -42,7 +47,7 @@ public final class SubContext {
         return values;
     }
 
-    public Collection<InstancePO> entities() {
+    public Collection<Tree> entities() {
         return entities.values();
     }
 
@@ -52,12 +57,10 @@ public final class SubContext {
         references.clear();
     }
 
-    public boolean remove(InstancePO entity) {
-        InstancePO removed = entities.remove(entity);
+    public boolean remove(Tree entity) {
+        var removed = entities.remove(entity);
         if (removed != null) {
-            if (removed.getId() != null) {
-                entityMap.remove(removed.getId());
-            }
+            entityMap.remove(removed.id());
             return true;
         } else {
             return false;
@@ -68,8 +71,8 @@ public final class SubContext {
         return values.remove(value);
     }
 
-    List<InstancePO> getEntities() {
-        return new ArrayList<>(entities.values());
+    Collection<Tree> trees() {
+        return Collections.unmodifiableCollection(entities.values());
     }
 
 }

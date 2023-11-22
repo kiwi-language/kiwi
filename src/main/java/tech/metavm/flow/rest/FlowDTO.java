@@ -28,16 +28,8 @@ public record FlowDTO(
         List<RefDTO> typeArgumentRefs,
         List<RefDTO> overriddenRefs,
         List<FlowDTO> templateInstances,
-        boolean error
+        int state
 ) implements BaseDTO, GenericDeclarationDTO {
-
-    public static FlowDTO create(String name, long declaringTypeId) {
-        return new FlowDTO(
-                null, null, name, null,false, false, false,
-                RefDTO.fromId(declaringTypeId), null,  null, null,
-                 null, null,  null,  null, List.of(),null, List.of(), false
-        );
-    }
 
     @JsonIgnore
     public FlowSignatureDTO signature() {

@@ -2,19 +2,20 @@ package tech.metavm.flow;
 
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityField;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.TryEndValueDTO;
 
 public class TryEndValue extends Entity {
 
-    @ChildEntity("中断节点")
+    @EntityField("中断节点")
     private NodeRT<?> raiseNode;
     @ChildEntity("值")
     private Value value;
 
     public TryEndValue(NodeRT<?> raiseNode, Value value) {
         this.raiseNode = raiseNode;
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public NodeRT<?> getRaiseNode() {
@@ -30,7 +31,7 @@ public class TryEndValue extends Entity {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public TryEndValueDTO toDTO() {

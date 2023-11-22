@@ -87,13 +87,13 @@ public class EntityProxyFactory {
         }
     }
 
-    private static Class<?> getProxyClass(Class<?> type) {
+    public static <T> Class<? extends T> getProxyClass(Class<T> type) {
         return PROXY_CLASS_MAP.computeIfAbsent(type, t -> {
             ProxyFactory proxyFactory = new ProxyFactory();
             proxyFactory.setSuperclass(type);
             proxyFactory.setFilter(EntityProxyFactory::shouldIntercept);
             return proxyFactory.createClass();
-        });
+        }).asSubclass(type);
     }
 
     private static boolean shouldIntercept(Method method) {

@@ -46,10 +46,10 @@ public abstract class ModelDef<T, I extends Instance> {
             if(entity.getParentEntityField() != null) {
                 parentField = defContext.getField(entity.getParentEntityField());
             }
-            instance.reloadParent(new InstanceParentRef(parent, parentField));
+            instance.resetParent(parent, parentField);
         }
         else {
-            instance.reloadParent(null);
+            instance.resetParent(null, null);
         }
     }
 
@@ -57,15 +57,12 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public abstract void initInstance(I instance, T model, ModelInstanceMap instanceMap);
 
-    public final I createInstanceHelper(Object model, ModelInstanceMap instanceMap) {
-        return createInstance(javaClass.cast(model), instanceMap);
+    public final I createInstanceHelper(Object model, ModelInstanceMap instanceMap, Long id) {
+        return createInstance(javaClass.cast(model), instanceMap, id);
     }
 
-    public I createInstance(T model, ModelInstanceMap instanceMap) {
-        I instance = InstanceFactory.allocate(instanceType, getType());
-        if((model instanceof Identifiable identifiable) && identifiable.getId() != null) {
-            instance.initId(identifiable.getId());
-        }
+    public I createInstance(T model, ModelInstanceMap instanceMap, Long id) {
+        I instance = InstanceFactory.allocate(instanceType, getType(), id);
         initInstance(instance, model, instanceMap);
         return instance;
     }
@@ -80,7 +77,7 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public abstract void updateInstance(I instance, T model, ModelInstanceMap instanceMap);
 
-    public Class<? extends T> getJavaClass() {
+    public Class<T> getJavaClass() {
         return javaClass;
     }
 
@@ -108,6 +105,14 @@ public abstract class ModelDef<T, I extends Instance> {
         }
         initModel(model, instance, modelInstanceMap);
         return model;
+    }
+
+    public <R> ModelDef<R, ?> as(Class<R> javaClass) {
+        if(javaClass.isAssignableFrom(this.javaClass))
+            //noinspection unchecked
+            return (ModelDef<R, ?>) this;
+        else
+            throw new ClassCastException();
     }
 
     protected T allocateModel() {

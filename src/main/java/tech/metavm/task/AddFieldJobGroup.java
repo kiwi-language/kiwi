@@ -1,12 +1,11 @@
 package tech.metavm.task;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.TaskGroup;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.entity.ChildArray;
+import tech.metavm.object.type.MetadataState;
 import tech.metavm.object.version.Versions;
 import tech.metavm.util.NncUtils;
 
@@ -16,55 +15,46 @@ import java.util.List;
 @EntityType("添加字段任务组")
 public class AddFieldJobGroup extends TaskGroup {
 
-    @ChildEntity("字段")
-    private final FieldData data;
+    @EntityField("字段")
+    private final Field field;
     @ChildEntity("模版实例字段列表")
-    private final ChildArray<FieldData> transformedFieldData =
-            addChild(new ChildArray<>(FieldData.class), "transformedFieldData");
+    private final ReadWriteArray<Field> templateInstanceFields =
+            addChild(new ReadWriteArray<>(Field.class), "templateInstanceFields");
 
-    public AddFieldJobGroup(FieldData fieldData) {
-        this.data = fieldData;
+    public AddFieldJobGroup(Field field) {
+        this.field = field;
     }
 
     public List<Task> createJobs(IEntityContext context) {
-        var type = data.getDeclaringType();
+        var type = field.getDeclaringType();
         List<Task> jobs = new ArrayList<>();
         if (type.isTemplate()) {
             var templateInstances = context.selectByKey(ClassType.TEMPLATE_IDX, type);
             for (ClassType templateInstance : templateInstances) {
-                var transformedData = context.getGenericContext().transformFieldData(
-                        type, templateInstance, data
+                var tiField = context.getGenericContext().retransformField(
+                        field, templateInstance
                 );
-                transformedFieldData.addChild(transformedData);
-                createJobsForType(templateInstance, transformedData, jobs);
+                templateInstanceFields.add(tiField);
+                createJobsForType(templateInstance, tiField, jobs);
             }
         } else {
-            createJobsForType(type, data, jobs);
+            createJobsForType(type, field, jobs);
         }
         return jobs;
     }
 
-    private void createJobsForType(ClassType type, FieldData data, List<Task> jobs) {
-        jobs.add(new AddFieldTask(type, data));
+    private void createJobsForType(ClassType type, Field field, List<Task> jobs) {
+        jobs.add(new AddFieldTask(type, field));
         for (ClassType subType : type.getSubTypes()) {
-            createJobsForType(subType, data, jobs);
+            createJobsForType(subType, field, jobs);
         }
     }
 
     @Override
     public void onJobsDone(IEntityContext context) {
-        List<FieldData> allFieldData = NncUtils.prepend(data, transformedFieldData.toList());
-        for (FieldData data : allFieldData) {
-            var field = FieldBuilder.newBuilder(data.getName(), data.getCode(), data.getDeclaringType(), data.getType())
-                    .isChild(data.isChild())
-                    .asTitle(data.isAsTitle())
-                    .defaultValue(data.getDefaultValue())
-                    .access(data.getAccess())
-                    .column(data.getColumn())
-                    .unique(data.isUnique())
-                    .build();
-            Versions.create(field.getDeclaringType(), context);
-            context.bind(field);
-        }
+        List<Field> fields = NncUtils.prepend(field, templateInstanceFields.toList());
+        for (Field field : fields)
+            field.setState(MetadataState.READY);
     }
+
 }

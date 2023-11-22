@@ -47,7 +47,7 @@ public class DefContextTest extends TestCase {
     public void testConvertToInstance() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        Instance instance = typeDef.createInstance(type, modelInstanceMap);
+        Instance instance = typeDef.createInstance(type, modelInstanceMap, null);
 //        InstanceDTO instanceDTO = instance.toDTO();
 //        TestUtils.logJSON(LOGGER, "instance", instanceDTO);
         Assert.assertEquals(type.getId(), instance.getId());
@@ -56,7 +56,7 @@ public class DefContextTest extends TestCase {
     public void testConvertFoo() {
         EntityDef<Foo> fooDef = defContext.getEntityDef(Foo.class);
         Foo foo = new Foo(" Big Foo", new Bar("Bar001"));
-        ClassInstance instance = fooDef.createInstance(foo, modelInstanceMap);
+        ClassInstance instance = fooDef.createInstance(foo, modelInstanceMap, null);
         Foo recoveredFoo = fooDef.createModel(instance, modelInstanceMap);
         Assert.assertFalse(EntityUtils.isPojoDifferent(foo, recoveredFoo));
     }
@@ -64,7 +64,7 @@ public class DefContextTest extends TestCase {
     public void testConvertType() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        ClassInstance instance = typeDef.createInstance(type, modelInstanceMap);
+        ClassInstance instance = typeDef.createInstance(type, modelInstanceMap, null);
         ClassType recoveredType = typeDef.createModel(instance, modelInstanceMap);
         MatcherAssert.assertThat(recoveredType, PojoMatcher.of(type));
     }
@@ -113,7 +113,7 @@ public class DefContextTest extends TestCase {
         qux.initId(idProvider.allocateOne(TestConstants.TENANT_ID, quxType));
 
         ConstantExpression model = new ConstantExpression(qux);
-        Instance instance = def.createInstance(model, modelInstanceMap);
+        Instance instance = def.createInstance(model, modelInstanceMap, null);
         ConstantExpression recoveredModel = def.createModelHelper(instance, modelInstanceMap);
         MatcherAssert.assertThat(recoveredModel, PojoMatcher.of(model));
     }

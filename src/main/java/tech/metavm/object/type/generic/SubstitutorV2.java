@@ -312,7 +312,7 @@ public class SubstitutorV2 extends CopyVisitor {
                 .newBuilder(field.getName(), field.getCode(), currentClass(), substituteType(field.getType()))
                 .tmpId(NncUtils.get(fieldDTO, FieldDTO::tmpId))
                 .existing(existing)
-                .isChild(field.isChildField())
+                .isChild(field.isChild())
                 .unique(field.isUnique())
                 .nullType(typeFactory.getNullType())
                 .asTitle(field.isAsTitle())

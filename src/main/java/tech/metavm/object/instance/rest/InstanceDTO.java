@@ -1,11 +1,14 @@
 package tech.metavm.object.instance.rest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,8 +19,8 @@ public record InstanceDTO(
         String title,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
-        InstanceParamDTO param
-) {
+        InstanceParam param
+) implements Serializable  {
 
     public static InstanceDTO valueOf(@Nullable Long id, long typeId, String title, List<InstanceFieldDTO> fields){
         return new InstanceDTO(id, RefDTO.fromId(typeId), null, title, new ClassInstanceParam(fields));
@@ -43,11 +46,11 @@ public record InstanceDTO(
                 RefDTO.fromId(typeId),
                 null,
                 null,
-                new ArrayParamDTO(false, elements)
+                new ArrayInstanceParam(false, elements)
         );
     }
 
-    public InstanceDTO copyWithParam(InstanceParamDTO param) {
+    public InstanceDTO copyWithParam(InstanceParam param) {
         return new InstanceDTO(id, typeRef, typeName, title, param);
     }
 
@@ -57,6 +60,11 @@ public record InstanceDTO(
         if (o == null || getClass() != o.getClass()) return false;
         InstanceDTO that = (InstanceDTO) o;
         return Objects.equals(id, that.id) && Objects.equals(typeRef, that.typeRef) && Objects.equals(typeName, that.typeName) && Objects.equals(title, that.title) && Objects.equals(param, that.param);
+    }
+
+    @JsonIgnore
+    public long getIdRequired() {
+        return NncUtils.requireNonNull(id);
     }
 
     @Override

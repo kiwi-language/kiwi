@@ -12,7 +12,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.StandardTypes;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
@@ -35,10 +35,10 @@ public class DeleteElementNode extends NodeRT<DeleteElementParam> {
     private Value element;
 
     public DeleteElementNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value array, tech.metavm.flow.Value element) {
-        super(tmpId, name, StandardTypes.getBoolType(), previous, scope);
+        super(tmpId, name, StandardTypes.getBooleanType(), previous, scope);
         check(array, element);
-        this.array = array;
-        this.element = element;
+        this.array = addChild(array, "array");
+        this.element = addChild(element, "element");
     }
 
     private void check(Value array, Value element) {
@@ -71,8 +71,8 @@ public class DeleteElementNode extends NodeRT<DeleteElementParam> {
             element = ValueFactory.create(param.element(), parsingContext);
         }
         check(array, element);
-        this.array = array;
-        this.element = element;
+        this.array = addChild(array, "array");
+        this.element = addChild(element, "element");
     }
 
     public Value getArray() {

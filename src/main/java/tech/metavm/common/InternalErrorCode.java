@@ -5,7 +5,7 @@ public enum InternalErrorCode {
     PROXY_CIRCULAR_REF(9110001,
             "Proxy initialization recurses. Current method: {}"),
 
-    MODEL_TYPE_MISMATCHED(9110002,
+    ENTITY_TYPE_MISMATCH(9110002,
             "Model type mismatch. Expected type: {}. Actual Type: {}"),
 
     INVALID_ID(9110003,

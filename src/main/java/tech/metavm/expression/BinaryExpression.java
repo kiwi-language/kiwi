@@ -22,8 +22,8 @@ public class BinaryExpression extends Expression {
 
     public BinaryExpression(Operator operator, Expression first, Expression second) {
         this.operator = operator;
-        this.first = first;
-        this.second = second;
+        this.first = addChild(first.copy(), "first");
+        this.second = addChild(second.copy(), "second");
     }
 
     public Operator getOperator() {

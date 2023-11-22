@@ -3,7 +3,7 @@ package tech.metavm.object.type;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
@@ -31,10 +31,10 @@ public class ClassTypeTest extends TestCase {
                 .build();
 
         Assert.assertNotNull(nameField.getColumn());
-        Assert.assertTrue(nameField.getColumnName().startsWith(SQLType.VARCHAR64.prefix()));
+        Assert.assertTrue(nameField.getColumnName().startsWith(ColumnKind.STRING.prefix()));
 
         Assert.assertNotNull(barField.getColumn());
-        Assert.assertTrue(barField.getColumnName().startsWith(SQLType.VALUE.prefix()));
+        Assert.assertTrue(barField.getColumnName().startsWith(ColumnKind.UNSPECIFIED.prefix()));
     }
 
     public void testAllocateColumnForArray() {
@@ -44,7 +44,7 @@ public class ClassTypeTest extends TestCase {
                 .newBuilder("bars", null, bazType, new ArrayType(null, barType, ArrayKind.READ_WRITE))
                 .build();
         Assert.assertNotNull(barsField.getColumn());
-        Assert.assertTrue(barsField.getColumnName().startsWith(SQLType.MULTI_REFERENCE.prefix()));
+        Assert.assertTrue(barsField.getColumnName().startsWith(ColumnKind.REFERENCE.prefix()));
     }
 
     public void testIsAssignable() {

@@ -3,12 +3,13 @@ package tech.metavm.object.instance.rest;
 import tech.metavm.object.instance.InstanceKind;
 import tech.metavm.util.NncUtils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 public record ClassInstanceParam(
         List<InstanceFieldDTO> fields
-) implements InstanceParamDTO {
+) implements InstanceParam, Serializable {
 
     @Override
     public int getType() {

@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 

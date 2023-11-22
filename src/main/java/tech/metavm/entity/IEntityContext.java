@@ -4,7 +4,6 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
@@ -15,7 +14,7 @@ import tech.metavm.object.type.generic.*;
 import tech.metavm.user.RoleRT;
 import tech.metavm.user.UserRT;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Profiler;
+import tech.metavm.util.profile.Profiler;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
@@ -26,8 +25,6 @@ import java.util.Set;
 
 public interface IEntityContext extends ModelInstanceMap, Closeable {
 
-    boolean containsInstance(Instance instance);
-
     boolean containsModel(Object model);
 
     default <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
@@ -37,6 +34,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     default <T extends Entity> T getEntity(TypeReference<T> typeReference, RefDTO ref) {
         return getEntity(typeReference.getType(), ref);
     }
+
+    void invalidateCache(long id);
 
     Profiler getProfiler();
 
@@ -83,9 +82,17 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     <T> T getEntity(Class<T> entityType, long id);
 
+    <T> T getBufferedEntity(Class<T> entityType, long id);
+
     <T> T getEntity(Class<T> entityType, RefDTO reference);
 
     Type getType(Class<?> javaType);
+
+    IEntityContext getParent();
+
+    <T> T createEntity(Instance instance, ModelDef<T, ?> def);
+
+    void setLoadWithCache(Object entity);
 
     default FunctionType getFunctionType(RefDTO ref) {
         return getEntity(FunctionType.class, ref);

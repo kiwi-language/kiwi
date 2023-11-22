@@ -7,9 +7,6 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.StandardTypes;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.Collection;

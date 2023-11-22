@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
@@ -15,7 +16,7 @@ public class NodeExpression extends Expression {
     @EntityField("节点")
     private final NodeRT<?> node;
 
-    public NodeExpression(NodeRT<?> node) {
+    public NodeExpression(@NotNull NodeRT<?> node) {
         this.node = node;
     }
 

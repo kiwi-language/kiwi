@@ -43,11 +43,9 @@ public class GeneratorTest extends TestCase {
         );
         try (var session = sessionFactory.openSession()) {
             var instanceMapper = session.getMapper(InstanceMapper.class);
-            var instanceArrayMapper = session.getMapper(InstanceArrayMapper.class);
             var indexEntryMapper = session.getMapper(IndexEntryMapper.class);
             var referenceMapper = session.getMapper(ReferenceMapper.class);
-            var instanceMapperGateway = new InstanceMapperGateway(instanceMapper, instanceArrayMapper);
-            var instanceStore = new InstanceStore(instanceMapperGateway, indexEntryMapper, referenceMapper);
+            var instanceStore = new InstanceStore(instanceMapper, indexEntryMapper, referenceMapper);
             ModelDefRegistry.setDefContext(null);
             TestContext.setTenantId(ROOT_TENANT_ID);
             var allocatorStore = new DirectoryAllocatorStore(CP_ROOT);
@@ -62,6 +60,7 @@ public class GeneratorTest extends TestCase {
             var stdAllocators = new StdAllocators(allocatorStore);
             Bootstrap bootstrap = new Bootstrap(instanceContextFactory, stdAllocators, new MemColumnStore());
             bootstrap.boot();
+            ContextUtil.setLoginInfo(-1L, 0L);
             var context = instanceContextFactory.newContext().getEntityContext();
             typeResolver = new TypeResolverImpl(context);
             return action.apply(context);

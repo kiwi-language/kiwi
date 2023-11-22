@@ -7,21 +7,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.slf4j.Logger;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityIdProvider;
+import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
-import tech.metavm.object.instance.persistence.mappers.InstanceMapperGateway;
-import tech.metavm.object.instance.persistence.mappers.MemInstanceArrayMapper;
-import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
-import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
 
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 
 public class TestUtils {
@@ -51,6 +49,18 @@ public class TestUtils {
             return OBJECT_MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new InternalException(e);
+        }
+    }
+
+    private final static byte[] byteBuf = new byte[1024*1024];
+
+    public static byte[] readBytes(String path) {
+        try(var input = new FileInputStream(path)) {
+            int n = input.read(byteBuf);
+            return Arrays.copyOfRange(byteBuf, 0, n);
+        }
+        catch (IOException e) {
+            throw new InternalException(String.format("Fail to read file %s", path), e);
         }
     }
 
@@ -180,15 +190,5 @@ public class TestUtils {
         return instanceContextFactory;
     }
 
-    public static IInstanceStore getMemInstanceStore() {
-        return new InstanceStore(
-                new InstanceMapperGateway(
-                        new MemInstanceMapper(),
-                        new MemInstanceArrayMapper()
-                ),
-                new MemIndexEntryMapper(),
-                new MemReferenceMapper()
-        );
-    }
 
 }

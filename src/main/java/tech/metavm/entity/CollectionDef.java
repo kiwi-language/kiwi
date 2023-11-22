@@ -50,11 +50,11 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
         model.initialize(
                 NncUtils.map(
                         instance.getElements(),
-                        e -> modelInstanceMap.getModel(elementDef.getJavaClass(), e)
+                        e -> modelInstanceMap.getEntity(elementDef.getJavaClass(), e)
                 )
         );
         model.initParent(
-                NncUtils.get(instance.getParent(), p -> modelInstanceMap.getModel(Entity.class, p)),
+                NncUtils.get(instance.getParent(), p -> modelInstanceMap.getEntity(Entity.class, p)),
                 NncUtils.get(instance.getParentField(), defContext::getJavaField));
     }
 
@@ -68,9 +68,9 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
     public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
         reloadParent(model, instance, instanceMap, defContext);
         if (elementDef instanceof InstanceDef<?>) {
-            instance.reload(NncUtils.map(model, e -> elementDef.getInstanceType().cast(e)));
+            instance.reset(NncUtils.map(model, e -> elementDef.getInstanceType().cast(e)));
         } else {
-            instance.reload(NncUtils.map(NncUtils.listOf(model), instanceMap::getInstance));
+            instance.reset(NncUtils.map(NncUtils.listOf(model), instanceMap::getInstance));
         }
     }
 

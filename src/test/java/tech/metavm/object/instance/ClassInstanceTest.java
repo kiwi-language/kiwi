@@ -74,17 +74,13 @@ public class ClassInstanceTest extends TestCase {
                 .newBuilder("status", null, type, InstanceUtils.getIntType())
                 .build();
         ClassInstance instance = new ClassInstance(
-                10001L,
                 Map.of(
                         titleField,
                         InstanceUtils.stringInstance("Big Foo")
                 ),
-                type,
-                null,
-                0L,
-                0L
+                type
         );
-
+        instance.initId(10001L);
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 

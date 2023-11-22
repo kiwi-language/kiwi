@@ -37,11 +37,6 @@ public class ModelDefRegistry {
         entityDef.initModelHelper(model, instance, modelInstanceMap);
     }
 
-    public static Instance createInstance(Object entity, ModelInstanceMap instanceMap) {
-        ModelDef<?, ?> entityDef = DEF_CONTEXT.getDefByModel(entity);
-        return entityDef.createInstanceHelper(entity, instanceMap);
-    }
-
     public static void updateInstance(Object model, Instance instance, ModelInstanceMap instanceMap) {
         ModelDef<?, ?> entityDef = DEF_CONTEXT.getDef(instance.getType());
         updateInstanceHelper(entityDef, model, instance, instanceMap);

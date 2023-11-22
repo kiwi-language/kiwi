@@ -17,9 +17,13 @@ public interface IInstanceStore {
 
     void save(ChangeList<InstancePO> diff);
 
+    List<Long> getVersions(List<Long> ids);
+
+    List<Version> getRootVersions(List<Long> ids, IInstanceContext context);
+
     void saveReferences(ChangeList<ReferencePO> refChanges);
 
-    List<ReferencePO> getFirstStrongReferences(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds);
+    ReferencePO getFirstReference(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds);
 
     List<ReferencePO> getAllStrongReferences(long tenantId, Set<Long> targetIds, Set<Long> excludedSourceIds);
 
@@ -37,6 +41,8 @@ public interface IInstanceStore {
                 context
         );
     }
+
+    List<InstancePO> loadForest(List<Long> ids, IInstanceContext context);
 
     List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context);
 

@@ -38,13 +38,10 @@ public class TypeFetchingAspect {
     }
 
     private Result<?> process(@NotNull ProceedingJoinPoint pjp) throws Throwable {
-        long start = System.currentTimeMillis();
         Result<?> result = (Result<?>) pjp.proceed();
         var metaVersion = ContextUtil.getMetaVersion();
         if(metaVersion != null && metaVersion != -1L && ContextUtil.isLoggedIn())
             result.setMetaPatch(versionManager.pull(metaVersion));
-        long elapsed = System.currentTimeMillis() - start;
-        LOGGER.info("TypeFetchingAspect time: {}", elapsed);
         return result;
     }
 

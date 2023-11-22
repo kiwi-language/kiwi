@@ -71,7 +71,7 @@ public class TypeManager {
             Map<String, TypeDTO> primitiveTypes = new HashMap<>();
             primitiveTypes.put("long", StandardTypes.getLongType().toDTO());
             primitiveTypes.put("double", StandardTypes.getDoubleType().toDTO());
-            primitiveTypes.put("boolean", StandardTypes.getBoolType().toDTO());
+            primitiveTypes.put("boolean", StandardTypes.getBooleanType().toDTO());
             primitiveTypes.put("string", StandardTypes.getStringType().toDTO());
             primitiveTypes.put("time", StandardTypes.getTimeType().toDTO());
             primitiveTypes.put("password", StandardTypes.getPasswordType().toDTO());
@@ -89,14 +89,14 @@ public class TypeManager {
 
     public Map<Integer, Long> getPrimitiveMap() {
         Map<Integer, Long> primitiveTypes = new HashMap<>();
-        primitiveTypes.put(PrimitiveKind.LONG.getCode(), StandardTypes.getLongType().getId());
-        primitiveTypes.put(PrimitiveKind.DOUBLE.getCode(), StandardTypes.getDoubleType().getId());
-        primitiveTypes.put(PrimitiveKind.STRING.getCode(), StandardTypes.getStringType().getId());
-        primitiveTypes.put(PrimitiveKind.BOOLEAN.getCode(), StandardTypes.getBoolType().getId());
-        primitiveTypes.put(PrimitiveKind.TIME.getCode(), StandardTypes.getTimeType().getId());
-        primitiveTypes.put(PrimitiveKind.PASSWORD.getCode(), StandardTypes.getPasswordType().getId());
-        primitiveTypes.put(PrimitiveKind.NULL.getCode(), StandardTypes.getNullType().getId());
-        primitiveTypes.put(PrimitiveKind.VOID.getCode(), StandardTypes.getVoidType().getId());
+        primitiveTypes.put(PrimitiveKind.LONG.code(), StandardTypes.getLongType().getId());
+        primitiveTypes.put(PrimitiveKind.DOUBLE.code(), StandardTypes.getDoubleType().getId());
+        primitiveTypes.put(PrimitiveKind.STRING.code(), StandardTypes.getStringType().getId());
+        primitiveTypes.put(PrimitiveKind.BOOLEAN.code(), StandardTypes.getBooleanType().getId());
+        primitiveTypes.put(PrimitiveKind.TIME.code(), StandardTypes.getTimeType().getId());
+        primitiveTypes.put(PrimitiveKind.PASSWORD.code(), StandardTypes.getPasswordType().getId());
+        primitiveTypes.put(PrimitiveKind.NULL.code(), StandardTypes.getNullType().getId());
+        primitiveTypes.put(PrimitiveKind.VOID.code(), StandardTypes.getVoidType().getId());
         return primitiveTypes;
     }
 
@@ -105,7 +105,7 @@ public class TypeManager {
         return query(request, context);
     }
 
-    public Page<TypeDTO> query(QueryTypeRequest request,
+    private Page<TypeDTO> query(QueryTypeRequest request,
                                IEntityContext context) {
         var typePage = query0(request, context);
         return new Page<>(
@@ -373,7 +373,7 @@ public class TypeManager {
             var members = NncUtils.mapUnique(memberIds, context::getType);
             var type = context.getUnionType(members);
             if (type.getId() == null) {
-                if(TransactionSynchronizationManager.isActualTransactionActive())
+                if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
                     return transactionTemplate.execute(s -> getUnionType(memberIds));
@@ -387,7 +387,7 @@ public class TypeManager {
             var elementType = context.getType(elementId);
             var type = context.getArrayType(elementType, ArrayKind.getByCode(kind));
             if (type.getId() == null) {
-                if(TransactionSynchronizationManager.isActualTransactionActive())
+                if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
                     return transactionTemplate.execute(status -> getArrayType(elementId, kind));
@@ -442,7 +442,7 @@ public class TypeManager {
             var returnType = context.getType(returnTypeId);
             var type = context.getFunctionType(parameterTypes, returnType);
             if (type.getId() == null) {
-                if(TransactionSynchronizationManager.isActualTransactionActive())
+                if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
                     return transactionTemplate.execute(s -> getFunctionType(parameterTypeIds, returnTypeId));
@@ -457,7 +457,7 @@ public class TypeManager {
             var upperBound = context.getType(upperBoundId);
             var type = context.getUncertainType(lowerBound, upperBound);
             if (type.getId() == null) {
-                if(TransactionSynchronizationManager.isActualTransactionActive())
+                if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
                     return transactionTemplate.execute(s -> getUncertainType(lowerBoundId, upperBoundId));
@@ -591,7 +591,7 @@ public class TypeManager {
                                 false,
                                 new PrimitiveFieldValue(
                                         ordinal + "",
-                                        PrimitiveKind.LONG.getCode(),
+                                        PrimitiveKind.LONG.code(),
                                         ordinal
                                 )
                         )
@@ -701,19 +701,16 @@ public class TypeManager {
 
     private Field createField(FieldDTO fieldDTO, ClassType declaringType, IEntityContext context) {
         var type = context.getType(fieldDTO.typeRef());
+        var field = Types.createFieldAndBind(
+                declaringType,
+                fieldDTO,
+                context
+        );
+        retransformFieldIfRequired(field, context);
         if (fieldDTO.defaultValue() != null || fieldDTO.isChild() && type.isArray()) {
-            FieldData fieldData = FieldData.fromFieldDTO(fieldDTO, context);
-            context.bind(new AddFieldJobGroup(fieldData));
-            return null;
-        } else {
-            var field = Types.createFieldAndBind(
-                    declaringType,
-                    fieldDTO,
-                    context
-            );
-            retransformFieldIfRequired(field, context);
-            return field;
+            context.bind(new AddFieldJobGroup(field));
         }
+        return field;
     }
 
     @Transactional
@@ -876,7 +873,7 @@ public class TypeManager {
                     Path subPath = path.subPath(0, i + 1);
                     Path parentPath = path.subPath(0, i);
                     Type parent = NncUtils.requireNonNull(path2type.get(parentPath.toString()));
-                    if (parent.isUnionNullable()) {
+                    if (parent.isBinaryNullable()) {
                         parent = parent.getUnderlyingType();
                     }
                     if (parent instanceof ClassType classType) {

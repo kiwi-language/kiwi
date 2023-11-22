@@ -6,20 +6,20 @@ public class BlockPO implements Identifiable {
     private Long id;
     private Long tenantId;
     private Long typeId;
-    private Long start;
-    private Long end;
-    private Long next;
+    private Long startId;
+    private Long endId;
+    private Long nextId;
     private Boolean active;
 
     public BlockPO() {}
 
-    public BlockPO(Long id, Long tenantId, Long typeId, Long start, Long end, Long nextId, Boolean active) {
+    public BlockPO(Long id, Long tenantId, Long typeId, Long startId, Long end, Long nextId, Boolean active) {
         this.id = id;
         this.tenantId = tenantId;
         this.typeId = typeId;
-        this.start = start;
-        this.end = end;
-        this.next = nextId;
+        this.startId = startId;
+        this.endId = end;
+        this.nextId = nextId;
         this.active = active;
     }
 
@@ -47,28 +47,28 @@ public class BlockPO implements Identifiable {
         this.typeId = typeId;
     }
 
-    public Long getStart() {
-        return start;
+    public Long getStartId() {
+        return startId;
     }
 
-    public void setStart(Long start) {
-        this.start = start;
+    public void setStartId(Long startId) {
+        this.startId = startId;
     }
 
-    public Long getEnd() {
-        return end;
+    public Long getEndId() {
+        return endId;
     }
 
-    public void setEnd(Long end) {
-        this.end = end;
+    public void setEndId(Long endId) {
+        this.endId = endId;
     }
 
-    public Long getNext() {
-        return next;
+    public Long getNextId() {
+        return nextId;
     }
 
-    public void setNext(Long next) {
-        this.next = next;
+    public void setNextId(Long nextId) {
+        this.nextId = nextId;
     }
 
     public Boolean getActive() {
@@ -85,9 +85,9 @@ public class BlockPO implements Identifiable {
                 "id=" + id +
                 ", tenantId=" + tenantId +
                 ", typeId=" + typeId +
-                ", start=" + start +
-                ", end=" + end +
-                ", next=" + next +
+                ", start=" + startId +
+                ", end=" + endId +
+                ", next=" + nextId +
                 ", active=" + active +
                 '}';
     }

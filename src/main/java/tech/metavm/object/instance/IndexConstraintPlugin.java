@@ -3,9 +3,8 @@ package tech.metavm.object.instance;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
@@ -15,9 +14,7 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import static tech.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
@@ -35,17 +32,15 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
-        List<ClassInstance> currentInstances = NncUtils.mapAndFilterByType(
-                        change.insertsAndUpdates(),
-                        instancePO -> context.get(instancePO.getIdRequired()),
-                        ClassInstance.class
-                );
-
-        Map<Long, ClassInstance> instanceMap = NncUtils.toMap(currentInstances, Instance::getId);
-        List<IndexEntryPO> currentEntries = NncUtils.flatMap(
-                currentInstances,
-                instance -> instance.getIndexEntries(context.getEntityContext())
-        );
+        Map<Long, ClassInstance> instanceMap = new HashMap<>();
+        List<IndexEntryPO> currentEntries = new ArrayList<>();
+        change.forEachInsertOrUpdate(instancePO -> {
+            var instance = context.get(instancePO.getId());
+            if(instance instanceof ClassInstance classInstance) {
+                instanceMap.put(classInstance.getIdRequired(), classInstance);
+                currentEntries.addAll(classInstance.getIndexEntries(context.getEntityContext()));
+            }
+        });
         List<InstancePO> oldInstances = NncUtils.union(change.updates(), change.deletes());
         Set<Long> oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getId);
         List<IndexEntryPO> oldAndConflictingItems =

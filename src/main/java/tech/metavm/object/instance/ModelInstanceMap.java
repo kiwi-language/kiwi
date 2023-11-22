@@ -13,24 +13,24 @@ public interface ModelInstanceMap {
 
     Instance getInstance(Object model);
 
-    <T> T getModel(Class<T> klass, Instance instance);
+    <T> T getEntity(Class<T> klass, Instance instance);
 
-    <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?,?> def);
+    <T> T getEntity(Class<T> klass, Instance instance, @Nullable ModelDef<T,?> def);
 
     default ClassType getClassType(Instance instance) {
-        return getModel(ClassType.class, instance);
+        return getEntity(ClassType.class, instance);
     }
 
     default Type getType(Instance instance) {
-        return getModel(Type.class, instance);
+        return getEntity(Type.class, instance);
     }
 
     default Field getField(Instance instance) {
-        return getModel(Field.class, instance);
+        return getEntity(Field.class, instance);
     }
 
     default EnumConstantRT getEnumConstant(Instance instance) {
-        return getModel(EnumConstantRT.class, instance);
+        return getEntity(EnumConstantRT.class, instance);
     }
 
 }

@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.WireTypes;
 
 import java.text.DecimalFormat;
 
@@ -19,6 +21,11 @@ public class DoubleInstance extends NumberInstance {
     @Override
     public Double getValue() {
         return value;
+    }
+
+    @Override
+    public int getWireType() {
+        return WireTypes.DOUBLE;
     }
 
     @Override
@@ -69,7 +76,12 @@ public class DoubleInstance extends NumberInstance {
     public DoubleInstance mod(DoubleInstance that) {
         return new DoubleInstance(value % that.value, getType());
     }
-    
+
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeDouble(value);
+    }
+
     @Override
     public String getTitle() {
         return DF.format(value);

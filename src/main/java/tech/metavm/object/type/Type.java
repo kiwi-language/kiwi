@@ -1,7 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
@@ -145,12 +145,12 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return isAssignableFrom(NULL_TYPE);
     }
 
-    public boolean isUnionNullable() {
-        return isNullable() && this instanceof UnionType;
+    public boolean isBinaryNullable() {
+        return false;
     }
 
     public boolean isNull() {
-        return category.isNull();
+        return false;
     }
 
     public Type getConcreteType() {
@@ -302,86 +302,84 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         return isAssignableFrom(value.getType());
     }
 
-    public boolean isInt() {
-//        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.INT;
-        return isLong();
-    }
-
+    @NoProxy
     public boolean isLong() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.LONG;
+        return false;
     }
 
+    @NoProxy
     public boolean isDouble() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.DOUBLE;
+        return false;
     }
 
+    @NoProxy
     public boolean isBoolean() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.BOOLEAN;
+        return false;
     }
 
+    @NoProxy
     public boolean isString() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.STRING;
+        return false;
     }
 
+    @NoProxy
     public boolean isTime() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.TIME;
+        return false;
     }
 
+    @NoProxy
     public boolean isPassword() {
-        return (this instanceof PrimitiveType primType) && primType.getKind() == PrimitiveKind.PASSWORD;
+        return false;
     }
 
     public boolean isClass() {
-        return (this instanceof ClassType klass) && klass.getCategory() == TypeCategory.CLASS;
+        return false;
     }
 
     public boolean isValue() {
-        return (this instanceof ClassType klass) && klass.getCategory() == TypeCategory.VALUE;
+        return false;
     }
 
     public boolean isNotNull() {
         return !isNullable();
     }
 
+    @NoProxy
     public boolean isArray() {
-        return this instanceof ArrayType;
+        return false;
     }
 
+    @NoProxy
     public boolean isPrimitive() {
-        return this instanceof PrimitiveType;
+        return false;
     }
 
     public boolean isEnum() {
-        return category.isEnum();
+        return false;
     }
 
     public boolean isInterface() {
-        return category.isInterface();
+        return false;
     }
 
     public boolean isPojo() {
-        return category.isPojo();
+        return false;
     }
 
+    @NoProxy
     public boolean isVoid() {
-        return category == TypeCategory.VOID;
+        return false;
     }
 
     public boolean isReference() {
-        return isArray() || isPojo() ||
-                (!(this instanceof ObjectType) && isNullable() && getUnderlyingType().isReference());
+        return isArray() || isPojo() || (isBinaryNullable() && getUnderlyingType().isReference());
     }
 
     public Type getUnderlyingType() {
-        if (this instanceof UnionType unionType) {
-            if (isNullable()) {
-                return NncUtils.findRequired(unionType.getMembers(), t -> !t.equals(NULL_TYPE));
-            }
-        }
         return this;
     }
 
-    public SQLType getSQLType() {
+    public ColumnKind getSQLType() {
         return category.getSQLType();
     }
 

@@ -22,7 +22,7 @@ public class InstanceDef<I extends Instance> extends ModelDef<I, I> {
     }
 
     @Override
-    public I createInstance(I model, ModelInstanceMap instanceMap) {
+    public I createInstance(I model, ModelInstanceMap instanceMap, Long id) {
         return model;
     }
 

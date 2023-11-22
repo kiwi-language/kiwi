@@ -1,27 +1,27 @@
 package tech.metavm.object.instance;
 
-import com.fasterxml.jackson.core.sym.NameN;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
 
-public enum SQLType {
+public enum ColumnKind {
 
-    INT64("bigint", "long","l", 20),
-    INT32("int", "integer", "i", 10),
-    VARCHAR64("varchar(64)", "keyword","s", 10),
-    BOOL("bool", "boolean",  "b",10),
-    FLOAT("double", "double", "d", 10),
-    TEXT("varchar(1024)", "text","t", 2),
-    VALUE("json", null, "o", 10),
-    REFERENCE("json", "long","r", 20),
-    MULTI_REFERENCE("json", "long","m", 20),
-    UNION("json", null,"u", 10),
-    OBJECT("json", null,"a", 10),
-    NULL("json", null,"n", 10),
+    INT(1, "bigint", "long", "l", 20) ,
+
+    STRING(2, "varchar(256)","keyword","s",10),
+
+    BOOL(3, "bool","boolean","b",10),
+
+    DOUBLE(4, "double","double","d",10),
+
+    REFERENCE(5, "bigint","long","r",20),
+
+    UNSPECIFIED(6, "json",null,"o",10),
 
     ;
+
+    private final int tagSuffix;
 
     private final String sqlType;
 
@@ -33,30 +33,30 @@ public enum SQLType {
 
     private static final List<Column> COLUMNS;
 
-    private static final List<Column> SQL_COLUMNS;
-
     private static final List<String> SQL_COLUMNS_NAMES;
 
     public static final List<String> COLUMN_NAMES;
 
     public static final Map<String, Column> NAME_2_COLUMN;
 
-    final static Map<SQLType, List<Column>> COLUMN_MAP;
+    public static final Map<Integer, Column> TAG_2_COLUMN;
+
+    final static Map<ColumnKind, List<Column>> COLUMN_MAP;
 
     static {
         List<Column> columns = new ArrayList<>();
         List<String> columnNames = new ArrayList<>();
         List<Column> sqlColumns = new ArrayList<>();
-        Map<SQLType, List<Column>> columnMap = new HashMap<>();
+        Map<ColumnKind, List<Column>> columnMap = new HashMap<>();
         Map<String, Column> name2col = new HashMap<>();
-        for (SQLType columnType : values()) {
-            for(int i = 0; i < columnType.count; i++) {
-                Column column = new Column(columnType.prefix()+ i, columnType);
+        for (ColumnKind columnType : values()) {
+            for (int i = 0; i < columnType.count; i++) {
+                Column column = Column.create(columnType, i);
                 columns.add(column);
                 columnNames.add(column.name());
                 columnMap.computeIfAbsent(columnType, k -> new ArrayList<>()).add(column);
                 name2col.put(column.name(), column);
-                if(columnType.sqlType != null) {
+                if (columnType.sqlType != null) {
                     sqlColumns.add(column);
                 }
             }
@@ -65,24 +65,24 @@ public enum SQLType {
         COLUMNS = Collections.unmodifiableList(columns);
         COLUMN_MAP = Collections.unmodifiableMap(columnMap);
         COLUMN_NAMES = Collections.unmodifiableList(columnNames);
-        SQL_COLUMNS = sqlColumns;
         SQL_COLUMNS_NAMES = NncUtils.map(sqlColumns, Column::name);
+        TAG_2_COLUMN = NncUtils.toMap(sqlColumns, Column::tag);
     }
 
-    SQLType(String sqlName, String esType, String prefix, int count) {
+    ColumnKind(int tagSuffix, String sqlName, String esType, String prefix, int count) {
+        this.tagSuffix = tagSuffix;
         this.sqlType = sqlName;
         this.esType = esType;
         this.prefix = prefix;
         this.count = count;
     }
 
-    public static SQLType getByColumnName(String columnName) {
-        for (SQLType columnType : values()) {
-            if(columnType.checkColumnName(columnName)) {
-                return columnType;
-            }
-        }
-        throw new RuntimeException("No column category found for column: " + columnName);
+    public static Column getByTag(int tag) {
+        return TAG_2_COLUMN.get(tag);
+    }
+
+    public static ColumnKind getByPrefix(String prefix) {
+        return NncUtils.findRequired(values(), v -> v.prefix.equals(prefix));
     }
 
     public Column getColumn(int index) {
@@ -106,16 +106,20 @@ public enum SQLType {
         return count;
     }
 
+    public int tagSuffix() {
+        return tagSuffix;
+    }
+
     public boolean checkColumnName(String columnName) {
         return columnName != null && prefix != null && columnName.startsWith(prefix);
     }
 
-    public static Map<SQLType, Queue<Column>> getColumnMap(Collection<Column> usedColumns) {
+    public static Map<ColumnKind, Queue<Column>> getColumnMap(Collection<Column> usedColumns) {
         Set<Column> usedColumnSet = new HashSet<>(usedColumns);
-        Map<SQLType, Queue<Column>> result = new HashMap<>();
+        Map<ColumnKind, Queue<Column>> result = new HashMap<>();
         for (Column column : COLUMNS) {
-            if(!usedColumnSet.contains(column)) {
-                result.computeIfAbsent(column.type(), k -> new LinkedList<>()).add(column);
+            if (!usedColumnSet.contains(column)) {
+                result.computeIfAbsent(column.kind(), k -> new LinkedList<>()).add(column);
             }
         }
         return result;
@@ -133,4 +137,4 @@ public enum SQLType {
         return esType;
     }
 
-}
+    }

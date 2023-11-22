@@ -1,0 +1,118 @@
+package tech.metavm.util;
+
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PrimitiveInstance;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
+public class InstanceOutput extends OutputStream {
+
+    public static byte[] toByteArray(Instance instance) {
+        return toByteArray(instance, false, false);
+    }
+
+    public static byte[] toMessage(Instance instance) {
+        NncUtils.requireTrue(instance.isRoot());
+        return toByteArray(instance, true, true);
+    }
+
+    private static byte[] toByteArray(Instance instance, boolean includeChild, boolean withVersion) {
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout, includeChild);
+        if(withVersion)
+            output.writeLong(instance.getVersion());
+        output.writeInstance(instance);
+        return bout.toByteArray();
+    }
+
+    private final OutputStream outputStream;
+    private final boolean includeChildren;
+
+    public InstanceOutput(OutputStream outputStream) {
+        this(outputStream, false);
+    }
+
+    public InstanceOutput(OutputStream outputStream, boolean includeChildren) {
+        this.outputStream = outputStream;
+        this.includeChildren = includeChildren;
+    }
+
+    public void writeInstance(Instance instance) {
+        writeInstance0(instance, false);
+    }
+
+    public void writeReference(Instance instance) {
+        writeInstance0(instance, true);
+    }
+
+    private void writeInstance0(Instance instance, boolean isReference) {
+        if (instance instanceof PrimitiveInstance primitiveInstance) {
+            write(primitiveInstance.getWireType());
+            primitiveInstance.writeTo(this, includeChildren);
+        } else if (isReference) {
+            write(WireTypes.REFERENCE);
+            writeLong(instance.getIdRequired());
+        } else {
+            write(WireTypes.RECORD);
+            writeLong(instance.getIdRequired());
+            instance.writeTo(this, includeChildren);
+        }
+    }
+
+    public void writeString(String string) {
+        var bytes = string.getBytes(StandardCharsets.UTF_8);
+        writeInt(bytes.length);
+        write(bytes);
+    }
+
+    public void writeDouble(double d) {
+        long l = Double.doubleToLongBits(d);
+        for (int s = 0; s < 64; s += 8)
+            write((int) (l >> s & 0xff));
+    }
+
+    public void writeBoolean(boolean bool) {
+        write(bool ? 1 : 0);
+    }
+
+    public void writeInt(int i) {
+        writeLong(i);
+    }
+
+    public void writeLong(long l) {
+        long sign;
+        if (l < 0) {
+            sign = 1;
+            l = -l;
+        } else
+            sign = 0;
+        int b = (int) ((l & 0x3f) << 1 | sign);
+        l >>>= 6;
+        for (; l != 0; l >>>= 7) {
+            b |= 0x80;
+            write(b);
+            b = (int) (l & 0x7f);
+        }
+        write(b);
+    }
+
+    public void write(byte[] bytes) {
+        try {
+            outputStream.write(bytes);
+        } catch (IOException e) {
+            throw new InternalException("Failed to write to the underlying output stream", e);
+        }
+    }
+
+    public void write(int b) {
+        try {
+            outputStream.write(b);
+        } catch (IOException e) {
+            throw new InternalException("Failed to write to the underlying output stream", e);
+        }
+    }
+
+}

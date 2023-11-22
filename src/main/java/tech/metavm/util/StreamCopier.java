@@ -1,0 +1,112 @@
+package tech.metavm.util;
+
+import tech.metavm.management.RegionManager;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+
+public class StreamCopier extends StreamVisitor {
+
+    protected final InstanceOutput output;
+
+    public StreamCopier(InputStream in, OutputStream out) {
+        this(new InstanceInput(in), new InstanceOutput(out));
+    }
+    
+    public StreamCopier(InstanceInput input, InstanceOutput output) {
+        super(input);
+        this.output = output;
+    }
+
+    @Override
+    public void visitMessage() {
+        output.writeLong(readLong());
+        visit();
+    }
+
+    @Override
+    public void visitField() {
+        output.writeLong(readLong());
+        visit();
+    }
+
+    @Override
+    public void visitRecord() {
+        output.write(WireTypes.RECORD);
+        long id = readLong();
+        output.writeLong(id);
+        visitRecordBody(id);
+    }
+
+    @Override
+    public void visitRecordBody(long id) {
+        if (RegionManager.isArrayId(id)) {
+            int len = readInt();
+            output.writeInt(len);
+            for (int i = 0; i < len; i++) {
+                visit();
+            }
+        } else {
+            int numFields = readInt();
+            output.writeInt(numFields);
+            for (int i = 0; i < numFields; i++) {
+                visitField();
+            }
+        }
+    }
+
+    @Override
+    public void visitReference() {
+        output.write(WireTypes.REFERENCE);
+        output.writeLong(readLong());
+    }
+
+    @Override
+    public void visitString() {
+        output.write(WireTypes.STRING);
+        output.writeString(readString());
+    }
+
+    @Override
+    public void visitLong() {
+        output.write(WireTypes.LONG);
+        output.writeLong(readLong());
+    }
+
+    @Override
+    public void visitDouble() {
+        output.write(WireTypes.DOUBLE);
+        output.writeDouble(readDouble());
+    }
+
+    @Override
+    public void visitBoolean() {
+        output.write(WireTypes.BOOLEAN);
+        output.writeBoolean(readBoolean());
+    }
+
+    @Override
+    public void visitPassword() {
+        output.write(WireTypes.PASSWORD);
+        output.writeString(readString());
+    }
+
+    @Override
+    public void visitTime() {
+        output.write(WireTypes.TIME);
+        output.writeLong(readLong());
+    }
+
+    public void writeLong(long l) {
+        output.writeLong(l);
+    }
+
+    public void write(int b) {
+        output.write(b);
+    }
+
+    @Override
+    public void visitNull() {
+        output.write(WireTypes.NULL);
+    }
+}

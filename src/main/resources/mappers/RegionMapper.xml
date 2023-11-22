@@ -6,14 +6,14 @@
     <!--@mbg.generated-->
     <!--@Table id_region-->
     <result property="typeCategory" jdbcType="INTEGER" column="type_category"/>
-    <result property="start" jdbcType="BIGINT" column="start"/>
-    <result property="end" jdbcType="BIGINT" column="end"/>
-    <result property="next" jdbcType="BIGINT" column="next"/>
+    <result property="startId" jdbcType="BIGINT" column="start_id"/>
+    <result property="endId" jdbcType="BIGINT" column="end_id"/>
+    <result property="nextId" jdbcType="BIGINT" column="next_id"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    type_category, `start`, `end`, `next`
+    type_category, start_id, end_id, next_id
   </sql>
 
   <select id="selectByTypeCategories" resultMap="BaseResultMap">
@@ -31,16 +31,16 @@
   <update id="inc">
     update id_region
     set
-        `next` = `next` + #{inc}
+        next_id = next_id + #{inc}
     where type_category = #{typeCategory}
   </update>
 
   <insert id="batchInsert">
     <!--@mbg.generated-->
-    insert into id_region (type_category, `start`, `end`, `next`) values
+    insert into id_region (type_category, start_id, end_id, next_id) values
     <foreach collection="collection" item="item" separator=",">
       (
-      #{item.typeCategory}, #{item.start}, #{item.end}, #{item.next}
+      #{item.typeCategory}, #{item.startId}, #{item.endId}, #{item.nextId}
       )
     </foreach>
   </insert>

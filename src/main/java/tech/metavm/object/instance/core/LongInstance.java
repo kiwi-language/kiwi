@@ -1,7 +1,9 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.WireTypes;
 
 public class LongInstance extends NumberInstance {
 
@@ -14,6 +16,11 @@ public class LongInstance extends NumberInstance {
 
     public Long getValue() {
         return value;
+    }
+
+    @Override
+    public int getWireType() {
+        return WireTypes.LONG;
     }
 
     @Override
@@ -63,6 +70,11 @@ public class LongInstance extends NumberInstance {
 
     public BooleanInstance isLessThanOrEqualTo(LongInstance that) {
         return InstanceUtils.createBoolean(value <= that.value);
+    }
+
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeLong(value);
     }
 
     @Override

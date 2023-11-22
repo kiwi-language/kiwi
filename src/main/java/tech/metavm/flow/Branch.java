@@ -20,7 +20,6 @@ public class Branch extends Element {
                 new ConstantValue(ExpressionUtil.constant(InstanceUtils.trueInstance())),
                 false,
                 false,
-                new ScopeRT(owner.getFlow(), owner),
                 owner
         );
     }
@@ -31,7 +30,6 @@ public class Branch extends Element {
                 new ConstantValue(ExpressionUtil.trueExpression()),
                 true,
                 isExit,
-                new ScopeRT(owner.getFlow(), owner),
                 owner
         );
     }
@@ -49,12 +47,12 @@ public class Branch extends Element {
     @EntityField("是否为出口")
     private final boolean isExit;
 
-    public Branch(long index, Value condition, boolean preselected, boolean isExit, ScopeRT scope, BranchNode owner) {
+    public Branch(long index, Value condition, boolean preselected, boolean isExit, BranchNode owner) {
         this.index = index;
         this.owner = owner;
-        this.scope = scope;
+        this.scope = addChild(new ScopeRT(owner.getFlow(), owner), "scope");
         this.preselected = preselected;
-        this.condition = condition;
+        this.condition = addChild(condition, "condition");
         if(isExit) {
             NncUtils.requireTrue(preselected, "Only default branch can be an exit");
         }

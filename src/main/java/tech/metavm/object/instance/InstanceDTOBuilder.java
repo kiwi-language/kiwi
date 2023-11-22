@@ -49,7 +49,7 @@ public class InstanceDTOBuilder {
                                                 f.getName(),
                                                 f.getType().getConcreteType().getCategory().code(),
                                                 f.getType().isArray(),
-                                                build(instance.getField(f), depth - 1, isChild && f.isChildField())
+                                                build(instance.getField(f), depth - 1, isChild && f.isChild())
                                         )
                                 )
                         )
@@ -70,7 +70,7 @@ public class InstanceDTOBuilder {
                         context.getRef(array.getType()),
                         array.getType().getName(),
                         array.getTitle(),
-                        new ArrayParamDTO(
+                        new ArrayInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(
                                         array.getElements(),

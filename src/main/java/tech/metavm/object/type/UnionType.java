@@ -1,7 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeParam;
@@ -46,6 +46,7 @@ public class UnionType extends CompositeType {
         }
         return this;
     }
+
 
     public ReadonlyArray<Type> getDeclaredMembers() {
         return members;
@@ -113,12 +114,25 @@ public class UnionType extends CompositeType {
         return String.join("|", memberCanonicalNames);
     }
 
+    @Override
     public boolean isBinaryNullable() {
         return members.size() == 2 && isNullable();
     }
 
     @Override
-    public SQLType getSQLType() {
+    public Type getUnderlyingType() {
+        if(members.size() != 2)
+            return this;
+        Type t1 = members.get(0), t2 = members.get(1);
+        if(t1.isNull())
+            return t2;
+        else if(t2.isNull())
+            return t1;
+        return this;
+    }
+
+    @Override
+    public ColumnKind getSQLType() {
         if(isBinaryNullable()) {
             return getUnderlyingType().getSQLType();
         }

@@ -28,14 +28,16 @@ public enum ErrorCode {
     CAN_NOT_ASSIGN__CHILD_FIELD(311, "子对象字段不支持更新"),
 
     // 实例相关错误
-    INSTANCE_NOT_FOUND(301, "实例不存在(id: {})"),
+    INSTANCE_NOT_FOUND(301, "对象'{}'不存在"),
     INVALID_FIELD_VALUE(302, "属性值错误，属性: {}, 值: {}"),
     FIELD_REQUIRED(303, "属性{}不能为空"),
     INVALID_TYPE_VALUE(304, "数据格式错误，类型: {}, 值: {}"),
     FIELD_VALUE_REQUIRED(305, "属性'{}'不能为空"),
     STRONG_REFS_PREVENT_REMOVAL(306, "对象被其他对象关联，无法删除: {}"),
-    STRONG_REFS_PREVENT_REMOVAL2(308, "'{}' 被 '{}' 使用，无法删除"),
+    STRONG_REFS_PREVENT_REMOVAL2(308, "'{}' 被 '{}' 关联，无法删除"),
     INVALID_INSTANCE_PATH(307, "对象路径不合法: {}"),
+    INCORRECT_PARENT_REF(308, "父对象引用错误，子对象: {}, 父对象: {}, 引用值: {}"),
+    MULTI_PARENT(309, "子对象归属于多个父对象: {}"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),
@@ -71,7 +73,7 @@ public enum ErrorCode {
     INVALID_MASTER(431, "'{}'不能作为父对象"),
     INCORRECT_FIELD_VALUE(432, "字段值'{}'赋值错误"),
     INVALID_ADD_OBJECT_CHILD(433, "节点'{}'不能作为新建记录节点的子节点"),
-    FIELD_NOT_INITIALIZED(433, "{}创建失败，{}未初始化"),
+    FIELD_NOT_INITIALIZED(433, "{}创建失败，字段'{}'未初始化"),
     MODIFYING_READ_ONLY_ARRAY(433, "只读数组不支持修改"),
     ADD_ELEMENT_NOT_SUPPORTED(433, "当前数组不支持添加元素"),
     MISSING_REQUIRED_ARGUMENT(434, "未配置必填参数'{}'"),

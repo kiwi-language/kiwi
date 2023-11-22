@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.TargetPO;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,9 +23,10 @@ public interface ReferenceMapper {
             @Param("limit") long limit
     );
 
-    List<ReferencePO> selectFirstStrongReferences(
+    @Nullable
+    ReferencePO selectFirstStrongReference(
             @Param("tenantId") long tenantId,
-            @Param("ids") Collection<Long> ids,
+            @Param("targetIds") Collection<Long> targetIds,
             @Param("excludedSourceIds") Collection<Long> excludedSourceIds
     );
 

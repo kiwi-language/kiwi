@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.util.ContextUtil;
@@ -17,10 +18,12 @@ public class InstanceContextBuilder {
     private EntityIdProvider idProvider;
     private List<ContextPlugin> plugins = List.of();
     private long tenantId;
-    private long profileLogThreshold = -1L;
     private boolean asyncLogProcessing;
     private DefContext defContext = ModelDefRegistry.getDefContext();
+    private boolean childrenLazyLoading;
     private TypeResolver typeResolver = new DefaultTypeResolver();
+    private Cache cache;
+    private boolean readonly;
 
     public InstanceContextBuilder(IInstanceStore instanceStore, Executor executor,
                                   IInstanceContext parent, EntityIdProvider idProvider) {
@@ -45,8 +48,13 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder profileLogThreshold(long profileLogThreshold) {
-        this.profileLogThreshold = profileLogThreshold;
+    public InstanceContextBuilder childrenLazyLoading(boolean childrenLazyLoading) {
+        this.childrenLazyLoading = childrenLazyLoading;
+        return this;
+    }
+
+    public InstanceContextBuilder readonly(boolean readonly) {
+        this.readonly = readonly;
         return this;
     }
 
@@ -70,13 +78,18 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder cache(Cache cache) {
+        this.cache = cache;
+        return this;
+    }
+
     public IInstanceContext buildInstanceContext() {
         if(tenantId == 0)
             tenantId = ContextUtil.getTenantId();
         return new InstanceContext(
                 tenantId, instanceStore, idProvider, executor,
                 asyncLogProcessing, plugins, defContext, parent, typeResolver,
-                profileLogThreshold
+                 childrenLazyLoading, cache, readonly
         );
     }
 

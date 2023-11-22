@@ -20,6 +20,6 @@ public enum ReferenceKind {
     }
 
     public static ReferenceKind getFromType(Type type) {
-        return type.isUnionNullable() ? WEAK : STRONG;
+        return STRONG;//type.isNullable() ? WEAK : STRONG;
     }
 }

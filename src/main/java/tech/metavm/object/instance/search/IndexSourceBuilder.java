@@ -45,7 +45,7 @@ public class IndexSourceBuilder {
         }
         Object esValue = getEsValue(value);
         source.put(field.getColumnName(), esValue);
-        if (field.getColumn().type() == SQLType.VARCHAR64) {
+        if (field.getColumn().kind() == ColumnKind.STRING) {
             source.put(field.getColumn().fuzzyName(), esValue);
         }
     }

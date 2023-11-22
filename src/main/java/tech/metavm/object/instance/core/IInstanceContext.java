@@ -6,7 +6,7 @@ import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.Profiler;
+import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink, Closeable {
 
-    IInstanceContext newContext(long tenantId);
+    IInstanceContext createSame(long tenantId);
 
     void setLockMode(LockMode mode);
 
@@ -27,11 +27,17 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     void replace(Collection<Instance> instances);
 
-    default Instance get(long id) {
-        return NncUtils.getFirst(batchGet(List.of(id)));
-    }
+    Instance get(long id);
 
     Instance get(RefDTO ref);
+
+    Instance internalGet(long id);
+
+    Instance getIfPresentByTmpId(long tmpId);
+
+    void withCache(Instance instance);
+
+    boolean containsRef(RefDTO ref);
 
     Profiler getProfiler();
 
@@ -51,7 +57,11 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     List<Instance> getByReferenceTargetId(long targetId, Instance startExclusive, long limit);
 
-    void preload(Collection<Long> ids, LoadingOption...options);
+    void buffer(long id);
+
+    default void buffer(Collection<Long> ids) {
+        ids.forEach(this::buffer);
+    }
 
     void addRemovalListener(Consumer<Instance> listener);
 
@@ -89,10 +99,6 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     <E> E getAttribute(ContextAttributeKey<E> key);
 
-    boolean isNewInstance(Instance instance);
-
-    boolean isPersistedInstance(Instance instance);
-
     void initIdManually(Instance instance, long id);
 
     void increaseVersionsForAll();
@@ -102,4 +108,6 @@ public interface IInstanceContext extends InstanceSink, Closeable {
     @Nullable Consumer<Object> getBindHook();
 
     Instance getRemoved(long id);
+
+    void invalidateCache(Instance instance);
 }

@@ -41,8 +41,8 @@ public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
                         NodeRT<?> previous,
                         ScopeRT scope) {
         super(tmpId, name, type, previous, scope);
-        this.parentRef = parentRef;
-        this.value = check(value);
+        setParent(parentRef);
+        this.value = addChild(check(value), "value");
     }
 
     @Override
@@ -57,13 +57,12 @@ public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
     protected void setParam(NewArrayParam param, IEntityContext context) {
         var parsingContext = getParsingContext(context);
         if (param.value() != null) {
-            this.value = check(ValueFactory.create(param.value(), parsingContext));
+            this.value = addChild(check(ValueFactory.create(param.value(), parsingContext)), "value");
         }
-        if(param.parentRef() != null) {
-            this.parentRef = ParentRef.create(param.parentRef(), parsingContext, getType());
-        }
-        else {
-            this.parentRef = null;
+        if (param.parentRef() != null) {
+            setParent(ParentRef.create(param.parentRef(), parsingContext, getType()));
+        } else {
+            setParent(null);
         }
     }
 
@@ -102,7 +101,7 @@ public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
 
     @Override
     public void setParent(@Nullable ParentRef parentRef) {
-        this.parentRef = parentRef;
+        this.parentRef = NncUtils.get(parentRef, p -> addChild(p, "parentRef"));
     }
 
     public @Nullable ParentRef getParentRef() {

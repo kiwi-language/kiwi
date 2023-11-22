@@ -98,7 +98,7 @@ public class Scheduler {
         }
     }
 
-    @Scheduled(fixedDelay = 500000000)
+    @Scheduled(fixedDelay = 10000)
     public void sendHeartbeat() {
         long now = System.currentTimeMillis();
         try (var rootContext = newRootContext()) {

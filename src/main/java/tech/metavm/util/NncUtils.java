@@ -62,13 +62,20 @@ public class NncUtils {
     }
 
     public static void writeFile(String filePath, String content) {
-        try(var fileWriter = new FileWriter(filePath)) {
+        try (var fileWriter = new FileWriter(filePath)) {
             fileWriter.write(content);
         } catch (IOException e) {
             throw new InternalException("Fail to write to file '" + filePath + "'", e);
         }
     }
 
+    public static void writeFile(String filePath, byte[] bytes) {
+        try (var output = new FileOutputStream(filePath)) {
+            output.write(bytes);
+        } catch (IOException e) {
+            throw new InternalException(String.format("Fail to write file: %s", filePath));
+        }
+    }
 
     public static Runnable noop() {
         return () -> {
@@ -392,6 +399,7 @@ public class NncUtils {
         return streamOf(source).filter(filter).collect(Collectors.toSet());
     }
 
+
     public static <T> List<T> filterAndSort(Iterable<T> source, Predicate<T> filter, Comparator<T> comparator) {
         return filterAndSortAndLimit(source, filter, comparator, Long.MAX_VALUE);
     }
@@ -616,25 +624,58 @@ public class NncUtils {
         return isNotEmpty(list) ? mapping.apply(list.get(0)) : null;
     }
 
-    public static <T, R> void biForEach(T[] list1, R[] list2, BiConsumer<T, R> action) {
-        biForEach(List.of(list1), List.of(list2), action);
+    public static <T, R> void biForEach(T[] array1, R[] array2, BiConsumer<T, R> action) {
+        int len = array1.length;
+        if (len != array2.length)
+            throw new InternalException("Both arrays must have the same length");
+        for (int i = 0; i < len; i++)
+            action.accept(array1[i], array2[i]);
     }
 
     public static <T, R> void biForEach(Iterable<T> list1, Iterable<R> list2, BiConsumer<T, R> action) {
-        if (list1 == null) {
-            list1 = List.of();
-        }
-        if (list2 == null) {
-            list2 = List.of();
-        }
         Iterator<T> it1 = list1.iterator();
         Iterator<R> it2 = list2.iterator();
-
-        while (it1.hasNext() && it2.hasNext()) {
+        while (it1.hasNext() && it2.hasNext())
             action.accept(it1.next(), it2.next());
-        }
-        if (it1.hasNext() || it2.hasNext()) {
+        if (it1.hasNext() || it2.hasNext())
             throw new RuntimeException("Both lists must have the same size");
+    }
+
+    public static <T, K> void forEachPair(Collection<T> list1, Collection<T> list2,
+                                          Function<T, K> keyMapper, BiConsumer<T, T> action) {
+        Map<K, T> map = new HashMap<>();
+        list1.forEach(t1 -> map.put(keyMapper.apply(t1), t1));
+        for (T t2 : list2) {
+            action.accept(map.remove(keyMapper.apply(t2)), t2);
+        }
+        map.values().forEach(t1 -> action.accept(t1, null));
+    }
+
+    public static <T extends Comparable<T>> void forEachPair(List<T> list1, List<T> list2, BiConsumer<T, T> action) {
+        Collections.sort(list1);
+        Collections.sort(list2);
+        int i = 0, j = 0;
+        while (i < list1.size() && j < list2.size()) {
+            var t1 = list1.get(i);
+            var t2 = list2.get(j);
+            var r = t1.compareTo(t2);
+            if (r < 0) {
+                action.accept(t1, null);
+                i++;
+            } else if (r > 0) {
+                action.accept(null, t2);
+                j++;
+            } else {
+                action.accept(t1, t2);
+                i++;
+                j++;
+            }
+        }
+        for (; i < list1.size(); i++) {
+            action.accept(list1.get(i), null);
+        }
+        for (; j < list2.size(); j++) {
+            action.accept(null, list2.get(j));
         }
     }
 
@@ -1019,12 +1060,12 @@ public class NncUtils {
         return new ArrayList<>(new HashSet<>(list));
     }
 
-    public static <T,K> List<T> deduplicate(List<T> list, Function<T, K> keyMapper) {
+    public static <T, K> List<T> deduplicate(List<T> list, Function<T, K> keyMapper) {
         Set<K> set = new HashSet<>();
         List<T> result = new ArrayList<>();
         for (T t : list) {
             var key = keyMapper.apply(t);
-            if(set.add(key))
+            if (set.add(key))
                 result.add(t);
         }
         return result;
@@ -1148,17 +1189,26 @@ public class NncUtils {
     }
 
     public static <T> T requireNonNull(@Nullable T value) {
-        return requireNonNull(value, "参数不能为空");
+        if (value != null)
+            return value;
+        else
+            throw new InternalException("参数不能为空");
     }
 
     @Nullable
     public static <T> T requireNull(@Nullable T value) {
-        return requireNull(value, "Value必须为空");
+        if (value != null)
+            throw new InternalException("参数必须为空");
+        else
+            return null;
     }
 
     @Nullable
     public static <T> T requireNull(@Nullable T value, String message) {
-        return requireNull(value, () -> new InternalException(message));
+        if (value != null)
+            throw new InternalException(message);
+        else
+            return null;
     }
 
     @Nullable
@@ -1171,20 +1221,26 @@ public class NncUtils {
 
     @SuppressWarnings("unused")
     public static void requirePositive(int value) {
-        requireTrue(value > 0, () -> new InternalException("参数必须大于0"));
+        if (value <= 0)
+            throw new InternalException("参数必须大于0");
     }
 
     @SuppressWarnings("unused")
     public static void requireLessThan(int value, int max) {
-        requireTrue(value < max, () -> new InternalException("参数必须小于" + max));
+        if (value >= max)
+            throw new InternalException("参数必须小于" + max);
     }
 
     public static void requireRangeInclusively(int value, int min, int max) {
-        requireTrue(value >= min && value <= max, () -> new InternalException("参数必须在区间[" + min + "," + max + "]中"));
+        if (value < min || value > max)
+            throw new InternalException("参数必须在区间[" + min + "," + max + "]中");
     }
 
     public static <T> T requireNonNull(@Nullable T value, String message) {
-        return requireNonNull(value, () -> new InternalException(message));
+        if (value != null)
+            return value;
+        else
+            throw new InternalException(message);
     }
 
     public static <T> boolean equalsIgnoreOrder(Collection<T> coll1, Collection<T> coll2) {
@@ -1202,23 +1258,28 @@ public class NncUtils {
     }
 
     public static void requireFalse(boolean value) {
-        requireTrue(!value, "表达式必须为false");
+        if (value)
+            throw new InternalException("参数必须为false");
     }
 
     public static void requireFalse(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        requireTrue(!value, exceptionSupplier);
+        if (value)
+            throw exceptionSupplier.get();
     }
 
     public static void requireFalse(boolean value, String message) {
-        requireTrue(!value, message);
+        if (value)
+            throw new InternalException(message);
     }
 
     public static void requireTrue(boolean value) {
-        requireTrue(value, "Value must be true");
+        if (!value)
+            throw new InternalException("Value must be true");
     }
 
     public static void requireTrue(boolean value, String message) {
-        requireTrue(value, () -> new InternalException(message));
+        if (!value)
+            throw new InternalException(message);
     }
 
     public static void assertTrue(boolean condition, ErrorCode errorCode, Object... params) {
@@ -1235,45 +1296,46 @@ public class NncUtils {
     }
 
     public static void requireTrue(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (!value) {
+        if (!value)
             throw exceptionSupplier.get();
-        }
     }
 
     public static void requireEquals(Object first, Object second) {
-        requireEquals(first, second, second + " is not equal to the expected value " + first);
+        if (!Objects.equals(first, second))
+            throw new InternalException(String.format("'%s' is not equal to the expected value '%s'",
+                    first, second));
     }
 
     public static void requireEquals(Object first, Object second, String message) {
-        requireEquals(first, second, () -> new InternalException(message));
+        if (!Objects.equals(first, second))
+            throw new InternalException(message);
     }
 
     public static void requireEquals(Object first, Object second, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (!Objects.equals(first, second)) {
+        if (!Objects.equals(first, second))
             throw exceptionSupplier.get();
-        }
     }
 
     @NotNull
     public static <T> Collection<T> requireNotEmpty(Collection<T> collection) {
-        return requireNotEmpty(collection, "集合不能为空");
+        if (collection == null || collection.isEmpty())
+            throw new InternalException("Collection must not be empty");
+        else
+            return collection;
     }
 
     @NotNull
     public static <T> Collection<T> requireEmpty(Collection<T> collection, String message) {
-        if (isNotEmpty(collection)) {
+        if (isNotEmpty(collection))
             throw BusinessException.invalidParams(message);
-        }
         return collection;
     }
 
     public static <T> Collection<T> requireNotEmpty(Collection<T> collection, String message) {
-        if (isEmpty(collection)) {
+        if (isEmpty(collection))
             throw BusinessException.invalidParams(message);
-        }
         return collection;
     }
-
 
     @NotNull
     public static <T> List<T> requireNotEmpty(List<T> collection) {
@@ -1281,17 +1343,15 @@ public class NncUtils {
     }
 
     public static <T> List<T> requireNotEmpty(List<T> collection, String message) {
-        if (isEmpty(collection)) {
+        if (isEmpty(collection))
             throw BusinessException.invalidParams(message);
-        }
         return collection;
     }
 
     @SuppressWarnings("unused")
     public static <E> void addIfNotNull(List<E> list, E item) {
-        if (item != null) {
+        if (item != null)
             list.add(item);
-        }
     }
 
     public static String escape(String str) {
@@ -1314,19 +1374,16 @@ public class NncUtils {
         boolean lastBackslash = false;
         for (int i = 1; i < escaped.length() - 1; i++) {
             char c = escaped.charAt(i);
-            if(lastBackslash) {
-                if(c == '\\' || c == '\"') {
+            if (lastBackslash) {
+                if (c == '\\' || c == '\"') {
                     builder.append(c);
-                }
-                else {
+                } else {
                     throw new ExpressionParsingException("Invalid single escaped string '" + escaped + "'");
                 }
-            }
-            else {
-                if(c == '\\') {
+            } else {
+                if (c == '\\') {
                     lastBackslash = true;
-                }
-                else {
+                } else {
                     builder.append(c);
                 }
             }
@@ -1340,19 +1397,16 @@ public class NncUtils {
         boolean lastBackslash = false;
         for (int i = 1; i < escaped.length() - 1; i++) {
             char c = escaped.charAt(i);
-            if(lastBackslash) {
-                if(c == '\\' || c == '\'') {
+            if (lastBackslash) {
+                if (c == '\\' || c == '\'') {
                     builder.append(c);
-                }
-                else {
+                } else {
                     throw new ExpressionParsingException("Invalid single escaped string '" + escaped + "'");
                 }
-            }
-            else {
-                if(c == '\\') {
+            } else {
+                if (c == '\\') {
                     lastBackslash = true;
-                }
-                else {
+                } else {
                     builder.append(c);
                 }
             }

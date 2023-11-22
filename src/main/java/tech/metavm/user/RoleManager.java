@@ -12,6 +12,8 @@ import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
+import java.util.List;
+
 @Component
 public class RoleManager {
 
@@ -31,7 +33,9 @@ public class RoleManager {
                 page,
                 pageSize,
                 true,
-                false
+                false,
+                List.of(),
+                List.of()
         );
         Page<RoleRT> dataPage =
                 instanceQueryService.query(RoleRT.class, query, newContext());

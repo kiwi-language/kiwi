@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.ChangeLogPlugin;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.SQLType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.type.*;
@@ -118,7 +118,7 @@ public class BootstrapTest extends TestCase {
                     type1.getId(), type2.getId());
         }
 
-        for (Column column : SQLType.columns()) {
+        for (Column column : ColumnKind.columns()) {
             if(defContext2.containsModel(column)) {
                 Instance colInstance = defContext2.getInstance(column);
                 Assert.assertNotNull(colInstance.getId());

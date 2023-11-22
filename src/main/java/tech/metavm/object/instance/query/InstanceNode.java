@@ -65,7 +65,7 @@ public abstract class InstanceNode<I extends Instance> {
     protected abstract void fetch0(I instance, Path path, List<Instance> result);
 
     public static InstanceNode<?> create(PathTree path, Type type) {
-        if(type.isUnionNullable()) {
+        if(type.isBinaryNullable()) {
             type = type.getUnderlyingType();
         }
         if(type instanceof ClassType classType) {

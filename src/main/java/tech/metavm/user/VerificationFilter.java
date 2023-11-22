@@ -30,7 +30,7 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/tenant",
             "/login",
             "/bootstrap",
-            "/debug",
+            "/management",
             "/lab",
             "/is-logged-in"
     );

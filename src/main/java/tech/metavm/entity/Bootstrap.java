@@ -43,8 +43,9 @@ public class Bootstrap implements InitializingBean {
     public void boot() {
         ContextUtil.setLoginInfo(ROOT_TENANT_ID, -1L);
         InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newContext(
-                ROOT_TENANT_ID, false, new BootIdProvider(stdAllocators), null, null
+                ROOT_TENANT_ID, false, false, new BootIdProvider(stdAllocators), null, null
         );
+//        standardInstanceContext.clearListeners();
         InstanceContextFactory.setStdContext(standardInstanceContext);
 
         DefContext defContext = new DefContext(
@@ -77,11 +78,11 @@ public class Bootstrap implements InitializingBean {
             InstanceContext instanceContext = NncUtils.requireNonNull(
                     (InstanceContext) defContext.getInstanceContext()
             );
-            instanceContext.setBindHook(tempContext::bind);
+//            instanceContext.setBindHook(tempContext::bind);
 
             NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
             defContext.finish();
-            instanceContext.setBindHook(null);
+//            instanceContext.setBindHook(null);
 
             defContext.getIdentityMap().forEach((model, javaConstruct) ->
                     stdAllocators.putId(javaConstruct, defContext.getInstance(model).getIdRequired())

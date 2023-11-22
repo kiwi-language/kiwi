@@ -17,8 +17,8 @@ public class LoopField extends Entity {
 
     public LoopField(Field field, Value initialValue, Value updatedValue) {
         this.field = field;
-        this.initialValue = initialValue;
-        this.updatedValue = updatedValue;
+        this.initialValue = addChild(initialValue, "initialValue");
+        this.updatedValue = addChild(updatedValue, "updatedValue");
     }
 
     public Field getField() {
@@ -34,11 +34,11 @@ public class LoopField extends Entity {
     }
 
     public void setInitialValue(Value initialValue) {
-        this.initialValue = initialValue;
+        this.initialValue = addChild(initialValue, "initialValue");
     }
 
     public void setUpdatedValue(Value updatedValue) {
-        this.updatedValue = updatedValue;
+        this.updatedValue = addChild(updatedValue, "updatedValue");
     }
 
     public void update(LoopFieldDTO loopFieldDTO, IEntityContext context, ParsingContext parsingContext) {
@@ -46,10 +46,10 @@ public class LoopField extends Entity {
             field = context.getField(loopFieldDTO.fieldRef());
         }
         if(loopFieldDTO.initialValue() != null) {
-            initialValue = ValueFactory.create(loopFieldDTO.initialValue(), parsingContext);
+            setInitialValue(ValueFactory.create(loopFieldDTO.initialValue(), parsingContext));
         }
         if(loopFieldDTO.updatedValue() != null) {
-            updatedValue = ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext);
+            setUpdatedValue(ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext));
         }
     }
 

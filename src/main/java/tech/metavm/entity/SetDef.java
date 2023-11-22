@@ -42,7 +42,7 @@ public class SetDef<E> extends ModelDef<Set<E>, ClassInstance> {
         var setNative = (SetNative) NativeInvoker.getNativeObject(instance);
         var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(setNative.iterator());
         while (iteratorNative.hasNext().isTrue()) {
-            model.add(modelInstanceMap.getModel(elementDef.getJavaClass(), iteratorNative.next()));
+            model.add(modelInstanceMap.getEntity(elementDef.getJavaClass(), iteratorNative.next()));
         }
     }
 
@@ -52,7 +52,7 @@ public class SetDef<E> extends ModelDef<Set<E>, ClassInstance> {
         var setNative = (SetNative) NativeInvoker.getNativeObject(instance);
         var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(setNative.iterator());
         while(iteratorNative.hasNext().isTrue()) {
-            model.add(modelInstanceMap.getModel(elementDef.getJavaClass(), iteratorNative.next()));
+            model.add(modelInstanceMap.getEntity(elementDef.getJavaClass(), iteratorNative.next()));
         }
     }
 

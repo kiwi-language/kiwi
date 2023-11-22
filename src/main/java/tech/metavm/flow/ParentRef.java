@@ -38,7 +38,7 @@ public class ParentRef extends Element {
 
     public ParentRef(Value parent, @Nullable Field parentField) {
         check(parent, parentField);
-        this.parent = parent;
+        this.parent = addChild(parent, "parent");
         this.field = parentField;
     }
 

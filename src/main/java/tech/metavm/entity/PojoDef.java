@@ -58,7 +58,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         if (type == instance.getType()) {
             if(model instanceof Entity entity) {
                 entity.initParent(
-                        NncUtils.get(instance.getParent(), p -> modelInstanceMap.getModel(Entity.class, p)),
+                        NncUtils.get(instance.getParent(), p -> modelInstanceMap.getEntity(Entity.class, p)),
                         NncUtils.get(instance.getParentField(), defContext::getJavaField)
                 );
             }
@@ -96,7 +96,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
             if(model instanceof Entity entity) {
                 reloadParent(entity, instance, instanceMap, defContext);
             }
-            instance.reload(getInstanceFields(model, instanceMap), 0L, 0L);
+            instance.reset(getInstanceFields(model, instanceMap), 0L, 0L);
         } else {
             getSubTypeDef(instanceType).initInstanceHelper(instance, model, instanceMap);
         }
@@ -108,12 +108,16 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     @Override
     public void updateInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
-        if (type == instance.getType()) {
-            instance.reload(getInstanceFields(model, instanceMap), 0L, 0L);
-        } else {
-            PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType());
-            subTypeDef.updateInstanceHelper(model, instance, instanceMap);
-        }
+        initInstance(instance, model, instanceMap);
+//        ClassType instanceType = instance.getType();
+//        if (type == instance.getType()) {
+//            if(model instanceof Entity entity) {
+//                reloadParent(entity, instance, instanceMap, defContext);
+//            }
+//            instance.reset(getInstanceFields(model, instanceMap), 0L, 0L);
+//        } else {
+//            getSubTypeDef(instanceType).updateInstanceHelper(model, instance, instanceMap);
+//        }
     }
 
     private PojoDef<? extends T> getSubTypeDef(ClassType subType) {

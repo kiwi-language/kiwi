@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.ClassTypeParam;
@@ -40,6 +41,7 @@ public class FlowBuilder {
     private FunctionType type;
     private FunctionType staticType;
     private Flow existing;
+    private MetadataState state;
 
     private FlowBuilder(ClassType declaringType, String name, @Nullable String code, FunctionTypeContext functionTypeContext) {
         this.declaringType = declaringType;
@@ -80,6 +82,11 @@ public class FlowBuilder {
 
     public FlowBuilder parameters(List<Parameter> parameters) {
         this.parameters = parameters;
+        return this;
+    }
+
+    public FlowBuilder state(MetadataState state) {
+        this.state = state;
         return this;
     }
 
@@ -129,22 +136,20 @@ public class FlowBuilder {
 
     public Flow build() {
         if (returnType == null) {
-            if (isConstructor) {
+            if (isConstructor)
                 returnType = declaringType;
-            } else {
-                returnType = voidType != null ? voidType : StandardTypes.getVoidType();
-            }
+            else
+                returnType = NncUtils.orElse(voidType, StandardTypes::getVoidType);
         }
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        if (type == null) {
+        if (type == null)
             type = functionTypeContext.get(NncUtils.map(parameters, Parameter::getType), returnType);
-        }
-        if (staticType == null) {
+        if (staticType == null)
             staticType = functionTypeContext.get(NncUtils.prepend(declaringType, paramTypes), returnType);
-        }
         var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
-        Flow flow;
         if (existing == null) {
+            if (state == null)
+                state = MetadataState.READY;
             return new Flow(
                     effectiveTmpId,
                     declaringType,
@@ -160,7 +165,8 @@ public class FlowBuilder {
                     template,
                     typeArguments,
                     type,
-                    staticType
+                    staticType,
+                    state
             );
         } else {
             existing.setName(name);
@@ -172,6 +178,8 @@ public class FlowBuilder {
             existing.setTypeArguments(typeArguments);
             existing.setType(type);
             existing.setStaticType(staticType);
+            if (state != null)
+                existing.setState(state);
             return existing;
         }
     }
@@ -190,8 +198,8 @@ public class FlowBuilder {
         return code2tmpId;
     }
 
-    private PrimitiveType nullType() {
-        return nullType != null ? nullType : StandardTypes.getNullType();
+    private PrimitiveType getNullType() {
+        return NncUtils.orElse(nullType, StandardTypes::getNullType);
     }
 
     public FlowBuilder existing(Flow existing) {

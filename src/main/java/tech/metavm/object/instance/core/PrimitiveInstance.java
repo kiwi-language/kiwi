@@ -2,9 +2,10 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
-import tech.metavm.object.instance.rest.PrimitiveParamDTO;
+import tech.metavm.object.instance.rest.PrimitiveInstanceParam;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InstanceInput;
 
 import java.util.Objects;
 import java.util.Set;
@@ -23,9 +24,21 @@ public abstract class PrimitiveInstance extends Instance {
     }
 
     @Override
-    protected PrimitiveParamDTO getParam() {
-        return new PrimitiveParamDTO(
-                getType().getKind().getCode(),
+    public boolean isPrimitive() {
+        return true;
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return true;
+    }
+
+    public abstract int getWireType();
+
+    @Override
+    protected PrimitiveInstanceParam getParam() {
+        return new PrimitiveInstanceParam(
+                getType().getKind().code(),
                 getValue()
         );
     }
@@ -44,13 +57,13 @@ public abstract class PrimitiveInstance extends Instance {
     }
 
     @Override
-    public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return toColumnValue();
+    public Object toSearchConditionValue() {
+        return getValue();
     }
 
     @Override
-    public Object toSearchConditionValue() {
-        return getValue();
+    public void readFrom(InstanceInput input) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -75,7 +88,7 @@ public abstract class PrimitiveInstance extends Instance {
     public PrimitiveFieldValue toFieldValueDTO() {
         return new PrimitiveFieldValue(
                 getTitle(),
-                getType().getKind().getCode(),
+                getType().getKind().code(),
                 getValue()
         );
     }

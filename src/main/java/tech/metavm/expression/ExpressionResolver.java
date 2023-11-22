@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
@@ -100,7 +101,7 @@ public class ExpressionResolver {
         CursorExpression cursor = new CursorExpression(resolvedArray, alias);
         SubParsingContext subContext = new SubParsingContext(cursor, context);
         Expression resolvedCondition = ExpressionResolver.resolve(
-                expression.getCondition(), StandardTypes.getBoolType(), subContext
+                expression.getCondition(), StandardTypes.getBooleanType(), subContext
         );
         return new AllMatchExpression(resolvedArray, resolvedCondition, cursor);
     }

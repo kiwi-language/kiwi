@@ -18,12 +18,15 @@ public abstract class Property extends ClassMember {
     private String code;
     @EntityField("类型")
     private Type type;
+    @EntityField("状态")
+    private MetadataState state;
 
-    public Property(Long tmpId, String name, @Nullable String code, Type type, ClassType declaringType) {
+    public Property(Long tmpId, String name, @Nullable String code, Type type, ClassType declaringType, MetadataState state) {
         super(tmpId, declaringType);
         this.name = name;
         this.code = code;
         this.type = type;
+        this.state = state;
     }
 
     public String getName() {
@@ -55,4 +58,15 @@ public abstract class Property extends ClassMember {
         this.type = type;
     }
 
+    public MetadataState getState() {
+        return state;
+    }
+
+    public boolean isReady() {
+        return state == MetadataState.READY;
+    }
+
+    public void setState(MetadataState state) {
+        this.state = state;
+    }
 }

@@ -8,8 +8,8 @@ import tech.metavm.util.InternalException;
 
 import java.util.Map;
 
-import static tech.metavm.object.type.StandardTypes.getEnumNameField;
-import static tech.metavm.object.type.StandardTypes.getEnumOrdinalField;
+import static tech.metavm.entity.StandardTypes.getEnumNameField;
+import static tech.metavm.entity.StandardTypes.getEnumOrdinalField;
 
 public class EnumConstantRT {
 

@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.instance.ByTypeQuery;
 import tech.metavm.object.instance.ScanQuery;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.InstanceTitlePO;
+import tech.metavm.object.instance.persistence.Version;
 import tech.metavm.object.instance.persistence.VersionPO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
@@ -12,6 +12,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 
 public class MemInstanceMapper implements InstanceMapper {
 
@@ -19,6 +20,7 @@ public class MemInstanceMapper implements InstanceMapper {
     private final Map<Long, List<InstancePO>> type2instances = new HashMap<>();
     private final Map<Long, InstancePO> removed = new HashMap<>();
     private final Map<Long, ReadWriteLock> lockMap = new HashMap<>();
+    private final Map<Long, Set<InstancePO>> forest = new HashMap<>();
 
     @Override
     public List<InstancePO> selectByTypeIds(long tenantId, Collection<ByTypeQuery> queries) {
@@ -29,12 +31,24 @@ public class MemInstanceMapper implements InstanceMapper {
         return NncUtils.deduplicateAndSort(result, Comparator.comparingLong(InstancePO::getId));
     }
 
+    @Override
+    public List<InstancePO> selectForest(long tenantId, Collection<Long> ids, int lockMode) {
+        List<Version> rootVersions = selectRootVersions(tenantId, new ArrayList<>(ids));
+        var rootIds = NncUtils.map(rootVersions, Version::getId);
+        return NncUtils.flatMap(rootIds, id -> forest.getOrDefault(id, Set.of()));
+    }
+
     private List<InstancePO> queryByType(long tenantId, ByTypeQuery query) {
         List<InstancePO> result = NncUtils.filter(
                 type2instances.get(query.getTypeId()),
                 instancePO -> instancePO.getTenantId() == tenantId
         );
         return result.subList(0, Math.min((int) query.getLimit(), result.size()));
+    }
+
+    @Override
+    public InstancePO selectById(long id) {
+        return id2instance.get(id);
     }
 
     @Override
@@ -76,14 +90,18 @@ public class MemInstanceMapper implements InstanceMapper {
                 "Instance with id " + instancePO.getId() + " already exists");
         id2instance.put(instancePO.getId(), instancePO);
         type2instances.computeIfAbsent(instancePO.getTypeId(), k -> new ArrayList<>()).add(instancePO);
+        forest.computeIfAbsent(instancePO.getRootId(), k -> new HashSet<>()).add(instancePO);
     }
 
     private void remove(long id) {
-        InstancePO instanceArrayPO = id2instance.remove(id);
-        if(instanceArrayPO == null) {
+        InstancePO instancePO = id2instance.remove(id);
+        if(instancePO == null) {
             throw new InternalException("Instance " + id + " does not exist");
         }
-        type2instances.get(instanceArrayPO.getTypeId()).removeIf(i -> i.getId().equals(instanceArrayPO.getId()));
+        var tree = forest.get(instancePO.getRootId());
+        if(tree != null)
+            tree.remove(instancePO);
+        type2instances.get(instancePO.getTypeId()).removeIf(i -> Objects.equals(i.getId(), instancePO.getId()));
     }
 
     public List<InstancePO> head() {
@@ -112,12 +130,6 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     @Override
-    public List<InstanceTitlePO> selectTitleByIds(long tenantId, Collection<Long> ids) {
-        List<InstancePO> instancePOs = selectByIds(tenantId, ids, 0);
-        return NncUtils.map(instancePOs, i -> new InstanceTitlePO(i.getId(), i.getTitle()));
-    }
-
-    @Override
     public List<InstancePO> scan(long tenantId, Collection<ScanQuery> queries) {
         Set<InstancePO> uniqueResult = new IdentitySet<>();
         for (ScanQuery query : queries) {
@@ -126,6 +138,23 @@ public class MemInstanceMapper implements InstanceMapper {
         List<InstancePO> result = new ArrayList<>(uniqueResult);
         result.sort(Comparator.comparingLong(InstancePO::getId));
         return result;
+    }
+
+    @Override
+    public List<Long> selectVersions(List<Long> ids) {
+        return NncUtils.map(ids, id -> id2instance.get(id).getVersion());
+    }
+
+    @Override
+    public List<Version> selectRootVersions(long tenantId, List<Long> ids) {
+        return ids.stream().map(id2instance::get)
+                .filter(Objects::nonNull)
+                .map(InstancePO::getRootId)
+                .map(id2instance::get)
+                .filter(Objects::nonNull)
+                .distinct()
+                .map(i -> new Version(i.getId(), i.getVersion()))
+                .collect(Collectors.toList());
     }
 
     private List<InstancePO> scan(long tenantId, ScanQuery query) {

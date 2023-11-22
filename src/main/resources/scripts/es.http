@@ -22,7 +22,7 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:9200/instance/_doc/1242204845?routing=1239104783
+DELETE http://localhost:9200/instance/_doc/1206304127?routing=1205804117
 Authorization: Basic elastic 85263670
 
 ###

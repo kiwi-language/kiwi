@@ -18,7 +18,7 @@ public class Version extends Entity {
     private final ReadWriteArray<Long> changeTypeIds = addChild(new ReadWriteArray<>(Long.class), "changeTypeIds");
 
     @ChildEntity("删除类型ID列表")
-    private final ReadWriteArray<Long> removedTypeIds = addChild(new ReadWriteArray<>(Long.class), "changeTypeIds");
+    private final ReadWriteArray<Long> removedTypeIds = addChild(new ReadWriteArray<>(Long.class), "removedTypeIds");
 
     public Version(long version, Set<Long> changedTypeIds, Set<Long> removedTypeIds) {
         this.version = version;

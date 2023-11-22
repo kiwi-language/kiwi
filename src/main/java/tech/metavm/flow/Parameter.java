@@ -38,7 +38,7 @@ public class Parameter extends Element {
         this.code = code;
         this.type = type;
         this.template = template;
-        this.condition = condition;
+        setCondition(condition);
     }
 
     public Callable getCallable() {
@@ -107,7 +107,7 @@ public class Parameter extends Element {
     }
 
     public void setCondition(@Nullable Value condition) {
-        this.condition = condition;
+        this.condition = NncUtils.get(condition, c -> addChild(c, "condition"));
     }
 
     @Override

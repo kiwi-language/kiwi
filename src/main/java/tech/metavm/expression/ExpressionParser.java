@@ -11,7 +11,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.query.OperatorTypes;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.StandardTypes;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Constants;
 import tech.metavm.util.InstanceUtils;

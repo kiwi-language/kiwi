@@ -8,6 +8,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import static tech.metavm.util.ReflectUtils.getMetaTypeName;
 
@@ -17,15 +18,17 @@ public class EnumParser<T extends Enum<?>> implements DefParser<T, Instance, Enu
     private final ValueDef<Enum<?>> superDef;
     private EnumDef<T> enumDef;
     private final DefContext defContext;
+    private final Function<Object, Long> getId;
 
-    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefContext defContext) {
+    public EnumParser(Class<T> enumType, ValueDef<Enum<?>> superDef, DefContext defContext, Function<Object, Long> getId) {
         this.javaClass = enumType;
         this.superDef = superDef;
         this.defContext = defContext;
+        this.getId = getId;
     }
 
     private void parseEnumConstant(T value, EnumDef<T> enumDef) {
-        new EnumConstantDef<>(value, enumDef);
+        new EnumConstantDef<>(value, enumDef, getId);
     }
 
     @Override

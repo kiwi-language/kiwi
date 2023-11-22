@@ -7,28 +7,27 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Field;
 
 @EntityType("添加字段任务")
 public class AddFieldTask extends ScanByClassTask {
 
-    @EntityField("字段数据")
-    private final FieldData fieldData;
+    @EntityField("字段")
+    private final Field field;
 
-    protected AddFieldTask(ClassType declaringType, FieldData data) {
-        super(declaringType.getName() + "新增字段" + data.getName() + " 任务", declaringType);
-        this.fieldData = data;
+    protected AddFieldTask(ClassType declaringType, Field field) {
+        super(String.format("%s新增字段%s任务", declaringType.getName(), field.getName()), declaringType);
+        this.field = field;
     }
 
     @Override
     protected void processClassInstance(ClassInstance instance) {
         Instance fieldValue;
-        if(fieldData.isChild() && fieldData.getType() instanceof ArrayType arrayType) {
+        if(field.isChild() && field.getType() instanceof ArrayType arrayType)
             fieldValue = new ArrayInstance(arrayType);
-        }
-        else {
-            fieldValue = fieldData.getDefaultValue();
-        }
-        instance.setDirtyField(fieldData.getDeclaringType(), fieldData.getColumn(), fieldValue);
+        else
+            fieldValue = field.getDefaultValue();
+        instance.initField(field, fieldValue);
     }
 
 }

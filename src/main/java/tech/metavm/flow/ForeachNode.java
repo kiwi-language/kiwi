@@ -54,7 +54,7 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
     public ForeachNode(Long tmpId, String name, @Nullable ClassType outputType, NodeRT<?> previous, ScopeRT scope,
                        Value array, Value condition) {
         super(tmpId, name, outputType, previous, scope, condition);
-        this.array = array;
+        setArray(array);
     }
 
     @Override
@@ -72,8 +72,12 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
         setLoopParam(param, context);
         var parsingContext = getParsingContext(context);
         if (param.getArray() != null) {
-            array = ValueFactory.create(param.getArray(), parsingContext);
+            setArray(ValueFactory.create(param.getArray(), parsingContext));
         }
+    }
+
+    public void setArray(Value array) {
+        this.array = addChild(array, "array");
     }
 
     @Override
@@ -81,15 +85,15 @@ public class ForeachNode extends LoopNode<ForEachParamDTO> {
         var arrayValue = array.evaluate(frame);
         var index = InstanceUtils.longInstance(0);
         return new HashMap<>(Map.of(
-                getType().findFieldByCode("array"), arrayValue,
-                getType().findFieldByCode("index"), index
+                getType().getFieldByCode("array"), arrayValue,
+                getType().getFieldByCode("index"), index
         ));
     }
 
     @Override
     protected void updateExtraFields(ClassInstance instance, MetaFrame frame) {
         instance.setField(
-                getType().findFieldByCode("index"),
+                getType().getFieldByCode("index"),
                 instance.getLongField(getType().findFieldByCode("index")).inc(1)
         );
     }

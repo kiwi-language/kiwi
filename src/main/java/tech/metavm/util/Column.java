@@ -3,7 +3,7 @@ package tech.metavm.util;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.GlobalKey;
 import tech.metavm.entity.ValueType;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.Type;
 
 import java.util.Map;
@@ -14,22 +14,32 @@ import java.util.function.Function;
 
 @ValueType("列")
 public record Column(
+        @EntityField("列类型") ColumnKind kind,
         @EntityField(value = "列名", asTitle = true) String name,
-        @EntityField("列类型") SQLType type
+        @EntityField(value = "标签") int tag
 ) implements GlobalKey {
 
-    public static final Column ID = new Column("id", SQLType.INT64);
+    public static final Column ID = new Column(ColumnKind.INT, "id", 0);
 
-    public static Column valueOf(String columnName) {
-        if (columnName == null) {
-            return null;
-        }
-        return new Column(columnName, SQLType.getByColumnName(columnName));
+    public static Column create(ColumnKind columnKind, int index) {
+        return new Column(
+                columnKind,
+                String.format("%s%d", columnKind.prefix(), index),
+                index << 3 | columnKind.tagSuffix()
+        );
     }
 
-    public static Column allocate(Set<Column> usedColumns, SQLType sqlType) {
-        Map<SQLType, Queue<Column>> columnMap = SQLType.getColumnMap(usedColumns);
-        Queue<Column> columns = columnMap.get(sqlType);
+    public static Column valueOf(String columnName) {
+        if (columnName == null)
+            return null;
+        var sqlType = ColumnKind.getByPrefix(columnName.substring(0, 1));
+        int index = Integer.parseInt(columnName.substring(1));
+        return Column.create(sqlType, index);
+    }
+
+    public static Column allocate(Set<Column> usedColumns, ColumnKind columnKind) {
+        Map<ColumnKind, Queue<Column>> columnMap = ColumnKind.getColumnMap(usedColumns);
+        Queue<Column> columns = columnMap.get(columnKind);
         if (columns.isEmpty()) {
             throw BusinessException.tooManyFields();
         }
@@ -37,15 +47,10 @@ public record Column(
     }
 
     public String fuzzyName() {
-        if (type != SQLType.VARCHAR64) {
+        if (kind != ColumnKind.STRING) {
             return name();
-//            throw new UnsupportedOperationException("fuzzy name is only available for string columns");
         }
         return "t" + name.substring(1);
-    }
-
-    public Column copy() {
-        return new Column(name, type);
     }
 
     @Override
@@ -54,18 +59,18 @@ public record Column(
         if (obj == null || obj.getClass() != this.getClass()) return false;
         var that = (Column) obj;
         return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.type, that.type);
+                Objects.equals(this.kind, that.kind);
     }
 
     public boolean searchable() {
-        return type.esType() != null;
+        return kind.esType() != null;
     }
 
     @Override
     public String toString() {
         return "Column[" +
                 "name=" + name + ", " +
-                "type=" + type + ']';
+                "kind=" + kind + ']';
     }
 
     @Override

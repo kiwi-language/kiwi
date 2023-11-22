@@ -13,7 +13,6 @@ import java.util.List;
 public class MemInstanceStore extends InstanceStore {
 
     private final IndexEntryMapper indexEntryMapper;
-    private final InstanceMapperGateway instanceMapperGateway;
 
     public MemInstanceStore() {
         this(new MemIndexEntryMapper());
@@ -21,21 +20,17 @@ public class MemInstanceStore extends InstanceStore {
 
     public MemInstanceStore(MemIndexEntryMapper indexEntryMapper) {
         this(
-                new InstanceMapperGateway(
-                        new MemInstanceMapper(),
-                        new MemInstanceArrayMapper()
-                ),
+                new MemInstanceMapper(),
                 indexEntryMapper,
                 new MemReferenceMapper()
         );
     }
 
-    public MemInstanceStore(InstanceMapperGateway instanceMapperGateway,
+    public MemInstanceStore(InstanceMapper instanceMapperGateway,
                             IndexEntryMapper indexEntryMapper,
                             ReferenceMapper referenceMapper) {
         super(instanceMapperGateway,
                 indexEntryMapper, referenceMapper);
-        this.instanceMapperGateway = instanceMapperGateway;
         this.indexEntryMapper = indexEntryMapper;
     }
 
@@ -44,7 +39,7 @@ public class MemInstanceStore extends InstanceStore {
     }
 
     public InstancePO get(long id) {
-        return NncUtils.getFirst(instanceMapperGateway.selectByIds(TestConstants.TENANT_ID, List.of(id), 0));
+        return NncUtils.getFirst(instanceMapper.selectByIds(TestConstants.TENANT_ID, List.of(id), 0));
     }
 
     public void addIndex(long tenantId, IndexKeyPO indexKey, Long id) {

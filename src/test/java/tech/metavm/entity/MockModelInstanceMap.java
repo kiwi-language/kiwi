@@ -39,14 +39,14 @@ public class MockModelInstanceMap implements ModelInstanceMap {
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance) {
-        return getModel(klass, instance, null);
+    public <T> T getEntity(Class<T> klass, Instance instance) {
+        return getEntity(klass, instance, null);
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?,?> def) {
+    public <T> T getEntity(Class<T> klass, Instance instance, @Nullable ModelDef<T,?> def) {
         if(parent != null && parent.containsInstance(instance)) {
-            return parent.getModel(klass, instance);
+            return parent.getEntity(klass, instance);
         }
         Object existing;
         if((existing = instance2model.get(instance)) != null) {
@@ -116,7 +116,7 @@ public class MockModelInstanceMap implements ModelInstanceMap {
             return instance;
         }
         else {
-            Instance instance = def.createInstanceHelper(model, this);
+            Instance instance = def.createInstanceHelper(model, this, null);
             addMapping(model, instance);
             return instance;
         }

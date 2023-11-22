@@ -1,20 +1,16 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
-import tech.metavm.entity.SerializeContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.*;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.ReferenceKind;
-import tech.metavm.object.instance.SQLType;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.type.rest.dto.ArrayTypeKey;
 import tech.metavm.object.type.rest.dto.ArrayTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.StreamVisitor;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +72,7 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public SQLType getSQLType() {
+    public ColumnKind getSQLType() {
         if(isChildArray()) {
             return elementType.getSQLType();
         }
@@ -85,41 +81,30 @@ public class ArrayType extends CompositeType {
         }
     }
 
+    @Override
+    public boolean isArray() {
+        return true;
+    }
+
     public Type getElementType() {
         return elementType;
     }
 
-    public Type getInnerMostElementType() {
-        return elementType instanceof ArrayType arrayType ? arrayType.getInnerMostElementType() : elementType;
-    }
-
-    public int getDimensions() {
-        int dim = 1;
-        Type type = elementType;
-        while (type instanceof ArrayType arrayType) {
-            type = arrayType.getElementType();
-            dim++;
-        }
-        return dim;
-    }
-
     @Override
     public Set<ReferencePO> extractReferences(InstancePO instancePO) {
-        InstanceArrayPO arrayPO = (InstanceArrayPO) instancePO;
         Set<ReferencePO> refs = new HashSet<>();
-        boolean isRefType = getElementType().isReference();
-        for (Object element : arrayPO.getElements()) {
-            NncUtils.invokeIfNotNull(
-                    ReferencePO.convertToRefId(element, isRefType),
-                    targetId -> refs.add(new ReferencePO(
-                            arrayPO.getTenantId(),
-                            arrayPO.getId(),
-                            targetId,
-                            -1L,
-                            ReferenceKind.getFromType(elementType).code()
-                    ))
-            );
-        }
+        new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
+            @Override
+            public void visitReference() {
+                refs.add(new ReferencePO(
+                        instancePO.getTenantId(),
+                        instancePO.getId(),
+                        readLong(),
+                        -1L,
+                        ReferenceKind.getFromType(elementType).code()
+                ));
+            }
+        }.visit();
         return refs;
     }
 

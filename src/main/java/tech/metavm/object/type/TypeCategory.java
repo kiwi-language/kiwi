@@ -5,7 +5,7 @@ import tech.metavm.entity.EnumConstant;
 import tech.metavm.entity.natives.ArrayNative;
 import tech.metavm.management.RegionInfo;
 import tech.metavm.management.RegionManager;
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.util.NncUtils;
 
@@ -18,73 +18,73 @@ import java.util.Set;
 @EntityType("类型分类")
 public enum TypeCategory {
     @EnumConstant("类")
-    CLASS(0, SQLType.REFERENCE, ClassTypeParam.class, 2),
+    CLASS(0, ColumnKind.REFERENCE, ClassTypeParam.class, 2),
     @EnumConstant("枚举")
-    ENUM(1, SQLType.REFERENCE, ClassTypeParam.class, 2),
+    ENUM(1, ColumnKind.REFERENCE, ClassTypeParam.class, 2),
     @EnumConstant("接口")
-    INTERFACE(2, SQLType.OBJECT, ClassTypeParam.class, 3),
+    INTERFACE(2, ColumnKind.UNSPECIFIED, ClassTypeParam.class, 3),
     @EnumConstant("值")
-    VALUE(3, SQLType.VALUE, ClassTypeParam.class,2 ),
+    VALUE(3, ColumnKind.UNSPECIFIED, ClassTypeParam.class,2 ),
     @EnumConstant("读写数组")
-    READ_WRITE_ARRAY(6, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
+    READ_WRITE_ARRAY(6, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("只读数组")
-    READ_ONLY_ARRAY(7, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
+    READ_ONLY_ARRAY(7, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("子对象数组")
-    CHILD_ARRAY(8, SQLType.MULTI_REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
+    CHILD_ARRAY(8, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
     @EnumConstant("并集")
-    UNION(9, SQLType.UNION, UnionTypeParam.class, 5),
+    UNION(9, ColumnKind.UNSPECIFIED, UnionTypeParam.class, 5),
     @EnumConstant("空")
-    NULL(10, SQLType.NULL, PrimitiveTypeParam.class, 5),
+    NULL(10, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
     @EnumConstant("字符串")
-    STRING(11, SQLType.VARCHAR64, PrimitiveTypeParam.class, 5),
+    STRING(11, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
     @EnumConstant("浮点数")
-    DOUBLE(12, SQLType.FLOAT, PrimitiveTypeParam.class, 5),
+    DOUBLE(12, ColumnKind.DOUBLE, PrimitiveTypeParam.class, 5),
     @EnumConstant("整数")
-    LONG(13, SQLType.INT64, PrimitiveTypeParam.class, 5),
+    LONG(13, ColumnKind.INT, PrimitiveTypeParam.class, 5),
     @EnumConstant("布尔")
-    BOOLEAN(16, SQLType.BOOL, PrimitiveTypeParam.class, 5),
+    BOOLEAN(16, ColumnKind.BOOL, PrimitiveTypeParam.class, 5),
     @EnumConstant("时间")
-    TIME(18, SQLType.INT64, PrimitiveTypeParam.class, 5),
+    TIME(18, ColumnKind.INT, PrimitiveTypeParam.class, 5),
     @EnumConstant("日期")
-    DATE(19, SQLType.INT64, PrimitiveTypeParam.class, 5),
+    DATE(19, ColumnKind.INT, PrimitiveTypeParam.class, 5),
     @EnumConstant("任意类型")
-    OBJECT(21, SQLType.OBJECT, 5),
+    OBJECT(21, ColumnKind.UNSPECIFIED, 5),
     @EnumConstant("密码")
-    PASSWORD(22, SQLType.TEXT, PrimitiveTypeParam.class, 5),
+    PASSWORD(22, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
     @EnumConstant("Void")
-    VOID(23, SQLType.VALUE, PrimitiveTypeParam.class, 5),
+    VOID(23, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
     @EnumConstant("类型变量")
-    VARIABLE(24, SQLType.OBJECT, TypeVariableParam.class, 1),
+    VARIABLE(24, ColumnKind.UNSPECIFIED, TypeVariableParam.class, 1),
     @EnumConstant("类型交集")
-    INTERSECTION(26, SQLType.OBJECT, 4),
+    INTERSECTION(26, ColumnKind.UNSPECIFIED, 4),
     @EnumConstant("函数")
-    FUNCTION(27, SQLType.OBJECT, FunctionTypeParam.class, 5),
+    FUNCTION(27, ColumnKind.UNSPECIFIED, FunctionTypeParam.class, 5),
     @EnumConstant("不确定")
-    UNCERTAIN(28, SQLType.OBJECT, UncertainTypeParam.class, 5),
+    UNCERTAIN(28, ColumnKind.UNSPECIFIED, UncertainTypeParam.class, 5),
     @EnumConstant("不可能")
-    NOTHING(29, SQLType.OBJECT, 5),
+    NOTHING(29, ColumnKind.UNSPECIFIED, 5),
 
     ;
 
     private final int code;
     private final int closurePrecedence;
-    private final SQLType sqlType;
+    private final ColumnKind columnKind;
     private final Class<?> paramClass;
     private final @Nullable Class<?> nativeClass;
 
     private static volatile Set<TypeCategory> ALL;
 
-    TypeCategory(int code, SQLType sqlType, int closurePrecedence) {
-        this(code, sqlType, null, closurePrecedence);
+    TypeCategory(int code, ColumnKind columnKind, int closurePrecedence) {
+        this(code, columnKind, null, closurePrecedence);
     }
 
-    TypeCategory(int code, SQLType sqlType, Class<?> paramClass, int closurePrecedence) {
-        this(code, sqlType, paramClass, null, closurePrecedence);
+    TypeCategory(int code, ColumnKind columnKind, Class<?> paramClass, int closurePrecedence) {
+        this(code, columnKind, paramClass, null, closurePrecedence);
     }
 
-    TypeCategory(int code, SQLType sqlType, Class<?> paramClass, @Nullable Class<?> nativeClass, int closurePrecedence) {
+    TypeCategory(int code, ColumnKind columnKind, Class<?> paramClass, @Nullable Class<?> nativeClass, int closurePrecedence) {
         this.code = code;
-        this.sqlType = sqlType;
+        this.columnKind = columnKind;
         this.paramClass = paramClass;
         this.nativeClass = nativeClass;
         this.closurePrecedence = closurePrecedence;
@@ -182,8 +182,8 @@ public enum TypeCategory {
         return this == CLASS;
     }
 
-    public SQLType getSQLType() {
-        return sqlType;
+    public ColumnKind getSQLType() {
+        return columnKind;
     }
 
     public Class<?> getParamClass() {

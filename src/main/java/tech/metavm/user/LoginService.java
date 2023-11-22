@@ -19,10 +19,10 @@ import static tech.metavm.user.Tokens.TOKEN_TTL;
 @Component
 public class LoginService {
 
-    private final InstanceContextFactory instanceContextFactory;
+    private final InstanceContextFactory contextFactory;
 
-    public LoginService(InstanceContextFactory instanceContextFactory) {
-        this.instanceContextFactory = instanceContextFactory;
+    public LoginService(InstanceContextFactory contextFactory) {
+        this.contextFactory = contextFactory;
     }
 
     @Transactional
@@ -56,10 +56,13 @@ public class LoginService {
         }
     }
 
+    @Transactional(readOnly = true)
     public VerifyResult verify(Token token) {
         if (token == null)
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
-        try(IEntityContext context = newContext(token.tenantId())) {
+        try(var context = newContext(token.tenantId());
+            var ignored = ContextUtil.getProfiler().enter("verify")
+        ) {
             var session = context.selectByUniqueKey(Session.IDX_TOKEN, token.token());
             if(session != null && session.isActive())
                 return new VerifyResult(token.tenantId(), session.getUser().getIdRequired());
@@ -75,7 +78,7 @@ public class LoginService {
     }
 
     private IEntityContext newContext(long tenantId) {
-        return instanceContextFactory.newEntityContext(tenantId, true);
+        return contextFactory.newEntityContext(tenantId, true);
     }
 
 }

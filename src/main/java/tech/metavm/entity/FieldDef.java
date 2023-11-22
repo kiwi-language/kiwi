@@ -38,9 +38,10 @@ public class FieldDef implements IFieldDef {
     public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
         Instance fieldValue = instance.getField(field);
         if(targetDef instanceof InstanceDef<?> || targetDef instanceof InstanceCollectionDef<?,?>) {
-            return modelInstanceMap.getModel(javaField.getType(), fieldValue, targetDef);
+            //noinspection rawtypes,unchecked
+            return modelInstanceMap.getEntity(javaField.getType(), fieldValue, (ModelDef) targetDef);
         }
-        return modelInstanceMap.getModel(javaField.getType(), fieldValue);
+        return modelInstanceMap.getEntity(javaField.getType(), fieldValue);
     }
 
     @Override

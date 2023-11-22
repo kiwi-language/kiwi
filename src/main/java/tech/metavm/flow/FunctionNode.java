@@ -39,7 +39,7 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
                 ((FunctionType) Flows.getExpressionType(func.getExpression(), previous, scope)).getReturnType(),
                 previous, scope);
         check(func, arguments);
-        this.func = func;
+        this.func = addChild(func, "func");
         this.arguments.addChildren(arguments);
     }
 
@@ -63,7 +63,7 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
             arguments = NncUtils.map(param.arguments(), argDTO -> ValueFactory.create(argDTO, parsingContext));
         }
         check(func, arguments);
-        this.func = func;
+        this.func = addChild(func, "func");
         this.arguments.resetChildren(arguments);
     }
 

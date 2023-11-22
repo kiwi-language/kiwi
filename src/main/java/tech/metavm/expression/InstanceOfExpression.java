@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.Type;
 
@@ -14,8 +15,8 @@ public class InstanceOfExpression extends Expression {
     @EntityField("目标类型")
     private final Type targetType;
 
-    public InstanceOfExpression(Expression operand, Type targetType) {
-        this.operand = operand;
+    public InstanceOfExpression(@NotNull Expression operand, @NotNull Type targetType) {
+        this.operand = addChild(operand.copy(), "operand");
         this.targetType = targetType;
     }
 

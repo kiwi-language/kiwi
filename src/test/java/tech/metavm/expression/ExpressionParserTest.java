@@ -5,7 +5,7 @@ import org.junit.Assert;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ClassBuilder;
 import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.StandardTypes;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 

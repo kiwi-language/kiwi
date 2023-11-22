@@ -15,6 +15,7 @@ import java.util.Objects;
 
 public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
 
+    private boolean removed;
     private boolean persisted;
     private transient Long tmpId;
     @Nullable
@@ -70,7 +71,10 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     @NoProxy
     public final Long getIdRequired() {
-        return NncUtils.requireNonNull(getId());
+        if(id != null)
+            return id;
+        else
+            throw new InternalException("Entity id not initialized yet");
     }
 
     @NoProxy
@@ -81,12 +85,27 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return EntityKey.create(this.getEntityType(), id);
     }
 
+    public final boolean isRemoved() {
+        return removed;
+    }
+
+    public final void ensureNotRemoved() {
+        if(removed)
+            throw new InternalException(String.format("'%s' is already removed", this));
+    }
+
+    final void setRemoved() {
+        ensureNotRemoved();
+        this.removed = true;
+    }
+
     @Nullable
     public Entity getParentEntity() {
         return parentEntity;
     }
 
     public <T extends Entity> T addChild(T child, @Nullable String fieldName) {
+        NncUtils.requireNonNull(child, "Child object can not be null");
         var field = fieldName != null ?
                 ReflectUtils.getDeclaredFieldRecursively(this.getClass(), fieldName) : null;
         child.initParent(this, field);
@@ -94,11 +113,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     void initParent(Entity parent, @Nullable Field parentField) {
-//        if(this.parent != null) {
-//            throw new InternalException("Can not reInit parent");
-//        }
-        this.parentEntity = parent;
-        this.parentEntityField = parentField;
+        if(this.parentEntity != null) {
+            if(!Objects.equals(parent, parentEntity) || !Objects.equals(this.parentEntityField, parentField))
+                throw new InternalException("Can not reInit parent");
+        }
+        else {
+            this.parentEntity = parent;
+            this.parentEntityField = parentField;
+        }
     }
 
     @Nullable

@@ -5,6 +5,7 @@ import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.TargetPO;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class MemReferenceMapper implements ReferenceMapper {
@@ -27,7 +28,7 @@ public class MemReferenceMapper implements ReferenceMapper {
     @Override
     public List<ReferencePO> selectByTargetId(long tenantId, long targetId, long startIdExclusive, long limit) {
         List<ReferencePO> refs = targetMap.get(targetId);
-        if(NncUtils.isEmpty(refs)) {
+        if (NncUtils.isEmpty(refs)) {
             return List.of();
         }
         return NncUtils.filterAndSortAndLimit(
@@ -39,19 +40,18 @@ public class MemReferenceMapper implements ReferenceMapper {
     }
 
     @Override
-    public List<ReferencePO> selectFirstStrongReferences(long tenantId,
-                                                         Collection<Long> ids,
-                                                         Collection<Long> excludedSourceIds) {
+    public @Nullable ReferencePO selectFirstStrongReference(long tenantId,
+                                                            Collection<Long> targetIds,
+                                                            Collection<Long> excludedSourceIds) {
         Set<Long> excludedSourceIdSet = new HashSet<>(excludedSourceIds);
-        List<String> keys = NncUtils.map(ids, id -> tenantId + "-" + id + "-1");
-        return NncUtils.mapAndFilter(
-                keys,
-                key -> NncUtils.find(
+        List<String> keys = NncUtils.map(targetIds, id -> tenantId + "-" + id + "-1");
+        return keys.stream()
+                .map(key -> NncUtils.find(
                         targetWithKindMap.get(key),
                         ref -> !excludedSourceIdSet.contains(ref.getSourceId())
-                ),
-                Objects::nonNull
-        );
+                ))
+                .filter(Objects::nonNull)
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class MemReferenceMapper implements ReferenceMapper {
 
     private void add(ReferencePO ref) {
         ref = EntityUtils.copyPojo(ref);
-        if(!references.add(ref)) {
+        if (!references.add(ref)) {
             throw new RuntimeException(ref + " already exists");
         }
         targetWithKindMap.computeIfAbsent(ref.targetKeyWithKind(), k -> new ArrayList<>()).add(ref);
@@ -95,7 +95,7 @@ public class MemReferenceMapper implements ReferenceMapper {
     }
 
     private void remove(ReferencePO ref) {
-        if(!references.remove(ref)) {
+        if (!references.remove(ref)) {
             throw new RuntimeException(ref + " does not exist");
         }
         targetWithKindMap.get(ref.targetKeyWithKind()).remove(ref);

@@ -151,7 +151,8 @@ public class TenantManager {
     private List<Long> getInstanceIds(long tenantId, long typeId) {
         IEntityContext context = newContext();
         Page<Long> idPage = instanceQueryService.query(new InstanceQuery(
-                typeId , null, 1, 100, true, false
+                typeId , null, 1, 100, true, false,
+                List.of(), List.of()
         ), context.getInstanceContext());
         return idPage.data();
     }

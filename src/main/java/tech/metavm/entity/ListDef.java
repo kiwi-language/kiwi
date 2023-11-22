@@ -43,7 +43,7 @@ public class ListDef<E> extends ModelDef<List<E>, ClassInstance> {
         var listNative = (ListNative) NativeInvoker.getNativeObject(instance);
         var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(listNative.iterator());
         while (iteratorNative.hasNext().isTrue()) {
-            model.add(modelInstanceMap.getModel(elementDef.getJavaClass(), iteratorNative.next()));
+            model.add(modelInstanceMap.getEntity(elementDef.getJavaClass(), iteratorNative.next()));
         }
     }
 
@@ -53,7 +53,7 @@ public class ListDef<E> extends ModelDef<List<E>, ClassInstance> {
         var listNative = (ListNative) NativeInvoker.getNativeObject(instance);
         var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject(listNative.iterator());
         while(iteratorNative.hasNext().isTrue()) {
-            model.add(modelInstanceMap.getModel(elementDef.getJavaClass(), iteratorNative.next()));
+            model.add(modelInstanceMap.getEntity(elementDef.getJavaClass(), iteratorNative.next()));
         }
     }
 

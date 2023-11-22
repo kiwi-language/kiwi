@@ -1,6 +1,8 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.util.InstanceOutput;
+import tech.metavm.util.WireTypes;
 
 public class BooleanInstance extends PrimitiveInstance {
 
@@ -14,6 +16,11 @@ public class BooleanInstance extends PrimitiveInstance {
     @Override
     public Boolean getValue() {
         return value;
+    }
+
+    @Override
+    public int getWireType() {
+        return WireTypes.BOOLEAN;
     }
 
     @Override
@@ -39,6 +46,11 @@ public class BooleanInstance extends PrimitiveInstance {
 
     public BooleanInstance or(BooleanInstance that) {
         return new BooleanInstance(value || that.value, getType());
+    }
+
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeBoolean(value);
     }
 
     @Override

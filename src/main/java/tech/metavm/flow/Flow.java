@@ -29,7 +29,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     private Type returnType;
     @ChildEntity("被复写流程")
     private final ReadWriteArray<Flow> overridden = addChild(new ReadWriteArray<>(Flow.class), "overridden");
-    @ChildEntity(value = "根流程范围", lazy = true)
+    @ChildEntity(value = "根流程范围")
     private ScopeRT rootScope;
     @EntityField("版本")
     private Long version = 1L;
@@ -44,8 +44,6 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     private final ChildArray<Flow> templateInstances = addChild(new ChildArray<>(Flow.class), "templateInstances");
     @EntityField("静态类型")
     private FunctionType staticType;
-    @EntityField("错误")
-    private boolean error;
 
     private transient ReadWriteArray<ScopeRT> scopes;
     private transient ReadWriteArray<NodeRT<?>> nodes;
@@ -64,9 +62,10 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
                 @Nullable Flow template,
                 List<Type> typeArguments,
                 FunctionType type,
-                FunctionType staticType
+                FunctionType staticType,
+                MetadataState state
     ) {
-        super(tmpId, name, code, type, declaringType);
+        super(tmpId, name, code, type, declaringType, state);
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         this.isNative = isNative;
@@ -75,7 +74,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         this.scopes = new ReadWriteArray<>(ScopeRT.class);
         this.nodes = new ReadWriteArray<>(new TypeReference<>() {
         });
-        rootScope = new ScopeRT(this);
+        rootScope = addChild(new ScopeRT(this), "rootScope");
         this.template = template;
         this.typeParameters.addChildren(typeParameters);
         this.typeArguments.addAll(typeArguments);
@@ -186,18 +185,14 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
                     NncUtils.map(typeArguments, context::getRef),
                     NncUtils.map(getOverridden(), context::getRef),
                     NncUtils.map(templateInstances, ti -> ti.toDTO(false)),
-                    error
+                    getState().code()
             );
             return dto;
         }
     }
 
     public boolean isError() {
-        return error;
-    }
-
-    public void setError(boolean error) {
-        this.error = error;
+        return getState() == MetadataState.ERROR;
     }
 
     public void clearNodes() {
@@ -214,7 +209,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
                     context.getRef(getReturnType()),
                     !getParameterTypes().isEmpty(),
                     isConstructor,
-                    error
+                    getState().code()
             );
         }
     }

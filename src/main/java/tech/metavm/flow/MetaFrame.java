@@ -225,14 +225,6 @@ public class MetaFrame implements EvaluationContext, Frame {
         context.finish();
     }
 
-    public boolean isStackEmpty() {
-        return stack.isEmpty();
-    }
-
-    public void pushStack() {
-        stack.push(this);
-    }
-
     public FlowStack getStack() {
         return stack;
     }

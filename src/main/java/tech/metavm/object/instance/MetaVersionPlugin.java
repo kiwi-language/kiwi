@@ -10,10 +10,7 @@ import tech.metavm.object.type.Type;
 import tech.metavm.object.version.Versions;
 import tech.metavm.util.NncUtils;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Component
 @Order(1)
@@ -24,33 +21,34 @@ public class MetaVersionPlugin implements ContextPlugin {
         if (!context.getEntityContext().isBindSupported() && context.getBindHook() == null)
             return false;
         var entityContext = context.getEntityContext();
-        var changedEntities = NncUtils.map(change.insertsAndUpdates(),
-                i -> entityContext.getEntity(Object.class, i.getIdRequired()));
+        var changedEntities = new ArrayList<>();
+        change.forEachInsertOrUpdate(i ->
+                changedEntities.add(entityContext.getEntity(Object.class, i.getId()))
+        );
         var changedTypes = new HashSet<Type>();
         for (Object entity : changedEntities) {
-            if(entity instanceof Type type)
+            if (entity instanceof Type type)
                 changedTypes.add(type);
-            else if(entity instanceof ClassMember classMember)
+            else if (entity instanceof ClassMember classMember)
                 changedTypes.add(classMember.getDeclaringType());
         }
         List<Object> removeEntities = NncUtils.mapAndFilter(change.deletes(),
-                        i -> entityContext.getRemoved(Object.class, i.getIdRequired()),
-                        Objects::nonNull
-                );
+                i -> entityContext.getRemoved(Object.class, i.getId()),
+                Objects::nonNull
+        );
         Set<Long> removedTypeIds = new HashSet<>();
         for (Object entity : removeEntities) {
-            if(entity instanceof Type type)
+            if (entity instanceof Type type)
                 removedTypeIds.add(type.getIdRequired());
-            else if(entity instanceof ClassMember classMember) {
-                if(!entityContext.isRemoved(classMember.getDeclaringType()))
+            else if (entity instanceof ClassMember classMember) {
+                if (!entityContext.isRemoved(classMember.getDeclaringType()))
                     changedTypes.add(classMember.getDeclaringType());
             }
         }
         if (!changedTypes.isEmpty() || !removedTypeIds.isEmpty()) {
             Versions.create(changedTypes, removedTypeIds, context.getEntityContext());
             return true;
-        }
-        else
+        } else
             return false;
     }
 

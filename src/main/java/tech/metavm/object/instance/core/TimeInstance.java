@@ -3,7 +3,9 @@ package tech.metavm.object.instance.core;
 import tech.metavm.object.instance.persistence.TimePO;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.WireTypes;
 
 import java.sql.Time;
 import java.text.DateFormat;
@@ -16,18 +18,14 @@ public class TimeInstance extends PrimitiveInstance {
 
     private final long value;
 
-    public TimeInstance(Date date, PrimitiveType type) {
-        this(date.getTime(), type);
-    }
-
     public TimeInstance(long value, PrimitiveType type) {
         super(type);
         this.value = value;
     }
 
     @Override
-    public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return new TimePO(value);
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeLong(value);
     }
 
     public BooleanInstance isBefore(TimeInstance that) {
@@ -49,6 +47,11 @@ public class TimeInstance extends PrimitiveInstance {
     @Override
     public Long getValue() {
         return value;
+    }
+
+    @Override
+    public int getWireType() {
+        return WireTypes.TIME;
     }
 
     @Override

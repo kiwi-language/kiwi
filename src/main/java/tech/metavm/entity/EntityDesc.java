@@ -56,4 +56,8 @@ public class EntityDesc {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return klass.getName();
+    }
 }

@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.ArrayType;
@@ -530,7 +531,7 @@ public class Generator extends VisitorBase {
         var node = builder().createWhile();
         Field condField = null;
         if(condition != null) {
-            condField = builder().newTemproryField(node.getType(), "循环条件", StandardTypes.getBoolType());
+            condField = builder().newTemproryField(node.getType(), "循环条件", StandardTypes.getBooleanType());
         }
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         Set<QualifiedName> liveIn = requireNonNull(statement.getUserData(Keys.LIVE_VARS_IN));

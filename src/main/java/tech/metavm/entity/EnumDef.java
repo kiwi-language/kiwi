@@ -11,6 +11,7 @@ import tech.metavm.util.Null;
 import tech.metavm.util.ReflectUtils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
 
@@ -62,7 +63,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     @Override
-    public Instance createInstance(T model, ModelInstanceMap instanceMap) {
+    public Instance createInstance(T model, ModelInstanceMap instanceMap, Long id) {
         return NncUtils.findRequired(
                 enumConstantDefList,
                 def -> def.getValue() == model
@@ -98,8 +99,9 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
         return enumType;
     }
 
-    EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField) {
+    EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField, Function<Object, Long> getId) {
         ClassInstance instance = new ClassInstance(
+                getId.apply(value),
                 parentDef.getInstanceFields(value, new PrimitiveInstanceMap(defContext)),
                 type
         );
@@ -110,7 +112,6 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
                         stringType
                 )
         );
-
         EnumConstantRT enumConstant = new EnumConstantRT(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), type, type)
                 .defaultValue(new NullInstance(nullType))

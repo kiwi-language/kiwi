@@ -120,4 +120,8 @@ public class EntityProp {
         ReflectUtils.set(object, field, fieldValue);
     }
 
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

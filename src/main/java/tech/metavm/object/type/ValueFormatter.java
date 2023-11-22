@@ -105,7 +105,7 @@ public class ValueFormatter {
                 Instance fieldValue = rawValue != null ?
                         parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
                         : InstanceUtils.nullInstance();
-                if (!field.isChildField()) {
+                if (!field.isChild()) {
                     fieldValueMap.put(field, fieldValue);
                 }
             }
@@ -125,7 +125,7 @@ public class ValueFormatter {
             }
             return instance;
         } else if (actualType instanceof ArrayType arrayType) {
-            ArrayParamDTO param = (ArrayParamDTO) instanceDTO.param();
+            ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
             ArrayInstance array;
             if (instanceDTO.id() != null) {
                 array = (ArrayInstance) context.get(instanceDTO.id());

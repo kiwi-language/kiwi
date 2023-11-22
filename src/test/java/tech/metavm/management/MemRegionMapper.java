@@ -22,11 +22,11 @@ public class MemRegionMapper implements RegionMapper {
                 category2region.get(typeCategory),
                 "Can not find the region for category '" + typeCategory + "'"
         );
-        long next = regionPO.getNext() + inc;
-        if(next > regionPO.getEnd()) {
+        long next = regionPO.getNextId() + inc;
+        if(next > regionPO.getEndId()) {
             throw new InternalException("Region out of space");
         }
-        regionPO.setNext(next);
+        regionPO.setNextId(next);
     }
 
     @Override
@@ -39,9 +39,9 @@ public class MemRegionMapper implements RegionMapper {
                     region.getTypeCategory(),
                     new RegionPO(
                             region.getTypeCategory(),
-                            region.getStart(),
-                            region.getEnd(),
-                            region.getNext()
+                            region.getStartId(),
+                            region.getEndId(),
+                            region.getNextId()
                     )
             );
         }

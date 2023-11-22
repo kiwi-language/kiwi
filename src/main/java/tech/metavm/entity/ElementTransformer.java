@@ -222,7 +222,7 @@ public class ElementTransformer {
                 .existing(getExistingField(field))
                 .asTitle(field.isAsTitle())
                 .nullType(typeFactory.getNullType())
-                .isChild(field.isChildField())
+                .isChild(field.isChild())
                 .access(field.getAccess())
                 .unique(field.isUnique())
                 .isStatic(field.isStatic())
@@ -580,7 +580,6 @@ public class ElementTransformer {
                     transformValue(branch.getCondition()),
                     branch.isPreselected(),
                     branch.isExit(),
-                    new ScopeRT(flow(), transformed),
                     transformed
             );
             transformed.addBranch(branchCopy);

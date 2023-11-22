@@ -15,11 +15,10 @@ public record ReferenceRT(Instance source, Instance target, @Nullable Field fiel
         this.target = target;
         this.field = field;
         source.addOutgoingReference(this);
-        target.addIncomingReference(this);
     }
 
     public ReferenceKind getKind() {
-        return field != null && field.getType().isUnionNullable() ? ReferenceKind.WEAK : ReferenceKind.STRONG;
+        return field != null && field.getType().isNullable() ? ReferenceKind.WEAK : ReferenceKind.STRONG;
     }
 
     public boolean isStrong() {
@@ -28,7 +27,6 @@ public record ReferenceRT(Instance source, Instance target, @Nullable Field fiel
 
     public void clear() {
         source.removeOutgoingReference(this);
-        target.removeIncomingReference(this);
     }
 
     public void remove() {

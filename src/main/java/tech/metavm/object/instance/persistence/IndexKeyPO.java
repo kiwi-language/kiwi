@@ -2,25 +2,26 @@ package tech.metavm.object.instance.persistence;
 
 import tech.metavm.util.NncUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
 public class IndexKeyPO {
 
     public static final int MAX_KEY_COLUMNS = 5;
-    public static final String NULL = "\0";
-    private static final String ESCAPED_NULL = NULL + NULL;
+    public static final byte[] NULL = {'\0'};
+//    private static final String ESCAPED_NULL;
 
-    public static String getIndexColumn(Object value) {
+    public static byte[] getIndexColumn(Object value) {
         return NncUtils.mapOrElse(
                 value,
-                r -> r.toString().replace(NULL, ESCAPED_NULL),
+                r -> r.toString().getBytes(StandardCharsets.UTF_8),
                 () -> NULL
         );
     }
 
     private long constraintId;
-    private final String[] columns = new String[MAX_KEY_COLUMNS];
+    private final byte[][] columns = new byte[MAX_KEY_COLUMNS][];
     private boolean columnXPresent;
     private Long columnX;
 
@@ -42,47 +43,47 @@ public class IndexKeyPO {
         this.constraintId = constraintId;
     }
 
-    public String getColumn0() {
+    public byte[] getColumn0() {
         return columns[0];
     }
 
-    public void setColumn0(String column1) {
+    public void setColumn0(byte[] column1) {
         columns[0] = column1;
     }
 
-    public String getColumn1() {
+    public byte[] getColumn1() {
         return columns[1];
     }
 
-    public void setColumn1(String column1) {
+    public void setColumn1(byte[] column1) {
         columns[1] = column1;
     }
 
-    public String getColumn2() {
+    public byte[] getColumn2() {
         return columns[2];
     }
 
-    public void setColumn2(String column2) {
+    public void setColumn2(byte[] column2) {
         columns[2] = column2;
     }
 
-    public String getColumn3() {
+    public byte[] getColumn3() {
         return columns[3];
     }
 
-    public void setColumn3(String column3) {
+    public void setColumn3(byte[] column3) {
         columns[3] = column3;
     }
 
-    public String getColumn4() {
+    public byte[] getColumn4() {
         return columns[4];
     }
 
-    public void setColumn4(String column4) {
+    public void setColumn4(byte[] column4) {
         columns[4] = column4;
     }
 
-    public void setColumn(int i, String column) {
+    public void setColumn(int i, byte[] column) {
         columns[i] = column;
     }
 
@@ -102,11 +103,7 @@ public class IndexKeyPO {
         this.columnXPresent = columnXPresent;
     }
 
-    public static boolean isNull(String value) {
-        return "\0".equals(value);
-    }
-
-    public String getColumn(int i) {
+    public byte[] getColumn(int i) {
         return columns[i];
     }
 

@@ -14,13 +14,9 @@ public class FunctionExpression extends Expression {
     @ChildEntity("参数表达式列表")
     private final ChildArray<Expression> arguments = addChild(new ChildArray<>(Expression.class), "arguments");
 
-    public FunctionExpression(Function function) {
-        this(function, List.of());
-    }
-
     public FunctionExpression(Function function, List<Expression> arguments) {
         this.function = function;
-        this.arguments.addChildren(arguments);
+        this.arguments.addChildren(NncUtils.map(arguments, Expression::copy));
     }
 
 

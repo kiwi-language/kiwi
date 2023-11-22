@@ -35,8 +35,8 @@ public class GetElementNode extends NodeRT<GetElementParam> {
     public GetElementNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value array, Value index) {
         super(tmpId, name, ((ArrayType) array.getType()).getElementType(), previous, scope);
         check(array, index);
-        this.array = array;
-        this.index = index;
+        this.array = addChild(array, "array");
+        this.index = addChild(index, "index");
     }
 
     private static void check(Value array, Value index) {
@@ -63,8 +63,8 @@ public class GetElementNode extends NodeRT<GetElementParam> {
             index = ValueFactory.create(param.index(), parsingContext);
         }
         check(array, index);
-        this.array = array;
-        this.index = index;
+        this.array = addChild(array, "array");
+        this.index = addChild(index, "index");
         setOutputType(((ArrayType) array.getType()).getElementType());
     }
 

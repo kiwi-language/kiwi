@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
@@ -18,8 +19,8 @@ public class FuncExpression extends Expression {
     @EntityField("流程")
     private final Flow flow;
 
-    public FuncExpression(Expression self, Flow flow) {
-        this.self = self;
+    public FuncExpression(@NotNull Expression self, @NotNull Flow flow) {
+        this.self = addChild(self.copy(), "self");
         this.flow = flow;
     }
 

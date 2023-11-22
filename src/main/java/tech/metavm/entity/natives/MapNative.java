@@ -1,5 +1,6 @@
 package tech.metavm.entity.natives;
 
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;

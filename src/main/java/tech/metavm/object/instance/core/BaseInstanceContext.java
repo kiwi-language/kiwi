@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
@@ -9,12 +10,12 @@ import tech.metavm.object.instance.ByTypeQuery;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.ScanQuery;
-import tech.metavm.object.instance.persistence.IdentityPO;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.object.type.Type;
 import tech.metavm.tenant.TenantRT;
 import tech.metavm.util.*;
+import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -25,7 +26,7 @@ import java.util.function.Function;
 import static tech.metavm.util.NncUtils.getFirst;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
-public abstract class BaseInstanceContext implements IInstanceContext, Closeable {
+public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance> {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(BaseInstanceContext.class);
 
@@ -33,13 +34,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected final EntityIdProvider idService;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Long, Instance> instanceMap = new HashMap<>();
-    protected final Set<Instance> instances = new IdentitySet<>();
-    private final Set<Instance> newInstances = new IdentitySet<>();
-    private final Map<Long, Instance> removedInstanceMap = new HashMap<>();
-    private final Set<Instance> removed = new HashSet<>();
+    private Instance head;
+    private Instance tail;
     protected final IInstanceStore instanceStore;
     private LockMode lockMode = LockMode.NONE;
-    protected final Profiler profiler = new Profiler();
+    protected final Profiler profiler = ContextUtil.getProfiler();
 
     private final IInstanceContext parent;
     private final Set<InstanceIdInitListener> listeners = new LinkedHashSet<>();
@@ -50,17 +49,17 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Map<ClassInstance, List<IndexKeyRT>> indexKeys = new HashMap<>();
     private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
     private boolean closed;
-    private final long profilerLogThreshold;
+    private final boolean readonly;
     private DefContext defContext;
 
     public BaseInstanceContext(long tenantId,
                                EntityIdProvider idService,
                                IInstanceStore instanceStore,
-                               DefContext defContext, IInstanceContext parent, long profilerLogThreshold) {
+                               DefContext defContext, IInstanceContext parent, boolean readonly) {
         this.tenantId = tenantId;
         this.instanceStore = instanceStore;
-        this.profilerLogThreshold = profilerLogThreshold;
         this.defContext = defContext;
+        this.readonly = readonly;
         this.idService = new WrappedIdProvider(
                 this::interceptGetTypeId,
                 idService
@@ -83,22 +82,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void replace(Collection<Instance> instances) {
-        instances = getAllNewInstances(instances);
+        instances = crawNewInstances(instances);
         if (NncUtils.isEmpty(instances)) {
             return;
         }
         List<Instance> newInstances = NncUtils.filter(instances, inst -> inst.getId() == null);
         List<Instance> persistedInstances = NncUtils.filter(instances, inst -> inst.getId() != null);
-
         newInstances.forEach(this::add);
         replaceActually(persistedInstances);
     }
 
     public Profiler getProfiler() {
-        if(ContextUtil.isContextAvailable())
-            return ContextUtil.getProfiler();
-        else
-            return profiler;
+        return profiler;
     }
 
     @Override
@@ -113,22 +108,31 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void replaceActually(List<Instance> persistedInstances) {
         List<Instance> parentInstances = NncUtils.filter(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
         List<Instance> selfInstances = NncUtils.exclude(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
-
-        if (NncUtils.isNotEmpty(parentInstances)) {
+        if (NncUtils.isNotEmpty(parentInstances))
             parent.replace(parentInstances);
-        }
         onReplace(selfInstances);
         for (Instance instance : selfInstances) {
             Instance existing = instanceMap.get(instance.getId());
-            if (existing != null) {
-                instances.remove(existing);
-            }
+            if (existing != null)
+                evict(existing);
             add(instance);
         }
     }
 
-    public long getProfilerLogThreshold() {
-        return profilerLogThreshold;
+    public boolean isReadonly() {
+        return readonly;
+    }
+
+    private void evict(Instance instance) {
+        if (instance == head)
+            head = instance.getNext();
+        if (instance == tail)
+            tail = instance.getPrev();
+        Long id = instance.getId();
+        if (id != null)
+            instanceMap.remove(id);
+        instance.setContext(null);
+        instance.unlink();
     }
 
     public DefContext getDefContext() {
@@ -161,75 +165,107 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public void preload(Collection<Long> ids, LoadingOption... options) {
+    public void buffer(Collection<Long> ids) {
     }
 
     @Override
     public Instance get(RefDTO ref) {
-        if (ref.id() != null && ref.id() != 0L) {
+        if (ref.isPersisted())
             return get(ref.id());
-        } else {
-            return tmpId2Instance.get(ref.tmpId());
+        else {
+            var found = getIfPresentByTmpId(ref.tmpId());
+            if (found == null && parent != null)
+                found = parent.getIfPresentByTmpId(ref.tmpId());
+            if (found != null) {
+                if (found.isRemoved())
+                    throw new InternalException(
+                            String.format("Can not get instance '%s' because it's already removed", found));
+                return found;
+            } else
+                return null;
+        }
+    }
+
+    @Override
+    public boolean containsRef(RefDTO ref) {
+        return ref.isPersisted() ? instanceMap.containsKey(ref.id()) : tmpId2Instance.containsKey(ref.tmpId())
+                || parent != null && parent.containsRef(ref);
+    }
+
+    public void withCache(Instance instance) {
+        if (parent != null && parent.containsInstance(instance))
+            parent.withCache(instance);
+        else {
+            if (!instance.isInitialized())
+                instance.cacheEnabled = true;
         }
     }
 
     @Override
     public List<Instance> batchGet(Collection<Long> ids) {
-        if (parent == null) {
-            return batchGetSelf(ids);
+        return NncUtils.map(ids, this::get);
+    }
+
+    @Override
+    public Instance get(long id) {
+        var found = internalGet(id);
+        if (found != null) {
+            if (found.isRemoved())
+                throw new InternalException(
+                        String.format("Can not get instance '%s' because it's already removed", found));
+            return found;
         } else {
-            Collection<Long> parentIds = NncUtils.filter(ids, parent::containsId);
-            Collection<Long> selfIds = NncUtils.exclude(ids, parent::containsId);
-            return NncUtils.union(
-                    parent.batchGet(parentIds),
-                    batchGetSelf(selfIds)
-            );
+            buffer(id);
+            return add(id);
         }
     }
 
-    private List<Instance> batchGetSelf(Collection<Long> ids) {
-        return NncUtils.map(
-                ids,
-                this::getSelf
-        );
+    @Override
+    public Instance internalGet(long id) {
+        var found = instanceMap.get(id);
+        if (found == null && parent != null)
+            found = parent.internalGet(id);
+        return found;
     }
 
-    private Instance getSelf(long id) {
-        if (removedInstanceMap.containsKey(id)) {
-            throw new InternalException("Can not get instance " + id + " because it's already removed");
-        }
-        Instance instance = instanceMap.get(id);
-        if (instance == null) {
-            instance = createInstance(id);
-            add(instance);
-        }
+    @Override
+    public Instance getIfPresentByTmpId(long tmpId) {
+        return tmpId2Instance.get(tmpId);
+    }
+
+    private Instance add(long id) {
+        var instance = allocateInstance(id);
+        add(instance);
         return instance;
     }
 
-    protected abstract Instance createInstance(long id);
+    protected abstract Instance allocateInstance(long id);
 
     @Override
     public abstract IEntityContext getEntityContext();
 
     @Override
     public boolean containsInstance(Instance instance) {
-        return instances.contains(instance) || parent != null && parent.containsInstance(instance);
+        return instance.getContext() == this || parent != null && parent.containsInstance(instance);
     }
 
     @Override
     public boolean containsId(long id) {
-        return parent != null && parent.containsId(id) || instanceMap.get(id) != null
-                || removedInstanceMap.get(id) != null;
+        return instanceMap.containsKey(id) || parent != null && parent.containsId(id);
     }
 
     @Override
     public final void finish() {
-        if (closed) {
+        if (closed)
             throw new IllegalStateException("Context closed");
-        }
+        if (readonly)
+            throw new IllegalStateException("Can not finish a readonly context");
         try (var ignored = getProfiler().enter("finish")) {
             finishInternal();
-            newInstances.clear();
+            for (Instance instance : this) {
+                if (instance.isNew())
+                    instance.setLoaded(false);
+            }
         }
     }
 
@@ -239,27 +275,19 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             throw new IllegalStateException("Context already closed");
         }
         closed = true;
-        for (Instance instance : instances) {
-            for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
-                ref.clear();
-            }
-        }
-        if(getProfiler() == profiler) {
-            var profilerResult = getProfiler().finish();
-            if (profilerLogThreshold != -1L && profilerResult.duration() > profilerLogThreshold) {
-                LOGGER.info(profilerResult.output());
-            }
-        }
     }
 
     protected abstract void finishInternal();
 
     public Instance getRemoved(long id) {
-        return NncUtils.requireNonNull(removedInstanceMap.get(id));
+        var instance = NncUtils.requireNonNull(instanceMap.get(id));
+        NncUtils.requireTrue(instance.isRemoved());
+        return instance;
     }
 
     protected boolean isRemoved(long id) {
-        return removedInstanceMap.containsKey(id);
+        var instance = instanceMap.get(id);
+        return instance != null && instance.isRemoved();
     }
 
     @Override
@@ -268,7 +296,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public void initIds() {
         try (var ignored = getProfiler().enter("initIds")) {
             Function<Map<Type, Integer>, Map<Type, List<Long>>> idGenerator = getIdGenerator();
-            List<Instance> instancesToInitId = NncUtils.filter(instances, inst -> inst.getId() == null);
+            List<Instance> instancesToInitId = NncUtils.filter(this, Instance::isIdNull);
             if (instancesToInitId.isEmpty()) {
                 return;
             }
@@ -301,14 +329,17 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void initIdManually(Instance instance, long id) {
-        NncUtils.requireTrue(instances.contains(instance));
+        NncUtils.requireTrue(instance.getContext() == this);
         instance.initId(id);
         onIdInitialized(instance);
     }
 
     private void onIdInitialized(Instance instance) {
         instanceMap.put(instance.getId(), instance);
-        listeners.forEach(l -> l.onIdInitialized(instance));
+        for (InstanceIdInitListener listener : listeners) {
+            listener.onIdInitialized(instance);
+        }
+//        listeners.forEach(l -> l.onIdInitialized(instance));
     }
 
     private Function<Map<Type, Integer>, Map<Type, List<Long>>> getIdGenerator() {
@@ -331,21 +362,27 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public void batchRemove(Collection<Instance> instances) {
         Set<Instance> removalBatch = getRemovalBatch(instances);
+        Map<Instance, List<ReferenceRT>> referencesByTarget = new HashMap<>();
+        for (Instance instance : instances) {
+            for (ReferenceRT ref : instance.getOutgoingReferences()) {
+                referencesByTarget.computeIfAbsent(ref.target(), k -> new ArrayList<>()).add(ref);
+            }
+        }
         for (Instance toRemove : removalBatch) {
-            remove0(toRemove, removalBatch);
+            remove0(toRemove, removalBatch, referencesByTarget);
         }
     }
 
     public boolean remove(Instance instance) {
-        if (removed.contains(instance)) {
+        if (instance.isRemoved()) {
             throw new InternalException("Instance " + instance + " is already removed");
         }
         batchRemove(List.of(instance));
         return true;
     }
 
-    private void remove0(Instance instance, Set<Instance> removalBatch) {
-        if (!instances.contains(instance)) {
+    private void remove0(Instance instance, Set<Instance> removalBatch, Map<Instance, List<ReferenceRT>> referencesByTarget) {
+        if (instance.isRemoved()) {
             return;
         }
         if (instance.getParent() != null && !removalBatch.contains(instance.getParent())) {
@@ -358,8 +395,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         } else {
                             throw new BusinessException(
                                     ErrorCode.STRONG_REFS_PREVENT_REMOVAL2,
-                                    instance,
-                                    classParent
+                                    instance.getQualifiedTitle(),
+                                    classParent.getQualifiedTitle()
                             );
                         }
                     }
@@ -371,29 +408,20 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             }
         }
         Set<ReferenceRT> refsOutsideOfRemoval = NncUtils.filterUnique(
-                instance.getIncomingReferences(), r -> !removalBatch.contains(r.source())
+                referencesByTarget.get(instance), ref -> !removalBatch.contains(ref.source())
         );
         ReferenceRT strongRef;
         if ((strongRef = NncUtils.find(refsOutsideOfRemoval, ReferenceRT::isStrong)) != null) {
-            throw BusinessException.strongReferencesPreventRemoval(Map.of(strongRef.source(), instance));
+            throw BusinessException.strongReferencesPreventRemoval(strongRef.source(), instance);
         }
         new ArrayList<>(refsOutsideOfRemoval).forEach(ReferenceRT::remove);
-        instances.remove(instance);
-        removed.add(instance);
-        if (instance.getTmpId() != null) {
-            tmpId2Instance.remove(instance.getTmpId());
-        }
-        if (instance.getId() != null) {
-            instanceMap.remove(instance.getId());
-            removedInstanceMap.put(instance.getId(), instance);
-        }
+        instance.setRemoved();
         if (instance instanceof ClassInstance classInstance) {
             removeFromMemIndex(classInstance);
         }
         for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
-            if (!removalBatch.contains(ref.target())) {
+            if (!removalBatch.contains(ref.target()))
                 ref.clear();
-            }
         }
         for (Consumer<Instance> removalListener : removalListeners) {
             removalListener.accept(instance);
@@ -429,6 +457,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
+    @SuppressWarnings({"unused", "CommentedOutCode"})
     private void createReferenceCleanupJob(Instance instance) {
 //        if (createJob != null && isPersisted(instance)) {
 //            createJob.accept(new ReferenceCleanupTask(
@@ -439,34 +468,23 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        }
     }
 
-    @Override
-    public boolean isPersistedInstance(Instance instance) {
-        return !isNewInstance(instance);
-//        if (instance.getId() == null) {
-//            return false;
-//        }
-//        return isPersisted(instance.getId());
-    }
-
-//    protected boolean isPersisted(long id) {
-//        return true;
-//    }
-
     public void bind(Instance instance) {
+        NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemeral instance");
+        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
         NncUtils.requireNull(instance.getId(), "Can not bind a persisted instance");
-        NncUtils.requireFalse(removed.contains(instance),
+        NncUtils.requireFalse(instance.isRemoved(),
                 () -> new InternalException("Can not bind instance " + instance + " because it's already removed. " +
                         "See issue 0001"));
-        for (Instance inst : getAllNewInstances(List.of(instance))) {
+        for (Instance inst : crawNewInstances(List.of(instance))) {
             if (inst.getId() == null) {
                 add(inst);
             }
         }
     }
 
-    protected void rebind() {
-        try (var entry = getProfiler().enter("rebind")) {
-            var newInstances = getAllNewInstances(instances);
+    protected void craw() {
+        try (var entry = getProfiler().enter("craw")) {
+            var newInstances = crawNewInstances(this);
             entry.addMessage("numNewInstances", newInstances.size());
             for (Instance inst : newInstances) {
                 if (inst.getId() == null && !containsInstance(inst)) {
@@ -477,18 +495,22 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void add(Instance instance) {
-        NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemeral instance");
-        NncUtils.requireFalse(instance.isValue(), "Can not add a value instance");
-        NncUtils.requireFalse(removed.contains(instance),
-                () -> new InternalException(String.format("Trying to add a removed instance: %d", instance.getId())));
-        instances.add(instance);
+        NncUtils.requireFalse(instance.isRemoved(),
+                () -> new InternalException(String.format("Can not add a removed instance: %d", instance.getId())));
+        NncUtils.requireTrue(instance.getContext() == null
+                && instance.getNext() == null && instance.getPrev() == null);
+        if (tail == null)
+            head = tail = instance;
+        else {
+            tail.insertAfter(instance);
+            tail = instance;
+        }
+        instance.setContext(this);
         if (instance.getTmpId() != null) {
             tmpId2Instance.put(instance.getTmpId(), instance);
         }
         if (instance.getId() != null) {
             instanceMap.put(instance.getId(), instance);
-        } else {
-            newInstances.add(instance);
         }
     }
 
@@ -501,11 +523,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         for (Consumer<Instance> listener : initializationListeners) {
             listener.accept(instance);
         }
-    }
-
-    @Override
-    public boolean isNewInstance(Instance instance) {
-        return newInstances.contains(instance);
     }
 
     @SuppressWarnings("unused")
@@ -528,25 +545,25 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    private List<Instance> getAllNewInstances(Collection<Instance> instances) {
-        try(var entry = getProfiler().enter("getAllNewInstances")) {
+    private List<Instance> crawNewInstances(Iterable<Instance> instances) {
+        try (var entry = getProfiler().enter("getAllNewInstances")) {
             var result = new ArrayList<Instance>();
             var visitor = new GraphVisitor() {
                 @Override
                 public void visitInstance(Instance instance) {
-                    if(!EntityUtils.isModelInitialized(instance))
+                    if (!instance.isInitialized())
                         return;
-                    if(parent != null && parent.containsInstance(instance))
+                    if (parent != null && parent.containsInstance(instance))
                         return;
                     if ((instance instanceof ClassInstance || instance instanceof ArrayInstance)
-                            && !instance.isValue() && !containsInstance(instance)) {
+                            && !containsInstance(instance)) {
                         result.add(instance);
                     }
                     super.visitInstance(instance);
                 }
             };
             for (Instance instance : instances) {
-                if(EntityUtils.isModelInitialized(instance))
+                if (instance.isInitialized())
                     visitor.visit(instance);
             }
             entry.addMessage("numCalls", visitor.numCalls);
@@ -554,72 +571,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    protected void clearStaleReferences(InstancePO instancePO) {
-        Type type = getType(instancePO.getTypeId());
-        if (type instanceof ClassType classType) {
-            clearStaleReferencesForObject(instancePO, classType);
-        } else if (type instanceof ArrayType arrayType) {
-            clearStaleReferencesForArray((InstanceArrayPO) instancePO, arrayType);
-        }
-    }
-
-    private void clearStaleReferencesForObject(InstancePO instancePO, ClassType type) {
-        for (Field field : type.getAllFields()) {
-            boolean fieldIsRef = field.isReference();
-            long declaringTypeId = field.getDeclaringType().getIdRequired();
-            Object fieldValue = instancePO.get(declaringTypeId, field.getColumnName());
-            Long targetId = extractId(fieldValue, fieldIsRef);
-            Instance removed;
-            if (field.isNotNull() && (removed = removedInstanceMap.get(targetId)) != null) {
-                throw BusinessException.strongReferencesPreventRemovalFromPO(Map.of(instancePO, removed));
-            }
-            if (targetId != null && !checkAlive(targetId)) {
-                instancePO.set(declaringTypeId, field.getColumnName(), null);
-            }
-        }
-    }
-
-    private void clearStaleReferencesForArray(InstanceArrayPO arrayPO, ArrayType arrayType) {
-        if (arrayType.getElementType().isPrimitive()) {
-            return;
-        }
-        boolean elementIsRef = arrayType.getElementType().isReference();
-        List<Object> elements = arrayPO.getElements();
-        List<Object> newElements = new ArrayList<>();
-        for (Object element : elements) {
-            Long targetId = extractId(element, elementIsRef);
-            Instance removed;
-            if ((removed = removedInstanceMap.get(targetId)) != null) {
-                throw BusinessException.strongReferencesPreventRemovalFromPO(Map.of(arrayPO, removed));
-            }
-            if (targetId != null && checkAlive(targetId)) {
-                newElements.add(element);
-            }
-        }
-        arrayPO.setElements(newElements);
-    }
-
-    private boolean checkAlive(long id) {
-        return !removedInstanceMap.containsKey(id) &&
-                (parent != null && parent.containsId(id) || checkAliveInStore(id));
-    }
-
-    protected abstract boolean checkAliveInStore(long id);
-
-    private Long extractId(Object fieldValue, boolean isRef) {
-        if (isRef && (fieldValue instanceof Long id)) {
-            return id;
-        }
-        if (fieldValue instanceof IdentityPO identityPO) {
-            return identityPO.id();
-        }
-        return null;
-    }
-
     private boolean isIdInParent(long id) {
         return parent != null && parent.containsId(id);
     }
-
 
     @Override
     public List<Instance> getByReferenceTargetId(long targetId, Instance startExclusive, long limit) {
@@ -670,7 +624,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             startExclusive = InstanceUtils.nullInstance();
         }
         List<InstancePO> instancePOs = loadByType(new LoadByTypeRequest(type, startExclusive, limit));
-        List<Instance> persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getIdRequired()));
+        List<Instance> persistedResult = NncUtils.map(instancePOs, instancePO -> get(instancePO.getId()));
         if (persistedResult.size() >= limit || persistedOnly) {
             return persistedResult;
         }
@@ -684,7 +638,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit, Set<Long> persistedIds) {
         List<Instance> typeInstances = NncUtils.filter(
-                new ArrayList<>(instances),
+                this,
                 i -> type.isInstance(i) && !persistedIds.contains(i.getId())
         );
         if (startExclusive.isNull()) {
@@ -705,13 +659,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 instanceStore.scan(List.of(
                         new ScanQuery(startExclusive.isNull() ? 0L : startExclusive.getIdRequired() + 1L, limit)
                 ), this),
-                instancePO -> get(instancePO.getIdRequired())
+                instancePO -> get(instancePO.getId())
         );
     }
 
     @Override
     public boolean existsInstances(Type type, boolean persistedOnly) {
-        if (NncUtils.anyMatch(instances, i -> type.isInstance(i) && (!persistedOnly || isPersistedInstance(i)))) {
+        if (NncUtils.anyMatch(this, i -> type.isInstance(i) && (!persistedOnly || i.isPersisted()))) {
             return true;
         }
         return type.getId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
@@ -744,7 +698,28 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void increaseVersionsForAll() {
-        instances.forEach(Instance::incVersion);
+        for (Instance instance : this)
+            instance.incVersion();
     }
 
+    @NotNull
+    @Override
+    public Iterator<Instance> iterator() {
+        return new Iterator<>() {
+
+            Instance current = head;
+
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+
+            @Override
+            public Instance next() {
+                var i = current;
+                current = i.getNext();
+                return i;
+            }
+        };
+    }
 }

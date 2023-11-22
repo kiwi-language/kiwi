@@ -4,6 +4,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 import tech.metavm.util.Password;
+import tech.metavm.util.WireTypes;
 
 import java.util.Date;
 
@@ -57,7 +58,7 @@ public enum PrimitiveKind {
         return NncUtils.findRequired(values(), v -> v.javaClass == javaClass);
     }
 
-    public int getCode() {
+    public int code() {
         return code;
     }
 

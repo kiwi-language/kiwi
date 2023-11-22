@@ -14,7 +14,7 @@ public class FieldValueDTOTest extends TestCase {
     public static final Logger LOGGER = LoggerFactory.getLogger(FieldValueDTOTest.class);
 
     public void testToJSON() {
-        ValueDTO value = ValueDTO.constValue(new PrimitiveFieldValue("", PrimitiveKind.LONG.getCode(), 1));
+        ValueDTO value = ValueDTO.constValue(new PrimitiveFieldValue("", PrimitiveKind.LONG.code(), 1));
         ValueDTO recoveredValue = TestUtils.readJSON(ValueDTO.class, TestUtils.toJSONString(value));
         MatcherAssert.assertThat(recoveredValue, PojoMatcher.of(value));
 //        TestUtils.logJSON(LOGGER, value);

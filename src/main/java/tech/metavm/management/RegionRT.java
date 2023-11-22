@@ -13,9 +13,9 @@ public class RegionRT {
     public RegionRT(RegionPO regionPO) {
         this(
                 TypeCategory.getByCode(regionPO.getTypeCategory()),
-                regionPO.getStart(),
-                regionPO.getEnd(),
-                regionPO.getNext()
+                regionPO.getStartId(),
+                regionPO.getEndId(),
+                regionPO.getNextId()
         );
     }
 

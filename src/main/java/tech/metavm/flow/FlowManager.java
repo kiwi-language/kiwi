@@ -6,10 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.common.RefDTO;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.flow.rest.*;
@@ -21,7 +18,6 @@ import tech.metavm.object.type.rest.dto.ClassTypeParam;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
 import tech.metavm.object.type.rest.dto.TypeDTO;
-import tech.metavm.object.version.Versions;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
@@ -42,6 +38,7 @@ public class FlowManager {
         this.contextFactory = contextFactory;
     }
 
+    @Transactional(readOnly = true)
     public GetFlowResponse get(GetFlowRequest request) {
         try (var context = newContext()) {
             Flow flow = context.getEntity(Flow.class, request.id());
@@ -511,7 +508,7 @@ public class FlowManager {
                                     ValueKind.CONSTANT.code(),
                                     new PrimitiveFieldValue(
                                             null,
-                                            PrimitiveKind.BOOLEAN.getCode(),
+                                            PrimitiveKind.BOOLEAN.code(),
                                             true
                                     )
                             ),
@@ -523,7 +520,7 @@ public class FlowManager {
                                     ValueKind.CONSTANT.code(),
                                     new PrimitiveFieldValue(
                                             null,
-                                            PrimitiveKind.BOOLEAN.getCode(),
+                                            PrimitiveKind.BOOLEAN.code(),
                                             true
                                     )
                             ),

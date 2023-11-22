@@ -24,7 +24,7 @@ public class ValueUtil {
             return StandardTypes.getLongType();
         }
         if (isBoolean(value)) {
-            return StandardTypes.getBoolType();
+            return StandardTypes.getBooleanType();
         }
         if (isTime(value)) {
             return StandardTypes.getTimeType();
@@ -56,10 +56,10 @@ public class ValueUtil {
 
     public static boolean isConvertible(Type from, Type to) {
         if (to.isString()) return true;
-        if (from.isInt() && to.isLong()) {
+        if (to.isLong()) {
             return true;
         }
-        return (from.isInt() || from.isLong()) && to.isDouble();
+        return from.isLong() && to.isDouble();
     }
 
     public static Instance convert(Instance instance, Type type) {
@@ -169,7 +169,7 @@ public class ValueUtil {
 
     public static Type getPrimitiveType(Class<?> klass) {
         if (isBoolean(klass)) {
-            return StandardTypes.getBoolType();
+            return StandardTypes.getBooleanType();
         }
         if (isString(klass)) {
             return StandardTypes.getStringType();

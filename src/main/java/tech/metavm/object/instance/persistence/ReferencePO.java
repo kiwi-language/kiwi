@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Objects;
 
 public class ReferencePO {
-    private Long tenantId;
-    private Long sourceId;
-    private Long targetId;
-    private Long fieldId;
-    private Integer kind;
+    private long tenantId;
+    private long sourceId;
+    private long targetId;
+    private long fieldId;
+    private int kind;
 
-    public ReferencePO(Long tenantId, Long sourceId, Long targetId, Long fieldId, Integer kind) {
+    public ReferencePO(long tenantId, long sourceId, long targetId, long fieldId, int kind) {
         this.tenantId = tenantId;
         this.sourceId = sourceId;
         this.targetId = targetId;
@@ -67,7 +67,7 @@ public class ReferencePO {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ReferencePO that = (ReferencePO) o;
-        return Objects.equals(tenantId, that.tenantId) && Objects.equals(sourceId, that.sourceId) && Objects.equals(targetId, that.targetId) && Objects.equals(fieldId, that.fieldId);
+        return tenantId == that.tenantId && sourceId == that.sourceId && targetId == that.targetId && fieldId == that.fieldId;
     }
 
     @Override
@@ -97,13 +97,13 @@ public class ReferencePO {
     }
 
     public static Long convertToRefId(Object fieldValue, boolean isRef) {
-        if(fieldValue == null) {
+        if (fieldValue == null) {
             return null;
         }
-        if(fieldValue instanceof IdentityPO identityPO){
+        if (fieldValue instanceof IdentityPO identityPO) {
             return identityPO.id();
         }
-        if(isRef) {
+        if (isRef) {
             return (Long) fieldValue;
         }
         return null;

@@ -28,7 +28,7 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
 
     public CheckNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value condition, BranchNode exit) {
         super(tmpId, name, null, previous, scope);
-        this.condition = condition;
+        this.condition = addChild(condition, "condition");
         this.exit = exit;
     }
 
@@ -42,7 +42,8 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
     @Override
     protected void setParam(CheckNodeParamDTO param, IEntityContext context) {
         if (param.condition() != null) {
-            condition = ValueFactory.create(param.condition(), getParsingContext(context));
+            condition = addChild(ValueFactory.create(param.condition(), getParsingContext(context)),
+                    "condition");
         }
         if(param.exitRef() != null) {
             exit = context.getEntity(BranchNode.class, param.exitRef());

@@ -1,18 +1,23 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
 import java.util.Objects;
 
+@EntityType("变量路径表达式")
 public class VariablePathExpression extends Expression {
 
+    @EntityField("前缀")
     private final Expression qualifier;
     private final VariableExpression field;
 
-    public VariablePathExpression(Expression qualifier, VariableExpression field) {
-        this.qualifier = qualifier;
+    public VariablePathExpression(@NotNull Expression qualifier, @NotNull VariableExpression field) {
+        this.qualifier = addChild(qualifier.copy(), "qualifier");
         this.field = field;
     }
 

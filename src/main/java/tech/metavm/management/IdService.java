@@ -8,6 +8,7 @@ import tech.metavm.management.persistence.BlockMapper;
 import tech.metavm.management.persistence.BlockPO;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeCategory;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -38,11 +39,13 @@ public class IdService implements EntityIdProvider {
     }
 
     private BlockRT loadBlock(long point) {
-        BlockPO blockPO = NncUtils.requireNonNull(
-                blockMapper.selectByPoint(point),
-                () -> new InternalException("Can not find a block containing id " + point)
-        );
-        return new BlockRT(blockPO);
+        try (var ignored = ContextUtil.getProfiler().enter("IdService.loadBlock")) {
+            BlockPO blockPO = NncUtils.requireNonNull(
+                    blockMapper.selectByPoint(point),
+                    () -> new InternalException("Can not find a block containing id " + point)
+            );
+            return new BlockRT(blockPO);
+        }
     }
 
     public BlockRT getBydId(long id) {
@@ -50,42 +53,46 @@ public class IdService implements EntityIdProvider {
     }
 
     private Map<Long, BlockRT> getActiveBlockMap(long tenantId, Collection<Type> types) {
-        List<BlockRT> blocks = NncUtils.map(
-                blockMapper.selectActive(NncUtils.map(types, Entity::getId)),
-                BlockRT::new
-        );
-        Map<Long, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
-        List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getId()));
-        if(!residualTypes.isEmpty()) {
-            createBlocks(tenantId, residualTypes).forEach(block -> result.put(block.getTypeId(), block));
+        try (var ignored = ContextUtil.getProfiler().enter("IdService.getActiveBlockMap")) {
+            List<BlockRT> blocks = NncUtils.map(
+                    blockMapper.selectActive(NncUtils.map(types, Entity::getId)),
+                    BlockRT::new
+            );
+            Map<Long, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
+            List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getId()));
+            if (!residualTypes.isEmpty()) {
+                createBlocks(tenantId, residualTypes).forEach(block -> result.put(block.getTypeId(), block));
+            }
+            return result;
         }
-        return result;
     }
 
     private List<BlockRT> createBlocks(long tenantId, List<Type> types) {
         Map<TypeCategory, List<Long>> category2types = NncUtils.toMultiMap(types, Type::getCategory, Entity::getId);
         List<BlockRT> blocks = new ArrayList<>();
         category2types.forEach(((typeCategory, typeIds) ->
-            blocks.addAll(createBlocks(tenantId, typeCategory, typeIds))
+                blocks.addAll(createBlocks(tenantId, typeCategory, typeIds))
         ));
         return blocks;
     }
 
     private List<BlockRT> createBlocks(long tenantId, TypeCategory typeCategory, Collection<Long> typeIds) {
-        RegionRT region = regionManager.getRegion(typeCategory);
-        if(region == null) {
-            throw new InternalException("No id region defined for type category: " + typeCategory);
+        try (var ignored = ContextUtil.getProfiler().enter("IdService.createBlocks")) {
+            RegionRT region = regionManager.get(typeCategory);
+            if (region == null) {
+                throw new InternalException("No id region defined for type category: " + typeCategory);
+            }
+            long id = region.getNext();
+            List<BlockRT> blocks = new ArrayList<>();
+            for (Long typeId : typeIds) {
+                BlockRT block = newBlock(id++, tenantId, typeId, id++);
+                id += block.getSize();
+                blocks.add(block);
+            }
+            regionManager.inc(typeCategory, id - region.getNext());
+            blockMapper.batchInsert(NncUtils.map(blocks, BlockRT::toPO));
+            return blocks;
         }
-        long id = region.getNext();
-        List<BlockRT> blocks = new ArrayList<>();
-        for (Long typeId : typeIds) {
-            BlockRT block = newBlock(id++, tenantId, typeId, id++);
-            id += block.getSize();
-            blocks.add(block);
-        }
-        regionManager.inc(typeCategory, id - region.getNext());
-        blockMapper.batchInsert(NncUtils.map(blocks, BlockRT::toPO));
-        return blocks;
     }
 
     private BlockRT newBlock(long id, long tenantId, long typeId, long start) {
@@ -99,9 +106,12 @@ public class IdService implements EntityIdProvider {
     }
 
     private void updateBlocks(Collection<BlockRT> blocks) {
-        blockMapper.batchUpdate(NncUtils.map(blocks, BlockRT::toPO));
+        try (var ignored = ContextUtil.getProfiler().enter("IdService.updateBlocks")) {
+            blockMapper.batchUpdate(NncUtils.map(blocks, BlockRT::toPO));
+        }
     }
 
+    @Transactional
     public Long allocate(long tenantId, Type type) {
         Map<Type, List<Long>> result =
                 allocate(tenantId, Map.of(type, 1));
@@ -119,7 +129,7 @@ public class IdService implements EntityIdProvider {
     }
 
     private Map<Type, List<Long>> allocate0(long tenantId, Map<Type, Integer> typeId2count, int depth) {
-        if(depth > MAX_ALLOCATION_RECURSION_DEPTH) {
+        if (depth > MAX_ALLOCATION_RECURSION_DEPTH) {
             throw new InternalException("Allocation recursion depth exceeds maximum: "
                     + MAX_ALLOCATION_RECURSION_DEPTH);
         }
@@ -132,14 +142,14 @@ public class IdService implements EntityIdProvider {
             NncUtils.requireNonNull(block, "Active block not found for type: " + type);
             Integer allocateCount = Math.min(count, block.available());
             result.put(type, block.allocate(count));
-            if(allocateCount < count) {
+            if (allocateCount < count) {
                 residual.put(type, count - allocateCount);
             }
         });
         updateBlocks(activeBlockMap.values());
-        if(!residual.isEmpty()) {
+        if (!residual.isEmpty()) {
             allocate0(tenantId, residual, depth + 1).forEach((typeId, ids) ->
-                result.compute(typeId, (k, old) -> NncUtils.union(old, ids))
+                    result.compute(typeId, (k, old) -> NncUtils.union(old, ids))
             );
         }
         return result;

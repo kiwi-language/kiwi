@@ -12,6 +12,8 @@ import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
+import java.util.List;
+
 @Component
 public class UserManager {
 
@@ -32,7 +34,9 @@ public class UserManager {
                     page,
                     pageSize,
                     true,
-                    false
+                    false,
+                    List.of(),
+                    List.of()
             );
             Page<UserRT> dataPage = instanceQueryService.query(UserRT.class, query, context);
             return new Page<>(

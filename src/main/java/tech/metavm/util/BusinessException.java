@@ -28,18 +28,8 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.INVALID_PARAMETERS, detail);
     }
 
-    public static BusinessException strongReferencesPreventRemoval(Map<Instance, Instance> refMap) {
-        var entry = refMap.entrySet().iterator().next();
-        var source = entry.getKey();
-        var target = entry.getValue();
-        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target, source);
-    }
-
-    public static BusinessException strongReferencesPreventRemovalFromPO(Map<InstancePO, Instance> refMap) {
-        var entry = refMap.entrySet().iterator().next();
-        var source = entry.getKey().getTitle();
-        var target = entry.getValue();
-        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target, source);
+    public static BusinessException strongReferencesPreventRemoval(Instance source, Instance target) {
+        return new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, target.getQualifiedTitle(), source.getQualifiedTitle());
     }
 
     public static BusinessException invalidType(TypeDTO typeDTO, String reason) {

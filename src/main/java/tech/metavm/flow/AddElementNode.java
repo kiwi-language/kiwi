@@ -31,8 +31,8 @@ public class AddElementNode extends NodeRT<AddElementParamDTO> {
     public AddElementNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value array, Value element) {
         super(tmpId, name, null, previous, scope);
         check(array, element);
-        this.array = array;
-        this.element = element;
+        this.array = addChild(array, "array");
+        this.element = addChild(element, "element");
     }
 
     private void check(Value array, Value element) {
@@ -65,8 +65,8 @@ public class AddElementNode extends NodeRT<AddElementParamDTO> {
             element = ValueFactory.create(param.element(), parsingContext);
         }
         check(array, element);
-        this.array = array;
-        this.element = element;
+        this.array = addChild(array, "array");
+        this.element = addChild(element, "element");
     }
 
     public Value getArray() {

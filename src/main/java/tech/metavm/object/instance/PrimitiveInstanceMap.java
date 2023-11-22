@@ -19,18 +19,18 @@ public class PrimitiveInstanceMap implements ModelInstanceMap{
 
     @Override
     public Instance getInstance(Object model) {
-        return InstanceUtils.serializeEntityPrimitive(model, defContext::getType);
+        return InstanceUtils.serializePrimitive(model, defContext::getType);
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance) {
-        return getModel(klass, instance, null);
+    public <T> T getEntity(Class<T> klass, Instance instance) {
+        return getEntity(klass, instance, null);
     }
 
     @Override
-    public <T> T getModel(Class<T> klass, Instance instance, @Nullable ModelDef<?, ?> def) {
+    public <T> T getEntity(Class<T> klass, Instance instance, @Nullable ModelDef<T, ?> def) {
         if(instance instanceof PrimitiveInstance primitiveInstance)
-            return klass.cast(InstanceUtils.deserializeEntityPrimitive(primitiveInstance, klass));
+            return klass.cast(InstanceUtils.deserializePrimitive(primitiveInstance, klass));
         else
             throw new InternalException(String.format("Can not get model for instance %s", instance));
     }

@@ -41,6 +41,7 @@ public class MockRegistry {
         NncUtils.requireNonNull(idProvider, "idProvider required");
         ID_PROVIDER = idProvider;
         CONTEXT_FACTORY = new InstanceContextFactory(instanceStore);
+        CONTEXT_FACTORY.setIdService(idProvider);
         INSTANCE_STORE = instanceStore;
         INSTANCE_CONTEXT = (InstanceContext)
                 new InstanceContextBuilder(instanceStore, EXECUTOR, null, idProvider)
@@ -105,11 +106,15 @@ public class MockRegistry {
         Baz baz = new Baz(List.of(
                 new Bar("Bar001")
         ));
-        return getEntityDef(Baz.class).createInstance(baz, MODEL_INSTANCE_MAP);
+        return getEntityDef(Baz.class).createInstance(baz, MODEL_INSTANCE_MAP, null);
     }
 
     public static ClassInstance getNewFooInstance(String fooName, String barCode) {
         return getFooInstance(fooName, barCode, false);
+    }
+
+    public static MemInstanceStore getInstanceStore() {
+        return INSTANCE_STORE;
     }
 
     public static ClassInstance getFooInstance(String fooName, String barCode, boolean initId) {
@@ -126,7 +131,7 @@ public class MockRegistry {
                         )
                 )
         );
-        ClassInstance instance = getEntityDef(Foo.class).createInstance(foo, MODEL_INSTANCE_MAP);
+        ClassInstance instance = getEntityDef(Foo.class).createInstance(foo, MODEL_INSTANCE_MAP, null);
         if (initId) {
             initInstanceIds(instance);
         }
@@ -148,7 +153,7 @@ public class MockRegistry {
 
     private static ClassInstance getCouponInstance(boolean initId) {
         Coupon coupon = getCoupon();
-        ClassInstance instance = getEntityDef(Coupon.class).createInstance(coupon, MODEL_INSTANCE_MAP);
+        ClassInstance instance = getEntityDef(Coupon.class).createInstance(coupon, MODEL_INSTANCE_MAP, null);
         if (initId) {
             initInstanceIds(instance);
         }
@@ -229,7 +234,7 @@ public class MockRegistry {
 
     public static Instance getInstance(Object model, ModelInstanceMap modelInstanceMap) {
         NncUtils.requireNonNull(model);
-        return getDef(model.getClass()).createInstanceHelper(model, modelInstanceMap);
+        return getDef(model.getClass()).createInstanceHelper(model, modelInstanceMap, null);
     }
 
     public static Type getType(Class<?> javaClass) {

@@ -13,13 +13,13 @@ public final class DefaultTypeResolver implements TypeResolver {
 
     @Override
     public Type getType(InstanceContext context, long typeId) {
-        if (resolving.contains(typeId)) {
-            throw new InternalException("Fail to resolve root Type (id:" + typeId + "). The instance of the root type " +
-                    "should be preloaded.");
-        }
-        resolving.add(typeId);
+//        if (resolving.contains(typeId)) {
+//            throw new InternalException("Fail to resolve root Type (id:" + typeId + "). The instance of the root type " +
+//                    "should be preloaded.");
+//        }
+//        resolving.add(typeId);
         Type type = context.getEntityContext().getType(typeId);
-        resolving.remove(typeId);
+//        resolving.remove(typeId);
         return type;
     }
 }

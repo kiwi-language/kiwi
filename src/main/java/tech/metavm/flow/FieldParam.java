@@ -17,13 +17,11 @@ import java.util.Objects;
 public class FieldParam extends Entity {
 
     public static FieldParam create(FieldParamDTO fieldParamDTO,
-                                    EntityParentRef parentRef,
                                     ParsingContext parsingContext) {
         var entityContext = NncUtils.requireNonNull(parsingContext.getEntityContext());
         return new FieldParam(
                 entityContext.getField(fieldParamDTO.fieldRef()),
-                ValueFactory.create(fieldParamDTO.value(), parsingContext),
-                parentRef
+                ValueFactory.create(fieldParamDTO.value(), parsingContext)
         );
     }
 
@@ -37,12 +35,8 @@ public class FieldParam extends Entity {
     }
 
     public FieldParam(Field field, Value value) {
-        this(field, value, null);
-    }
-
-    public FieldParam(Field field, Value value, EntityParentRef parentRef) {
         this.field = field;
-        this.value = value;
+        setValue(value);
     }
 
     public Field getField() {
@@ -54,7 +48,7 @@ public class FieldParam extends Entity {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public FieldParamDTO toDTO(boolean persisting) {
@@ -70,7 +64,7 @@ public class FieldParam extends Entity {
             var value = ValueFactory.create(fieldParamDTO.value(), parsingContext);
             NncUtils.assertTrue(field.getType().isAssignableFrom(value.getType()),
                     ErrorCode.INCORRECT_FIELD_VALUE, field.getName());
-            this.value = value;
+            setValue(value);
         }
     }
 

@@ -4,6 +4,8 @@ import tech.metavm.object.instance.persistence.PasswordPO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.util.InstanceOutput;
+import tech.metavm.util.WireTypes;
 
 public class PasswordInstance extends PrimitiveInstance {
 
@@ -20,15 +22,25 @@ public class PasswordInstance extends PrimitiveInstance {
     }
 
     @Override
+    public int getWireType() {
+        return WireTypes.PASSWORD;
+    }
+
+    @Override
     public PasswordPO toColumnValue() {
         return new PasswordPO(value);
+    }
+
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeString(value);
     }
 
     @Override
     public PrimitiveFieldValue toFieldValueDTO() {
         return new PrimitiveFieldValue(
                 "******",
-                PrimitiveKind.PASSWORD.getCode(),
+                PrimitiveKind.PASSWORD.code(),
                 null
         );
     }

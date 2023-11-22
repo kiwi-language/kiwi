@@ -1,8 +1,10 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.WireTypes;
 
 public class StringInstance extends PrimitiveInstance {
 
@@ -16,6 +18,11 @@ public class StringInstance extends PrimitiveInstance {
     @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public int getWireType() {
+        return WireTypes.STRING;
     }
 
     @Override
@@ -37,6 +44,11 @@ public class StringInstance extends PrimitiveInstance {
 
     public BooleanInstance isBlank() {
         return InstanceUtils.createBoolean(NncUtils.isBlank(value));
+    }
+
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeString(value);
     }
 
     @Override

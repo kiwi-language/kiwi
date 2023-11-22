@@ -8,6 +8,8 @@ import java.util.function.Predicate;
 
 public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
 
+    public static final int BATCH_SIZE = 3000;
+
     public static <T> ChangeList<T> empty() {
         return new ChangeList<>(List.of(), List.of(), List.of());
     }
@@ -20,15 +22,15 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         return new ChangeList<>(List.of(), List.of(), deletes);
     }
 
-    public static <T,K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping) {
+    public static <T, K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping) {
         return build(beforeList, afterList, keyMapping, Objects::equals);
     }
 
-    public static <T,K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping, BiPredicate<T, T> equals) {
-        if(beforeList == null) {
+    public static <T, K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping, BiPredicate<T, T> equals) {
+        if (beforeList == null) {
             beforeList = List.of();
         }
-        if(afterList == null) {
+        if (afterList == null) {
             afterList = List.of();
         }
         List<T> deleted = new ArrayList<>();
@@ -38,7 +40,7 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         for (T before : beforeList) {
             K oldKey = keyMapping.apply(before);
             beforeMap.put(oldKey, before);
-            if(!newKeys.contains(oldKey)) {
+            if (!newKeys.contains(oldKey)) {
                 deleted.add(before);
             }
         }
@@ -47,12 +49,11 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         for (T after : afterList) {
             K key = keyMapping.apply(after);
             T before;
-            if((before = beforeMap.get(key)) != null) {
-                if(!equals.test(before, after)) {
+            if ((before = beforeMap.get(key)) != null) {
+                if (!equals.test(before, after)) {
                     updated.add(after);
                 }
-            }
-            else {
+            } else {
                 inserted.add(after);
             }
         }
@@ -67,10 +68,10 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         if (NncUtils.isNotEmpty(inserts)) {
             return inserts.get(0);
         }
-        if(NncUtils.isNotEmpty(updates)) {
+        if (NncUtils.isNotEmpty(updates)) {
             return updates.get(0);
         }
-        if(NncUtils.isNotEmpty(deletes)) {
+        if (NncUtils.isNotEmpty(deletes)) {
             return deletes.get(0);
         }
         throw new InternalException("Empty change list");
@@ -81,14 +82,22 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
             Consumer<List<T>> updatesConsumer,
             Consumer<List<T>> deletesConsumer
     ) {
-        if(NncUtils.isNotEmpty(inserts)) {
-            insertsConsumer.accept(inserts);
+        if (NncUtils.isNotEmpty(inserts)) {
+            doInBatch(inserts, insertsConsumer);
         }
-        if(NncUtils.isNotEmpty(updates)) {
-            updatesConsumer.accept(updates);
+        if (NncUtils.isNotEmpty(updates)) {
+            doInBatch(updates, updatesConsumer);
         }
-        if(NncUtils.isNotEmpty(deletes)) {
-            deletesConsumer.accept(deletes);
+        if (NncUtils.isNotEmpty(deletes)) {
+            doInBatch(deletes, deletesConsumer);
+        }
+    }
+
+    private void doInBatch(List<T> records, Consumer<List<T>> action) {
+        for (int i = 0; i * BATCH_SIZE < records.size(); i++) {
+            action.accept(
+                    records.subList(i * BATCH_SIZE, Math.min((i + 1) * BATCH_SIZE, records.size()))
+            );
         }
     }
 

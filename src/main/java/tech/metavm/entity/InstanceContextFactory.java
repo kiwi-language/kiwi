@@ -3,8 +3,10 @@ package tech.metavm.entity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.object.instance.ContextPlugin;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
@@ -20,8 +22,6 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     private static volatile IInstanceContext STD_CONTEXT;
 
-    private static final long DEFAULT_PROFILE_LOG_THRESHOLD = 50L;
-
     private EntityIdProvider idService;
 
     private final IInstanceStore instanceStore;
@@ -31,6 +31,8 @@ public class InstanceContextFactory implements IInstanceContextFactory {
     private ApplicationContext applicationContext;
 
     private boolean defaultAsyncProcessing = false;
+
+    private Cache cache;
 
     private final Executor executor = new ThreadPoolExecutor(
             16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000)
@@ -42,12 +44,18 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     @Override
     public IInstanceContext newContext(long tenantId) {
-        return newContext(tenantId, defaultAsyncProcessing, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
+
+        return newContext(tenantId, defaultAsyncProcessing, isReadonlyTransaction(), idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
     }
 
     @Override
     public IInstanceContext newContext(long tenantId, boolean asyncProcessLogs) {
-        return newContext(tenantId, asyncProcessLogs, idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
+        return newContext(tenantId, asyncProcessLogs, isReadonlyTransaction(), idService, STD_CONTEXT, ModelDefRegistry.getDefContext());
+    }
+
+    private boolean isReadonlyTransaction() {
+        return  !TransactionSynchronizationManager.isActualTransactionActive()
+                || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
     }
 
     public IEntityContext newEntityContext(long tenantId) {
@@ -62,11 +70,12 @@ public class InstanceContextFactory implements IInstanceContextFactory {
     public InstanceContextBuilder newBuilder() {
         return new InstanceContextBuilder(instanceStore, executor, STD_CONTEXT, idService)
                 .plugins(plugins)
-                .profileLogThreshold(DEFAULT_PROFILE_LOG_THRESHOLD);
+                .cache(cache);
     }
 
     public IInstanceContext newContext(long tenantId,
                                       boolean asyncProcessLogs,
+                                      boolean readonly,
                                       EntityIdProvider idProvider,
                                       IInstanceContext parent,
                                       DefContext defContext) {
@@ -75,6 +84,7 @@ public class InstanceContextFactory implements IInstanceContextFactory {
                 .asyncLogProcessing(asyncProcessLogs)
                 .idProvider(idProvider)
                 .parent(parent)
+                .readonly(readonly)
                 .defContext(defContext)
                 .buildInstanceContext();
     }
@@ -93,6 +103,11 @@ public class InstanceContextFactory implements IInstanceContextFactory {
     public InstanceContextFactory setPlugins(List<ContextPlugin> plugins) {
         this.plugins = plugins;
         return this;
+    }
+
+    @Autowired
+    public void setCache(Cache cache) {
+        this.cache = cache;
     }
 
     public IInstanceContext newContext() {

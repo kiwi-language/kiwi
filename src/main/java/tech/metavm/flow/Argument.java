@@ -16,7 +16,7 @@ public class Argument extends Element {
     public Argument(Long tmpId, Parameter parameter, Value value) {
         super(tmpId);
         this.parameter = parameter;
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public Parameter getParameter() {
@@ -28,7 +28,7 @@ public class Argument extends Element {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public Instance evaluate(EvaluationContext evaluationContext) {

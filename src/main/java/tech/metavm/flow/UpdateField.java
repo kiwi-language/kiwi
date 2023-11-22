@@ -24,7 +24,7 @@ public class UpdateField extends Entity {
     public UpdateField(Field field, UpdateOp op, Value value) {
         this.field = field;
         this.op = op;
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public void execute(@Nullable ClassInstance instance, EvaluationContext context, boolean inConstructor, IInstanceContext instanceContext) {
@@ -76,7 +76,7 @@ public class UpdateField extends Entity {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public void setOp(UpdateOp op) {

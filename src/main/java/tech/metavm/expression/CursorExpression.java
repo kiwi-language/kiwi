@@ -1,6 +1,8 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
@@ -9,14 +11,16 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+@EntityType("游标表达式")
 public class CursorExpression extends Expression{
 
+    @EntityField("数组")
     private final Expression array;
     @Nullable
     private final String alias;
 
     public CursorExpression(Expression array, @Nullable String alias) {
-        this.array = array;
+        this.array = NncUtils.requireNonNull(array);
         this.alias = alias;
     }
 

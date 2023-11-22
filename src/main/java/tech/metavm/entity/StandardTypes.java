@@ -1,16 +1,36 @@
-package tech.metavm.object.type;
+package tech.metavm.entity;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
 public class StandardTypes {
+
+    public static PrimitiveType longType;
+    public static PrimitiveType doubleType;
+    public static PrimitiveType booleanType;
+    public static PrimitiveType stringType;
+    public static PrimitiveType passwordType;
+    public static PrimitiveType timeType;
+    public static PrimitiveType nullType;
+    static PrimitiveType voidType;
+    static NothingType nothingType;
+    static ObjectType objectType;
+    static ClassType enumType;
+    static ClassType throwableType;
+    static ClassType exceptionType;
+    static ClassType runtimeExceptionType;
+    static ClassType entityType;
+    static ClassType recordType;
+    static ClassType collectionType;
+    static ClassType setType;
+    static ClassType listType;
+    static ClassType mapType;
+    static ClassType iteratorType;
+    static ClassType iteratorImplType;
 
     private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
 
@@ -23,11 +43,11 @@ public class StandardTypes {
     }
 
     public static ObjectType getObjectType() {
-        return (ObjectType) ModelDefRegistry.getType(Object.class);
+        return objectType;
     }
 
     public static UnionType getNullableObjectType() {
-        return ModelDefRegistry.getDefContext().getUnionType(Set.of(getObjectType(), getNullType()));
+        return (UnionType) ModelDefRegistry.getType(BiUnion.createNullableType(Object.class));
     }
 
     public static Type getObjectType(boolean nullable) {
@@ -35,7 +55,7 @@ public class StandardTypes {
     }
 
     public static ClassType getEnumType() {
-        return (ClassType) ModelDefRegistry.getType(Enum.class);
+        return enumType;
     }
 
     public static ClassType getParameterizedEnumType() {
@@ -46,43 +66,43 @@ public class StandardTypes {
     }
 
     public static ClassType getEntityType() {
-        return (ClassType) ModelDefRegistry.getType(Entity.class);
+        return entityType;
     }
 
     public static ClassType getRecordType() {
-        return (ClassType) ModelDefRegistry.getType(Record.class);
+        return recordType;
     }
 
-    public static PrimitiveType getBoolType() {
-        return (PrimitiveType) getType(Boolean.class);
+    public static PrimitiveType getBooleanType() {
+        return booleanType;
     }
 
     public static PrimitiveType getLongType() {
-        return (PrimitiveType) getType(Long.class);
+        return longType;
     }
 
     public static PrimitiveType getStringType() {
-        return (PrimitiveType) getType(String.class);
+        return stringType;
     }
 
     public static PrimitiveType getTimeType() {
-        return (PrimitiveType) getType(Date.class);
+        return timeType;
     }
 
     public static PrimitiveType getNullType() {
-        return (PrimitiveType) getType(Null.class);
+        return nullType;
     }
 
     public static PrimitiveType getVoidType() {
-        return (PrimitiveType) getType(Void.class);
+        return voidType;
     }
 
     public static PrimitiveType getPasswordType() {
-        return (PrimitiveType) getType(Password.class);
+        return passwordType;
     }
 
     public static PrimitiveType getDoubleType() {
-        return (PrimitiveType) getType(Double.class);
+        return doubleType;
     }
 
     public static ArrayType getObjectArrayType() {
@@ -106,39 +126,39 @@ public class StandardTypes {
     }
 
     public static ClassType getListType() {
-        return getClassType(MetaList.class);
+        return listType;
     }
 
     public static ClassType getSetType() {
-        return getClassType(MetaSet.class);
+        return setType;
     }
 
     public static ClassType getMapType() {
-        return getClassType(MetaMap.class);
+        return mapType;
     }
 
     public static ClassType getCollectionType() {
-        return getClassType(Collection.class);
+        return collectionType;
     }
 
     public static ClassType getIteratorType() {
-        return getClassType(MetaIterator.class);
+        return iteratorType;
     }
 
     public static ClassType getIteratorImplType() {
-        return getClassType(IteratorImpl.class);
+        return iteratorImplType;
     }
 
     public static ClassType getThrowableType() {
-        return getClassType(Throwable.class);
+        return throwableType;
     }
 
     public static ClassType getExceptionType() {
-        return getClassType(Exception.class);
+        return exceptionType;
     }
 
     public static ClassType getRuntimeExceptionType() {
-        return getClassType(RuntimeException.class);
+        return runtimeExceptionType;
     }
 
     public static UnionType getNullableThrowableType() {
@@ -146,13 +166,13 @@ public class StandardTypes {
     }
 
     public static NothingType getNothingType() {
-        return (NothingType) getType(Nothing.class);
+        return nothingType;
     }
 
     public static List<PrimitiveType> getPrimitiveTypes() {
         return List.of(
                 getLongType(), getStringType(), getTimeType(),
-                getDoubleType(), getPasswordType(), getBoolType(), getBoolType()
+                getDoubleType(), getPasswordType(), getBooleanType(), getBooleanType()
         );
     }
 

@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import tech.metavm.entity.Element;
 import tech.metavm.expression.StructuralVisitor;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.MetadataState;
 
 public class FlowChecker extends StructuralVisitor<Boolean> {
 
@@ -18,7 +19,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
     public Boolean visitFlow(Flow flow) {
         this.flow = flow;
         flow.getDeclaringType().clearElementErrors(flow);
-        flow.setError(false);
+        flow.setState(MetadataState.READY);
         super.visitFlow(flow);
         if (flow.isError()) {
             flow.getDeclaringType().addError(
@@ -35,7 +36,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
     public Boolean visitNode(NodeRT<?> node) {
         node.check();
         if (node.getError() != null)
-            flow.setError(true);
+            flow.setState(MetadataState.ERROR);
         super.visitNode(node);
         return node.getError() != null;
     }

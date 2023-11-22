@@ -11,23 +11,30 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 @Order(2)
 public class RequestTimeFilter extends OncePerRequestFilter {
 
+    public static final Set<String> LOG_WHITE_LIST = Set.of(
+            "/flow/execute",
+            "/perf"
+    );
+
     public static final Logger LOGGER = LoggerFactory.getLogger(RequestTimeFilter.class);
 
-    public static final long LOG_PROFILE_THRESHOLD = 0L;
+    public static final long LOG_PROFILE_THRESHOLD = 150L;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        try(var entry = ContextUtil.getProfiler().enter("Request")) {
-            entry.addMessage("uri", request.getRequestURI());
+        try (var entry = ContextUtil.getProfiler().enter("Request")) {
+            entry.addMessage("request", request.getMethod() + " " + request.getRequestURI());
             filterChain.doFilter(request, response);
         }
         var result = ContextUtil.getProfiler().finish();
-        if(result.duration() > LOG_PROFILE_THRESHOLD) {
+        String requestUri = request.getRequestURI();
+        if (result.duration() >= LOG_PROFILE_THRESHOLD) {
             LOGGER.info(result.output());
         }
     }

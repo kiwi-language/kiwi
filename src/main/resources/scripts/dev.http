@@ -5,7 +5,7 @@ POST http://metavm.tech/api/bootstrap/region
 POST http://metavm.tech/api/bootstrap/scheduler
 
 ###
-POST https://metavm.tech/api/bootstrap
+POST https://metavm.tech/api/bootstrap?saveIds=false
 
 ###
 POST https://metavm.tech/api/bootstrap/save
@@ -26,7 +26,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "tenantId": 1000400009,
+  "tenantId": 1006100123,
   "loginName": "admin",
   "password": "123456"
 }

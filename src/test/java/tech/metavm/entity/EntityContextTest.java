@@ -135,7 +135,6 @@ public class EntityContextTest extends TestCase {
         Foo foo = context.getEntity(Foo.class, inst.getIdRequired());
         context.remove(foo);
         Assert.assertFalse(context.containsModel(foo));
-        Assert.assertFalse(context.containsInstance(inst));
         Assert.assertFalse(instanceContext.containsInstance(inst));
         Assert.assertFalse(instanceContext.containsId(inst.getIdRequired()));
     }
@@ -223,7 +222,7 @@ public class EntityContextTest extends TestCase {
         context.bind(foo);
         Instance instance = context.getInstance(foo);
         Assert.assertNotNull(instance);
-        Foo gotFoo = context.getModel(Foo.class, instance);
+        Foo gotFoo = context.getEntity(Foo.class, instance);
         Assert.assertSame(gotFoo, foo);
     }
 
@@ -235,7 +234,7 @@ public class EntityContextTest extends TestCase {
         Assert.assertNotNull(foo);
         Assert.assertEquals(inst.getId(), foo.getId());
 
-        Foo gotFoo = context.getModel(Foo.class, inst);
+        Foo gotFoo = context.getEntity(Foo.class, inst);
         Assert.assertSame(foo, gotFoo);
 
         Instance gotInst = context.getInstance(foo);
@@ -249,8 +248,6 @@ public class EntityContextTest extends TestCase {
         Assert.assertTrue(subContext.containsModel(foo));
         Instance fooInst = subContext.getInstance(foo);
         Assert.assertNotNull(fooInst);
-        Assert.assertTrue(subContext.containsInstance(fooInst));
-        Assert.assertTrue(context.containsInstance(fooInst));
     }
 
     public void testSelectByKey() {
@@ -291,7 +288,7 @@ public class EntityContextTest extends TestCase {
             context.getEntity(Baz.class, fooInst.getIdRequired());
             Assert.fail("Should throw an exception");
         } catch (InternalException e) {
-            Assert.assertEquals(InternalErrorCode.MODEL_TYPE_MISMATCHED, e.getErrorCode());
+            Assert.assertEquals(InternalErrorCode.ENTITY_TYPE_MISMATCH, e.getErrorCode());
         }
     }
 
@@ -359,7 +356,7 @@ public class EntityContextTest extends TestCase {
     }
 
     public void testGetRecord() {
-        Column column = new Column("x1", SQLType.INT64);
+        Column column = Column.create(ColumnKind.INT, 1);
         context.bind(column);
         context.finish();
 

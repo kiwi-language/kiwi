@@ -1,192 +1,174 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.*;
+import tech.metavm.common.ErrorCode;
+import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.instance.persistence.IdentityPO;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.util.IdAndValue;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.instance.persistence.Version;
+import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.util.*;
-
-import static tech.metavm.entity.LoadingOption.ENUM_CONSTANTS_LAZY_LOADING;
 
 public class LoadingBuffer {
 
-    private final List<ClassType> byTypeRequests = new ArrayList<>();
-    private final List<LoadRequest> identityRequests = new ArrayList<>();
-    private final Map<Long, InstancePO> identityResultMap = new HashMap<>();
-    private final Map<ClassType, List<InstancePO>> byTypeResultMap = new HashMap<>();
-    private final Set<Long> loaded = new HashSet<>();
+    private final List<Long> bufferedIds = new ArrayList<>();
+    private final Set<Long> visited = new HashSet<>();
     private final InstanceContext context;
     private final IInstanceStore instanceStore;
-    private final Set<Long> aliveIds = new HashSet<>();
-    private final Map<Long, RangeCache<Long>> rangeCaches = new HashMap<>();
-    private final RangeCache<Long> globalRangeCache = new RangeCache<>(this::loadGlobalRange);
+    private final @Nullable Cache cache;
+    private final Map<Long, Tree> invertedIndex = new HashMap<>();
 
-    public LoadingBuffer(InstanceContext context) {
+    public LoadingBuffer(InstanceContext context, @Nullable Cache cache) {
         this.context = context;
         instanceStore = context.getInstanceStore();
+        this.cache = cache;
     }
 
-    public void load(LoadRequest request) {
-        if (isMissing(request.id())) {
-            identityRequests.add(request);
-        }
+    public boolean buffer(long id) {
+        if (visited.add(id)) {
+            bufferedIds.add(id);
+            return true;
+        } else
+            return false;
     }
 
-    public boolean isMissing(long id) {
-        return !loaded.contains(id);
-    }
-
-    public void preload(long id, InstancePO instancePO) {
-        if (isMissing(id)) {
-            loaded.add(id);
-            identityResultMap.put(id, instancePO);
-        }
-    }
-
-    public void preload(Map<Long, InstancePO> supplierMap) {
-        supplierMap.forEach(this::preload);
-    }
-
-    public InstancePO getInstancePO(long id) {
-        if (!identityResultMap.containsKey(id)) {
-            load(LoadRequest.create(id, ENUM_CONSTANTS_LAZY_LOADING));
-            flush();
-        }
-        return identityResultMap.get(id);
-    }
-
-    public List<InstancePO> flush() {
-        List<InstancePO> results = new ArrayList<>();
-        flushIdRequests(results);
-        flushByTypeRequests(new ArrayList<>());
-        return NncUtils.deduplicate(results, InstancePO::getId);
-    }
-
-    public List<InstancePO> scan(long startId, long limit) {
-        return NncUtils.map(
-                globalRangeCache.query(List.of(new RangeQuery(startId, limit))).values().iterator().next(),
-                identityResultMap::get
+    public Tree getTree(long id) {
+        return NncUtils.requireNonNull(
+                tryGetTree(id),
+                () -> new BusinessException(ErrorCode.INSTANCE_NOT_FOUND, id)
         );
     }
 
-    private RangeCache<Long> getRangeCache(long typeId) {
-        return rangeCaches.computeIfAbsent(typeId, k -> new RangeCache<>(
-                queries -> loadTypeRange(typeId, queries)
-        ));
+    public Tree tryGetTree(long id) {
+        var tree = invertedIndex.get(id);
+        if (tree != null)
+            return tree;
+        buffer(id);
+        flush();
+        tree = invertedIndex.get(id);
+        return tree;
     }
 
-
-    private Map<RangeQuery, List<IdAndValue<Long>>> loadGlobalRange(List<RangeQuery> queries) {
-        List<InstancePO> instancePOS = instanceStore.scan(
-                NncUtils.map(queries, q -> new ScanQuery(q.startId(), q.limit())),
-                context
-        );
-        return buildRangeResult(queries, instancePOS);
-    }
-
-    private Map<RangeQuery, List<IdAndValue<Long>>> loadTypeRange(long typeId, List<RangeQuery> queries) {
-        List<InstancePO> instancePOs = instanceStore.queryByTypeIds(
-                NncUtils.map(queries, q -> new ByTypeQuery(typeId, q.startId(), q.limit())),
-                context
-        );
-        return buildRangeResult(queries, instancePOs);
-    }
-
-    private Map<RangeQuery, List<IdAndValue<Long>>> buildRangeResult(List<RangeQuery> queries, List<InstancePO> instancePOs) {
-        for (InstancePO instancePO : instancePOs) {
-            if (!identityResultMap.containsKey(instancePO.getId())) {
-                identityResultMap.put(instancePO.getId(), instancePO);
-            }
-        }
-        queries = new ArrayList<>(queries);
-        queries.sort(Comparator.comparingLong(RangeQuery::startId));
-        Map<RangeQuery, List<IdAndValue<Long>>> result = new HashMap<>();
-        for (InstancePO instancePO : instancePOs) {
-            int index = NncUtils.binarySearch(queries, instancePO.getId(), (q, id) -> Long.compare(q.startId(), id));
-            RangeQuery query = index >= 0 ? queries.get(index) : queries.get(-index - 1);
-            result.computeIfAbsent(query, k -> new ArrayList<>()).add(
-                    new IdAndValue<>(instancePO.getIdRequired(), instancePO.getId())
-            );
-        }
-        return result;
-    }
-
-    private void flushIdRequests(List<InstancePO> results) {
-        if (identityRequests.isEmpty()) {
+    private void flush() {
+        if (bufferedIds.isEmpty())
             return;
-        }
-        var loaded = loadInstancePOs(identityRequests);
-        results.addAll(loaded);
-        for (InstancePO instancePO : loaded) {
-            identityResultMap.put(instancePO.getId(), instancePO);
-        }
-        identityRequests.clear();
+        loadForest(bufferedIds);
+        bufferedIds.clear();
     }
 
-    private List<InstancePO> loadInstancePOs(List<LoadRequest> requests) {
-        List<InstancePO> instancePOs = instanceStore.load(StoreLoadRequest.fromLoadRequests(requests), context);
-        addAliveIds(instancePOs);
-        return instancePOs;
-    }
-
-    public boolean isAlive(long id) {
-        return identityResultMap.containsKey(id) || aliveIds.contains(id);
-    }
-
-    private void addAliveIds(List<InstancePO> instancePOs) {
-        Set<Long> refIds = new HashSet<>();
-        for (InstancePO instancePO : instancePOs) {
-            if (instancePO instanceof InstanceArrayPO arrayPO) {
-                extractRefIdsFromArray(arrayPO, refIds);
-            } else {
-                extractRefIdsFromObject(instancePO, refIds);
+    private void loadForest(List<Long> ids) {
+        List<Long> misses;
+        if (cache != null) {
+            var rootVersions = instanceStore.getRootVersions(ids, context);
+            var bytes = cache.batchGet(NncUtils.map(rootVersions, Version::getId));
+            misses = new ArrayList<>();
+            for (int i = 0; i < bytes.size(); i++) {
+                var tree = bytes.get(i);
+                var v = rootVersions.get(i);
+                if (tree != null) {
+                    if (ByteUtils.readFirstLong(tree) == v.getVersion()) {
+                        addTree(new Tree(v.getId(), v.getVersion(), tree));
+                        continue;
+                    }
+                }
+                misses.add(v.getId());
+            }
+        } else
+            misses = ids;
+        if (!misses.isEmpty()) {
+            var instancePOs = new HashMap<Long, InstancePO>();
+            for (InstancePO instancePO : instanceStore.loadForest(misses, context)) {
+                instancePOs.put(instancePO.getId(), instancePO);
+            }
+            for (Long id : misses) {
+                var root = instancePOs.get(id);
+                if (root != null)
+                    addTree(buildTree(root, instancePOs));
+            }
+            if (cache != null) {
+                List<KeyValue<Long, byte[]>> entries = new ArrayList<>();
+                for (Long id : misses) {
+                    var tree = invertedIndex.get(id);
+                    if (tree != null)
+                        entries.add(new KeyValue<>(id, tree.data()));
+                }
+                cache.batchAdd(entries);
             }
         }
-        refIds = new HashSet<>(NncUtils.exclude(refIds, identityResultMap::containsKey));
-        aliveIds.addAll(instanceStore.getAliveInstanceIds(context.getTenantId(), refIds));
     }
 
-    public void extractRefIdsFromObject(InstancePO instancePO, Set<Long> refIds) {
-        for (Map<String, Object> subMap : instancePO.getData().values()) {
-            for (Object fieldValue : subMap.values()) {
-                NncUtils.invokeIfNotNull(convertToRefId(fieldValue), refIds::add);
+    private void addTree(Tree tree) {
+        new StreamVisitor(new ByteArrayInputStream(tree.data())) {
+
+            @Override
+            public void visitRecordBody(long id) {
+                invertedIndex.put(id, tree);
+                super.visitRecordBody(id);
             }
-        }
+
+        }.visitMessage();
+
     }
 
-    public void extractRefIdsFromArray(InstanceArrayPO arrayPO, Set<Long> refIds) {
-        List<Object> elements = arrayPO.getElements();
-        for (Object element : elements) {
-            NncUtils.invokeIfNotNull(convertToRefId(element), refIds::add);
-        }
+    private Tree buildTree(InstancePO root, Map<Long, InstancePO> instancePOs) {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        new MessageWriter(bout, instancePOs).writeMessage(root);
+        return new Tree(root.getId(), root.getVersion(), bout.toByteArray());
     }
 
-    private Long convertToRefId(Object fieldValue) {
-        if (fieldValue instanceof IdentityPO identityPO) {
-            return identityPO.id();
-        }
-        return null;
-    }
+    private static class MessageWriter extends InstanceOutput {
 
-    private void flushByTypeRequests(List<InstancePO> results) {
-        if (byTypeRequests.isEmpty()) {
-            return;
+        private long parentId;
+        private long parentFieldId;
+        private final Map<Long, InstancePO> instancePOs;
+
+        public MessageWriter(OutputStream outputStream, Map<Long, InstancePO> instancePOs) {
+            super(outputStream);
+            this.instancePOs = instancePOs;
         }
-        List<InstancePO> instancePOs =
-                instanceStore.getByTypeIds(NncUtils.map(byTypeRequests, Entity::getId), context);
-        results.addAll(instancePOs);
-        Map<Long, List<InstancePO>> typeId2InstancePOs = NncUtils.toMultiMap(instancePOs, InstancePO::getTypeId);
-        for (ClassType byTypeRequest : byTypeRequests) {
-            byTypeResultMap.put(
-                    byTypeRequest,
-                    typeId2InstancePOs.computeIfAbsent(byTypeRequest.getId(), k -> new ArrayList<>())
-            );
+
+        public void writeMessage(InstancePO root) {
+            writeLong(root.getVersion());
+            writeInstancePO(root);
         }
+
+        public void writeInstancePO(InstancePO instancePO) {
+            long oldParentId = parentId;
+            long oldParentFieldId = parentFieldId;
+            parentId = instancePO.getId();
+            parentFieldId = -1L;
+            new StreamCopier(new ByteArrayInputStream(instancePO.getData()), this) {
+
+                @Override
+                public void visitField() {
+                    writeLong(parentFieldId = readLong());
+                    visit();
+                }
+
+                @Override
+                public void visitReference() {
+                    long id = readLong();
+                    var instancePO = instancePOs.get(id);
+                    if (instancePO != null
+                            && instancePO.getParentId() == parentId
+                            && instancePO.getParentFieldId() == parentFieldId)
+                        writeInstancePO(instancePO);
+                    else {
+                        write(WireTypes.REFERENCE);
+                        writeLong(id);
+                    }
+                }
+
+            }.visit();
+            parentId = oldParentId;
+            parentFieldId = oldParentFieldId;
+        }
+
     }
 
 }

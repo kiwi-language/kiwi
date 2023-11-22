@@ -30,7 +30,7 @@ public abstract class EntityScanTask<T> extends ScanTask {
     @Override
     protected void process(List<Instance> batch, IInstanceContext context) {
         List<T> models = NncUtils.map(
-                batch, instance -> context.getEntityContext().getModel(entityType, instance)
+                batch, instance -> context.getEntityContext().getEntity(entityType, instance)
         );
         processModels(context, models);
     }

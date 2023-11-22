@@ -4,9 +4,11 @@ import tech.metavm.flow.FlowStack;
 import tech.metavm.flow.Frame;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.instance.rest.InstanceParamDTO;
+import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.FunctionType;
 import tech.metavm.util.IdentitySet;
+import tech.metavm.util.InstanceInput;
+import tech.metavm.util.InstanceOutput;
 
 import java.util.List;
 import java.util.Set;
@@ -26,16 +28,16 @@ public abstract class FunctionInstance extends Instance {
     }
 
     @Override
+    public boolean isInitialized() {
+        return true;
+    }
+
+    @Override
     public FunctionType getType() {
         return (FunctionType) super.getType();
     }
 
     public abstract Frame createFrame(FlowStack stack, List<Instance> arguments);
-
-    @Override
-    public Object toColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return null;
-    }
 
     @Override
     public boolean isReference() {
@@ -68,7 +70,17 @@ public abstract class FunctionInstance extends Instance {
     }
 
     @Override
-    protected InstanceParamDTO getParam() {
+    protected InstanceParam getParam() {
         return null;
+    }
+
+    @Override
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void readFrom(InstanceInput input) {
+        throw new UnsupportedOperationException();
     }
 }

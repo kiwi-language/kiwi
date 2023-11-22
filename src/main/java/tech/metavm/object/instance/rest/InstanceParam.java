@@ -7,11 +7,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes(
         {
                 @JsonSubTypes.Type(name = "1", value = ClassInstanceParam.class),
-                @JsonSubTypes.Type(name = "2", value = ArrayParamDTO.class),
-                @JsonSubTypes.Type(name = "3", value = PrimitiveParamDTO.class),
+                @JsonSubTypes.Type(name = "2", value = ArrayInstanceParam.class),
+                @JsonSubTypes.Type(name = "3", value = PrimitiveInstanceParam.class),
         }
 )
-public interface InstanceParamDTO {
+public interface InstanceParam {
 
     int getType();
 

@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
@@ -253,7 +254,7 @@ public class Types {
     }
 
     public static boolean isBool(Type type) {
-        return type == StandardTypes.getBoolType();
+        return type == StandardTypes.getBooleanType();
     }
 
     public static boolean isDouble(Type type) {
@@ -281,14 +282,14 @@ public class Types {
     }
 
     public static ClassType ensureClassArray(Type type) {
-        if (type.isUnionNullable()) {
+        if (type.isBinaryNullable()) {
             type = type.getUnderlyingType();
         }
         if (!(type instanceof ArrayType arrayType)) {
             throw new InternalException("array expression must has an array type");
         }
         Type elementType = arrayType.getElementType();
-        if (elementType.isUnionNullable()) {
+        if (elementType.isBinaryNullable()) {
             elementType = elementType.getUnderlyingType();
         }
         if (elementType instanceof ClassType classType) {
@@ -320,20 +321,6 @@ public class Types {
 
     public static ClassType getMapType(Type keyType, Type valueType, IEntityContext context) {
         return context.getParameterizedType(StandardTypes.getMapType(), List.of(keyType, valueType));
-    }
-
-    public static List<String> getCollectionTypeNames(Type type) {
-        List<String> result = new ArrayList<>();
-        result.add(getCollectionName(type));
-        result.add(getIteratorName(type));
-        result.add(getListName(type));
-        result.add(getSetName(type));
-        result.add(getIteratorImplName(type));
-        var primTypes = StandardTypes.getPrimitiveTypes();
-        for (PrimitiveType primType : primTypes) {
-            result.add(getMapTypeName(primType, type));
-        }
-        return result;
     }
 
     public static String getMapTypeName(Type keyType, Type valueType) {

@@ -3,14 +3,13 @@ package tech.metavm.entity;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.ChangeList;
-import tech.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
     private final Class<T> entityType;
-
     private final List<T> toInserts = new ArrayList<>();
     private final List<T> toUpdate = new ArrayList<>();
     private final List<T> toDelete = new ArrayList<>();
@@ -25,14 +24,6 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
         toInserts.add(entity);
     }
 
-    public void addAllToInsert(List<T> inserts) {
-        toInserts.addAll(inserts);
-    }
-
-    public void addAllToDelete(List<T> deletes) {
-        toDelete.addAll(deletes);
-    }
-
     public void addToUpdate(T entity) {
         toUpdate.add(entity);
     }
@@ -40,18 +31,6 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
     public void addToDelete(T entity) {
         toDelete.add(entity);
     }
-
-//    public void apply(EntityStore<T> store) {
-//        if(NncUtils.isNotEmpty(toInserts)) {
-//            store.batchInsert(toInserts);
-//        }
-//        if(NncUtils.isNotEmpty(toUpdate)) {
-//            store.batchUpdate(toUpdate);
-//        }
-//        if(NncUtils.isNotEmpty(toDelete)) {
-//            store.batchDelete(toDelete);
-//        }
-//    }
 
     public List<T> inserts() {
         return toInserts;
@@ -61,12 +40,26 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
         return toUpdate;
     }
 
-    public List<T> deletes() {
-        return toDelete;
+    public void forEachInsertOrUpdate(Consumer<T> action) {
+        for (T insert : inserts()) {
+            action.accept(insert);
+        }
+        for (T update : updates()) {
+            action.accept(update);
+        }
     }
 
-    public List<T> insertsAndUpdates() {
-        return NncUtils.union(inserts(), updates());
+    public void forEachUpdateOrDelete(Consumer<T> action) {
+        for (T update : updates()) {
+            action.accept(update);
+        }
+        for (T delete : deletes()) {
+            action.accept(delete);
+        }
+    }
+
+    public List<T> deletes() {
+        return toDelete;
     }
 
     public boolean isEmpty() {

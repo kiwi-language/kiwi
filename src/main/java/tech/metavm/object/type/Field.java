@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import com.alibaba.druid.support.spring.stat.annotation.Stat;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
@@ -29,7 +30,7 @@ public class Field extends Property implements UpdateAware, GlobalKey {
     @EntityField("列")
     private final Column column;
     @EntityField("是否子对象字段")
-    private final boolean isChildField;
+    private final boolean isChild;
     @EntityField(value = "是否静态", code = "static")
     private boolean _static;
     @EntityField(value = "静态属性值", code = "static")
@@ -49,14 +50,15 @@ public class Field extends Property implements UpdateAware, GlobalKey {
             Boolean unique,
             boolean asTitle,
             Instance defaultValue,
-            boolean isChildField,
+            boolean isChild,
             boolean isStatic,
             boolean lazy,
             Instance staticValue,
             @Nullable Field template,
-            @Nullable Column column
+            @Nullable Column column,
+            MetadataState state
     ) {
-        super(tmpId, name, code, type, declaringType);
+        super(tmpId, name, code, type, declaringType, state);
         setName(name);
         requireNonNull(type);
         requireNonNull(declaringType, "属性所属类型不能为空");
@@ -70,7 +72,7 @@ public class Field extends Property implements UpdateAware, GlobalKey {
                     "Fail to allocate a column for field " + this);
         }
         setDefaultValue(defaultValue);
-        this.isChildField = isChildField;
+        this.isChild = isChild;
         if (unique != null) {
             setUnique(unique);
         }
@@ -85,8 +87,8 @@ public class Field extends Property implements UpdateAware, GlobalKey {
         return access;
     }
 
-    public boolean isChildField() {
-        return isChildField;
+    public boolean isChild() {
+        return isChild;
     }
 
     public TypeCategory getConcreteTypeCategory() {
@@ -110,10 +112,6 @@ public class Field extends Property implements UpdateAware, GlobalKey {
 
     public Field getEffectiveTemplate() {
         return template != null ? template : this;
-    }
-
-    public boolean isReady() {
-        return true;
     }
 
     public void setAccess(Access access) {
@@ -219,7 +217,8 @@ public class Field extends Property implements UpdateAware, GlobalKey {
 
     @Override
     public void onBind(IEntityContext context) {
-        if (isNullable() || isStatic() || getDefaultValue().isNotNull() || isChildField() && getType().isArray()) {
+        if (isNullable() || isStatic() || getState() == MetadataState.INITIALIZING
+                || isChild() && getType().isArray()) {
             return;
         }
         if (Objects.requireNonNull(context.getInstanceContext()).existsInstances(declaringType, true)) {
@@ -333,10 +332,11 @@ public class Field extends Property implements UpdateAware, GlobalKey {
                     asTitle,
                     declaringType.getId(),
                     context.getRef(getType()),
-                    isChildField,
+                    isChild,
                     _static,
                     lazy,
-                    NncUtils.get(staticValue, Instance::toDTO)
+                    NncUtils.get(staticValue, Instance::toDTO),
+                    getState().code()
             );
         }
     }

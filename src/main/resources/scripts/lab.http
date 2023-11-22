@@ -10,6 +10,55 @@ Content-Type: application/json
 }
 
 ###
+
+POST http://localhost:8081/api/flow/execute
+Accept: application/json
+Content-Type: application/json
+
+{
+  "flowId": 1267305434,
+  "instanceId": 1268605373,
+  "arguments": [
+    {
+      "type": 1,
+      "value": 1,
+      "primitiveKind": 1
+    },
+    {
+      "elementAsChild": false,
+      "type": 3,
+      "elements": []
+    },
+    {
+      "elementAsChild": false,
+      "type": 3,
+      "elements": []
+    }
+  ]
+}
+
+###
+POST http://localhost:8080/management/invalidate-cache/1293005863
+
+###
+GET http://localhost:8080/management/instance/1262205246
+
+###
+GET http://localhost:8080/management/cache/1288705775
+
+###
+POST http://localhost:8080/management/download-cache/1258405178
+
+###
+POST http://localhost:8080/management/clear-cache
+
+###
+GET http://localhost:8080/perf/read-bytes/1258405178?runs=10
+
+###
+GET http://localhost:8080/perf/skip-bytes/1256205279?runs=1
+
+###
 POST http://localhost:8080/logout
 Accept: application/json
 Content-Type: application/json
@@ -167,7 +216,7 @@ Content-Type: application/json
 GET http://localhost:8080/instance/7205760425393226
 
 ###
-DELETE http://localhost:8080/instance/1075001532
+DELETE http://localhost:8080/instance/1206304127
 
 ###
 POST http://localhost:8080/instance/load-by-tree
@@ -447,7 +496,7 @@ DELETE http://localhost:8080/flow/node/1242404897
 
 
 ###
-DELETE http://localhost:8080/instance/1075301517
+DELETE http://localhost:8080/instance/1262405249
 
 ###
 DELETE http://localhost:8080/flow/node/1139802809
@@ -459,10 +508,10 @@ GET http://localhost:8080/type/12004
 GET http://localhost:8080/instance/1175503532
 
 ###
-GET http://localhost:8080/instance/reference-chain/1162503251?rootMode=1
+GET http://localhost:8080/instance/reference-chain/7205760443893523?rootMode=1
 
 ###
-GET http://localhost:8080/instance/reference-chain/1073501481?rootMode=2
+GET http://localhost:8080/instance/reference-chain/7205760443893524?rootMode=2
 
 ###
 GET http://localhost:8080/type/primitives

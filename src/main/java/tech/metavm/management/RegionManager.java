@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.management.persistence.RegionMapper;
 import tech.metavm.management.persistence.RegionPO;
 import tech.metavm.object.type.TypeCategory;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -52,17 +53,28 @@ public class RegionManager {
 
     private static final Map<TypeCategory, RegionInfo> VALUE_MAP = new HashMap<>();
 
+    public static RegionInfo CLASS_REGION;
+    public static RegionInfo ENUM_REGION;
+    public static RegionInfo CHILD_ARRAY_REGION;
+    public static RegionInfo READ_WRITE_ARRAY_REGION;
+    public static RegionInfo READ_ONLY_ARRAY_REGION;
+
     static {
-        create(TypeCategory.CLASS, CLASS_REGION_BASE, CLASS_REGION_END);
-        create(TypeCategory.ENUM, ENUM_REGION_BASE, ENUM_REGION_END);
-        create(TypeCategory.READ_WRITE_ARRAY, READ_WRITE_ARRAY_REGION_BASE, READ_WRITE_ARRAY_REGION_END);
-        create(TypeCategory.READ_ONLY_ARRAY, READ_ONLY_ARRAY_REGION_BASE, READ_ONLY_ARRAY_REGION_END);
-        create(TypeCategory.CHILD_ARRAY, CHILD_ARRAY_REGION_BASE, CHILD_ARRAY_REGION_END);
+        CLASS_REGION = create(TypeCategory.CLASS, CLASS_REGION_BASE, CLASS_REGION_END);
+        ENUM_REGION = create(TypeCategory.ENUM, ENUM_REGION_BASE, ENUM_REGION_END);
+        READ_WRITE_ARRAY_REGION = create(TypeCategory.READ_WRITE_ARRAY, READ_WRITE_ARRAY_REGION_BASE, READ_WRITE_ARRAY_REGION_END);
+        READ_ONLY_ARRAY_REGION = create(TypeCategory.READ_ONLY_ARRAY, READ_ONLY_ARRAY_REGION_BASE, READ_ONLY_ARRAY_REGION_END);
+        CHILD_ARRAY_REGION = create(TypeCategory.CHILD_ARRAY, CHILD_ARRAY_REGION_BASE, CHILD_ARRAY_REGION_END);
     }
 
-    private static void create(TypeCategory typeCategory, long start, long end) {
+    private static RegionInfo create(TypeCategory typeCategory, long start, long end) {
         RegionInfo region = new RegionInfo(typeCategory, start, end);
         VALUE_MAP.put(typeCategory, region);
+        return region;
+    }
+
+    public static boolean isArrayId(long id) {
+        return id >= READ_WRITE_ARRAY_REGION_BASE && id <= CHILD_ARRAY_REGION_END;
     }
 
     public static boolean isSystemId(long id) {
@@ -78,13 +90,17 @@ public class RegionManager {
         return VALUE_MAP.get(typeCategory);
     }
 
-    public @Nullable RegionRT getRegion(TypeCategory typeCategory) {
-        List<RegionPO> regionPOs = regionMapper.selectByTypeCategories(List.of(typeCategory.code()));
-        NncUtils.requireNotEmpty(regionPOs, "No region found for type category: " + typeCategory);
-        return new RegionRT(regionPOs.get(0));
+    public @Nullable RegionRT get(TypeCategory typeCategory) {
+        try(var ignored= ContextUtil.getProfiler().enter("RegionManager.get")) {
+            List<RegionPO> regionPOs = regionMapper.selectByTypeCategories(List.of(typeCategory.code()));
+            NncUtils.requireNotEmpty(regionPOs, "No region found for type category: " + typeCategory);
+            return new RegionRT(regionPOs.get(0));
+        }
     }
 
     public void inc(TypeCategory typeCategory, long inc) {
-        regionMapper.inc(typeCategory.code(), inc);
+        try(var ignored= ContextUtil.getProfiler().enter("RegionManager.inc")) {
+            regionMapper.inc(typeCategory.code(), inc);
+        }
     }
 }

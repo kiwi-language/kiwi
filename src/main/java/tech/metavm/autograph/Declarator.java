@@ -2,6 +2,7 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.*;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowBuilder;
 import tech.metavm.flow.Parameter;

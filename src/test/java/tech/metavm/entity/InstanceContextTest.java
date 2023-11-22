@@ -14,7 +14,6 @@ import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLog;
-import tech.metavm.object.instance.persistence.InstanceArrayPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Index;
@@ -132,7 +131,7 @@ public class InstanceContextTest extends TestCase {
         IInstanceContext context1 = newContext();
         Instance loadedFoo = context1.get(foo.getId());
         // should be lazily initialized
-        Assert.assertFalse(InstanceUtils.isInitialized(loadedFoo));
+        Assert.assertFalse(loadedFoo.isInitialized());
         MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
     }
 
@@ -162,7 +161,7 @@ public class InstanceContextTest extends TestCase {
         IInstanceContext context1 = newContext(null, typeResolver);
 
         Foo foo = new Foo("big foo", new Bar("little bar"));
-        Instance fooInstance = fooDef.createInstance(foo, modelInstanceMap);
+        Instance fooInstance = fooDef.createInstance(foo, modelInstanceMap, null);
         context1.bind(fooInstance);
         context1.finish();
 
@@ -171,7 +170,7 @@ public class InstanceContextTest extends TestCase {
         foo.initId(fooInstance.getIdRequired());
         IInstanceContext context2 = newContext(null, typeResolver);
         Instance loadedFooInstance = context2.get(foo.getId());
-        Foo loadedFoo = modelInstanceMap.getModel(Foo.class, loadedFooInstance);
+        Foo loadedFoo = modelInstanceMap.getEntity(Foo.class, loadedFooInstance);
         MatcherAssert.assertThat(loadedFoo, PojoMatcher.of(foo));
     }
 
@@ -353,7 +352,7 @@ public class InstanceContextTest extends TestCase {
 
         IInstanceContext context2 = newContext();
         Instance loadedFoo = context2.get(foo.getId());
-        Assert.assertFalse(InstanceUtils.isInitialized(loadedFoo));
+        Assert.assertFalse(loadedFoo.isInitialized());
         context2.finish();
     }
 
@@ -392,7 +391,7 @@ public class InstanceContextTest extends TestCase {
         Assert.assertFalse(EntityUtils.isPojoDifferent(bazInst.toPO(TENANT_ID), bazInstancePO));
         Long barsArrayId = bazInst.getInstanceField(bazBarsField).getId();
         NncUtils.requireNonNull(barsArrayId);
-        InstanceArrayPO barsArrayPO = (InstanceArrayPO) instanceStore.get(barsArrayId);
+        var barsArrayPO =  instanceStore.get(barsArrayId);
         MatcherAssert.assertThat(bazInst.getInstanceField(bazBarsField).toPO(TENANT_ID), PojoMatcher.of(barsArrayPO));
 
         IInstanceContext context2 = newContext();

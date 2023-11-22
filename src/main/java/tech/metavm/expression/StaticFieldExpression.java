@@ -1,6 +1,9 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
@@ -8,11 +11,13 @@ import tech.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
+@EntityType("静态字段表达式")
 public class StaticFieldExpression extends Expression {
 
+    @EntityField("字段")
     private final Field field;
 
-    public StaticFieldExpression(Field field) {
+    public StaticFieldExpression(@NotNull Field field) {
         this.field = field;
     }
 

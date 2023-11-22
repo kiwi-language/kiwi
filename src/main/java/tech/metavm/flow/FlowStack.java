@@ -1,5 +1,9 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.EntityUtils;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.expression.StaticFieldExpression;
+import tech.metavm.expression.VoidStructuralVisitor;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.natives.ThrowableNative;
 import tech.metavm.entity.natives.NativeInvoker;
@@ -9,6 +13,9 @@ import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.CompositeType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.FlowExecutionException;
 
 import java.util.LinkedList;
@@ -24,8 +31,17 @@ public class FlowStack {
 
     public FlowStack(Flow flow, Instance self, List<Instance> arguments, IInstanceContext context) {
         this.context = context;
-        stack.push(new MetaFrame(flow, self, arguments, this));
+        push(createFlowFrame(flow, self, arguments));
     }
+
+    public MetaFrame createFlowFrame(Flow flow, Instance self, List<Instance> arguments) {
+//        setLoadFromCache(flow);
+        return new MetaFrame(flow, self, arguments, this);
+    }
+
+//    private void setLoadFromCache(Flow flow) {
+//        flow.accept(new WithCacheVisitor(context.getEntityContext()));
+//    }
 
     public Instance execute() {
         while (!stack.isEmpty()) {

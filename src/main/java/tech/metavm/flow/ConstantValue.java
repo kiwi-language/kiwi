@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
@@ -23,19 +24,19 @@ public class ConstantValue extends Value {
     public ConstantValue(ValueDTO valueDTO, @Nullable Type assignedType, ParsingContext parsingContext) {
         super(ValueKind.CONSTANT);
         if (valueDTO.isNull()) {
-            expression = ExpressionUtil.constant(InstanceUtils.nullInstance());
+            expression = addChild(ExpressionUtil.constant(InstanceUtils.nullInstance()), "expression");
         } else {
-            expression = ExpressionParser.parse(
+            expression = addChild(ExpressionParser.parse(
                     ExpressionUtil.constantToExpression(valueDTO.value()),
                     assignedType,
                     parsingContext
-            );
+            ), "expression");
         }
     }
 
-    public ConstantValue(Expression expression) {
+    public ConstantValue(@NotNull Expression expression) {
         super(ValueKind.CONSTANT);
-        this.expression = expression;
+        this.expression = addChild(expression.copy(), "expression");
     }
 
     @Override

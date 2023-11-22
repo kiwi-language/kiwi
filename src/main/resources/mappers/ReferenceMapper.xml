@@ -30,7 +30,7 @@
         </foreach>
     </delete>
 
-    <insert id="batchInsert" useGeneratedKeys="true">
+    <insert id="batchInsert">
         <!--@mbg.generated-->
         insert into reference (tenant_id, source_id, target_id, field_id, kind)
         values
@@ -78,21 +78,16 @@
         </foreach>
     </select>
 
-    <select id="selectFirstStrongReferences" resultMap="BaseResultMap">
-        select r1.tenant_id as tenant_id,
-               r1.source_id as source_id,
-               r1.target_id as target_id,
-               r1.field_id  as field_id,
-               r1.kind      as kind
-        from reference r1
-            inner join
-        (select min(id) as id
-         from reference
-                  use index (target_idx)
+    <select id="selectFirstStrongReference" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List">
+        </include>
+        from reference
         where tenant_id = #{tenantId}
           and kind = 1
-          and target_id in
-        <foreach collection="ids" item="id" separator="," open="(" close=")">
+          and
+            target_id in
+        <foreach collection="targetIds" item="id" separator="," open="(" close=")">
             #{id}
         </foreach>
         <if test="excludedSourceIds != null and excludedSourceIds.size() != 0">
@@ -101,8 +96,7 @@
                 #{id}
             </foreach>
         </if>
-        group by target_id) as r2
-        on r1.id = r2.id
+        limit 1
     </select>
 
     <select id="selectAllStrongReferences" resultMap="BaseResultMap">

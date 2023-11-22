@@ -33,7 +33,7 @@ public class ClassFieldDef implements IFieldDef {
         if(instanceFieldValue.isNull()) {
             return null;
         }
-        ClassType type = modelInstanceMap.getModel(ClassType.class, instanceFieldValue);
+        ClassType type = modelInstanceMap.getEntity(ClassType.class, instanceFieldValue);
         return defMap.getDef(type).getJavaClass();
     }
 

@@ -100,6 +100,8 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
     @Override
     public void execute(MetaFrame frame) {
         FlowStack stack = frame.getStack();
+        var entityContext = stack.getContext().getEntityContext();
+        Flows.enableCache(subFlow, entityContext);
         var self = getSelf(frame);
         List<Instance> args = new ArrayList<>();
         var argMap = NncUtils.toMap(arguments, Argument::getParameter, Function.identity());
@@ -111,9 +113,8 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
                 args.add(InstanceUtils.nullInstance());
         }
         var flow = subFlow;
-        if (flow.isAbstract()) {
+        if (flow.isAbstract())
             flow = ((ClassType) self.getType()).getOverrideFlowRequired(flow);
-        }
         if (flow.isNative()) {
             var result = NativeInvoker.invoke(flow, self, args);
             onReturn(result, frame);
@@ -121,7 +122,7 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
                 frame.setResult(result);
             }
         } else {
-            stack.push(new MetaFrame(flow, self, args, stack));
+            stack.push(stack.createFlowFrame(flow, self, args));
         }
     }
 

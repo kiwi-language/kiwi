@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
@@ -21,9 +22,9 @@ public class PropertyExpression extends Expression {
     @EntityField("属性")
     private final Property property;
 
-    public PropertyExpression(Expression instance, Property attribute) {
-        this.instance = requireNonNull(instance);
-        this.property = requireNonNull(attribute);
+    public PropertyExpression(@NotNull Expression instance, @NotNull Property property) {
+        this.instance = addChild(instance.copy(), "instance");
+        this.property = requireNonNull(property);
     }
 
     public Property getProperty() {
@@ -37,12 +38,12 @@ public class PropertyExpression extends Expression {
 
     @Override
     public List<Expression> getChildren() {
-        return List.of();
+        return List.of(instance);
     }
 
     @Override
     public Expression substituteChildren(List<Expression> children) {
-        return new PropertyExpression(instance, property);
+        return new PropertyExpression(children.get(0), property);
     }
 
     @Override

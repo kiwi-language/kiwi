@@ -27,7 +27,7 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
 
     public ValueNode(Long tmpId, String name, Type outputType, NodeRT<?> previous, ScopeRT scope, Value value) {
         super(tmpId, name, outputType, previous, scope);
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     @Override
@@ -40,13 +40,13 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     @Override
     protected void setParam(ValueParamDTO param, IEntityContext context) {
         if(param.value() != null) {
-            value = ValueFactory.create(param.value(), getParsingContext(context));
+            setValue(ValueFactory.create(param.value(), getParsingContext(context)));
             setOutputType(value.getType().getCertainUpperBound());
         }
     }

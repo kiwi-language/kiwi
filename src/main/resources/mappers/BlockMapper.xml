@@ -8,27 +8,27 @@
     <id column="id" jdbcType="BIGINT" property="id"/>
     <result column="tenant_id" jdbcType="BIGINT" property="tenantId"/>
     <result column="type_id" jdbcType="BIGINT" property="typeId" />
-    <result column="start" jdbcType="BIGINT" property="start" />
-    <result column="end" jdbcType="BIGINT" property="end" />
-    <result column="next" jdbcType="BIGINT" property="next" />
-    <result column="active" jdbcType="BOOLEAN" property="active"/>
+    <result column="start_id" jdbcType="BIGINT" property="startId" />
+    <result column="end_id" jdbcType="BIGINT" property="endId" />
+    <result column="next_id" jdbcType="BIGINT" property="nextId" />
+    <result column="is_active" jdbcType="BOOLEAN" property="active"/>
   </resultMap>
 
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, tenant_id, type_id, `start`, `end`, `next`, `active`
+    id, tenant_id, type_id, start_id, end_id, next_id, is_active
   </sql>
 
   <insert id="batchInsert">
     <!--@mbg.generated-->
-    insert into id_block (id, tenant_id, type_id, `start`, `end`, `next`, `active`) values
+    insert into id_block (id, tenant_id, type_id, start_id, end_id, next_id, is_active) values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.tenantId}, #{item.typeId}, #{item.start}, #{item.end}, #{item.next}, #{item.active})
+      (#{item.id}, #{item.tenantId}, #{item.typeId}, #{item.startId}, #{item.endId}, #{item.nextId}, #{item.active})
     </foreach>
   </insert>
 
   <update id="increaseNextId">
-    update id_block set next = id_block.next + #{inc} where id = #{id}
+    update id_block set next_id = id_block.next_id + #{inc} where id = #{id}
   </update>
 
   <select id="selectActiveRanges" resultMap="BaseResultMap">
@@ -40,13 +40,13 @@
     <foreach collection="typeIds" item="typeId" open="(" close=")" separator=",">
       #{typeId}
     </foreach>
-    and active = true
+    and is_active = true
   </select>
 
   <select id="selectByPoint" resultMap="BaseResultMap">
-    select * from id_block
-    where end > #{point}
-    order by end limit 1
+    select <include refid="Base_Column_List"/> from id_block
+    where end_id > #{point}
+    order by end_id limit 1
   </select>
 
   <update id="inc">
@@ -54,9 +54,9 @@
       update
         id_block
       set
-        next = next + #{item.inc}
+        next_id = next_id + #{item.inc}
       <if test="item.deactivating" >
-        , active = false
+        , is_active = false
       </if>
       where id = #{item.id}
     </foreach>
@@ -67,7 +67,7 @@
       <include refid="Base_Column_List"/>
     from
     id_block
-    where active = true and
+    where is_active = true and
     type_id in
     <foreach collection="collection" item="item" open="(" close=")" separator=",">
       #{item}
@@ -78,11 +78,11 @@
     <foreach collection="collection" item="item" separator=";">
       update id_block
       <set>
-        <if test="item.next != null">
-          `next` = #{item.next},
+        <if test="item.nextId != null">
+          next_id = #{item.nextId},
         </if>
         <if test="item.active != null ">
-          `active` = #{item.active},
+          is_active = #{item.active},
         </if>
       </set>
       where id = #{item.id}

@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
@@ -19,12 +20,13 @@ public class ReferenceValue extends Value {
     public ReferenceValue(ValueDTO valueDTO, ParsingContext parsingContext) {
         super(ValueKind.REFERENCE);
         ExpressionFieldValue exprValue = (ExpressionFieldValue) valueDTO.value();
-        expression = ExpressionParser.parse(exprValue.getExpression(), parsingContext);
+        expression = addChild(ExpressionParser.parse(exprValue.getExpression(), parsingContext),
+                "expression");
     }
 
-    public ReferenceValue(Expression expression) {
+    public ReferenceValue(@NotNull Expression expression) {
         super(ValueKind.REFERENCE);
-        this.expression = expression;
+        this.expression = addChild(expression.copy(), "expression");
     }
 
     @Override

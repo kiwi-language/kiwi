@@ -14,10 +14,15 @@ public class InstanceField {
     private @NotNull Instance value;
 
     InstanceField(ClassInstance owner, Field field, Instance value) {
+        this(owner, field, value, true);
+    }
+
+    InstanceField(ClassInstance owner, Field field, Instance value, boolean check) {
         this.field = field;
         this.owner = owner;
-        this.value = InstanceUtils.nullInstance();
-        setValue(value);
+        if (value.isNotPrimitive())
+            new ReferenceRT(owner, value, field);
+        this.value = check ? checkValue(value) : value;
     }
 
     public Field getField() {
@@ -41,10 +46,10 @@ public class InstanceField {
 
     void setValue(Instance value) {
         value = checkValue(value);
-        if (!this.value.isNull()) {
+        if (this.value.isNotPrimitive()) {
             owner.getOutgoingReference(this.value, field).clear();
         }
-        if (!value.isNull()) {
+        if (value.isNotPrimitive()) {
             new ReferenceRT(owner, value, field);
         }
         this.value = value;
@@ -54,12 +59,11 @@ public class InstanceField {
         if (field.getType().isInstance(value)) {
             return value;
         } else {
-            throw new InternalException(String.format("Value '%s' is not assignable to %s", value, field));
+            if(value.isNull() && !field.isReady())
+                return value;
+            else
+                throw new InternalException(String.format("Value '%s' is not assignable to %s", value, field));
         }
-    }
-
-    public Object getColumnValue(long tenantId, IdentitySet<Instance> visited) {
-        return value.toColumnValue(tenantId, visited);
     }
 
     public @NotNull Instance getValue() {

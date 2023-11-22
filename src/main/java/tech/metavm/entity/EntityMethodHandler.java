@@ -21,7 +21,6 @@ public final class EntityMethodHandler<T> implements MethodHandler {
 
     private final Class<T> type;
     private final Consumer<T> initializer;
-    private Consumer<T> directInitializer;
     private State state = State.UNINITIALIZED;
 
     public EntityMethodHandler(Class<T> type, Consumer<T> initializer) {
@@ -49,10 +48,6 @@ public final class EntityMethodHandler<T> implements MethodHandler {
            return;
         }
         if(state == State.INITIALIZING) {
-            if(directInitializer != null) {
-                directInitializer.accept(type.cast(self));
-                state = State.INITIALIZED;
-            }
 //            if(LOGGER.isDebugEnabled()) {
 //                LOGGER.debug("Call method '" + ReflectUtils.getMethodQualifiedName(thisMethod) + "' while initializing proxy");
 //            }
@@ -67,18 +62,13 @@ public final class EntityMethodHandler<T> implements MethodHandler {
         }
         state = State.INITIALIZING;
         initializer.accept(type.cast(self));
-        if(self instanceof LoadAware loadAware) {
+        if(self instanceof LoadAware loadAware)
             loadAware.onLoad();
-        }
         state = State.INITIALIZED;
     }
 
     public boolean isInitialized() {
         return state == State.INITIALIZED;
-    }
-
-    public void setDirectInitializer(Consumer<T> directInitializer) {
-        this.directInitializer = directInitializer;
     }
 
     public boolean isUninitialized() {

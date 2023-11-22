@@ -36,13 +36,13 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
     public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value selfId, List<Argument> arguments,
                        Flow subFlow) {
         super(tmpId, name,  prev, scope, arguments, subFlow);
-        this.selfId = selfId;
+        this.selfId = addChild(selfId, "selfId");
     }
 
     @Override
     protected void setParam(SubFlowParam param, IEntityContext entityContext) {
         ParsingContext parsingContext = getParsingContext(entityContext);
-        selfId = ValueFactory.create(param.getSelf(), parsingContext);
+        setSelfId(ValueFactory.create(param.getSelf(), parsingContext));
         super.setCallParam(param, entityContext);
     }
 
@@ -63,7 +63,7 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
     }
 
     public void setSelfId(Value selfId) {
-        this.selfId = selfId;
+        this.selfId = addChild(selfId, "selfId");
     }
 
     protected Instance getSelf(MetaFrame frame) {

@@ -99,7 +99,7 @@ public class IndexDef<T> {
                     index,
                     field.getName(),
                     field.getCode(),
-                    new ReferenceValue(ExpressionUtil.attributeExpr(field))
+                    new ReferenceValue(ExpressionUtil.propertyExpr(field))
             );
         }
         return index;

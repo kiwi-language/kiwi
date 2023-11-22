@@ -1,0 +1,20 @@
+message: version value
+value: long | double | string | boolean | time | password | null | reference | record
+long: 1 varint
+double: 2 int64
+string: 3 utf8
+boolean: 4 int8
+time: 5 varint
+password: 6 utf8
+null: 7
+reference: 10 id
+record: 11 id recordBody
+recordBody: object | array
+object: varint field*
+field: field_id value
+array: varint value*
+field_id: varint
+parent_id: varint
+parent_field_id: varint
+id: varint
+version: varint

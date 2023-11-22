@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import com.intellij.psi.PsiMethod;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.ArrayExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionUtil;

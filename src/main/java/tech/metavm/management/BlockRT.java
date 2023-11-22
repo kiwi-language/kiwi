@@ -21,9 +21,9 @@ public class BlockRT implements Comparable<BlockRT> {
         this.tenantId = idRange.getTenantId();
         this.id = idRange.getId();
         this.typeId = idRange.getTypeId();
-        this.start = idRange.getStart();
-        this.end = idRange.getEnd();
-        this.next = idRange.getNext();
+        this.start = idRange.getStartId();
+        this.end = idRange.getEndId();
+        this.next = idRange.getNextId();
         this.active = idRange.getActive();
     }
 

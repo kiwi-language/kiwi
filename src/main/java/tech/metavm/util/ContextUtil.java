@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.common.ErrorCode;
+import tech.metavm.util.profile.Profiler;
 
 public class ContextUtil {
 

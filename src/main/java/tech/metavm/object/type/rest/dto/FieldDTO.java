@@ -21,7 +21,8 @@ public record FieldDTO(
         boolean isChild,
         boolean isStatic,
         boolean lazy,
-        @Nullable InstanceDTO staticValue
+        @Nullable InstanceDTO staticValue,
+        int state
 ) implements BaseDTO {
 
     public Long typeId() {

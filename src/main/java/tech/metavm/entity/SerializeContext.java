@@ -126,7 +126,7 @@ public class SerializeContext implements Closeable {
         while (!classTypes.isEmpty()) {
             var type = classTypes.poll();
             for (Field field : type.getFields()) {
-                if(field.isChildField()) {
+                if(field.isChild()) {
                     writeType(field.getType());
                     var concreteFieldType = field.getType().getConcreteType();
                     if(concreteFieldType instanceof ClassType classType && added.add(classType)) {

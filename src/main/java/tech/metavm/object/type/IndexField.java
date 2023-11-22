@@ -26,7 +26,7 @@ public class IndexField extends Entity {
                 constraint,
                 field.getName(),
                 field.getCode(),
-                new ReferenceValue(ExpressionUtil.attributeExpr(field))
+                new ReferenceValue(ExpressionUtil.propertyExpr(field))
         );
     }
 
@@ -61,7 +61,7 @@ public class IndexField extends Entity {
     }
 
     public void setValue(Value value) {
-        this.value = value;
+        this.value = addChild(value, "value");
     }
 
     public void setCode(@Nullable String code) {
@@ -136,11 +136,11 @@ public class IndexField extends Entity {
     }
 
     public boolean isColumnX() {
-        return (value.getType().isLong() || value.getType().isInt()) && index.isLastItem(this);
+        return value.getType().isLong() && index.isLastItem(this);
     }
 
     public Instance convertModelToInstance(Object model, IEntityContext context) {
-        if (InstanceUtils.isPrimitiveEntityValue(model) || context.containsModel(model))
+        if (InstanceUtils.isPrimitive(model) || context.containsModel(model))
             return context.getInstance(model);
         else
             throw new InternalException("Model " + model + " does not exist in the context");

@@ -25,11 +25,11 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
     @ChildEntity("节点类型")
     private final ClassType nodeType;
 
-    protected LoopNode(Long tmpId, String name, @Nullable ClassType outputType, NodeRT<?> previous,
-                       ScopeRT scope, Value condition) {
+    protected LoopNode(Long tmpId, String name, @NotNull ClassType outputType, NodeRT<?> previous,
+                       @NotNull ScopeRT scope, @NotNull Value condition) {
         super(tmpId, name, null, previous, scope, true);
-        this.nodeType = outputType;
-        this.condition = condition;
+        this.nodeType = addChild(outputType, "nodeType");
+        this.condition = addChild(condition, "condition");
     }
 
     @Override
@@ -43,7 +43,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         }
         var parsingContext = getParsingContext(context);
         if (param.getCondition() != null) {
-            condition = ValueFactory.create(param.getCondition(), parsingContext);
+            setCondition(ValueFactory.create(param.getCondition(), parsingContext));
         }
     }
 
@@ -139,7 +139,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
     }
 
     public void setCondition(@Nullable Value condition) {
-        this.condition = condition;
+        this.condition = condition != null ? addChild(condition, "condition") : null;
     }
 
     @Override

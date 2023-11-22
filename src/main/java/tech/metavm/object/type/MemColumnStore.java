@@ -1,6 +1,6 @@
 package tech.metavm.object.type;
 
-import tech.metavm.object.instance.SQLType;
+import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.util.Column;
 import tech.metavm.util.NncUtils;
 
@@ -18,16 +18,16 @@ public class MemColumnStore implements ColumnStore {
     }
 
     @Override
-    public Column getColumn(Type type, Field field, SQLType sqlType) {
+    public Column getColumn(Type type, Field field, ColumnKind columnKind) {
         String columnName = getSubMap(type).get(field.getName());
-        return columnName != null ? SQLType.getColumnByName(columnName) :
-                allocateColumn(type, field.getName(), sqlType);
+        return columnName != null ? ColumnKind.getColumnByName(columnName) :
+                allocateColumn(type, field.getName(), columnKind);
     }
 
-    private Column allocateColumn(Type type, String fieldName, SQLType sqlType) {
+    private Column allocateColumn(Type type, String fieldName, ColumnKind columnKind) {
         var subMap = getSubMap(type);
-        Set<Column> usedColumns = NncUtils.mapUnique(subMap.values(), SQLType::getColumnByName);
-        var column = Column.allocate(usedColumns, sqlType);
+        Set<Column> usedColumns = NncUtils.mapUnique(subMap.values(), ColumnKind::getColumnByName);
+        var column = Column.allocate(usedColumns, columnKind);
         subMap.put(fieldName, column.name());
         return column;
     }

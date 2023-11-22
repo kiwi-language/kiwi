@@ -4,12 +4,11 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.type.CheckConstraint;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
@@ -19,13 +18,11 @@ public class CheckConstraintPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
-        List<InstancePO> instancePOs = change.insertsAndUpdates();
-        List<ClassInstance> instances = NncUtils.mapAndFilterByType(
-                instancePOs,
-                instancePO -> context.get(instancePO.getIdRequired()),
-                ClassInstance.class
-        );
-        instances.forEach(i -> checkConstraints(i, context.getEntityContext()));
+        change.forEachInsertOrUpdate(instancePO -> {
+            var instance = context.get(instancePO.getId());
+            if(instance instanceof ClassInstance classInstance)
+                checkConstraints(classInstance, context.getEntityContext());
+        });
         return false;
     }
 
