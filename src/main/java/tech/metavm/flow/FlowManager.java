@@ -51,13 +51,13 @@ public class FlowManager {
 
     private GetFlowResponse makeFlowResponse(Flow flow, boolean includeNodes) {
         try (var serContext = SerializeContext.enter()) {
-            if(includeNodes) {
-                serContext.setIncludingNodeOutputType(true);
-                serContext.setIncludeExpressionType(true);
-            }
+//            if(includeNodes) {
+//                serContext.setIncludingNodeOutputType(true);
+//                serContext.setIncludeExpressionType(true);
+//            }
             var flowDTO = flow.toDTO(includeNodes);
-            serContext.writeDependencies();
-            return new GetFlowResponse(flowDTO, serContext.getTypes());
+//            serContext.writeDependencies();
+            return new GetFlowResponse(flowDTO, List.of());
         }
     }
 

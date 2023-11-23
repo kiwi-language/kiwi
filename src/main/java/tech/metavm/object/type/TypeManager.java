@@ -310,7 +310,7 @@ public class TypeManager {
     public List<Long> batchSave(BatchSaveRequest request) {
         List<TypeDTO> typeDTOs = request.types();
         FlowSavingContext.skipPreprocessing(true);
-        try (var context = newContext(true)) {
+        try (var context = newContext()) {
             batchSave(typeDTOs, context);
             List<ClassType> newClasses = NncUtils.filterAndMap(
                     typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && t.id() == null,
@@ -551,7 +551,7 @@ public class TypeManager {
 
     @Transactional
     public long saveEnumConstant(InstanceDTO instanceDTO) {
-        try (var context = newContext(true)) {
+        try (var context = newContext()) {
             var instanceContext = Objects.requireNonNull(context.getInstanceContext());
             var type = context.getClassType(instanceDTO.typeRef());
             ClassInstance instance;
@@ -598,7 +598,7 @@ public class TypeManager {
 
     @Transactional
     public void deleteEnumConstant(long id) {
-        try (var context = newContext(true)) {
+        try (var context = newContext()) {
             var instanceContext = NncUtils.requireNonNull(context.getInstanceContext());
             var instance = instanceContext.get(id);
             var type = (ClassType) instance.getType();
@@ -649,7 +649,7 @@ public class TypeManager {
 
     @Transactional
     public void remove(long id) {
-        try (var context = newContext(true)) {
+        try (var context = newContext()) {
             ClassType type = context.getClassType(id);
             if (type == null)
                 return;
@@ -660,7 +660,7 @@ public class TypeManager {
 
     @Transactional
     public long saveField(FieldDTO fieldDTO) {
-        IEntityContext context = newContext(true);
+        IEntityContext context = newContext();
         Field field = saveField(fieldDTO, context);
         context.finish();
         return NncUtils.getOrElse(field, Entity::getIdRequired, 0L);
@@ -712,7 +712,7 @@ public class TypeManager {
 
     @Transactional
     public void moveField(long id, int ordinal) {
-        try (var context = newContext(true)) {
+        try (var context = newContext()) {
             var field = context.getField(id);
             field.getDeclaringType().moveField(field, ordinal);
             context.finish();
@@ -772,7 +772,7 @@ public class TypeManager {
 
     @Transactional
     public void removeField(long fieldId) {
-        IEntityContext context = newContext(true);
+        IEntityContext context = newContext();
         Field field = context.getField(fieldId);
         context.remove(field);
         removeTransformedFieldIfRequired(field, context);
@@ -923,11 +923,7 @@ public class TypeManager {
     }
 
     private IEntityContext newContext() {
-        return newContext(false);
-    }
-
-    private IEntityContext newContext(boolean asyncLogProcessing) {
-        return instanceContextFactory.newEntityContext(asyncLogProcessing);
+        return instanceContextFactory.newEntityContext();
     }
 
     @Autowired

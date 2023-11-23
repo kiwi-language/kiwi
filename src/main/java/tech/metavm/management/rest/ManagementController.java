@@ -16,8 +16,6 @@ import tech.metavm.util.NncUtils;
 @RequestMapping("/management")
 public class ManagementController {
 
-    private static final String PRIM_JSON_FILE = "/Users/leen/workspace/front/src/type/PrimitiveTypes.json";
-
     private static final String TENANT_ID_FILE = "/Users/leen/workspace/front/src/user/Tenant.json";
 
     public static final String RESULT_JSON_FILE = "/Users/leen/workspace/object/result.json";
@@ -40,7 +38,6 @@ public class ManagementController {
 
     private final StoreManager storeManager;
 
-
     public ManagementController(TypeManager typeManager, TenantManager tenantManager, LoginController loginController, BootstrapController bootstrapController, CacheManager cacheManager, StoreManager storeManager) {
         this.typeManager = typeManager;
         this.tenantManager = tenantManager;
@@ -55,8 +52,6 @@ public class ManagementController {
         bootstrapController.boot(true);
         long tenantId = tenantManager.create(new TenantCreateRequest(TENANT_NAME, PASSWD));
         loginController.login(servletResponse, new LoginRequest(tenantId, ADMIN_NANE, PASSWD));
-        String json = NncUtils.toJSONStringIgnoreNull(typeManager.getPrimitiveTypes());
-        NncUtils.writeFile(PRIM_JSON_FILE, json);
         NncUtils.writeFile(TENANT_ID_FILE, String.format("{\"tenantId\": %d}", tenantId));
         NncUtils.writeFile(RESULT_JSON_FILE, "[]");
         return Result.voidSuccess();
