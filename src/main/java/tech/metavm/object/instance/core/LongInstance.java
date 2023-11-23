@@ -1,6 +1,8 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.PrimitiveType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.WireTypes;
@@ -26,6 +28,14 @@ public class LongInstance extends NumberInstance {
     @Override
     public Long toColumnValue() {
         return value;
+    }
+
+    @Override
+    public Instance convert(Type type) {
+        if(type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.DOUBLE)
+            return new DoubleInstance(value, primitiveType);
+        else
+            return super.convert(type);
     }
 
     public LongInstance inc(long inc) {

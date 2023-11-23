@@ -62,7 +62,7 @@ public class InstanceField {
             if(value.isNull() && !field.isReady())
                 return value;
             else
-                throw new InternalException(String.format("Value '%s' is not assignable to %s", value, field));
+                return value.convert(field.getType());
         }
     }
 

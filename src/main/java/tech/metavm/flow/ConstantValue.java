@@ -7,13 +7,19 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.expression.*;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
+import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Date;
+
+import static tech.metavm.object.instance.core.TimeInstance.DF;
 
 @EntityType("常量值")
 public class ConstantValue extends Value {
@@ -48,8 +54,21 @@ public class ConstantValue extends Value {
         return switch (expression) {
             case ConstantExpression constantExpression -> ExpressionUtil.expressionToConstant(constantExpression);
             case ArrayExpression arrayExpression -> toArrayFieldValue(arrayExpression);
+            case FunctionExpression funcExpr
+                    when funcExpr.getFunction() == Function.TIME
+                    && funcExpr.getArguments().get(0) instanceof ConstantExpression constExpr ->
+                    toTimeFieldValue((LongInstance) constExpr.getValue());
             default -> throw new IllegalStateException("Unexpected value: " + expression);
         };
+    }
+
+    private PrimitiveFieldValue toTimeFieldValue(LongInstance timeMillis) {
+        var value = timeMillis.getValue();
+        return new PrimitiveFieldValue(
+                DF.format(new Date(value)),
+                PrimitiveKind.TIME.code(),
+                value
+        );
     }
 
     private ArrayFieldValue toArrayFieldValue(ArrayExpression arrayExpression) {

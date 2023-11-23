@@ -6,14 +6,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
 import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.InstanceQueryBuilder;
 import tech.metavm.entity.SerializeContext;
-import tech.metavm.expression.ConstantExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
-import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PrimitiveInstance;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.query.GraphQueryExecutor;
 import tech.metavm.object.instance.query.InstanceNode;
@@ -23,7 +21,6 @@ import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.util.*;
@@ -41,10 +38,13 @@ public class InstanceManager {
 
     private final InstanceSearchService instanceSearchService;
 
-    public InstanceManager(InstanceStore instanceStore, InstanceContextFactory instanceContextFactory, InstanceSearchService instanceSearchService) {
+    private final InstanceQueryService instanceQueryService;
+
+    public InstanceManager(InstanceStore instanceStore, InstanceContextFactory instanceContextFactory, InstanceSearchService instanceSearchService, InstanceQueryService instanceQueryService) {
         this.instanceStore = instanceStore;
         this.instanceContextFactory = instanceContextFactory;
         this.instanceSearchService = instanceSearchService;
+        this.instanceQueryService = instanceQueryService;
     }
 
     @Transactional(readOnly = true)
@@ -193,54 +193,68 @@ public class InstanceManager {
     }
 
     public QueryInstancesResponse query(InstanceQuery query) {
-        try (var context = instanceContextFactory.newBuilder().childrenLazyLoading(true).buildInstanceContext()) {
+        try (var context = newContext()) {
             Type type = context.getType(query.typeId());
-            if (type instanceof ClassType classType) {
-                Expression expression =
-                        query.searchText() != null ?
-                                ExpressionParser.parse(classType, query.searchText(), context) :
-                                ExpressionUtil.trueExpression();
-                if ((expression instanceof ConstantExpression constExpr) && constExpr.isString()) {
-                    Field titleField = classType.getTileField();
-                    PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(query.searchText());
-                    expression = ExpressionUtil.or(
-                            ExpressionUtil.fieldStartsWith(titleField, searchTextInst),
-                            ExpressionUtil.fieldLike(titleField, searchTextInst)
-                    );
-                }
-                SearchQuery searchQuery = new SearchQuery(
-                        context.getTenantId(),
-                        query.includeSubTypes() ? classType.getSubTypeIds() : Set.of(classType.getIdRequired()),
-                        expression,
-                        false,
-                        query.page(),
-                        query.pageSize() + NncUtils.getOrElse(query.removed(), List::size, 0)
+            if (type instanceof ClassType) {
+                var internalQuery = InstanceQueryBuilder.newBuilder(type)
+                        .searchText(query.searchText())
+                        .newlyCreated(query.newlyCreated())
+                        .page(query.page())
+                        .pageSize(query.pageSize())
+                        .build();
+                var dataPage1 = instanceQueryService.query(internalQuery, context);
+                return new QueryInstancesResponse(
+                        new Page<>(
+                                NncUtils.map(dataPage1.data(), Instance::toDTO),
+                                dataPage1.total()
+                        ),
+                        List.of()
                 );
-                Page<Long> idPage = instanceSearchService.search(searchQuery);
-
-                Set<Long> idSet = new HashSet<>(idPage.data());
-                if (query.created() != null && query.page() == 1)
-                    idSet.addAll(query.created());
-                if (query.removed() != null)
-                    query.removed().forEach(idSet::remove);
-                List<Long> ids = new ArrayList<>(idSet);
-                ids.sort((id1,id2) -> Long.compare(id2, id1));
-                ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
-                long total = idPage.total() + (idSet.size() - idPage.data().size());
-                List<Instance> instances = context.batchGet(ids);
-                var page = new Page<>(
-                        NncUtils.map(instances, Instance::toDTO),
-                        total
-                );
-                if (query.includeContextTypes()) {
-                    try (var serContext = SerializeContext.enter()) {
-                        serContext.writeType(classType);
-                        serContext.writeDependencies();
-                        return new QueryInstancesResponse(page, serContext.getTypes());
-                    }
-                } else {
-                    return new QueryInstancesResponse(page, List.of());
-                }
+//                Expression expression =
+//                        query.searchText() != null ?
+//                                ExpressionParser.parse(classType, query.searchText(), context) :
+//                                ExpressionUtil.trueExpression();
+//                if ((expression instanceof ConstantExpression constExpr) && constExpr.isString()) {
+//                    Field titleField = classType.getTileField();
+//                    PrimitiveInstance searchTextInst = InstanceUtils.stringInstance(query.searchText());
+//                    expression = ExpressionUtil.or(
+//                            ExpressionUtil.fieldStartsWith(titleField, searchTextInst),
+//                            ExpressionUtil.fieldLike(titleField, searchTextInst)
+//                    );
+//                }
+//                SearchQuery searchQuery = new SearchQuery(
+//                        context.getTenantId(),
+//                        query.includeSubTypes() ? classType.getSubTypeIds() : Set.of(classType.getIdRequired()),
+//                        expression,
+//                        false,
+//                        query.page(),
+//                        query.pageSize() + NncUtils.getOrElse(query.removed(), List::size, 0)
+//                );
+//                Page<Long> idPage = instanceSearchService.search(searchQuery);
+//
+//                Set<Long> idSet = new HashSet<>(idPage.data());
+//                if (query.newlyCreated() != null && query.page() == 1)
+//                    idSet.addAll(query.newlyCreated());
+//                if (query.removed() != null)
+//                    query.removed().forEach(idSet::remove);
+//                List<Long> ids = new ArrayList<>(idSet);
+//                ids.sort((id1,id2) -> Long.compare(id2, id1));
+//                ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
+//                long total = idPage.total() + (idSet.size() - idPage.data().size());
+//                List<Instance> instances = context.batchGet(ids);
+//                var page = new Page<>(
+//                        NncUtils.map(instances, Instance::toDTO),
+//                        total
+//                );
+//                if (query.includeContextTypes()) {
+//                    try (var serContext = SerializeContext.enter()) {
+//                        serContext.writeType(classType);
+//                        serContext.writeDependencies();
+//                        return new QueryInstancesResponse(page, serContext.getTypes());
+//                    }
+//                } else {
+//                    return new QueryInstancesResponse(page, List.of());
+//                }
             } else {
                 return new QueryInstancesResponse(new Page<>(List.of(), 0L), List.of());
             }

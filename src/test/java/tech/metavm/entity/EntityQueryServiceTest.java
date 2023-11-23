@@ -31,7 +31,7 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public <T extends Entity> T addEntity(T entity) {
-        if(!entityContext.containsModel(entity)) {
+        if (!entityContext.containsModel(entity)) {
             entityContext.bind(entity);
             entityContext.initIds();
         }
@@ -42,18 +42,11 @@ public class EntityQueryServiceTest extends TestCase {
     public void test() {
         Foo foo = addEntity(MockRegistry.getFoo());
         Page<Foo> page = entityQueryService.query(
-                new EntityQuery<>(
-                        Foo.class,
-                        null,
-                        List.of(),
-                        false,
-                        1,
-                        20,
-                        List.of(
+                EntityQueryBuilder.newBuilder(Foo.class)
+                        .fields(
                                 new EntityQueryField("name", foo.getName()),
                                 new EntityQueryField("qux", foo.getQux())
-                        )
-                ),
+                        ).build(),
                 entityContext
         );
         Assert.assertEquals(1, page.total());
@@ -63,15 +56,10 @@ public class EntityQueryServiceTest extends TestCase {
     public void testSearchText() {
         Foo foo = addEntity(MockRegistry.getFoo());
         Page<Foo> page = entityQueryService.query(
-                new EntityQuery<>(
-                        Foo.class,
-                        "Foo001",
-                        List.of("code"),
-                        false,
-                        1,
-                        20,
-                        List.of()
-                ),
+                EntityQueryBuilder.newBuilder(Foo.class)
+                        .searchText("Foo001")
+                        .searchFields(List.of("code"))
+                        .build(),
                 entityContext
         );
         Assert.assertEquals(1, page.total());
@@ -81,18 +69,12 @@ public class EntityQueryServiceTest extends TestCase {
     public void testSearchTypes() {
         ClassType fooType = addEntity(MockRegistry.getClassType(Foo.class));
         Page<ClassType> page = entityQueryService.query(
-                new EntityQuery<>(
-                        ClassType.class,
-                        null,
-                        List.of(),
-                        false,
-                        1,
-                        20,
-                        List.of(
+                EntityQueryBuilder.newBuilder(ClassType.class)
+                        .fields(
                                 new EntityQueryField("category", fooType.getCategory()),
                                 new EntityQueryField("name", fooType.getName())
                         )
-                ),
+                        .build(),
                 entityContext
         );
         Assert.assertEquals(1, page.total());

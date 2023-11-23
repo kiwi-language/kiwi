@@ -3,7 +3,6 @@ package tech.metavm.object.type.rest;
 import org.springframework.web.bind.annotation.*;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
-import tech.metavm.common.Request;
 import tech.metavm.common.Result;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.type.ArrayKind;
@@ -24,7 +23,7 @@ public class TypeController {
     }
 
     @PostMapping("/query")
-    public Result<Page<TypeDTO>> query(@RequestBody QueryTypeRequest request) {
+    public Result<Page<TypeDTO>> query(@RequestBody TypeQuery request) {
         return Result.success(typeManager.query(request));
     }
 

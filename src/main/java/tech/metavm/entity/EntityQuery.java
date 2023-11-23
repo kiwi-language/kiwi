@@ -11,7 +11,8 @@ public record EntityQuery<T extends Entity>(
         boolean includeBuiltin,
         int page,
         int pageSize,
-        List<EntityQueryField> fields
+        List<EntityQueryField> fields,
+        List<Long> newlyCreated
 ) {
 
     public static <T extends Entity> EntityQuery<T> create(
@@ -27,6 +28,7 @@ public record EntityQuery<T extends Entity>(
                 false,
                 page,
                 pageSize,
+                List.of(),
                 List.of()
         );
     }
@@ -45,7 +47,8 @@ public record EntityQuery<T extends Entity>(
                 false,
                 page,
                 pageSize,
-                fields
+                fields,
+                List.of()
         );
     }
 
@@ -63,7 +66,8 @@ public record EntityQuery<T extends Entity>(
                 false,
                 page,
                 pageSize,
-                fields
+                fields,
+                List.of()
         );
     }
 

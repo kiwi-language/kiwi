@@ -160,7 +160,7 @@ public class SubstitutorV2 extends CopyVisitor {
 
     @Override
     public Element visitTypeVariable(TypeVariable type) {
-        // Type variables can be created before it's parent object
+        // Type variables can be newlyCreated before it's parent object
         var subst = substituteType(type);
         if (subst != type)
             return subst;
@@ -255,11 +255,10 @@ public class SubstitutorV2 extends CopyVisitor {
         copy.setNative(flow.isNative());
         copy.setConstructor(flow.isConstructor());
         copy.update(
-                NncUtils.map(flow.getOverridden(), this::substituteFlow),
                 NncUtils.map(flow.getParameters(), p -> (Parameter) copy(p)),
                 substituteType(flow.getReturnType()),
-                (FunctionType) substituteType(flow.getType()),
-                (FunctionType) substituteType(flow.getStaticType())
+                NncUtils.map(flow.getOverridden(), this::substituteFlow),
+                context.getEntityContext().getFunctionTypeContext()
         );
         if (stage.isAfterOrAt(DEFINITION)) {
             copy.getRootScope().clearNodes();

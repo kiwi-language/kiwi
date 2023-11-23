@@ -7,6 +7,7 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.flow.NodeKind;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
@@ -36,7 +37,8 @@ public record NodeDTO(
 
     public static NodeDTO newNode(long flowId, String name, int type, Long prevId, Object param, long scopeId) {
         return new NodeDTO(
-                null, null, flowId, name, type, RefDTO.fromId(prevId), null, param, null, scopeId, null
+                null, null, flowId, name, type, NncUtils.get(prevId, RefDTO::fromId),
+                null, param, null, scopeId, null
         );
     }
 

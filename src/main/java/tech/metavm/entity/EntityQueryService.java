@@ -22,21 +22,23 @@ public class EntityQueryService {
 
     public <T extends Entity> Page<T> query(EntityQuery<T> query, IEntityContext context) {
         InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
-        Page<Long> instancePage = instanceQueryService.query(instanceQuery, context.getInstanceContext());
-        return instancePage.map(id -> context.getEntity(query.entityType(), id));
+        Page<Instance> instancePage = instanceQueryService.query(instanceQuery, context.getInstanceContext());
+        return instancePage.map(inst -> context.getEntity(query.entityType(), inst));
     }
 
     private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
         ClassType type = ModelDefRegistry.getClassType(entityQuery.entityType());
         EntityDef<?> entityDef = ModelDefRegistry.getEntityDef(type);
         return new InstanceQuery(
-                type.getIdRequired(),
+                type,
                 entityQuery.searchText(),
                 NncUtils.map(entityQuery.searchFields(), entityDef::getFieldByJavaFieldName),
                 entityQuery.includeBuiltin(),
+                true,
                 entityQuery.page(),
                 entityQuery.pageSize(),
-                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context))
+                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context)),
+                entityQuery.newlyCreated()
         );
     }
 

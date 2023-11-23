@@ -40,7 +40,6 @@ public class NncUtils {
     private static final ObjectMapper OBJECT_MAPPER_IGNORE_NULL = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
 
-
     static {
         OBJECT_MAPPER.registerModule(new Jdk8Module());
         OBJECT_MAPPER.registerModule(new JavaTimeModule());
@@ -101,6 +100,48 @@ public class NncUtils {
         } else {
             return Character.toUpperCase(s.charAt(0)) + s.substring(1);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Comparable<T>> List<T> merge(List<T> list1, List<T> list2, boolean desc) {
+        Object[] array1 = list1.toArray(), array2 = list2.toArray();
+        Arrays.sort(array1);
+        Arrays.sort(array2);
+        List<T> result = new ArrayList<>();
+        T last = null;
+        int i = 0, j = 0;
+        while (i < array1.length && j < array2.length) {
+            var t1 = (T) array1[i];
+            var t2 = (T) array2[j];
+            var r = t1.compareTo(t2);
+            T x;
+            if (r < 0) {
+                x = t1;
+                i++;
+            } else if (r > 0) {
+                x = t2;
+                j++;
+            } else {
+                x = t1;
+                i++;
+                j++;
+            }
+            if (!x.equals(last))
+                result.add(last = x);
+        }
+        for (; i < array1.length; i++) {
+            var t1 = (T) array1[i];
+            if (!t1.equals(last))
+                result.add(last = t1);
+        }
+        for (; j < array2.length; j++) {
+            var t2 = (T) array2[j];
+            if (!t2.equals(last))
+                result.add(last = t2);
+        }
+        if (desc)
+            Collections.reverse(result);
+        return result;
     }
 
     public static <T> List<T> concatList(List<? extends T> list, List<? extends T> values) {
@@ -651,13 +692,16 @@ public class NncUtils {
         map.values().forEach(t1 -> action.accept(t1, null));
     }
 
+    @SuppressWarnings({"ReassignedVariable", "unchecked"})
     public static <T extends Comparable<T>> void forEachPair(List<T> list1, List<T> list2, BiConsumer<T, T> action) {
-        Collections.sort(list1);
-        Collections.sort(list2);
+        var array1 = list1.toArray();
+        var array2 = list2.toArray();
+        Arrays.sort(array1);
+        Arrays.sort(array2);
         int i = 0, j = 0;
-        while (i < list1.size() && j < list2.size()) {
-            var t1 = list1.get(i);
-            var t2 = list2.get(j);
+        while (i < array1.length && j < array2.length) {
+            var t1 = (T) array1[i];
+            var t2 = (T) array2[j];
             var r = t1.compareTo(t2);
             if (r < 0) {
                 action.accept(t1, null);
@@ -671,11 +715,11 @@ public class NncUtils {
                 j++;
             }
         }
-        for (; i < list1.size(); i++) {
-            action.accept(list1.get(i), null);
+        for (; i < array1.length; i++) {
+            action.accept((T) array1[i], null);
         }
-        for (; j < list2.size(); j++) {
-            action.accept(null, list2.get(j));
+        for (; j < array2.length; j++) {
+            action.accept(null, (T) array2[j]);
         }
     }
 

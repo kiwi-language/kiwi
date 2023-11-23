@@ -22,6 +22,8 @@ public enum Function {
     SUM$_LONG(Long.class, Long.class, Long.class),
     SUM$_DOUBLE(Double.class, Double.class, Double.class),
 
+    RANDOM(Long.class),
+
     IF(Object.class, List.of(Boolean.class, Object.class, Object.class),
             types -> ValueUtil.getConvertibleType(types.get(1), types.get(2))),
 
@@ -29,13 +31,15 @@ public enum Function {
 
     NOW(Date.class),
 
+    TIME(Long.class, Long.class),
+
     LEN(Boolean.class, Object.class),
 
     STARTS_WITH(Boolean.class, String.class, String.class),
 
     CONTAINS(Boolean.class, String.class, String.class),
 
-    CONCAT(String.class, String.class, String.class),
+    CONCAT(String.class, Object.class, Object.class),
 
     HAS_NEXT(Boolean.class, Object.class),
 

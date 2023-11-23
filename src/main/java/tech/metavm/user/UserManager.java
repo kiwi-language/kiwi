@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.InstanceQueryBuilder;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.InstanceQuery;
@@ -27,17 +28,11 @@ public class UserManager {
     }
 
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
-        try(var context = newContext()) {
-            InstanceQuery query = new InstanceQuery(
-                    ModelDefRegistry.getType(UserRT.class).getIdRequired(),
-                    searchText,
-                    page,
-                    pageSize,
-                    true,
-                    false,
-                    List.of(),
-                    List.of()
-            );
+        try (var context = newContext()) {
+            var query = InstanceQueryBuilder.newBuilder(ModelDefRegistry.getType(UserRT.class))
+                    .searchText(searchText)
+                    .page(page)
+                    .pageSize(pageSize).build();
             Page<UserRT> dataPage = instanceQueryService.query(UserRT.class, query, context);
             return new Page<>(
                     NncUtils.map(dataPage.data(), UserRT::toUserDTO),
@@ -99,7 +94,7 @@ public class UserManager {
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext( false);
+        return instanceContextFactory.newEntityContext(false);
     }
 
 }

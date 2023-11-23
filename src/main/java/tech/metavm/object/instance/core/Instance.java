@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.IdInitializing;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.SerializeContext;
@@ -210,6 +211,10 @@ public abstract class Instance implements IdInitializing {
     @NoProxy
     public boolean isPassword() {
         return type.isPassword();
+    }
+
+    public Instance convert(Type type) {
+        throw new BusinessException(ErrorCode.CONVERSION_FAILED, getQualifiedTitle(), type.getName());
     }
 
     public void setContext(IInstanceContext context) {

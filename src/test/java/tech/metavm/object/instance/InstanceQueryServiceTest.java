@@ -12,8 +12,6 @@ import tech.metavm.object.type.Field;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 
-import java.util.List;
-
 import static tech.metavm.util.MockRegistry.getField;
 import static tech.metavm.util.TestContext.getTenantId;
 
@@ -43,14 +41,8 @@ public class InstanceQueryServiceTest extends TestCase {
         Instance qux = foo.getInstanceField(fooQuxField);
         Instance baz = foo.getInstanceArray(fooBazListField).getInstance(0);
 
-        InstanceQuery query = new InstanceQuery(
-                fooType.getIdRequired(),
-                null,
-                List.of(),
-                false,
-                1,
-                20,
-                List.of(
+        InstanceQuery query = InstanceQueryBuilder.newBuilder(fooType)
+                .fields(
                         new InstanceQueryField(
                                 fooNameField,
                                 foo.getStringField(fooNameField)
@@ -58,11 +50,10 @@ public class InstanceQueryServiceTest extends TestCase {
                         new InstanceQueryField(fooQuxField, qux),
                         new InstanceQueryField(fooBazListField, baz)
                 )
-        );
-
-        Page<Long> page = instanceQueryService.query(query, context);
+                .build();
+        Page<Instance> page = instanceQueryService.query(query, context);
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(foo.getId(), page.data().get(0));
+        Assert.assertEquals(foo.getId(), page.data().get(0).getId());
     }
 
     private ClassInstance addInstance(ClassInstance instance) {
@@ -78,24 +69,15 @@ public class InstanceQueryServiceTest extends TestCase {
 
         ClassInstance foo = addInstance(MockRegistry.getNewFooInstance());
 
-        InstanceQuery query2 = new InstanceQuery(
-                fooType.getIdRequired(),
-                null,
-                List.of(),
-                false,
-                1,
-                20,
-                List.of(
-                        new InstanceQueryField(
-                                fooNameField,
-                                foo.getField(fooNameField)
-                        )
-                )
-        );
-
-        Page<Long> page2 = instanceQueryService.query(query2, context);
+        InstanceQuery query2 = InstanceQueryBuilder.newBuilder(fooType)
+                .fields(new InstanceQueryField(
+                        fooNameField,
+                        foo.getField(fooNameField)
+                ))
+                .build();
+        Page<Instance> page2 = instanceQueryService.query(query2, context);
         Assert.assertEquals(1, page2.total());
-        Assert.assertEquals(foo.getId(), page2.data().get(0));
+        Assert.assertEquals(foo.getId(), page2.data().get(0).getId());
     }
 
 }

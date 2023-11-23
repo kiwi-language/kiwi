@@ -10,6 +10,7 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 import static tech.metavm.util.Constants.ROOT_TENANT_ID;
@@ -89,6 +90,11 @@ public class MemInstanceContext extends BaseInstanceContext {
         return new MemInstanceContext(
                 tenantId, idService, instanceStore, getParent()
         );
+    }
+
+    @Override
+    protected boolean checkAliveInStore(long id) {
+        return !instanceStore.load(StoreLoadRequest.create(id), this).isEmpty();
     }
 
     public void setEntityContext(IEntityContext entityContext) {

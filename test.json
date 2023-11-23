@@ -1,254 +1,85 @@
 {
-  "data": {
-    "id": 1006000121,
-    "fields": [
-      {
-        "id": 70094,
-        "value": {
-          "elements": [],
-          "id": 7205760404592737
-        }
-      },
-      {
-        "id": 70095,
-        "value": 150000
-      },
-      {
-        "id": 70096,
-        "value": {
-          "elements": [],
-          "id": 7205760404592738
-        }
-      },
-      {
-        "id": 70098,
-        "value": {
-          "elements": [
-            {
-              "id": 1006100123,
-              "fields": [
-                {
-                  "id": 70362,
-                  "value": 1006000121
-                },
-                {
-                  "id": 70363,
-                  "value": "标题"
-                },
-                {
-                  "id": 70365,
-                  "value": 20000
-                },
-                {
-                  "id": 70366,
-                  "value": 160000
-                },
-                {
-                  "id": 70367,
-                  "value": 220001
-                },
-                {
-                  "id": 70369,
-                  "value": true
-                },
-                {
-                  "id": 70370,
-                  "value": false
-                },
-                {
-                  "id": 70371,
-                  "value": 410002
-                },
-                {
-                  "id": 70372,
-                  "value": false
-                },
-                {
-                  "id": 70373,
-                  "value": false
-                }
-              ]
-            },
-            {
-              "id": 1006100124,
-              "fields": [
-                {
-                  "id": 70362,
-                  "value": 1006000121
-                },
-                {
-                  "id": 70363,
-                  "value": "库存"
-                },
-                {
-                  "id": 70365,
-                  "value": 20002
-                },
-                {
-                  "id": 70366,
-                  "value": 160000
-                },
-                {
-                  "id": 70367,
-                  "value": 220001
-                },
-                {
-                  "id": 70369,
-                  "value": false
-                },
-                {
-                  "id": 70370,
-                  "value": false
-                },
-                {
-                  "id": 70371,
-                  "value": 410007
-                },
-                {
-                  "id": 70372,
-                  "value": false
-                },
-                {
-                  "id": 70373,
-                  "value": false
-                }
-              ]
-            },
-            {
-              "id": 1006100131,
-              "fields": [
-                {
-                  "id": 70362,
-                  "value": 1006000121
-                },
-                {
-                  "id": 70363,
-                  "value": "价格"
-                },
-                {
-                  "id": 70365,
-                  "value": 20005
-                },
-                {
-                  "id": 70366,
-                  "value": 160000
-                },
-                {
-                  "id": 70367,
-                  "value": 220001
-                },
-                {
-                  "id": 70369,
-                  "value": false
-                },
-                {
-                  "id": 70370,
-                  "value": false
-                },
-                {
-                  "id": 70371,
-                  "value": 410030
-                },
-                {
-                  "id": 70372,
-                  "value": false
-                },
-                {
-                  "id": 70373,
-                  "value": false
-                }
-              ]
-            }
-          ],
-          "id": 7836264353424620
-        }
-      },
-      {
-        "id": 70099,
-        "value": {
-          "elements": [],
-          "id": 7836264353324618
-        }
-      },
-      {
-        "id": 70313,
-        "value": {
-          "elements": [],
-          "id": 7836264353424621
-        }
-      },
-      {
-        "id": 70314,
-        "value": {
-          "elements": [],
-          "id": 7836264353024612
-        }
-      },
-      {
-        "id": 70316,
-        "value": false
-      },
-      {
-        "id": 70317,
-        "value": false
-      },
-      {
-        "id": 70318,
-        "value": {
-          "elements": [],
-          "id": 7836264353224616
-        }
-      },
-      {
-        "id": 70319,
-        "value": {
-          "elements": [],
-          "id": 7205760404692739
-        }
-      },
-      {
-        "id": 70320,
-        "value": {
-          "elements": [],
-          "id": 7205760404592739
-        }
-      },
-      {
-        "id": 70322,
-        "value": {
-          "elements": [],
-          "id": 7836264353124614
-        }
-      },
-      {
-        "id": 70326,
-        "value": "商品"
-      },
-      {
-        "id": 70327,
-        "value": "Product"
-      },
-      {
-        "id": 70357,
-        "value": false
-      },
-      {
-        "id": 70358,
-        "value": false
-      },
-      {
-        "id": 70359,
-        "value": 140000
-      },
-      {
-        "id": 70360,
-        "value": false
-      },
-      {
-        "id": 70361,
-        "value": false
-      }
-    ]
+  "id": 1015000302,
+  "flowId": 1013200266,
+  "scopeId": 1012800260,
+  "prevRef": {
+    "id": 1015300307
   },
-  "version": 2
+  "name": "订单",
+  "type": 3,
+  "param": {
+    "typeRef": {
+      "id": 1012100252
+    },
+    "fieldParams": [
+      {
+        "fieldRef": {
+          "id": 1012000254
+        },
+        "value": {
+          "kind": 2,
+          "value": {
+            "expression": "当前对象.标题",
+            "type": 5,
+            "displayValue": ""
+          }
+        }
+      },
+      {
+        "fieldRef": {
+          "id": 1012000257
+        },
+        "value": {
+          "kind": 2,
+          "value": {
+            "expression": "当前对象",
+            "type": 5,
+            "displayValue": ""
+          }
+        }
+      },
+      {
+        "fieldRef": {
+          "id": 1012000258
+        },
+        "value": {
+          "kind": 2,
+          "value": {
+            "expression": "流程输入.数量",
+            "type": 5,
+            "displayValue": ""
+          }
+        }
+      },
+      {
+        "fieldRef": {
+          "id": 1012000259
+        },
+        "value": {
+          "kind": 3,
+          "value": {
+            "expression": "流程输入.数量 * 当前对象.价格 - 循环节点.折扣总额",
+            "type": 5,
+            "displayValue": ""
+          }
+        }
+      },
+      {
+        "fieldRef": {
+          "id": 1012000268
+        },
+        "value": {
+          "kind": 1,
+          "value": {
+            "displayValue": "1700730102151",
+            "primitiveKind": 1,
+            "value": 1700730102151,
+            "type": 1
+          }
+        }
+      }
+    ],
+    "kind": 3
+  },
+  "kind": 3
 }

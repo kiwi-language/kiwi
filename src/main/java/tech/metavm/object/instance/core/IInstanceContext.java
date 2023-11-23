@@ -27,6 +27,13 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     void replace(Collection<Instance> instances);
 
+    /*
+     * Used to filter out dead ids from search result arsing from index rebuild delay
+     */
+    List<Long> filterAlive(List<Long> ids);
+
+    boolean isAlive(long id);
+
     Instance get(long id);
 
     Instance get(RefDTO ref);

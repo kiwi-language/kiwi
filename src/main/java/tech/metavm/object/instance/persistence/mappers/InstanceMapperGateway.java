@@ -96,7 +96,7 @@
 //                InstanceArrayPO.class::isInstance,
 //                InstanceArrayPO.class::cast
 //        );
-//        List<InstancePO> instancePOs = NncUtils.exclude(
+//        List<InstancePO> instancePOs = NncUtils.removed(
 //                records,
 //                InstanceArrayPO.class::isInstance
 //        );
@@ -109,7 +109,7 @@
 //    }
 //
 //    public int updateSyncVersion(List<VersionPO> versions) {
-//        List<VersionPO> objectVersions = NncUtils.exclude(versions, v -> TypeCategory.isArrayId(v.id()));
+//        List<VersionPO> objectVersions = NncUtils.removed(versions, v -> TypeCategory.isArrayId(v.id()));
 //        if (NncUtils.isNotEmpty(objectVersions)) {
 //            return instanceMapper.updateSyncVersion(objectVersions);
 //        }

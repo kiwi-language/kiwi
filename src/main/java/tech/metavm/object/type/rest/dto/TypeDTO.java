@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.GenericDeclarationDTO;
 import tech.metavm.object.type.ClassSource;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -59,7 +60,7 @@ public record TypeDTO(
                 id, tmpId, name, null, TypeCategory.CLASS.code(),
                 ephemeral, anonymous,
                 new ClassTypeParam(
-                        RefDTO.fromId(superTypeId),
+                        NncUtils.get(superTypeId, RefDTO::fromId),
                         List.of(),
                         ClassSource.RUNTIME.code(),
                         fieldDTOs,

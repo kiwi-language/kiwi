@@ -307,9 +307,11 @@ public class TableManager {
 
     public Page<TableDTO> list(String searchText, int page, int pageSize) {
         try (IEntityContext context = newContext()) {
-            var request = new QueryTypeRequest(
+            var request = new TypeQuery(
                     searchText, List.of(TypeCategory.CLASS.code(), TypeCategory.VALUE.code()),
-                    false, false, false, null, page, pageSize
+                    false, false, false, null,
+                    List.of(),
+                    page, pageSize
             );
             Page<TypeDTO> typePage = typeManager.query(request);
             return new Page<>(

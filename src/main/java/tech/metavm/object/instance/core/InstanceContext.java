@@ -82,7 +82,10 @@ public class InstanceContext extends BaseInstanceContext {
 
     @Override
     public void buffer(long id) {
-        loadingBuffer.buffer(id);
+        if(parent != null && parent.containsId(id))
+            parent.buffer(id);
+        else
+            loadingBuffer.buffer(id);
     }
 
     @Override
@@ -93,6 +96,11 @@ public class InstanceContext extends BaseInstanceContext {
         } else {
             return new ClassInstance(id, (ClassType) type, this::initializeInstance);
         }
+    }
+
+    @Override
+    protected boolean checkAliveInStore(long id) {
+        return loadingBuffer.tryGetTree(id) != null;
     }
 
     private void initializeInstance(Instance instance) {

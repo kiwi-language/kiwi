@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.Instance;
@@ -8,6 +9,7 @@ import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;

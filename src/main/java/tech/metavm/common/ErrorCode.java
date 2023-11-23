@@ -38,6 +38,7 @@ public enum ErrorCode {
     INVALID_INSTANCE_PATH(307, "对象路径不合法: {}"),
     INCORRECT_PARENT_REF(308, "父对象引用错误，子对象: {}, 父对象: {}, 引用值: {}"),
     MULTI_PARENT(309, "子对象归属于多个父对象: {}"),
+    CONVERSION_FAILED(410, "对象'{}'不能转化为类型'{}'"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),

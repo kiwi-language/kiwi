@@ -30,7 +30,7 @@ public class InstanceContextFactory implements IInstanceContextFactory {
 
     private ApplicationContext applicationContext;
 
-    private boolean defaultAsyncProcessing = false;
+    private boolean defaultAsyncProcessing = true;
 
     private Cache cache;
 
@@ -56,6 +56,10 @@ public class InstanceContextFactory implements IInstanceContextFactory {
     private boolean isReadonlyTransaction() {
         return  !TransactionSynchronizationManager.isActualTransactionActive()
                 || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+    }
+
+    public IEntityContext newEntityContext() {
+        return newEntityContext(ContextUtil.getTenantId(), defaultAsyncProcessing);
     }
 
     public IEntityContext newEntityContext(long tenantId) {

@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.IteratorImplNative;
 import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.object.instance.core.*;
@@ -73,8 +74,12 @@ public class FunctionMethods {
         return str.contains(prefix);
     }
 
-    public static StringInstance CONCAT(StringInstance str1, StringInstance str2) {
-        return str1.concat(str2);
+    public static StringInstance CONCAT(Instance str1, Instance str2) {
+        return new StringInstance(str1.getTitle() + str2.getTitle(), StandardTypes.getStringType());
+    }
+
+    public static LongInstance RANDOM() {
+        return new LongInstance(NncUtils.random(), StandardTypes.getLongType());
     }
 
     public static Instance IF(BooleanInstance condition, Instance value1, Instance value2) {
@@ -103,6 +108,10 @@ public class FunctionMethods {
 
     public static TimeInstance NOW() {
         return InstanceUtils.timeInstance(System.currentTimeMillis());
+    }
+
+    public static TimeInstance TIME(LongInstance timeMillis) {
+        return InstanceUtils.timeInstance(timeMillis.getValue());
     }
 
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {

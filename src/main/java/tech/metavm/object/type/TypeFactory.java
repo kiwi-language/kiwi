@@ -209,23 +209,11 @@ public abstract class TypeFactory {
         flow.setAbstract(flowDTO.isAbstract());
         flow.setConstructor(flowDTO.isConstructor());
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), batch::getTypeVariable));
-        var parameters = NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch));
-        var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        var returnType = batch.get(flowDTO.returnTypeRef());
         flow.update(
+                NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)),
+                batch.get(flowDTO.returnTypeRef()),
                 NncUtils.map(flowDTO.overriddenRefs(), batch::getFlow),
-                parameters,
-                returnType,
-                context.getFunctionTypeContext().get(
-                        paramTypes,
-                        returnType,
-                        NncUtils.get(flowDTO.typeRef(), RefDTO::tmpId)
-                ),
-                context.getFunctionTypeContext().get(
-                        NncUtils.prepend(flow.getDeclaringType(), paramTypes),
-                        returnType,
-                        NncUtils.get(flowDTO.staticTypeRef(), RefDTO::tmpId)
-                )
+                context.getFunctionTypeContext()
         );
         flow.setAbstract(flowDTO.isAbstract());
         if(flowDTO.templateInstances() != null) {

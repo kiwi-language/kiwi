@@ -184,10 +184,12 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         return removed;
     }
 
-    private void checkElement(Instance element) {
-        if (!getType().getElementType().isAssignableFrom(element.getType())) {
-            throw new BusinessException(ErrorCode.INCORRECT_ELEMENT_TYPE);
-        }
+    private Instance checkElement(Instance element) {
+        var elementType = getType().getElementType();
+        if (elementType.isAssignableFrom(element.getType()))
+            return element;
+        else
+            return element.convert(elementType);
     }
 
     private void checkIndex(int index) {
@@ -195,7 +197,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     }
 
     private boolean addInternally(Instance element) {
-        checkElement(element);
+        element = checkElement(element);
         elements.add(element);
         onAdd(element);
         return true;

@@ -416,19 +416,36 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         isNative = aNative;
     }
 
-    public void update(List<Flow> overridden,
-                       List<Parameter> parameters,
-                       Type returnType,
-                       FunctionType type,
-                       FunctionType staticType
-    ) {
-        checkTypes(overridden, parameters, returnType, type, staticType);
-        this.overridden.reset(overridden);
-        this.returnType = returnType;
-        super.setType(type);
-        this.staticType = staticType;
-        setParameters(parameters, false);
+    public void update(List<Parameter> parameters, Type returnType,
+                       FunctionTypeContext functionTypeContext) {
+        update(parameters, returnType, null, functionTypeContext);
     }
+
+    public void update(List<Parameter> parameters, Type returnType,
+                       @Nullable List<Flow> overridden, FunctionTypeContext functionTypeContext) {
+        var paramTypes = NncUtils.map(parameters, Parameter::getType);
+        var type = functionTypeContext.get(paramTypes, returnType);
+        var staticType = functionTypeContext.get(NncUtils.prepend(declaringType, paramTypes), returnType);
+        checkTypes(NncUtils.orElse(overridden, this.overridden), parameters, returnType, type, staticType);
+        setParameters(parameters, false);
+        this.returnType = returnType;
+        if(overridden != null)
+            this.overridden.reset(overridden);
+    }
+
+//    public void update(List<Flow> overridden,
+//                       List<Parameter> parameters,
+//                       Type returnType,
+//                       FunctionType type,
+//                       FunctionType staticType
+//    ) {
+//        checkTypes(overridden, parameters, returnType, type, staticType);
+//        this.overridden.reset(overridden);
+//        this.returnType = returnType;
+//        super.setType(type);
+//        this.staticType = staticType;
+//        setParameters(parameters, false);
+//    }
 
     @Override
     public void setType(Type type) {

@@ -142,14 +142,7 @@ public class FlowManager {
         flow.setTypeArguments(NncUtils.map(flowDTO.typeArgumentRefs(), context::getType));
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), context::getTypeVariable));
         var parameters = NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, context));
-        var parameterTypes = NncUtils.map(parameters, Parameter::getType);
-        flow.update(
-                overriden,
-                parameters,
-                returnType,
-                context.getFunctionType(parameterTypes, returnType),
-                context.getFunctionType(NncUtils.prepend(declaringType, parameterTypes), returnType)
-        );
+        flow.update(parameters, returnType, overriden, context.getFunctionTypeContext());
         if (flowDTO.templateInstances() != null) {
             for (FlowDTO templateInstance : flowDTO.templateInstances()) {
                 save(templateInstance, declarationOnly, context);
@@ -764,16 +757,18 @@ public class FlowManager {
                 parameter.setCondition(cond);
             }
         }
-        var oldFuncType = callable.getFunctionType();
-        callable.setParameters(parameters);
         var funcTypeContext = context.getFunctionTypeContext();
-        callable.setFunctionType(funcTypeContext.get(callable.getParameterTypes(), callable.getReturnType()));
         if (callable instanceof Flow flow) {
-            flow.setStaticType(funcTypeContext.get(
-                    NncUtils.prepend(flow.getDeclaringType(), flow.getParameterTypes()), flow.getReturnType()));
-            if (flow.isAbstract() && !oldFuncType.equals(callable.getFunctionType())) {
+            var oldFuncType = flow.getFunctionType();
+            flow.update(parameters, flow.getReturnType(), funcTypeContext);
+            if (flow.isAbstract() && !oldFuncType.equals(flow.getFunctionType()))
                 recreateOverrideFlows(flow, context);
-            }
+        }
+        else {
+            var funcType = funcTypeContext.get(callable.getParameterTypes(), callable.getReturnType());
+            callable.setParameters(parameters);
+            callable.setFunctionType(funcType);
+
         }
     }
 

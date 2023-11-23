@@ -40,7 +40,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private LockMode lockMode = LockMode.NONE;
     protected final Profiler profiler = ContextUtil.getProfiler();
 
-    private final IInstanceContext parent;
+    protected final IInstanceContext parent;
     private final Set<InstanceIdInitListener> listeners = new LinkedHashSet<>();
     private final Set<Consumer<Instance>> removalListeners = new LinkedHashSet<>();
     private final Set<Consumer<Instance>> initializationListeners = new LinkedHashSet<>();
@@ -165,12 +165,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public void buffer(Collection<Long> ids) {
-    }
-
-    @Override
     public Instance get(RefDTO ref) {
-        if(ref.isEmpty())
+        if (ref.isEmpty())
             return null;
         if (ref.isPersisted())
             return get(ref.id());
@@ -210,11 +206,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public Instance get(long id) {
-        var found = internalGet(id);
-        if (found.isRemoved())
-            throw new InternalException(
-                    String.format("Can not get instance '%s' because it's already removed", found));
-        return found;
+        var found = getBuffered(id);
+        if (found != null) {
+            if (found.isRemoved())
+                throw new InternalException(
+                        String.format("Can not get instance '%s' because it's already removed", found));
+            return found;
+        } else {
+            buffer(id);
+            return add(id);
+        }
     }
 
     @Override
@@ -223,7 +224,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (found != null)
             return found;
         else {
-            buffer(id);
             return add(id);
         }
     }
@@ -235,6 +235,32 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             found = parent.getBuffered(id);
         return found;
     }
+
+    protected Instance getSelfBuffered(long id) {
+        return instanceMap.get(id);
+    }
+
+    @Override
+    public List<Long> filterAlive(List<Long> ids) {
+        buffer(ids);
+        return NncUtils.filter(ids, this::isAlive);
+    }
+
+    @Override
+    public final boolean isAlive(long id) {
+        if(parent != null && parent.containsId(id))
+            return parent.isAlive(id);
+        var instance = getSelfBuffered(id);
+        if(instance != null) {
+            if(instance.isRemoved())
+                return false;
+            if(instance.isLoaded())
+                return true;
+        }
+        return checkAliveInStore(id);
+    }
+
+    protected abstract boolean checkAliveInStore(long id);
 
     @Override
     public Instance getIfPresentByTmpId(long tmpId) {

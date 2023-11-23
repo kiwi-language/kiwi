@@ -4,6 +4,7 @@ import tech.metavm.entity.ElementTransformer;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.Property;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -396,6 +397,8 @@ public class ExpressionUtil {
             Object value = primitiveFieldValue.getValue();
             if (value instanceof String str) {
                 return "'" + str + "'";
+            } else if (primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.TIME.code()) {
+                return String.format("TIME(%d)", (long) primitiveFieldValue.getValue());
             } else {
                 return value.toString();
             }

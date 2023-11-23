@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;

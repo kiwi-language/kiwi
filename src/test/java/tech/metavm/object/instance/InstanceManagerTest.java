@@ -32,16 +32,17 @@ public class InstanceManagerTest extends TestCase {
         MockRegistry.setUp(idProvider);
         MemInstanceStore instanceStore = new MemInstanceStore();
         MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
+        InstanceQueryService instanceQueryService = new InstanceQueryService(instanceSearchService);
         instanceContextFactory = TestUtils.getInstanceContextFactory(
                 idProvider, instanceStore, instanceSearchService
         );
         instanceManager = new InstanceManager(
-                instanceStore, instanceContextFactory, instanceSearchService
-        );
+                instanceStore, instanceContextFactory, instanceSearchService,
+                instanceQueryService);
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newContext().getEntityContext();
+        return instanceContextFactory.newEntityContext();
     }
 
     private Foo saveFoo(IEntityContext context) {
@@ -101,7 +102,7 @@ public class InstanceManagerTest extends TestCase {
         Foo foo = saveFoo(context);
         ClassType fooType = MockRegistry.getClassType(Foo.class);
         Page<InstanceDTO[]> page = instanceManager.select(new SelectRequestDTO(
-                fooType.getId(),
+                fooType.getIdRequired(),
                 List.of(
                         "巴.编号",
                         "量子X"

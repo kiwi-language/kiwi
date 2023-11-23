@@ -100,14 +100,15 @@ public class TypeManager {
         return primitiveTypes;
     }
 
-    public Page<TypeDTO> query(QueryTypeRequest request) {
-        IEntityContext context = newContext();
-        return query(request, context);
+    public Page<TypeDTO> query(TypeQuery request) {
+        try (IEntityContext context = newContext()) {
+            return query(request, context);
+        }
     }
 
-    private Page<TypeDTO> query(QueryTypeRequest request,
-                               IEntityContext context) {
-        var typePage = query0(request, context);
+    private Page<TypeDTO> query(TypeQuery query,
+                                IEntityContext context) {
+        var typePage = query0(query, context);
         return new Page<>(
                 NncUtils.map(typePage.data(), Type::toDTO),
                 typePage.total()
@@ -142,35 +143,29 @@ public class TypeManager {
         }
     }
 
-    private Page<? extends Type> query0(QueryTypeRequest request, IEntityContext context) {
-        List<TypeCategory> categories = request.getCategories() != null ?
-                NncUtils.map(request.getCategories(), TypeCategory::getByCode)
+    private Page<? extends Type> query0(TypeQuery query, IEntityContext context) {
+        List<TypeCategory> categories = query.categories() != null ?
+                NncUtils.map(query.categories(), TypeCategory::getByCode)
                 : List.of(TypeCategory.CLASS, TypeCategory.VALUE);
-        if (categories.isEmpty()) {
+        if (categories.isEmpty())
             return new Page<>(List.of(), 0);
-        }
-        var fields = new ArrayList<>(List.of(
-                new EntityQueryField("category", categories)
-        ));
-        if (!request.isIncludeAnonymous()) {
+        var fields = new ArrayList<>(List.of(new EntityQueryField("category", categories)));
+        if (!query.includeAnonymous())
             fields.add(new EntityQueryField("anonymous", false));
-        }
-        if (request.isTemplate() != null) {
-            fields.add(new EntityQueryField("templateFlag", request.isTemplate()));
-        }
-        if (request.getError() != null) {
-            fields.add(new EntityQueryField("error", request.getError()));
-        }
+        if (query.isTemplate() != null)
+            fields.add(new EntityQueryField("templateFlag", query.isTemplate()));
+        if (query.error() != null)
+            fields.add(new EntityQueryField("error", query.error()));
         return entityQueryService.query(
-                new EntityQuery<>(
-                        Type.class,
-                        request.getSearchText(),
-                        List.of("code"),
-                        request.isIncludeBuiltin(),
-                        request.getPage(),
-                        request.getPageSize(),
-                        fields
-                ),
+                EntityQueryBuilder.newBuilder(Type.class)
+                        .searchText(query.searchText())
+                        .searchFields(List.of("code"))
+                        .fields(fields)
+                        .includeBuiltin(query.includeBuiltin())
+                        .page(query.page())
+                        .pageSize(query.pageSize())
+                        .newlyCreated(query.newlyCreated())
+                        .build(),
                 context
         );
     }
@@ -315,20 +310,21 @@ public class TypeManager {
     public List<Long> batchSave(BatchSaveRequest request) {
         List<TypeDTO> typeDTOs = request.types();
         FlowSavingContext.skipPreprocessing(true);
-        IEntityContext context = newContext();
-        batchSave(typeDTOs, context);
-        List<ClassType> newClasses = NncUtils.filterAndMap(
-                typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && t.id() == null,
-                t -> context.getClassType(t.getRef())
-        );
-        for (ClassType newClass : newClasses) {
-            if (!newClass.isInterface()) {
-                context.initIds();
-                initClass(newClass, context);
+        try (var context = newContext(true)) {
+            batchSave(typeDTOs, context);
+            List<ClassType> newClasses = NncUtils.filterAndMap(
+                    typeDTOs, t -> TypeCategory.getByCode(t.category()).isPojo() && t.id() == null,
+                    t -> context.getClassType(t.getRef())
+            );
+            for (ClassType newClass : newClasses) {
+                if (!newClass.isInterface()) {
+                    context.initIds();
+                    initClass(newClass, context);
+                }
             }
+            context.finish();
+            return NncUtils.map(typeDTOs, typeDTO -> context.getType(typeDTO.getRef()).getIdRequired());
         }
-        context.finish();
-        return NncUtils.map(typeDTOs, typeDTO -> context.getType(typeDTO.getRef()).getIdRequired());
     }
 
     public List<Type> batchSave(List<TypeDTO> typeDTOs, IEntityContext context) {
@@ -487,8 +483,9 @@ public class TypeManager {
             List<ClassType> types;
             if (lowerBound == StandardTypes.getNothingType() && upperBound == StandardTypes.getObjectType()) {
                 types = NncUtils.filterByType(query0(
-                        new QueryTypeRequest(null, request.categories(), request.isTemplate(),
-                                request.includeParameterized(), request.includeBuiltin(), null, 1, 20),
+                        new TypeQuery(null, request.categories(), request.isTemplate(),
+                                request.includeParameterized(), request.includeBuiltin(), null,
+                                List.of(), 1, 20),
                         context
                 ).data(), ClassType.class);
             } else {
@@ -580,7 +577,7 @@ public class TypeManager {
     }
 
     private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, ClassType type) {
-        var ordinalField = type.findFieldByCode("ordinal");
+        var ordinalField = type.getFieldByCode("ordinal");
         var param = (ClassInstanceParam) instanceDTO.param();
         return instanceDTO.copyWithParam(
                 param.copyWithNewField(
@@ -652,7 +649,7 @@ public class TypeManager {
 
     @Transactional
     public void remove(long id) {
-        try (var context = newContext()) {
+        try (var context = newContext(true)) {
             ClassType type = context.getClassType(id);
             if (type == null)
                 return;

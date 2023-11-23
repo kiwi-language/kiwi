@@ -1,5 +1,7 @@
 package tech.metavm.object.instance.rest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 public record InstanceQuery(
@@ -9,14 +11,15 @@ public record InstanceQuery(
         int pageSize,
         boolean includeSubTypes,
         boolean includeContextTypes,
-        List<Long> created,
-        List<Long> removed
+        List<Long> newlyCreated
 ) {
 
+    @JsonIgnore
     public long start() {
         return (long) (page - 1) * pageSize;
     }
 
+    @JsonIgnore
     public long limit() {
         return pageSize;
     }
