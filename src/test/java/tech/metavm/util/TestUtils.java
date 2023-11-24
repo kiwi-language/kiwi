@@ -15,6 +15,7 @@ import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
+import tech.metavm.object.type.websocket.MockMetaChangeQueue;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -185,7 +186,7 @@ public class TestUtils {
                         instanceSearchService,
                         instanceContextFactory,
                         instanceStore,
-                        new MockTransactionOperations()))
+                        new MockTransactionOperations(), new MockMetaChangeQueue()))
         ));
         return instanceContextFactory;
     }

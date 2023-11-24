@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
+import tech.metavm.object.type.websocket.MockMetaChangeQueue;
 import tech.metavm.task.TaskManager;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
@@ -42,7 +43,7 @@ public class FlowManagerTest extends TestCase {
                                 instanceSearchService,
                                 instanceContextFactory,
                                 instanceStore,
-                                new MockTransactionOperations()))
+                                new MockTransactionOperations(), new MockMetaChangeQueue()))
         ));
 
         EntityQueryService entityQueryService =

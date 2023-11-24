@@ -35,13 +35,18 @@ public class LoginController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/is-logged-in")
-    public Result<Boolean> check(HttpServletRequest httpServletRequest) {
+    @GetMapping("/get-tenant-id")
+    public Result<Long> getTenantId(HttpServletRequest httpServletRequest) {
         try {
-            loginService.verify(Tokens.getToken(httpServletRequest));
-            return Result.success(true);
+            var token = Tokens.getToken(httpServletRequest);
+            if(token != null) {
+                loginService.verify(token);
+                return Result.success(token.tenantId());
+            }
+            else
+                return Result.success(-2L);
         } catch (BusinessException e) {
-            return Result.success(false);
+            return Result.success(-2L);
         }
     }
 

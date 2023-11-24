@@ -12,6 +12,7 @@ import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.websocket.MockMetaChangeQueue;
 import tech.metavm.util.*;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public class BootstrapTest extends TestCase {
                 instanceSearchService,
                 instanceContextFactory,
                 instanceStore,
-                new MockTransactionOperations());
+                new MockTransactionOperations(), new MockMetaChangeQueue());
         instanceContextFactory.setIdService(mockIdProvider);
         instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
     }

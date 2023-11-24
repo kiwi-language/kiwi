@@ -8,6 +8,7 @@ import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.search.InstanceSearchService;
+import tech.metavm.object.type.websocket.MockMetaChangeQueue;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.ContextUtil;
@@ -40,7 +41,7 @@ public class UserManagerTest extends TestCase {
                 new IndexConstraintPlugin(new MemIndexEntryMapper()),
                 new CheckConstraintPlugin(),
                 new ChangeLogPlugin(
-                        new InstanceLogServiceImpl(instanceSearchService, instanceContextFactory, instanceStore, new MockTransactionOperations())
+                        new InstanceLogServiceImpl(instanceSearchService, instanceContextFactory, instanceStore, new MockTransactionOperations(), new MockMetaChangeQueue())
                 )
         ));
 

@@ -5,6 +5,7 @@ import org.junit.Assert;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.*;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.websocket.MockMetaChangeQueue;
 import tech.metavm.util.*;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class InstanceLogServiceImplTest extends TestCase {
         MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
         InstanceLogServiceImpl instanceLogService = new InstanceLogServiceImpl(
                 instanceSearchService, instanceContextFactory, instanceStore,
-                new MockTransactionOperations());
+                new MockTransactionOperations(), new MockMetaChangeQueue());
 
         instanceLogService.process(logs);
         Assert.assertTrue(instanceSearchService.contains(fooInstance.getId()));

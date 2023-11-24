@@ -18,6 +18,7 @@ import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.GetTypesRequest;
 import tech.metavm.object.type.rest.dto.GetTypesResponse;
 import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.type.websocket.MockMetaChangeQueue;
 import tech.metavm.util.*;
 
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public class GeneratorTest extends TestCase {
                     instanceSearchService,
                     instanceContextFactory,
                     instanceStore,
-                    new MockTransactionOperations());
+                    new MockTransactionOperations(), new MockMetaChangeQueue());
             instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
             var stdAllocators = new StdAllocators(allocatorStore);
             Bootstrap bootstrap = new Bootstrap(instanceContextFactory, stdAllocators, new MemColumnStore());
