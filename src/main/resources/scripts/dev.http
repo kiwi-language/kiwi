@@ -2,6 +2,10 @@
 POST https://metavm.tech/api/bootstrap?saveIds=false
 
 ###
+GET https://metavm.tech/websocket/metavm-websocket
+Upgrade: websocket
+
+###
 POST https://metavm.tech/api/bootstrap/save
 
 ###

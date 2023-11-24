@@ -32,7 +32,7 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/bootstrap",
             "/management",
             "/lab",
-            "/is-logged-in"
+            "/get-tenant-id"
     );
 
     @Override
