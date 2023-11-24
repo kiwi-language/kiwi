@@ -1,5 +1,7 @@
 package tech.metavm.object.type.websocket;
 
 public interface MetaChangeQueue {
-    void sendMetaChange(long tenantId, long version);
+
+    void notifyTypeChange(long tenantId, long version);
+
 }

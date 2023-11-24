@@ -94,7 +94,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
             ClassType versionType = ModelDefRegistry.getClassType(Version.class);
             List<Version> versions = NncUtils.filterAndMap(changed,
                     versionType::isInstance, inst -> context.getEntity(Version.class, inst));
-            handleNewVersions(tenantId, versions);
+            handleVersions(tenantId, versions);
             List<Long> removed = NncUtils.filterAndMap(logs, InstanceLog::isDelete, InstanceLog::getId);
             if (NncUtils.isNotEmpty(changed) || NncUtils.isNotEmpty(removed)) {
                 try (var ignored = context.getProfiler().enter("bulk")) {
@@ -105,10 +105,10 @@ public class InstanceLogServiceImpl implements InstanceLogService {
         }
     }
 
-    private void handleNewVersions(long tenantId, List<Version> versions) {
+    private void handleVersions(long tenantId, List<Version> versions) {
         var maxVersion = versions.stream().mapToLong(Version::getVersion).max().orElse(-1L);
         if(maxVersion != -1L) {
-            metaChangeQueue.sendMetaChange(tenantId, maxVersion);
+            metaChangeQueue.notifyTypeChange(tenantId, maxVersion);
         }
     }
 
