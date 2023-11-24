@@ -16,6 +16,7 @@ public class InstanceQueryBuilder {
 
     private final Type type;
     private @Nullable String searchText;
+    private @Nullable String expression;
     private int page = 1;
     private int pageSize = 20;
     private boolean includeBuiltin;
@@ -73,10 +74,16 @@ public class InstanceQueryBuilder {
         return this;
     }
 
+    public InstanceQueryBuilder expression(String expression) {
+        this.expression = expression;
+        return this;
+    }
+
     public InstanceQuery build() {
         return new InstanceQuery(
                 type,
                 searchText,
+                expression,
                 searchFields,
                 includeBuiltin,
                 includeSubtypes,

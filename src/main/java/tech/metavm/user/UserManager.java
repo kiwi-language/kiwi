@@ -8,12 +8,9 @@ import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.InstanceQueryBuilder;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.rest.InstanceQuery;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
-
-import java.util.List;
 
 @Component
 public class UserManager {

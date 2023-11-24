@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.InstanceQueryBuilder;
+import tech.metavm.entity.InstanceQueryField;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionParser;
@@ -192,13 +193,15 @@ public class InstanceManager {
         }
     }
 
-    public QueryInstancesResponse query(InstanceQuery query) {
+    public QueryInstancesResponse query(InstanceQueryDTO query) {
         try (var context = newContext()) {
             Type type = context.getType(query.typeId());
             if (type instanceof ClassType) {
                 var internalQuery = InstanceQueryBuilder.newBuilder(type)
                         .searchText(query.searchText())
                         .newlyCreated(query.newlyCreated())
+                        .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, context)))
+                        .expression(query.expression())
                         .page(query.page())
                         .pageSize(query.pageSize())
                         .build();

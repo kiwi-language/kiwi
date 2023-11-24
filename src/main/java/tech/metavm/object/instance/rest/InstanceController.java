@@ -16,7 +16,7 @@ public class InstanceController {
     private InstanceManager instanceManager;
 
     @PostMapping("/query")
-    public Result<QueryInstancesResponse> query(@RequestBody InstanceQuery query) {
+    public Result<QueryInstancesResponse> query(@RequestBody InstanceQueryDTO query) {
         return Result.success(instanceManager.query(query));
     }
 

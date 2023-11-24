@@ -3,11 +3,13 @@ package tech.metavm.entity;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public record InstanceQuery(
         Type type,
-        String searchText,
+        @Nullable String searchText,
+        @Nullable String expression,
         List<Field> searchFields,
         boolean includeBuiltin,
         boolean includeSubTypes,

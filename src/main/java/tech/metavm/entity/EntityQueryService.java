@@ -32,6 +32,7 @@ public class EntityQueryService {
         return new InstanceQuery(
                 type,
                 entityQuery.searchText(),
+                entityQuery.expression(),
                 NncUtils.map(entityQuery.searchFields(), entityDef::getFieldByJavaFieldName),
                 entityQuery.includeBuiltin(),
                 true,
@@ -45,7 +46,7 @@ public class EntityQueryService {
     private InstanceQueryField convertToInstanceQueryField(EntityDef<?> entityDef, EntityQueryField entityQueryField, IEntityContext context) {
         Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
         Instance instanceValue = convertValue(entityQueryField.value(), context);
-        return new InstanceQueryField(field, instanceValue);
+        return InstanceQueryField.create(field, instanceValue);
     }
 
     private Instance convertValue(Object value, IEntityContext context) {

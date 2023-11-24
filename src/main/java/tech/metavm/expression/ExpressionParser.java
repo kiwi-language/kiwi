@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.expression.antlr.InstacodeLexer;
 import tech.metavm.expression.antlr.InstacodeParser;
@@ -24,15 +25,15 @@ import static java.util.Objects.requireNonNull;
 
 public class ExpressionParser {
 
-    public static Expression parse(ClassType type, String expression, IInstanceContext instanceContext) {
+    public static Expression parse(@NotNull ClassType type, @NotNull String expression, @NotNull IInstanceContext instanceContext) {
         return parse(expression, new TypeParsingContext(type, instanceContext));
     }
 
-    public static Expression parse(String expression, ParsingContext context) {
+    public static Expression parse(@NotNull String expression, @NotNull ParsingContext context) {
         return parse(expression, null , context);
     }
 
-    public static Expression parse(String expression, @Nullable Type assignedType, ParsingContext context) {
+    public static Expression parse(@NotNull String expression, @Nullable Type assignedType, @NotNull ParsingContext context) {
         return new ExpressionParser(expression, context).parse(assignedType);
     }
 

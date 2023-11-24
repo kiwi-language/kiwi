@@ -1,11 +1,15 @@
 package tech.metavm.object.instance;
 
 import org.springframework.stereotype.Component;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.entity.Entity;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.InstanceQuery;
 import tech.metavm.entity.InstanceQueryField;
+import tech.metavm.expression.ConstantExpression;
 import tech.metavm.expression.Expression;
+import tech.metavm.expression.ExpressionParser;
 import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
@@ -16,6 +20,7 @@ import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
@@ -32,7 +37,7 @@ public class InstanceQueryService {
         this.instanceSearchService = instanceSearchService;
     }
 
-    public <T extends Entity> Page<T> query(Class<T> entityType, tech.metavm.entity.InstanceQuery query, IEntityContext context) {
+    public <T extends Entity> Page<T> query(Class<T> entityType, InstanceQuery query, IEntityContext context) {
         Page<Instance> idPage = query(query, context.getInstanceContext());
         return new Page<>(
                 NncUtils.map(idPage.data(), inst -> context.getEntity(entityType, inst)),
@@ -40,7 +45,7 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<Instance> query(tech.metavm.entity.InstanceQuery query, IInstanceContext context) {
+    public Page<Instance> query(InstanceQuery query, IInstanceContext context) {
         var expression = buildCondition(query, context);
         Type type = query.type();
         Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
@@ -61,24 +66,42 @@ public class InstanceQueryService {
         return new Page<>(NncUtils.map(ids, context::get), total);
     }
 
-    private Expression buildCondition(tech.metavm.entity.InstanceQuery query, IInstanceContext context) {
+    private Expression buildCondition(InstanceQuery query, IInstanceContext context) {
         Expression condition = buildConditionForSearchText(
                 query.type().getIdRequired(), query.searchText(), query.searchFields(), context
         );
         for (InstanceQueryField queryField : query.fields()) {
-            Expression fieldCondition;
-            if (queryField.value() instanceof ArrayInstance array) {
-//                List<Instance> instanceValues = NncUtils.map(
-//                    values, v -> resolvePersistedValue(queryField.field().getType(), v)
-//                );
-                fieldCondition = ExpressionUtil.fieldIn(queryField.field(), array.getElements());
-            } else {
-//                Instance fieldValue =
-//                        resolvePersistedValue(queryField.field().getType(), queryField.value());
-                fieldCondition = ExpressionUtil.fieldEq(queryField.field(), queryField.value());
+            Expression fieldCondition = null;
+            if(queryField.value() != null) {
+                if (queryField.value() instanceof ArrayInstance array) {
+                    fieldCondition = ExpressionUtil.fieldIn(queryField.field(), array.getElements());
+                } else {
+                    fieldCondition = ExpressionUtil.fieldEq(queryField.field(), queryField.value());
+                }
             }
+            else {
+                if(queryField.min() != null) {
+                    fieldCondition = ExpressionUtil.ge(
+                            ExpressionUtil.propertyExpr(queryField.field()),
+                            new ConstantExpression(queryField.min()));
+                }
+                if(queryField.max() != null) {
+                    var leExpr = ExpressionUtil.le(
+                            ExpressionUtil.propertyExpr(queryField.field()),
+                            new ConstantExpression(queryField.max())
+                    );
+                    fieldCondition = fieldCondition != null ?
+                            ExpressionUtil.and(fieldCondition, leExpr) : leExpr;
+                }
+            }
+            if(fieldCondition == null)
+                throw new BusinessException(ErrorCode.ILLEGAL_SEARCH_CONDITION);
             condition = condition != null ?
                     ExpressionUtil.and(condition, fieldCondition) : fieldCondition;
+        }
+        if(query.expression() != null) {
+            var exprCond = ExpressionParser.parse((ClassType) query.type(), query.expression(), context);
+            condition = condition != null ? ExpressionUtil.and(condition, exprCond) : exprCond;
         }
         return condition;
     }

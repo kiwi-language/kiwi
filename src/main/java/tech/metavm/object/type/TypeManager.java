@@ -795,14 +795,11 @@ public class TypeManager {
         IEntityContext context = newContext();
         ClassType type = context.getClassType(typeId);
         Page<Constraint> dataPage = entityQueryService.query(
-                EntityQuery.create(
-                        new TypeReference<>() {
-                        },
-                        null,
-                        page,
-                        pageSize,
-                        List.of(new EntityQueryField("declaringType", type))
-                ),
+                EntityQueryBuilder.newBuilder(Constraint.class)
+                        .fields(new EntityQueryField("declaringType", type))
+                        .page(page)
+                        .pageSize(pageSize)
+                        .build(),
                 context
         );
         return new Page<>(

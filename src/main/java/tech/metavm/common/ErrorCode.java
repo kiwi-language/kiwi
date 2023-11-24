@@ -84,6 +84,7 @@ public enum ErrorCode {
     EXPRESSION_INVALID_VALUE(502, "表达式值错误，期望类型为：{}, 实际值为：{}"),
     FUNCTION_ARGUMENTS_INVALID(503, "函数{}参数不正确"),
     INVALID_CONDITION_EXPR(504, "条件表达式不合法: {}"),
+    ILLEGAL_SEARCH_CONDITION(505, "搜索条件错误"),
 
 
     // 用户相关

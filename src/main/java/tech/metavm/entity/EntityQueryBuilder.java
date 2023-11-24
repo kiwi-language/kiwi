@@ -1,10 +1,16 @@
 package tech.metavm.entity;
 
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.TypeReference;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class EntityQueryBuilder<T extends Entity> {
+
+    public static <T extends Entity> EntityQueryBuilder<T> newBuilder(TypeReference<T> typeReference) {
+        return newBuilder(typeReference.getType());
+    }
 
     public static <T extends Entity> EntityQueryBuilder<T> newBuilder(Class<T> entityClass) {
         return new EntityQueryBuilder<T>(entityClass);
@@ -12,6 +18,7 @@ public class EntityQueryBuilder<T extends Entity> {
 
     private final Class<T> entityClass;
     private String searchText;
+    private @Nullable String expression;
     private List<String> searchFields = List.of();
     private List<EntityQueryField> fields = List.of();
     private boolean includeBuiltin;
@@ -49,6 +56,11 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
+    public EntityQueryBuilder<T> expression(@Nullable String expression) {
+        this.expression = expression;
+        return this;
+    }
+
     public EntityQueryBuilder<T> includeBuiltin(boolean includeBuiltin) {
         this.includeBuiltin = includeBuiltin;
         return this;
@@ -63,6 +75,7 @@ public class EntityQueryBuilder<T extends Entity> {
         return new EntityQuery<T>(
                 entityClass,
                 searchText,
+                expression,
                 searchFields,
                 includeBuiltin,
                 page,

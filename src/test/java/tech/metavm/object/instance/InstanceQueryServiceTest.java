@@ -43,12 +43,12 @@ public class InstanceQueryServiceTest extends TestCase {
 
         InstanceQuery query = InstanceQueryBuilder.newBuilder(fooType)
                 .fields(
-                        new InstanceQueryField(
+                        InstanceQueryField.create(
                                 fooNameField,
                                 foo.getStringField(fooNameField)
                         ),
-                        new InstanceQueryField(fooQuxField, qux),
-                        new InstanceQueryField(fooBazListField, baz)
+                        InstanceQueryField.create(fooQuxField, qux),
+                        InstanceQueryField.create(fooBazListField, baz)
                 )
                 .build();
         Page<Instance> page = instanceQueryService.query(query, context);
@@ -70,7 +70,7 @@ public class InstanceQueryServiceTest extends TestCase {
         ClassInstance foo = addInstance(MockRegistry.getNewFooInstance());
 
         InstanceQuery query2 = InstanceQueryBuilder.newBuilder(fooType)
-                .fields(new InstanceQueryField(
+                .fields(InstanceQueryField.create(
                         fooNameField,
                         foo.getField(fooNameField)
                 ))
