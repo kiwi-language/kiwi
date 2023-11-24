@@ -50,6 +50,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
     private boolean closed;
     private final boolean readonly;
+    private final String clientId = ContextUtil.getClientId();
     private DefContext defContext;
 
     public BaseInstanceContext(long tenantId,
@@ -117,6 +118,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 evict(existing);
             add(instance);
         }
+    }
+
+    @Override
+    public String getClientId() {
+        return clientId;
     }
 
     public boolean isReadonly() {

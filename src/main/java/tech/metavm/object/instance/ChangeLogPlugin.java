@@ -7,6 +7,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLog;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class ChangeLogPlugin implements ContextPlugin {
             logs.add(InstanceLog.update(instance));
         }
         for (InstancePO delete : change.deletes()) {
-            logs.add(InstanceLog.delete(delete.nextVersion()));
+            logs.add(InstanceLog.delete(delete));
         }
         context.getAttribute(CHANGE_LOGS).addAll(logs);
         return false;
@@ -49,7 +50,7 @@ public class ChangeLogPlugin implements ContextPlugin {
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if(NncUtils.isNotEmpty(logs)) {
-            instanceLogService.process(logs);
+            instanceLogService.process(logs, context.getClientId());
         }
     }
 

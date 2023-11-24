@@ -25,6 +25,7 @@ import java.io.*;
 import java.lang.invoke.SerializedLambda;
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -418,6 +419,15 @@ public class NncUtils {
         return list.stream().filter(filter).count();
     }
 
+    public static final Pattern INT_PATTERN = Pattern.compile("^-?\\d+$");
+
+    public static @Nullable Long tryParseLong(@Nullable String str) {
+        if(str == null)
+            return null;
+        var matcher = INT_PATTERN.matcher(str);
+        return matcher.matches() ? Long.parseLong(str) : null;
+    }
+
     public static <T> List<T> filter(Iterable<T> source, Predicate<T> filter) {
         if (source == null) {
             return List.of();
@@ -441,7 +451,8 @@ public class NncUtils {
     }
 
 
-    public static <T> List<T> filterAndSort(Iterable<T> source, Predicate<T> filter, Comparator<T> comparator) {
+    public static <
+            T> List<T> filterAndSort(Iterable<T> source, Predicate<T> filter, Comparator<T> comparator) {
         return filterAndSortAndLimit(source, filter, comparator, Long.MAX_VALUE);
     }
 
@@ -452,7 +463,9 @@ public class NncUtils {
         return streamOf(source).filter(filter).limit(limit).collect(Collectors.toList());
     }
 
-    public static <T> List<T> filterAndSortAndLimit(Iterable<T> source, Predicate<T> filter, Comparator<T> comparator, long limit) {
+    public static <
+            T> List<T> filterAndSortAndLimit(Iterable<T> source, Predicate<T> filter, Comparator<T> comparator,
+                                             long limit) {
         if (source == null) {
             source = List.of();
         }
@@ -497,7 +510,8 @@ public class NncUtils {
         return merged;
     }
 
-    public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2, Set<? extends T> coll3) {
+    public static <T> Set<T> mergeSets(Set<? extends T> coll1, Set<? extends T> coll2, Set<? extends
+            T> coll3) {
         return mergeSets(mergeSets(coll1, coll2), coll3);
     }
 
@@ -516,7 +530,8 @@ public class NncUtils {
         return merged;
     }
 
-    public static <T, M, R> List<R> mapAndFilterByType(Iterable<T> source, Function<T, M> mapper, Class<R> resultType) {
+    public static <
+            T, M, R> List<R> mapAndFilterByType(Iterable<T> source, Function<T, M> mapper, Class<R> resultType) {
         return NncUtils.filterByType(
                 NncUtils.map(source, mapper),
                 resultType
@@ -572,12 +587,14 @@ public class NncUtils {
         return countMap;
     }
 
-    public static <T, M, R> List<R> map(Collection<T> source, Function<T, M> mapping1, Function<M, R> mapping2) {
+    public static <
+            T, M, R> List<R> map(Collection<T> source, Function<T, M> mapping1, Function<M, R> mapping2) {
         return map(map(source, mapping1), mapping2);
     }
 
     @SuppressWarnings("unused")
-    public static <T, K, V> Map<K, List<V>> groupBy(List<T> list, Function<T, K> keyMapping, Function<T, V> valueMapping) {
+    public static <
+            T, K, V> Map<K, List<V>> groupBy(List<T> list, Function<T, K> keyMapping, Function<T, V> valueMapping) {
         Map<K, List<V>> result = new HashMap<>();
         for (T t : list) {
             K k = keyMapping.apply(t);
@@ -620,11 +637,13 @@ public class NncUtils {
         return sortAndMap(list, Comparator.comparingInt(intMapper), Function.identity());
     }
 
-    public static <T, R> List<R> sortByIntAndMap(Iterable<T> list, ToIntFunction<T> intFunc, Function<T, R> mapper) {
+    public static <
+            T, R> List<R> sortByIntAndMap(Iterable<T> list, ToIntFunction<T> intFunc, Function<T, R> mapper) {
         return sortAndMap(list, Comparator.comparingInt(intFunc), mapper);
     }
 
-    public static <T, R> List<R> sortAndMap(Iterable<T> iterable, Comparator<T> comparator, Function<T, R> mapper) {
+    public static <
+            T, R> List<R> sortAndMap(Iterable<T> iterable, Comparator<T> comparator, Function<T, R> mapper) {
         if (iterable == null) {
             return List.of();
         }
@@ -634,7 +653,8 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <T, R> List<R> mapAndSort(Iterable<T> iterable, Function<T, R> mapper, Comparator<R> comparator) {
+    public static <
+            T, R> List<R> mapAndSort(Iterable<T> iterable, Function<T, R> mapper, Comparator<R> comparator) {
         if (iterable == null) {
             return List.of();
         }
@@ -693,7 +713,8 @@ public class NncUtils {
     }
 
     @SuppressWarnings({"ReassignedVariable", "unchecked"})
-    public static <T extends Comparable<T>> void forEachPair(List<T> list1, List<T> list2, BiConsumer<T, T> action) {
+    public static <T extends Comparable<T>> void forEachPair
+            (List<T> list1, List<T> list2, BiConsumer<T, T> action) {
         var array1 = list1.toArray();
         var array2 = list2.toArray();
         Arrays.sort(array1);
@@ -731,7 +752,8 @@ public class NncUtils {
         return list;
     }
 
-    public static <T, R> void biForEachWithIndex(Iterable<T> list1, Iterable<R> list2, TriConsumer<T, R, Integer> action) {
+    public static <T, R> void biForEachWithIndex
+            (Iterable<T> list1, Iterable<R> list2, TriConsumer<T, R, Integer> action) {
         Iterator<T> it1 = list1.iterator();
         Iterator<R> it2 = list2.iterator();
         int index = 0;
@@ -743,7 +765,8 @@ public class NncUtils {
         }
     }
 
-    public static <T1, T2, R> List<R> biMap(List<T1> list1, List<T2> list2, BiFunction<T1, T2, R> mapper) {
+    public static <
+            T1, T2, R> List<R> biMap(List<T1> list1, List<T2> list2, BiFunction<T1, T2, R> mapper) {
         if (list1 == null) {
             list1 = List.of();
         }
@@ -763,7 +786,8 @@ public class NncUtils {
         return result;
     }
 
-    public static <T, R> List<R> filterAndMap(Iterable<T> source, Predicate<T> filter, Function<T, R> mapping) {
+    public static <
+            T, R> List<R> filterAndMap(Iterable<T> source, Predicate<T> filter, Function<T, R> mapping) {
         if (source == null) {
             return List.of();
         }
@@ -788,7 +812,8 @@ public class NncUtils {
     }
 
     @SuppressWarnings("unused")
-    public static <T, R> Set<R> filterAndMapUnique(Iterable<T> source, Predicate<T> filter, Function<T, R> mapping) {
+    public static <
+            T, R> Set<R> filterAndMapUnique(Iterable<T> source, Predicate<T> filter, Function<T, R> mapping) {
         if (source == null) {
             return Set.of();
         }
@@ -854,7 +879,8 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <T> void splitAndForEach(Collection<T> collection, Predicate<T> test, Consumer<List<T>> action1, Consumer<List<T>> action2) {
+    public static <T> void splitAndForEach
+            (Collection<T> collection, Predicate<T> test, Consumer<List<T>> action1, Consumer<List<T>> action2) {
         List<T> list1 = filter(collection, test);
         List<T> list2 = exclude(collection, test);
         if (isNotEmpty(list1)) {
@@ -918,12 +944,14 @@ public class NncUtils {
     }
 
     @Nullable
-    public static <T, R> R filterOneAndMap(Iterable<T> iterable, Predicate<T> filter, Function<T, R> mapping) {
+    public static <T, R> R
+    filterOneAndMap(Iterable<T> iterable, Predicate<T> filter, Function<T, R> mapping) {
         return streamOf(iterable).filter(filter).map(mapping).findAny().orElse(null);
     }
 
     @SuppressWarnings("unused")
-    public static <T> String filterAndJoin(Iterable<T> iterable, Predicate<T> filter, Function<T, String> mapping) {
+    public static <T> String
+    filterAndJoin(Iterable<T> iterable, Predicate<T> filter, Function<T, String> mapping) {
         return join(iterable, filter, mapping, ",");
     }
 
@@ -940,7 +968,8 @@ public class NncUtils {
         return join(iterable, t -> true, mapping, delimiter);
     }
 
-    public static <T> String join(Iterable<T> iterable, Predicate<T> filter, Function<T, String> mapping, String delimiter) {
+    public static <T> String
+    join(Iterable<T> iterable, Predicate<T> filter, Function<T, String> mapping, String delimiter) {
         return streamOf(iterable).filter(filter).map(mapping).collect(Collectors.joining(delimiter));
     }
 
@@ -987,7 +1016,8 @@ public class NncUtils {
         return pairs;
     }
 
-    public static <K, T, R> Map<K, R> toMap(Iterable<T> iterable, Function<T, ? extends K> keyMapper, Function<T, ? extends R> valueMapper) {
+    public static <K, T, R> Map<K, R> toMap(Iterable<T> iterable, Function<T, ? extends
+            K> keyMapper, Function<T, ? extends R> valueMapper) {
         if (iterable == null) {
             return new HashMap<>();
         }
@@ -998,7 +1028,8 @@ public class NncUtils {
         return map;
     }
 
-    public static <K, T> IdentityHashMap<K, T> toIdentityMap(Collection<T> list, Function<T, K> keyMapping) {
+    public static <
+            K, T> IdentityHashMap<K, T> toIdentityMap(Collection<T> list, Function<T, K> keyMapping) {
         if (list == null) {
             return new IdentityHashMap<>();
         }
@@ -1013,7 +1044,8 @@ public class NncUtils {
         return toMultiMap(list, keyMapping, Function.identity());
     }
 
-    public static <K, T, R> Map<K, List<R>> toMultiMap(Iterable<T> list, Function<T, K> keyMapper, Function<T, R> valueMapper) {
+    public static <
+            K, T, R> Map<K, List<R>> toMultiMap(Iterable<T> list, Function<T, K> keyMapper, Function<T, R> valueMapper) {
         if (list == null) {
             return new HashMap<>();
         }
@@ -1024,7 +1056,8 @@ public class NncUtils {
         return map;
     }
 
-    public static <T, R> List<R> mapAndFilter(Iterable<T> source, Function<T, R> mapping, Predicate<R> filter) {
+    public static <
+            T, R> List<R> mapAndFilter(Iterable<T> source, Function<T, R> mapping, Predicate<R> filter) {
         if (source == null) {
             return List.of();
         }
@@ -1034,7 +1067,8 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
-    public static <T, R> Set<R> mapAndFilterUnique(Iterable<T> source, Function<T, R> mapping, Predicate<R> filter) {
+    public static <
+            T, R> Set<R> mapAndFilterUnique(Iterable<T> source, Function<T, R> mapping, Predicate<R> filter) {
         if (source == null) {
             return Set.of();
         }
@@ -1044,7 +1078,8 @@ public class NncUtils {
                 .collect(Collectors.toSet());
     }
 
-    public static List<Pair<EntityPO>> buildEntityPairs(Collection<EntityPO> list1, Collection<EntityPO> list2) {
+    public static List<Pair<EntityPO>> buildEntityPairs
+            (Collection<EntityPO> list1, Collection<EntityPO> list2) {
         return buildPairs(list1, list2, EntityPO::getId);
     }
 
@@ -1059,7 +1094,8 @@ public class NncUtils {
         return map;
     }
 
-    public static <T> List<Pair<@org.jetbrains.annotations.Nullable T>> buildPairs(Collection<? extends T> coll1, Collection<? extends T> coll2) {
+    public static <T> List<Pair<@org.jetbrains.annotations.Nullable T>> buildPairs(Collection<? extends
+            T> coll1, Collection<? extends T> coll2) {
         List<Pair<@org.jetbrains.annotations.Nullable T>> pairs = new ArrayList<>();
         Iterator<? extends T> it1 = coll1.iterator(), it2 = coll2.iterator();
         while (it1.hasNext() && it2.hasNext()) {
@@ -1074,7 +1110,8 @@ public class NncUtils {
         return pairs;
     }
 
-    public static <T, K> List<Pair<T>> buildPairs(Collection<T> list1, Collection<T> list2, Function<T, K> keyMapping) {
+    public static <
+            T, K> List<Pair<T>> buildPairs(Collection<T> list1, Collection<T> list2, Function<T, K> keyMapping) {
         Map<K, Queue<T>> firstMap = new HashMap<>();
         for (T t : list1) {
             firstMap.computeIfAbsent(keyMapping.apply(t), (k) -> new LinkedList<>())
@@ -1120,7 +1157,8 @@ public class NncUtils {
         return flatMapAndFilter(list, mapping, e -> true);
     }
 
-    public static <T, R> List<R> flatMapAndFilter(Iterable<T> iterable, Function<T, Collection<R>> mapping, Predicate<R> filter) {
+    public static <
+            T, R> List<R> flatMapAndFilter(Iterable<T> iterable, Function<T, Collection<R>> mapping, Predicate<R> filter) {
         if (iterable == null) {
             return List.of();
         }
@@ -1355,7 +1393,8 @@ public class NncUtils {
             throw new InternalException(message);
     }
 
-    public static void requireEquals(Object first, Object second, Supplier<? extends RuntimeException> exceptionSupplier) {
+    public static void requireEquals(Object first, Object second, Supplier<? extends
+            RuntimeException> exceptionSupplier) {
         if (!Objects.equals(first, second))
             throw exceptionSupplier.get();
     }
@@ -1514,7 +1553,8 @@ public class NncUtils {
         return NncUtils.allMatch(booleans, b -> b);
     }
 
-    public static <T, R> Set<R> flatMapUnique(Iterable<T> iterable, Function<T, ? extends Collection<R>> mapper) {
+    public static <T, R> Set<R> flatMapUnique(Iterable<T> iterable, Function<T, ? extends Collection<R>>
+            mapper) {
         if (iterable == null) {
             return Set.of();
         }

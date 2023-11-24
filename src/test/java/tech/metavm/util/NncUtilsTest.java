@@ -34,4 +34,10 @@ public class NncUtilsTest extends TestCase {
         return list;
     }
 
+    public void testTryParseLong() {
+        Assert.assertEquals((Object) 111L, NncUtils.tryParseLong("000111"));
+        Assert.assertEquals((Object) (-1L), NncUtils.tryParseLong("-1"));
+        Assert.assertNull(NncUtils.tryParseLong("abc"));
+    }
+
 }

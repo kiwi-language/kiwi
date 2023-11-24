@@ -7,25 +7,30 @@ import tech.metavm.object.instance.persistence.VersionPO;
 public class InstanceLog {
 
     public static InstanceLog insert(InstancePO instance) {
-        return new InstanceLog(instance.getTenantId(), instance.getId(), ChangeType.INSERT, instance.getVersion());
+        return new InstanceLog(instance.getTenantId(), instance.getId(),
+                instance.getTypeId(), ChangeType.INSERT, instance.getVersion());
     }
 
     public static InstanceLog update(InstancePO instance) {
-        return new InstanceLog(instance.getTenantId(), instance.getId(), ChangeType.UPDATE, instance.getVersion());
+        return new InstanceLog(instance.getTenantId(), instance.getId(),
+                instance.getTypeId(), ChangeType.UPDATE, instance.getVersion());
     }
 
-    public static InstanceLog delete(VersionPO version) {
-        return new InstanceLog(version.tenantId(), version.id(), ChangeType.DELETE, version.version());
+    public static InstanceLog delete(InstancePO instance) {
+        return new InstanceLog(instance.getTenantId(), instance.getId(),
+                instance.getTypeId(), ChangeType.DELETE, instance.getVersion());
     }
 
     private final long tenantId;
     private final long id;
+    private final long typeId;
     private final ChangeType changeType;
     private final long version;
 
-    public InstanceLog(long tenantId, long id, ChangeType changeType, long version) {
+    public InstanceLog(long tenantId, long id, long typeId, ChangeType changeType, long version) {
         this.tenantId = tenantId;
         this.id = id;
+        this.typeId = typeId;
         this.changeType = changeType;
         this.version = version;
     }
@@ -36,6 +41,10 @@ public class InstanceLog {
 
     public long getId() {
         return id;
+    }
+
+    public long getTypeId() {
+        return typeId;
     }
 
     public ChangeType getChangeType() {

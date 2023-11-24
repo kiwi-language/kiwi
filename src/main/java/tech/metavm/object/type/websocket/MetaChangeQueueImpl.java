@@ -5,6 +5,9 @@ import org.springframework.stereotype.Component;
 import tech.metavm.object.type.websocket.dto.TypeChangeMessage;
 import tech.metavm.util.ContextUtil;
 
+import javax.annotation.Nullable;
+import java.util.List;
+
 @Component
 public class MetaChangeQueueImpl implements MetaChangeQueue {
 
@@ -15,11 +18,11 @@ public class MetaChangeQueueImpl implements MetaChangeQueue {
     }
 
     @Override
-    public void notifyTypeChange(long tenantId, long version) {
+    public void notifyTypeChange(long tenantId, long version, List<Long> typeIds, @Nullable String triggerClientId) {
         try(var ignored = ContextUtil.getProfiler().enter("notifyTypeChange")) {
             simpMessagingTemplate.convertAndSend(
                     String.format("/topic/type-change/%d", tenantId),
-                    new TypeChangeMessage(tenantId, version)
+                    new TypeChangeMessage(tenantId, version, typeIds, triggerClientId)
             );
         }
     }

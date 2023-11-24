@@ -3,10 +3,13 @@ package tech.metavm.util;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.util.profile.Profiler;
 
+import javax.annotation.Nullable;
+
 public class ContextUtil {
 
     private static class ContextInfo {
         private Long metaVersion;
+        @Nullable String clientId;
         LoginInfo loginInfo;
         private final Profiler profiler = new Profiler();
     }
@@ -24,12 +27,20 @@ public class ContextUtil {
         return getLoginInfo().userId;
     }
 
+    public static @Nullable String getClientId() {
+        return getContextInfo().clientId;
+    }
+
     public static Long getMetaVersion() {
         return getContextInfo().metaVersion;
     }
 
     public static void setMetaVersion(long metaVersion) {
         getContextInfo().metaVersion = metaVersion;
+    }
+
+    public static void setClientId(String clientId) {
+        getContextInfo().clientId = clientId;
     }
 
     public static boolean isLoggedIn() {

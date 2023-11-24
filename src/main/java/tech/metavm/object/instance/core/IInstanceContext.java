@@ -40,6 +40,8 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     @Nullable Instance getBuffered(long id);
 
+    String getClientId();
+
     Instance internalGet(long id);
 
     Instance getIfPresentByTmpId(long tmpId);

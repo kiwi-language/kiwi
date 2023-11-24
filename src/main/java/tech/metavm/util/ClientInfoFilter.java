@@ -14,22 +14,17 @@ import java.io.IOException;
 
 @Component
 @Order(4)
-public class MetaVersionFilter extends OncePerRequestFilter {
+public class ClientInfoFilter extends OncePerRequestFilter {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(MetaVersionFilter.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ClientInfoFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String metaVersionStr = request.getHeader("MetaVersion");
-        if(metaVersionStr != null) {
-            try {
-                var metaVersion = Long.parseLong(metaVersionStr);
-                ContextUtil.setMetaVersion(metaVersion);
-            }
-            catch (NumberFormatException e) {
-                LOGGER.error("Malformed meta version {}", metaVersionStr);
-            }
-        }
+        ContextUtil.setClientId(request.getHeader("ClientId"));
+        var metaVersionHeader = request.getHeader("MetaVersion");
+        Long metaVersion = NncUtils.tryParseLong(metaVersionHeader);
+        if(metaVersion != null)
+            ContextUtil.setMetaVersion(metaVersion);
         filterChain.doFilter(request, response);
     }
 

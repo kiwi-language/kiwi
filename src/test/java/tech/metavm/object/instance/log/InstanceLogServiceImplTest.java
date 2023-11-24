@@ -31,7 +31,8 @@ public class InstanceLogServiceImplTest extends TestCase {
 
         List<InstanceLog> logs = new ArrayList<>();
         logs.add(new InstanceLog(
-                TENANT_ID, fooInstance.getId(), ChangeType.INSERT, 1L
+                TENANT_ID, fooInstance.getIdRequired(), fooInstance.getType().getIdRequired(),
+                ChangeType.INSERT, 1L
         ));
 
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore);
@@ -42,8 +43,8 @@ public class InstanceLogServiceImplTest extends TestCase {
                 instanceSearchService, instanceContextFactory, instanceStore,
                 new MockTransactionOperations(), new MockMetaChangeQueue());
 
-        instanceLogService.process(logs);
-        Assert.assertTrue(instanceSearchService.contains(fooInstance.getId()));
+        instanceLogService.process(logs, null);
+        Assert.assertTrue(instanceSearchService.contains(fooInstance.getIdRequired()));
     }
 
 }

@@ -17,19 +17,16 @@ import tech.metavm.task.Task;
 import tech.metavm.task.TaskSignal;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.*;
 
 @Component
 public class InstanceLogServiceImpl implements InstanceLogService {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
-
-    public static final int CORE_POOL_SIZE = 32;
-    public static final int MAX_POOL_SIZE = 32;
-    public static final long KEEP_ALIVE = 10000L;
-    public static final int QUEUE_SIZE = 1024;
 
     private final InstanceSearchService instanceSearchService;
 
@@ -40,14 +37,6 @@ public class InstanceLogServiceImpl implements InstanceLogService {
     private final TransactionOperations transactionOperations;
 
     private final MetaChangeQueue metaChangeQueue;
-
-    private final Executor executor = new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAX_POOL_SIZE,
-            KEEP_ALIVE,
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(QUEUE_SIZE)
-    );
 
     public InstanceLogServiceImpl(InstanceSearchService instanceSearchService,
                                   IInstanceContextFactory instanceContextFactory,
@@ -61,16 +50,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
     }
 
     @Override
-    public void asyncProcess(List<InstanceLog> logs) {
-        try {
-            executor.execute(() -> process(logs));
-        } catch (RejectedExecutionException e) {
-            LOGGER.error("task rejected by thread pool", e);
-        }
-    }
-
-    @Override
-    public void process(List<InstanceLog> logs) {
+    public void process(List<InstanceLog> logs, @Nullable String clientId) {
         if (NncUtils.isEmpty(logs)) {
             return;
         }
@@ -91,10 +71,7 @@ public class InstanceLogServiceImpl implements InstanceLogService {
             if (NncUtils.isNotEmpty(taskInstances)) {
                 increaseUnfinishedTaskCount(tenantId, taskInstances.size());
             }
-            ClassType versionType = ModelDefRegistry.getClassType(Version.class);
-            List<Version> versions = NncUtils.filterAndMap(changed,
-                    versionType::isInstance, inst -> context.getEntity(Version.class, inst));
-            handleVersions(tenantId, versions);
+            handleVersions(changed, clientId,  context);
             List<Long> removed = NncUtils.filterAndMap(logs, InstanceLog::isDelete, InstanceLog::getId);
             if (NncUtils.isNotEmpty(changed) || NncUtils.isNotEmpty(removed)) {
                 try (var ignored = context.getProfiler().enter("bulk")) {
@@ -105,12 +82,23 @@ public class InstanceLogServiceImpl implements InstanceLogService {
         }
     }
 
-    private void handleVersions(long tenantId, List<Version> versions) {
-        var maxVersion = versions.stream().mapToLong(Version::getVersion).max().orElse(-1L);
-        if(maxVersion != -1L) {
-            metaChangeQueue.notifyTypeChange(tenantId, maxVersion);
+    private void handleVersions(List<ClassInstance> changed, @Nullable String clientId, IEntityContext context) {
+        ClassType versionType = ModelDefRegistry.getClassType(Version.class);
+        List<Version> versions = NncUtils.filterAndMap(changed,
+                versionType::isInstance, inst -> context.getEntity(Version.class, inst));
+        if(!versions.isEmpty()) {
+            long maxVersion = 0L;
+            Set<Long> typeIds = new HashSet<>();
+            for (Version version : versions) {
+                maxVersion = Math.max(maxVersion, version.getVersion());
+                typeIds.addAll(version.getRemovedTypeIds());
+                typeIds.addAll(version.getChangeTypeIds());
+            }
+            metaChangeQueue.notifyTypeChange(context.getTenantId(), maxVersion,
+                    new ArrayList<>(typeIds), clientId);
         }
     }
+
 
     private void increaseUnfinishedTaskCount(long tenantId, int newJobCount) {
         transactionOperations.executeWithoutResult(s -> {
