@@ -84,6 +84,10 @@ public abstract class Expression extends Element {
         return results;
     }
 
+    public Expression simplify() {
+        return substituteChildren(NncUtils.map(getChildren(), Expression::simplify));
+    }
+
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return List.of();
     }

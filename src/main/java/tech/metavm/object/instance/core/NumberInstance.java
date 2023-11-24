@@ -8,4 +8,6 @@ public abstract class NumberInstance extends PrimitiveInstance {
         super(type);
     }
 
+    public abstract NumberInstance negate();
+
 }

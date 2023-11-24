@@ -92,4 +92,8 @@ public class DoubleInstance extends NumberInstance {
         visitor.visitDoubleInstance(this);
     }
 
+    @Override
+    public DoubleInstance negate() {
+        return new DoubleInstance(-value, getType());
+    }
 }

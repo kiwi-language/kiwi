@@ -42,7 +42,7 @@ public class SearchBuilder {
             queryString += " AND " + typeIdCondition;
         }
         if (query.condition() != null && !ExpressionUtil.isConstantTrue(query.condition())) {
-            queryString += " AND " + parse(query.condition());
+            queryString += " AND " + parse(query.condition().simplify());
         }
         return queryString;
     }

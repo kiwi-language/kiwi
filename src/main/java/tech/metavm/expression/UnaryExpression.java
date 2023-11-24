@@ -5,6 +5,8 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.NumberInstance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -41,6 +43,22 @@ public class UnaryExpression extends Expression {
         else {
             return operandExpr + " " + operator;
         }
+    }
+
+    @Override
+    public Expression simplify() {
+        var operand = this.operand.simplify();;
+        if(operator == Operator.NOT) {
+            if(operand instanceof ConstantExpression constExpr)
+                return new ConstantExpression(((BooleanInstance) constExpr.getValue()).not());
+            else if(operand instanceof UnaryExpression unaryExpr && unaryExpr.getOperator() == Operator.NOT)
+                return unaryExpr.operand;
+        }
+        else if(operator == Operator.NEG) {
+            if(operand instanceof ConstantExpression constExpr)
+                return new ConstantExpression(((NumberInstance) constExpr.getValue()).negate());
+        }
+        return new UnaryExpression(operator, operand);
     }
 
     @Override

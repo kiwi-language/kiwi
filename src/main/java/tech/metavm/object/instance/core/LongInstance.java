@@ -96,4 +96,9 @@ public class LongInstance extends NumberInstance {
     public void accept(InstanceVisitor visitor) {
         visitor.visitLongInstance(this);
     }
+
+    @Override
+    public LongInstance negate() {
+        return new LongInstance(-value, getType());
+    }
 }
