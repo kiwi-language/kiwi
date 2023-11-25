@@ -3,10 +3,13 @@ package tech.metavm.flow;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.expression.VoidStructuralVisitor;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSignatureDTO;
 import tech.metavm.flow.rest.FlowSummaryDTO;
+import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -35,13 +38,25 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     private Long version = 1L;
     @ChildEntity("类型参数")
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
+    /*
+     *                       horizontalTemplate
+     *  Foo<T>.bar<E>       <------------------      Foo<T>.bar<String>
+     *       ^                                            ^
+     *       | verticalTemplate                           | verticalTemplate
+     *       |                                            |
+     * Foo<Integer>.bar<E>  <-------------------  Foo<Integer>.bar<String>
+     *                       horizontalTemplate
+     */
     @Nullable
-    @EntityField("模板")
-    private final Flow template;
-    @ChildEntity("TypeArguments")
+    @EntityField("纵向模板")
+    private final Flow verticalTemplate;
+    @Nullable
+    @EntityField("横向模板")
+    private final Flow horizontalTemplate;
+    @ChildEntity("类型实参列表")
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
     @ChildEntity("模板实例")
-    private final ChildArray<Flow> templateInstances = addChild(new ChildArray<>(Flow.class), "templateInstances");
+    private final ChildArray<Flow> horizontalInstances = addChild(new ChildArray<>(Flow.class), "horizontalInstances");
     @EntityField("静态类型")
     private FunctionType staticType;
 
@@ -59,13 +74,17 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
                 Type returnType,
                 List<Flow> overridden,
                 List<TypeVariable> typeParameters,
-                @Nullable Flow template,
+                @Nullable Flow verticalTemplate,
+                @Nullable Flow horizontalTemplate,
                 List<Type> typeArguments,
                 FunctionType type,
                 FunctionType staticType,
+                boolean isStatic,
                 MetadataState state
     ) {
-        super(tmpId, name, code, type, declaringType, state);
+        super(tmpId, name, code, type, declaringType, isStatic, state);
+        if(isStatic && isAbstract)
+            throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         this.isNative = isNative;
@@ -75,17 +94,16 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         this.nodes = new ReadWriteArray<>(new TypeReference<>() {
         });
         rootScope = addChild(new ScopeRT(this), "rootScope");
-        this.template = template;
+        this.verticalTemplate = verticalTemplate;
+        this.horizontalTemplate = horizontalTemplate;
         this.typeParameters.addChildren(typeParameters);
         this.typeArguments.addAll(typeArguments);
         this.staticType = staticType;
         setParameters(parameters);
-        if (template != null && template.declaringType == declaringType) {
-            template.addTemplateInstance(this);
-        }
-        if (template == null || template.getDeclaringType() != declaringType) {
+        if (horizontalTemplate != null)
+            horizontalTemplate.addTemplateInstance(this);
+        else
             declaringType.addFlow(this);
-        }
     }
 
     public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
@@ -123,10 +141,10 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         return overridden.toList();
     }
 
-    public List<Flow> getAllOverriden() {
+    public List<Flow> getAllOverridden() {
         List<Flow> allOverriden = NncUtils.listOf(overridden);
         for (Flow overridenFlow : overridden) {
-            allOverriden.addAll(overridenFlow.getAllOverriden());
+            allOverriden.addAll(overridenFlow.getAllOverridden());
         }
         return allOverriden;
     }
@@ -157,6 +175,31 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         this.scopes().add(scope);
     }
 
+    public FlowExecResult execute(@Nullable Instance self, List<Instance> arguments, IInstanceContext context) {
+        if(!isStatic())
+            Objects.requireNonNull(self);
+        checkArguments(arguments);
+        if(isNative)
+            return NativeInvoker.invoke(this, self, arguments);
+        else
+            return new MetaFrame(this, self, arguments, context).execute();
+    }
+
+    private void checkArguments(List<Instance> arguments) {
+        out: if(arguments.size() == parameters.size()) {
+            var paramIt = parameters.iterator();
+            var argIt = arguments.iterator();
+            while (paramIt.hasNext() && argIt.hasNext()) {
+                var param = paramIt.next();
+                var arg = argIt.next();
+                if(!param.getType().isInstance(arg))
+                    break out;
+            }
+            return;
+        }
+        throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
+
     public FlowDTO toDTO(boolean includingCode) {
         try (var context = SerializeContext.enter()) {
             if(includingCode) {
@@ -181,10 +224,12 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
                     context.getRef(getType()),
                     context.getRef(staticType),
                     NncUtils.map(typeParameters, context::getRef),
-                    NncUtils.get(template, context::getRef),
+                    NncUtils.get(horizontalTemplate, context::getRef),
+                    NncUtils.get(verticalTemplate, context::getRef),
                     NncUtils.map(typeArguments, context::getRef),
                     NncUtils.map(getOverridden(), context::getRef),
-                    NncUtils.map(templateInstances, ti -> ti.toDTO(false)),
+                    NncUtils.map(horizontalInstances, ti -> ti.toDTO(false)),
+                    isStatic(),
                     getState().code()
             );
             return dto;
@@ -267,8 +312,17 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         version++;
     }
 
+    @Override
+    public Flow getTemplate() {
+        return getVerticalTemplate();
+    }
+
     public boolean isTemplate() {
         return !typeParameters.isEmpty();
+    }
+
+    public boolean isParameterized() {
+        return horizontalTemplate != null;
     }
 
     public Parameter getParameterByCode(String code) {
@@ -290,7 +344,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     public NodeRT<?> getRootNode() {
-        return rootScope.getFirstNode();
+        return rootScope.tryGetFirstNode();
     }
 
     @SuppressWarnings("unused")
@@ -317,7 +371,7 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     public ReadonlyArray<? extends Type> getEffectiveTypeArguments() {
-        return template == null ? typeParameters : typeArguments;
+        return horizontalTemplate == null ? typeParameters : typeArguments;
     }
 
     public void setParameters(List<Parameter> parameters) {
@@ -363,19 +417,13 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         this.rootScope = rootScope;
     }
 
-    public Flow getTemplateInstance(ClassType declaringType, List<Type> typeArguments) {
-        return NncUtils.find(templateInstances, ti ->
-                ti.getDeclaringType() == declaringType
-                        && Objects.equals(ti.getTypeArguments(), typeArguments)
-        );
+    @Nullable
+    public Flow findHorizontalInstance(List<Type> typeArguments) {
+        return NncUtils.find(horizontalInstances, ti -> Objects.equals(ti.getTypeArguments(), typeArguments));
     }
 
-    public Flow getTemplateInstance(List<Type> typeArguments) {
-        return NncUtils.find(templateInstances, ti -> Objects.equals(ti.getTypeArguments(), typeArguments));
-    }
-
-    public ReadonlyArray<Flow> getTemplateInstances() {
-        return templateInstances;
+    public List<Flow> getHorizontalInstances() {
+        return horizontalInstances.toList();
     }
 
     public void setReturnType(Type returnType) {
@@ -383,21 +431,16 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         this.returnType = returnType;
     }
 
-    @Nullable
-    public Flow getTemplate() {
-        return template;
+    public @Nullable Flow getHorizontalTemplate() {
+        return horizontalTemplate;
     }
 
-    @Nullable
-    public Flow getRootTemplate() {
-        if (template == null) {
-            return null;
-        }
-        var t = template;
-        while (t.template != null) {
-            t = t.template;
-        }
-        return t;
+    public @Nullable Flow getVerticalTemplate() {
+        return verticalTemplate;
+    }
+
+    public Flow getEffectiveVerticalTemplate() {
+        return verticalTemplate == null ? this : verticalTemplate;
     }
 
     public List<Type> getTypeArguments() {
@@ -480,11 +523,11 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     public void addTemplateInstance(Flow templateInstance) {
-        templateInstances.addChild(templateInstance);
+        horizontalInstances.addChild(templateInstance);
     }
 
     public void removeTemplateInstance(Flow templateInstance) {
-        this.templateInstances.remove(templateInstance);
+        this.horizontalInstances.remove(templateInstance);
     }
 
     public void setTypeArguments(List<? extends Type> typeArguments) {
@@ -498,10 +541,6 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
 
     public FunctionType getStaticType() {
         return staticType;
-    }
-
-    public Flow getEffectiveTemplate() {
-        return template != null ? template : this;
     }
 
     public void setStaticType(FunctionType staticType) {

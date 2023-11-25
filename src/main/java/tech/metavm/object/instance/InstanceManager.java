@@ -88,7 +88,6 @@ public class InstanceManager {
              var ignored = ContextUtil.getProfiler().enter("batchGet")) {
             var instances = context.batchGet(ids);
             context.buffer(ids);
-            instances.forEach(context::withCache);
             try (var ignored1 = SerializeContext.enter()) {
                 var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth));
                 return new GetInstancesResponse(instanceDTOs);

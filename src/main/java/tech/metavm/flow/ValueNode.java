@@ -58,8 +58,8 @@ public class ValueNode extends NodeRT<ValueParamDTO>  {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
-        frame.setResult(value.evaluate(frame));
+    public NodeExecResult execute(MetaFrame frame) {
+        return next(value.evaluate(frame));
     }
 
     @Override

@@ -4,10 +4,7 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @EntityType(value = "AST产品", compiled = true)
 public class AstProduct extends Entity {
@@ -52,20 +49,14 @@ public class AstProduct extends Entity {
         return calcDiscount(list);
     }
 
-    public AstOrder buy(int amount, AstCoupon[] coupons, Long[] allowedDiscounts) {
+    public AstOrder buy(int amount, AstCoupon[] coupons) {
         dec(amount);
-        Map<Long, AstCoupon> couponMap = new HashMap<>();
-        for (AstCoupon coupon : coupons) {
-            couponMap.put(coupon.calc(amount), coupon);
-        }
-        long orderPrice = amount * price;
         List<AstCoupon> selectedCoupons = new ArrayList<>();
-        for (Long discount : allowedDiscounts) {
-            var coupon = couponMap.get(discount);
-            if (coupon != null) {
-                orderPrice -= coupon.use(amount);
-                selectedCoupons.add(coupon);
-            }
+        long orderPrice = amount * price;
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < coupons.length; i++) {
+            orderPrice -= coupons[i].use(amount);
+            selectedCoupons.add(coupons[i]);
         }
         return new AstOrder(
                 title + ++orderCount,
@@ -74,17 +65,6 @@ public class AstProduct extends Entity {
                 amount,
                 selectedCoupons
         );
-    }
-
-    public List<AstOrder> buy(AstPair<AstProduct, AstCoupon>[] productCouponPairs) {
-        var orders = new ArrayList<AstOrder>();
-        for (AstPair<AstProduct, AstCoupon> productCouponPair : productCouponPairs) {
-            orders.add(productCouponPair.first.buy(
-                    1, new AstCoupon[]{productCouponPair.second},
-                    new Long[]{productCouponPair.second.calc(1)}
-            ));
-        }
-        return orders;
     }
 
 }

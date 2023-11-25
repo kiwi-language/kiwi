@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 
 import java.util.List;
@@ -41,6 +42,11 @@ public class ThisExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new ThisExpression(type);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return context.evaluate(this);
     }
 
     @Override

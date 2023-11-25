@@ -41,7 +41,9 @@ public class Declarator extends JavaRecursiveElementVisitor {
         if(!metaClass.isInterface()) {
             FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
                     .build();
-            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext()).build();
+            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
+                    .isStatic(true)
+                    .build();
         }
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if(!metaClass.isInterface() && !hashConstructor) {
@@ -80,6 +82,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
             parameters.addAll(processParameters(method.getParameterList()));
         var flow = FlowBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method), context.getFunctionTypeContext())
                 .isConstructor(method.isConstructor())
+                .isStatic(method.getModifierList().hasModifierProperty(PsiModifier.STATIC))
                 .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
                 .parameters(parameters)
                 .returnType(getOutputType(method))

@@ -55,6 +55,11 @@ public class ConstantExpression extends Expression {
         return new ConstantExpression(value);
     }
 
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return value;
+    }
+
     public boolean isString() {
         return value instanceof StringInstance;
     }

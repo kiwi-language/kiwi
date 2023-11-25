@@ -77,10 +77,10 @@ public class GetElementNode extends NodeRT<GetElementParam> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var arrayInst = (ArrayInstance) array.evaluate(frame);
         var indexInst = (LongInstance) index.evaluate(frame);
-        frame.setResult(arrayInst.get(indexInst.getValue().intValue()));
+        return next(arrayInst.get(indexInst.getValue().intValue()));
     }
 
     @Override

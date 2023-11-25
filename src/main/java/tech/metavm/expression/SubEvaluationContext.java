@@ -20,12 +20,12 @@ public class SubEvaluationContext implements EvaluationContext {
 
     @Override
     @Nullable
-    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression) {
         if(isSelfContextExpression(expression)) {
             return instance;
         }
         else if(parent != null && this.parent.isContextExpression(expression)) {
-            return parent.evaluate(expression, evaluator);
+            return parent.evaluate(expression);
         }
         else {
             throw new InternalException(expression + " is not a context expression of " + this);

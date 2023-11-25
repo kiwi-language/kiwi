@@ -73,7 +73,7 @@ public class ExpressionEvaluator {
     }
 
     private Instance evaluateFunc(FuncExpression funcExpression) {
-        return ((ClassInstance) evaluate(funcExpression.getSelf())).getFunction(funcExpression.getFlow());
+        return ((ClassInstance) evaluate(funcExpression.getSelf())).getFunction(funcExpression.getFlow(), context.getEntityContext());
     }
 
     private Instance evaluateInstanceOf(InstanceOfExpression instanceOfExpression) {
@@ -93,7 +93,7 @@ public class ExpressionEvaluator {
 
     private Instance evaluateProperty(PropertyExpression expression) {
         ClassInstance instance = (ClassInstance) evaluate(expression.getInstance());
-        return NncUtils.get(instance, inst -> inst.getProperty(expression.getProperty()));
+        return NncUtils.get(instance, inst -> inst.getProperty(expression.getProperty(), context.getEntityContext()));
     }
 
     private Instance evaluateFunction(FunctionExpression functionExpression) {
@@ -136,7 +136,7 @@ public class ExpressionEvaluator {
     }
 
     private Instance evaluateInContext(Expression expression) {
-        return context.evaluate(expression, this);
+        return context.evaluate(expression);
     }
 
     private Instance evaluateConst(ConstantExpression constantExpression) {
@@ -144,11 +144,11 @@ public class ExpressionEvaluator {
     }
 
     private Instance evaluateBinary(BinaryExpression binaryExpression) {
-        Operator op = binaryExpression.getOperator();
+        BinaryOperator op = binaryExpression.getOperator();
         Instance firstValue = evaluate(binaryExpression.getFirst()),
                 secondValue = evaluate(binaryExpression.getSecond());
 
-        if (op == Operator.EQ) {
+        if (op == BinaryOperator.EQ) {
             if (firstValue.getType().getCategory() == TypeCategory.ENUM) {
 //                EnumConstantRT opt = NncUtils.find(
 //                        enumType.getEnumConstants(),
@@ -176,7 +176,7 @@ public class ExpressionEvaluator {
             }
             return InstanceUtils.createBoolean(equals);
         }
-        if (op == Operator.NE) {
+        if (op == BinaryOperator.NE) {
             boolean equals;
             if (isAllIntegers(firstValue, secondValue)) {
                 equals = !castInteger(firstValue).equals(castInteger(secondValue));
@@ -188,43 +188,43 @@ public class ExpressionEvaluator {
             }
             return InstanceUtils.createBoolean(equals);
         }
-        if (op == Operator.GE) {
+        if (op == BinaryOperator.GE) {
             if (isAllTime(firstValue, secondValue)) {
                 return ((TimeInstance) firstValue).isAfterOrAt((TimeInstance) secondValue);
             }
             if (isAllIntegers(firstValue, secondValue)) {
-                return castInteger(firstValue).isGreaterThanOrEqualTo(castInteger(secondValue));
+                return castInteger(firstValue).ge(castInteger(secondValue));
             }
-            return castFloat(firstValue).isGreaterThanOrEqualTo(castFloat(secondValue));
+            return castFloat(firstValue).ge(castFloat(secondValue));
         }
-        if (op == Operator.GT) {
+        if (op == BinaryOperator.GT) {
             if (isAllTime(firstValue, secondValue)) {
                 return ((TimeInstance) firstValue).isAfter((TimeInstance) secondValue);
             }
             if (isAllIntegers(firstValue, secondValue)) {
-                return castInteger(firstValue).isGreaterThan(castInteger(secondValue));
+                return castInteger(firstValue).gt(castInteger(secondValue));
             }
-            return castFloat(firstValue).isGreaterThan(castFloat(secondValue));
+            return castFloat(firstValue).gt(castFloat(secondValue));
         }
-        if (op == Operator.LE) {
+        if (op == BinaryOperator.LE) {
             if (isAllTime(firstValue, secondValue)) {
                 return ((TimeInstance) firstValue).isBeforeOrAt((TimeInstance) secondValue);
             }
             if (isAllIntegers(firstValue, secondValue)) {
-                return castInteger(firstValue).isLessThanOrEqualTo(castInteger(secondValue));
+                return castInteger(firstValue).le(castInteger(secondValue));
             }
-            return castFloat(firstValue).isLessThanOrEqualTo(castFloat(secondValue));
+            return castFloat(firstValue).le(castFloat(secondValue));
         }
-        if (op == Operator.LT) {
+        if (op == BinaryOperator.LT) {
             if (isAllTime(firstValue, secondValue)) {
                 return ((TimeInstance) firstValue).isBefore((TimeInstance) secondValue);
             }
             if (isAllIntegers(firstValue, secondValue)) {
-                return castInteger(firstValue).isLessThan(castInteger(secondValue));
+                return castInteger(firstValue).lt(castInteger(secondValue));
             }
-            return castFloat(firstValue).isLessThan(castFloat(secondValue));
+            return castFloat(firstValue).lt(castFloat(secondValue));
         }
-        if (op == Operator.ADD) {
+        if (op == BinaryOperator.ADD) {
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).add(castInteger(secondValue));
             }
@@ -233,61 +233,61 @@ public class ExpressionEvaluator {
             }
             return castFloat(firstValue).add(castFloat(secondValue));
         }
-        if (op == Operator.MINUS) {
+        if (op == BinaryOperator.MINUS) {
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).minus(castInteger(secondValue));
             }
             return castFloat(firstValue).minus(castFloat(secondValue));
         }
-        if (op == Operator.MULTIPLY) {
+        if (op == BinaryOperator.MULTIPLY) {
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).mul(castInteger(secondValue));
             }
             return castFloat(firstValue).mul(castFloat(secondValue));
         }
-        if (op == Operator.DIVIDE) {
+        if (op == BinaryOperator.DIVIDE) {
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).div(castInteger(secondValue));
             }
             return castFloat(firstValue).div(castFloat(secondValue));
         }
-        if (op == Operator.MOD) {
+        if (op == BinaryOperator.MOD) {
             if (isAllIntegers(firstValue, secondValue)) {
                 return castInteger(firstValue).mod(castInteger(secondValue));
             }
             return castFloat(firstValue).mod(castFloat(secondValue));
         }
-        if (op == Operator.STARTS_WITH) {
+        if (op == BinaryOperator.STARTS_WITH) {
             if (InstanceUtils.isAnyNull(firstValue, secondValue)) {
                 return InstanceUtils.falseInstance();
             }
             return castString(firstValue).startsWith(castString(secondValue));
         }
-        if (op == Operator.LIKE) {
+        if (op == BinaryOperator.LIKE) {
             if (InstanceUtils.isAnyNull(firstValue, secondValue)) {
                 return falseInstance();
             }
             return castString(firstValue).contains(castString(secondValue));
         }
-        if (op == Operator.IN) {
+        if (op == BinaryOperator.IN) {
             if (InstanceUtils.isAnyNull(firstValue, secondValue)) {
                 return InstanceUtils.falseInstance();
             }
             return castCollection(secondValue).instanceContains(firstValue);
         }
-        if (op == Operator.AND) {
+        if (op == BinaryOperator.AND) {
             return castBoolean(firstValue).and(castBoolean(secondValue));
         }
-        if (op == Operator.OR) {
+        if (op == BinaryOperator.OR) {
             return castBoolean(firstValue).or(castBoolean(secondValue));
         }
         throw new RuntimeException("Unsupported operator " + op + " for binary expressions");
     }
 
     private Instance evaluateUnary(UnaryExpression expr) {
-        Operator op = expr.getOperator();
+        UnaryOperator op = expr.getOperator();
         Instance value = evaluate(expr.getOperand());
-        if (op == Operator.NOT) {
+        if (op == UnaryOperator.NOT) {
             return castBoolean(value).not();
         }
 //        TODO: 支持负数运算符
@@ -297,10 +297,10 @@ public class ExpressionEvaluator {
 //            }
 //            return -castFloat(value);
 //        }
-        if (op == Operator.IS_NOT_NULL) {
+        if (op == UnaryOperator.IS_NOT_NULL) {
             return InstanceUtils.createBoolean(!value.isNull());
         }
-        if (op == Operator.IS_NULL) {
+        if (op == UnaryOperator.IS_NULL) {
             return InstanceUtils.createBoolean(value.isNull());
         }
         throw BusinessException.invalidExpression("不支持的运算符: " + expr.getOperator());

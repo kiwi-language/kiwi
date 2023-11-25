@@ -1,6 +1,7 @@
 package tech.metavm.object.type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Var;
@@ -13,11 +14,11 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.util.LinkedList;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.util.LinkedList;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -81,7 +82,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    private transient FlowTable flowTable;
+    private transient volatile FlowTable flowTable;
 
     // longest path from the current type upwards in the hierarchy
     private transient int rank;
@@ -304,7 +305,10 @@ public class ClassType extends Type implements GenericDeclaration {
 
     private FlowTable getFlowTable() {
         if (flowTable == null) {
-            flowTable = new FlowTable(this);
+            synchronized (this) {
+                if(flowTable == null)
+                    flowTable = new FlowTable(this);
+            }
         }
         return flowTable;
     }
@@ -368,8 +372,8 @@ public class ClassType extends Type implements GenericDeclaration {
         return getFlow(Property::getCode, code);
     }
 
-    public Flow getFlowByRootTemplate(Flow template) {
-        return getFlow(Flow::getRootTemplate, template);
+    public Flow getFlowByVerticalTemplate(Flow template) {
+        return getFlow(Flow::getVerticalTemplate, template);
     }
 
     public Flow findFlow(Predicate<Flow> predicate) {
@@ -954,37 +958,47 @@ public class ClassType extends Type implements GenericDeclaration {
                 && field.getStaticValue() instanceof ClassInstance;
     }
 
-    public Flow getOverrideFlowRequired(Flow overriden) {
-        return NncUtils.requireNonNull(
-                resolveFlow(overriden),
-                "Can not find implementation of flow " + overriden.getName()
-                        + " in type " + getName()
+    // BFS
+    public void foreachAncestor(Consumer<ClassType> action) {
+        var queue = new LinkedList<ClassType>();
+        queue.offer(this);
+        while (!queue.isEmpty()) {
+            var type = queue.poll();
+            action.accept(type);
+            if(type.getSuperClass() != null)
+                queue.offer(type.getSuperClass());
+            queue.addAll(type.getInterfaces());
+        }
+    }
+
+    public Flow resolveFlow(@NotNull Flow flowRef, @NotNull IEntityContext context) {
+        return Objects.requireNonNull(
+                tryResolveFlow(flowRef, context),
+                () -> String.format("Fail to resolve flow %s in type %s", flowRef, this)
         );
     }
 
-    @Nullable
-    public Flow resolveFlow(Flow flowRef) {
-        if (flowRef.getDeclaringType().isUncertain()) {
-            var template = NncUtils.requireNonNull(flowRef.getDeclaringType().getTemplate());
-            Queue<ClassType> types = new LinkedList<>();
-            types.add(this);
-            while (!types.isEmpty()) {
-                var type = types.poll();
-                if (type.getTemplate() == template) {
-                    var flowTemplate = NncUtils.requireNonNull(flowRef.getRootTemplate());
-                    if (flowTemplate.getTypeParameters().isEmpty()) {
-                        flowRef = NncUtils.requireNonNull(type.getFlowByRootTemplate(flowTemplate));
-                        break;
-                    } else {
-                        // TODO support flow template instance
-                        throw new InternalException("Can not resolve flow '" + flowRef.getName() + "' in type '"
-                                + getName() + "'");
-                    }
-                }
-                types.addAll(type.getSuperTypes());
-            }
+    public @Nullable Flow tryResolveFlow(@NotNull Flow flowRef, @NotNull IEntityContext context) {
+        if(flowRef.getDeclaringType() == this)
+            return flowRef;
+        var hTemplate = flowRef.getHorizontalTemplate();
+        if(hTemplate != null) {
+            var resolvedTemplate = tryResolveNonParameterizedFlow(hTemplate);
+            if(resolvedTemplate == null)
+                return null;
+            return context.getGenericContext().getParameterizedFlow(resolvedTemplate, flowRef.getTypeArguments());
         }
-        return getFlowTable().tryLookup(flowRef);
+        else
+            return tryResolveNonParameterizedFlow(flowRef);
+    }
+
+    @Nullable
+    public Flow tryResolveNonParameterizedFlow(Flow flowRef) {
+        NncUtils.requireFalse(flowRef.isParameterized());
+        var flowTable = getFlowTable();
+        if (flowRef.getDeclaringType().isUncertain())
+            flowRef = flowTable.findByVerticalTemplate(Objects.requireNonNull(flowRef.getVerticalTemplate()));
+        return flowTable.findByOverridden(flowRef);
     }
 
     @Override
@@ -999,7 +1013,7 @@ public class ClassType extends Type implements GenericDeclaration {
         if (!isInterface()) {
             for (ClassType it : interfaces) {
                 for (Flow flow : it.getFlows()) {
-                    if (resolveFlow(flow) == null) {
+                    if (tryResolveNonParameterizedFlow(flow) == null) {
                         throw new BusinessException(ErrorCode.INTERFACE_FLOW_NOT_IMPLEMENTED,
                                 getName(), it.getName(), flow.getName());
                     }

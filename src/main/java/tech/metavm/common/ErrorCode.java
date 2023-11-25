@@ -21,7 +21,7 @@ public enum ErrorCode {
     TYPE_NOT_FOUND(210, "类型不存在, ID: {}"),
     INVALID_COLUMN(211, "列'{}'配置错误，原因: {}"),
     INVALID_TYPE_PATH(307, "路径不合法: {}"),
-    STATIC_FIELD__CAN_NOT_BE_NULL(308, "静态字段'{}'不能为空"),
+    STATIC_FIELD_CAN_NOT_BE_NULL(308, "静态字段'{}'不能为空"),
     TOO_MAY_FIELDS(309, "字段数量超出限制"),
     OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES(209, "复写流程不支持修改参数数量或参数类型"),
     ORDINAL_OUT_OF_BOUND(310, "属性序号超出范围"),
@@ -78,6 +78,7 @@ public enum ErrorCode {
     MODIFYING_READ_ONLY_ARRAY(433, "只读数组不支持修改"),
     ADD_ELEMENT_NOT_SUPPORTED(433, "当前数组不支持添加元素"),
     MISSING_REQUIRED_ARGUMENT(434, "未配置必填参数'{}'"),
+    STATIC_FLOW_CAN_NOT_BE_ABSTRACT(436, "静态流程不能设置为为抽象"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),

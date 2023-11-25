@@ -1,6 +1,5 @@
 package tech.metavm.object.type;
 
-import com.alibaba.druid.support.spring.stat.annotation.Stat;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
@@ -31,8 +30,6 @@ public class Field extends Property implements UpdateAware, GlobalKey {
     private final Column column;
     @EntityField("是否子对象字段")
     private final boolean isChild;
-    @EntityField(value = "是否静态", code = "static")
-    private boolean _static;
     @EntityField(value = "静态属性值", code = "static")
     private Instance staticValue;
     @Nullable
@@ -58,7 +55,7 @@ public class Field extends Property implements UpdateAware, GlobalKey {
             @Nullable Column column,
             MetadataState state
     ) {
-        super(tmpId, name, code, type, declaringType, state);
+        super(tmpId, name, code, type, declaringType, isStatic, state);
         setName(name);
         requireNonNull(type);
         requireNonNull(declaringType, "属性所属类型不能为空");
@@ -76,7 +73,6 @@ public class Field extends Property implements UpdateAware, GlobalKey {
         if (unique != null) {
             setUnique(unique);
         }
-        this._static = isStatic;
         this.lazy = lazy;
         this.staticValue = staticValue;
         this.template = template;
@@ -192,14 +188,6 @@ public class Field extends Property implements UpdateAware, GlobalKey {
         } else {
             return NncUtils.requireNonNull((instance)).getField(this);
         }
-    }
-
-    public boolean isStatic() {
-        return _static;
-    }
-
-    public void setStatic(boolean _static) {
-        this._static = _static;
     }
 
     public void setStaticValue(Instance staticValue) {
@@ -333,7 +321,7 @@ public class Field extends Property implements UpdateAware, GlobalKey {
                     declaringType.getId(),
                     context.getRef(getType()),
                     isChild,
-                    _static,
+                    isStatic(),
                     lazy,
                     NncUtils.get(staticValue, Instance::toDTO),
                     getState().code()
@@ -365,7 +353,7 @@ public class Field extends Property implements UpdateAware, GlobalKey {
             var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
             var value = instance.getField(staticValueField);
             if (!getType().isInstance(value)) {
-                throw new BusinessException(ErrorCode.STATIC_FIELD__CAN_NOT_BE_NULL, getQualifiedName());
+                throw new BusinessException(ErrorCode.STATIC_FIELD_CAN_NOT_BE_NULL, getQualifiedName());
             }
         }
     }

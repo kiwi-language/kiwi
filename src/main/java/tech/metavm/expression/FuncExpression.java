@@ -6,6 +6,8 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.flow.Flow;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
@@ -55,6 +57,11 @@ public class FuncExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return null;
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return ((ClassInstance) self.evaluate(context)).getFunction(flow, context.getEntityContext());
     }
 
     @Override

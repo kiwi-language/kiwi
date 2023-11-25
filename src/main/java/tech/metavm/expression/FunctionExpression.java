@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -62,6 +63,11 @@ public class FunctionExpression extends Expression {
     public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, this.arguments.size());
         return new FunctionExpression(function, children);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return function.evaluate(NncUtils.map(arguments, arg -> arg.evaluate(context)));
     }
 
     @Override

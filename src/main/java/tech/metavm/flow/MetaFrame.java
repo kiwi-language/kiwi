@@ -1,19 +1,19 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
-import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Access;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.*;
 import tech.metavm.util.LinkedList;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -23,11 +23,9 @@ public class MetaFrame implements EvaluationContext, Frame {
     private final Instance self;
     private final List<Instance> arguments;
     private final ClassType owner;
-    private final Map<NodeRT<?>, Instance> results = new HashMap<>();
-    private NodeRT<?> pc;
-    private boolean jumped;
+    private final Map<NodeRT<?>, Instance> outputs = new HashMap<>();
+    private NodeRT<?> entry;
     private final IInstanceContext context;
-    private final FlowStack stack;
     private final Map<BranchNode, Branch> selectedBranches = new IdentityHashMap<>();
     private final Map<BranchNode, Branch> exitBranches = new IdentityHashMap<>();
     private final LinkedList<Branch> branches = new LinkedList<>();
@@ -37,40 +35,29 @@ public class MetaFrame implements EvaluationContext, Frame {
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
 
-    public MetaFrame(Flow flow, Instance self, List<Instance> arguments, FlowStack stack) {
-        this(flow.getRootNode(), flow.getDeclaringType(), self, arguments, stack);
+    public MetaFrame(Flow flow, Instance self, List<Instance> arguments, IInstanceContext context) {
+        this(flow.getRootNode(), flow.getDeclaringType(), self, arguments, context);
     }
 
-    public MetaFrame(NodeRT<?> entry, ClassType owner, Instance self, List<Instance> arguments, FlowStack stack) {
-        this.stack = stack;
-        this.context = stack.getContext();
+    public MetaFrame(NodeRT<?> entry, ClassType owner, Instance self, List<Instance> arguments, IInstanceContext context) {
+        this.entry = entry;
+        this.owner = owner;
         this.self = self;
         this.arguments = arguments;
-        this.owner = owner;
-        pc = entry;
+        this.context = context;
     }
 
-    public void setResult(Instance result) {
-        checkResult(result, pc);
-        results.put(pc, result);
+    public Instance getOutput(NodeRT<?> node) {
+        return outputs.get(node);
     }
 
-    public Instance getResult(NodeRT<?> node) {
-        return results.get(node);
+    public void setOutput(NodeRT<?> node, Instance output) {
+        this.outputs.put(node, output);
     }
 
     public Instance addInstance(Instance instance) {
         context.bind(instance);
         return instance;
-    }
-
-    public Instance getInstance(long id) {
-        return context.get(id);
-    }
-
-    public void ret(Instance returnValue) {
-        setResult(returnValue);
-        state = FrameState.RETURN;
     }
 
     public void enterTrySection(TryNode tryNode) {
@@ -81,24 +68,33 @@ public class MetaFrame implements EvaluationContext, Frame {
         return tryNodes.pop();
     }
 
+    @SuppressWarnings("unused")
     public boolean inTrySection() {
         return !tryNodes.isEmpty();
     }
 
+    @SuppressWarnings("unused")
     public TryNode currentTrySection() {
         return NncUtils.requireNonNull(tryNodes.peek());
     }
 
-    public void exception(ClassInstance exception) {
-        exception(exception, false);
+    public NodeExecResult catchException(@NotNull NodeRT<?> raiseNode, @NotNull ClassInstance exception) {
+        var tryNode = tryNodes.peek();
+        if(tryNode != null) {
+            exceptions.put(tryNode, new ExceptionInfo(raiseNode, exception));
+            return NodeExecResult.jump(tryNode.getSuccessor());
+        }
+        else
+            return NodeExecResult.exception(exception);
     }
 
+    @SuppressWarnings("unused")
     private void exception(ClassInstance exception, boolean fromResume) {
         if(!tryNodes.isEmpty()) {
             var tryNode = tryNodes.peek();
-            exceptions.put(tryNode, new ExceptionInfo(pc, exception));
+            exceptions.put(tryNode, new ExceptionInfo(entry, exception));
             if(fromResume) {
-                pc = tryNode.getSuccessor();
+                entry = tryNode.getSuccessor();
             }
             else {
                 jumpTo(tryNode.getSuccessor());
@@ -114,15 +110,11 @@ public class MetaFrame implements EvaluationContext, Frame {
         return exceptions.get(tryNode);
     }
 
-    public void deleteInstance(long id) {
-        context.remove(context.get(id));
-    }
-
-
     public void deleteInstance(Instance instance) {
         context.remove(instance);
     }
 
+    @SuppressWarnings("unused")
     public Object getInstanceField(ClassInstance instance, Field field) {
         checkAccess(field);
         return instance.getField(field);
@@ -143,31 +135,26 @@ public class MetaFrame implements EvaluationContext, Frame {
         }
     }
 
-    public void execute() {
-        for (; ; ) {
-            NodeRT<?> node = pc;
-            node.execute(this);
-            if (state == FrameState.RETURN) {
-                return;
-            }
-            if (state == FrameState.EXCEPTION) {
-                return;
-            }
-            if (stack.peek() != this) {
-                return;
-            }
-            if (jumped) {
-                jumped = false;
-            } else {
-                pc = node.getNext();
-            }
-            if (pc == null) {
-                state = FrameState.RETURN;
-                return;
-            }
+    public static final int MAX_STEPS = 100000;
+
+    public FlowExecResult execute() {
+        var outputs = this.outputs;
+        var pc = entry;
+        for(int i = 0; i < MAX_STEPS; i++) {
+            var result = pc.execute(this);
+            var output = result.output();
+            if(result.next() == null)
+                return new FlowExecResult(output, null);
+            if(result.exception() != null)
+                return new FlowExecResult(null, result.exception());
+            if(output != null)
+                outputs.put(pc, output);
+            pc = result.next();
         }
+        throw new FlowExecutionException(String.format("流程执行步骤超出限制: %d", MAX_STEPS));
     }
 
+    @SuppressWarnings("unused")
     private void checkResult(Instance result, NodeRT<?> node) {
         Type outputType = node.getType();
         if (outputType == null || outputType.isVoid()) {
@@ -183,9 +170,9 @@ public class MetaFrame implements EvaluationContext, Frame {
     }
 
     @Override
-    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression) {
         if (expression instanceof NodeExpression nodeExpression) {
-            return getResult(nodeExpression.getNode());
+            return getOutput(nodeExpression.getNode());
         } else {
             throw new RuntimeException("context '" + this + "' doesn't support expression: " + expression);
         }
@@ -198,19 +185,7 @@ public class MetaFrame implements EvaluationContext, Frame {
 
     @Override
     public IEntityContext getEntityContext() {
-        return getStack().getContext().getEntityContext();
-    }
-
-    public void resume(Instance result) {
-        setResult(result);
-        if(pc instanceof CallNode<?> callNode) {
-            callNode.onReturn(result, this);
-        }
-        pc = pc.getNext();
-    }
-
-    public void resumeWithException(ClassInstance exception) {
-        exception(exception, true);
+        return context.getEntityContext();
     }
 
     public Instance getSelf() {
@@ -225,19 +200,15 @@ public class MetaFrame implements EvaluationContext, Frame {
         context.finish();
     }
 
-    public FlowStack getStack() {
-        return stack;
-    }
-
     public void jumpTo(NodeRT<?> node) {
-        jumped = true;
-        this.pc = node;
+        this.entry = node;
     }
 
     public Branch getSelectedBranch(BranchNode branchNode) {
         return selectedBranches.get(branchNode);
     }
 
+    @SuppressWarnings("unused")
     public Branch currentBranch() {
         return NncUtils.requireNonNull(branches.peek());
     }
@@ -258,12 +229,11 @@ public class MetaFrame implements EvaluationContext, Frame {
         return state;
     }
 
-    public Instance getRet() {
-        return pc != null ? results.get(pc) : InstanceUtils.nullInstance();
-    }
-
     public ClassInstance getThrow() {
         return NncUtils.requireNonNull(exception);
     }
 
+    public IInstanceContext getContext() {
+        return context;
+    }
 }

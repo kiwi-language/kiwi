@@ -16,6 +16,7 @@ import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Function;
 
 @EntityType("新增记录节点")
@@ -117,7 +118,7 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> implements NewNode 
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var instance = new ClassInstance(getType(), NncUtils.get(parent, p -> p.evaluate(frame)));
         var fieldParamMap = NncUtils.toMap(fields, FieldParam::getField, Function.identity());
         for (Field field : getType().getAllFields()) {
@@ -135,10 +136,14 @@ public class AddObjectNode extends ScopeNode<AddObjectParam> implements NewNode 
             }
         }
         frame.addInstance(instance);
-        frame.setResult(instance);
-        if(bodyScope.isNotEmpty()) {
-            frame.jumpTo(bodyScope.getFirstNode());
-        }
+        return bodyScope.isNotEmpty() ?
+                NodeExecResult.jump(instance, bodyScope.tryGetFirstNode()) : next(instance);
+    }
+
+    @Override
+    @NotNull
+    public NodeRT<?> getSuccessor() {
+        return Objects.requireNonNull(super.getSuccessor());
     }
 
     @Override

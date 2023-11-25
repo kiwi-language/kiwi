@@ -89,10 +89,11 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         for (UpdateField field : fields) {
-            field.execute(null, frame, getFlow().isConstructor(), frame.getStack().getContext());
+            field.execute(null, frame, getFlow().isConstructor(), frame.getContext());
         }
+        return next(null);
     }
 
     @Override

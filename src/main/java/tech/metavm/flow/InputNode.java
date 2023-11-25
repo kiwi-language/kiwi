@@ -72,11 +72,10 @@ public class InputNode extends ChildTypeNode<InputParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         Map<Field, Instance> fieldValues = new HashMap<>();
         NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
-        var instance = new ClassInstance(fieldValues, getType());
-        frame.setResult(instance);
+        return next(new ClassInstance(fieldValues, getType()));
     }
 
     @Override

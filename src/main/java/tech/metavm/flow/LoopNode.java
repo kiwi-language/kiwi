@@ -89,22 +89,22 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
     }
 
     @Override
-    public final void execute(MetaFrame frame) {
-        ClassInstance loopObject = (ClassInstance) frame.getResult(this);
+    public final NodeExecResult execute(MetaFrame frame) {
+        ClassInstance loopObject = (ClassInstance) frame.getOutput(this);
         if (loopObject == null) {
             loopObject = initLoopObject(frame);
-            frame.setResult(loopObject);
+            frame.setOutput(this, loopObject);
         } else {
             updateLoopObject(loopObject, frame);
         }
         var extraCondValue = (BooleanInstance) condition.evaluate(frame);
         if (!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
-            return;
+            return next(loopObject);
         }
         if (bodyScope.isEmpty()) {
-            frame.jumpTo(this);
+            return NodeExecResult.jump(loopObject, this);
         } else {
-            frame.jumpTo(bodyScope.getFirstNode());
+            return NodeExecResult.jump(loopObject, bodyScope.tryGetFirstNode());
         }
     }
 

@@ -137,16 +137,16 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var func = new LambdaInstance(this, frame);
         if (functionalInterface == null) {
-            frame.setResult(func);
+            return next(func);
         } else {
             var funcClass = Types.createFunctionalClass(
                     functionalInterface,
-                    frame.getStack().getContext().getEntityContext());
+                    frame.getEntityContext());
             var funcField = funcClass.getFieldByCode("func");
-            frame.setResult(new ClassInstance(Map.of(funcField, func), funcClass));
+            return next(new ClassInstance(Map.of(funcField, func), funcClass));
         }
     }
 

@@ -35,7 +35,7 @@ public class ValueUtil {
         throw new InternalException("Unsupported value: " + value);
     }
 
-    public static Type getConvertibleType(Type type1, Type type2) {
+    public static Type getCompatibleType(Type type1, Type type2) {
         if (type1.equals(type2)) {
             return type1;
         }
@@ -71,7 +71,7 @@ public class ValueUtil {
         throw new InternalException("Can not convert instance '" + instance + "' to type '" + type + "'");
     }
 
-    public static Type getConvertibleType(List<Type> types) {
+    public static Type getCompatibleType(List<Type> types) {
         NncUtils.requireMinimumSize(types, 1);
         Iterator<Type> it = types.iterator();
         Type compatibleType = it.next();

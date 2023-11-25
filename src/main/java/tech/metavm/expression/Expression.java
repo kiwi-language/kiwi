@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.Element;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -83,6 +84,8 @@ public abstract class Expression extends Element {
         results.addAll(extractExpressionsRecursively(klass));
         return results;
     }
+
+    public abstract Instance evaluate(EvaluationContext context);
 
     public Expression simplify() {
         return substituteChildren(NncUtils.map(getChildren(), Expression::simplify));

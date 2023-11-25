@@ -25,7 +25,7 @@ public enum Function {
     RANDOM(Long.class),
 
     IF(Object.class, List.of(Boolean.class, Object.class, Object.class),
-            types -> ValueUtil.getConvertibleType(types.get(1), types.get(2))),
+            types -> ValueUtil.getCompatibleType(types.get(1), types.get(2))),
 
     IS_BLANK(Boolean.class, String.class),
 

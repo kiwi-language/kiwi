@@ -72,6 +72,7 @@
     <foreach collection="collection" item="item" open="(" close=")" separator=",">
       #{item}
     </foreach>
+    for update
   </select>
 
   <update id="batchUpdate">

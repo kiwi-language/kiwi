@@ -16,6 +16,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -223,13 +224,13 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     protected List<Runnable> ancestorChangeListeners() {
-        if(ancestorChangeListeners == null)
+        if (ancestorChangeListeners == null)
             ancestorChangeListeners = new ArrayList<>();
         return ancestorChangeListeners;
     }
 
     private void ensureListenersInitialized() {
-        if(superTypesCheckpoint == null) {
+        if (superTypesCheckpoint == null) {
             for (Type superType : getSuperTypes())
                 superType.ensureListenersInitialized();
             resetSuperTypeListeners();
@@ -262,17 +263,15 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isAssignableFrom(Type that) {
-        if (that instanceof NothingType) {
+        if (that instanceof NothingType)
             return true;
-        }
         var bound = that.getUpperBound();
-        if (bound instanceof UnionType unionType) {
-            return NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
-        } else if (bound instanceof IntersectionType intersection) {
-            return NncUtils.anyMatch(intersection.getTypes(), this::isAssignableFrom);
-        } else {
-            return getLowerBound().isAssignableFrom0(bound);
-        }
+        return switch (bound) {
+            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
+            case IntersectionType intersectionType ->
+                    NncUtils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
+            default -> isAssignableFrom0(bound);
+        };
     }
 
     public boolean isUncertain() {

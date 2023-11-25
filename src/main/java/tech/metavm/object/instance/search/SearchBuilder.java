@@ -85,11 +85,11 @@ public class SearchBuilder {
     }
 
     private static String parseBinary(BinaryExpression expression) {
-        Operator operator = expression.getOperator();
+        BinaryOperator operator = expression.getOperator();
 
-        if (operator == Operator.EQ
-                || operator == Operator.GT || operator == Operator.GE
-                || operator == Operator.LT || operator == Operator.LE
+        if (operator == BinaryOperator.EQ
+                || operator == BinaryOperator.GT || operator == BinaryOperator.GE
+                || operator == BinaryOperator.LT || operator == BinaryOperator.LE
         ) {
             Expression fieldExpr = expression.getVariableChild();
             ConstantExpression constExpr = expression.getConstChild();
@@ -99,7 +99,7 @@ public class SearchBuilder {
             String value = toString(constValue.toSearchConditionValue());
             return parenthesize(columnName + getEsOperator(operator) + value);
         }
-        if (operator == Operator.IN) {
+        if (operator == BinaryOperator.IN) {
             Expression fieldExpr = expression.getVariableChild();
             Iterable<Expression> expressions;
             if (expression.getSecond() instanceof ArrayExpression) {
@@ -124,10 +124,10 @@ public class SearchBuilder {
         }
         String first = parse(expression.getFirst()),
                 second = parse(expression.getSecond());
-        if (operator == Operator.AND) {
+        if (operator == BinaryOperator.AND) {
             return parenthesize(first + " AND " + second);
         }
-        if (operator == Operator.OR) {
+        if (operator == BinaryOperator.OR) {
             return parenthesize(first + " OR " + second);
         }
         throw new RuntimeException("Unsupported operator: " + operator);
@@ -144,32 +144,32 @@ public class SearchBuilder {
         }
     }
 
-    private static String getEsOperator(Operator operator) {
-        if (operator == Operator.LT) {
+    private static String getEsOperator(BinaryOperator operator) {
+        if (operator == BinaryOperator.LT) {
             return ":<";
         }
-        if (operator == Operator.LE) {
+        if (operator == BinaryOperator.LE) {
             return ":<=";
         }
-        if (operator == Operator.GT) {
+        if (operator == BinaryOperator.GT) {
             return ":>";
         }
-        if (operator == Operator.GE) {
+        if (operator == BinaryOperator.GE) {
             return ":>=";
         }
         return ":";
     }
 
     private static String parseUnary(UnaryExpression expression) {
-        Operator operator = expression.getOperator();
+        var operator = expression.getOperator();
         String operand = parse(expression.getOperand());
-        if (operator == Operator.NOT) {
+        if (operator == UnaryOperator.NOT) {
             return "!" + operand;
         }
-        if (operator == Operator.IS_NULL) {
+        if (operator == UnaryOperator.IS_NULL) {
             return "!" + parenthesize("_exists_:" + operand);
         }
-        if (operator == Operator.IS_NOT_NULL) {
+        if (operator == UnaryOperator.IS_NOT_NULL) {
             return "_exists_:" + operand;
         }
         throw new RuntimeException("Unsupported operator: " + operator);

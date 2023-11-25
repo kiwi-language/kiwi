@@ -63,11 +63,9 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
-        IInstanceContext instanceContext = frame.getStack().getContext();
-        frame.setResult(
-                instanceContext.selectByUniqueKey(buildIndexKey(frame))
-        );
+    public NodeExecResult execute(MetaFrame frame) {
+        IInstanceContext instanceContext = frame.getContext();
+        return next(instanceContext.selectByUniqueKey(buildIndexKey(frame)));
     }
 
     private IndexKeyRT buildIndexKey(MetaFrame frame) {

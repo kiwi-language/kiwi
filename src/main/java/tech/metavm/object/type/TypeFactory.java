@@ -198,6 +198,7 @@ public abstract class TypeFactory {
         if (flow == null) {
             var declaringType = batch.getClassType(flowDTO.declaringTypeRef());
             flow = FlowBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code(), context.getFunctionTypeContext())
+                    .isStatic(flowDTO.isStatic())
                     .tmpId(flowDTO.tmpId())
                     .build();
             context.bind(flow);
@@ -216,8 +217,8 @@ public abstract class TypeFactory {
                 context.getFunctionTypeContext()
         );
         flow.setAbstract(flowDTO.isAbstract());
-        if(flowDTO.templateInstances() != null) {
-            for (FlowDTO templateInstance : flowDTO.templateInstances()) {
+        if(flowDTO.horizontalInstances() != null) {
+            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
                 context.getGenericContext().getParameterizedFlow(
                         flow,
                         NncUtils.map(templateInstance.typeArgumentRefs(), batch::get),

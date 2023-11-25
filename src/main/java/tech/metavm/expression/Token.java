@@ -16,8 +16,8 @@ public record Token (
         return (String) value;
     }
 
-    public Operator getOperator() {
-        return (Operator) value;
+    public BinaryOperator getOperator() {
+        return (BinaryOperator) value;
     }
 
     public Function getFunction() {
@@ -41,11 +41,11 @@ public record Token (
     }
 
     public boolean isLt() {
-        return type == TokenType.OPERATOR && getOperator() == Operator.LT;
+        return type == TokenType.OPERATOR && getOperator() == BinaryOperator.LT;
     }
 
     public boolean isGt() {
-        return type == TokenType.OPERATOR && getOperator() == Operator.GT;
+        return type == TokenType.OPERATOR && getOperator() == BinaryOperator.GT;
     }
 
     public boolean isFunction() {

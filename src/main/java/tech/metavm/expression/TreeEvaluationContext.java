@@ -18,7 +18,7 @@ public class TreeEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression) {
         if(expression instanceof PropertyExpression fieldExpression) {
             return objectNode.getByPath(instance, Path.create(fieldExpression.getProperty().getName()));
         }

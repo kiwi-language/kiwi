@@ -359,7 +359,7 @@ public class TypeManager {
             var flows = it.getAllFlows();
             for (Flow overriden : flows) {
                 if (overriden.isAbstract())
-                    flowManager.createOverrideFlows(overriden, type, context);
+                    flowManager.createOverridingFlows(overriden, type, context);
             }
         }
     }

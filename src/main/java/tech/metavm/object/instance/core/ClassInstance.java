@@ -332,20 +332,20 @@ public class ClassInstance extends Instance {
         return field(field).getValue();
     }
 
-    public FlowInstance getFunction(Flow flow) {
+    public FlowInstance getFunction(Flow flow, IEntityContext context) {
         ensureLoaded();
         if (functions == null) {
             functions = new HashMap<>();
         }
-        var concreteFlow = getType().resolveFlow(flow);
+        var concreteFlow = getType().tryResolveFlow(flow, context);
         return functions.computeIfAbsent(concreteFlow,
-                k -> new FlowInstance(getType().resolveFlow(flow), this));
+                k -> new FlowInstance(getType().tryResolveFlow(flow, context), this));
     }
 
-    public Instance getProperty(Property property) {
+    public Instance getProperty(Property property, IEntityContext context) {
         return switch (property) {
             case Field field -> getField(field);
-            case Flow flow -> getFunction(flow);
+            case Flow flow -> getFunction(flow, context);
             default -> throw new IllegalStateException("Unexpected value: " + property);
         };
     }

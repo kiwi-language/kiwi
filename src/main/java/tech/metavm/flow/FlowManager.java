@@ -131,6 +131,7 @@ public class FlowManager {
                     .newBuilder(context.getClassType(flowDTO.declaringTypeRef()), flowDTO.name(),
                             flowDTO.code(), context.getFunctionTypeContext())
                     .flowDTO(flowDTO)
+                    .isStatic(flowDTO.isStatic())
                     .tmpId(flowDTO.tmpId()).build();
             context.bind(flow);
         }
@@ -143,8 +144,8 @@ public class FlowManager {
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterRefs(), context::getTypeVariable));
         var parameters = NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, context));
         flow.update(parameters, returnType, overriden, context.getFunctionTypeContext());
-        if (flowDTO.templateInstances() != null) {
-            for (FlowDTO templateInstance : flowDTO.templateInstances()) {
+        if (flowDTO.horizontalInstances() != null) {
+            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
                 save(templateInstance, declarationOnly, context);
             }
         }
@@ -154,9 +155,9 @@ public class FlowManager {
         retransformFlowIfRequired(flow, context);
         if (flow.isAbstract()) {
             if (creating) {
-                createOverrideFlows(flow, context);
+                createOverridingFlows(flow, context);
             } else if (oldFuncType != flow.getType()) {
-                recreateOverrideFlows(flow, context);
+                recreateOverridingFlows(flow, context);
             }
         }
         flow.check();
@@ -180,26 +181,26 @@ public class FlowManager {
         }
     }
 
-    public void createOverrideFlows(Flow overriden, IEntityContext context) {
+    public void createOverridingFlows(Flow overriden, IEntityContext context) {
         NncUtils.requireTrue(overriden.isAbstract());
         for (ClassType subType : overriden.getDeclaringType().getSubTypes()) {
-            createOverrideFlows(overriden, subType, context);
+            createOverridingFlows(overriden, subType, context);
         }
     }
 
-    public void recreateOverrideFlows(Flow flow, IEntityContext context) {
+    public void recreateOverridingFlows(Flow flow, IEntityContext context) {
         detachOverrideFlows(flow);
-        createOverrideFlows(flow, context);
+        createOverridingFlows(flow, context);
     }
 
-    public void createOverrideFlows(Flow overriden, ClassType type, IEntityContext context) {
+    public void createOverridingFlows(Flow overriden, ClassType type, IEntityContext context) {
         NncUtils.requireTrue(overriden.isAbstract());
         if (type.isAbstract()) {
             for (ClassType subType : type.getSubTypes()) {
-                createOverrideFlows(overriden, subType, context);
+                createOverridingFlows(overriden, subType, context);
             }
         } else {
-            var flow = type.resolveFlow(overriden);
+            var flow = type.tryResolveNonParameterizedFlow(overriden);
             if (flow == null) {
                 var candidate = NncUtils.find(
                         type.getFlows(),
@@ -261,7 +262,7 @@ public class FlowManager {
         if (flow.getDeclaringType().isTemplate() && context.isPersisted(flow.getDeclaringType())) {
             var templateInstances = context.getTemplateInstances(flow.getDeclaringType());
             for (ClassType templateInstance : templateInstances) {
-                var flowTi = templateInstance.getFlowByRootTemplate(flow);
+                var flowTi = templateInstance.getFlowByVerticalTemplate(flow);
                 templateInstance.removeFlow(flowTi);
                 context.remove(flowTi);
             }
@@ -279,9 +280,9 @@ public class FlowManager {
         } else {
             saveNodes(flowDTO, flow, context);
         }
-        if (flowDTO.templateInstances() != null) {
-            for (FlowDTO templateInstance : flowDTO.templateInstances()) {
-                saveContent(templateInstance, context.getFlow(templateInstance.getRef()), context);
+        if (flowDTO.horizontalInstances() != null) {
+            for (FlowDTO inst : flowDTO.horizontalInstances()) {
+                saveContent(inst, context.getFlow(inst.getRef()), context);
             }
         }
     }
@@ -344,7 +345,7 @@ public class FlowManager {
     }
 
     private void detachOverrideFlows(Flow flow, ClassType type) {
-        var override = type.resolveFlow(flow);
+        var override = type.tryResolveNonParameterizedFlow(flow);
         if (override != null) {
             override.removeOverriden(flow);
             override.addOverriden(flow.getOverridden());
@@ -762,7 +763,7 @@ public class FlowManager {
             var oldFuncType = flow.getFunctionType();
             flow.update(parameters, flow.getReturnType(), funcTypeContext);
             if (flow.isAbstract() && !oldFuncType.equals(flow.getFunctionType()))
-                recreateOverrideFlows(flow, context);
+                recreateOverridingFlows(flow, context);
         }
         else {
             var funcType = funcTypeContext.get(callable.getParameterTypes(), callable.getReturnType());

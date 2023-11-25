@@ -54,27 +54,8 @@ public class UnionType extends CompositeType {
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        Iterable<Type> thatTypes;
-        if (that instanceof UnionType thatUnionType) {
-            thatTypes = thatUnionType.members;
-        } else {
-            thatTypes = List.of(that);
-        }
-        for (Type thatType : thatTypes) {
-            boolean anyMatch = false;
-            for (Type typeMember : members) {
-                if (typeMember.isAssignableFrom(thatType)) {
-                    anyMatch = true;
-                    break;
-                }
-            }
-            if (!anyMatch) {
-                return false;
-            }
-        }
-        return true;
+        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that));
     }
-
 
     @Override
     protected UnionTypeParam getParamInternal() {

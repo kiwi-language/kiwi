@@ -120,7 +120,7 @@ public class GeneratorTest extends TestCase {
             assertTrue(it.isAssignableFrom(sub));
             var itTest = it.getFlowByCode("test");
             assertTrue(itTest.isAbstract());
-            var subTest = sub.resolveFlow(itTest);
+            var subTest = sub.tryResolveNonParameterizedFlow(itTest);
             assertNotNull(subTest);
             assertEquals(subTest.getName(), itTest.getName());
             assertFalse(subTest.isAbstract());
@@ -155,13 +155,19 @@ public class GeneratorTest extends TestCase {
             var result = HttpUtils.post("/type/batch-get",
                     new GetTypesRequest(ids, false),
                     new TypeReference<Result<GetTypesResponse>>() {});
-            List<Long> nonEnumIds = new ArrayList<>();
+            List<Long> arrayAndClassIds = new ArrayList<>();
+            List<Integer> arrayAndClassCategories = List.of(
+                    TypeCategory.READ_WRITE_ARRAY.code(),
+                    TypeCategory.READ_ONLY_ARRAY.code(),
+                    TypeCategory.CHILD_ARRAY.code(),
+                    TypeCategory.CLASS.code()
+            );
             for (TypeDTO type : result.getData().types()) {
-                if(type.category() != TypeCategory.ENUM.code())
-                    nonEnumIds.add(type.id());
+                if(arrayAndClassCategories.contains(type.category()))
+                    arrayAndClassIds.add(type.id());
             }
             var deleteInstanceResp = HttpUtils.post("/instance/delete-by-types",
-                    nonEnumIds, new TypeReference<Result<Void>>() {
+                    arrayAndClassIds, new TypeReference<Result<Void>>() {
                     });
             if (deleteInstanceResp.getCode() != 0) {
                 throw new InternalException("Fail to remove instances: " + deleteInstanceResp.getMessage());

@@ -13,8 +13,10 @@ import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 @EntityType("调用节点")
@@ -54,9 +56,6 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
         setExtraParam(param, context);
     }
 
-    public void onReturn(Instance returnValue, MetaFrame frame) {
-    }
-
     protected void setExtraParam(CallParam paramDTO, IEntityContext context) {
     }
 
@@ -85,7 +84,7 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
         return arguments.toList();
     }
 
-    protected abstract Instance getSelf(MetaFrame frame);
+    protected abstract @Nullable Instance getSelf(MetaFrame frame);
 
     @Override
     protected String check0() {
@@ -98,32 +97,28 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
-        FlowStack stack = frame.getStack();
-        var entityContext = stack.getContext().getEntityContext();
-        Flows.enableCache(subFlow, entityContext);
+    public NodeExecResult execute(MetaFrame frame) {
         var self = getSelf(frame);
-        List<Instance> args = new ArrayList<>();
-        var argMap = NncUtils.toMap(arguments, Argument::getParameter, Function.identity());
-        for (Parameter param : subFlow.getParameters()) {
-            var arg = argMap.get(param);
-            if (arg != null)
-                args.add(arg.evaluate(frame));
-            else
-                args.add(InstanceUtils.nullInstance());
-        }
+        List<Instance> argInstances = new ArrayList<>();
         var flow = subFlow;
-        if (flow.isAbstract())
-            flow = ((ClassType) self.getType()).getOverrideFlowRequired(flow);
-        if (flow.isNative()) {
-            var result = NativeInvoker.invoke(flow, self, args);
-            onReturn(result, frame);
-            if (result != null) {
-                frame.setResult(result);
+        var args = arguments;
+        out: for (Parameter param : flow.getParameters()) {
+            for (Argument arg : args) {
+                if(arg.getParameter() == param) {
+                    argInstances.add(arg.evaluate(frame));
+                    continue out;
+                }
             }
-        } else {
-            stack.push(stack.createFlowFrame(flow, self, args));
+            argInstances.add(InstanceUtils.nullInstance());
         }
+        if(!flow.isStatic())
+            flow = ((ClassType) Objects.requireNonNull(self).getType())
+                    .resolveFlow(flow, frame.getEntityContext());
+        FlowExecResult result = flow.execute(self, argInstances, frame.getContext());
+        if(result.exception() != null)
+            return frame.catchException(this, result.exception());
+        else
+            return next(result.ret());
     }
 
 }

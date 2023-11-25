@@ -226,7 +226,7 @@ public class Generator extends VisitorBase {
         }
         var exceptBranchNode = builder().createBranchNode(false);
         var exceptionBranch = exceptBranchNode.addBranch(
-                new ExpressionValue(new UnaryExpression(Operator.IS_NOT_NULL, exceptionExpr))
+                new ExpressionValue(new UnaryExpression(UnaryOperator.IS_NOT_NULL, exceptionExpr))
         );
         exceptBranchNode.addDefaultBranch();
         builder().enterCondSection(exceptBranchNode);
@@ -252,7 +252,7 @@ public class Generator extends VisitorBase {
             if (expression == null) {
                 expression = checkExpr;
             } else {
-                expression = new BinaryExpression(Operator.OR, expression, checkExpr);
+                expression = new BinaryExpression(BinaryOperator.OR, expression, checkExpr);
             }
         }
         return NncUtils.requireNonNull(expression);
@@ -291,12 +291,12 @@ public class Generator extends VisitorBase {
                                 klass.getFieldByCode("name"),
                                 new PropertyExpression(
                                         new NodeExpression(inputNode),
-                                        inputNode.getType().findFieldByCode("name")
+                                        inputNode.getType().getFieldByCode("name")
                                 ),
                                 klass.getFieldByCode("ordinal"),
                                 new PropertyExpression(
                                         new NodeExpression(inputNode),
-                                        inputNode.getType().findFieldByCode("ordinal")
+                                        inputNode.getType().getFieldByCode("ordinal")
                                 )
                         )
                 );
@@ -380,7 +380,7 @@ public class Generator extends VisitorBase {
                     var expressions = NncUtils.map(caseLabelElementList.getElements(),
                             e -> resolveExpression((PsiExpression) e));
                     cond = new BinaryExpression(
-                            Operator.IN,
+                            BinaryOperator.IN,
                             resolveExpression(statement.getExpression()),
                             ArrayExpression.create(expressions, entityContext)
                     );

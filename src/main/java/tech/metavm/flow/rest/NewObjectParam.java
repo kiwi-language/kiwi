@@ -11,13 +11,21 @@ public class NewObjectParam extends CallParam implements NewParam<NewObjectParam
     @Nullable
     private final ParentRefDTO parent;
 
+    private final boolean ephemeral;
+
     public NewObjectParam(@JsonProperty("flowRef") RefDTO flowRef,
                           @JsonProperty("typeRef") @Nullable RefDTO typeRef,
                           @JsonProperty("arguments") List<ArgumentDTO> arguments,
-                          @Nullable @JsonProperty("parent") ParentRefDTO parent
+                          @Nullable @JsonProperty("parent") ParentRefDTO parent,
+                          @JsonProperty("ephemeral") boolean ephemeral
     ) {
         super(flowRef, typeRef, arguments);
         this.parent = parent;
+        this.ephemeral = ephemeral;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
     }
 
     @Nullable
@@ -28,7 +36,7 @@ public class NewObjectParam extends CallParam implements NewParam<NewObjectParam
     @Override
     public NewObjectParam copyWithParentRef(ParentRefDTO parentRef) {
         return new NewObjectParam(
-                getFlowRef(), getTypeRef(), getArguments(), parentRef
+                getFlowRef(), getTypeRef(), getArguments(), parentRef, ephemeral
         );
     }
 }

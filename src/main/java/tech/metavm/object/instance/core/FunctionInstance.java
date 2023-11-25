@@ -1,7 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.flow.FlowStack;
-import tech.metavm.flow.Frame;
+import tech.metavm.flow.FlowExecResult;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
@@ -27,6 +26,8 @@ public abstract class FunctionInstance extends Instance {
     public void acceptChildren(InstanceVisitor visitor) {
     }
 
+    public abstract FlowExecResult execute(List<Instance> arguments, IInstanceContext context);
+
     @Override
     public boolean isInitialized() {
         return true;
@@ -37,7 +38,7 @@ public abstract class FunctionInstance extends Instance {
         return (FunctionType) super.getType();
     }
 
-    public abstract Frame createFrame(FlowStack stack, List<Instance> arguments);
+//    public abstract Frame createFrame(FlowStack stack, List<Instance> arguments);
 
     @Override
     public boolean isReference() {

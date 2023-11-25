@@ -47,6 +47,11 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     @Override
+    public StringInstance toStringInstance() {
+        return this;
+    }
+
+    @Override
     public void writeTo(InstanceOutput output, boolean includeChildren) {
         output.writeString(value);
     }

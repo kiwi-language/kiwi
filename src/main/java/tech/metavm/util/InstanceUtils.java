@@ -236,7 +236,7 @@ public class InstanceUtils {
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
-        return new BooleanInstance(value, StandardTypes.getBooleanType());
+        return value ? trueInstance : falseInstance;
     }
 
     public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
@@ -340,19 +340,19 @@ public class InstanceUtils {
     }
 
     public static LongInstance max(LongInstance a, LongInstance b) {
-        return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
+        return a.ge(b).getValue() ? a : b;
     }
 
     public static DoubleInstance max(DoubleInstance a, DoubleInstance b) {
-        return a.isGreaterThanOrEqualTo(b).getValue() ? a : b;
+        return a.ge(b).getValue() ? a : b;
     }
 
     public static LongInstance min(LongInstance a, LongInstance b) {
-        return a.isLessThanOrEqualTo(b).getValue() ? a : b;
+        return a.le(b).getValue() ? a : b;
     }
 
     public static DoubleInstance min(DoubleInstance a, DoubleInstance b) {
-        return a.isLessThanOrEqualTo(b).getValue() ? a : b;
+        return a.le(b).getValue() ? a : b;
     }
 
     public static StringInstance createString(String value) {
@@ -372,7 +372,7 @@ public class InstanceUtils {
     }
 
     public static BooleanInstance createBoolean(boolean b) {
-        return new BooleanInstance(b, getBooleanType());
+        return b ? trueInstance : falseInstance;
     }
 
     public static PrimitiveType getStringType(Function<Class<?>, Type> getTypeFunc) {

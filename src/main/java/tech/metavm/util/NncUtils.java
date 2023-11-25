@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.intellij.util.TriConsumer;
+import kotlin.jvm.JvmInline;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -1341,7 +1342,7 @@ public class NncUtils {
 
     public static void requireFalse(boolean value) {
         if (value)
-            throw new InternalException("参数必须为false");
+            throw new InternalException("value must be false");
     }
 
     public static void requireFalse(boolean value, Supplier<? extends RuntimeException> exceptionSupplier) {

@@ -22,9 +22,6 @@ public interface GenericDeclaration {
         return index;
     }
 
-    @Nullable
-    GenericDeclaration getTemplate();
-
     void addTypeParameter(TypeVariable typeParameter);
 
     String getKey(Function<Type, java.lang.reflect.Type> getJavaType);
@@ -35,4 +32,5 @@ public interface GenericDeclaration {
 
     RefDTO getRef();
 
+    GenericDeclaration getTemplate();
 }

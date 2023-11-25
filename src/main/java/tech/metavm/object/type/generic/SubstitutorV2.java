@@ -17,6 +17,7 @@ import tech.metavm.util.LinkedList;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static tech.metavm.object.type.ResolutionStage.*;
 
@@ -69,7 +70,8 @@ public class SubstitutorV2 extends CopyVisitor {
         if (type == flow.getDeclaringType())
             return flow;
         else
-            return NncUtils.requireNonNull(type.findFlow(f -> f.getTemplate() == flow.getEffectiveTemplate()));
+            return NncUtils.requireNonNull(type.findFlow(
+                    f -> f.getEffectiveVerticalTemplate() == flow.getEffectiveVerticalTemplate()));
     }
 
     @Override
@@ -124,17 +126,18 @@ public class SubstitutorV2 extends CopyVisitor {
         var typeArguments = NncUtils.map(type.getTypeArguments(), this::substituteType);
         var name = Types.getParameterizedName(template.getName(), typeArguments);
         var code = Types.getParameterizedCode(template.getCode(), typeArguments);
-        var existing = context.getExisting(template, typeArguments);
+        var copy = context.getExisting(template, typeArguments);
         var pKey = new ParameterizedTypeKey(template.getRef(), NncUtils.map(typeArguments, Entity::getRef));
         var typeDTO = batch.getTypeDTO(pKey);
-        var copy = ClassBuilder.newBuilder(name, code)
-                .existing(existing)
-                .typeArguments(typeArguments)
-                .template(template)
-                .anonymous(true)
-                .tmpId(NncUtils.get(typeDTO, TypeDTO::tmpId))
-                .build();
-        context.addType(copy);
+        if(copy == null) {
+            copy = ClassBuilder.newBuilder(name, code)
+                    .typeArguments(typeArguments)
+                    .template(template)
+                    .anonymous(true)
+                    .tmpId(NncUtils.get(typeDTO, TypeDTO::tmpId))
+                    .build();
+            context.addType(copy);
+        }
         return copy;
     }
 
@@ -160,13 +163,12 @@ public class SubstitutorV2 extends CopyVisitor {
 
     @Override
     public Element visitTypeVariable(TypeVariable type) {
-        // Type variables can be newlyCreated before it's parent object
+        // Type variables can be created before it's parent object
         var subst = substituteType(type);
         if (subst != type)
             return subst;
         var genericDecl = currentElement(GenericDeclaration.class);
-        var genericDeclTemp = NncUtils.requireNonNull(genericDecl.getTemplate());
-
+        var genericDeclTemp = Objects.requireNonNull(genericDecl.getTemplate());
         var copy = NncUtils.find(genericDecl.getTypeParameters(), v -> v.getTemplate() == type);
         if (copy == null) {
             var typeKey = new TypeVariableKey(genericDecl.getRef(), genericDeclTemp.getTypeParameterIndex(type));
@@ -194,7 +196,7 @@ public class SubstitutorV2 extends CopyVisitor {
         return copy;
     }
 
-    private Flow generateFlowInst(ClassType declaringType, Flow flow) {
+    private Flow generateHorizontalFlowInst(ClassType declaringType, Flow flow) {
         var typeDTO = batch.getTypeDTO(declaringType.getRef());
         FlowDTO templateFlowDTO = NncUtils.get(typeDTO, t -> t.getClassParam().findFlowBySignature(
                 flow.getSignature()
@@ -202,15 +204,16 @@ public class SubstitutorV2 extends CopyVisitor {
         List<Type> typeArgs = NncUtils.map(flow.getTypeParameters(), this::substituteType);
         FlowDTO flowDTO = null;
         if (templateFlowDTO != null) {
-            flowDTO = NncUtils.find(templateFlowDTO.templateInstances(),
+            flowDTO = NncUtils.find(templateFlowDTO.horizontalInstances(),
                     f -> f.typeArgumentRefs().equals(NncUtils.map(typeArgs, Entity::getRef)));
         }
-        var copy = flow.getTemplateInstance(typeArgs);
+        var copy = flow.findHorizontalInstance(typeArgs);
         if (copy == null) {
             copy = FlowBuilder
                     .newBuilder(declaringType, flow.getName(), flow.getCode(), context.getEntityContext().getFunctionTypeContext())
                     .tmpId(NncUtils.get(flowDTO, FlowDTO::tmpId))
-                    .template(flow)
+                    .horizontalTemplate(flow)
+                    .isStatic(flow.isStatic())
                     .nullType(typeFactory.getNullType())
                     .voidType(typeFactory.getVoidType())
                     .typeArguments(typeArgs)
@@ -220,8 +223,8 @@ public class SubstitutorV2 extends CopyVisitor {
         return copy;
     }
 
-    private Flow generateFlow(ClassType declaringType, Flow flow) {
-        var copy = declaringType.findFlow(f -> f.getTemplate() == flow);
+    private Flow generateVerticalFlowInst(ClassType declaringType, Flow flow) {
+        var copy = declaringType.getFlowByVerticalTemplate(flow);
         var paramTypes = NncUtils.map(flow.getParameterTypes(), this::substituteType);
         var typeDTO = batch.getTypeDTO(declaringType.getRef());
         var flowDTO = NncUtils.get(typeDTO, t -> t.getClassParam().findFlowBySignature(
@@ -231,7 +234,8 @@ public class SubstitutorV2 extends CopyVisitor {
             copy = FlowBuilder
                     .newBuilder(declaringType, flow.getName(), flow.getCode(), context.getEntityContext().getFunctionTypeContext())
                     .tmpId(NncUtils.get(flowDTO, FlowDTO::tmpId))
-                    .template(flow)
+                    .verticalTemplate(flow)
+                    .isStatic(flow.isStatic())
                     .nullType(typeFactory.getNullType())
                     .voidType(typeFactory.getVoidType())
                     .build();
@@ -247,7 +251,8 @@ public class SubstitutorV2 extends CopyVisitor {
     public Element visitFlow(Flow flow) {
         var declaringType = currentClass();
         var copy = flow.getDeclaringType() != declaringType ?
-                generateFlow(declaringType, flow) : generateFlowInst(declaringType, flow);
+                generateVerticalFlowInst(declaringType, flow)
+                : generateHorizontalFlowInst(declaringType, flow);
         addCopy(flow, copy);
         addCopy(flow.getRootScope(), copy.getRootScope());
         enterElement(copy);

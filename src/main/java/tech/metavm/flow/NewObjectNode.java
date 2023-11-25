@@ -30,23 +30,25 @@ public class NewObjectNode extends CallNode<NewObjectParam> implements NewNode{
         );
         var parentRef = NncUtils.get(param.getParent(),
                 p ->ParentRef.create(p, parsingContext, subFlow.getReturnType()));
-        return new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), subFlow, arguments, prev, scope, parentRef);
+        return new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), subFlow,
+                arguments, prev, scope, parentRef, param.isEphemeral());
     }
-
 
     @ChildEntity("父对象")
     @Nullable
     private ParentRef parent;
 
-    // 临时对象：如果创建的对象未被其他持久对象引用，则该对象不会被持久化
+    // 临时对象：如果对象未被其他持久对象引用，则不会被持久化
     @EntityField("是否临时")
     private boolean ephemeral;
 
     public NewObjectNode(Long tmpId, String name, Flow subFlow,
                          List<Argument> arguments,
-                         NodeRT<?> prev, ScopeRT scope, @Nullable ParentRef parentRef) {
+                         NodeRT<?> prev, ScopeRT scope,
+                         @Nullable ParentRef parentRef, boolean ephemeral) {
         super(tmpId, name, prev, scope, arguments, subFlow);
         setParent(parentRef);
+        this.ephemeral = ephemeral;
     }
 
     @Override
@@ -56,7 +58,8 @@ public class NewObjectNode extends CallNode<NewObjectParam> implements NewNode{
                     context.getRef(subFlow),
                     context.getRef(subFlow.getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO),
-                    NncUtils.get(parent, ParentRef::toDTO)
+                    NncUtils.get(parent, ParentRef::toDTO),
+                    ephemeral
             );
         }
     }
@@ -74,7 +77,7 @@ public class NewObjectNode extends CallNode<NewObjectParam> implements NewNode{
     protected Instance getSelf(MetaFrame frame) {
         var instance = new ClassInstance(subFlow.getDeclaringType(), NncUtils.get(parent, p -> p.evaluate(frame)));
         if (!ephemeral) {
-            frame.getStack().getContext().bind(instance);
+            frame.getContext().bind(instance);
         }
         return instance;
     }

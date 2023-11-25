@@ -117,10 +117,10 @@ public class ExpressionParser {
     private Expression parsePrefix(InstacodeParser.ExpressionContext expression) {
         return switch (expression.prefix.getType()) {
             case InstacodeParser.ADD -> new UnaryExpression(
-                    Operator.POS, parse(expression.expression(0))
+                    UnaryOperator.POS, parse(expression.expression(0))
             );
             case InstacodeParser.SUB -> new UnaryExpression(
-                    Operator.NEG, parse(expression.expression(0))
+                    UnaryOperator.NEG, parse(expression.expression(0))
             );
             default -> throw new IllegalStateException("Unexpected prefix: " + expression.prefix.getTokenIndex());
         };
@@ -187,7 +187,7 @@ public class ExpressionParser {
                     parse(expression.expression(2))
             );
             default -> new BinaryExpression(
-                    Operator.getByOp(bop.getText(), OperatorTypes.BINARY),
+                    BinaryOperator.getByOp(bop.getText(), OperatorTypes.BINARY),
                     parse(expression.expression(0)),
                     parse(expression.expression(1))
             );

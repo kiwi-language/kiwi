@@ -160,7 +160,7 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var exitBranch = frame.getExitBranch(this);
         for (Branch branch : branches) {
             if (exitBranch != null) {
@@ -170,13 +170,14 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
                 continue;
             }
             if (branch.checkCondition(frame)) {
-                if (branch.isNotEmpty()) {
-                    frame.jumpTo(branch.getScope().getFirstNode());
-                }
                 frame.setSelectedBranch(this, branch);
-                break;
+                if (branch.isNotEmpty())
+                    return NodeExecResult.jump(branch.getScope().tryGetFirstNode());
+                else
+                    return next();
             }
         }
+        throw new InternalException("Not matching branch");
     }
 
     @Override

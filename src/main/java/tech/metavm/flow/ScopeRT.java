@@ -63,9 +63,9 @@ public class ScopeRT extends Element {
         if (pred != null) {
             nodes.addChildAfter(node, pred);
         } else {
-            if(!isEmpty()) {
-                getFirstNode().insertBefore(node);
-            }
+            var nodes = this.nodes;
+            if(!nodes.isEmpty())
+                nodes.get(0).insertBefore(node);
             nodes.addFirstChild(node);
         }
         flow.addNode(node);
@@ -136,8 +136,8 @@ public class ScopeRT extends Element {
         return nodes.get(index);
     }
 
-    public NodeRT<?> getFirstNode() {
-        return NncUtils.find(getNodes(), node -> node.getPredecessor() == null);
+    public NodeRT<?> tryGetFirstNode() {
+        return nodes.isEmpty() ? null : nodes.get(0);
     }
 
     public @Nullable NodeRT<?> getOwner() {
@@ -163,7 +163,7 @@ public class ScopeRT extends Element {
     }
 
     public boolean isNotEmpty() {
-        return !isEmpty();
+        return !nodes.isEmpty();
     }
 
     public boolean isWithBackEdge() {

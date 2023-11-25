@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Types;
 import tech.metavm.util.NncUtils;
@@ -56,6 +57,11 @@ public class CursorExpression extends Expression{
     public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 0);
         return new CursorExpression(array, alias);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

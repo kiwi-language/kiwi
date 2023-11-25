@@ -1,6 +1,8 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Types;
@@ -52,7 +54,7 @@ public class ArrayExpression extends Expression {
 
     @Override
     public int precedence() {
-        return Operator.COMMA.precedence();
+        return 9;
     }
 
     @Override
@@ -71,6 +73,11 @@ public class ArrayExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new ArrayExpression(children, type);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return new ArrayInstance(type, NncUtils.map(expressions, e -> e.evaluate(context)));
     }
 
     @Override

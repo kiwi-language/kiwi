@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.object.type.Type;
@@ -33,9 +34,13 @@ public class LongInstance extends NumberInstance {
     @Override
     public Instance convert(Type type) {
         if(type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.DOUBLE)
-            return new DoubleInstance(value, primitiveType);
+            return toDouble();
         else
             return super.convert(type);
+    }
+
+    public DoubleInstance toDouble() {
+        return new DoubleInstance(value, StandardTypes.getDoubleType());
     }
 
     public LongInstance inc(long inc) {
@@ -62,23 +67,35 @@ public class LongInstance extends NumberInstance {
         return new LongInstance(value / that.value, getType());
     }
 
+    public LongInstance leftShift(LongInstance that) {
+        return new LongInstance(value << that.value, getType());
+    }
+
+    public LongInstance rightShift(LongInstance that) {
+        return new LongInstance(value >> that.value, getType());
+    }
+
+    public LongInstance unsignedRightShift(LongInstance that) {
+        return new LongInstance(value >>> that.value, getType());
+    }
+
     public LongInstance mod(LongInstance that) {
         return new LongInstance(value % that.value, getType());
     }
 
-    public BooleanInstance isGreaterThan(LongInstance that) {
+    public BooleanInstance gt(LongInstance that) {
         return InstanceUtils.createBoolean(value > that.value);
     }
 
-    public BooleanInstance isGreaterThanOrEqualTo(LongInstance that) {
+    public BooleanInstance ge(LongInstance that) {
         return InstanceUtils.createBoolean(value >= that.value);
     }
 
-    public BooleanInstance isLessThan(LongInstance that) {
+    public BooleanInstance lt(LongInstance that) {
         return InstanceUtils.createBoolean(value < that.value);
     }
 
-    public BooleanInstance isLessThanOrEqualTo(LongInstance that) {
+    public BooleanInstance le(LongInstance that) {
         return InstanceUtils.createBoolean(value <= that.value);
     }
 
@@ -100,5 +117,50 @@ public class LongInstance extends NumberInstance {
     @Override
     public LongInstance negate() {
         return new LongInstance(-value, getType());
+    }
+
+    @Override
+    public NumberInstance add(NumberInstance that) {
+        return that.add(this);
+    }
+
+    @Override
+    public NumberInstance minus(NumberInstance that) {
+        return that.minus(this);
+    }
+
+    @Override
+    public NumberInstance mul(NumberInstance that) {
+        return that.mul(this);
+    }
+
+    @Override
+    public NumberInstance div(NumberInstance that) {
+        return that.div(this);
+    }
+
+    @Override
+    public NumberInstance mod(NumberInstance that) {
+        return that.mod(this);
+    }
+
+    @Override
+    public BooleanInstance lt(NumberInstance that) {
+        return that.lt(this);
+    }
+
+    @Override
+    public BooleanInstance le(NumberInstance that) {
+        return that.le(this);
+    }
+
+    @Override
+    public BooleanInstance gt(NumberInstance that) {
+        return that.gt(this);
+    }
+
+    @Override
+    public BooleanInstance ge(NumberInstance that) {
+        return that.ge(this);
     }
 }

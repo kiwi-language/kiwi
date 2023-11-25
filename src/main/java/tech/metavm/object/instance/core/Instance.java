@@ -24,7 +24,6 @@ public abstract class Instance implements IdInitializing {
     private transient boolean _new;
     private transient boolean loaded;
     transient boolean loadedFromCache;
-    transient boolean cacheEnabled;
     private transient boolean removed;
     private transient IInstanceContext context;
     @Nullable
@@ -215,6 +214,10 @@ public abstract class Instance implements IdInitializing {
 
     public Instance convert(Type type) {
         throw new BusinessException(ErrorCode.CONVERSION_FAILED, getQualifiedTitle(), type.getName());
+    }
+
+    public StringInstance toStringInstance() {
+        return InstanceUtils.stringInstance(getTitle());
     }
 
     public void setContext(IInstanceContext context) {

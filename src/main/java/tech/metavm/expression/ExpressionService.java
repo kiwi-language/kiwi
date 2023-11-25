@@ -31,8 +31,8 @@ public class ExpressionService extends EntityContextBean {
 
     public static final int CONTEXT_TYPE_FLOW = 2;
 
-    public static final Set<Operator> SEARCH_EXPR_OPERATORS = Set.of(
-        Operator.EQ, Operator.IN, Operator.STARTS_WITH, Operator.LIKE
+    public static final Set<BinaryOperator> SEARCH_EXPR_OPERATORS = Set.of(
+        BinaryOperator.EQ, BinaryOperator.IN, BinaryOperator.STARTS_WITH, BinaryOperator.LIKE
     );
 
     public ExpressionService(InstanceContextFactory instanceContextFactory) {
@@ -40,8 +40,7 @@ public class ExpressionService extends EntityContextBean {
     }
 
     public BoolExprDTO parseBoolExpr(BoolExprParseRequest request) {
-        try {
-            IEntityContext context = newContext();
+        try(var context = newContext()) {
             Expression expression = ExpressionParser.parse(
                     extractExpr(request.value()),
                     getParsingContext(request.context(), context.getInstanceContext())
@@ -58,10 +57,12 @@ public class ExpressionService extends EntityContextBean {
     }
 
     public List<InstanceSearchItemDTO> parseSearchText(long typeId, String searchText) {
-        IInstanceContext context = newContext().getInstanceContext();
-        ClassType type = context.getClassType(typeId);
-        Expression expression = ExpressionParser.parse(searchText, new TypeParsingContext(type, context));
-        return parseExpression(expression);
+        try(var entityContext = newContext()) {
+            var context = entityContext.getInstanceContext();
+            ClassType type = context.getClassType(typeId);
+            Expression expression = ExpressionParser.parse(searchText, new TypeParsingContext(type, context));
+            return parseExpression(expression);
+        }
     }
 
     private List<InstanceSearchItemDTO> parseExpression(Expression expression) {
@@ -74,11 +75,11 @@ public class ExpressionService extends EntityContextBean {
         if(!(expression instanceof BinaryExpression binaryExpression)) {
             throw BusinessException.invalidExpression(expression.buildSelf(VarType.NAME));
         }
-        if(binaryExpression.getOperator() == Operator.AND) {
+        if(binaryExpression.getOperator() == BinaryOperator.AND) {
             parseExpression0(binaryExpression.getFirst(), result);
             parseExpression0(binaryExpression.getSecond(), result);
         }
-        else if(binaryExpression.getOperator() == Operator.OR) {
+        else if(binaryExpression.getOperator() == BinaryOperator.OR) {
             parseExpression0(binaryExpression.getFirst(), result);
         }
         else {
@@ -89,7 +90,7 @@ public class ExpressionService extends EntityContextBean {
     private InstanceSearchItemDTO parseFieldExpr(BinaryExpression binaryExpression) {
         Expression first = binaryExpression.getFirst();
         Expression second = binaryExpression.getSecond();
-        Operator operator = binaryExpression.getOperator();
+        BinaryOperator operator = binaryExpression.getOperator();
         if(!SEARCH_EXPR_OPERATORS.contains(operator)
                 || !(first instanceof PropertyExpression fieldExpr)
                 || !(second instanceof ConstantExpression constExpr)) {
@@ -102,7 +103,7 @@ public class ExpressionService extends EntityContextBean {
         else {
             searchValue = NncUtils.requireNonNull(constExpr.getValue().getId());
         }
-        return new InstanceSearchItemDTO(fieldExpr.getProperty().getId(), searchValue);
+        return new InstanceSearchItemDTO(fieldExpr.getProperty().getIdRequired(), searchValue);
     }
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {
@@ -126,23 +127,23 @@ public class ExpressionService extends EntityContextBean {
     }
 
     private ParsingContext getParsingContext(ParsingContextDTO contextDTO, IInstanceContext instanceContext) {
-        IEntityContext context = newContext();
-        if(contextDTO instanceof FlowParsingContextDTO flowContext) {
-            NodeRT<?> prev = NncUtils.get(flowContext.getPrevNodeId(), context::getNode);
-            ScopeRT scope = context.getScope(flowContext.getScopeId());
-            return FlowParsingContext.create(scope, prev, instanceContext);
+        try(var context = newContext()) {
+            if (contextDTO instanceof FlowParsingContextDTO flowContext) {
+                NodeRT<?> prev = NncUtils.get(flowContext.getPrevNodeId(), context::getNode);
+                ScopeRT scope = context.getScope(flowContext.getScopeId());
+                return FlowParsingContext.create(scope, prev, instanceContext);
+            } else if (contextDTO instanceof TypeParsingContextDTO typeContext) {
+                return new TypeParsingContext(
+                        context.getClassType(typeContext.getTypeId()), instanceContext
+                );
+            }
+            throw BusinessException.invalidParams("请求参数错误，未识别的解析上下文类型: " + contextDTO.getClass().getName());
         }
-        else if(contextDTO instanceof TypeParsingContextDTO typeContext) {
-            return new TypeParsingContext(
-                    context.getClassType(typeContext.getTypeId()), instanceContext
-            );
-        }
-        throw BusinessException.invalidParams("请求参数错误，未识别的解析上下文类型: " + contextDTO.getClass().getName());
     }
 
     private List<ConditionGroupDTO> parseConditionGroups(Expression expression) throws ExpressionParsingException {
         if(expression instanceof BinaryExpression binaryExpression) {
-            if(binaryExpression.getOperator() == Operator.OR) {
+            if(binaryExpression.getOperator() == BinaryOperator.OR) {
                 List<ConditionGroupDTO> firstGroups = parseConditionGroups(binaryExpression.getFirst());
                 List<ConditionGroupDTO> secondGroups = parseConditionGroups(binaryExpression.getSecond());
                 return NncUtils.union(firstGroups, secondGroups);
@@ -156,7 +157,7 @@ public class ExpressionService extends EntityContextBean {
 
     private List<ConditionDTO> parseConditions(Expression expression) throws ExpressionParsingException {
         if(expression instanceof BinaryExpression binaryExpression) {
-            if(binaryExpression.getOperator() == Operator.AND) {
+            if(binaryExpression.getOperator() == BinaryOperator.AND) {
                 List<ConditionDTO> firstGroups = parseConditions(binaryExpression.getFirst());
                 List<ConditionDTO> secondGroups = parseConditions(binaryExpression.getSecond());
                 return NncUtils.union(firstGroups, secondGroups);
@@ -217,7 +218,7 @@ public class ExpressionService extends EntityContextBean {
         }
     }
 
-    private int parseOpCode(Operator operator) {
+    private int parseOpCode(BinaryOperator operator) {
 //        return ConditionOpCode.getByOperator(operator).code();
         return operator.code();
     }
@@ -225,7 +226,7 @@ public class ExpressionService extends EntityContextBean {
     private ConditionDTO parseUnary(UnaryExpression expression) throws ExpressionParsingException {
         return new ConditionDTO(
                 parseRefValue(expression.getOperand()),
-                parseOpCode(expression.getOperator()),
+                expression.getOperator().code(),
                 null
         );
     }

@@ -2,13 +2,20 @@ package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+
+import static tech.metavm.util.InstanceUtils.trueInstance;
 
 @EntityType("AllMatch表达式")
 public class AllMatchExpression extends Expression {
@@ -87,6 +94,30 @@ public class AllMatchExpression extends Expression {
     public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 2);
         return new AllMatchExpression(children.get(0), children.get(1), null);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        Instance instance = array.evaluate(context);
+        if (instance.isNull()) {
+            return trueInstance();
+        }
+        if (!(instance instanceof ArrayInstance arrayInst)) {
+            throw new InternalException("Expecting array instance for AllMatchExpression but got " + instance);
+        }
+        for (Instance element : arrayInst.getElements()) {
+            if (element instanceof ClassInstance classInstance) {
+                EvaluationContext subContext = new SubEvaluationContext(context, cursor, classInstance);
+                if (!InstanceUtils.isTrue(
+                        condition.evaluate(subContext))
+                ) {
+                    return InstanceUtils.falseInstance();
+                }
+            } else {
+                throw new InternalException("AllMatchExpression only supports reference array right now");
+            }
+        }
+        return InstanceUtils.trueInstance();
     }
 
     @Override

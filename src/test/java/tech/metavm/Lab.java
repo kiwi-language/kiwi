@@ -8,14 +8,13 @@ import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.util.Scanner;
 
-public abstract class Lab {
+public class Lab {
 
     public static final String FILE = "/Users/leen/DeskTop/wad.txt";
 
     public static final String BYTES_FILE = "/Users/leen/workspace/object/src/test/resources/bytes/test";
 
     public static void main(String[] args) throws Exception {
-        var buf = ByteBuffer.allocateDirect(1024);
     }
 
     private static void testBytes() {

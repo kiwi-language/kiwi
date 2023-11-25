@@ -58,9 +58,9 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var retValue = getType().isVoid() ? null : Objects.requireNonNull(value).evaluate(frame);
-        frame.ret(retValue);
+        return NodeExecResult.ret(retValue);
     }
 
     @Override

@@ -89,6 +89,10 @@ public class TestUtils {
         }
     }
 
+    public static <R> R parseJson(String jsonStr, Class<R> klass) {
+        return NncUtils.readJSONString(jsonStr, klass);
+    }
+
     public static <R> R readJson(String path, Class<R> klass) {
         try {
             return OBJECT_MAPPER.readValue(readEntireFile(path), klass);

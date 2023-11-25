@@ -196,15 +196,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 || parent != null && parent.containsRef(ref);
     }
 
-    public void withCache(Instance instance) {
-        if (parent != null && parent.containsInstance(instance))
-            parent.withCache(instance);
-        else {
-            if (!instance.isInitialized())
-                instance.cacheEnabled = true;
-        }
-    }
-
     @Override
     public List<Instance> batchGet(Collection<Long> ids) {
         return NncUtils.map(ids, this::get);
@@ -679,7 +670,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private List<Instance> getByTypeFromBuffer(Type type, Instance startExclusive, int limit, Set<Long> persistedIds) {
         List<Instance> typeInstances = NncUtils.filter(
                 this,
-                i -> type.isInstance(i) && !persistedIds.contains(i.getId())
+                i -> type == i.getType() && !persistedIds.contains(i.getId())
         );
         if (startExclusive.isNull()) {
             return typeInstances.subList(0, Math.min(typeInstances.size(), limit));

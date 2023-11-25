@@ -92,15 +92,15 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         if (exception != null) {
-            frame.exception((ClassInstance) this.exception.evaluate(frame));
+            return NodeExecResult.exception((ClassInstance) this.exception.evaluate(frame));
         } else {
             NncUtils.requireNonNull(message);
             var exceptionInst = new ClassInstance(StandardTypes.getExceptionType());
             ExceptionNative nativeObj = (ExceptionNative) NativeInvoker.getNativeObject(exceptionInst);
             nativeObj.Exception(message.evaluate(frame));
-            frame.exception(exceptionInst);
+            return frame.catchException(this, exceptionInst);
         }
     }
 

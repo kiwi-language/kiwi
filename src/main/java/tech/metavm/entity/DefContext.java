@@ -122,10 +122,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return getDef(javaClass).getType();
     }
 
-    @Override
-    public void setLoadWithCache(Object entity) {
-    }
-
     public ClassType getClassType(Class<?> javaType) {
         return (ClassType) getType(javaType);
     }

@@ -57,19 +57,19 @@ public class DoubleInstance extends NumberInstance {
         return new DoubleInstance(value / that.value, getType());
     }
 
-    public BooleanInstance isGreaterThan(DoubleInstance that) {
+    public BooleanInstance gt(DoubleInstance that) {
         return InstanceUtils.createBoolean(value > that.value);
     }
 
-    public BooleanInstance isGreaterThanOrEqualTo(DoubleInstance that) {
+    public BooleanInstance ge(DoubleInstance that) {
         return InstanceUtils.createBoolean(value >= that.value);
     }
 
-    public BooleanInstance isLessThan(DoubleInstance that) {
+    public BooleanInstance lt(DoubleInstance that) {
         return InstanceUtils.createBoolean(value < that.value);
     }
 
-    public BooleanInstance isLessThanOrEqualTo(DoubleInstance that) {
+    public BooleanInstance le(DoubleInstance that) {
         return InstanceUtils.createBoolean(value <= that.value);
     }
 
@@ -95,5 +95,54 @@ public class DoubleInstance extends NumberInstance {
     @Override
     public DoubleInstance negate() {
         return new DoubleInstance(-value, getType());
+    }
+
+    @Override
+    public DoubleInstance toDouble() {
+        return this;
+    }
+
+    @Override
+    public NumberInstance add(NumberInstance that) {
+        return add(that.toDouble());
+    }
+
+    public DoubleInstance mod(NumberInstance that) {
+        return mod(that.toDouble());
+    }
+
+    @Override
+    public NumberInstance minus(NumberInstance that) {
+        return minus(that.toDouble());
+    }
+
+    @Override
+    public NumberInstance mul(NumberInstance that) {
+        return mul(that.toDouble());
+    }
+
+    @Override
+    public DoubleInstance div(NumberInstance that) {
+        return div(that.toDouble());
+    }
+
+    @Override
+    public BooleanInstance lt(NumberInstance that) {
+        return lt(that.toDouble());
+    }
+
+    @Override
+    public BooleanInstance le(NumberInstance that) {
+        return le(that.toDouble());
+    }
+
+    @Override
+    public BooleanInstance gt(NumberInstance that) {
+        return gt(that.toDouble());
+    }
+
+    @Override
+    public BooleanInstance ge(NumberInstance that) {
+        return ge(that.toDouble());
     }
 }

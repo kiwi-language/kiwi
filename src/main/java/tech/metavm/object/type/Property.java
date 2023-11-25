@@ -18,14 +18,18 @@ public abstract class Property extends ClassMember {
     private String code;
     @EntityField("类型")
     private Type type;
+    @EntityField(value = "是否静态", code = "static")
+    private boolean _static;
     @EntityField("状态")
     private MetadataState state;
 
-    public Property(Long tmpId, String name, @Nullable String code, Type type, ClassType declaringType, MetadataState state) {
+    public Property(Long tmpId, String name, @Nullable String code, Type type,
+                    ClassType declaringType, boolean _static, MetadataState state) {
         super(tmpId, declaringType);
         this.name = name;
         this.code = code;
         this.type = type;
+        this._static = _static;
         this.state = state;
     }
 
@@ -56,6 +60,14 @@ public abstract class Property extends ClassMember {
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public boolean isStatic() {
+        return _static;
+    }
+
+    public void setStatic(boolean _static) {
+        this._static = _static;
     }
 
     public MetadataState getState() {

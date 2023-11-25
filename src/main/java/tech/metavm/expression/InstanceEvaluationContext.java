@@ -16,12 +16,12 @@ public class InstanceEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Instance evaluate(Expression expression, ExpressionEvaluator evaluator) {
+    public Instance evaluate(Expression expression) {
         if(isContextExpression(expression)) {
             return instance;
         }
         else {
-            throw new InternalException(evaluator + " is not a context expression of " + this);
+            throw new InternalException(expression + " is not a context expression of " + this);
         }
     }
 

@@ -5,6 +5,8 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Property;
 import tech.metavm.object.type.Type;
 
@@ -44,6 +46,11 @@ public class PropertyExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new PropertyExpression(children.get(0), property);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return ((ClassInstance) instance.evaluate(context)).getProperty(property, context.getEntityContext());
     }
 
     @Override

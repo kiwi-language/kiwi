@@ -4,6 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
@@ -57,6 +60,12 @@ public class ArrayAccessExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new ArrayAccessExpression(children.get(0), children.get(1));
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        int i = ((LongInstance) (index.evaluate(context))).getValue().intValue();
+        return ((ArrayInstance) array.evaluate(context)).get(i);
     }
 
     @Override

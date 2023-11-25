@@ -1,5 +1,7 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ElementVisitor;
@@ -8,6 +10,7 @@ import tech.metavm.flow.rest.TryNodeParamDTO;
 import tech.metavm.util.NncUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("尝试节点")
 public class TryNode extends ScopeNode<TryNodeParamDTO> {
@@ -30,26 +33,28 @@ public class TryNode extends ScopeNode<TryNodeParamDTO> {
 
     }
 
-    public TryEndNode getTryEndNode() {
-        return (TryEndNode) NncUtils.requireNonNull(getSuccessor());
+    @NotNull
+    @Override
+    public TryEndNode getSuccessor() {
+        return (TryEndNode) Objects.requireNonNull(super.getSuccessor());
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         frame.enterTrySection(this);
-        if(!bodyScope.isEmpty()) {
-            frame.jumpTo(bodyScope.getFirstNode());
-        }
+        if(bodyScope.isNotEmpty())
+            return NodeExecResult.jump(bodyScope.tryGetFirstNode());
+        else
+            return next();
     }
+
 
     @Override
     protected List<Object> nodeBeforeRemove() {
-        if(getSuccessor() instanceof TryEndNode tryEndNode) {
+        if(getSuccessor() instanceof TryEndNode tryEndNode)
             return List.of(tryEndNode);
-        }
-        else {
+        else
             return List.of();
-        }
     }
 
     @Override

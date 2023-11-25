@@ -165,7 +165,7 @@ public class ExpressionTokenizer {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public Token nextOperator(Operator operator) {
+    public Token nextOperator(BinaryOperator operator) {
         return nextToken(TokenType.OPERATOR, operator, null);
     }
 
@@ -174,7 +174,7 @@ public class ExpressionTokenizer {
         return nextToken(TokenType.KEYWORD, null, keyword);
     }
 
-    public Token nextToken(TokenType expectedTokenType, Operator expectedOperator, String keyword) {
+    public Token nextToken(TokenType expectedTokenType, BinaryOperator expectedOperator, String keyword) {
         Token token = nextToken();
         if (expectedTokenType != null && token.type() != expectedTokenType) {
             throw incorrectTokenType(expectedTokenType, token);
@@ -224,7 +224,7 @@ public class ExpressionTokenizer {
         );
     }
 
-    private QueryStringException incorrectOperator(Operator expectedOperator, Token actualToken) {
+    private QueryStringException incorrectOperator(BinaryOperator expectedOperator, Token actualToken) {
         return new QueryStringException(
                 "Expecting operator " + expectedOperator.name() + " at position " + position
                         + " but got token '" + actualToken + "'"
@@ -327,11 +327,11 @@ public class ExpressionTokenizer {
                 tokens.add(token);
             }
             String tokenSeq = tokenSequenceValue(tokens);
-            if (Operator.isOperator(tokenSeq)) {
+            if (BinaryOperator.isOperator(tokenSeq)) {
                 return new Token(
                         TokenType.OPERATOR,
                         tokenSeq,
-                        Operator.getByOp(tokenSeq)
+                        BinaryOperator.getByOp(tokenSeq)
                 );
             } else {
                 return new Token(
@@ -445,7 +445,7 @@ public class ExpressionTokenizer {
             case BOOLEAN -> Boolean.parseBoolean(rawValue);
             case DOUBLE_QUOTED_STRING -> unquoteDoubleQuoted(rawValue);
             case SINGLE_QUOTED_STRING -> unquoteSingleQuoted(rawValue);
-            case OPERATOR -> Operator.getByOp(rawValue);
+            case OPERATOR -> BinaryOperator.getByOp(rawValue);
             case FUNCTION -> Function.getByName(rawValue);
             case VARIABLE -> rawValue;
             case NULL, KEYWORD, OPEN_PARENTHESIS, CLOSING_PARENTHESIS, OPEN_BRACKET, CLOSING_BRACKET -> null;
@@ -602,7 +602,7 @@ public class ExpressionTokenizer {
     }
 
     private boolean isOperator(int start) {
-        return Operator.isOperator(expression.substring(start, position));
+        return BinaryOperator.isOperator(expression.substring(start, position));
     }
 
     private boolean isNull(int start) {

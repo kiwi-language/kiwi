@@ -46,8 +46,6 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     Instance getIfPresentByTmpId(long tmpId);
 
-    void withCache(Instance instance);
-
     boolean containsRef(RefDTO ref);
 
     Profiler getProfiler();

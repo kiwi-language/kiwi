@@ -1,8 +1,6 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.expression.ExpressionUtil;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.CheckNodeParamDTO;
 import tech.metavm.flow.rest.NodeDTO;
@@ -55,7 +53,7 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var branch = getScope().getBranch();
         while (branch != null && branch.getOwner() != exit) {
             branch = branch.getOwner().getScope().getBranch();
@@ -64,9 +62,12 @@ public class CheckNode extends NodeRT<CheckNodeParamDTO> {
             throw new InternalException("Can not find an exit branch");
         }
         var checkResult = ((BooleanInstance) condition.evaluate(frame)).isTrue();
-        if (!checkResult) {
+        if (checkResult) {
+            return next();
+        }
+        else {
             frame.setExitBranch(branch.getOwner(), branch);
-            frame.jumpTo(branch.getOwner());
+            return NodeExecResult.jump(branch.getOwner());
         }
     }
 

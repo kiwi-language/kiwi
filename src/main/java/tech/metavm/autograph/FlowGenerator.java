@@ -297,13 +297,13 @@ public class FlowGenerator {
         );
     }
 
-    NewObjectNode createNew(Flow flow, List<Expression> arguments) {
+    NewObjectNode createNew(Flow flow, List<Expression> arguments, boolean ephemeral) {
         List<Argument> args = NncUtils.biMap(
                 flow.getParameters(), arguments,
                 (param, arg) -> new Argument(null, param, new ExpressionValue(arg))
         );
         return setNodeExprTypes(new NewObjectNode(null, nextName(flow.getName()), flow, args,
-                scope().getLastNode(), scope(), null));
+                scope().getLastNode(), scope(), null, ephemeral));
     }
 
     ExpressionResolver getExpressionResolver() {

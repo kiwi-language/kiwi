@@ -2,7 +2,10 @@ package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.InstanceUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +33,7 @@ public class InstanceOfExpression extends Expression {
 
     @Override
     public int precedence() {
-        return 0;
+        return 5;
     }
 
     @Override
@@ -46,6 +49,11 @@ public class InstanceOfExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new InstanceOfExpression(children.get(0), targetType);
+    }
+
+    @Override
+    public BooleanInstance evaluate(EvaluationContext context) {
+        return InstanceUtils.booleanInstance(targetType.isInstance(operand.evaluate(context)));
     }
 
     public Expression getOperand() {

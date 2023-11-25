@@ -5,6 +5,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
@@ -48,6 +49,11 @@ public class AsExpression extends Expression {
     public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 1);
         return new AsExpression(children.get(0), alias);
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return expression.evaluate(context);
     }
 
     public Expression getExpression() {

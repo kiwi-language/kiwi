@@ -65,7 +65,7 @@ public class ArrayType extends CompositeType {
     @Override
     protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ArrayType arrayType) {
-            return kind.isAssignableFrom(arrayType.kind) && elementType.contains(arrayType.elementType);
+            return kind.isAssignableFrom(arrayType.kind, elementType, arrayType.elementType);
         } else {
             return false;
         }

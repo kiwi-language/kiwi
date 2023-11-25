@@ -39,11 +39,13 @@ public class DiskFormatter {
     private static final String CONFIG_DB_PASSWORD = "db_password";
     private static final String CONFIG_JDBC_URL = "db_jdbc_url";
     private static final String CONFIG_DELETE_ID_FILES = "delete_id_files";
+    private static final String CONFIG_CLEAR_DB = "delete_clear_db";
 
     public static final Map<String, Object> DEV_CONFIG = Map.of(
             CONFIG_HOST, "47.104.104.66",
             CONFIG_ES_PORT, 9500,
             CONFIG_DELETE_ID_FILES, false,
+            CONFIG_CLEAR_DB, false,
             CONFIG_DB_USER, "root",
             CONFIG_DB_PASSWORD, "85263670",
             CONFIG_JDBC_URL, "jdbc:mysql://47.104.104.66:3306/object?allowMultiQueries=true",
@@ -55,6 +57,7 @@ public class DiskFormatter {
             CONFIG_ES_PORT, 9200,
             CONFIG_REDIS_PORT, 6379,
             CONFIG_DELETE_ID_FILES, true,
+            CONFIG_CLEAR_DB, true,
             CONFIG_DB_USER, "postgres",
             CONFIG_DB_PASSWORD, "85263670",
             CONFIG_JDBC_URL, "jdbc:postgresql://127.0.0.1:5432/object",
@@ -78,23 +81,25 @@ public class DiskFormatter {
     }
 
     private static void clearDataBases() {
-        try (DruidDataSource dataSource = new DruidDataSource()) {
-            dataSource.setDriverClassName((String) CONFIG.get(CONFIG_DB_DRIVER));
-            dataSource.setUrl((String) CONFIG.get(CONFIG_JDBC_URL));
-            dataSource.setUsername((String) CONFIG.get(CONFIG_DB_USER));
-            dataSource.setPassword((String) CONFIG.get(CONFIG_DB_PASSWORD));
-            dataSource.setMaxActive(1);
+        if((boolean) CONFIG.get(CONFIG_CLEAR_DB)) {
+            try (DruidDataSource dataSource = new DruidDataSource()) {
+                dataSource.setDriverClassName((String) CONFIG.get(CONFIG_DB_DRIVER));
+                dataSource.setUrl((String) CONFIG.get(CONFIG_JDBC_URL));
+                dataSource.setUsername((String) CONFIG.get(CONFIG_DB_USER));
+                dataSource.setPassword((String) CONFIG.get(CONFIG_DB_PASSWORD));
+                dataSource.setMaxActive(1);
 
-            try (Connection connection = dataSource.getConnection();
-                 Statement statement = connection.createStatement()) {
-                statement.execute("delete from id_block");
+                try (Connection connection = dataSource.getConnection();
+                     Statement statement = connection.createStatement()) {
+                    statement.execute("delete from id_block");
 //                statement.execute("delete from id_region");
-                statement.execute("delete from tenant");
-                statement.execute("delete from instance");
-                statement.execute("delete from reference");
-                statement.execute("delete from index_entry");
-            } catch (SQLException e) {
-                throw new InternalException("SQL Error", e);
+                    statement.execute("delete from tenant");
+                    statement.execute("delete from instance");
+                    statement.execute("delete from reference");
+                    statement.execute("delete from index_entry");
+                } catch (SQLException e) {
+                    throw new InternalException("SQL Error", e);
+                }
             }
         }
     }

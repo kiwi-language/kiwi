@@ -92,8 +92,6 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     <T> T createEntity(Instance instance, ModelDef<T, ?> def);
 
-    void setLoadWithCache(Object entity);
-
     default FunctionType getFunctionType(RefDTO ref) {
         return getEntity(FunctionType.class, ref);
     }

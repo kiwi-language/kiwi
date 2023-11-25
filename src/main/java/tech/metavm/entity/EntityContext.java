@@ -20,14 +20,6 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
         this.defContext = defContext;
     }
 
-    public void setLoadWithCache(Object entity) {
-        var parent = getParent();
-        if(parent != null && parent.containsModel(entity))
-            parent.setLoadWithCache(entity);
-        else
-            getInstanceContext().withCache(getInstance(entity));
-    }
-
     @Override
     protected TypeFactory getTypeFactory() {
         return new DefaultTypeFactory(ModelDefRegistry::getType);

@@ -33,8 +33,8 @@ public class SelfNode extends NodeRT<Void> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
-        frame.setResult(frame.getSelf());
+    public NodeExecResult execute(MetaFrame frame) {
+        return next(frame.getSelf());
     }
 
     @Override

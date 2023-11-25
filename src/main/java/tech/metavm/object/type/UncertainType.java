@@ -40,9 +40,8 @@ public class UncertainType extends CompositeType implements LoadAware  {
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        return false;
+        return getLowerBound().isAssignableFrom0(that);
     }
-
 
     @Override
     public boolean isUncertain() {

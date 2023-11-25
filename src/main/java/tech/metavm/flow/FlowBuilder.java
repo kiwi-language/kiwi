@@ -36,11 +36,13 @@ public class FlowBuilder {
     private PrimitiveType nullType;
     private PrimitiveType voidType;
     private List<TypeVariable> typeParameters = List.of();
-    private Flow template;
+    private Flow horizontalTemplate;
+    private Flow verticalTemplate;
     private List<Type> typeArguments = List.of();
     private FunctionType type;
     private FunctionType staticType;
     private Flow existing;
+    private boolean _static;
     private MetadataState state;
 
     private FlowBuilder(ClassType declaringType, String name, @Nullable String code, FunctionTypeContext functionTypeContext) {
@@ -109,8 +111,13 @@ public class FlowBuilder {
         return this;
     }
 
-    public FlowBuilder template(Flow template) {
-        this.template = template;
+    public FlowBuilder horizontalTemplate(Flow horizontalTemplate) {
+        this.horizontalTemplate = horizontalTemplate;
+        return this;
+    }
+
+    public FlowBuilder verticalTemplate(Flow verticalTemplate) {
+        this.verticalTemplate = verticalTemplate;
         return this;
     }
 
@@ -131,6 +138,11 @@ public class FlowBuilder {
 
     public FlowBuilder typeArguments(List<Type> typeArguments) {
         this.typeArguments = typeArguments;
+        return this;
+    }
+
+    public FlowBuilder isStatic(boolean isStatic) {
+        this._static = isStatic;
         return this;
     }
 
@@ -162,10 +174,12 @@ public class FlowBuilder {
                     returnType,
                     overriden,
                     typeParameters,
-                    template,
+                    verticalTemplate,
+                    horizontalTemplate,
                     typeArguments,
                     type,
                     staticType,
+                    _static,
                     state
             );
         } else {

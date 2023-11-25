@@ -4,6 +4,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
@@ -14,19 +15,19 @@ import java.util.Objects;
 @EntityType("二元表达式")
 public class BinaryExpression extends Expression {
     @EntityField(value = "运算符", asTitle = true)
-    private final Operator operator;
+    private final BinaryOperator operator;
     @ChildEntity("运算数一")
     private final Expression first;
     @ChildEntity("运算数二")
     private final Expression second;
 
-    public BinaryExpression(Operator operator, Expression first, Expression second) {
+    public BinaryExpression(BinaryOperator operator, Expression first, Expression second) {
         this.operator = operator;
         this.first = addChild(first.copy(), "first");
         this.second = addChild(second.copy(), "second");
     }
 
-    public Operator getOperator() {
+    public BinaryOperator getOperator() {
         return operator;
     }
 
@@ -55,7 +56,7 @@ public class BinaryExpression extends Expression {
         if(operator.resultType() != null) {
             return operator.resultType();
         }
-        return ValueUtil.getConvertibleType(first.getType(), second.getType());
+        return ValueUtil.getCompatibleType(first.getType(), second.getType());
     }
 
     @Override
@@ -67,6 +68,11 @@ public class BinaryExpression extends Expression {
     public Expression substituteChildren(List<Expression> children) {
         NncUtils.requireLength(children, 2);
         return new BinaryExpression(operator, children.get(0), children.get(1));
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return operator.evaluate(first.evaluate(context), second.evaluate(context));
     }
 
     @Override

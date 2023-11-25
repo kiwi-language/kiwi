@@ -84,10 +84,13 @@ public class FunctionNode extends NodeRT<FunctionNodeParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var funcInst = (FunctionInstance) func.evaluate(frame);
-        var subFrame = funcInst.createFrame(frame.getStack(), NncUtils.map(arguments, arg -> arg.evaluate(frame)));
-        frame.getStack().push(subFrame);
+        var result = funcInst.execute(NncUtils.map(arguments, arg -> arg.evaluate(frame)), frame.getContext());
+        if(result.exception() != null)
+            return frame.catchException(this, result.exception());
+        else
+            return next(result.ret());
     }
 
     @Override

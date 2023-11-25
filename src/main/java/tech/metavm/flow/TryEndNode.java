@@ -91,8 +91,9 @@ public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
-        NncUtils.requireTrue(frame.exitTrySection() == getPredecessor());
+    public NodeExecResult execute(MetaFrame frame) {
+        var tryNode = frame.exitTrySection();
+        assert tryNode == getPredecessor();
         var exceptionInfo = frame.getExceptionInfo(getPredecessor());
         var exceptionField = getType().getFieldByCode("exception");
         Instance exception;
@@ -109,7 +110,7 @@ public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));
         fieldValues.put(exceptionField, exception);
-        frame.setResult(new ClassInstance(fieldValues, getType()));
+        return next(new ClassInstance(fieldValues, getType()));
     }
 
     @Override

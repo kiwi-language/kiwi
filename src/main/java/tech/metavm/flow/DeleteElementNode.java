@@ -84,10 +84,10 @@ public class DeleteElementNode extends NodeRT<DeleteElementParam> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var arrayInst = (ArrayInstance) array.evaluate(frame);
         var elementInst = element.evaluate(frame);
-        frame.setResult(InstanceUtils.booleanInstance(arrayInst.remove(elementInst)));
+        return next(InstanceUtils.booleanInstance(arrayInst.remove(elementInst)));
     }
 
     @Override

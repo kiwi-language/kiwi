@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 public interface EvaluationContext {
 
     @Nullable
-    Instance evaluate(Expression expression, ExpressionEvaluator evaluator);
+    Instance evaluate(Expression expression);
 
     boolean isContextExpression(Expression expression);
 

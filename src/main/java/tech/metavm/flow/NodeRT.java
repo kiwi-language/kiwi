@@ -7,6 +7,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.persistence.NodePO;
 import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.NameUtils;
@@ -15,6 +16,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static tech.metavm.util.ContextUtil.getTenantId;
 
@@ -256,7 +258,15 @@ public abstract class NodeRT<P> extends Element {
         return outputType;
     }
 
-    public abstract void execute(MetaFrame frame);
+    public abstract NodeExecResult execute(MetaFrame frame);
+
+    public NodeExecResult next(Instance output) {
+        return new NodeExecResult(output, null, getNext());
+    }
+
+    public NodeExecResult next() {
+        return new NodeExecResult(null, null, getNext());
+    }
 
     public ExpressionTypeMap getExpressionTypes() {
         return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);

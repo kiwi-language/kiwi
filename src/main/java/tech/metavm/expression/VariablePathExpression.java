@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
@@ -52,6 +53,11 @@ public class VariablePathExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new VariablePathExpression(children.get(0), (VariableExpression) children.get(1));
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

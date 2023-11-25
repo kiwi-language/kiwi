@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 
 import java.util.List;
@@ -36,7 +38,7 @@ public class ConditionalExpression extends Expression {
 
     @Override
     public int precedence() {
-        return Operator.CONDITIONAL.precedence();
+        return 10;
     }
 
     @Override
@@ -64,6 +66,12 @@ public class ConditionalExpression extends Expression {
     @Override
     public Expression substituteChildren(List<Expression> children) {
         return new ConditionalExpression(children.get(0), children.get(1), children.get(2));
+    }
+
+    @Override
+    public Instance evaluate(EvaluationContext context) {
+        return ((BooleanInstance) condition.evaluate(context)).getValue() ?
+                trueValue.evaluate(context) : falseValue.evaluate(context);
     }
 
     @Override

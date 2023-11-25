@@ -24,10 +24,12 @@ public record FlowDTO(
         RefDTO typeRef,
         RefDTO staticTypeRef,
         List<RefDTO> typeParameterRefs,
-        @Nullable RefDTO templateRef,
+        @Nullable RefDTO horizontalTemplateRef,
+        @Nullable RefDTO verticalTemplateRef,
         List<RefDTO> typeArgumentRefs,
         List<RefDTO> overriddenRefs,
-        List<FlowDTO> templateInstances,
+        List<FlowDTO> horizontalInstances,
+        boolean isStatic,
         int state
 ) implements BaseDTO, GenericDeclarationDTO {
 

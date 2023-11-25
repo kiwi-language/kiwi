@@ -110,7 +110,7 @@ public class MergeNode extends ChildTypeNode<MergeParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         Branch branch = frame.getSelectedBranch(getBranchNode());
         Map<Field, Instance> fieldValues = new HashMap<>();
         for (MergeNodeField field : fields) {
@@ -119,7 +119,7 @@ public class MergeNode extends ChildTypeNode<MergeParamDTO> {
                     field.getValue(branch).evaluate(frame)
             );
         }
-        frame.setResult(new ClassInstance(fieldValues, getType()));
+        return next(new ClassInstance(fieldValues, getType()));
     }
 
     @Override

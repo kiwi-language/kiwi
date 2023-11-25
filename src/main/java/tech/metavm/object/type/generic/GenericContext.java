@@ -1,5 +1,6 @@
 package tech.metavm.object.type.generic;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.*;
@@ -209,7 +210,7 @@ public class GenericContext {
         template.accept(substitutor);
     }
 
-    public Flow getParameterizedFlow(Flow template, List<Type> typeArguments) {
+    public Flow getParameterizedFlow(@NotNull Flow template, List<Type> typeArguments) {
         return getParameterizedFlow(template, typeArguments, DEFINITION, emptyBatch);
     }
 
@@ -218,10 +219,9 @@ public class GenericContext {
         if (template.getTypeParameters().isEmpty()) {
             return template;
         }
-        var ti = template.getTemplateInstance(typeArguments);
-        if (ti != null) {
-            return ti;
-        }
+        var pFlow = template.findHorizontalInstance(typeArguments);
+        if (pFlow != null)
+            return pFlow;
         var substitutor = new SubstitutorV2(
                 template, this, template.getTypeParameters(), typeArguments, stage,
                 batch, typeFactory

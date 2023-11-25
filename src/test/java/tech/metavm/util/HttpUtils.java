@@ -51,6 +51,14 @@ public class HttpUtils {
         try {
             var uri = new URI("http://localhost:8080" + path);
             var client = buildClient(uri);
+            return post(client, uri, request, responseTypeRef);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <R> R post(HttpClient client, URI uri, Object request, TypeReference<R> responseTypeRef) {
+        try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(uri)
                     .header("Accept", "application/json")
@@ -66,7 +74,7 @@ public class HttpUtils {
         }
     }
 
-    private static HttpClient buildClient(URI uri) {
+    public static HttpClient buildClient(URI uri) {
         CookieManager cookieManager = new CookieManager();
         CookieHandler.setDefault(cookieManager);
 

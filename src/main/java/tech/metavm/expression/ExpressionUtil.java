@@ -1,14 +1,13 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ElementTransformer;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.PrimitiveKind;
-import tech.metavm.object.type.Property;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.entity.StandardTypes;
+import tech.metavm.object.type.PrimitiveKind;
+import tech.metavm.object.type.Property;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -28,32 +27,32 @@ public class ExpressionUtil {
         } else if (isConstantTrue(expression)) {
             return falseExpression();
         } else if (expression instanceof UnaryExpression unaryExpression
-                && unaryExpression.getOperator() == Operator.NOT) {
+                && unaryExpression.getOperator() == UnaryOperator.NOT) {
             return unaryExpression.getOperand();
         } else if (expression instanceof BinaryExpression binaryExpression) {
             var op = binaryExpression.getOperator();
-            if (op == Operator.AND) {
+            if (op == BinaryOperator.AND) {
                 return new BinaryExpression(
-                        Operator.OR,
+                        BinaryOperator.OR,
                         not(binaryExpression.getFirst()),
                         not(binaryExpression.getSecond())
                 );
-            } else if (op == Operator.OR) {
+            } else if (op == BinaryOperator.OR) {
                 return new BinaryExpression(
-                        Operator.AND,
+                        BinaryOperator.AND,
                         not(binaryExpression.getFirst()),
                         not(binaryExpression.getSecond())
                 );
             } else {
                 return new BinaryExpression(
-                        op.negate(),
+                        op.complement(),
                         binaryExpression.getFirst(),
                         binaryExpression.getSecond()
                 );
             }
         } else {
             return new UnaryExpression(
-                    Operator.NOT,
+                    UnaryOperator.NOT,
                     expression
             );
         }
@@ -70,7 +69,7 @@ public class ExpressionUtil {
             return first;
         }
         return new BinaryExpression(
-                Operator.OR,
+                BinaryOperator.OR,
                 first,
                 second
         );
@@ -87,7 +86,7 @@ public class ExpressionUtil {
             return first;
         }
         return new BinaryExpression(
-                Operator.AND,
+                BinaryOperator.AND,
                 first,
                 second
         );
@@ -95,20 +94,20 @@ public class ExpressionUtil {
 
     public static Expression isNull(Expression operand) {
         return new UnaryExpression(
-                Operator.IS_NULL,
+                UnaryOperator.IS_NULL,
                 operand
         );
     }
 
     public static Expression isNotNull(Expression operand) {
         return new UnaryExpression(
-                Operator.IS_NOT_NULL,
+                UnaryOperator.IS_NOT_NULL,
                 operand
         );
     }
 
     public static Expression add(Expression first, Expression second) {
-        return new BinaryExpression(Operator.ADD, first, second);
+        return new BinaryExpression(BinaryOperator.ADD, first, second);
     }
 
     public static Expression constant(Instance value) {
@@ -157,7 +156,7 @@ public class ExpressionUtil {
 
     public static Expression fieldEq(Field field, Instance value) {
         return new BinaryExpression(
-                Operator.EQ,
+                BinaryOperator.EQ,
                 propertyExpr(field),
                 new ConstantExpression(value)
         );
@@ -169,7 +168,7 @@ public class ExpressionUtil {
 
     public static Expression fieldIn(Field field, Collection<? extends Instance> values) {
         return new BinaryExpression(
-                Operator.IN,
+                BinaryOperator.IN,
                 propertyExpr(field),
                 new ArrayExpression(
                         NncUtils.map(values, ConstantExpression::new),
@@ -178,123 +177,44 @@ public class ExpressionUtil {
         );
     }
 
-    public static Expression negate(Expression expression) {
-        return new NegateTransformer().transformExpression(expression);
-    }
-
-    private static class NegateTransformer extends ElementTransformer {
-
-        @Override
-        public Expression transformPropertyExpression(PropertyExpression expression) {
-            return defaultNegate(expression);
-        }
-
-        @Override
-        public Expression transformStaticFieldExpression(StaticFieldExpression expression) {
-            return defaultNegate(expression);
-        }
-
-        @Override
-        public Expression transformArrayAccessExpression(ArrayAccessExpression expression) {
-            return defaultNegate(expression);
-        }
-
-        private Expression defaultNegate(Expression expression) {
-            return new UnaryExpression(Operator.NOT, copyExpression(expression));
-        }
-
-        @Override
-        public Expression transformBinaryExpression(BinaryExpression expression) {
-            var op = expression.getOperator();
-            if (op == Operator.AND) {
-                return new BinaryExpression(
-                        Operator.OR,
-                        transformExpression(expression.getFirst()),
-                        transformExpression(expression.getSecond())
-                );
-            }
-            if (op == Operator.OR) {
-                return new BinaryExpression(
-                        Operator.AND,
-                        transformExpression(expression.getFirst()),
-                        transformExpression(expression.getSecond())
-                );
-            } else {
-                return new BinaryExpression(
-                        op.negate(),
-                        copyExpression(expression.getFirst()),
-                        copyExpression(expression.getSecond())
-                );
-            }
-        }
-
-        @Override
-        public Expression transformUnaryExpression(UnaryExpression expression) {
-            var op = expression.getOperator();
-            if (op == Operator.NOT) {
-                return copyExpression(expression.getOperand());
-            } else {
-                return new UnaryExpression(op.negate(), copyExpression(expression.getOperand()));
-            }
-        }
-
-        @Override
-        public Expression transformConstantExpression(ConstantExpression expression) {
-            if (ExpressionUtil.isConstantTrue(expression)) {
-                return ExpressionUtil.falseExpression();
-            } else if (ExpressionUtil.isConstantFalse(expression)) {
-                return ExpressionUtil.trueExpression();
-            } else {
-                throw new InternalException("Can not negate non-boolean constant expression: " + expression);
-            }
-        }
-    }
-
-    private static final ElementTransformer ELEMENT_TRANSFORMER = new ElementTransformer();
-
-    public static Expression copyExpression(Expression expression) {
-        return ELEMENT_TRANSFORMER.transformExpression(expression);
-    }
-
-
     public static Expression subtract(Expression first, Expression second) {
-        return new BinaryExpression(Operator.MINUS, first, second);
+        return new BinaryExpression(BinaryOperator.MINUS, first, second);
     }
 
     public static Expression multiply(Expression first, Expression second) {
-        return new BinaryExpression(Operator.MULTIPLY, first, second);
+        return new BinaryExpression(BinaryOperator.MULTIPLY, first, second);
     }
 
     public static Expression divide(Expression first, Expression second) {
-        return new BinaryExpression(Operator.DIVIDE, first, second);
+        return new BinaryExpression(BinaryOperator.DIVIDE, first, second);
     }
 
     public static Expression mod(Expression first, Expression second) {
-        return new BinaryExpression(Operator.MOD, first, second);
+        return new BinaryExpression(BinaryOperator.MOD, first, second);
     }
 
     public static Expression eq(Expression first, Expression second) {
-        return new BinaryExpression(Operator.EQ, first, second);
+        return new BinaryExpression(BinaryOperator.EQ, first, second);
     }
 
     public static Expression ne(Expression first, Expression second) {
-        return new BinaryExpression(Operator.NE, first, second);
+        return new BinaryExpression(BinaryOperator.NE, first, second);
     }
 
     public static Expression gt(Expression first, Expression second) {
-        return new BinaryExpression(Operator.GT, first, second);
+        return new BinaryExpression(BinaryOperator.GT, first, second);
     }
 
     public static Expression ge(Expression first, Expression second) {
-        return new BinaryExpression(Operator.GE, first, second);
+        return new BinaryExpression(BinaryOperator.GE, first, second);
     }
 
     public static Expression lt(Expression first, Expression second) {
-        return new BinaryExpression(Operator.LT, first, second);
+        return new BinaryExpression(BinaryOperator.LT, first, second);
     }
 
     public static Expression le(Expression first, Expression second) {
-        return new BinaryExpression(Operator.LE, first, second);
+        return new BinaryExpression(BinaryOperator.LE, first, second);
     }
 
     public static boolean isAllInteger(Object first, Object second) {

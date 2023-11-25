@@ -114,14 +114,15 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         ClassInstance instance = (ClassInstance) objectId.evaluate(frame);
         if(instance != null) {
             for (UpdateField updateField : fieldParams) {
                 var inConstructor = getFlow().isConstructor() || Objects.equals(getFlow().getCode(), "<init>");
-                updateField.execute(instance, frame, inConstructor, frame.getStack().getContext());
+                updateField.execute(instance, frame, inConstructor, frame.getContext());
             }
         }
+        return next(null);
     }
 
     @Override

@@ -48,13 +48,13 @@ public class TypeNarrower {
         var first = binaryExpression.getFirst();
         var second = binaryExpression.getSecond();
         final Map<Expression, Type> result = new HashMap<>();
-        if (op == Operator.AND || op == Operator.OR) {
+        if (op == BinaryOperator.AND || op == BinaryOperator.OR) {
             if (negated) {
-                op = op == Operator.AND ? Operator.OR : Operator.AND;
+                op = op == BinaryOperator.AND ? BinaryOperator.OR : BinaryOperator.AND;
             }
             var firstResult = process(first, negated);
             var secondResult = process(second, negated);
-            if (op == Operator.AND) {
+            if (op == BinaryOperator.AND) {
                 result.putAll(mergeResults(firstResult, secondResult));
             } else {
                 firstResult.forEach((expr, type) -> {
@@ -64,11 +64,11 @@ public class TypeNarrower {
                     }
                 });
             }
-        } else if (op == Operator.EQ || op == Operator.NE) {
+        } else if (op == BinaryOperator.EQ || op == BinaryOperator.NE) {
             if (negated) {
-                op = op == Operator.NE ? Operator.EQ : Operator.NE;
+                op = op == BinaryOperator.NE ? BinaryOperator.EQ : BinaryOperator.NE;
             }
-            if (op == Operator.EQ) {
+            if (op == BinaryOperator.EQ) {
                 var intersection = typeIntersection(getType(first), getType(second));
                 if (intersection != null) {
                     if (ExpressionUtil.isNotConstant(first)) {
@@ -130,16 +130,16 @@ public class TypeNarrower {
             return Map.of();
         }
         var op = unaryExpression.getOperator();
-        if (op == Operator.IS_NOT_NULL || op == Operator.IS_NULL) {
+        if (op == UnaryOperator.IS_NOT_NULL || op == UnaryOperator.IS_NULL) {
             if (negated) {
-                op = op == Operator.IS_NULL ? Operator.IS_NOT_NULL : Operator.IS_NULL;
+                op = op == UnaryOperator.IS_NULL ? UnaryOperator.IS_NOT_NULL : UnaryOperator.IS_NULL;
             }
-            if (op == Operator.IS_NOT_NULL) {
+            if (op == UnaryOperator.IS_NOT_NULL) {
                 return Map.of(operand, getType(operand).getUnderlyingType());
             } else {
                 return Map.of(operand, ModelDefRegistry.getType(Null.class));
             }
-        } else if (op == Operator.NOT) {
+        } else if (op == UnaryOperator.NOT) {
             return process(operand, !negated);
         } else {
             return Map.of();

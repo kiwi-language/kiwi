@@ -1,20 +1,20 @@
 package tech.metavm.flow;
 
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
+import javax.annotation.Nullable;
 
 public interface Frame {
 
-    void execute();
+    @Nullable
+    FlowExecResult execute();
 
     FrameState getState();
 
-    Instance getRet();
+//    Instance getRet();
 
-    void resume(Instance ret);
+//    void resume(Instance ret);
 
-    ClassInstance getThrow();
+//    ClassInstance getThrow();
 
-    void resumeWithException(ClassInstance exception);
+//    void resumeWithException(ClassInstance exception);
 
 }

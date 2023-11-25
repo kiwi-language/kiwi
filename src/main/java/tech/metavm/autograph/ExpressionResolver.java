@@ -24,21 +24,27 @@ import static tech.metavm.util.ReflectUtils.getMethod;
 
 public class ExpressionResolver {
 
-    private static final Map<IElementType, Operator> OPERATOR_MAP = Map.ofEntries(
-            Map.entry(JavaTokenType.PLUS, Operator.ADD),
-            Map.entry(JavaTokenType.MINUS, Operator.MINUS),
-            Map.entry(JavaTokenType.PLUSPLUS, Operator.PLUS_PLUS),
-            Map.entry(JavaTokenType.MINUSMINUS, Operator.MINUS_MINUS),
-            Map.entry(JavaTokenType.EQEQ, Operator.EQ),
-            Map.entry(JavaTokenType.NE, Operator.NE),
-            Map.entry(JavaTokenType.GT, Operator.GT),
-            Map.entry(JavaTokenType.GE, Operator.GE),
-            Map.entry(JavaTokenType.LT, Operator.LT),
-            Map.entry(JavaTokenType.LE, Operator.LE),
-            Map.entry(JavaTokenType.ANDAND, Operator.AND),
-            Map.entry(JavaTokenType.OROR, Operator.OR),
-            Map.entry(JavaTokenType.ASTERISK, Operator.MULTIPLY),
-            Map.entry(JavaTokenType.DIV, Operator.DIVIDE)
+    public static final Map<IElementType, UnaryOperator> UNARY_OPERATOR_MAP = Map.ofEntries(
+            Map.entry(JavaTokenType.PLUS, UnaryOperator.POS),
+            Map.entry(JavaTokenType.MINUS, UnaryOperator.NEG),
+            Map.entry(JavaTokenType.EXCL, UnaryOperator.NOT)
+    );
+
+    private static final Map<IElementType, BinaryOperator> OPERATOR_MAP = Map.ofEntries(
+            Map.entry(JavaTokenType.PLUS, BinaryOperator.ADD),
+            Map.entry(JavaTokenType.MINUS, BinaryOperator.MINUS),
+//            Map.entry(JavaTokenType.PLUSPLUS, Operator.PLUS_PLUS),
+//            Map.entry(JavaTokenType.MINUSMINUS, Operator.MINUS_MINUS),
+            Map.entry(JavaTokenType.EQEQ, BinaryOperator.EQ),
+            Map.entry(JavaTokenType.NE, BinaryOperator.NE),
+            Map.entry(JavaTokenType.GT, BinaryOperator.GT),
+            Map.entry(JavaTokenType.GE, BinaryOperator.GE),
+            Map.entry(JavaTokenType.LT, BinaryOperator.LT),
+            Map.entry(JavaTokenType.LE, BinaryOperator.LE),
+            Map.entry(JavaTokenType.ANDAND, BinaryOperator.AND),
+            Map.entry(JavaTokenType.OROR, BinaryOperator.OR),
+            Map.entry(JavaTokenType.ASTERISK, BinaryOperator.MULTIPLY),
+            Map.entry(JavaTokenType.DIV, BinaryOperator.DIVIDE)
     );
 
     public static final Set<IElementType> BOOL_OPS = Set.of(
@@ -216,7 +222,7 @@ public class ExpressionResolver {
         var op = psiPrefixExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
             return new BinaryExpression(
-                    Operator.EQ,
+                    BinaryOperator.EQ,
                     resolve(Objects.requireNonNull(psiPrefixExpression.getOperand()), context),
                     new ConstantExpression(InstanceUtils.booleanInstance(false))
             );
@@ -226,7 +232,7 @@ public class ExpressionResolver {
             return processAssignment(
                     operand,
                     new BinaryExpression(
-                            Operator.ADD,
+                            BinaryOperator.ADD,
                             resolvedOperand,
                             new ConstantExpression(InstanceUtils.longInstance(1))
                     ),
@@ -236,7 +242,7 @@ public class ExpressionResolver {
             return processAssignment(
                     operand,
                     new BinaryExpression(
-                            Operator.MINUS,
+                            BinaryOperator.MINUS,
                             resolvedOperand,
                             new ConstantExpression(InstanceUtils.longInstance(1))
                     ),
@@ -250,7 +256,7 @@ public class ExpressionResolver {
     private Expression resolveUnary(PsiUnaryExpression psiUnaryExpression, ResolutionContext context) {
         if (psiUnaryExpression.getOperand() instanceof PsiLiteralExpression literalExpression) {
             return new UnaryExpression(
-                    resolveOperator(psiUnaryExpression.getOperationSign().getTokenType()),
+                    resolveUnaryOperator(psiUnaryExpression.getOperationSign().getTokenType()),
                     resolveLiteral(literalExpression)
             );
         }
@@ -263,7 +269,7 @@ public class ExpressionResolver {
             processAssignment(
                     (PsiReferenceExpression) psiUnaryExpression.getOperand(),
                     new BinaryExpression(
-                            Operator.ADD,
+                            BinaryOperator.ADD,
                             resolvedOperand,
                             new ConstantExpression(InstanceUtils.longInstance(1))
                     ),
@@ -274,7 +280,7 @@ public class ExpressionResolver {
             processAssignment(
                     (PsiReferenceExpression) psiUnaryExpression.getOperand(),
                     new BinaryExpression(
-                            Operator.MINUS,
+                            BinaryOperator.MINUS,
                             resolvedOperand,
                             new ConstantExpression(InstanceUtils.longInstance(1))
                     ),
@@ -283,7 +289,7 @@ public class ExpressionResolver {
             return resolvedOperand;
         } else {
             return new UnaryExpression(
-                    resolveOperator(psiUnaryExpression.getOperationSign()),
+                    resolveUnaryOperator(psiUnaryExpression.getOperationSign().getTokenType()),
                     resolve(Objects.requireNonNull(psiUnaryExpression.getOperand()), context)
             );
         }
@@ -360,7 +366,7 @@ public class ExpressionResolver {
     }
 
     private Expression invokeFlow(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
-        return getSingleValue(createInvokeFlowNode(self, flowCode, argumentList, context));
+        return createNodeExpression(createInvokeFlowNode(self, flowCode, argumentList, context));
     }
 
     private void ensureTypeDeclared(PsiType psiType) {
@@ -397,7 +403,7 @@ public class ExpressionResolver {
         if (flow.getReturnType().isVoid()) {
             return null;
         } else {
-            return getSingleValue(node);
+            return createNodeExpression(node);
         }
     }
 
@@ -417,14 +423,14 @@ public class ExpressionResolver {
                 param -> typeResolver.resolveDeclaration(param.getType())
         );
         var tempalteFlow = template.getFlowByCodeAndParamTypes(method.getName(), rawParamTypes);
-        Flow piFlow = template != declaringType ? declaringType.getFlowByRootTemplate(tempalteFlow) : tempalteFlow;
+        Flow piFlow = template != declaringType ? declaringType.getFlowByVerticalTemplate(tempalteFlow) : tempalteFlow;
         Flow flow;
         if (piFlow.getTypeParameters().isEmpty()) {
             flow = piFlow;
         } else {
             var flowTypeArgs = NncUtils.map(method.getTypeParameters(),
                     typeParam -> typeResolver.resolveDeclaration(substitutor.substitute(typeParam)));
-            flow = piFlow.getTemplateInstance(flowTypeArgs);
+            flow = piFlow.findHorizontalInstance(flowTypeArgs);
             if (flow == null) {
                 flow = genericContext.getParameterizedFlow(piFlow, flowTypeArgs);
             }
@@ -462,15 +468,19 @@ public class ExpressionResolver {
             var listType = (ClassType) typeResolver.resolve(type);
             var signature = resolveMethodSignature(expression);
             var subFlow = listType.getFlowByCodeAndParamTypes("List", signature.parameterTypes);
-            return getSingleValue(flowBuilder.createNew(subFlow,
-                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context)));
+            var newNode = flowBuilder.createNew(subFlow,
+                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
+                    true);
+            return createNodeExpression(newNode);
         }
         var psiMapType = TranspileUtil.createType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = (ClassType) typeResolver.resolve(type);
             var subFlow = mapType.getFlowByCode("Map");
-            return getSingleValue(flowBuilder.createNew(subFlow,
-                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context)));
+            var newNode = flowBuilder.createNew(subFlow,
+                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
+                    true);
+            return createNodeExpression(newNode);
         }
         if (expression.getType() instanceof PsiClassType psiClassType) {
             var klass = (ClassType) typeResolver.resolve(psiClassType);
@@ -513,7 +523,7 @@ public class ExpressionResolver {
         var methodGenerics = constructorCall.resolveMethodGenerics();
         if (methodGenerics.getElement() == null) {
             var flow = declaringType.getDefaultConstructor();
-            return new NodeExpression(flowBuilder.createNew(flow, List.of()));
+            return new NodeExpression(flowBuilder.createNew(flow, List.of(), false));
         } else {
             var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
             var substitutor = methodGenerics.getSubstitutor();
@@ -527,12 +537,12 @@ public class ExpressionResolver {
             );
             paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
             var flow = declaringType.getFlowByCodeAndParamTypes(declaringType.getEffectiveTemplate().getCode(), paramTypes);
-            var newNode = flowBuilder.createNew(flow, arguments);
+            var newNode = flowBuilder.createNew(flow, arguments, false);
             return new NodeExpression(newNode);
         }
     }
 
-    private Expression getSingleValue(NodeRT<?> node) {
+    private Expression createNodeExpression(NodeRT<?> node) {
         return new NodeExpression(node);
     }
 
@@ -545,13 +555,13 @@ public class ExpressionResolver {
         } else {
             var resolvedLeft = resolve(expression.getLExpression(), context);
             if (op == JavaTokenType.PLUSEQ) {
-                assignment = new BinaryExpression(Operator.ADD, resolvedLeft, resolvedRight);
+                assignment = new BinaryExpression(BinaryOperator.ADD, resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.MINUSEQ) {
-                assignment = new BinaryExpression(Operator.MINUS, resolvedLeft, resolvedRight);
+                assignment = new BinaryExpression(BinaryOperator.MINUS, resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.ASTERISKEQ) {
-                assignment = new BinaryExpression(Operator.MULTIPLY, resolvedLeft, resolvedRight);
+                assignment = new BinaryExpression(BinaryOperator.MULTIPLY, resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.DIVEQ) {
-                assignment = new BinaryExpression(Operator.DIVIDE, resolvedLeft, resolvedRight);
+                assignment = new BinaryExpression(BinaryOperator.DIVIDE, resolvedLeft, resolvedRight);
             } else {
                 throw new InternalException("Unsupported assignment operator " + op);
             }
@@ -574,10 +584,9 @@ public class ExpressionResolver {
                 ClassType instanceType = (ClassType) flowBuilder.getExpressionType(self);
                 typeResolver.ensureDeclared(instanceType);
                 Field field = instanceType.getFieldByCode(psiField.getName());
-                if(field.isChild()) {
+                if (field.isChild()) {
                     processChildAssignment(self, field, assignment, context);
-                }
-                else {
+                } else {
                     UpdateObjectNode node = flowBuilder.createUpdateObject();
                     node.setObjectId(new ExpressionValue(self));
                     node.setUpdateField(field, UpdateOp.SET, new ExpressionValue(assignment));
@@ -595,14 +604,13 @@ public class ExpressionResolver {
     }
 
     private void processChildAssignment(Expression self, Field field,
-                                              Expression assignment, ResolutionContext context) {
+                                        Expression assignment, ResolutionContext context) {
         NncUtils.requireTrue(field.isChild());
         NncUtils.requireTrue(assignment instanceof NodeExpression);
         var node = ((NodeExpression) assignment).getNode();
-        if(node instanceof NewNode newNode) {
+        if (node instanceof NewNode newNode) {
             newNode.setParent(new ParentRef(new ExpressionValue(self), field));
-        }
-        else {
+        } else {
             throw new InternalException(
                     String.format("Only new objects are allowed to be assigned to a child field. field: %s",
                             field.getName())
@@ -610,11 +618,15 @@ public class ExpressionResolver {
         }
     }
 
-    private Operator resolveOperator(PsiJavaToken psiOp) {
+    private BinaryOperator resolveOperator(PsiJavaToken psiOp) {
         return resolveOperator(psiOp.getTokenType());
     }
 
-    private Operator resolveOperator(IElementType elementType) {
+    private UnaryOperator resolveUnaryOperator(IElementType elementType) {
+        return UNARY_OPERATOR_MAP.get(elementType);
+    }
+
+    private BinaryOperator resolveOperator(IElementType elementType) {
         return OPERATOR_MAP.get(elementType);
     }
 
@@ -702,12 +714,12 @@ public class ExpressionResolver {
         var first = NncUtils.requireNonNull(psiBinaryExpression.getLOperand());
         var second = NncUtils.requireNonNull(psiBinaryExpression.getROperand());
         if (negated) {
-            op = op.negate();
+            op = op.complement();
         }
-        if (op == Operator.AND) {
+        if (op == BinaryOperator.AND) {
             constructBool(first, negated, parent, context);
             constructBool(second, negated, parent, context);
-        } else if (op == Operator.OR) {
+        } else if (op == BinaryOperator.OR) {
             var branchNode = flowBuilder.createBranchNode(false);
 //            var branch1 = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
 //            branchNode.addDefaultBranch();
@@ -750,13 +762,13 @@ public class ExpressionResolver {
     public void constructPolyadicBool(PsiPolyadicExpression expression, boolean negated, BranchNode parent, ResolutionContext context) {
         var op = resolveOperator(expression.getOperationTokenType());
         if (negated) {
-            op = op.negate();
+            op = op.complement();
         }
-        if (op == Operator.AND) {
+        if (op == BinaryOperator.AND) {
             for (PsiExpression operand : expression.getOperands()) {
                 constructBool(operand, negated, parent, context);
             }
-        } else if (op == Operator.OR) {
+        } else if (op == BinaryOperator.OR) {
             var branchNode = flowBuilder.createBranchNode(false);
             var thenBranch = branchNode.addBranch(new ExpressionValue(ExpressionUtil.trueExpression()));
             branchNode.addDefaultBranch();

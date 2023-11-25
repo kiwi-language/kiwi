@@ -7,9 +7,24 @@ import tech.metavm.util.*;
 
 public enum ArrayKind {
 
-    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, ReadWriteArray.class),
-    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, ReadonlyArray.class),
-    CHILD(3, TypeCategory.CHILD_ARRAY, ChildArray.class),
+    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, ReadWriteArray.class) {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return that == READ_WRITE && assignedElementType.contains(assignmentElementType);
+        }
+    },
+    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, ReadonlyArray.class) {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return assignedElementType.isAssignableFrom(assignmentElementType);
+        }
+    },
+    CHILD(3, TypeCategory.CHILD_ARRAY, ChildArray.class) {
+        @Override
+        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
+            return that == CHILD && assignedElementType.contains(assignmentElementType);
+        }
+    },
 
     ;
 
@@ -35,10 +50,9 @@ public enum ArrayKind {
         return category;
     }
 
-    public boolean isAssignableFrom(ArrayKind that) {
-        return this == that || this == READ_ONLY;
-    }
+    public abstract boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType);
 
+    @SuppressWarnings("rawtypes")
     public Class<? extends ReadonlyArray> getEntityClass() {
         //noinspection unchecked
         return (Class<? extends ReadonlyArray<?>>) entityClass;

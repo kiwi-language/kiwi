@@ -1,12 +1,12 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.flow.FlowStack;
-import tech.metavm.flow.Frame;
+import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.LambdaNode;
 import tech.metavm.flow.MetaFrame;
 import tech.metavm.object.instance.LambdaFrame;
 
 import java.util.List;
+import java.util.Objects;
 
 public class LambdaInstance extends FunctionInstance {
 
@@ -19,16 +19,21 @@ public class LambdaInstance extends FunctionInstance {
         this.containingFrame = containingFrame;
     }
 
-    public Frame createFrame(FlowStack stack, List<Instance> arguments) {
+    private MetaFrame createFrame(List<Instance> arguments, IInstanceContext context) {
         return new LambdaFrame(
-                lambdaNode.getBodyScope().getFirstNode(),
+                Objects.requireNonNull(lambdaNode.getBodyScope().tryGetFirstNode()),
                 lambdaNode.getFlow().getDeclaringType(),
-                arguments, stack, containingFrame
+                arguments, context, containingFrame
         );
     }
 
     @Override
     public void accept(InstanceVisitor visitor) {
         visitor.visitLambdaInstance(this);
+    }
+
+    @Override
+    public FlowExecResult execute(List<Instance> arguments, IInstanceContext context) {
+        return createFrame(arguments, context).execute();
     }
 }

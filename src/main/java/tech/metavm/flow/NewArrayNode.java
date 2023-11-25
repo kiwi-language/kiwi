@@ -86,13 +86,13 @@ public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
     }
 
     @Override
-    public void execute(MetaFrame frame) {
+    public NodeExecResult execute(MetaFrame frame) {
         var instParentRef = NncUtils.get(parentRef, ref -> ref.evaluate(frame));
         var array = new ArrayInstance(getType(), instParentRef);
         if (!array.isChildArray()) {
             array.addAll((ArrayInstance) value.evaluate(frame));
         }
-        frame.setResult(array);
+        return next(array);
     }
 
     public Value getValue() {

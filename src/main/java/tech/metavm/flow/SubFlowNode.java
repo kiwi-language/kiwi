@@ -31,18 +31,18 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
     }
 
     @ChildEntity("目标对象")
-    private Value selfId;
+    private Value self;
 
-    public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value selfId, List<Argument> arguments,
+    public SubFlowNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, Value self, List<Argument> arguments,
                        Flow subFlow) {
         super(tmpId, name,  prev, scope, arguments, subFlow);
-        this.selfId = addChild(selfId, "selfId");
+        this.self = addChild(self, "self");
     }
 
     @Override
     protected void setParam(SubFlowParam param, IEntityContext entityContext) {
         ParsingContext parsingContext = getParsingContext(entityContext);
-        setSelfId(ValueFactory.create(param.getSelf(), parsingContext));
+        setSelf(ValueFactory.create(param.getSelf(), parsingContext));
         super.setCallParam(param, entityContext);
     }
 
@@ -50,7 +50,7 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
     protected SubFlowParam getParam(boolean persisting) {
         try(var context = SerializeContext.enter()) {
             return new SubFlowParam(
-                    selfId.toDTO(persisting),
+                    self.toDTO(persisting),
                     context.getRef(subFlow),
                     context.getRef(subFlow.getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO)
@@ -58,16 +58,16 @@ public class SubFlowNode extends CallNode<SubFlowParam> {
         }
     }
 
-    public Value getSelfId() {
-        return selfId;
+    public Value getSelf() {
+        return self;
     }
 
-    public void setSelfId(Value selfId) {
-        this.selfId = addChild(selfId, "selfId");
+    public void setSelf(Value self) {
+        this.self = addChild(self, "self");
     }
 
     protected Instance getSelf(MetaFrame frame) {
-        return selfId.evaluate(frame);
+        return self.evaluate(frame);
     }
 
 

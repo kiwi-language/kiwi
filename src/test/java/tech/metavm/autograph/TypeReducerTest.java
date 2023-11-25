@@ -24,28 +24,28 @@ public class TypeReducerTest extends TestCase {
         );
         var amountFieldExpr = new PropertyExpression(new ThisExpression(fooType), amountField);
         Expression expression = new BinaryExpression(
-                Operator.OR,
+                BinaryOperator.OR,
                 new BinaryExpression(
-                        Operator.AND,
+                        BinaryOperator.AND,
                         new BinaryExpression(
-                                Operator.NE,
+                                BinaryOperator.NE,
                                 nameFieldExpr,
                                 ExpressionUtil.nullExpression()
                         ),
                         new BinaryExpression(
-                                Operator.GT,
+                                BinaryOperator.GT,
                                 amountFieldExpr,
                                 ExpressionUtil.constantLong(0)
                         )
                 ),
                 new BinaryExpression(
-                        Operator.AND,
+                        BinaryOperator.AND,
                         new UnaryExpression(
-                                Operator.IS_NOT_NULL,
+                                UnaryOperator.IS_NOT_NULL,
                                 nameFieldExpr
                         ),
                         new BinaryExpression(
-                                Operator.EQ,
+                                BinaryOperator.EQ,
                                 amountFieldExpr,
                                 ExpressionUtil.constantLong(-1L)
                         )

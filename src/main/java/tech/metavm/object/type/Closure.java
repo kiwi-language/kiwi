@@ -10,6 +10,7 @@ public class Closure<T extends Type> {
 
     private final Class<T> elementJavaClass;
     private final List<T> types;
+    private final Map<ClassType, T> template2instance = new HashMap<>();
     private final Set<T> set;
 
     public Closure(T type, Class<T> elementJavaClass) {
@@ -32,6 +33,13 @@ public class Closure<T extends Type> {
         this.types = types;
         this.set = set;
         this.elementJavaClass = elementJavaClass;
+        for (T type : types) {
+            if(type instanceof ClassType classType) {
+                var template = classType.getTemplate();
+                if(template != null)
+                    template2instance.put(template, type);
+            }
+        }
     }
 
     public List<Type> getTypes() {
@@ -52,6 +60,10 @@ public class Closure<T extends Type> {
 
     public @Nullable T find(Predicate<T> predicate) {
         return NncUtils.find(types, predicate);
+    }
+
+    public T findByTemplate(ClassType template) {
+        return template2instance.get(template);
     }
 
     public Closure<T> getMin() {
