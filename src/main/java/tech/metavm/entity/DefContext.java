@@ -81,7 +81,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         checkJavaType(javaType);
         javaType = ReflectUtils.getBoxedType(javaType);
         if (!(javaType instanceof TypeVariable<?>)) {
-            javaType = ReflectUtils.eraseType(javaType);
+            javaType = EntityUtils.getEntityType(javaType);
             if (javaType instanceof Class<?> klass) {
                 if (ReflectUtils.isBoxingClass(klass)) {
                     javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
@@ -171,7 +171,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
          if (javaType instanceof TypeVariable<?> typeVariable) {
             return new TypeVariableParser(typeVariable, this);
         }
-        javaType = ReflectUtils.eraseType(javaType);
+        javaType = EntityUtils.getEntityType(javaType);
         Class<?> javaClass = ReflectUtils.getRawClass(javaType);
         TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
         if (ReadonlyArray.class.isAssignableFrom(javaClass)) {

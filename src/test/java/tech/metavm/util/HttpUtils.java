@@ -12,19 +12,25 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class HttpUtils {
 
     public static final String COOKIE_FILE = "/Users/leen/workspace/object/.idea/httpRequests/http-client.cookies";
 
-    private static final String TOKEN;
+    private static final Map<String, String> TOKENS = new HashMap<>();
 
     static {
         try (BufferedReader reader = new BufferedReader(new FileReader(COOKIE_FILE))) {
             reader.readLine();
-            String line = reader.readLine();
-            String[] splits = line.split("\t");
-            TOKEN = splits[3];
+            String line;
+            while ((line= reader.readLine()) != null) {
+                String[] splits = line.split("\t");
+                String host = splits[0], token = splits[3];
+                TOKENS.put(host, token);
+            }
         } catch (IOException e) {
             throw new InternalException("Fail to read cookie file", e);
         }
@@ -77,9 +83,9 @@ public class HttpUtils {
     public static HttpClient buildClient(URI uri) {
         CookieManager cookieManager = new CookieManager();
         CookieHandler.setDefault(cookieManager);
-
-        var cookie = new HttpCookie("__token__", TOKEN);
-        cookie.setDomain("localhost");
+        var cookie = new HttpCookie("__token__",
+                Objects.requireNonNull(TOKENS.get(uri.getHost())));
+        cookie.setDomain(uri.getHost());
         cookie.setPath("/");
 
         ((CookieManager) CookieHandler.getDefault()).getCookieStore().add(uri, cookie);

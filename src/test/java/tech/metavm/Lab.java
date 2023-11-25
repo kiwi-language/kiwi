@@ -1,5 +1,6 @@
 package tech.metavm;
 
+import tech.metavm.expression.BinaryOperator;
 import tech.metavm.util.ByteUtils;
 import tech.metavm.util.TestUtils;
 
@@ -15,6 +16,8 @@ public class Lab {
     public static final String BYTES_FILE = "/Users/leen/workspace/object/src/test/resources/bytes/test";
 
     public static void main(String[] args) throws Exception {
+        var klass = BinaryOperator.EQ.getClass();
+        System.out.println(klass);
     }
 
     private static void testBytes() {

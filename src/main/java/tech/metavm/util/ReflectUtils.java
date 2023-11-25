@@ -952,6 +952,14 @@ public class ReflectUtils {
         return Object.class;
     }
 
+    public static Class<?> getEnumClass(Enum<?> enumConstant) {
+        var klass = enumConstant.getClass();
+        if(klass.isEnum())
+            return klass;
+        else
+            return klass.getSuperclass();
+    }
+
     public static Type eraseType(Type type) {
         return eraseType0(type, new IdentitySet<>());
     }

@@ -6,7 +6,7 @@ Authorization: Basic elastic 85263670
 {
   "query": {
     "query_string": {
-      "query": "(typeId:60136)"
+      "query": "tenantId:\\-d"
     }
   }
 }

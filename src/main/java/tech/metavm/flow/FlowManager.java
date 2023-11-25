@@ -137,6 +137,8 @@ public class FlowManager {
         }
         Type oldFuncType = flow.getType();
         Type returnType = getReturnType(flowDTO, declaringType, context);
+        flow.setName(flowDTO.name());
+        flow.setCode(flowDTO.code());
         flow.setConstructor(flowDTO.isConstructor());
         flow.setAbstract(declaringType.isInterface() || flowDTO.isAbstract());
         flow.setNative(flowDTO.isNative());

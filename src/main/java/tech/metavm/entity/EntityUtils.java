@@ -410,6 +410,15 @@ public class EntityUtils {
         return type;
     }
 
+    public static Type getEntityType(Type type) {
+        type = ReflectUtils.eraseType(type);
+        if(type instanceof Class<?> klass) {
+            if(klass.getSuperclass() != null && klass.getSuperclass().isEnum())
+                type = klass.getSuperclass();
+        }
+        return type;
+    }
+
     public static Class<?> getEntityType(Class<?> type) {
         if (ProxyObject.class.isAssignableFrom(type)) {
             return type.getSuperclass();

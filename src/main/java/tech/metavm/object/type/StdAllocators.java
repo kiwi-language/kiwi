@@ -53,7 +53,7 @@ public class StdAllocators {
             return getId0(ClassType.class, getTypeCode(type));
         }
         if (object instanceof Enum<?> enumConstant) {
-            return getId0(enumConstant.getClass(), enumConstant.name());
+            return getId0(ReflectUtils.getEnumClass(enumConstant), enumConstant.name());
         }
         if (object instanceof ModelIdentity modelIdentity) {
             return getId0(modelIdentity.type(), modelIdentity.name());
@@ -67,7 +67,7 @@ public class StdAllocators {
         } else if (object instanceof java.lang.reflect.Type type) {
             putId0(ClassType.class, getTypeCode(type), id);
         } else if (object instanceof Enum<?> enumConstant) {
-            putId0(enumConstant.getClass(), enumConstant.name(), id);
+            putId0(ReflectUtils.getEnumClass(enumConstant), enumConstant.name(), id);
         } else if (object instanceof ModelIdentity modelIdentity) {
             putId0(modelIdentity.type(), modelIdentity.name(), id);
         } else {

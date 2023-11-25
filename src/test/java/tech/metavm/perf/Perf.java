@@ -20,11 +20,11 @@ public class Perf {
             "{\"flowId\":1044501450,\"instanceId\":1049900999,\"arguments\":[{\"type\":1,\"value\":1,\"primitiveKind\":1},{\"elementAsChild\":false,\"type\":3,\"elements\":[{\"type\":2,\"id\":1050001003,\"displayValue\":\"10\"},{\"type\":2,\"id\":1050001002,\"displayValue\":\"5\"},{\"type\":2,\"id\":1050001001,\"displayValue\":\"10\"}]}]}";
 
     public static void main(String[] args) throws URISyntaxException, InterruptedException {
-        var uri = new URI("http://localhost:8080/flow/execute");
+        var uri = new URI("https://metavm.tech/api/flow/execute");
         client = HttpUtils.buildClient(uri);
         request = TestUtils.parseJson(jsonStr, FlowExecutionRequest.class);
-        int numRuns = 100;
-        int numThreads = 5;
+        int numRuns = 1;
+        int numThreads = 1;
         Thread[] threads = new Thread[numThreads];
         for (int i = 0; i < numThreads; i++) {
             threads[i] = new Thread(() -> {
