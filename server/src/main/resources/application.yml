@@ -1,0 +1,58 @@
+spring:
+  main:
+    allow-circular-references: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: 85263670
+    url: jdbc:postgresql://127.0.0.1:5432/object
+  #    driver-class-name: com.mysql.cj.jdbc.Driver
+#    username: root
+#    password: 85263670
+#    url: jdbc:mysql://localhost:3306/object?allowMultiQueries=true
+  data:
+    elasticsearch:
+      host: localhost
+      port: 9200
+      user: elastic
+      password: 85263670
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  jackson:
+    default-property-inclusion: non_null
+
+smtp:
+  host: smtp.163.com
+  port: 25
+  username: 15968879210@163.com
+  password: 85263670
+
+server:
+  compression:
+    enabled: true
+    mime-types: text/html,text/plain,text/css,application/javascript,application/json
+    min-response-size: 1024
+
+management.health.elasticsearch.enabled: false
+
+mybatis:
+  mapper-locations: classpath*:/mappers/*.xml
+  type-aliases-package: tech.nonocode.object.meta.persistence
+  type-handlers-package: tech.metavm.util
+
+metavm:
+  resource-cp-root: /Users/leen/workspace/object/common/src/main/resources
+  token:
+    encrypt:
+      certificate: /etc/metavm/encrypt_key.pub
+      key: /etc/metavm/encrypt_key
+    sign:
+      certificate: /etc/metavm/sign_key.pub
+      key: /etc/metavm/sign_key
+  id:
+    file:
+      Type: /id/Type.properties
+      Field: /id/Field.properties
+      UniqueConstraintRT: /id/Constraint.properties
+      TypeCategory: /id/TypeCategory.properties

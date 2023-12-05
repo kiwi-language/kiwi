@@ -1,3 +1,2 @@
-1 在flow editor中更新参数不会立即生效，需要刷新页面才可见
-
-2 流程节点名称未校验重名
+1 Property removal are not submitted to the server
+2 Array field can not be properly represented in the source code

@@ -1,0 +1,27 @@
+package tech.metavm.flow.rest;
+
+import tech.metavm.common.RefDTO;
+import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
+import tech.metavm.util.NncUtils;
+
+public record LoopFieldDTO(
+        RefDTO fieldRef,
+        String name,
+        RefDTO typeRef,
+        ValueDTO initialValue,
+        ValueDTO updatedValue
+) implements FieldReferringDTO<LoopFieldDTO> {
+
+    public LoopFieldDTO copyWithFieldRef(RefDTO fieldRef) {
+        return new LoopFieldDTO(fieldRef, name, typeRef, initialValue, updatedValue);
+    }
+
+    public FieldDTO toFieldDTO() {
+        return FieldDTOBuilder.newBuilder(name,  typeRef)
+                .tmpId(NncUtils.get(fieldRef, RefDTO::tmpId))
+                .id(NncUtils.get(fieldRef, RefDTO::id))
+                .build();
+    }
+
+}

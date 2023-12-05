@@ -1,0 +1,31 @@
+package tech.metavm.flow.rest;
+
+public class NodeKindCodes {
+
+    public static final int SELF = 0;
+    public static final int INPUT = 1;
+    public static final int ADD_OBJECT = 3;
+    public static final int UPDATE_OBJECT = 4;
+    public static final int DELETE_OBJECT = 5;
+    public static final int BRANCH = 7;
+    public static final int RETURN = 9;
+    public static final int EXCEPTION = 10;
+    public static final int SUB_FLOW = 12;
+    public static final int GET_UNIQUE = 13;
+    public static final int MERGE = 14;
+    public static final int NEW = 15;
+    public static final int VALUE = 16;
+    public static final int UPDATE_STATIC = 17;
+    public static final int FOREACH = 19;
+    public static final int WHILE = 20;
+    public static final int NEW_ARRAY = 21;
+    public static final int CHECK = 22;
+    public static final int TRY = 23;
+    public static final int TRY_END = 24;
+    public static final int FUNC = 25;
+    public static final int LAMBDA = 26;
+    public static final int ADD_ELEMENT = 27;
+    public static final int DELETE_ELEMENT = 28;
+    public static final int GET_ELEMENT = 29;
+
+}

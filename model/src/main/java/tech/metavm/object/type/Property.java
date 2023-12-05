@@ -1,0 +1,84 @@
+package tech.metavm.object.type;
+
+import tech.metavm.entity.*;
+import tech.metavm.util.NamingUtils;
+import tech.metavm.util.NncUtils;
+
+import javax.annotation.Nullable;
+
+@EntityType("属性")
+public abstract class Property extends ClassMember {
+
+    public static final IndexDef<Property> INDEX_TYPE = new IndexDef<>(Property.class, false,"type");
+
+    @EntityField(value = "名称", asTitle = true)
+    private String name;
+    @EntityField("编号")
+    @Nullable
+    private String code;
+    @EntityField("类型")
+    private Type type;
+    @EntityField(value = "是否静态", code = "static")
+    private boolean _static;
+    @EntityField("状态")
+    private MetadataState state;
+
+    public Property(Long tmpId, String name, @Nullable String code, Type type,
+                    ClassType declaringType, boolean _static, MetadataState state) {
+        super(tmpId, declaringType);
+        this.name = NamingUtils.ensureValidName(name);
+        this.code = NamingUtils.ensureValidCode(code);
+        this.type = type;
+        this._static = _static;
+        this.state = state;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = NamingUtils.ensureValidName(name);
+    }
+
+    @Nullable
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = NamingUtils.ensureValidCode(code);
+    }
+
+    public String getCodeRequired() {
+        return NncUtils.requireNonNull(code, "code is set for type " + getName());
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public boolean isStatic() {
+        return _static;
+    }
+
+    public void setStatic(boolean _static) {
+        this._static = _static;
+    }
+
+    public MetadataState getState() {
+        return state;
+    }
+
+    public boolean isReady() {
+        return state == MetadataState.READY;
+    }
+
+    public void setState(MetadataState state) {
+        this.state = state;
+    }
+}

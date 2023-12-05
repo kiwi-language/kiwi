@@ -1,0 +1,37 @@
+###
+POST https://metavm.tech/api/bootstrap?saveIds=false
+
+###
+GET https://metavm.tech/websocket/metavm-websocket
+Upgrade: websocket
+
+###
+POST https://metavm.tech/api/bootstrap/save
+
+###
+POST https://metavm.tech/api/application/create
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "test",
+  "rootPassword": "123456"
+}
+
+###
+POST https://metavm.tech/api/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "appId": 1007900159,
+  "loginName": "admin",
+  "password": "123456"
+}
+
+###
+DELETE https://metavm.tech/api/instance/7205760404292733
+
+###
+GET https://metavm.tech/api/system/cache/1005400109
+

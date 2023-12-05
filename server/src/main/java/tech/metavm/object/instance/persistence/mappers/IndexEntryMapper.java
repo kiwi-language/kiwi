@@ -1,0 +1,36 @@
+package tech.metavm.object.instance.persistence.mappers;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import tech.metavm.object.instance.persistence.IndexEntryPO;
+import tech.metavm.object.instance.persistence.IndexKeyPO;
+import tech.metavm.object.instance.persistence.IndexQueryPO;
+
+import java.util.Collection;
+import java.util.List;
+
+@Mapper
+public interface IndexEntryMapper {
+
+    long count(IndexQueryPO queryPO);
+
+    List<IndexEntryPO> query(IndexQueryPO queryPO);
+
+    List<IndexEntryPO> selectByInstanceIdsOrKeys(
+            @Param("appId") long appId,
+            @Param("instanceIds") Collection<Long> instanceIds,
+            @Param("keys") Collection<IndexKeyPO> keys
+            );
+
+    List<IndexEntryPO> selectByInstanceIds(
+            @Param("appId") long appId,
+            @Param("instanceIds") Collection<Long> instanceIds
+    );
+
+    List<IndexEntryPO> selectByKeys(@Param("appId") long appId, @Param("keys") Collection<IndexKeyPO> keys);
+
+    void batchInsert(Collection<IndexEntryPO> items);
+
+    void batchDelete(Collection<IndexEntryPO> items);
+
+}

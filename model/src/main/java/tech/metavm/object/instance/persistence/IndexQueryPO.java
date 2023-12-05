@@ -1,0 +1,45 @@
+package tech.metavm.object.instance.persistence;
+
+import tech.metavm.util.NncUtils;
+
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+
+public record IndexQueryPO(long appId,
+                           long constraintId,
+                           List<IndexQueryItemPO> items,
+                           boolean desc,
+                           Long limit,
+                           int lockMode) {
+
+    public List<IndexEntryPO> execute(Collection<IndexEntryPO> indexItems) {
+        return NncUtils.filterAndSortAndLimit(
+                indexItems,
+                this::matches,
+                getItemComparator(),
+                limit
+        );
+    }
+
+    public long count(Collection<IndexEntryPO> indexItems) {
+        return indexItems.stream().filter(this::matches).count();
+    }
+
+    private Comparator<IndexEntryPO> getItemComparator() {
+        return (e1, e2) -> IndexKeyUtils.compare(e1.getKey(), e2.getKey());
+    }
+
+    private boolean matches(IndexEntryPO indexItem) {
+        if (appId != indexItem.getAppId() && constraintId != indexItem.getIndexId()) {
+            return false;
+        }
+        for (int i = 0; i < items.size(); i++) {
+            var item = items.get(i);
+            if (!item.operator().evaluate(item.value(), indexItem.getColumn(i)))
+                return false;
+        }
+        return true;
+    }
+
+}

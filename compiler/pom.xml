@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>tech.metavm</groupId>
+        <artifactId>object</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>compiler</artifactId>
+
+    <properties>
+        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.target>20</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <intellij.version>222.4554.10</intellij.version>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>tech.metavm</groupId>
+            <artifactId>model</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.java</groupId>
+            <artifactId>java-psi</artifactId>
+            <version>${intellij.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.java</groupId>
+            <artifactId>java-psi-impl</artifactId>
+            <version>${intellij.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>code-style</artifactId>
+            <version>${intellij.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>code-style-impl</artifactId>
+            <version>${intellij.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.graphstream</groupId>
+            <artifactId>gs-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

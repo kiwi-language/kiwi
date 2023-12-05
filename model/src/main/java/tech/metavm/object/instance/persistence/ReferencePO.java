@@ -1,0 +1,112 @@
+package tech.metavm.object.instance.persistence;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.Objects;
+
+public class ReferencePO {
+    private long appId;
+    private long sourceId;
+    private long targetId;
+    private long fieldId;
+    private int kind;
+
+    public ReferencePO(long appId, long sourceId, long targetId, long fieldId, int kind) {
+        this.appId = appId;
+        this.sourceId = sourceId;
+        this.targetId = targetId;
+        this.fieldId = fieldId;
+        this.kind = kind;
+    }
+
+    public ReferencePO() {
+    }
+
+    public Long getAppId() {
+        return appId;
+    }
+
+    public void setAppId(Long appId) {
+        this.appId = appId;
+    }
+
+    public Long getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(Long sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public Long getTargetId() {
+        return targetId;
+    }
+
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
+
+    public Long getFieldId() {
+        return fieldId;
+    }
+
+    public void setFieldId(Long fieldId) {
+        this.fieldId = fieldId;
+    }
+
+    public Integer getKind() {
+        return kind;
+    }
+
+    public void setKind(Integer kind) {
+        this.kind = kind;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReferencePO that = (ReferencePO) o;
+        return appId == that.appId && sourceId == that.sourceId && targetId == that.targetId && fieldId == that.fieldId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(appId, sourceId, targetId, fieldId);
+    }
+
+    @Override
+    public String toString() {
+        return "ReferencePO{" +
+                "appId=" + appId +
+                ", sourceId=" + sourceId +
+                ", targetId=" + targetId +
+                ", fieldId=" + fieldId +
+                ", kind=" + kind +
+                '}';
+    }
+
+    @JsonIgnore
+    public String targetKeyWithKind() {
+        return appId + "-" + targetId + "-" + kind;
+    }
+
+    @JsonIgnore
+    public String targetKeyWithField() {
+        return appId + "-" + targetId + "-" + fieldId;
+    }
+
+    public static Long convertToRefId(Object fieldValue, boolean isRef) {
+        if (fieldValue == null) {
+            return null;
+        }
+        if (fieldValue instanceof IdentityPO identityPO) {
+            return identityPO.id();
+        }
+        if (isRef) {
+            return (Long) fieldValue;
+        }
+        return null;
+    }
+
+}

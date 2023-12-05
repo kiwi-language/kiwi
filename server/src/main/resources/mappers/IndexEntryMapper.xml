@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.object.instance.persistence.mappers.IndexEntryMapper">
+    <resultMap id="BaseResultMap" type="tech.metavm.object.instance.persistence.IndexEntryPO">
+        <!--@mbg.generated-->
+        <!--@Table index_entry-->
+        <result property="appId" jdbcType="BIGINT" column="app_id"/>
+        <result property="indexId" jdbcType="BIGINT" column="index_id"/>
+        <result property="column0" column="column0"/>
+        <result property="column1" column="column1"/>
+        <result property="column2" column="column2"/>
+        <result property="column3" column="column3"/>
+        <result property="column4" column="column4"/>
+        <result property="instanceId" jdbcType="BIGINT" column="instance_id"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        app_id,
+        index_id,
+        column0,
+        column1,
+        column2,
+        column3,
+        column4,
+        instance_id
+    </sql>
+
+    <update id="batchDelete">
+        <!--@mbg.generated-->
+        delete
+        from index_entry
+        where
+            (app_id, index_id, column0, column1, column2, column3, column4, instance_id) in
+        <foreach collection="collection" item="item" open="(" close=")" separator=",">
+            (#{item.appId}, #{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2},
+            #{item.column3}, #{item.column4}, #{item.instanceId})
+        </foreach>
+    </update>
+
+    <insert id="batchInsert">
+        <!--@mbg.generated-->
+        insert into index_entry (app_id, index_id, column0, column1, column2, column3, column4, instance_id)
+        values
+        <foreach collection="collection" item="item" separator=",">
+            (#{item.appId}, #{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2},
+            #{item.column3}, #{item.column4}, #{item.instanceId})
+        </foreach>
+    </insert>
+
+    <select id="selectByInstanceIdsOrKeys" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from index_entry
+        where app_id = #{appId}
+          and (
+        <trim suffixOverrides="or">
+            <if test="instanceIds != null and instanceIds.size() != 0">
+                instance_id in
+                <foreach collection="instanceIds" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                or
+            </if>
+            <if test="keys != null and keys.size() != 0">
+                (index_id, column0, column1, column2, column3, column4) in
+                <foreach collection="keys" item="item" open="(" close=")" separator=",">
+                    (#{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2}, #{item.column3},
+                    #{item.column4})
+                </foreach>
+                or
+            </if>
+        </trim>
+        )
+    </select>
+
+    <select id="query" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from index_entry
+        where
+        <include refid="condition"/>
+        <if test="desc">
+            order by (column0, column1, column2, column3, column4) desc
+        </if>
+        <if test="limit != null">
+            limit #{limit}
+        </if>
+        <if test="lockMode == 1">
+            for
+            share
+        </if>
+        <if test="lockMode == 2">
+            for
+            update
+        </if>
+    </select>
+
+    <select id="count" resultType="long">
+        select COUNT(1)
+        from index_entry
+        where
+        <include refid="condition"/>
+        <if test="lockMode == 1">
+            for
+                share
+        </if>
+        <if test="lockMode == 2">
+            for
+            update
+        </if>
+    </select>
+
+    <sql id="condition">
+            app_id = #{appId}
+            and index_id = #{constraintId}
+        <foreach collection="items" item="item">
+            and ${item.columnName} ${item.operator.op} #{item.value}
+        </foreach>
+    </sql>
+
+    <select id="selectByInstanceIds" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from index_entry
+        where app_id = #{appId}
+          and
+            instance_id in
+        <foreach collection="instanceIds" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectByKeys" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from index_entry
+        where app_id = #{appId}
+          and
+            (index_id, column0, column1, column2, column3, column4) in
+        <foreach collection="keys" item="item" open="(" close=")" separator=",">
+            (#{item.indexId}, #{item.column0}, #{item.column1}, #{item.column2}, #{item.column3},
+             #{item.column4})
+        </foreach>
+    </select>
+</mapper>
