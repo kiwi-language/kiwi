@@ -3,25 +3,25 @@ package tech.metavm.task;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 @Component
-public class TaskManager {
-
-    private final InstanceContextFactory instanceContextFactory;
+public class TaskManager extends EntityContextFactoryBean  {
 
     private final TransactionOperations transactionTemplate;
 
-    public TaskManager(InstanceContextFactory instanceContextFactory, TransactionOperations transactionTemplate) {
-        this.instanceContextFactory = instanceContextFactory;
+    public TaskManager(EntityContextFactory entityContextFactory, TransactionOperations transactionTemplate) {
+        super(entityContextFactory);
         this.transactionTemplate = transactionTemplate;
         Executor executor = Executors.newSingleThreadExecutor();
 //        executor.execute(() -> {
@@ -46,7 +46,7 @@ public class TaskManager {
                 return;
             }
             FieldRemovalTask task = tasks.get(0);
-            if (task.executeBatch(context.getInstanceContext())) {
+            if (task.executeBatch(context)) {
                 context.remove(task);
             }
             context.finish();
@@ -64,16 +64,8 @@ public class TaskManager {
     @Transactional
     public void runTask(String taskClassName) {
         try (IEntityContext context = newContext()) {
-            Class<? extends Task> taskClass = ReflectUtils.classForName(taskClassName).asSubclass(Task.class);
+            Class<? extends Task> taskClass = ReflectionUtils.classForName(taskClassName).asSubclass(Task.class);
         }
-    }
-
-    private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext();
-    }
-
-    private IEntityContext newPlatformContext() {
-        return instanceContextFactory.newEntityContext(Constants.PLATFORM_APP_ID);
     }
 
 }

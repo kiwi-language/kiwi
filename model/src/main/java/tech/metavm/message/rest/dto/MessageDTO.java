@@ -7,7 +7,7 @@ public record MessageDTO(
         long receiverId,
         String title,
         int kind,
-        @Nullable Long targetId,
+        @Nullable String targetId,
         boolean read
 ) {
 }

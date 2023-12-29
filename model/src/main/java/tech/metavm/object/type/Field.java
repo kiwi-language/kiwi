@@ -1,29 +1,35 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.GenericElementDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
-
-import static tech.metavm.util.NncUtils.requireNonNull;
 
 @EntityType("字段")
-public class Field extends Property implements UpdateAware, GlobalKey {
+public class Field extends Element implements ChangeAware, GenericElement, Property {
 
+    @EntityField("名称")
+    private String name;
+    @EntityField("编号")
+    @Nullable
+    private String code;
+    @EntityField("所属类型")
+    private final ClassType declaringType;
     @EntityField("可见范围")
     private Access access;
+    @EntityField("是否静态")
+    private boolean _static;
     @EntityField("默认值")
     private Instance defaultValue;
-    @EntityField("是否作为标题")
-    private boolean asTitle;
     @EntityField("懒加载")
     private boolean lazy;
     @EntityField("列")
@@ -34,8 +40,16 @@ public class Field extends Property implements UpdateAware, GlobalKey {
     private Instance staticValue;
     @Nullable
     private Expression initializer;
+    @EntityField("模板")
     @Nullable
-    private final Field template;
+    @CopyIgnore
+    private Field template;
+    @EntityField("只读")
+    private boolean readonly;
+    @EntityField("状态")
+    private MetadataState state;
+    @EntityField("类型")
+    private Type type;
 
     public Field(
             Long tmpId,
@@ -44,23 +58,27 @@ public class Field extends Property implements UpdateAware, GlobalKey {
             ClassType declaringType,
             Type type,
             Access access,
+            boolean readonly,
             Boolean unique,
-            boolean asTitle,
             Instance defaultValue,
             boolean isChild,
             boolean isStatic,
             boolean lazy,
             Instance staticValue,
-            @Nullable Field template,
             @Nullable Column column,
             MetadataState state
     ) {
-        super(tmpId, name, code, type, declaringType, isStatic, state);
-        setName(name);
-        requireNonNull(type);
-        requireNonNull(declaringType, "属性所属类型不能为空");
-        this.access = requireNonNull(access, "属性访问控制");
-        this.asTitle = asTitle;
+        super(tmpId);
+        if(isChild && type.isPrimitive())
+            throw new BusinessException(ErrorCode.CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED);
+        this.name = NamingUtils.ensureValidName(name);
+        this.code = NamingUtils.ensureValidCode(code);
+        this.declaringType = Objects.requireNonNull(declaringType);
+        this._static = isStatic;
+        this.access = access;
+        this.state = state;
+        this.type = Objects.requireNonNull(type);
+        this.readonly = readonly;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
             this.column = column;
@@ -75,12 +93,8 @@ public class Field extends Property implements UpdateAware, GlobalKey {
         }
         this.lazy = lazy;
         this.staticValue = staticValue;
-        this.template = template;
+//        this.template = template;
         declaringType.addField(this);
-    }
-
-    public Access getAccess() {
-        return access;
     }
 
     public boolean isChild() {
@@ -96,22 +110,16 @@ public class Field extends Property implements UpdateAware, GlobalKey {
     }
 
     public void update(FieldDTO update) {
-        if (update.typeId() != null && !Objects.equals(getType().getId(), update.typeId())) {
+        if (update.typeId() != null && !Objects.equals(getType().getId(), update.typeId()))
             throw BusinessException.invalidField(this, "类型不支持修改");
-        }
         setName(update.name());
-        setAccess(Access.getByCodeRequired(update.access()));
+        setAccess(Access.getByCode(update.access()));
         setUnique(update.unique());
-        setAsTitle(update.asTitle());
         setUnique(update.unique());
     }
 
     public Field getEffectiveTemplate() {
-        return template != null ? template : this;
-    }
-
-    public void setAccess(Access access) {
-        this.access = access;
+        return getTemplate() != null ? getTemplate() : this;
     }
 
     public void setDefaultValue(Instance defaultValue) {
@@ -146,15 +154,15 @@ public class Field extends Property implements UpdateAware, GlobalKey {
 
     @Override
     public List<Object> beforeRemove(IEntityContext context) {
+        List<Object> cascades = new ArrayList<>(super.beforeRemove(context));
         List<Index> fieldIndices = declaringType.getFieldIndices(this);
-        List<Object> cascades = new ArrayList<>();
         for (Index fieldIndex : fieldIndices) {
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
-        if (declaringType.isEnumConstantField(this)) {
+        if (declaringType.isEnumConstantField(this))
             cascades.add(staticValue);
-        }
+        declaringType.resetFieldsMemoryDataStructures();
         return cascades;
     }
 
@@ -266,20 +274,6 @@ public class Field extends Property implements UpdateAware, GlobalKey {
         return getType().isNotNull();
     }
 
-    public boolean isAsTitle() {
-        return asTitle;
-    }
-
-    public void setAsTitle(boolean asTitle) {
-        if (asTitle) {
-            Field titleField = declaringType.getTileField();
-            if (titleField != null && !titleField.equals(this)) {
-                throw BusinessException.multipleTitleFields();
-            }
-        }
-        this.asTitle = asTitle;
-    }
-
     public Column getColumn() {
         return column;
     }
@@ -308,20 +302,19 @@ public class Field extends Property implements UpdateAware, GlobalKey {
     }
 
     public FieldDTO toDTO() {
-        try (var context = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new FieldDTO(
-                    context.getTmpId(this),
-                    id,
+                    id, serContext.getTmpId(this),
                     getName(),
                     getCode(),
-                    access.code(),
+                    getAccess().code(),
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
-                    asTitle,
                     declaringType.getId(),
-                    context.getRef(getType()),
+                    serContext.getRef(getType()),
                     isChild,
                     isStatic(),
+                    readonly,
                     lazy,
                     NncUtils.get(staticValue, Instance::toDTO),
                     getState().code()
@@ -344,11 +337,16 @@ public class Field extends Property implements UpdateAware, GlobalKey {
 
     @Nullable
     public Field getTemplate() {
-        return template;
+        return this.template;
     }
 
     @Override
-    public void onUpdate(ClassInstance instance) {
+    public void setTemplate(@Nullable Object template) {
+        this.template = (Field) template;
+    }
+
+    @Override
+    public void onChange(ClassInstance instance, IEntityContext context) {
         if (isStatic()) {
             var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
             var value = instance.getField(staticValueField);
@@ -363,8 +361,94 @@ public class Field extends Property implements UpdateAware, GlobalKey {
         return visitor.visitField(this);
     }
 
+    public boolean isReadonly() {
+        return readonly;
+    }
+
+    public void setReadonly(boolean readonly) {
+        this.readonly = readonly;
+    }
+
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return getDeclaringType().getKey(getJavaType) + "." + getCodeRequired();
+    public boolean isValidLocalKey() {
+        return getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return getCodeRequired();
+    }
+
+    public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
+        return new GenericElementDTO(
+                serializeContext.getRef(this),
+                serializeContext.getRef(Objects.requireNonNull(getTemplate()))
+        );
+    }
+
+    @Override
+    public ClassType getDeclaringType() {
+        return declaringType;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = NamingUtils.ensureValidName(name);
+    }
+
+    @Override
+    public Access getAccess() {
+        return access;
+    }
+
+    @Override
+    public void setAccess(Access access) {
+        this.access = access;
+    }
+
+    @Nullable
+    @Override
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public void setCode(@Nullable String code) {
+        this.code = NamingUtils.ensureValidCode(code);
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    @Override
+    public boolean isStatic() {
+        return _static;
+    }
+
+    @Override
+    public void setStatic(boolean _static) {
+        this._static = _static;
+    }
+
+    @Override
+    public MetadataState getState() {
+        return state;
+    }
+
+    @Override
+    public void setState(MetadataState state) {
+        this.state = state;
     }
 }

@@ -1,16 +1,16 @@
 package tech.metavm.object.instance;
 
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.type.Index;
+import tech.metavm.object.type.IndexProvider;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
@@ -21,16 +21,17 @@ import java.util.function.Function;
 import static tech.metavm.entity.DifferenceAttributeKey.NEW_INDEX_ITEMS;
 import static tech.metavm.entity.DifferenceAttributeKey.OLD_INDEX_ITEMS;
 
-@Component
-@Order(11)
 public class IndexConstraintPlugin implements ContextPlugin {
 
     public static final int BATCH_SIZE = 2000;
 
     private final IndexEntryMapper indexEntryMapper;
 
-    public IndexConstraintPlugin(IndexEntryMapper indexEntryMapper) {
+    private final IndexProvider indexProvider;
+
+    public IndexConstraintPlugin(IndexEntryMapper indexEntryMapper, IndexProvider indexProvider) {
         this.indexEntryMapper = indexEntryMapper;
+        this.indexProvider = indexProvider;
     }
 
     @Override
@@ -38,10 +39,10 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Map<Long, ClassInstance> instanceMap = new HashMap<>();
         List<IndexEntryPO> currentEntries = new ArrayList<>();
         change.forEachInsertOrUpdate(instancePO -> {
-            var instance = context.get(instancePO.getId());
+            var instance = context.get(PhysicalId.of(instancePO.getId()));
             if (instance instanceof ClassInstance classInstance) {
                 instanceMap.put(classInstance.getIdRequired(), classInstance);
-                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getEntityContext()));
+                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(),context.getAppId() ));
             }
         });
         List<InstancePO> oldInstances = NncUtils.union(change.updates(), change.deletes());
@@ -67,8 +68,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         );
         Map<IndexKeyPO, Long> conflictingKeyMap = NncUtils.toMap(conflictingEntries, IndexEntryPO::getKey, IndexEntryPO::getInstanceId);
         for (IndexEntryPO currentItem : currentEntries) {
-            Index constraint =
-                    context.getEntityContext().getEntity(Index.class, currentItem.getIndexId());
+            Index constraint = indexProvider.getIndex(currentItem.getIndexId());
             if (!constraint.isUnique() || PersistenceUtils.containsNull(constraint, currentItem.getKey())) {
                 continue;
             }
@@ -113,10 +113,10 @@ public class IndexConstraintPlugin implements ContextPlugin {
         List<IndexEntryPO> currentItems = change.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
         if (NncUtils.isNotEmpty(changeList.inserts())) {
-            indexEntryMapper.batchInsert(changeList.inserts());
+            NncUtils.doInBatch(changeList.inserts(), indexEntryMapper::batchInsert);
         }
         if (NncUtils.isNotEmpty(changeList.deletes())) {
-            indexEntryMapper.batchDelete(changeList.deletes());
+            NncUtils.doInBatch(changeList.deletes(), indexEntryMapper::batchDelete);
         }
     }
 

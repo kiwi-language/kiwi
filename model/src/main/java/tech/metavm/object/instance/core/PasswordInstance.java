@@ -45,7 +45,7 @@ public class PasswordInstance extends PrimitiveInstance {
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitPasswordInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitPasswordInstance(this);
     }
 }

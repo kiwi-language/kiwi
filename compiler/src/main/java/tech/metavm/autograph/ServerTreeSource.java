@@ -22,8 +22,9 @@ public class ServerTreeSource implements TreeSource {
 
     @Override
     public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
-        var trees = HttpUtils.post("/instance/",
-                new GetTreesRequest(new ArrayList<>(ids)), new TypeReference<List<TreeDTO>>() {
+        var trees = HttpUtils.post("/instance/trees",
+                new GetTreesRequest(new ArrayList<>(ids)),
+                new TypeReference<List<TreeDTO>>() {
                 });
         return NncUtils.map(trees, t -> new Tree(t.id(), t.version(), t.bytes()));
     }

@@ -1,7 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.type.NothingType;
+import tech.metavm.object.type.NeverType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.UnionType;
 import tech.metavm.util.NncUtils;
@@ -70,19 +70,19 @@ public class TypeNarrower {
             if (op == BinaryOperator.EQ) {
                 var intersection = typeIntersection(getType(first), getType(second));
                 if (intersection != null) {
-                    if (ExpressionUtil.isNotConstant(first)) {
+                    if (Expressions.isNotConstant(first)) {
                         result.put(first, intersection);
                     }
-                    if (ExpressionUtil.isNotConstant(second)) {
+                    if (Expressions.isNotConstant(second)) {
                         result.put(second, intersection);
                     }
                 }
             }
             else {
-                if (ExpressionUtil.isNotConstant(first) && isSingleValuedType(second.getType())) {
+                if (Expressions.isNotConstant(first) && isSingleValuedType(second.getType())) {
                     result.put(first, typeDiff(getType(first), getType(second)));
                 }
-                if (ExpressionUtil.isNotConstant(second) && isSingleValuedType(first.getType())) {
+                if (Expressions.isNotConstant(second) && isSingleValuedType(first.getType())) {
                     result.put(second, typeDiff(getType(second), getType(first)));
                 }
             }
@@ -191,7 +191,7 @@ public class TypeNarrower {
 
     private static Type createTypeFromSet(Set<Type> set) {
         if (set.isEmpty()) {
-            return new NothingType();
+            return new NeverType();
         }
         if (set.size() == 1) {
             return set.iterator().next();

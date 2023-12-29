@@ -2,7 +2,6 @@ package tech.metavm.task;
 
 import tech.metavm.application.Application;
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.user.PlatformUser;
 import tech.metavm.user.PlatformUsers;
 
@@ -18,15 +17,15 @@ public class ClearUsersTask extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context) {
-        var app = context.getEntityContext().getEntity(Application.class, appId);
-        var users = context.getEntityContext().query(
+    protected boolean run0(IEntityContext context) {
+        var app = context.getEntity(Application.class, appId);
+        var users = context.query(
                 PlatformUser.IDX_APP.newQueryBuilder()
                         .addEqItem("applications", app)
                         .limit(BATCH_SIZE)
                         .build()
         );
-        PlatformUsers.leaveApp(users, app, context.getEntityContext());
+        PlatformUsers.leaveApp(users, app, context);
         return users.size() < BATCH_SIZE;
     }
 }

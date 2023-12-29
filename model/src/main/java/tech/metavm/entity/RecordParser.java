@@ -2,7 +2,7 @@ package tech.metavm.entity;
 
 import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -16,7 +16,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
 
     @Override
     protected List<Field> getPropertyFields() {
-        return NncUtils.map(javaClass.getRecordComponents(), ReflectUtils::getField);
+        return NncUtils.map(javaClass.getRecordComponents(), ReflectionUtils::getField);
     }
 
     @Override

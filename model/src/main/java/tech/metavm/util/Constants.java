@@ -10,7 +10,7 @@ public class Constants {
 
     public static final String PLATFORM_APP_NAME = "platform";
 
-    public final static String RESOURCE_CP_ROOT = "/Users/leen/workspace/object/common/src/main/resources";
+    public final static String RESOURCE_CP_ROOT = "/Users/leen/workspace/object/model/src/main/resources";
 
     public static final String DEFAULT_ADMIN_NAME = "管理员";
 
@@ -24,6 +24,8 @@ public class Constants {
     public static final String PLATFORM_ADMIN_PASSWORD = "123456";
     public static final String CONSTANT_ID_PREFIX = "$$";
     public static final String CONSTANT_TMP_ID_PREFIX = "$_$";
+
+    public static final int BATCH_SIZE = 3000;
 
     private Constants() {}
 

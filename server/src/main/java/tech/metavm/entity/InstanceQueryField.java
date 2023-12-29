@@ -1,9 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.common.ErrorCode;
-import tech.metavm.expression.BinaryOperator;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.rest.InstanceQueryFieldDTO;
 import tech.metavm.object.type.Field;
@@ -32,17 +30,16 @@ public record InstanceQueryField(
         return new InstanceQueryField(field, null, min, max);
     }
 
-    public static InstanceQueryField create(InstanceQueryFieldDTO queryFieldDTO, IInstanceContext context) {
-        var entityContext = context.getEntityContext();
-        var field = entityContext.getField(queryFieldDTO.fieldId());
+    public static InstanceQueryField create(InstanceQueryFieldDTO queryFieldDTO, IEntityContext context) {
+        var field = context.getField(queryFieldDTO.fieldId());
         return new InstanceQueryField(
                 field,
                 NncUtils.get(queryFieldDTO.value(), v ->
-                        InstanceFactory.resolveValue(v, field.getType(), entityContext)),
+                        InstanceFactory.resolveValue(v, field.getType(), context)),
                 NncUtils.get(queryFieldDTO.min(), v ->
-                        InstanceFactory.resolveValue(v, field.getType(), entityContext)),
+                        InstanceFactory.resolveValue(v, field.getType(), context)),
                 NncUtils.get(queryFieldDTO.max(), v ->
-                        InstanceFactory.resolveValue(v, field.getType(), entityContext))
+                        InstanceFactory.resolveValue(v, field.getType(), context))
         );
     }
 

@@ -4,26 +4,26 @@ import tech.metavm.entity.EntityUtils;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
 public class FunctionDesc {
 
-    private final Function function;
+    private final Func function;
     private final Method method;
     private final Method resultTypeResolverMethod;
 
-    public FunctionDesc(Function function) {
+    public FunctionDesc(Func function) {
         this.function = function;
         List<Class<?>> instanceParamTypes = NncUtils.map(
                 function.getParameterTypes(),
-                InstanceUtils::getInstanceClassByJavaClass
+                Instances::getInstanceClassByJavaClass
         );
-        method = ReflectUtils.getMethod(FunctionMethods.class, function.code(), instanceParamTypes);
+        method = ReflectionUtils.getMethod(FunctionMethods.class, function.code(), instanceParamTypes);
         resultTypeResolverMethod =
                 EntityUtils.tryGetMethodByName(FunctionDesc.class, typeResolverMethodName(function.code()));
     }
@@ -32,7 +32,7 @@ public class FunctionDesc {
         return functionName + "$_TYPE_RESOLVER";
     }
 
-    public Function getFunction() {
+    public Func getFunction() {
         return function;
     }
 
@@ -46,10 +46,10 @@ public class FunctionDesc {
 
     public Type getReturnType(List<Type> argumentTypes) {
         if(resultTypeResolverMethod != null) {
-            return (Type) ReflectUtils.invoke(null, resultTypeResolverMethod, argumentTypes);
+            return (Type) ReflectionUtils.invoke(null, resultTypeResolverMethod, argumentTypes);
         }
         else {
-            return InstanceUtils.getTypeByInstanceClass(method.getReturnType());
+            return Instances.getTypeByInstanceClass(method.getReturnType());
         }
     }
 

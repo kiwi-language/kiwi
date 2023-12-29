@@ -1,36 +1,18 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
-import tech.metavm.expression.ExpressionEvaluator;
-import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.VarType;
 import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.expression.EvaluationContext;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.rest.dto.InstanceParentRef;
 
 import javax.annotation.Nullable;
 
 @EntityType("流程值")
 public abstract class Value extends Element {
-
-    public static Value constant(Expression expression) {
-        return new ConstantValue(ValueKind.CONSTANT, expression);
-    }
-
-    public static Value reference(Expression expression) {
-        return new DynamicValue(ValueKind.REFERENCE, expression);
-    }
-
-    public static Value expression(Expression expression) {
-        return new DynamicValue(ValueKind.EXPRESSION, expression);
-    }
-
-    public static Value nullValue() {
-        return new ConstantValue(ValueKind.NULL, ExpressionUtil.nullExpression());
-    }
 
     @EntityField("类别")
     protected final ValueKind kind;
@@ -48,14 +30,13 @@ public abstract class Value extends Element {
         this.kind = kind;
     }
 
-    protected abstract FieldValue toFieldValue(boolean persisting);
+    protected abstract FieldValue toFieldValue();
 
-    public ValueDTO toDTO(boolean persisting) {
-        try (var context = SerializeContext.enter()) {
-            if(context.isIncludingValueType()) {
-                context.writeType(getType());
-            }
-            return new ValueDTO(kind.code(), toFieldValue(persisting));
+    public ValueDTO toDTO() {
+        try (var serContext = SerializeContext.enter()) {
+            if(serContext.includeValueType())
+                serContext.writeType(getType());
+            return new ValueDTO(kind.code(), toFieldValue());
         }
     }
 
@@ -68,11 +49,7 @@ public abstract class Value extends Element {
     }
 
     public Instance evaluate(EvaluationContext context) {
-        return ExpressionEvaluator.evaluate(getExpression(), context);
-    }
-
-    public Instance evaluateChild(InstanceParentRef parentRef, EvaluationContext context) {
-        return ExpressionEvaluator.evaluateChild(getExpression(), parentRef, context);
+        return expression.evaluate(context);
     }
 
     public Expression getExpression() {
@@ -81,7 +58,9 @@ public abstract class Value extends Element {
 
     public abstract Value copy();
 
-    public abstract Value substituteExpression(Expression expression);
+    public String getText() {
+        return expression.build(VarType.NAME);
+    }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {

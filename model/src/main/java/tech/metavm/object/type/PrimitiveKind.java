@@ -1,10 +1,7 @@
 package tech.metavm.object.type;
 
 import tech.metavm.object.instance.core.*;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.Null;
-import tech.metavm.util.Password;
-import tech.metavm.util.WireTypes;
+import tech.metavm.util.*;
 
 import java.util.Date;
 
@@ -56,6 +53,10 @@ public enum PrimitiveKind {
 
     public static PrimitiveKind getByJavaClass(Class<?> javaClass) {
         return NncUtils.findRequired(values(), v -> v.javaClass == javaClass);
+    }
+
+    public String getTypeCode() {
+        return NamingUtils.firstCharToUpperCase(this.name().toLowerCase());
     }
 
     public int code() {

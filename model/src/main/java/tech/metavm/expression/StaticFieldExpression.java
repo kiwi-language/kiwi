@@ -1,10 +1,7 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
@@ -24,9 +21,9 @@ public class StaticFieldExpression extends Expression {
 
     @Override
     public String buildSelf(VarType symbolType) {
-        try(var context = SerializeContext.enter()) {
-            if(context.isIncludeExpressionType()) {
-                context.writeType(field.getDeclaringType());
+        try(var serContext = SerializeContext.enter()) {
+            if(serContext.isIncludeExpressionType()) {
+                serContext.writeType(field.getDeclaringType());
             }
             return switch (symbolType) {
                 case NAME -> field.getDeclaringType().getName() + "." + field.getName();
@@ -53,11 +50,6 @@ public class StaticFieldExpression extends Expression {
 
     public Field getField() {
         return field;
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new StaticFieldExpression(field);
     }
 
     @Override

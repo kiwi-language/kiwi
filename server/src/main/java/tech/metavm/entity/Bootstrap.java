@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceContext;
+import tech.metavm.object.instance.core.InstanceContextDependency;
 import tech.metavm.object.type.BootIdProvider;
 import tech.metavm.object.type.ColumnStore;
 import tech.metavm.object.type.StdAllocators;
@@ -14,20 +14,20 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
-import java.util.List;
-
 import static tech.metavm.util.Constants.ROOT_APP_ID;
 
 @Component
-public class Bootstrap implements InitializingBean {
+public class Bootstrap extends EntityContextFactoryBean implements InitializingBean {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Bootstrap.class);
 
-    private final InstanceContextFactory instanceContextFactory;
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
+    private final InstanceContextFactory instanceContextFactory;
 
-    public Bootstrap(InstanceContextFactory instanceContextFactory, StdAllocators stdAllocators, ColumnStore columnStore) {
+    public Bootstrap(EntityContextFactory entityContextFactory, InstanceContextFactory instanceContextFactory,
+                     StdAllocators stdAllocators, ColumnStore columnStore) {
+        super(entityContextFactory);
         this.instanceContextFactory = instanceContextFactory;
         this.stdAllocators = stdAllocators;
         this.columnStore = columnStore;
@@ -35,15 +35,18 @@ public class Bootstrap implements InitializingBean {
 
     public void boot() {
         ContextUtil.setAppId(ROOT_APP_ID);
-        InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newContext(
-                ROOT_APP_ID, false, false, new BootIdProvider(stdAllocators), null, null
-        );
-        InstanceContextFactory.setStdContext(standardInstanceContext);
+        var dep = new InstanceContextDependency();
+        InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newBuilder(
+                        ROOT_APP_ID, dep, dep, dep)
+                .idProvider(new BootIdProvider(stdAllocators))
+                .build();
         DefContext defContext = new DefContext(
                 stdAllocators::getId,
                 standardInstanceContext, columnStore);
-        standardInstanceContext.setDefContext(defContext);
-        standardInstanceContext.setEntityContext(defContext);
+        dep.setEntityContext(defContext);
+        InstanceContextFactory.setDefContext(defContext);
+//        standardInstanceContext.setDefContext(defContext);
+//        standardInstanceContext.setEntityContext(defContext);
         ModelDefRegistry.setDefContext(defContext);
         for (Class<?> entityClass : EntityUtils.getModelClasses()) {
             if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
@@ -52,7 +55,7 @@ public class Bootstrap implements InitializingBean {
         defContext.flushAndWriteInstances();
         ModelDefRegistry.setDefContext(defContext);
 
-        List<Instance> idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.getId() == null);
+        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.getId() == null);
         if (!idNullInstances.isEmpty()) {
             LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
         }
@@ -71,7 +74,7 @@ public class Bootstrap implements InitializingBean {
         if (defContext.isFinished()) {
             return;
         }
-        try (IEntityContext tempContext = instanceContextFactory.newEntityContext(ROOT_APP_ID)) {
+        try (IEntityContext tempContext = newContext(ROOT_APP_ID)) {
             NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
             defContext.finish();
             defContext.getIdentityMap().forEach((model, javaConstruct) ->
@@ -91,7 +94,7 @@ public class Bootstrap implements InitializingBean {
 
     private void check() {
         DefContext defContext = ModelDefRegistry.getDefContext();
-        for (Instance instance : defContext.instances()) {
+        for (var instance : defContext.instances()) {
             if (instance.getId() == null) {
                 throw new InternalException("Detected instance with uninitialized id. instance: " + instance);
             }

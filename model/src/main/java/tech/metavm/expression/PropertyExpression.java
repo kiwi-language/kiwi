@@ -1,10 +1,7 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Property;
@@ -44,13 +41,8 @@ public class PropertyExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new PropertyExpression(children.get(0), property);
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
-        return ((ClassInstance) instance.evaluate(context)).getProperty(property, context.getEntityContext());
+        return ((ClassInstance) instance.evaluate(context)).getProperty(property, context.getParameterizedFlowProvider());
     }
 
     @Override

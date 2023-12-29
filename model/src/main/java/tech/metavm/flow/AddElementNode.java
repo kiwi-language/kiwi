@@ -1,9 +1,10 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.AddElementParamDTO;
+import tech.metavm.flow.rest.AddElementNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -11,17 +12,24 @@ import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.AssertUtils;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.NncUtils;
 
-@EntityType("添加元素节点")
-public class AddElementNode extends NodeRT<AddElementParamDTO> {
+import javax.annotation.Nullable;
 
-    public static AddElementNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+@EntityType("添加数组元素节点")
+public class AddElementNode extends NodeRT {
+
+    public static AddElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        AddElementParamDTO param = nodeDTO.getParam();
+        AddElementNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.array(), parsingContext);
         var element = ValueFactory.create(param.element(), parsingContext);
-        return new AddElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, array, element);
+        AddElementNode node;
+        if (nodeDTO.id() != null) {
+            node = (AddElementNode) context.getNode(nodeDTO.id());
+            node.update(array, element);
+        } else
+            node = new AddElementNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, array, element);
+        return node;
     }
 
     @ChildEntity("数组")
@@ -29,18 +37,16 @@ public class AddElementNode extends NodeRT<AddElementParamDTO> {
     @ChildEntity("元素")
     private Value element;
 
-    public AddElementNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value array, Value element) {
-        super(tmpId, name, null, previous, scope);
+    public AddElementNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope, Value array, Value element) {
+        super(tmpId, name, code, null, previous, scope);
         check(array, element);
         this.array = addChild(array, "array");
         this.element = addChild(element, "element");
     }
 
-    private void check(Value array, Value element) {
-        NncUtils.requireNonNull(array);
-        NncUtils.requireNonNull(element);
+    private void check(@NotNull Value array, @NotNull Value element) {
         if (array.getType() instanceof ArrayType arrayType) {
-            AssertUtils.assertTrue(arrayType.getKind() == ArrayKind.READ_WRITE,
+            AssertUtils.assertTrue(arrayType.getKind() != ArrayKind.READ_ONLY,
                     ErrorCode.ADD_ELEMENT_NOT_SUPPORTED);
             AssertUtils.assertTrue(arrayType.getElementType().isAssignableFrom(element.getType()),
                     ErrorCode.INCORRECT_ELEMENT_TYPE);
@@ -50,21 +56,11 @@ public class AddElementNode extends NodeRT<AddElementParamDTO> {
     }
 
     @Override
-    protected AddElementParamDTO getParam(boolean persisting) {
-        return new AddElementParamDTO(array.toDTO(persisting), element.toDTO(persisting));
+    protected AddElementNodeParam getParam(SerializeContext serializeContext) {
+        return new AddElementNodeParam(array.toDTO(), element.toDTO());
     }
 
-    @Override
-    protected void setParam(AddElementParamDTO param, IEntityContext context) {
-        var parsingContext = getParsingContext(context);
-        var array = this.array;
-        var element = this.element;
-        if (param.array() != null) {
-            array = ValueFactory.create(param.array(), parsingContext);
-        }
-        if (param.element() != null) {
-            element = ValueFactory.create(param.element(), parsingContext);
-        }
+    public void update(Value array, Value element) {
         check(array, element);
         this.array = addChild(array, "array");
         this.element = addChild(element, "element");
@@ -82,8 +78,13 @@ public class AddElementNode extends NodeRT<AddElementParamDTO> {
     public NodeExecResult execute(MetaFrame frame) {
         var arrayInst = (ArrayInstance) array.evaluate(frame);
         var elementInst = (Instance) element.evaluate(frame);
-        arrayInst.add(elementInst);
+        arrayInst.addElement(elementInst);
         return next();
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("add(" + array.getText() + ", " + element.getText() + ")");
     }
 
     @Override

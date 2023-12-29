@@ -20,11 +20,13 @@ public class InstanceDTOTest extends TestCase {
     }
 
     public void testToJSONString() {
-        Instance instance = MockRegistry.getFooInstance();
-        InstanceDTO instanceDTO = instance.toDTO();
-        String jsonString = NncUtils.toJSONString(instanceDTO);
-        InstanceDTO recoveredInstanceDTO = NncUtils.readJSONString(jsonString, InstanceDTO.class);
-        MatcherAssert.assertThat(recoveredInstanceDTO, PojoMatcher.of(instanceDTO));
+        try (var context = MockRegistry.newContext(10L)) {
+            Instance instance = MockRegistry.getFooInstance();
+            InstanceDTO instanceDTO = instance.toDTO();
+            String jsonString = NncUtils.toJSONString(instanceDTO);
+            InstanceDTO recoveredInstanceDTO = NncUtils.readJSONString(jsonString, InstanceDTO.class);
+            MatcherAssert.assertThat(recoveredInstanceDTO, PojoMatcher.of(instanceDTO));
+        }
     }
 
 

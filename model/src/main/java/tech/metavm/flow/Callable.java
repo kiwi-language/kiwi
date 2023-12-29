@@ -12,9 +12,15 @@ public interface Callable {
 
     List<Parameter> getParameters();
 
+    default Parameter getParameter(int index) {
+        return getParameters().get(index);
+    }
+
     void setParameters(List<Parameter> parameters);
 
-    Parameter getParameterByName(String name);
+    default Parameter getParameterByName(String name) {
+        return NncUtils.find(getParameters(), p -> p.getName().equals(name));
+    }
 
     default Parameter getParameterByTemplate(Parameter template) {
         return NncUtils.findRequired(getParameters(), p -> p.getTemplate() == template);

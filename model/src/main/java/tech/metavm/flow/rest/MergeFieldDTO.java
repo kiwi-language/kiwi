@@ -22,6 +22,7 @@ public record MergeFieldDTO(
         return FieldDTOBuilder.newBuilder(name, typeRef)
                 .tmpId(NncUtils.get(fieldRef, RefDTO::tmpId))
                 .id(NncUtils.get(fieldRef, RefDTO::id))
+                .readonly(true)
                 .build();
     }
 

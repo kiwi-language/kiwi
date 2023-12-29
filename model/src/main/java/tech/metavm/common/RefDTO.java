@@ -1,7 +1,12 @@
 package tech.metavm.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.TmpId;
 import tech.metavm.util.CommonConstants;
+
+import java.util.Objects;
 
 public record RefDTO(Long id, Long tmpId) {
 
@@ -41,4 +46,12 @@ public record RefDTO(Long id, Long tmpId) {
     public String toString() {
         return tmpId != null ? "tmpId-" + tmpId : "id-" + id;
     }
+
+    public Id toId() {
+        if(id != null)
+            return new PhysicalId(id);
+        else
+            return new TmpId(Objects.requireNonNull(tmpId));
+    }
+
 }

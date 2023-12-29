@@ -19,8 +19,10 @@ public class InstanceDTOBuilderTest extends TestCase {
     }
 
     public void test() {
-        ClassInstance foo = MockRegistry.getFooInstance();
-        InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo, 2);
-        TestUtils.logJSON(LOGGER, instanceDTO);
+        try (var context = MockRegistry.newContext(1L)) {
+            ClassInstance foo = MockRegistry.getFooInstance();
+            InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo, 2, context);
+            TestUtils.logJSON(LOGGER, instanceDTO);
+        }
     }
 }

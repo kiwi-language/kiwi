@@ -1,62 +1,37 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
-import tech.metavm.entity.natives.NativeInvoker;
-import tech.metavm.flow.rest.ArgumentDTO;
-import tech.metavm.flow.rest.CallParam;
-import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.flow.rest.CallNodeParam;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType("调用节点")
-public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
+import static java.util.Objects.requireNonNull;
 
-    public static Flow getFlow(CallParam param, IEntityContext context) {
-        return context.getEntity(Flow.class, param.getFlowRef());
+@EntityType("调用节点")
+public abstract class CallNode extends NodeRT {
+
+    public static Flow getFlow(CallNodeParam param, IEntityContext context) {
+        return context.getEntity(Method.class, param.getFlowRef());
     }
 
+    @EntityField("子流程")
+    private Flow subFlow;
     @ChildEntity("参数列表")
     protected final ChildArray<Argument> arguments = addChild(new ChildArray<>(Argument.class), "arguments");
-    @EntityField("子流程")
-    protected Flow subFlow;
 
-    public CallNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, List<Argument> arguments,
-                    Flow subFlow) {
-        super(tmpId, name, null, prev, scope);
-        this.arguments.addChildren(arguments);
+    public CallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @NotNull Flow subFlow, @NotNull List<Argument> arguments) {
+        super(tmpId, name, code, null, prev, scope);
         this.subFlow = subFlow;
-    }
-
-    @Override
-    protected void setParam(T param, IEntityContext context) {
-        setCallParam(param, context);
-    }
-
-    protected void setCallParam(CallParam param, IEntityContext context) {
-        subFlow = context.getFlow(param.getFlowRef());
-        if (param.getArguments() != null) {
-            arguments.clear();
-            for (ArgumentDTO(Long tmpId, RefDTO paramRef, ValueDTO value) : param.getArguments()) {
-                Parameter parameter = context.getEntity(Parameter.class, paramRef);
-                arguments.addChild(new Argument(tmpId, parameter,
-                        ValueFactory.create(value, getParsingContext(context))));
-            }
-        }
-        setExtraParam(param, context);
-    }
-
-    protected void setExtraParam(CallParam paramDTO, IEntityContext context) {
+        this.arguments.addChildren(arguments);
     }
 
     @NotNull
@@ -65,15 +40,12 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
         return subFlow.getReturnType();
     }
 
-    @Override
-    protected abstract T getParam(boolean persisting);
-
     public Flow getSubFlow() {
         return subFlow;
     }
 
-    public void setSubFlow(Flow flow) {
-        this.subFlow = flow;
+    public void setSubFlow(Flow subFlow) {
+        this.subFlow = subFlow;
     }
 
     public void setArguments(List<Argument> arguments) {
@@ -84,7 +56,7 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
         return arguments.toList();
     }
 
-    protected abstract @Nullable Instance getSelf(MetaFrame frame);
+    protected abstract @Nullable ClassInstance getSelf(MetaFrame frame);
 
     @Override
     protected String check0() {
@@ -98,27 +70,33 @@ public abstract class CallNode<T extends CallParam> extends NodeRT<T> {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var self = getSelf(frame);
-        List<Instance> argInstances = new ArrayList<>();
         var flow = subFlow;
         var args = arguments;
-        out: for (Parameter param : flow.getParameters()) {
+        List<Instance> argInstances = new ArrayList<>();
+        out:
+        for (Parameter param : flow.getParameters()) {
             for (Argument arg : args) {
-                if(arg.getParameter() == param) {
+                if (arg.getParameter() == param) {
                     argInstances.add(arg.evaluate(frame));
                     continue out;
                 }
             }
-            argInstances.add(InstanceUtils.nullInstance());
+            argInstances.add(Instances.nullInstance());
         }
-        if(!flow.isStatic())
-            flow = ((ClassType) Objects.requireNonNull(self).getType())
-                    .resolveFlow(flow, frame.getEntityContext());
-        FlowExecResult result = flow.execute(self, argInstances, frame.getContext());
-        if(result.exception() != null)
+        var self = getSelf(frame);
+        if (flow instanceof Method method && method.isInstanceMethod())
+            flow = requireNonNull(self).getType().resolveMethod(method, frame.getParameterizedFlowProvider());
+        FlowExecResult result = flow.execute(self, argInstances,
+                frame.getInstanceRepository(),
+                frame.getParameterizedFlowProvider());
+        if (result.exception() != null)
             return frame.catchException(this, result.exception());
         else
             return next(result.ret());
     }
 
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write(subFlow.getName() + "(" + NncUtils.join(arguments, Argument::getText, ", ") + ")");
+    }
 }

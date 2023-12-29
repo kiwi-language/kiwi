@@ -1,10 +1,8 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
-import tech.metavm.entity.Tree;
 import tech.metavm.object.instance.ArrayListener;
 import tech.metavm.object.instance.rest.ArrayInstanceParam;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
@@ -13,10 +11,11 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ArrayInstance extends Instance implements Iterable<Instance> /*implements Collection<Instance>*/ {
+public class ArrayInstance extends DurableInstance implements Iterable<Instance> {
 
     public static ArrayInstance allocate(ArrayType type) {
         return new ArrayInstance(type);
@@ -29,7 +28,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         this(null, type, null);
     }
 
-    public ArrayInstance(Long id, ArrayType type, @Nullable Consumer<Instance> load) {
+    public ArrayInstance(Long id, ArrayType type, @Nullable Consumer<DurableInstance> load) {
         super(id, type, null, 0, 0, load);
     }
 
@@ -47,13 +46,13 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         clearInternal();
         for (Instance element : elements)
             addInternally(element);
-        if(!isNew() && !isLoaded())
+        if (!isNew() && !isLoaded())
             setLoaded(false);
     }
 
     private void clearInternal() {
         for (Instance instance : new ArrayList<>(elements)) {
-            remove(instance);
+            removeElement(instance);
         }
     }
 
@@ -63,15 +62,15 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     }
 
     @Override
-    public boolean isChild(Instance instance) {
+    public boolean isChild(DurableInstance instance) {
         ensureLoaded();
         return isChildArray() && elements.contains(instance);
     }
 
-    public Set<Instance> getChildren() {
+    public Set<DurableInstance> getChildren() {
         ensureLoaded();
         if (getType().getKind() == ArrayKind.CHILD) {
-            return NncUtils.filterUnique(elements, Instance::isNotNull);
+            return NncUtils.filterAndMapUnique(elements, Instance::isNotNull, e -> (DurableInstance) e);
         } else {
             return Set.of();
         }
@@ -83,7 +82,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         output.writeInt(size());
         boolean isChildArray = isChildArray();
         for (Instance element : elements) {
-            if(isChildArray && includeChildren)
+            if (isChildArray && includeChildren)
                 output.writeValue(element);
             else
                 output.writeInstance(element);
@@ -102,8 +101,8 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         for (int i = 0; i < len; i++) {
             var element = input.readInstance();
             elements.add(element);
-            if(element.isNotPrimitive())
-                new ReferenceRT(this, element, null);
+            if (element instanceof DurableInstance d)
+                new ReferenceRT(this, d, null);
         }
         input.setParent(parent, parentField);
     }
@@ -137,7 +136,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     public BooleanInstance instanceContains(Instance instance) {
         ensureLoaded();
-        return InstanceUtils.createBoolean(contains(instance));
+        return Instances.createBoolean(contains(instance));
     }
 
     @NotNull
@@ -146,17 +145,16 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         return elements.iterator();
     }
 
-    public boolean add(Instance element) {
+    public boolean addElement(Instance element) {
         ensureLoaded();
-        NncUtils.requireFalse(isChildArray(),
-                () -> new BusinessException(ErrorCode.CAN_NOT_ASSIGN__CHILD_FIELD));
         return addInternally(element);
     }
 
-    void addChild(Instance element) {
-        ensureLoaded();
-        NncUtils.requireTrue(isChildArray());
-        addInternally(element);
+    /**
+     * For instance copy only
+     */
+    void setElementDirectly(int index, Instance instance) {
+        this.elements.set(index, instance);
     }
 
     void removeChild(Instance element) {
@@ -164,7 +162,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         removeInternally(element);
     }
 
-    public Instance remove(int index) {
+    public Instance removeElement(int index) {
         ensureLoaded();
         checkIndex(index);
         var removed = elements.remove(index);
@@ -172,11 +170,13 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         return removed;
     }
 
-    public Instance set(int index, Instance element) {
+    public Instance setElement(int index, Instance element) {
         ensureLoaded();
         checkIndex(index);
-        checkElement(element);
-        Instance removed = elements.set(index, element);
+        element = checkElement(element);
+        if (isChildArray() && element.isNotNull())
+            ((DurableInstance) element).initParent(this, null);
+        var removed = elements.set(index, element);
         if (removed != null)
             onRemove(removed);
         onAdd(element);
@@ -197,6 +197,8 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     private boolean addInternally(Instance element) {
         element = checkElement(element);
+        if (isChildArray() && element.isNotNull())
+            ((DurableInstance) element).initParent(this, null);
         elements.add(element);
         onAdd(element);
         return true;
@@ -205,11 +207,11 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     public void setElements(List<Instance> elements) {
         ensureLoaded();
         for (Instance element : new ArrayList<>(this.elements))
-            remove(element);
+            removeElement(element);
         this.addAll(elements);
     }
 
-    public boolean remove(Object element) {
+    public boolean removeElement(Object element) {
         ensureLoaded();
         return removeInternally(element);
     }
@@ -234,8 +236,8 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     private void onAdd(Instance instance) {
         setModified();
-        if(instance.isNotPrimitive())
-            new ReferenceRT(this, instance, null);
+        if (instance instanceof DurableInstance d)
+            new ReferenceRT(this, d, null);
         for (ArrayListener listener : listeners)
             listener.onAdd(instance);
     }
@@ -246,7 +248,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     public boolean addAll(Iterable<? extends Instance> c) {
         ensureLoaded();
-        c.forEach(this::add);
+        c.forEach(this::addElement);
         return true;
     }
 
@@ -260,11 +262,16 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
         return elements;
     }
 
+    public Instance getElement(int index) {
+        ensureLoaded();
+        return elements.get(index);
+    }
+
     @Override
-    public Set<Instance> getRefInstances() {
+    public Set<DurableInstance> getRefInstances() {
         ensureLoaded();
         return new IdentitySet<>(
-                NncUtils.filter(elements, Instance::isReference)
+                NncUtils.filterByType(elements, DurableInstance.class)
         );
     }
 
@@ -289,7 +296,7 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
                     true,
                     NncUtils.map(elements, e ->
                             new InstanceFieldValue(
-                                    e.getTitle(), e.toDTO()
+                                    e.getTitle(), ((DurableInstance) e).toDTO()
                             )
                     )
             );
@@ -303,23 +310,21 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     @Override
     @NoProxy
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitArrayInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitArrayInstance(this);
     }
 
     @Override
-    public void acceptReferences(InstanceVisitor visitor) {
+    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
         ensureLoaded();
-        for (Instance element : elements)
-            element.accept(visitor);
+        elements.forEach(visitor::visit);
     }
 
     @Override
-    public void acceptChildren(InstanceVisitor visitor) {
+    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
         ensureLoaded();
-        if (isChildArray()) {
-            acceptReferences(visitor);
-        }
+        if (isChildArray())
+            elements.forEach(visitor::visit);
     }
 
     @SuppressWarnings("unused")
@@ -334,17 +339,17 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     @SuppressWarnings("unused")
     public Instance __set__(Instance index, Instance value) {
-        return set(getIndex(index), value);
+        return setElement(getIndex(index), value);
     }
 
     @SuppressWarnings("unused")
     public BooleanInstance __remove__(Instance instance) {
-        return InstanceUtils.booleanInstance(remove(instance));
+        return Instances.booleanInstance(removeElement(instance));
     }
 
     @SuppressWarnings("unused")
     public Instance __removeAt__(Instance index) {
-        return remove(getIndex(index));
+        return removeElement(getIndex(index));
     }
 
     private int getIndex(Instance instance) {
@@ -362,12 +367,12 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
 
     @SuppressWarnings("unused")
     public void __add__(Instance instance) {
-        add(instance);
+        addElement(instance);
     }
 
     @SuppressWarnings("unused")
     public LongInstance __size__() {
-        return InstanceUtils.longInstance(size());
+        return Instances.longInstance(size());
     }
 
     @Override
@@ -385,6 +390,10 @@ public class ArrayInstance extends Instance implements Iterable<Instance> /*impl
     public void clear() {
         ensureLoaded();
         clearInternal();
+    }
+
+    public ArrayInstance getSource() {
+        return (ArrayInstance) super.getSource();
     }
 
     public void addListener(ArrayListener listener) {

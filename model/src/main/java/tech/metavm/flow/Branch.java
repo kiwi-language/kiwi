@@ -1,22 +1,23 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
-import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.Expressions;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.BranchDTO;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 @EntityType("分支")
-public class Branch extends Element {
+public class Branch extends Element implements LocalKey {
 
     private static final long PRESELECTED_BRANCH_ID = 10000;
 
     public static Branch create(long index, BranchNode owner) {
         return new Branch(
                 index,
-                Value.constant(ExpressionUtil.constant(InstanceUtils.trueInstance())),
+                Values.constant(Expressions.constant(Instances.trueInstance())),
                 false,
                 false,
                 owner
@@ -26,7 +27,7 @@ public class Branch extends Element {
     public static Branch createPreselected(BranchNode owner, boolean isExit) {
         return new Branch(
                 PRESELECTED_BRANCH_ID,
-                Value.constant(ExpressionUtil.trueExpression()),
+                Values.constant(Expressions.trueExpression()),
                 true,
                 isExit,
                 owner
@@ -52,7 +53,7 @@ public class Branch extends Element {
         this.scope = addChild(new ScopeRT(owner.getFlow(), owner), "scope");
         this.preselected = preselected;
         this.condition = addChild(condition, "condition");
-        if(isExit) {
+        if (isExit) {
             NncUtils.requireTrue(preselected, "Only default branch can be an exit");
         }
         this.isExit = isExit;
@@ -79,19 +80,17 @@ public class Branch extends Element {
         return isExit;
     }
 
-    public BranchDTO toDTO(boolean withNodes, boolean persisting) {
-        try(var context = SerializeContext.enter()) {
-            return new BranchDTO(
-                    getId(),
-                    context.getTmpId(this),
-                    index,
-                    owner.getId(),
-                    NncUtils.get(condition, v -> v.toDTO(persisting)),
-                    scope.toDTO(withNodes),
-                    preselected,
-                    isExit
-            );
-        }
+    public BranchDTO toDTO(boolean withNodes, SerializeContext serContext) {
+        return new BranchDTO(
+                getId(),
+                serContext.getTmpId(this),
+                index,
+                owner.getId(),
+                NncUtils.get(condition, Value::toDTO),
+                scope.toDTO(withNodes, serContext),
+                preselected,
+                isExit
+        );
     }
 
     private ParsingContext getParsingContext(IEntityContext entityContext) {
@@ -103,7 +102,7 @@ public class Branch extends Element {
     }
 
     public void update(BranchDTO branchDTO, IEntityContext entityContext) {
-        if(branchDTO.condition() != null) {
+        if (branchDTO.condition() != null) {
             setCondition(ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext)));
         }
     }
@@ -113,7 +112,7 @@ public class Branch extends Element {
     }
 
     public boolean checkCondition(MetaFrame frame) {
-        return InstanceUtils.isTrue(condition.evaluate(frame));
+        return Instances.isTrue(condition.evaluate(frame));
     }
 
     public boolean isEmpty() {
@@ -127,5 +126,21 @@ public class Branch extends Element {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitBranch(this);
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return true;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Long.toString(index);
+    }
+
+    public void writeCode(CodeWriter writer) {
+        writer.writeNewLine("case " + condition.getText());
+        writer.writeNewLine(" -> ");
+        scope.writeCode(writer);
     }
 }

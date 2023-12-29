@@ -3,8 +3,6 @@ package tech.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.rest.InstanceFieldDTO;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.InternalException;
 
 public class InstanceField {
@@ -20,8 +18,10 @@ public class InstanceField {
     InstanceField(ClassInstance owner, Field field, Instance value, boolean check) {
         this.field = field;
         this.owner = owner;
-        if (value.isNotPrimitive())
-            new ReferenceRT(owner, value, field);
+        if(field.isChild() && value.isNotNull())
+            ((DurableInstance) value).initParent(this.owner, this.field);
+        if (value instanceof DurableInstance d)
+            new ReferenceRT(owner, d, field);
         this.value = check ? checkValue(value) : value;
     }
 
@@ -38,20 +38,19 @@ public class InstanceField {
     }
 
     String getColumnName() {
-        if (field.getColumn() == null) {
+        if (field.getColumn() == null)
             throw new InternalException("Field " + field + " doesn't have a column");
-        }
         return field.getColumn().name();
     }
 
     void setValue(Instance value) {
         value = checkValue(value);
-        if (this.value.isNotPrimitive()) {
+        if(field.isChild() && value.isNotNull())
+            ((DurableInstance) value).initParent(this.owner, this.field);
+        if (this.value.isNotPrimitive())
             owner.getOutgoingReference(this.value, field).clear();
-        }
-        if (value.isNotPrimitive()) {
-            new ReferenceRT(owner, value, field);
-        }
+        if (value instanceof DurableInstance d)
+            new ReferenceRT(owner, d, field);
         this.value = value;
     }
 

@@ -11,17 +11,16 @@ import java.util.Objects;
 @EntityType("函数表达式")
 public class FunctionExpression extends Expression {
     @EntityField("函数")
-    private final Function function;
+    private final Func function;
     @ChildEntity("参数表达式列表")
     private final ChildArray<Expression> arguments = addChild(new ChildArray<>(Expression.class), "arguments");
 
-    public FunctionExpression(Function function, List<Expression> arguments) {
+    public FunctionExpression(Func function, List<Expression> arguments) {
         this.function = function;
         this.arguments.addChildren(NncUtils.map(arguments, Expression::copy));
     }
 
-
-    public FunctionExpression(Function function, Expression argument) {
+    public FunctionExpression(Func function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {
             arguments.addChildren(arrayExpression.getExpressions());
@@ -31,7 +30,7 @@ public class FunctionExpression extends Expression {
         }
     }
 
-    public Function getFunction() {
+    public Func getFunction() {
         return function;
     }
 
@@ -57,12 +56,6 @@ public class FunctionExpression extends Expression {
     @Override
     public List<Expression> getChildren() {
         return NncUtils.listOf(arguments);
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        NncUtils.requireLength(children, this.arguments.size());
-        return new FunctionExpression(function, children);
     }
 
     @Override

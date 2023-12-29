@@ -18,7 +18,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static tech.metavm.util.ReflectUtils.*;
+import static tech.metavm.util.ReflectionUtils.*;
 
 public class EntityUtils {
 
@@ -43,12 +43,22 @@ public class EntityUtils {
         });
     }
 
-    public static Type getEntityRuntimeType(Object entity) {
-        if (entity instanceof RuntimeGeneric runtimeGeneric) {
+    public static Type getRuntimeType(Object object) {
+        if (object instanceof RuntimeGeneric runtimeGeneric)
             return runtimeGeneric.getGenericType();
-        } else {
-            return entity.getClass();
-        }
+        else
+            return object.getClass();
+    }
+
+    public static void forEachDescendant(Object object, Consumer<Object> action) {
+        if(object instanceof Entity entity)
+            entity.forEachDescendant(action::accept);
+        else
+            action.accept(object);
+    }
+
+    public static void forEachReference(Entity entity, Consumer<Object> action) {
+        entity.forEachReference(action);
     }
 
     public static void traverseModelGraph(Object model, BiConsumer<List<String>, Object> action) {
@@ -262,6 +272,10 @@ public class EntityUtils {
         }
     }
 
+    public static void ensureTreeInitialized(Object object) {
+        forEachDescendant(object, EntityUtils::ensureProxyInitialized);
+    }
+
     public static EntityMethodHandler.State getProxyState(Object object) {
         if (object instanceof ProxyObject proxyObject) {
             var handler = (EntityMethodHandler<?>) proxyObject.getHandler();
@@ -385,7 +399,7 @@ public class EntityUtils {
     }
 
     public static Type getEntityType(Type type) {
-        type = ReflectUtils.eraseType(type);
+//        type = ReflectUtils.eraseType(type);
         if(type instanceof Class<?> klass) {
             if(klass.getSuperclass() != null && klass.getSuperclass().isEnum())
                 type = klass.getSuperclass();

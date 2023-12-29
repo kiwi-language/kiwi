@@ -4,6 +4,7 @@ import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.entity.ChildList;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
@@ -49,7 +50,7 @@ public class TypeResolverImpl implements TypeResolver {
     private final IEntityContext context;
 
     private static final Map<Class<?>, Supplier<Type>> STANDARD_CLASSES = Map.of(
-            Object.class, StandardTypes::getObjectType,
+            Object.class, StandardTypes::getAnyType,
             Entity.class, StandardTypes::getEntityType,
             Enum.class, StandardTypes::getEnumType,
             Throwable.class, StandardTypes::getThrowableType,
@@ -60,7 +61,7 @@ public class TypeResolverImpl implements TypeResolver {
     private static final List<KeyValue<Class<?>, BiFunction<Type, IEntityContext, ClassType>>> COLLECTION_CLASSES = List.of(
             new KeyValue<>(IteratorImpl.class, Types::getIteratorImplType),
             new KeyValue<>(Iterator.class, Types::getIteratorType),
-            new KeyValue<>(List.class, Types::getListType),
+//            new KeyValue<>(List.class, Types::getListType),
             new KeyValue<>(Set.class, Types::getSetType),
             new KeyValue<>(Collection.class, Types::getCollectionType)
     );
@@ -89,7 +90,7 @@ public class TypeResolverImpl implements TypeResolver {
     public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> {
-                var klass = ReflectUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
+                var klass = ReflectionUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
                 yield context.getType(klass);
             }
             case PsiClassType classType -> resolveClassType(classType, stage);
@@ -133,6 +134,14 @@ public class TypeResolverImpl implements TypeResolver {
                     return entry.getValue().get();
                 }
             }
+            if(TranspileUtil.createType(List.class).isAssignableFrom(classType)) {
+                var listType = TranspileUtil.getSuperType(classType, List.class);
+                return context.getArrayType(resolve(listType.getParameters()[0], stage), ArrayKind.READ_WRITE);
+            }
+            if(TranspileUtil.createType(ChildList.class).isAssignableFrom(classType)) {
+                var childListType = TranspileUtil.getSuperType(classType, ChildList.class);
+                return context.getArrayType(resolve(childListType.getParameters()[0], stage), ArrayKind.CHILD);
+            }
             for (var entry : COLLECTION_CLASSES) {
                 var collClass = entry.key();
                 if (TranspileUtil.createType(collClass).isAssignableFrom(classType)) {
@@ -140,11 +149,11 @@ public class TypeResolverImpl implements TypeResolver {
                     return entry.value().apply(resolve(collType.getParameters()[0], stage), context);
                 }
             }
-            if (ReflectUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
+            if (ReflectionUtils.isPrimitiveBoxClassName(psiClass.getQualifiedName())
                     || PRIM_CLASS_NAMES.contains(psiClass.getQualifiedName())) {
-                return context.getType(ReflectUtils.classForName(psiClass.getQualifiedName()));
+                return context.getType(ReflectionUtils.classForName(psiClass.getQualifiedName()));
             } else if (TranspileUtil.isObjectClass(psiClass)) {
-                return StandardTypes.getObjectType();
+                return StandardTypes.getAnyType();
             } else if (TranspileUtil.createType(Map.class).isAssignableFrom(classType)) {
                 var mapType = TranspileUtil.getSuperType(classType, Map.class);
                 return Types.getMapType(
@@ -184,6 +193,10 @@ public class TypeResolverImpl implements TypeResolver {
         );
     }
 
+    public Set<Flow> getGeneratedParameterizedFlows() {
+        return context.getGenericContext().getNewFlows();
+    }
+
     private PsiClassType createParameterizedEnumType() {
         if (parameterizedEnumType != null) {
             return parameterizedEnumType;
@@ -197,7 +210,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     public Flow resolveFlow(PsiMethod method) {
         var type = (ClassType) resolveDeclaration(TranspileUtil.createType(method.getContainingClass()));
-        return type.getFlowByCodeAndParamTypes(
+        return type.getMethodByCodeAndParamTypes(
                 method.getName(),
                 NncUtils.map(
                         requireNonNull(method.getParameterList().getParameters()),
@@ -255,7 +268,8 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
 
-    private @Nullable TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
+    @Nullable
+    private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
             var ownerType = TranspileUtil.createType(psiClass);
             var listType = TranspileUtil.createType(List.class);
@@ -332,36 +346,36 @@ public class TypeResolverImpl implements TypeResolver {
         if (metaClass == null) {
             metaClass = createMetaClass(psiClass);
         }
-        procesClassType(metaClass, psiClass, stage);
+        processClassType(metaClass, psiClass, stage);
         return metaClass;
     }
 
     @Override
     public void ensureDeclared(ClassType classType) {
-        procesClassType(classType, DECLARATION);
+        processClassType(classType, DECLARATION);
     }
 
     @Override
     public void ensureCodeGenerated(ClassType classType) {
-        procesClassType(classType, DEFINITION);
+        processClassType(classType, DEFINITION);
     }
 
-    private void procesClassType(ClassType metaClass, final ResolutionStage stage) {
+    private void processClassType(ClassType metaClass, final ResolutionStage stage) {
         var template = metaClass.getEffectiveTemplate();
         if (template.getId() == null) {
             var psiClass = NncUtils.requireNonNull(psiClassMap.get(template));
-            procesClassType(template, psiClass, stage);
+            processClassType(template, psiClass, stage);
         }
     }
 
-    private void procesClassType(ClassType metaClass, PsiClass psiClass, final ResolutionStage stage) {
+    private void processClassType(ClassType metaClass, PsiClass psiClass, final ResolutionStage stage) {
         if (stage == INIT) {
             return;
         }
         for (PsiClassType superType : psiClass.getSuperTypes())
             resolve(superType, stage);
         for (ClassType superType : metaClass.getSuperTypes())
-            procesClassType(superType, stage);
+            processClassType(superType, stage);
         if (stage.isAfterOrAt(DECLARATION) && metaClass.getStage().isBefore(DECLARATION)) {
             codeGenerator.generateDecl(psiClass, this);
             context.getGenericContext().generateDeclarations(metaClass);

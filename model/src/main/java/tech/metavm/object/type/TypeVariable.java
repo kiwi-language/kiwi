@@ -1,10 +1,11 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeVariableKey;
 import tech.metavm.object.type.rest.dto.TypeVariableParam;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -12,30 +13,33 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 @EntityType("类型变量")
-public class TypeVariable extends Type {
+public class TypeVariable extends Type implements LocalKey, GenericElement {
 
     @ChildEntity("类型上界")
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
     @EntityField("范型声明")
-    private GenericDeclaration genericDeclaration;
+    private @NotNull GenericDeclaration genericDeclaration;
     @EntityField("模板")
+    @CopyIgnore
     @Nullable
     private TypeVariable template;
 
     private transient IntersectionType intersection;
+    private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    private ResolutionStage stage = ResolutionStage.INIT;
-
-    public TypeVariable(Long tmpId, String name, @Nullable String code, GenericDeclaration genericDeclarator) {
-        super(name, false, false, TypeCategory.VARIABLE);
+    public TypeVariable(Long tmpId, @NotNull String name, @Nullable String code, @NotNull GenericDeclaration genericDeclaration) {
+        super(name, code, false, false, TypeCategory.VARIABLE);
         setTmpId(tmpId);
-        setCode(code);
-        if(genericDeclarator != null) {
-            setGenericDeclaration(genericDeclarator);
-        }
+        this.genericDeclaration = genericDeclaration;
+        genericDeclaration.addTypeParameter(this);
+    }
+
+    @Override
+    public void onLoad(IEntityContext context) {
+        super.onLoad(context);
+        stage = ResolutionStage.INIT;
     }
 
     @Override
@@ -44,11 +48,13 @@ public class TypeVariable extends Type {
     }
 
     public void setGenericDeclaration(GenericDeclaration genericDeclaration) {
+        if (this.genericDeclaration != DummyGenericDeclaration.INSTANCE)
+            throw new InternalException("Can not change generic declaration of a type variable");
         this.genericDeclaration = genericDeclaration;
         genericDeclaration.addTypeParameter(this);
     }
 
-    public GenericDeclaration getGenericDeclaration() {
+    public @NotNull GenericDeclaration getGenericDeclaration() {
         return genericDeclaration;
     }
 
@@ -58,9 +64,11 @@ public class TypeVariable extends Type {
         onSuperTypesChanged();
     }
 
-    public void setTemplate(TypeVariable template) {
-        NncUtils.requireTrue(template.getGenericDeclaration() == genericDeclaration.getTemplate());
-        this.template = template;
+    public void setTemplate(Object template) {
+        NncUtils.requireNull(this.template);
+        var typeVarTemplate = (TypeVariable) template;
+        NncUtils.requireTrue(typeVarTemplate.getGenericDeclaration() == genericDeclaration.getTemplate());
+        this.template = typeVarTemplate;
     }
 
     @Override
@@ -77,22 +85,27 @@ public class TypeVariable extends Type {
     }
 
     @Override
+    public boolean isValidGlobalKey() {
+        return false;
+    }
+
+    @Override
     protected boolean isAssignableFrom0(Type that) {
         return this == that;
     }
 
     @Override
     public Type getUpperBound() {
-        if(bounds.size() == 1) {
+        if (bounds.size() == 1) {
             return bounds.get(0);
         }
-        if(intersection != null) {
+        if (intersection != null) {
             return intersection;
         }
         return intersection = new IntersectionType(null, new HashSet<>(bounds));
     }
 
-    public TypeVariable getTemplate() {
+    public @Nullable TypeVariable getTemplate() {
         return template;
     }
 
@@ -107,19 +120,19 @@ public class TypeVariable extends Type {
 
     @Override
     protected TypeVariableParam getParam() {
-        try(var context = SerializeContext.enter()) {
-            getBounds().forEach(context::writeType);
+        try (var serContext = SerializeContext.enter()) {
+            getBounds().forEach(serContext::writeType);
             return new TypeVariableParam(
-                    context.getRef(genericDeclaration),
+                    serContext.getRef(genericDeclaration),
                     genericDeclaration.getTypeParameters().indexOf(this),
-                    NncUtils.map(bounds, context::getRef)
+                    NncUtils.map(bounds, serContext::getRef)
             );
         }
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return genericDeclaration.getKey(getJavaType) + "." + getJavaType.apply(this).getTypeName();
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        throw new UnsupportedOperationException();
     }
 
     public TypeVariable copy() {
@@ -142,4 +155,15 @@ public class TypeVariable extends Type {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitTypeVariable(this);
     }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return getCodeRequired();
+    }
+
 }

@@ -1,17 +1,16 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.type.ObjectType;
+import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.type.AnyType;
 import tech.metavm.object.type.Type;
 
-import java.util.Map;
+public class InstanceDef<I extends DurableInstance> extends ModelDef<I, I> {
 
-public class InstanceDef<I extends Instance> extends ModelDef<I, I> {
+    private final AnyType type;
 
-    private final ObjectType type;
-
-    protected InstanceDef(Class<I> instanceClass, ObjectType type) {
+    protected InstanceDef(Class<I> instanceClass, AnyType type) {
         super(instanceClass, instanceClass);
         this.type = type;
     }
@@ -22,32 +21,32 @@ public class InstanceDef<I extends Instance> extends ModelDef<I, I> {
     }
 
     @Override
-    public I createInstance(I model, ModelInstanceMap instanceMap, Long id) {
+    public I createInstance(I model, ObjectInstanceMap instanceMap, Long id) {
         return model;
     }
 
     @Override
-    public I createModel(I instance, ModelInstanceMap modelIMap) {
+    public I createModel(I instance, ObjectInstanceMap modelIMap) {
         return instance;
     }
 
     @Override
-    public void initModel(I model, I instance, ModelInstanceMap modelIMap) {
+    public void initModel(I model, I instance, ObjectInstanceMap modelIMap) {
 
     }
 
     @Override
-    public void updateModel(I model, I instance, ModelInstanceMap modelIMap) {
+    public void updateModel(I model, I instance, ObjectInstanceMap modelIMap) {
 
     }
 
     @Override
-    public void initInstance(I instance, I model, ModelInstanceMap instanceMap) {
+    public void initInstance(I instance, I model, ObjectInstanceMap instanceMap) {
 
     }
 
     @Override
-    public void updateInstance(I instance, I model, ModelInstanceMap instanceMap) {
+    public void updateInstance(I instance, I model, ObjectInstanceMap instanceMap) {
 
     }
 
@@ -56,8 +55,4 @@ public class InstanceDef<I extends Instance> extends ModelDef<I, I> {
         return false;
     }
 
-    @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of();
-    }
 }

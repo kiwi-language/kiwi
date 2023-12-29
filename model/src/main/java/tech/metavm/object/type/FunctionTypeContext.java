@@ -8,17 +8,17 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class FunctionTypeContext extends CompositeTypeContext<FunctionType> {
+public class FunctionTypeContext extends CompositeTypeContext<FunctionType> implements FunctionTypeProvider {
 
     public FunctionTypeContext(IEntityContext context, @Nullable FunctionTypeContext parent) {
         super(context, FunctionType.KEY_IDX, parent);
     }
 
-    public FunctionType get(List<Type> parameterTypes, Type returnType) {
-        return get(parameterTypes, returnType, null);
+    public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType) {
+        return getFunctionType(parameterTypes, returnType, null);
     }
 
-    public FunctionType get(List<Type> parameterTypes, Type returnType, Long tmpId) {
+    public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType, Long tmpId) {
         return get(NncUtils.append(parameterTypes, returnType), tmpId);
     }
 

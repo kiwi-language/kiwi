@@ -45,18 +45,18 @@ public class BooleanInstance extends PrimitiveInstance {
     }
 
     @Override
-    public void writeTo(InstanceOutput output, boolean includeChildren) {
-        output.writeBoolean(value);
-    }
-
-    @Override
     public String getTitle() {
         return value ? "是" : "否";
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitBooleanInstance(this);
+    public void writeTo(InstanceOutput output, boolean includeChildren) {
+        output.writeBoolean(value);
+    }
+
+    @Override
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitBooleanInstance(this);
     }
 
     @Override

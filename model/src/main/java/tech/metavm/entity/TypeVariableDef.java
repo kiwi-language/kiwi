@@ -1,10 +1,8 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.TypeVariable;
-
-import java.util.Map;
 
 public class TypeVariableDef extends ModelDef<Object, ClassInstance> {
 
@@ -21,27 +19,23 @@ public class TypeVariableDef extends ModelDef<Object, ClassInstance> {
     }
 
     @Override
-    public void initModel(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void initModel(Object model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void updateModel(Object model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void initInstance(ClassInstance instance, Object model, ModelInstanceMap instanceMap) {
+    public void initInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateInstance(ClassInstance instance, Object model, ModelInstanceMap instanceMap) {
+    public void updateInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of();
-    }
 }

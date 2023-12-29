@@ -2,23 +2,21 @@ package tech.metavm.task;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.MemIndexEntryMapper;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.TestConstants;
 import tech.metavm.util.TestUtils;
 
-import java.util.List;
-
 public class IndexRebuildJobTest extends TestCase {
 
-    private InstanceContextFactory instanceContextFactory;
+    private EntityContextFactory entityContextFactory;
 
     private MemInstanceSearchService instanceSearchService;
 
@@ -28,27 +26,23 @@ public class IndexRebuildJobTest extends TestCase {
         MockIdProvider idProvider = new MockIdProvider();
         MockRegistry.setUp(idProvider, instanceStore);
         instanceSearchService = new MemInstanceSearchService();
-        instanceContextFactory = TestUtils.getInstanceContextFactory(idProvider, instanceStore, instanceSearchService);
-
+        entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), new MemIndexEntryMapper());
     }
 
     public void test() {
         IndexRebuildTask job = new IndexRebuildTask();
-        {
-            IInstanceContext context = newContext();
+        try(var context = newContext()){
             for (int i = 0; i < 100; i++) {
                 context.bind(MockRegistry.getNewFooInstance());
             }
-
-            context.getEntityContext().bind(job);
-            context.getEntityContext().finish();
+            context.bind(job);
+            context.finish();
         }
 
         instanceSearchService.clear();
 
-        {
-            IInstanceContext context1 = newContext();
-            job = context1.getEntityContext().getEntity(IndexRebuildTask.class, job.getId());
+        try (var context1 = newContext()) {
+            job = context1.getEntity(IndexRebuildTask.class, job.getIdRequired());
             for (int i = 0; i < 50; i++) {
                 if (job.run0(context1)) {
                     break;
@@ -57,20 +51,17 @@ public class IndexRebuildJobTest extends TestCase {
             context1.finish();
         }
 
-        {
-            IInstanceContext context = newContext();
-            ClassType fooType = MockRegistry.getClassType(Foo.class);
-            List<Instance> instances = context.getByType(fooType, null, 100);
-            for (Instance instance : instances) {
-                Assert.assertTrue(instanceSearchService.contains(instance.getId()));
+        try (var context = newContext()) {
+            var instances = context.getByType(Foo.class, null, 100);
+            for (var instance : instances) {
+                Assert.assertTrue(instanceSearchService.contains(instance.getIdRequired()));
             }
         }
 
-
     }
 
-    private IInstanceContext newContext() {
-        return instanceContextFactory.newContext(TestConstants.APP_ID);
+    private IEntityContext newContext() {
+        return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 
 }

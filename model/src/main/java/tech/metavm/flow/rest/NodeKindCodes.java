@@ -10,7 +10,7 @@ public class NodeKindCodes {
     public static final int BRANCH = 7;
     public static final int RETURN = 9;
     public static final int EXCEPTION = 10;
-    public static final int SUB_FLOW = 12;
+    public static final int METHOD_CALL = 12;
     public static final int GET_UNIQUE = 13;
     public static final int MERGE = 14;
     public static final int NEW = 15;
@@ -27,5 +27,8 @@ public class NodeKindCodes {
     public static final int ADD_ELEMENT = 27;
     public static final int DELETE_ELEMENT = 28;
     public static final int GET_ELEMENT = 29;
-
+    public static final int FUNCTION_CALL = 30;
+    public static final int CAST = 31;
+    public static final int CLEAR_ARRAY = 32;
+    public static final int COPY = 33;
 }

@@ -7,11 +7,11 @@ import java.util.Objects;
 
 public class ArrayFieldValue extends FieldValue {
 
-    private final Long id;
+    private final String id;
     private final boolean elementAsChild;
     private final List<FieldValue> elements;
 
-    public ArrayFieldValue(@JsonProperty("id") Long id,
+    public ArrayFieldValue(@JsonProperty("id") String id,
                            @JsonProperty("elementAsChild") boolean elementAsChild,
                            @JsonProperty("elements") List<FieldValue> elements) {
         super(FieldValueKind.ARRAY.code(), "");
@@ -28,7 +28,7 @@ public class ArrayFieldValue extends FieldValue {
         return elementAsChild;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

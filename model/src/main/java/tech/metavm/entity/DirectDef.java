@@ -1,11 +1,9 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.ReflectUtils;
-
-import java.util.Map;
+import tech.metavm.util.ReflectionUtils;
 
 public class DirectDef<T> extends ModelDef<T, ClassInstance> {
 
@@ -18,7 +16,7 @@ public class DirectDef<T> extends ModelDef<T, ClassInstance> {
 
     public DirectDef(java.lang.reflect.Type javaType, Type type, Class<?> nativeClass) {
         //noinspection rawtypes,unchecked
-        super((Class) ReflectUtils.getRawClass(javaType), javaType, ClassInstance.class);
+        super((Class) ReflectionUtils.getRawClass(javaType), javaType, ClassInstance.class);
         this.type = type;
         this.nativeClass = nativeClass;
     }
@@ -29,28 +27,23 @@ public class DirectDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(T model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void updateModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void initInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
+    public void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
+    public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of();
     }
 
     public Class<?> getNativeClass() {

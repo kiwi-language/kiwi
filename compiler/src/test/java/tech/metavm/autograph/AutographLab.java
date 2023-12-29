@@ -1,17 +1,16 @@
 package tech.metavm.autograph;
 
-import tech.metavm.autograph.mocks.Foo;
+import tech.metavm.entity.ChildList;
 
-import java.util.Arrays;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 
 public class AutographLab {
 
-    public static void main(String[] args) {
-        var fooType = TranspileTestTools.getPsiClass(Foo.class);
-        var superTypes = fooType.getSuperTypes();
-        var objectType = TranspileUtil.getElementFactory().createTypeByFQClassName(Object.class.getName());
-        var objectClass = objectType.resolve();
-        System.out.println(Arrays.toString(superTypes));
+    public static void main(String[] args) throws URISyntaxException {
+        File file = Paths.get(ChildList.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toFile();
+        System.out.println(file.getPath());
     }
 
 }

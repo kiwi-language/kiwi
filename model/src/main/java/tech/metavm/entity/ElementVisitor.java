@@ -1,9 +1,11 @@
 package tech.metavm.entity;
 
 import tech.metavm.expression.*;
+import tech.metavm.flow.Function;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.*;
 
 public abstract class ElementVisitor<R> {
 
@@ -51,16 +53,12 @@ public abstract class ElementVisitor<R> {
         return visitType(type);
     }
 
-    public R visitProperty(Property property) {
-        return visitElement(property);
-    }
-
     public R visitField(Field field) {
-        return visitProperty(field);
+        return visitElement(field);
     }
 
     public R visitFlow(Flow flow) {
-        return visitProperty(flow);
+        return visitElement(flow);
     }
 
     public R visitParameter(Parameter parameter) {
@@ -75,11 +73,11 @@ public abstract class ElementVisitor<R> {
         return visitElement(branch);
     }
 
-    public R visitNode(NodeRT<?> node) {
+    public R visitNode(NodeRT node) {
         return visitElement(node);
     }
 
-    public R visitScopeNode(ScopeNode<?> node) {
+    public R visitScopeNode(ScopeNode node) {
         return visitNode(node);
     }
 
@@ -87,7 +85,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitDeleteElementNode(DeleteElementNode node) {
+    public R visitDeleteElementNode(RemoveElementNode node) {
         return visitNode(node);
     }
 
@@ -139,7 +137,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLoopNode(LoopNode<?> node) {
+    public R visitLoopNode(LoopNode node) {
         return visitScopeNode(node);
     }
 
@@ -151,11 +149,11 @@ public abstract class ElementVisitor<R> {
         return visitLoopNode(node);
     }
 
-    public R visitCallNode(CallNode<?> node) {
+    public R visitCallNode(CallNode node) {
         return visitNode(node);
     }
 
-    public R visitSubFlowNode(SubFlowNode node) {
+    public R visitSubFlowNode(MethodCallNode node) {
         return visitCallNode(node);
     }
 
@@ -219,7 +217,7 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expression);
     }
 
-    public R visitFuncExpression(FuncExpression expression) {
+    public R visitFuncExpression(MethodExpression expression) {
         return visitExpression(expression);
     }
 
@@ -275,12 +273,12 @@ public abstract class ElementVisitor<R> {
         return visitType(functionType);
     }
 
-    public R visitNothingType(NothingType nothingType) {
-        return visitType(nothingType);
+    public R visitNothingType(NeverType neverType) {
+        return visitType(neverType);
     }
 
-    public R visitObjectType(ObjectType objectType) {
-        return visitType(objectType);
+    public R visitObjectType(AnyType anyType) {
+        return visitType(anyType);
     }
 
     public R visitUncertainType(UncertainType uncertainType) {
@@ -293,5 +291,65 @@ public abstract class ElementVisitor<R> {
 
     public R visitParentRef(ParentRef parentRef) {
         return visitElement(parentRef);
+    }
+
+    public R visitExpressionPlaceholder(ExpressionPlaceholder expressionPlaceholder) {
+        return visitExpression(expressionPlaceholder);
+    }
+
+    public R visitFlowFieldMapping(FlowFieldMapping flowFieldMapping) {
+        return visitFieldMapping(flowFieldMapping);
+    }
+
+    public R visitDirectFieldMapping(DirectFieldMapping directFieldMapping) {
+        return visitFieldMapping(directFieldMapping);
+    }
+
+    public R visitFieldMapping(FieldMapping fieldMapping) {
+        return visitElement(fieldMapping);
+    }
+
+    public R visitMapping(Mapping mapping) {
+        return visitElement(mapping);
+    }
+
+    public R visitObjectMapping(ObjectMapping mapping) {
+        return visitMapping(mapping);
+    }
+
+    public R visitDefaultObjectMapping(DefaultObjectMapping mapping) {
+        return visitObjectMapping(mapping);
+    }
+
+    public R visitComputedFieldMapping(ComputedFieldMapping computedFieldMapping) {
+        return visitFieldMapping(computedFieldMapping);
+    }
+
+    public R visitCopyNode(CopyNode copyNode) {
+        return visitNode(copyNode);
+    }
+
+    public R visitArrayMapping(ArrayMapping arrayMapping) {
+        return visitMapping(arrayMapping);
+    }
+
+    public R visitFunction(Function function) {
+        return visitFlow(function);
+    }
+
+    public R visitMethod(Method method) {
+        return visitFlow(method);
+    }
+
+    public R visitFunctionCallNode(FunctionCallNode functionCallNode) {
+        return visitCallNode(functionCallNode);
+    }
+
+    public R visitCastNode(CastNode castNode) {
+        return visitNode(castNode);
+    }
+
+    public R visitClearArrayNode(ClearArrayNode clearArrayNode) {
+        return visitNode(clearArrayNode);
     }
 }

@@ -2,11 +2,12 @@ package tech.metavm.task;
 
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.util.InstanceUtils;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType("实例扫描任务")
@@ -15,19 +16,20 @@ public abstract class ScanTask extends Task {
     public static final long BATCH_SIZE = 256L;
 
     @EntityField("游标")
-    private Instance cursor = InstanceUtils.nullInstance();
+    @Nullable
+    private DurableInstance cursor;
 
     protected ScanTask(String title) {
         super(title);
     }
 
-    public final void processNewInstances(List<Instance> newInstances, IInstanceContext context) {
+    public final void processNewInstances(List<DurableInstance> newInstances, IEntityContext context) {
         process(newInstances, context);
     }
 
     @Override
-    protected boolean run0(IInstanceContext context) {
-        List<Instance> batch = scan(context, cursor, BATCH_SIZE);
+    protected boolean run0(IEntityContext context) {
+        var batch = scan(context.getInstanceContext(), cursor, BATCH_SIZE);
         if(NncUtils.isEmpty(batch)) {
             onScanOver();
             return true;
@@ -45,10 +47,10 @@ public abstract class ScanTask extends Task {
 
     protected void onScanOver() {}
 
-    protected abstract List<Instance> scan(IInstanceContext context,
-                                           Instance cursor,
-                                           @SuppressWarnings("SameParameterValue") long limit);
+    protected abstract List<DurableInstance> scan(IInstanceContext context,
+                                                  DurableInstance cursor,
+                                                  @SuppressWarnings("SameParameterValue") long limit);
 
-    protected abstract void process(List<Instance> batch, IInstanceContext context);
+    protected abstract void process(List<DurableInstance> batch, IEntityContext context);
 
 }

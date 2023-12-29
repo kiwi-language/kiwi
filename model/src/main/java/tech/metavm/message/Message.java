@@ -7,15 +7,14 @@ import tech.metavm.entity.IndexDef;
 import tech.metavm.message.rest.dto.MessageDTO;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.user.User;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
 @EntityType("站内信")
 public class Message extends Entity {
 
-    public static final IndexDef<Message> IDX_TARGET = IndexDef.normalKey(Message.class, "target");
+    public static final IndexDef<Message> IDX_TARGET = IndexDef.create(Message.class, "target");
 
     @EntityField("接受者")
     private final User receiver;
@@ -61,14 +60,14 @@ public class Message extends Entity {
     }
 
     public void clearTarget() {
-        this.target = InstanceUtils.nullInstance();
+        this.target = Instances.nullInstance();
     }
 
     public MessageDTO toDTO() {
         return new MessageDTO(
                 getIdRequired(),
                 receiver.getIdRequired(), title, kind.code,
-                target.getId(),
+                target.getInstanceIdString(),
                 read
         );
     }

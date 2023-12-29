@@ -15,7 +15,8 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
     private final IEntityContext context;
     private final Set<T> newTypes = new IdentitySet<>();
     private final Map<String, T> persistedTypes = new HashMap<>();
-    private final @Nullable CompositeTypeContext<T> parent;
+    @Nullable
+    private final CompositeTypeContext<T> parent;
     protected final IndexDef<T> indexDef;
 
     protected CompositeTypeContext(IEntityContext context, IndexDef<T> indexDef, @Nullable CompositeTypeContext<T> parent) {

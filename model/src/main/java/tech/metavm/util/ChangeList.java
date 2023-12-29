@@ -1,5 +1,7 @@
 package tech.metavm.util;
 
+import org.checkerframework.checker.units.qual.K;
+
 import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -25,12 +27,10 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
     }
 
     public static <T, K> ChangeList<T> build(Collection<T> beforeList, Collection<T> afterList, Function<T, K> keyMapping, BiPredicate<T, T> equals) {
-        if (beforeList == null) {
+        if (beforeList == null)
             beforeList = List.of();
-        }
-        if (afterList == null) {
+        if (afterList == null)
             afterList = List.of();
-        }
         List<T> deleted = new ArrayList<>();
         Set<K> newKeys = new HashSet<>();
         afterList.forEach(f -> newKeys.add(keyMapping.apply(f)));
@@ -38,9 +38,8 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         for (T before : beforeList) {
             K oldKey = keyMapping.apply(before);
             beforeMap.put(oldKey, before);
-            if (!newKeys.contains(oldKey)) {
+            if (!newKeys.contains(oldKey))
                 deleted.add(before);
-            }
         }
         List<T> updated = new ArrayList<>();
         List<T> inserted = new ArrayList<>();
@@ -48,12 +47,10 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
             K key = keyMapping.apply(after);
             T before;
             if ((before = beforeMap.get(key)) != null) {
-                if (!equals.test(before, after)) {
+                if (!equals.test(before, after))
                     updated.add(after);
-                }
-            } else {
+            } else
                 inserted.add(after);
-            }
         }
         return new ChangeList<>(inserted, updated, deleted);
     }
@@ -63,15 +60,12 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
     }
 
     public T any() {
-        if (NncUtils.isNotEmpty(inserts)) {
+        if (NncUtils.isNotEmpty(inserts))
             return inserts.get(0);
-        }
-        if (NncUtils.isNotEmpty(updates)) {
+        if (NncUtils.isNotEmpty(updates))
             return updates.get(0);
-        }
-        if (NncUtils.isNotEmpty(deletes)) {
+        if (NncUtils.isNotEmpty(deletes))
             return deletes.get(0);
-        }
         throw new InternalException("Empty change list");
     }
 
@@ -80,15 +74,12 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
             Consumer<List<T>> updatesConsumer,
             Consumer<List<T>> deletesConsumer
     ) {
-        if (NncUtils.isNotEmpty(inserts)) {
+        if (NncUtils.isNotEmpty(inserts))
             NncUtils.doInBatch(inserts, insertsConsumer);
-        }
-        if (NncUtils.isNotEmpty(updates)) {
+        if (NncUtils.isNotEmpty(updates))
             NncUtils.doInBatch(updates, updatesConsumer);
-        }
-        if (NncUtils.isNotEmpty(deletes)) {
+        if (NncUtils.isNotEmpty(deletes))
             NncUtils.doInBatch(deletes, deletesConsumer);
-        }
     }
 
     public <R> ChangeList<R> filterAndMap(Predicate<T> filter, Function<T, R> mapper) {

@@ -5,6 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.ParentRefDTO;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
@@ -16,13 +17,13 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("父对象引用")
+@EntityType("父引用")
 public class ParentRef extends Element {
 
-    public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, @Nullable Type childType) {
+    public static ParentRef create(ParentRefDTO parentRefDTO, ParsingContext parsingContext, IEntityContext entityContext, @Nullable Type childType) {
         var master = ValueFactory.create(parentRefDTO.parent(), parsingContext);
         var field = NncUtils.get(parentRefDTO.fieldRef(),
-                Objects.requireNonNull(parsingContext.getEntityContext())::getField);
+                Objects.requireNonNull(entityContext)::getField);
         var masterRef = new ParentRef(master, field);
         if (childType != null) {
             masterRef.ensureChildAssignable(childType);
@@ -32,7 +33,7 @@ public class ParentRef extends Element {
 
     @ChildEntity("父对象")
     private final Value parent;
-    @EntityField("父对象字段")
+    @EntityField("父字段")
     @Nullable
     private final Field field;
 
@@ -43,13 +44,13 @@ public class ParentRef extends Element {
     }
 
     public InstanceParentRef evaluate(EvaluationContext context) {
-        return new InstanceParentRef(parent.evaluate(context), field);
+        return new InstanceParentRef((DurableInstance) parent.evaluate(context), field);
     }
 
     public ParentRefDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new ParentRefDTO(
-                    parent.toDTO(false),
+                    parent.toDTO(),
                     NncUtils.get(field, serContext::getRef)
             );
         }
@@ -103,4 +104,12 @@ public class ParentRef extends Element {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitParentRef(this);
     }
+
+    public String getText() {
+        String text = "as child of " + parent.getText();
+        if (field != null)
+            text += "." + field.getName();
+        return text;
+    }
+
 }

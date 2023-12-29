@@ -2,23 +2,18 @@ package tech.metavm.object.version;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.common.MetaPatch;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Component
-public class VersionManager {
+public class VersionManager extends EntityContextFactoryBean {
 
-    private final InstanceContextFactory instanceContextFactory;
-
-    public VersionManager(InstanceContextFactory instanceContextFactory) {
-        this.instanceContextFactory = instanceContextFactory;
+    public VersionManager(EntityContextFactory entityContextFactory) {
+        super(entityContextFactory);
     }
 
     public InternalMetaPatch pullInternal(long baseVersion, IEntityContext context) {
@@ -28,13 +23,26 @@ public class VersionManager {
                 .build()
         );
         if (versions.isEmpty()) {
-            return new InternalMetaPatch(baseVersion, baseVersion, List.of(), List.of());
+            return new InternalMetaPatch(baseVersion, baseVersion,
+                    List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         }
-        Set<Long> typeIds = NncUtils.flatMapUnique(versions, Version::getChangeTypeIds);
-        Set<Long> removedTypeIds = NncUtils.flatMapUnique(versions, Version::getRemovedTypeIds);
+        var typeIds = NncUtils.flatMapUnique(versions, Version::getChangedTypeIds);
+        var removedTypeIds = NncUtils.flatMapUnique(versions, Version::getRemovedTypeIds);
+        var mappingIds = NncUtils.flatMapUnique(versions, Version::getChangedMappingIds);
+        var removedMappingIds = NncUtils.flatMapUnique(versions, Version::getRemovedMappingIds);
+        var functionIds = NncUtils.flatMapUnique(versions, Version::getChangedFunctionIds);
+        var removedFunctionIds = NncUtils.flatMapUnique(versions, Version::getRemovedFunctionIds);
+
         typeIds = NncUtils.diffSet(typeIds, removedTypeIds);
+        mappingIds = NncUtils.diffSet(mappingIds, removedMappingIds);
+
         return new InternalMetaPatch(baseVersion, versions.get(versions.size() - 1).getVersion(),
-                new ArrayList<>(typeIds), new ArrayList<>(removedTypeIds)
+                new ArrayList<>(typeIds),
+                new ArrayList<>(removedTypeIds),
+                new ArrayList<>(mappingIds),
+                new ArrayList<>(removedMappingIds),
+                new ArrayList<>(functionIds),
+                new ArrayList<>(removedFunctionIds)
         );
     }
 
@@ -47,15 +55,26 @@ public class VersionManager {
                     serContext.writeType(type);
                 }
                 var typeDTOs = serContext.getTypes();
+                var mappingDTOs = NncUtils.map(
+                        internalPatch.changedMappingIds(),
+                        id -> context.getMapping(id).toDTO(serContext)
+                );
+                var functionDTOs = NncUtils.map(
+                        internalPatch.changedFunctionIds(),
+                        id -> context.getFunction(id).toDTO(false, serContext)
+                );
                 return new MetaPatch(
-                        baseVersion, internalPatch.version(), typeDTOs, internalPatch.removedTypeIds()
+                        baseVersion,
+                        internalPatch.version(),
+                        typeDTOs,
+                        internalPatch.removedTypeIds(),
+                        mappingDTOs,
+                        internalPatch.removedMappingIds(),
+                        functionDTOs,
+                        internalPatch.removedFunctionIds()
                 );
             }
         }
-    }
-
-    private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext(true);
     }
 
 }

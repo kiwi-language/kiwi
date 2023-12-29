@@ -1,13 +1,13 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.EntityUtils;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 //@EntityType("字段删除任务")
 public class FieldRemovalTask {
@@ -16,14 +16,14 @@ public class FieldRemovalTask {
 
     private final Field field;
     @Nullable
-    private Instance cursor;
+    private DurableInstance cursor;
 
     public FieldRemovalTask(Field field) {
         this.field = field;
     }
 
-    public boolean executeBatch(IInstanceContext context) {
-        List<Instance> instances = context.getByType(field.getDeclaringType(), cursor, BATCH_SIZE);
+    public boolean executeBatch(IEntityContext context) {
+        var instances = context.getInstanceContext().getByType(field.getDeclaringType(), cursor, BATCH_SIZE);
         if(NncUtils.isEmpty(instances)) {
             doFinally(context);
             return true;
@@ -39,8 +39,8 @@ public class FieldRemovalTask {
         }
     }
 
-    private void doFinally(IInstanceContext context) {
-        context.getEntityContext().remove(field);
+    private void doFinally(IEntityContext context) {
+        context.remove(field);
     }
 
     private void processInstance(Instance instance) {

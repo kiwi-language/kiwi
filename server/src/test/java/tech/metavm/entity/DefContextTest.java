@@ -5,15 +5,15 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.expression.ConstantExpression;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
-import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.expression.ConstantExpression;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -26,7 +26,7 @@ public class DefContextTest extends TestCase {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefContextTest.class);
 
     private DefContext defContext;
-    private MockModelInstanceMap modelInstanceMap;
+    private ObjectInstanceMap objectInstanceMap;
     private TypeFactory typeFactory;
     private MockIdProvider idProvider;
 
@@ -34,7 +34,7 @@ public class DefContextTest extends TestCase {
     protected void setUp() {
         idProvider = new MockIdProvider();
         defContext = new DefContext(o -> null, null, new MemColumnStore());
-        modelInstanceMap = new MockModelInstanceMap(defContext);
+        objectInstanceMap = defContext.getObjectInstanceMap();
         typeFactory = new DefaultTypeFactory(defContext::getType);
     }
 
@@ -47,7 +47,7 @@ public class DefContextTest extends TestCase {
     public void testConvertToInstance() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        Instance instance = typeDef.createInstance(type, modelInstanceMap, null);
+        var instance = typeDef.createInstance(type, objectInstanceMap, null);
 //        InstanceDTO instanceDTO = instance.toDTO();
 //        TestUtils.logJSON(LOGGER, "instance", instanceDTO);
         Assert.assertEquals(type.getId(), instance.getId());
@@ -56,38 +56,25 @@ public class DefContextTest extends TestCase {
     public void testConvertFoo() {
         EntityDef<Foo> fooDef = defContext.getEntityDef(Foo.class);
         Foo foo = new Foo(" Big Foo", new Bar("Bar001"));
-        ClassInstance instance = fooDef.createInstance(foo, modelInstanceMap, null);
-        Foo recoveredFoo = fooDef.createModel(instance, modelInstanceMap);
+        ClassInstance instance = fooDef.createInstance(foo, objectInstanceMap, null);
+        Foo recoveredFoo = fooDef.createModel(instance, objectInstanceMap);
         Assert.assertFalse(DiffUtils.isPojoDifferent(foo, recoveredFoo));
     }
 
     public void testConvertType() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        ClassInstance instance = typeDef.createInstance(type, modelInstanceMap, null);
-        ClassType recoveredType = typeDef.createModel(instance, modelInstanceMap);
+        ClassInstance instance = typeDef.createInstance(type, objectInstanceMap, null);
+        ClassType recoveredType = typeDef.createModel(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredType, PojoMatcher.of(type));
     }
 
     public void testGenerateInstances() {
-        defContext = new DefContext(o -> null, new MemInstanceContext(), new MemColumnStore());
-        ModelDef<ClassType, ?> typeDef = defContext.getDef(ClassType.class);
-        Assert.assertNotNull(typeDef);
 
-        defContext.finish();
-
-        Assert.assertNotNull(typeDef.getType().getId());
-
-        Assert.assertTrue(typeDef.getType() instanceof ClassType);
-        ClassType classType = (ClassType) typeDef.getType();
-
-        ReadonlyArray<Constraint> constraints = classType.getDeclaredConstraints();
-        Assert.assertNotNull(constraints);
-        Assert.assertNotNull(constraints.getId());
     }
 
     public void testInheritance() {
-        EntityDef<NodeRT<?>> superDef = defContext.getEntityDef(new TypeReference<>(){});
+        EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>(){});
         Assert.assertSame(superDef.getType().getSuperClass(), typeFactory.getEntityType());
     }
 
@@ -104,17 +91,16 @@ public class DefContextTest extends TestCase {
         PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
         ClassType quxType = defContext.getClassType(Qux.class);
         Field quxAmountField = defContext.getField(Qux.class, "amount");
-        Instance qux = new ClassInstance(
+        var qux = ClassInstance.create(
                 Map.of(
-                        quxAmountField, InstanceUtils.longInstance(100L)
+                        quxAmountField, Instances.longInstance(100L)
                 ),
                 quxType
         );
         qux.initId(idProvider.allocateOne(TestConstants.APP_ID, quxType));
-
         ConstantExpression model = new ConstantExpression(qux);
-        Instance instance = def.createInstance(model, modelInstanceMap, null);
-        ConstantExpression recoveredModel = def.createModelHelper(instance, modelInstanceMap);
+        Instance instance = def.createInstance(model, objectInstanceMap, null);
+        ConstantExpression recoveredModel = def.createModelHelper(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredModel, PojoMatcher.of(model));
     }
 

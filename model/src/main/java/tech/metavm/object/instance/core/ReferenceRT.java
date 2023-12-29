@@ -2,15 +2,15 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-public record ReferenceRT(Instance source, Instance target, @Nullable Field field) {
+public record ReferenceRT(DurableInstance source, DurableInstance target, @Nullable Field field) {
 
-    public ReferenceRT(Instance source, Instance target, @Nullable Field field) {
+    public ReferenceRT(DurableInstance source, DurableInstance target, @Nullable Field field) {
         this.source = source;
         this.target = target;
         this.field = field;
@@ -31,9 +31,9 @@ public record ReferenceRT(Instance source, Instance target, @Nullable Field fiel
 
     public void remove() {
         if (source instanceof ClassInstance classInstance) {
-            classInstance.setField(NncUtils.requireNonNull(field), InstanceUtils.nullInstance());
+            classInstance.setField(NncUtils.requireNonNull(field), Instances.nullInstance());
         } else if (source instanceof ArrayInstance arrayInstance) {
-            arrayInstance.remove(target);
+            arrayInstance.removeElement(target);
         } else {
             throw new InternalException("Unexpected source: " + source);
         }

@@ -11,10 +11,10 @@ import java.util.Date;
 public class LoginAttempt extends Entity {
 
     public static final IndexDef<LoginAttempt> IDX_LOGIN_NAME_SUCC_TIME =
-            IndexDef.normalKey(LoginAttempt.class, "loginName", "successful", "time");
+            IndexDef.create(LoginAttempt.class, "loginName", "successful", "time");
 
     public static final IndexDef<LoginAttempt> IDX_CLIENT_IP_SUCC_TIME  =
-            IndexDef.normalKey(LoginAttempt.class, "clientIP", "successful", "time");
+            IndexDef.create(LoginAttempt.class, "clientIP", "successful", "time");
 
     @EntityField("是否成功")
     private final boolean successful;

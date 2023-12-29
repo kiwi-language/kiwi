@@ -1,19 +1,15 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.NullInstance;
-import tech.metavm.object.instance.core.StringInstance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
-import tech.metavm.util.ReflectUtils;
 
 import java.util.*;
 import java.util.function.Function;
 
-public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
+public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
 
     private final String name;
     private final ValueDef<Enum<?>> parentDef;
@@ -25,7 +21,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     private final DefContext defContext;
 
     public EnumDef(Class<T> enumType, ValueDef<Enum<?>> parentDef, ClassType type, DefContext defContext) {
-        super(enumType, Instance.class);
+        super(enumType, ClassInstance.class);
         this.enumType = enumType;
         this.parentDef = parentDef;
         EntityType annotation = enumType.getAnnotation(EntityType.class);
@@ -45,7 +41,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     @Override
-    public T createModel(Instance instance, ModelInstanceMap modelInstanceMap) {
+    public T createModel(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         return NncUtils.findRequired(
                 enumConstantDefList,
                 def -> def.getInstance() == instance
@@ -53,17 +49,17 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     @Override
-    public void initModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
+    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(T model, Instance instance, ModelInstanceMap modelInstanceMap) {
+    public void updateModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
 
     }
 
     @Override
-    public Instance createInstance(T model, ModelInstanceMap instanceMap, Long id) {
+    public ClassInstance createInstance(T model, ObjectInstanceMap instanceMap, Long id) {
         return NncUtils.findRequired(
                 enumConstantDefList,
                 def -> def.getValue() == model
@@ -71,22 +67,17 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     }
 
     @Override
-    public void initInstance(Instance instance, T enumConstant, ModelInstanceMap instanceMap) {
+    public void initInstance(ClassInstance instance, T enumConstant, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateInstance(Instance instance, T model, ModelInstanceMap instanceMap) {
+    public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
 
     }
 
     @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of(enumType, type);
-    }
-
-    @Override
-    public Map<Object, Instance> getInstanceMapping() {
+    public Map<Object, DurableInstance> getInstanceMapping() {
         return NncUtils.toMap(
                 enumConstantDefList,
                 EnumConstantDef::getValue,
@@ -102,7 +93,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, Instance> {
     EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField, Function<Object, Long> getId) {
         ClassInstance instance = new ClassInstance(
                 getId.apply(value),
-                parentDef.getInstanceFields(value, new PrimitiveInstanceMap(defContext)),
+                parentDef.getInstanceFields(value, defContext.getObjectInstanceMap()),
                 type
         );
         instance.setField(

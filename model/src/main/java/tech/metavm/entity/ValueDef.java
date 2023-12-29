@@ -1,8 +1,8 @@
 package tech.metavm.entity;
 
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.type.ClassType;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 
 public class ValueDef<T> extends PojoDef<T> {

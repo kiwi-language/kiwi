@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.type.CheckConstraint;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
@@ -14,7 +14,7 @@ public class CheckConstraintDef {
     public CheckConstraintDef(CheckConstraint checkConstraint, Field constraintDefField, PojoDef<?> declaringTypeDef) {
         this.checkConstraint = checkConstraint;
         this.constraintDefField = constraintDefField;
-        constraintDef = (ConstraintDef<?>) ReflectUtils.get(null, constraintDefField);
+        constraintDef = (ConstraintDef<?>) ReflectionUtils.get(null, constraintDefField);
         checkConstraint.setConstraintDef(constraintDef);
         declaringTypeDef.addCheckConstraintDef(this);
     }

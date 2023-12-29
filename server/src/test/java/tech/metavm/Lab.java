@@ -1,43 +1,47 @@
 package tech.metavm;
 
-import tech.metavm.util.BytesUtils;
-import tech.metavm.util.TestUtils;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Scanner;
+
+import java.util.Scanner;
 import java.util.Scanner;
 
 public class Lab {
 
-    public static final String FILE = "/Users/leen/DeskTop/wad.txt";
+    static @NotNull String s = "Hello";
 
-    public static final String BYTES_FILE = "/Users/leen/workspace/object/src/test/resources/bytes/test";
-
-    public static final DecimalFormat DF = new DecimalFormat("000000");
-
-    public static void main(String[] args) throws Exception {
-
+    public static void main(String[] args) {
     }
 
-    private static void testBytes() {
-        var bytes = TestUtils.readBytes(BYTES_FILE);
-        TestUtils.printJSON(BytesUtils.convertToJSON(bytes, false));
-    }
+    private static boolean isConsistent(String s) {
+        int size = 0;  // Size of the array
+        int toRemove = 0;  // Elements to remove to restore sorted order
 
-    private static void calcTime() throws Exception {
-        try(var input = new FileInputStream(FILE)) {
-            Scanner scanner = new Scanner(input);
-            long t = 0;
-            while (scanner.hasNextLine()) {
-                t += Integer.parseInt(scanner.nextLine());
+        for (char ch : s.toCharArray()) {
+            if (ch == '+') {
+                size++;  // Add an element to the array
+            } else if (ch == '-') {
+                if (size == 0) {
+                    return false;  // Cannot remove from an empty array
+                }
+                size--;  // Remove an element from the array
+                if (toRemove > 0) {
+                    toRemove--;
+                }
+            } else if (ch == '0') {
+                if (size < 2) {
+                    return false;  // An array with less than 2 elements should be sorted
+                }
+                toRemove = size;  // Set the number of elements to be removed to restore sorted order
+            } else if (ch == '1') {
+                if (toRemove > 0) {
+                    return false;  // The array is unsorted and cannot be sorted without removing more elements
+                }
             }
-            System.out.println(t);
         }
+
+        return true;
     }
-
 }
-

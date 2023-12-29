@@ -4,7 +4,7 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 public class IteratorImplNative extends NativeBase {
@@ -26,7 +26,7 @@ public class IteratorImplNative extends NativeBase {
     }
 
     public BooleanInstance hasNext() {
-        return InstanceUtils.booleanInstance(index < size);
+        return Instances.booleanInstance(index < size);
     }
 
     public Instance next() {

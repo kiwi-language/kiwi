@@ -1,12 +1,15 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.flow.rest.ArgumentDTO;
 import tech.metavm.object.instance.core.Instance;
 
+import java.util.Objects;
+
 @EntityType("实参")
-public class Argument extends Element {
+public class Argument extends Element implements LocalKey {
 
     @EntityField("形参")
     private final Parameter parameter;
@@ -36,8 +39,8 @@ public class Argument extends Element {
     }
 
     public ArgumentDTO toDTO() {
-        try(var context = SerializeContext.enter()) {
-            return new ArgumentDTO(null, context.getRef(parameter), value.toDTO(false));
+        try(var serContext = SerializeContext.enter()) {
+            return new ArgumentDTO(null, serContext.getRef(parameter), value.toDTO());
         }
     }
 
@@ -45,4 +48,19 @@ public class Argument extends Element {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitArgument(this);
     }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return parameter.getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(parameter.getCode());
+    }
+
+    public String getText() {
+        return getParameter().getName() + ": " + value.getText();
+    }
+
 }

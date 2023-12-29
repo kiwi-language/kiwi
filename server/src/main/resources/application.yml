@@ -42,7 +42,7 @@ mybatis:
   type-handlers-package: tech.metavm.util
 
 metavm:
-  resource-cp-root: /Users/leen/workspace/object/common/src/main/resources
+  resource-cp-root: /Users/leen/workspace/object/model/src/main/resources
   token:
     encrypt:
       certificate: /etc/metavm/encrypt_key.pub

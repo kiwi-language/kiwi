@@ -3,7 +3,7 @@ package tech.metavm.util;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.expression.Function;
+import tech.metavm.expression.Func;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.rest.dto.TypeDTO;
@@ -180,7 +180,7 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.EXPRESSION_INVALID_VALUE, expectedType, actualValue);
     }
 
-    public static BusinessException invalidFuncArguments(Function function) {
+    public static BusinessException invalidFuncArguments(Func function) {
         return new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_INVALID, function.name());
     }
 

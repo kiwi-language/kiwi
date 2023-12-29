@@ -1,68 +1,58 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.UpdateFieldDTO;
-import tech.metavm.flow.rest.UpdateStaticParamDTO;
+import tech.metavm.flow.rest.UpdateStaticNodeParam;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType("更新静态字段节点")
-public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
+public class UpdateStaticNode extends NodeRT {
 
-    public static UpdateStaticNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        UpdateStaticParamDTO param = nodeDTO.getParam();
-        var node = new UpdateStaticNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope,
-                context.getClassType(param.typeRef()));
-        node.setParam(param, context);
+    public static UpdateStaticNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        UpdateStaticNodeParam param = nodeDTO.getParam();
+        var node = (UpdateStaticNode) context.getNode(nodeDTO.getRef());
+        var type = context.getClassType(param.typeRef());
+        if (node == null)
+            node = new UpdateStaticNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, type);
+        else
+            node.setType(type);
+        var parsingContext = FlowParsingContext.create(scope, prev, context);
+        node.setFields(
+                NncUtils.map(
+                        param.fields(),
+                        field -> new UpdateField(
+                                context.getField(field.fieldRef()),
+                                UpdateOp.getByCode(field.opCode()),
+                                ValueFactory.create(field.value(), parsingContext)
+                        )
+                )
+        );
         return node;
     }
 
-    @SuppressWarnings("FieldCanBeLocal")
-    @EntityField("更新类型")
+    @EntityField("类型")
     private ClassType type;
 
-    @ChildEntity("更新字段")
+    @ChildEntity("字段列表")
     private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
 
-    public UpdateStaticNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, ClassType type) {
-        super(tmpId, name, null, previous, scope);
+    public UpdateStaticNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, ClassType type) {
+        super(tmpId, name, code, null, previous, scope);
         this.type = type;
     }
 
     @Override
-    protected UpdateStaticParamDTO getParam(boolean persisting) {
-        try (var context = SerializeContext.enter()) {
-            return new UpdateStaticParamDTO(
-                    context.getRef(type),
-                    NncUtils.map(fields, f -> f.toDTO(persisting))
-            );
-        }
-    }
-
-    @Override
-    protected void setParam(UpdateStaticParamDTO param, IEntityContext context) {
-        if (param.typeRef() != null) {
-            type = context.getClassType(param.typeRef());
-        }
-        if (param.fields() != null) {
-            for (UpdateFieldDTO field : param.fields()) {
-                NncUtils.requireTrue(context.getField(field.fieldRef()).getDeclaringType() == type);
-            }
-            var parsingContext = getParsingContext(context);
-            fields.resetChildren(
-                    NncUtils.map(
-                            param.fields(),
-                            field -> new UpdateField(
-                                    context.getField(field.fieldRef()),
-                                    UpdateOp.getByCode(field.opCode()),
-                                    ValueFactory.create(field.value(), parsingContext)
-                            )
-                    )
+    protected UpdateStaticNodeParam getParam(SerializeContext serializeContext) {
+        try (var serContext = SerializeContext.enter()) {
+            return new UpdateStaticNodeParam(
+                    serContext.getRef(type),
+                    NncUtils.map(fields, UpdateField::toDTO)
             );
         }
     }
@@ -80,20 +70,32 @@ public class UpdateStaticNode extends NodeRT<UpdateStaticParamDTO> {
         }
     }
 
-    public ClassType getUpdateType() {
-        return type;
-    }
-
     public List<UpdateField> getFields() {
         return fields.toList();
+    }
+
+    public void setType(ClassType type) {
+        this.type = type;
+        this.fields.clear();
+    }
+
+    public void setFields(List<UpdateField> fields) {
+        NncUtils.requireTrue(NncUtils.allMatch(fields, f -> f.getField().getDeclaringType() == type));
+        this.fields.resetChildren(fields);
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         for (UpdateField field : fields) {
-            field.execute(null, frame, getFlow().isConstructor(), frame.getContext());
+            field.execute(null, frame, Flows.isConstructor(getFlow()));
         }
         return next(null);
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("update(" + type.getName() + ", {"
+                + NncUtils.join(fields, UpdateField::getText, ", ") + "}");
     }
 
     @Override

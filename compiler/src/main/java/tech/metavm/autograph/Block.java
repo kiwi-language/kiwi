@@ -6,7 +6,7 @@ import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
-class Block {
+public class Block {
     final @Nullable Block parent;
     final PsiCodeBlock element;
     final Set<String> declaredNames = new HashSet<>();

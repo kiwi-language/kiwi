@@ -5,7 +5,6 @@ import tech.metavm.common.BaseDTO;
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.GenericDeclarationDTO;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -24,6 +23,11 @@ public record TypeDTO(
     @JsonIgnore
     public ClassTypeParam getClassParam() {
         return (ClassTypeParam) param;
+    }
+
+    @JsonIgnore
+    public PTypeDTO getPTypeDTO() {
+        return (PTypeDTO) param;
     }
 
     @JsonIgnore

@@ -13,28 +13,28 @@ public enum ValueKind {
     NULL(ValueKindCodes.NULL) {
         @Override
         public Value createValue(Expression expression) {
-            return Value.nullValue();
+            return Values.nullValue();
         }
     },
     @EnumConstant("常量")
     CONSTANT(ValueKindCodes.CONSTANT) {
         @Override
         public Value createValue(Expression expression) {
-            return Value.constant(expression);
+            return Values.constant(expression);
         }
     },
     @EnumConstant("引用")
     REFERENCE(ValueKindCodes.REFERENCE) {
         @Override
         public Value createValue(Expression expression) {
-            return Value.reference(expression);
+            return Values.reference(expression);
         }
     },
     @EnumConstant("表达式")
     EXPRESSION(ValueKindCodes.EXPRESSION) {
         @Override
         public Value createValue(Expression expression) {
-            return Value.expression(expression);
+            return Values.expression(expression);
         }
     };
 

@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -31,7 +30,7 @@ public class EntityProp {
     }
 
     public boolean isEntityList() {
-        return ReflectUtils.isCollectionOf(field.getGenericType(), Entity.class);
+        return ReflectionUtils.isCollectionOf(field.getGenericType(), Entity.class);
     }
 
     public boolean isEntity() {
@@ -78,7 +77,7 @@ public class EntityProp {
     }
 
     public Entity getEntity(Object object) {
-        return (Entity) ReflectUtils.get(object, field);
+        return (Entity) ReflectionUtils.get(object, field);
     }
 
     public List<Entity> getEntityList(Object object) {
@@ -114,11 +113,11 @@ public class EntityProp {
     }
 
     public Object get(Object object) {
-        return ReflectUtils.get(object, field);
+        return ReflectionUtils.get(object, field);
     }
 
     public void set(Object object, Object fieldValue) {
-        ReflectUtils.set(object, field, fieldValue);
+        ReflectionUtils.set(object, field, fieldValue);
     }
 
     @Override

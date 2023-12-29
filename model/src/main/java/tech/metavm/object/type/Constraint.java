@@ -1,9 +1,7 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.SerializeContext;
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.*;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.object.type.rest.dto.ConstraintDTO;
@@ -14,21 +12,25 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType("约束")
-public abstract class Constraint extends ClassMember {
+public abstract class Constraint extends Element implements  ClassMember, LocalKey {
 
+    @EntityField("所属类型")
+    private final ClassType declaringType;
     @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField(value = "编号")
-    private @Nullable String code;
+    @Nullable
+    private String code;
     @EntityField("类别")
     private final ConstraintKind kind;
     @EntityField("错误提示")
     @Nullable
     private String message;
 
-    public Constraint(ConstraintKind kind, ClassType declaringType,
+    public Constraint(ConstraintKind kind, @NotNull ClassType declaringType,
                       String name, @Nullable String code, @Nullable String message) {
-        super(null, declaringType);
+        super(null);
+        this.declaringType = declaringType;
         this.name =  NamingUtils.ensureValidName(name);
         this.code = NamingUtils.ensureValidCode(code);
         this.kind = kind;
@@ -46,12 +48,12 @@ public abstract class Constraint extends ClassMember {
         this.message = message;
     }
 
-    protected abstract ConstraintParam getParam(boolean forPersistence);
+    protected abstract ConstraintParam getParam();
 
     public abstract void setParam(Object param, IEntityContext context);
 
     protected ParsingContext getParsingContext(IEntityContext context) {
-        return new TypeParsingContext(getDeclaringType(), Objects.requireNonNull(context.getInstanceContext()));
+        return TypeParsingContext.create(getDeclaringType(), context);
     }
 
     public String getName() {
@@ -72,18 +74,22 @@ public abstract class Constraint extends ClassMember {
     }
 
     public ConstraintDTO toDTO() {
-        try (var context = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new ConstraintDTO(
-                    context.getTmpId(this),
-                    getId(),
+                    getId(), serContext.getTmpId(this),
                     kind.code(),
                     getDeclaringType().getIdRequired(),
                     name,
                     code,
                     message,
-                    getParam(false)
+                    getParam()
             );
         }
+    }
+
+    @Override
+    public ClassType getDeclaringType() {
+        return declaringType;
     }
 
     public abstract String getDesc();
@@ -96,4 +102,13 @@ public abstract class Constraint extends ClassMember {
             setParam(constraintDTO.getParam(), context);
     }
 
+    @Override
+    public boolean isValidLocalKey() {
+        return code != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(code);
+    }
 }

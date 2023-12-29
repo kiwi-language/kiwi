@@ -14,14 +14,18 @@ import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.*;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.MockRegistry;
+import tech.metavm.util.TestUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static tech.metavm.util.InstanceUtils.*;
-import static tech.metavm.util.MockRegistry.*;
+import static tech.metavm.util.Instances.stringInstance;
+import static tech.metavm.util.MockRegistry.getClassType;
+import static tech.metavm.util.MockRegistry.getField;
 import static tech.metavm.util.TestConstants.APP_ID;
 
 public class InstanceTest extends TestCase {
@@ -45,7 +49,7 @@ public class InstanceTest extends TestCase {
     private ClassInstance getBarInstance() {
         Map<Field, Instance> barData = new HashMap<>();
         barData.put(getField(Bar.class, "code"), stringInstance(CONST_BAR_CODE));
-        ClassInstance bar = new ClassInstance(barData, getClassType(Bar.class));
+        ClassInstance bar = ClassInstance.create(barData, getClassType(Bar.class));
         bar.initId(2L);
         return bar;
     }
@@ -54,13 +58,13 @@ public class InstanceTest extends TestCase {
         Map<Field, Instance> fooData = new HashMap<>();
         fooData.put(getField(Foo.class, "name"), stringInstance(CONST_FOO_NAME));
         fooData.put(getField(Foo.class, "bar"), getBarInstance());
-        ClassInstance foo =  new ClassInstance(fooData, getClassType(Foo.class));
+        ClassInstance foo = ClassInstance.create(fooData, getClassType(Foo.class));
         foo.initId(1L);
         return foo;
     }
 
     public void testToPO() {
-        Instance foo = getFooInstance();
+        var foo = getFooInstance();
         TestUtils.logJSON(LOGGER, PersistenceUtils.toInstancePO(foo, APP_ID));
     }
 
@@ -81,7 +85,7 @@ public class InstanceTest extends TestCase {
                         List.of(getBarInstance())
                 )
         );
-        ClassInstance baz = new ClassInstance(data, getClassType(Baz.class));
+        ClassInstance baz = ClassInstance.create(data, getClassType(Baz.class));
         ArrayInstance bars = baz.getInstanceArray(getField(Baz.class, "bars"));
         ClassInstance bar = (ClassInstance) bars.getInstance(0);
         Assert.assertEquals(1, bars.length());

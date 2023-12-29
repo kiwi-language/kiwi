@@ -8,7 +8,7 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -40,8 +40,8 @@ public class SetNative extends NativeBase {
 
     public ClassInstance iterator() {
         var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
-        var it = new ClassInstance(iteratorImplType);
-        var itNative = (IteratorImplNative) NativeInvoker.getNativeObject(it);
+        var it = ClassInstance.allocate(iteratorImplType);
+        var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance);
         return it;
     }
@@ -49,10 +49,10 @@ public class SetNative extends NativeBase {
     public Instance add(Instance value) {
         if (!element2index.containsKey(value)) {
             element2index.put(value, array.size());
-            array.add(value);
-            return InstanceUtils.trueInstance();
+            array.addElement(value);
+            return Instances.trueInstance();
         } else {
-            return InstanceUtils.falseInstance();
+            return Instances.falseInstance();
         }
     }
 
@@ -60,27 +60,27 @@ public class SetNative extends NativeBase {
         Integer index = element2index.remove(value);
         if (index != null) {
             int lastIdx = array.size() - 1;
-            var last = array.remove(lastIdx);
+            var last = array.removeElement(lastIdx);
             if (index != lastIdx) {
-                array.set(index, last);
+                array.setElement(index, last);
                 element2index.put(last, index);
             }
-            return InstanceUtils.trueInstance();
+            return Instances.trueInstance();
         } else {
-            return InstanceUtils.falseInstance();
+            return Instances.falseInstance();
         }
     }
 
     public Instance isEmpty() {
-        return InstanceUtils.booleanInstance(element2index.isEmpty());
+        return Instances.booleanInstance(element2index.isEmpty());
     }
 
     public Instance contains(Instance value) {
-        return InstanceUtils.booleanInstance(element2index.containsKey(value));
+        return Instances.booleanInstance(element2index.containsKey(value));
     }
 
     public Instance size() {
-        return InstanceUtils.longInstance(element2index.size());
+        return Instances.longInstance(element2index.size());
     }
 
     public void clear() {

@@ -78,6 +78,16 @@ public class NncUtils {
         }
     }
 
+    public static <T> boolean iterableEquals(Iterable<? extends T> iterable1, Iterable<? extends T> iterable2) {
+        var it1 = iterable1.iterator();
+        var it2 = iterable2.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            if(!it1.next().equals(it2.next()))
+                return false;
+        }
+        return !it1.hasNext() && !it2.hasNext();
+    }
+
     public static void writeJsonToFile(String filePath, Object object) {
         writeFile(filePath, toJSONString(object));
     }
@@ -110,18 +120,7 @@ public class NncUtils {
     }
 
     public static String getGetter(String name) {
-        return "get" + firstCharToUpperCase(name);
-    }
-
-    public static String firstCharToUpperCase(String s) {
-        if (s.isEmpty()) {
-            return s;
-        }
-        if (s.length() == 1) {
-            return s.toUpperCase();
-        } else {
-            return Character.toUpperCase(s.charAt(0)) + s.substring(1);
-        }
+        return "get" + NamingUtils.firstCharToUpperCase(name);
     }
 
     @SuppressWarnings("unchecked")

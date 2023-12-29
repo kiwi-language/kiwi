@@ -2,8 +2,7 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.flow.rest.LambdaNodeParamDTO;
+import tech.metavm.flow.rest.LambdaNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.LambdaInstance;
@@ -11,7 +10,7 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.FunctionType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.Types;
-import tech.metavm.entity.ChildArray;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -19,10 +18,10 @@ import java.util.List;
 import java.util.Map;
 
 @EntityType("Lambda节点")
-public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callable {
+public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
-    public static LambdaNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        LambdaNodeParamDTO param = nodeDTO.getParam();
+    public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        LambdaNodeParam param = nodeDTO.getParam();
         var parameters = NncUtils.map(
                 param.getParameters(),
                 paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
@@ -31,12 +30,17 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         var parameterTypes = NncUtils.map(parameters, Parameter::getType);
         var returnType = context.getType(param.getReturnTypeRef());
         var funcInterface = NncUtils.get(param.getFunctionalInterfaceRef(), context::getClassType);
-        var funcType = context.getFunctionTypeContext().get(parameterTypes, returnType);
-        var node = new LambdaNode(
-                nodeDTO.tmpId(), nodeDTO.name(), prev, scope, parameters, returnType,
-                funcType, funcInterface
-        );
-
+        var funcType = context.getFunctionTypeContext().getFunctionType(parameterTypes, returnType);
+        var node = (LambdaNode) context.getNode(nodeDTO.getRef());
+        if (node == null) {
+            node = new LambdaNode(
+                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType,
+                    funcType, funcInterface
+            );
+            node.createSAMImpl(context);
+        }
+        else
+            node.update(parameters, returnType, funcType, funcInterface);
         return node;
     }
 
@@ -51,17 +55,31 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
 
     @Nullable
     @EntityField("函数接口")
-    private final ClassType functionalInterface;
+    private ClassType functionalInterface;
 
-    public LambdaNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope,
+    private transient ClassType functionInterfaceImpl;
+
+    public LambdaNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
                       List<Parameter> parameters,
                       Type returnType,
                       FunctionType functionType, @Nullable ClassType functionalInterface) {
-        super(tmpId, name, functionalInterface != null ? functionalInterface : functionType, previous, scope, false);
+        super(tmpId, name, code, functionalInterface != null ? functionalInterface : functionType, previous, scope, false);
+        checkTypes(parameters, returnType, functionType);
         setParameters(parameters);
         this.returnType = returnType;
         this.functionType = functionType;
         this.functionalInterface = functionalInterface;
+    }
+
+    private void checkTypes(List<Parameter> parameters, Type returnType, FunctionType functionType) {
+        if (parameters.size() != functionType.getParameterTypes().size())
+            throw new InternalException("Parameter size mismatch");
+        for (int i = 0; i < parameters.size(); i++) {
+            if (!parameters.get(i).getType().equals(functionType.getParameterTypes().get(i)))
+                throw new InternalException("Parameter type mismatch");
+        }
+        if (!returnType.equals(functionType.getReturnType()))
+            throw new InternalException("Return type mismatch");
     }
 
     @Override
@@ -69,7 +87,6 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
     public Type getType() {
         return NncUtils.requireNonNull(super.getType());
     }
-
 
     @Nullable
     public ClassType getFunctionalInterface() {
@@ -80,42 +97,20 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         return NncUtils.listOf(parameters);
     }
 
-    @Override
-    public Parameter getParameterByName(String name) {
-        return parameters.get(Parameter::getName, name);
-    }
-
     public Type getReturnType() {
         return returnType;
     }
 
     @Override
-    protected LambdaNodeParamDTO getParam(boolean persisting) {
-        try (var context = SerializeContext.enter()) {
-            return new LambdaNodeParamDTO(
-                    bodyScope.toDTO(true),
+    protected LambdaNodeParam getParam(SerializeContext serializeContext) {
+        try (var serContext = SerializeContext.enter()) {
+            return new LambdaNodeParam(
+                    bodyScope.toDTO(true, serializeContext),
                     NncUtils.map(parameters, Parameter::toDTO),
-                    context.getRef(returnType),
-                    NncUtils.get(functionalInterface, context::getRef)
+                    serContext.getRef(returnType),
+                    NncUtils.get(functionalInterface, serContext::getRef)
             );
         }
-    }
-
-    @Override
-    protected void setParam(LambdaNodeParamDTO param, IEntityContext context) {
-        if (param.getParameters() != null) {
-            parameters.resetChildren(
-                    NncUtils.map(
-                            param.getParameters(),
-                            paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                                    context.getType(paramDTO.typeRef()))
-                    )
-            );
-        }
-        if (param.getReturnTypeRef() != null) {
-            this.returnType = context.getType(param.getReturnTypeRef());
-        }
-        setOutputType(context.getFunctionTypeContext().get(getParameterTypes(), returnType));
     }
 
     public List<Type> getParameterTypes() {
@@ -126,9 +121,25 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
         return functionType;
     }
 
+    public void update(List<Parameter> parameters, Type returnType,
+                       FunctionType functionType,
+                       @Nullable ClassType functionalInterface) {
+        checkTypes(parameters, returnType, functionType);
+        setParameters(parameters);
+        this.returnType = returnType;
+        this.functionalInterface = functionalInterface;
+        this.functionType = functionType;
+        setOutputType(functionalInterface != null ? functionalInterface : functionType);
+    }
+
     public void setParameters(List<Parameter> parameters) {
         NncUtils.forEach(parameters, p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
+    }
+
+    @Override
+    public Parameter getParameterByName(String name) {
+        return parameters.get(Parameter::getName, name);
     }
 
     @Override
@@ -139,19 +150,33 @@ public class LambdaNode extends ScopeNode<LambdaNodeParamDTO> implements Callabl
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var func = new LambdaInstance(this, frame);
-        if (functionalInterface == null) {
+        if (functionInterfaceImpl == null) {
             return next(func);
         } else {
-            var funcClass = Types.createFunctionalClass(
-                    functionalInterface,
-                    frame.getEntityContext());
-            var funcField = funcClass.getFieldByCode("func");
-            return next(new ClassInstance(Map.of(funcField, func), funcClass));
+            var funcField = functionInterfaceImpl.getFieldByCode("func");
+            return next(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl));
         }
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("(" + NncUtils.join(parameters, Parameter::getText, ", ") + ")");
+        writer.write(": " + returnType.getName() + " -> ");
+        bodyScope.writeCode(writer);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitLambdaNode(this);
     }
+
+    @Override
+    public void onLoad(IEntityContext context) {
+        createSAMImpl(context);
+    }
+
+    public void createSAMImpl(IEntityContext context) {
+        functionInterfaceImpl = functionalInterface != null ? Types.createFunctionalClass(functionalInterface, context) : null;
+    }
+
 }

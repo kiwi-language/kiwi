@@ -1,5 +1,6 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.FieldParamDTO;
@@ -15,11 +16,10 @@ import tech.metavm.util.NncUtils;
 import java.util.Objects;
 
 @EntityType("字段值")
-public class FieldParam extends Entity {
+public class FieldParam extends Entity implements LocalKey {
 
     public static FieldParam create(FieldParamDTO fieldParamDTO,
-                                    ParsingContext parsingContext) {
-        var entityContext = NncUtils.requireNonNull(parsingContext.getEntityContext());
+                                    ParsingContext parsingContext, IEntityContext entityContext) {
         return new FieldParam(
                 entityContext.getField(fieldParamDTO.fieldRef()),
                 ValueFactory.create(fieldParamDTO.value(), parsingContext)
@@ -52,11 +52,11 @@ public class FieldParam extends Entity {
         this.value = addChild(value, "value");
     }
 
-    public FieldParamDTO toDTO(boolean persisting) {
-        try(var context = SerializeContext.enter()) {
+    public FieldParamDTO toDTO() {
+        try(var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
                     getId(), getTmpId(),
-                    context.getRef(field), NncUtils.get(value, v -> v.toDTO(persisting)));
+                    serContext.getRef(field), NncUtils.get(value, v -> v.toDTO()));
         }
     }
 
@@ -89,4 +89,19 @@ public class FieldParam extends Entity {
     public int hashCode() {
         return Objects.hash(field, value);
     }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return field.getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(field.getCode());
+    }
+
+    public String getText() {
+        return field.getName() + ": " + value.getText();
+    }
+
 }

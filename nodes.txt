@@ -1,0 +1,3 @@
+ViewMapping override
+
+ViewMapping is a member of the class, just like fields and flows. ViewMapping supports overriding like flows.

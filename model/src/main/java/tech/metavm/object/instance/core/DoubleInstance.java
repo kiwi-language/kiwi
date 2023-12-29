@@ -3,11 +3,10 @@ package tech.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.WireTypes;
 
 import java.text.DecimalFormat;
-import java.util.Comparator;
 
 public class DoubleInstance extends NumberInstance {
 
@@ -55,19 +54,19 @@ public class DoubleInstance extends NumberInstance {
     }
 
     public BooleanInstance gt(DoubleInstance that) {
-        return InstanceUtils.createBoolean(value > that.value);
+        return Instances.createBoolean(value > that.value);
     }
 
     public BooleanInstance ge(DoubleInstance that) {
-        return InstanceUtils.createBoolean(value >= that.value);
+        return Instances.createBoolean(value >= that.value);
     }
 
     public BooleanInstance lt(DoubleInstance that) {
-        return InstanceUtils.createBoolean(value < that.value);
+        return Instances.createBoolean(value < that.value);
     }
 
     public BooleanInstance le(DoubleInstance that) {
-        return InstanceUtils.createBoolean(value <= that.value);
+        return Instances.createBoolean(value <= that.value);
     }
 
     public DoubleInstance mod(DoubleInstance that) {
@@ -85,8 +84,8 @@ public class DoubleInstance extends NumberInstance {
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitDoubleInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitDoubleInstance(this);
     }
 
     @Override

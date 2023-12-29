@@ -3,20 +3,19 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
 
-import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.List;
 
-public class TypeVariableParser implements DefParser<Object, ClassInstance, TypeVariableDef> {
+import static tech.metavm.object.type.ResolutionStage.INIT;
+
+public class TypeVariableParser extends DefParser<Object, ClassInstance, TypeVariableDef> {
 
     private final TypeVariable<?> javaTypeVariable;
     private final Class<?> declaringClass;
-    private final DefMap defMap;
+    private final DefContext defMap;
     private tech.metavm.object.type.TypeVariable type;
 
-    public TypeVariableParser(TypeVariable<?> javaTypeVariable, DefMap defMap) {
+    public TypeVariableParser(TypeVariable<?> javaTypeVariable, DefContext defMap) {
         if(!(javaTypeVariable.getGenericDeclaration() instanceof Class<?>)) {
             throw new InternalException("TypeVariables not declared in classes are not supported yet");
         }
@@ -30,8 +29,13 @@ public class TypeVariableParser implements DefParser<Object, ClassInstance, Type
         return new TypeVariableDef(javaTypeVariable, createType());
     }
 
+    @Override
+    public TypeVariableDef get() {
+        return null;
+    }
+
     private tech.metavm.object.type.TypeVariable createType() {
-        var declaringType = defMap.getPojoDef(declaringClass).getType();
+        var declaringType = defMap.getPojoDef(declaringClass, INIT).getType();
         return type = new tech.metavm.object.type.TypeVariable(
                 null,
                 EntityUtils.getMetaTypeVariableName(javaTypeVariable),
@@ -40,13 +44,18 @@ public class TypeVariableParser implements DefParser<Object, ClassInstance, Type
     }
 
     @Override
-    public void initialize() {
-        type.setBounds(NncUtils.map(javaTypeVariable.getBounds(), defMap::getType));
+    public void generateSignature() {
+        type.setBounds(NncUtils.map(javaTypeVariable.getBounds(), b -> defMap.getType(b, INIT)));
     }
 
     @Override
-    public List<Type> getDependencyTypes() {
-        return List.of(declaringClass);
+    public void generateDeclaration() {
+
+    }
+
+    @Override
+    public void generateDefinition() {
+
     }
 
 }

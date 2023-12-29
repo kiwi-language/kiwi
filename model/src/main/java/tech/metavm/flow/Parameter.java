@@ -1,14 +1,16 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 @EntityType("参数")
-public class Parameter extends Element {
+public class Parameter extends Element implements GenericElement, LocalKey {
     @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField(value = "编号", asKey = true)
@@ -22,7 +24,8 @@ public class Parameter extends Element {
     @EntityField("可调用")
     private Callable callable;
     @EntityField("模板")
-    private final @Nullable Parameter template;
+    @Nullable
+    private Parameter template;
 
     public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
         this(tmpId, name, code, type, null, null, DummyCallable.INSTANCE);
@@ -46,7 +49,7 @@ public class Parameter extends Element {
     }
 
     public void setCallable(Callable callable) {
-        if(callable == this.callable)
+        if (callable == this.callable)
             return;
         NncUtils.requireTrue(this.callable == DummyCallable.INSTANCE,
                 "Callable already set");
@@ -83,16 +86,16 @@ public class Parameter extends Element {
     }
 
     public ParameterDTO toDTO() {
-        try (var context = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new ParameterDTO(
-                    context.getTmpId(this),
                     getId(),
+                    serContext.getTmpId(this),
                     name,
                     code,
-                    context.getRef(type),
-                    NncUtils.get(condition, v -> v.toDTO(false)),
-                    NncUtils.get(template, context::getRef),
-                    context.getRef(callable)
+                    serContext.getRef(type),
+                    NncUtils.get(condition, Value::toDTO),
+                    NncUtils.get(template, serContext::getRef),
+                    serContext.getRef(callable)
             );
         }
     }
@@ -100,6 +103,12 @@ public class Parameter extends Element {
     @Nullable
     public Parameter getTemplate() {
         return template;
+    }
+
+    @Override
+    public void setTemplate(Object template) {
+        NncUtils.requireNull(this.template);
+        this.template = (Parameter) template;
     }
 
     public @Nullable Value getCondition() {
@@ -113,5 +122,19 @@ public class Parameter extends Element {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitParameter(this);
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return code != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(code);
+    }
+
+    public String getText() {
+        return name + ":" + type.getName();
     }
 }

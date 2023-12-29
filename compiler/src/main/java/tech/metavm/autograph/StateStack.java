@@ -1,7 +1,7 @@
 package tech.metavm.autograph;
 
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -13,8 +13,8 @@ public class StateStack {
 
     public <T extends State> T create(Class<T> klass) {
         var stack = stack(klass);
-        var constructor = ReflectUtils.getConstructor(klass, State.class, StateStack.class);
-        T state = ReflectUtils.newInstance(constructor, stack.peek(), this);
+        var constructor = ReflectionUtils.getConstructor(klass, State.class, StateStack.class);
+        T state = ReflectionUtils.newInstance(constructor, stack.peek(), this);
         stack.push(state);
         return state;
     }

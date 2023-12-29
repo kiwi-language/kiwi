@@ -2,12 +2,12 @@ package tech.metavm.task;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.EntityUtils;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 @EntityType("引用清理任务")
 public class ReferenceCleanupTask extends Task {
@@ -28,9 +28,10 @@ public class ReferenceCleanupTask extends Task {
     }
 
     @Override
-    public boolean run0(IInstanceContext context) {
-        Instance next = NncUtils.get(nextReferenceId, context::get);
-        List<Instance> instances = context.getByReferenceTargetId(targetId, next, BATCH_SIZE);
+    public boolean run0(IEntityContext context) {
+        var instanceContext = context.getInstanceContext();
+        var next = NncUtils.get(nextReferenceId, id -> instanceContext.get(new PhysicalId(id)));
+        var instances = instanceContext.getByReferenceTargetId(targetId, next, BATCH_SIZE);
         for (Instance instance : instances) {
             EntityUtils.ensureProxyInitialized(instance);
         }

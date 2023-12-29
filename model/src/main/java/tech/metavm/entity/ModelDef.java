@@ -1,21 +1,25 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.object.type.rest.dto.InstanceParentRef;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 
-public abstract class ModelDef<T, I extends Instance> {
+public abstract class ModelDef<T, I extends DurableInstance> {
 
-    private final Class<T> javaClass;
-    private final java.lang.reflect.Type javaType;
+    protected final Class<T> javaClass;
+    protected final java.lang.reflect.Type javaType;
     private final Class<I> instanceType;
+    private boolean initialized;
+    @Nullable
+    private DefParser<T,I,?> parser;
 
     protected ModelDef(Class<T> javaClass, Class<I> instanceType) {
         this(javaClass, javaClass, instanceType);
@@ -33,15 +37,15 @@ public abstract class ModelDef<T, I extends Instance> {
 
     public abstract Type getType();
 
-    public abstract void initModel(T model, I instance, ModelInstanceMap modelInstanceMap);
+    public abstract void initModel(T model, I instance, ObjectInstanceMap objectInstanceMap);
 
-    public void initModelHelper(Object model, Instance instance, ModelInstanceMap modelInstanceMap) {
-        initModel(javaClass.cast(model), instanceType.cast(instance), modelInstanceMap);
+    public void initModelHelper(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
+        initModel(javaClass.cast(model), instanceType.cast(instance), objectInstanceMap);
     }
 
-    protected void reloadParent(Entity entity, Instance instance, ModelInstanceMap instanceMap, DefContext defContext) {
+    protected void reloadParent(Entity entity, DurableInstance instance, ObjectInstanceMap instanceMap, DefContext defContext) {
         if(entity.getParentEntity() != null) {
-            var parent = instanceMap.getInstance(entity.getParentEntity());
+            var parent = (DurableInstance) instanceMap.getInstance(entity.getParentEntity());
             Field parentField = null;
             if(entity.getParentEntityField() != null) {
                 parentField = defContext.getField(entity.getParentEntityField());
@@ -53,29 +57,29 @@ public abstract class ModelDef<T, I extends Instance> {
         }
     }
 
-    public abstract void updateModel(T model, I instance, ModelInstanceMap modelInstanceMap);
+    public abstract void updateModel(T model, I instance, ObjectInstanceMap objectInstanceMap);
 
-    public abstract void initInstance(I instance, T model, ModelInstanceMap instanceMap);
+    public abstract void initInstance(I instance, T model, ObjectInstanceMap instanceMap);
 
-    public final I createInstanceHelper(Object model, ModelInstanceMap instanceMap, Long id) {
+    public final I createInstanceHelper(Object model, ObjectInstanceMap instanceMap, Long id) {
         return createInstance(javaClass.cast(model), instanceMap, id);
     }
 
-    public I createInstance(T model, ModelInstanceMap instanceMap, Long id) {
+    public I createInstance(T model, ObjectInstanceMap instanceMap, Long id) {
         I instance = InstanceFactory.allocate(instanceType, getType(), id);
         initInstance(instance, model, instanceMap);
         return instance;
     }
 
-    public final void initInstanceHelper(Instance instance, Object model, ModelInstanceMap instanceMap) {
+    public final void initInstanceHelper(Instance instance, Object model, ObjectInstanceMap instanceMap) {
         initInstance(instanceType.cast(instance), javaClass.cast(model), instanceMap);
     }
 
-    public final void updateInstanceHelper(Object object, Instance instance, ModelInstanceMap instanceMap) {
+    public final void updateInstanceHelper(Object object, Instance instance, ObjectInstanceMap instanceMap) {
         updateInstance(instanceType.cast(instance), javaClass.cast(object), instanceMap);
     }
 
-    public abstract void updateInstance(I instance, T model, ModelInstanceMap instanceMap);
+    public abstract void updateInstance(I instance, T model, ObjectInstanceMap instanceMap);
 
     public Class<T> getJavaClass() {
         return javaClass;
@@ -89,21 +93,21 @@ public abstract class ModelDef<T, I extends Instance> {
         return javaType;
     }
 
-    public abstract Map<Object, Identifiable> getEntityMapping();
-
-    public Map<Object, Instance> getInstanceMapping() {
+    public Map<Object, DurableInstance> getInstanceMapping() {
         return Map.of();
     }
 
-    public T createModelHelper(Instance instance, ModelInstanceMap modelInstanceMap) {
-        return createModel(instanceType.cast(instance), modelInstanceMap);
+    public T createModelHelper(Instance instance, ObjectInstanceMap objectInstanceMap) {
+        return createModel(instanceType.cast(instance), objectInstanceMap);
     }
-    public T createModel(I instance, ModelInstanceMap modelInstanceMap) {
+    public T createModel(I instance, ObjectInstanceMap objectInstanceMap) {
         T model = allocateModel();
-        if(model instanceof IdInitializing idInitializing && instance.getId() != null) {
-            idInitializing.initId(instance.getId());
+        if(model instanceof IdInitializing idInitializing) {
+            var d = (DurableInstance) instance;
+            if(d.getId() != null)
+                idInitializing.initId(d.getId());
         }
-        initModel(model, instance, modelInstanceMap);
+        initModel(model, instance, objectInstanceMap);
         return model;
     }
 
@@ -116,7 +120,7 @@ public abstract class ModelDef<T, I extends Instance> {
     }
 
     protected T allocateModel() {
-        return ReflectUtils.allocateInstance(javaClass);
+        return ReflectionUtils.allocateInstance(javaClass);
     }
 
     public boolean isProxySupported() {
@@ -131,4 +135,20 @@ public abstract class ModelDef<T, I extends Instance> {
         return createModelProxy(proxyClass.asSubclass(javaClass));
     }
 
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    public void setInitialized(boolean initialized) {
+        this.initialized = initialized;
+    }
+
+    @Nullable
+    public DefParser<T, I, ?> getParser() {
+        return parser;
+    }
+
+    public void setParser(@Nullable DefParser<T, I, ?> parser) {
+        this.parser = parser;
+    }
 }

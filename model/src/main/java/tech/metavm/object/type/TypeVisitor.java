@@ -20,8 +20,8 @@ public interface TypeVisitor<R,S> {
 
     R visitPrimitiveType(PrimitiveType type, S s);
 
-    R visitNothingType(NothingType type, S s);
+    R visitNothingType(NeverType type, S s);
 
-    R visitObjectType(ObjectType type, S s);
+    R visitObjectType(AnyType type, S s);
 
 }

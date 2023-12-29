@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.entity.ReadWriteArray;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,7 +27,7 @@ public class StdAllocatorsTest extends TestCase {
     }
 
     public void testSmoking() {
-        java.lang.reflect.Field typeNameField = ReflectUtils.getField(Type.class, "name");
+        java.lang.reflect.Field typeNameField = ReflectionUtils.getField(Type.class, "name");
 
         Map<java.lang.reflect.Type, List<Long>> class2ids = allocators.allocate(
                 Map.of(ClassType.class, 1, Field.class, 1)
@@ -44,7 +44,7 @@ public class StdAllocatorsTest extends TestCase {
     }
 
     public void testGetTypeId() {
-        java.lang.reflect.Field typeNameReflectField = ReflectUtils.getField(Type.class, "name");
+        java.lang.reflect.Field typeNameReflectField = ReflectionUtils.getField(Type.class, "name");
 
         Map<java.lang.reflect.Type, List<Long>> class2ids = allocators.allocate(
                 Map.of(ClassType.class, 3, Field.class, 1, TypeCategory.class, 1)

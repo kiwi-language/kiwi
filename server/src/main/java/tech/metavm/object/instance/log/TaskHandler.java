@@ -1,26 +1,24 @@
 package tech.metavm.object.instance.log;
 
-import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.IInstanceContextFactory;
 import tech.metavm.task.Task;
 import tech.metavm.task.TaskSignal;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @Component
-public class TaskHandler implements LogHandler<Task>  {
-
-    private final IInstanceContextFactory instanceContextFactory;
+public class TaskHandler extends EntityContextFactoryBean implements LogHandler<Task>  {
 
     private final TransactionOperations transactionOperations;
 
-    public TaskHandler(IInstanceContextFactory instanceContextFactory, TransactionOperations transactionOperations) {
-        this.instanceContextFactory = instanceContextFactory;
+    public TaskHandler(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations) {
+        super(entityContextFactory);
         this.transactionOperations = transactionOperations;
     }
 
@@ -41,8 +39,5 @@ public class TaskHandler implements LogHandler<Task>  {
         });
     }
 
-    private IEntityContext newPlatformContext() {
-        return instanceContextFactory.newEntityContext(Constants.PLATFORM_APP_ID);
-    }
 
 }

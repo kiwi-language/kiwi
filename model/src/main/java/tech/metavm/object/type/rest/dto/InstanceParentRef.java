@@ -2,13 +2,14 @@ package tech.metavm.object.type.rest.dto;
 
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Field;
 
 import javax.annotation.Nullable;
 
 public record InstanceParentRef(
-        Instance parent,
+        DurableInstance parent,
         @Nullable Field field
 ) {
 

@@ -6,6 +6,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.common.EmailService;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.util.BusinessException;
@@ -17,18 +19,16 @@ import java.text.DecimalFormat;
 import java.util.Date;
 
 @Component
-public class VerificationCodeService {
+public class VerificationCodeService extends EntityContextFactoryBean {
 
     private static final int MAX_SENT_PER_FIFTEEN_MINUTES = 15;
-
-    private final InstanceContextFactory contextFactory;
 
     private final EmailService emailService;
 
     public static final DecimalFormat DF = new DecimalFormat("000000");
 
-    public VerificationCodeService(InstanceContextFactory contextFactory, EmailService emailService) {
-        this.contextFactory = contextFactory;
+    public VerificationCodeService(EntityContextFactory entityContextFactory, EmailService emailService) {
+        super(entityContextFactory);
         this.emailService = emailService;
     }
 
@@ -66,10 +66,6 @@ public class VerificationCodeService {
         ).isEmpty();
         if (!valid)
             throw new BusinessException(ErrorCode.INCORRECT_VERIFICATION_CODE);
-    }
-
-    private IEntityContext newPlatformContext() {
-        return contextFactory.newEntityContext(Constants.PLATFORM_APP_ID);
     }
 
 }

@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.InstanceFactory;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.ArrayMapping;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -18,22 +20,29 @@ import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.function.Function;
 
-public class DefContext extends BaseEntityContext implements DefMap, IEntityContext {
+import static tech.metavm.object.type.ResolutionStage.*;
+
+public class DefContext extends BaseEntityContext implements DefMap, IEntityContext, TypeRegistry {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(DefContext.class);
+    public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of(
+            ArrayMapping.class
+    );
 
     private final Map<Type, ModelDef<?, ?>> javaType2Def = new HashMap<>();
     private final Map<tech.metavm.object.type.Type, ModelDef<?, ?>> type2Def = new IdentityHashMap<>();
     private final IdentitySet<ModelDef<?, ?>> processedDefSet = new IdentitySet<>();
     private final IdentitySet<ClassType> initializedClassTypes = new IdentitySet<>();
-    private final ObjectTypeDef<Object> objectDef;
+    private final DirectDef<Object> objectDef;
     private final ValueDef<Enum<?>> enumDef;
     private final Function<Object, Long> getId;
     private final Set<Object> pendingModels = new IdentitySet<>();
     private final Map<tech.metavm.object.type.Type, tech.metavm.object.type.Type> typeInternMap = new HashMap<>();
-    private final Map<Object, Instance> instanceMapping = new IdentityHashMap<>();
-    private final IdentityContext identityContext = new IdentityContext(this::isClassTypeInitialized, this::getJavaType);
+    private final Map<Object, DurableInstance> instanceMapping = new IdentityHashMap<>();
+    private final IdentityContext identityContext = new IdentityContext();
     private final ColumnStore columnStore;
+    private final Map<Type, DefParser<?, ?, ?>> parsers = new HashMap<>();
+    private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -57,51 +66,54 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         ColumnKind.columns().forEach(this::writeEntity);
     }
 
-    public void createCompositeTypes(Type javaType, tech.metavm.object.type.Type type) {
-        predefineCompositeTypes(javaType, type);
-        initCompositeTypes(javaType);
+    public void createCompositeTypes(tech.metavm.object.type.Type type) {
+        predefineCompositeTypes(type);
     }
 
-    public void predefineCompositeTypes(Type javaType, tech.metavm.object.type.Type type) {
-        preAddDef(new DirectDef<>(BiUnion.createNullableType(javaType), getNullableType(type)));
-        preAddDef(new CollectionDef<>(ReadWriteArray.class, ParameterizedTypeImpl.create(ReadWriteArray.class, javaType),
-                getArrayType(type, ArrayKind.READ_WRITE), getDef(type), this));
-        preAddDef(new CollectionDef<>(ChildArray.class, ParameterizedTypeImpl.create(ChildArray.class, javaType),
-                getArrayType(type, ArrayKind.CHILD), getDef(type), this));
-        preAddDef(new CollectionDef<>(ReadonlyArray.class, ParameterizedTypeImpl.create(ReadonlyArray.class, javaType),
-                getArrayType(type, ArrayKind.READ_ONLY), getDef(type), this));
-    }
-
-    public void initCompositeTypes(Type javaType) {
-        afterDefInitialized(getDef(BiUnion.createNullableType(javaType)));
-        afterDefInitialized(getDef(ParameterizedTypeImpl.create(ReadWriteArray.class, javaType)));
-        afterDefInitialized(getDef(ParameterizedTypeImpl.create(ChildArray.class, javaType)));
-        afterDefInitialized(getDef(ParameterizedTypeImpl.create(ReadonlyArray.class, javaType)));
+    public void predefineCompositeTypes(tech.metavm.object.type.Type type) {
+        getNullableType(type);
+        getArrayType(type, ArrayKind.READ_WRITE);
+        getArrayType(type, ArrayKind.CHILD);
+        getArrayType(type, ArrayKind.READ_ONLY);
     }
 
     @Override
     public ModelDef<?, ?> getDef(Type javaType) {
+        return getDef(javaType, DEFINITION);
+    }
+
+    public PojoDef<?> getPojoDef(Type javatype, ResolutionStage stage) {
+        return (PojoDef<?>) getDef(javatype, stage);
+    }
+
+    public tech.metavm.object.type.Type getType(Type javaType, ResolutionStage stage) {
+        if (BiUnion.isNullable(javaType))
+            return getNullableType(getType(BiUnion.getUnderlyingType(javaType), stage));
+        else
+            return getDef(javaType, stage).getType();
+    }
+
+    public void ensureStage(tech.metavm.object.type.Type type, ResolutionStage stage) {
+        var def = Objects.requireNonNull(type2Def.get(type));
+        getDef(def.getJavaType(), stage);
+    }
+
+    public ModelDef<?, ?> getDef(Type javaType, ResolutionStage stage) {
         checkJavaType(javaType);
-        javaType = ReflectUtils.getBoxedType(javaType);
+        javaType = ReflectionUtils.getBoxedType(javaType);
         if (!(javaType instanceof TypeVariable<?>)) {
             javaType = EntityUtils.getEntityType(javaType);
             if (javaType instanceof Class<?> klass) {
-                if (ReflectUtils.isBoxingClass(klass)) {
+                if (ReflectionUtils.isBoxingClass(klass))
                     javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
-                } else {
+                else
                     javaType = EntityUtils.getRealType(klass);
-                }
             }
         }
         ModelDef<?, ?> existing = javaType2Def.get(javaType);
-        if (existing != null) {
+        if (existing != null && existing.getParser() == null)
             return existing;
-        }
-        ModelDef<?, ?> def = parseType(javaType);
-        if (!processedDefSet.contains(def)) {
-            addDef(def);
-        }
-        return def;
+        return parseType(javaType, stage);
     }
 
     @Override
@@ -132,11 +144,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @SuppressWarnings("unused")
     public java.lang.reflect.Field getJavaField(Field field) {
         Class<?> javaClass = getJavaClass(field.getDeclaringType());
-        return ReflectUtils.getDeclaredFieldByName(javaClass, field.getCode());
+        return ReflectionUtils.getDeclaredFieldByName(javaClass, field.getCode());
     }
 
     public Field getField(Class<?> javaType, String javaFieldName) {
-        return getField(ReflectUtils.getField(javaType, javaFieldName));
+        return getField(ReflectionUtils.getField(javaType, javaFieldName));
     }
 
     public Field getField(java.lang.reflect.Field javaField) {
@@ -171,14 +183,19 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private DefParser<?, ?, ?> getParser(Type javaType) {
-        if (javaType instanceof TypeVariable<?> typeVariable) {
-            return new TypeVariableParser(typeVariable, this);
-        }
         javaType = EntityUtils.getEntityType(javaType);
-        Class<?> javaClass = ReflectUtils.getRawClass(javaType);
-        TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
+        var parser = parsers.get(javaType);
+        if (parser != null)
+            return parser;
+        parser = createParser(javaType);
+        parsers.put(javaType, parser);
+        return parser;
+    }
+
+    private DefParser<?, ?, ?> createParser(Type javaType) {
+        Class<?> javaClass = ReflectionUtils.getRawClass(javaType);
         if (ReadonlyArray.class.isAssignableFrom(javaClass)) {
-            Class<? extends ReadonlyArray<?>> arrayClass = ReadonlyArray.class.asSubclass(
+            Class<? extends ReadonlyArray<?>> arrayClass = javaClass.asSubclass(
                     new TypeReference<ReadonlyArray<?>>() {
                     }.getType()
             );
@@ -202,6 +219,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         } else if (Instance.class.isAssignableFrom(javaClass)) {
             throw new InternalException("Instance def should be predefined by StandardDefBuilder");
         } else {
+            NncUtils.requireTrue(javaType == javaClass,
+                    "Generic type not supported: " + javaType);
+            TypeCategory typeCategory = ValueUtil.getTypeCategory(javaType);
             return switch (typeCategory) {
                 case ENUM -> new EnumParser<>(
                         javaClass.asSubclass(new TypeReference<Enum<?>>() {
@@ -228,19 +248,27 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         }
     }
 
-    private ModelDef<?, ?> parseType(Type javaType) {
-        DefParser<?, ?, ?> parser = getParser(javaType);
-        for (Type dependencyType : parser.getDependencyTypes()) {
-            getDef(dependencyType);
-        }
+    private ModelDef<?, ?> parseType(Type javaType, ResolutionStage stage) {
+        var parser = parsers.get(javaType);
         ModelDef<?, ?> def;
-        if ((def = javaType2Def.get(javaType)) != null) {
-            return def;
+        if (parser == null) {
+            NncUtils.requireNull(javaType2Def.get(javaType));
+            parser = getParser(javaType);
+            def = parser.create();
+            //noinspection unchecked,rawtypes
+            def.setParser((DefParser) parser);
+            preAddDef(def);
+        } else
+            def = parser.get();
+        var curStage = parser.setStage(stage);
+        if (curStage.isBefore(SIGNATURE) && stage.isAfterOrAt(SIGNATURE))
+            parser.generateSignature();
+        if (curStage.isBefore(DECLARATION) && stage.isAfterOrAt(DECLARATION))
+            parser.generateDeclaration();
+        if (curStage.isBefore(DEFINITION) && stage.isAfterOrAt(DEFINITION)) {
+            parser.generateDefinition();
+            afterDefInitialized(def);
         }
-        def = parser.create();
-        preAddDef(def);
-        parser.initialize();
-        afterDefInitialized(def);
         return def;
     }
 
@@ -264,7 +292,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (!(def instanceof InstanceDef) && !(def instanceof InstanceCollectionDef<?, ?>)) {
             existing = type2Def.get(def.getType());
             if (existing != null && existing != def) {
-                throw new InternalException("Def for type " + def.getType() + " already exists");
+                throw new InternalException("Def for type " + def.getType() + " already exists. Def: " + existing);
             }
             type2Def.put(def.getType(), def);
         }
@@ -278,37 +306,34 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     public void afterDefInitialized(ModelDef<?, ?> def) {
-        if (processedDefSet.contains(def)) {
+        if (processedDefSet.contains(def))
             return;
-        }
         processedDefSet.add(def);
-        if (def.getType() instanceof ClassType classType) {
+        if (def.getType() instanceof ClassType classType)
             initializedClassTypes.add(classType);
-        }
         writeEntity(def.getType());
         def.getInstanceMapping().forEach((javaConstruct, instance) -> {
             if (!instance.isValue() && instance.getId() == null) {
-                Long id = getId.apply(javaConstruct);
-                if (id != null) {
+                Long id = getId.apply(identityContext.getModelId(javaConstruct));
+                if (id != null)
                     instance.initId(id);
-                }
             }
             addToContext(javaConstruct, instance);
         });
         instanceMapping.putAll(def.getInstanceMapping());
     }
 
-    private void writeEntity(Object entity) {
-        Map<Object, ModelIdentity> identityMap = identityContext.getIdentityMap(entity);
-        identityMap.forEach((model, modelId) -> {
-            if ((model instanceof IdInitializing idInitializing) && idInitializing.getId() == null) {
+    void writeEntity(Object entity) {
+        var identityMap = identityContext.getIdentityMap(entity);
+        identityMap.forEach((object, modelId) -> {
+            if ((object instanceof IdInitializing idInitializing) && idInitializing.getId() == null) {
                 Long id = getId.apply(modelId);
-                if (id != null) {
+                if (id != null)
                     idInitializing.initId(id);
-                }
             }
-            if (!containsModel(model)) {
-                pendingModels.add(model);
+            if (!containsModel(object)) {
+                pendingModels.add(object);
+                memoryIndex.save(object);
             }
         });
     }
@@ -343,22 +368,18 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return identityContext.getIdentityMap();
     }
 
-    public Map<Object, Instance> getInstanceMapping() {
+    public Map<Object, DurableInstance> getInstanceMapping() {
         return instanceMapping;
     }
 
     @Override
-    public Instance getInstance(Object model) {
-        Instance primitiveInst = InstanceUtils.trySerializePrimitive(model, this::getType);
-        if (primitiveInst != null)
-            return primitiveInst;
+    public DurableInstance getInstance(Object model) {
         return getInstance(model, null);
     }
 
-    public Instance getInstance(Object model, ModelDef<?, ?> def) {
-        if (model instanceof Instance instance) {
-            return instance;
-        }
+    public DurableInstance getInstance(Object model, ModelDef<?, ?> def) {
+        if (model instanceof DurableInstance d)
+            return d;
         if (pendingModels.contains(model)) {
             generateInstance(model, def);
         }
@@ -398,16 +419,16 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         ModelIdentity identity = identityContext.getIdentity(model);
         Long id = identity != null ? getId.apply(identity) : null;
         if (def.isProxySupported()) {
-            Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), id);
+            var instance = (DurableInstance) InstanceFactory.allocate(def.getInstanceType(), def.getType(), id);
             addToContext(model, instance);
-            def.initInstanceHelper(instance, model, this);
+            def.initInstanceHelper(instance, model, getObjectInstanceMap());
         } else {
-            Instance instance = def.createInstanceHelper(model, this, id);
+            var instance = (DurableInstance)  def.createInstanceHelper(model, getObjectInstanceMap(), id);
             addToContext(model, instance);
         }
     }
 
-    private void addToContext(Object model, Instance instance) {
+    private void addToContext(Object model, DurableInstance instance) {
         if (instance.getId() == null)
             // onBind will get invoked
             addBinding(model, instance);
@@ -422,6 +443,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
+    protected void updateMemIndex(Object object) {
+        super.updateMemIndex(object);
+        memoryIndex.save(object);
+    }
+
+    @Override
     public DefContext getDefContext() {
         return this;
     }
@@ -432,7 +459,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
+    protected <T> void beforeGetModel(Class<T> klass, DurableInstance instance) {
         generateInstances();
     }
 
@@ -453,6 +480,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     protected void flush() {
+        parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
+        var arrayMappings = getByType(ArrayMapping.class, null, 100000);
+        for (ArrayMapping arrayMapping : arrayMappings) {
+            arrayMapping.generateCode(getFunctionTypeContext());
+        }
         int numPending = pendingModels.size();
         for (ClassType newType : getGenericContext().getNewTypes()) {
             writeEntity(newType);
@@ -477,7 +509,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             if (model instanceof ClassType type) {
                 if (type.getDeclaredConstraints() == table
                         || type.getDeclaredFields() == table
-                        || type.getDeclaredFlows() == table
+                        || type.getDeclaredMethods() == table
                 ) {
                     return type;
                 }
@@ -492,14 +524,39 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
+    public <T> List<T> getByType(Class<? extends T> javaType, @Nullable T startExclusive, long limit) {
+        return memoryIndex.selectByType(javaType, startExclusive, limit);
+    }
+
+    @Override
+    public <T> List<T> query(EntityIndexQuery<T> query) {
+        return memoryIndex.query(query);
+    }
+
+    @Override
+    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values) {
+        return memoryIndex.selectByKey(indexDef, List.of(values));
+    }
+
+    @Nullable
+    @Override
+    public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object... values) {
+        return memoryIndex.selectByUniqueKey(indexDef, List.of(values));
+    }
+
+    @Override
     public boolean remove(Object entity) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public <T> T bind(T model) {
-        // Entities enter the DefContext through models def.
-        throw new UnsupportedOperationException("Binding not supported.");
+        if (BINDING_ALLOWED_CLASSES.contains(EntityUtils.getRealType(model.getClass()))) {
+            writeEntity(model);
+            return model;
+        } else
+            // Entities enter the DefContext through models def.
+            throw new UnsupportedOperationException("Binding not supported.");
     }
 
     @Override

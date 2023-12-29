@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.expression.StructuralVisitor;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
 
@@ -23,7 +22,7 @@ public abstract class Element extends Entity {
     public void acceptChildren(StructuralVisitor<?> visitor) {
         var desc = DescStore.get(getClass());
         for (EntityProp prop : desc.getPropsWithAnnotation(ChildEntity.class)) {
-            var fieldValue = ReflectUtils.get(this, prop.getField());
+            var fieldValue = ReflectionUtils.get(this, prop.getField());
             if (fieldValue instanceof Entity child) {
                 visitor.pushParentRef(new EntityParentRef(this, prop.getField()));
                 acceptChild(child, visitor);

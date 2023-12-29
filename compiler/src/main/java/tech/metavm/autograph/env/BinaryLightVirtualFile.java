@@ -24,7 +24,8 @@ public class BinaryLightVirtualFile extends LightVirtualFileBase {
 
     protected final File file;
 
-    private @Nullable byte[] myContent;
+    @Nullable
+    private byte[] myContent;
 
     public BinaryLightVirtualFile(File file) {
         this(file, null);

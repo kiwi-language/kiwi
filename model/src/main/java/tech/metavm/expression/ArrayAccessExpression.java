@@ -9,7 +9,6 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -55,11 +54,6 @@ public class ArrayAccessExpression extends Expression {
 
     public Expression getIndex() {
         return index;
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new ArrayAccessExpression(children.get(0), children.get(1));
     }
 
     @Override

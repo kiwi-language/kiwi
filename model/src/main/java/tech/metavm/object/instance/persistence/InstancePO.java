@@ -144,7 +144,6 @@ public class InstancePO {
                 "appId=" + appId +
                 ", id=" + id +
                 ", typeId=" + typeId +
-                ", data.length=" + data.length +
                 ", version=" + version +
                 ", syncVersion=" + syncVersion +
                 '}';

@@ -19,9 +19,10 @@ public class ScopeRT extends Element {
     private final Flow flow;
     @EntityField("所属节点")
     @Nullable
-    private final NodeRT<?> owner;
+    private final NodeRT owner;
     @ChildEntity("节点列表")
-    private final ChildArray<NodeRT<?>> nodes = addChild(new ChildArray<>(new TypeReference<>() {}), "nodes");
+    private final ChildArray<NodeRT> nodes = addChild(new ChildArray<>(new TypeReference<>() {
+    }), "nodes");
     @EntityField("是否未循环体")
     private final boolean withBackEdge;
     @EntityField("所属分支")
@@ -34,32 +35,30 @@ public class ScopeRT extends Element {
         this(flow, null, false);
     }
 
-    public ScopeRT(Flow flow, @Nullable NodeRT<?> owner) {
+    public ScopeRT(Flow flow, @Nullable NodeRT owner) {
         this(flow, owner, false);
     }
 
-    public ScopeRT(Flow flow, @Nullable NodeRT<?> owner, boolean withBackEdge) {
+    public ScopeRT(Flow flow, @Nullable NodeRT owner, boolean withBackEdge) {
         this.flow = flow;
         this.owner = owner;
         this.withBackEdge = withBackEdge;
     }
 
-    public ScopeDTO toDTO(boolean withNodes) {
-        try (var context = SerializeContext.enter()) {
-            return new ScopeDTO(
-                    context.getTmpId(this), getId(),
-                    withNodes ? NncUtils.map(getNodes(), NodeRT::toDTO) : List.of()
-            );
-        }
+    public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
+        return new ScopeDTO(
+                getId(), serializeContext.getTmpId(this),
+                withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of()
+        );
     }
 
-    public void addNode(NodeRT<?> node) {
+    public void addNode(NodeRT node) {
         var pred = node.getPredecessor() != null ? node.getPredecessor() : null;
         if (pred != null) {
             nodes.addChildAfter(node, pred);
         } else {
             var nodes = this.nodes;
-            if(!nodes.isEmpty())
+            if (!nodes.isEmpty())
                 nodes.get(0).insertBefore(node);
             nodes.addFirstChild(node);
         }
@@ -70,9 +69,13 @@ public class ScopeRT extends Element {
         this.nodes.clear();
     }
 
+    public void setNodes(List<NodeRT> nodes) {
+        this.nodes.resetChildren(nodes);
+    }
+
     public void setBranch(@Nullable Branch branch) {
         this.branch = branch;
-        if(branch != null) {
+        if (branch != null) {
             var typeNarrower = new TypeNarrower(
                     expr -> owner != null ? owner.getExpressionTypes().getType(expr) : expr.getType()
             );
@@ -80,7 +83,7 @@ public class ScopeRT extends Element {
         }
     }
 
-    public NodeRT<?> getPredecessor() {
+    public NodeRT getPredecessor() {
         return owner;
 //        if (withBackEdge) {
 //            return owner;
@@ -96,7 +99,7 @@ public class ScopeRT extends Element {
         return branch;
     }
 
-    public @Nullable NodeRT<?> getSuccessor() {
+    public @Nullable NodeRT getSuccessor() {
         if (withBackEdge) {
             return owner;
         }
@@ -107,35 +110,35 @@ public class ScopeRT extends Element {
     }
 
 
-    public NodeRT<?> getNode(long id) {
+    public NodeRT getNode(long id) {
         return nodes.get(Entity::getId, id);
     }
 
-    public NodeRT<?> getNode(RefDTO ref) {
+    public NodeRT getNode(RefDTO ref) {
         return nodes.get(Entity::getRef, ref);
     }
 
-    public ChildArray<NodeRT<?>> getNodes() {
+    public ChildArray<NodeRT> getNodes() {
         return nodes;
     }
 
-    public NodeRT<?> getNodeById(long id) {
+    public NodeRT getNodeById(long id) {
         return nodes.get(Entity::getId, id);
     }
 
-    public NodeRT<?> getNodeByName(String name) {
+    public NodeRT getNodeByName(String name) {
         return nodes.get(NodeRT::getName, name);
     }
 
-    public NodeRT<?> getNodeByIndex(int index) {
+    public NodeRT getNodeByIndex(int index) {
         return nodes.get(index);
     }
 
-    public NodeRT<?> tryGetFirstNode() {
+    public NodeRT tryGetFirstNode() {
         return nodes.isEmpty() ? null : nodes.get(0);
     }
 
-    public @Nullable NodeRT<?> getOwner() {
+    public @Nullable NodeRT getOwner() {
         return owner;
     }
 
@@ -143,7 +146,7 @@ public class ScopeRT extends Element {
         return NncUtils.get(owner, NodeRT::getScope);
     }
 
-    public void removeNode(NodeRT<?> node) {
+    public void removeNode(NodeRT node) {
         nodes.remove(node);
         flow.removeNode(node);
     }
@@ -166,7 +169,7 @@ public class ScopeRT extends Element {
     }
 
     @Nullable
-    public NodeRT<?> getLastNode() {
+    public NodeRT getLastNode() {
         return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
     }
 
@@ -186,4 +189,13 @@ public class ScopeRT extends Element {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitScope(this);
     }
+
+    public void writeCode(CodeWriter writer) {
+        writer.write(" {");
+        writer.indent();
+        nodes.forEach(node -> node.write(writer));
+        writer.unindent();
+        writer.writeNewLine("}");
+    }
+
 }

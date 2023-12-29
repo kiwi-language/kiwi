@@ -2,19 +2,20 @@ package tech.metavm.entity;
 
 import tech.metavm.common.RefDTO;
 import tech.metavm.event.EventQueue;
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.NodeRT;
-import tech.metavm.flow.ScopeRT;
+import tech.metavm.flow.*;
+import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.type.ArrayKind;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.*;
+import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.Mapping;
+import tech.metavm.object.view.MappingProvider;
+import tech.metavm.object.view.ObjectMapping;
+import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.profile.Profiler;
 import tech.metavm.util.TypeReference;
+import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -22,7 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface IEntityContext extends ModelInstanceMap, Closeable {
+public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider {
 
     boolean containsModel(Object model);
 
@@ -34,13 +35,34 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
         return getEntity(typeReference.getType(), ref);
     }
 
+    default <T> T getEntity(Class<T> klass, DurableInstance instance) {
+        return getEntity(klass, instance, null);
+    }
+
+    ObjectInstanceMap getObjectInstanceMap();
+
+    <T> T getEntity(Class<T> klass, DurableInstance instance, @Nullable ModelDef<T, ?> def);
+
+    DurableInstance getInstance(Object object);
+
     void invalidateCache(long id);
 
     Profiler getProfiler();
 
     DefContext getDefContext();
 
-    <T> List<T> getByType(Class<? extends T> type, T startExclusive, long limit);
+    default <T> void getAllByType(Class<T> klass, List<? super T> result) {
+        T start = null;
+        List<T> batch;
+        do {
+            batch = getByType(klass, start, Constants.BATCH_SIZE);
+            result.addAll(batch);
+            if (!batch.isEmpty())
+                start = batch.get(batch.size() - 1);
+        } while (batch.size() == Constants.BATCH_SIZE);
+    }
+
+    <T> List<T> getByType(Class<? extends T> type, @Nullable T startExclusive, long limit);
 
     default List<ClassType> getTemplateInstances(ClassType template) {
         NncUtils.requireTrue(template.isTemplate());
@@ -83,13 +105,13 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
 
     <T> T getBufferedEntity(Class<T> entityType, long id);
 
-    <T> T getEntity(Class<T> entityType, RefDTO reference);
+    @Nullable<T> T getEntity(Class<T> entityType, RefDTO ref);
 
     Type getType(Class<?> javaType);
 
     @Nullable IEntityContext getParent();
 
-    <T> T createEntity(Instance instance, ModelDef<T, ?> def);
+    <T> T createEntity(DurableInstance instance, ModelDef<T, ?> def);
 
     default FunctionType getFunctionType(RefDTO ref) {
         return getEntity(FunctionType.class, ref);
@@ -105,8 +127,8 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
         return getEntity(Type.class, id);
     }
 
-    default Type getType(RefDTO reference) {
-        return getEntity(Type.class, reference);
+    default Type getType(RefDTO ref) {
+        return getEntity(Type.class, ref);
     }
 
     default ClassType getClassType(long id) {
@@ -145,15 +167,13 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
         return getEntity(Field.class, id);
     }
 
-    default Field getField(RefDTO reference) {
-        return getEntity(Field.class, reference);
+    default Field getField(RefDTO ref) {
+        return getEntity(Field.class, ref);
     }
 
-    default TypeVariable getTypeVariable(RefDTO reference) {
-        return getEntity(TypeVariable.class, reference);
+    default TypeVariable getTypeVariable(RefDTO ref) {
+        return getEntity(TypeVariable.class, ref);
     }
-
-    void afterContextIntIds();
 
     default NodeRT getNode(long id) {
         return getEntity(NodeRT.class, id);
@@ -175,6 +195,38 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
         return getEntity(Flow.class, ref);
     }
 
+    default Method getMethod(RefDTO ref) {
+        return getEntity(Method.class, ref);
+    }
+
+    default Method getMethod(long id) {
+        return getEntity(Method.class, id);
+    }
+
+    default ObjectMapping getObjectMapping(RefDTO ref) {
+        return getEntity(ObjectMapping.class, ref);
+    }
+
+    default Mapping getMapping(RefDTO ref) {
+        return getEntity(Mapping.class, ref);
+    }
+
+    default Function getFunction(RefDTO ref) {
+        return getEntity(Function.class, ref);
+    }
+
+    default Function getFunction(Long id) {
+        return getEntity(Function.class, id);
+    }
+
+    default Mapping getMapping(long id) {
+        return getEntity(Mapping.class, id);
+    }
+
+    default DefaultObjectMapping getObjectMapping(Long id) {
+        return getEntity(DefaultObjectMapping.class, id);
+    }
+
     boolean isFinished();
 
     void finish();
@@ -184,6 +236,10 @@ public interface IEntityContext extends ModelInstanceMap, Closeable {
     <T> List<T> query(EntityIndexQuery<T> query);
 
     long count(EntityIndexQuery<?> query);
+
+    void updateInstances();
+
+    void update(Object object);
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object...refValues);
 

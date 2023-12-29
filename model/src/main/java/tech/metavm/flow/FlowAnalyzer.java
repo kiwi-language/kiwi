@@ -7,7 +7,7 @@ import tech.metavm.expression.VoidStructuralVisitor;
 public class FlowAnalyzer extends VoidStructuralVisitor {
 
     @Override
-    public Void visitNode(NodeRT<?> node) {
+    public Void visitNode(NodeRT node) {
         if(node.getPredecessor() != null) {
             node.setExpressionTypes(node.getPredecessor().getExpressionTypes());
         }
@@ -37,7 +37,7 @@ public class FlowAnalyzer extends VoidStructuralVisitor {
             scope.mergeExpressionTypes(scope.getOwner().getExpressionTypes());
         }
         TypeNarrower narrower = new TypeNarrower(scope.getExpressionTypes()::getType);
-        if(scope.getOwner() instanceof LoopNode<?> loopNode) {
+        if(scope.getOwner() instanceof LoopNode loopNode) {
             scope.mergeExpressionTypes(narrower.narrowType(loopNode.getCondition().getExpression()));
         }
         else if(scope.getBranch() != null) {

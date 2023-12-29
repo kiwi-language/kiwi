@@ -2,7 +2,7 @@ package tech.metavm.object.instance.query;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.expression.Function;
+import tech.metavm.expression.Func;
 import tech.metavm.expression.FunctionDesc;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
@@ -10,12 +10,12 @@ import tech.metavm.util.BusinessException;
 
 import java.util.List;
 
-import static tech.metavm.util.InstanceUtils.*;
+import static tech.metavm.util.Instances.*;
 
 public class FunctionDescTest extends TestCase {
 
     public void test_get_return_type_max_double() {
-        FunctionDesc desc = new FunctionDesc(Function.MAX$_DOUBLE);
+        FunctionDesc desc = new FunctionDesc(Func.MAX$_DOUBLE);
         Type returnType = desc.getReturnType(List.of(
                 getDoubleType(), getDoubleType()
         ));
@@ -23,7 +23,7 @@ public class FunctionDescTest extends TestCase {
     }
 
     public void test_get_return_type_if() {
-        FunctionDesc desc = new FunctionDesc(Function.IF);
+        FunctionDesc desc = new FunctionDesc(Func.IF);
         Type returnType = desc.getReturnType(List.of(
                 getAnyType(), getDoubleType()
         ));
@@ -32,7 +32,7 @@ public class FunctionDescTest extends TestCase {
 
     @SuppressWarnings("CatchMayIgnoreException")
     public void test_check_argument_max_double() {
-        FunctionDesc desc = new FunctionDesc(Function.MAX$_DOUBLE);
+        FunctionDesc desc = new FunctionDesc(Func.MAX$_DOUBLE);
         desc.checkArguments(List.of(createDouble(1.0), createDouble(1.1)));
         try {
             desc.checkArguments(List.of(createLong(1L), createDouble(1.1)));
@@ -44,7 +44,7 @@ public class FunctionDescTest extends TestCase {
 
     @SuppressWarnings("CatchMayIgnoreException")
     public void test_check_argument_if() {
-        FunctionDesc desc = new FunctionDesc(Function.IF);
+        FunctionDesc desc = new FunctionDesc(Func.IF);
         desc.checkArguments(List.of(
                 createBoolean(true), createDouble(1.1), createLong(1L)
         ));
@@ -57,7 +57,7 @@ public class FunctionDescTest extends TestCase {
     }
 
     public void test_evaluate_max_double() {
-        FunctionDesc desc = new FunctionDesc(Function.MAX$_DOUBLE);
+        FunctionDesc desc = new FunctionDesc(Func.MAX$_DOUBLE);
 
         Instance result = desc.evaluate(
                 List.of(
@@ -68,7 +68,7 @@ public class FunctionDescTest extends TestCase {
     }
 
     public void test_evaluate_is_blank() {
-        FunctionDesc desc = new FunctionDesc(Function.IS_BLANK);
+        FunctionDesc desc = new FunctionDesc(Func.IS_BLANK);
         Instance result = desc.evaluate(
                 List.of(
                         createString("abc")
@@ -78,7 +78,7 @@ public class FunctionDescTest extends TestCase {
     }
 
     public void test_evaluate_sum_int() {
-        FunctionDesc desc = new FunctionDesc(Function.SUM$_INT);
+        FunctionDesc desc = new FunctionDesc(Func.SUM$_INT);
         Instance result = desc.evaluate(
                 List.of(
                         createLong(1L), createLong(2L)
@@ -88,7 +88,7 @@ public class FunctionDescTest extends TestCase {
     }
 
     public void test_evaluate_if() {
-        FunctionDesc desc = new FunctionDesc(Function.IF);
+        FunctionDesc desc = new FunctionDesc(Func.IF);
         Instance result = desc.evaluate(
                 List.of(
                         createBoolean(false),
@@ -99,7 +99,7 @@ public class FunctionDescTest extends TestCase {
     }
 
     public void test_evaluate_if_fail() {
-        FunctionDesc desc = new FunctionDesc(Function.IF);
+        FunctionDesc desc = new FunctionDesc(Func.IF);
         //noinspection CatchMayIgnoreException
         try {
             desc.evaluate(

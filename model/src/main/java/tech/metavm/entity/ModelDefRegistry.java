@@ -1,12 +1,13 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 public class ModelDefRegistry {
 
@@ -25,21 +26,21 @@ public class ModelDefRegistry {
         return DEF_CONTEXT.containsDef(type);
     }
 
-    public static void setModelFields(Object model, Instance instance, ModelInstanceMap modelInstanceMap) {
+    public static void setModelFields(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
         EntityDef<?> entityDef = (EntityDef<?>) DEF_CONTEXT.getDef(instance.getType());
-        entityDef.initModelHelper(model, instance, modelInstanceMap);
+        entityDef.initModelHelper(model, instance, objectInstanceMap);
     }
 
-    public static void updateInstance(Object model, Instance instance, ModelInstanceMap instanceMap) {
+    public static void updateInstance(Object model, Instance instance, ObjectInstanceMap instanceMap) {
         ModelDef<?, ?> entityDef = DEF_CONTEXT.getDef(instance.getType());
         updateInstanceHelper(entityDef, model, instance, instanceMap);
     }
 
-    private static <T, I extends Instance> void updateInstanceHelper(
+    private static <T, I extends DurableInstance> void updateInstanceHelper(
             ModelDef<T, I> modelDef,
             Object entity,
             Instance instance,
-            ModelInstanceMap instanceMap) {
+            ObjectInstanceMap instanceMap) {
         modelDef.updateInstance(
                 modelDef.getInstanceType().cast(instance), modelDef.getJavaClass().cast(entity),
                 instanceMap
@@ -71,7 +72,7 @@ public class ModelDefRegistry {
     }
 
     public static Field getField(Class<?> klass, String fieldName) {
-        return getField(ReflectUtils.getField(klass, fieldName));
+        return getField(ReflectionUtils.getField(klass, fieldName));
     }
 
     public static Index getIndexConstraint(IndexDef<?> indexDef) {

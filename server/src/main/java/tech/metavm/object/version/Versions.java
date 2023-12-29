@@ -1,37 +1,36 @@
 package tech.metavm.object.version;
 
 import tech.metavm.entity.*;
-import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import java.util.Set;
 
 public class Versions {
 
-    public static Version create(Type type, IEntityContext context) {
-        return create(Set.of(type), Set.of(), context);
-    }
-
-    public static Version createForRemoval(Long removedTypeId, IEntityContext context) {
-        return create(Set.of(), Set.of(removedTypeId), context);
-    }
-
-    public static Version create(Set<Type> changedTypes, Set<Long> removedTypeIds, IEntityContext context) {
-        NncUtils.requireTrue(!changedTypes.isEmpty() || !removedTypeIds.isEmpty(),
+    public static Version create(Set<Long> changedTypeIds,
+                                 Set<Long> removedTypeIds,
+                                 Set<Long> changedMappingIds,
+                                 Set<Long> removedMappingIds,
+                                 Set<Long> changedFunctionIds,
+                                 Set<Long> removedFunctionIds,
+                                 VersionRepository versionRepository) {
+        NncUtils.requireTrue(!changedTypeIds.isEmpty() || !removedTypeIds.isEmpty(),
                 "Change set is empty");
-        if (NncUtils.anyMatch(changedTypes, Entity::isIdNull))
-            context.initIds();
-        Version lastVersion = NncUtils.first(context.query(
-                Version.IDX_VERSION.newQueryBuilder().desc(true).limit(1).build()
-        ));
+        Version lastVersion = versionRepository.getLastVersion();
         long nextVersion = lastVersion != null ? lastVersion.getVersion() + 1 : 1;
         var version = new Version(nextVersion,
-                NncUtils.mapUnique(changedTypes, Entity::getIdRequired),
-                removedTypeIds);
-        if (context.getInstanceContext().getBindHook() != null)
-            context.getInstanceContext().getBindHook().accept(version);
-        else
-            context.bind(version);
+                changedTypeIds,
+                removedTypeIds,
+                changedMappingIds,
+                removedMappingIds,
+                changedFunctionIds,
+                removedFunctionIds
+        );
+//        if (versionRepository.getInstanceContext().getBindHook() != null)
+//            versionRepository.getInstanceContext().getBindHook().accept(version);
+//        else
+//            versionRepository.bind(version);
+        versionRepository.save(version);
         return version;
     }
 

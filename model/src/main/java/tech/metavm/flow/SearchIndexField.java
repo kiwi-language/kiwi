@@ -11,9 +11,7 @@ import java.util.Objects;
 @EntityType("查询索引字段")
 public class SearchIndexField extends Entity {
 
-
-    public static SearchIndexField create(SearchIndexFieldDTO fieldDTO, ParsingContext parsingContext) {
-        var entityContext = Objects.requireNonNull(parsingContext.getEntityContext());
+    public static SearchIndexField create(SearchIndexFieldDTO fieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
         return new SearchIndexField(
                 entityContext.getEntity(IndexField.class, fieldDTO.indexFieldRef()),
                 IndexOperator.getByCode(fieldDTO.operator()),
@@ -60,11 +58,11 @@ public class SearchIndexField extends Entity {
         );
     }
 
-    public SearchIndexFieldDTO toDTO(boolean persisting) {
-        try(var context = SerializeContext.enter()) {
+    public SearchIndexFieldDTO toDTO(IEntityContext context) {
+        try(var serContext = SerializeContext.enter()) {
             return new SearchIndexFieldDTO(
-                    context.getRef(field), operator.code(),
-                    value.toDTO(persisting)
+                    serContext.getRef(field), operator.code(),
+                    value.toDTO()
             );
         }
     }

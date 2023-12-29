@@ -2,10 +2,10 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.Instances;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
@@ -28,21 +28,20 @@ public class ClassFieldDef implements IFieldDef {
     }
 
     @Override
-    public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        Instance instanceFieldValue =instance.getField(field);
-        if(instanceFieldValue.isNull()) {
+    public Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        Instance instanceFieldValue = instance.getField(field);
+        if(instanceFieldValue.isNull())
             return null;
-        }
-        ClassType type = modelInstanceMap.getEntity(ClassType.class, instanceFieldValue);
+        ClassType type = objectInstanceMap.getEntity(ClassType.class, instanceFieldValue);
         return defMap.getDef(type).getJavaClass();
     }
 
     @Override
-    public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
-        Class<?> fieldValue = (Class<?>) ReflectUtils.get(model, javaField);
+    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
+        Class<?> fieldValue = (Class<?>) ReflectionUtils.get(model, javaField);
         return fieldValue != null ?
                 instanceMap.getInstance(defMap.getType(fieldValue))
-                : InstanceUtils.nullInstance();
+                : Instances.nullInstance();
     }
 
     @Override

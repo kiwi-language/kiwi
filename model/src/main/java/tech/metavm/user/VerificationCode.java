@@ -11,10 +11,10 @@ import java.util.Date;
 public class VerificationCode extends Entity {
 
     public static final IndexDef<VerificationCode> IDX =
-            IndexDef.normalKey(VerificationCode.class, "receiver", "code", "expiredAt");
+            IndexDef.create(VerificationCode.class, "receiver", "code", "expiredAt");
 
     public static final IndexDef<VerificationCode> IDX_CLIENT_IP_CREATED_AT =
-            IndexDef.normalKey(VerificationCode.class, "clientIP", "createdAt");
+            IndexDef.create(VerificationCode.class, "clientIP", "createdAt");
 
     public static final long DEFAULT_EXPIRE_IN_MILLIS = 15 * 60 * 1000L;
 

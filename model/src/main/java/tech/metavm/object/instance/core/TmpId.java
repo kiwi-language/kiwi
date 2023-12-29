@@ -1,0 +1,43 @@
+package tech.metavm.object.instance.core;
+
+import tech.metavm.util.InstanceOutput;
+
+import java.util.Objects;
+
+public final class TmpId extends Id {
+
+    public static final int TAG = 2;
+
+    private final long tmpId;
+
+    public TmpId(long tmpId) {
+        this.tmpId = tmpId;
+    }
+
+    @Override
+    public void writeBytes(InstanceOutput output) {
+        output.write(TAG);
+        output.writeLong(tmpId);
+    }
+
+    public long getTmpId() {
+        return tmpId;
+    }
+
+    @Override
+    public Long tryGetPhysicalId() {
+        return null;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (!(object instanceof TmpId tmpId1)) return false;
+        return tmpId == tmpId1.tmpId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tmpId);
+    }
+}

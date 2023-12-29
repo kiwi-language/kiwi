@@ -1,18 +1,20 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.EntityType;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.util.NncUtils;
 
-public abstract class ChildTypeNode<P> extends NodeRT<P> {
+import javax.annotation.Nullable;
+
+@EntityType("子类型节点")
+public abstract class ChildTypeNode extends NodeRT {
 
     @ChildEntity("节点类型")
     private final ClassType nodeType;
 
-    protected ChildTypeNode(Long tmpId, String name, ClassType outputType, NodeRT<?> previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    protected ChildTypeNode(Long tmpId, String name, @Nullable String code, ClassType outputType, NodeRT previous, ScopeRT scope) {
+        super(tmpId, name, code, null, previous, scope);
         this.nodeType = addChild(outputType, "nodeType");
     }
 

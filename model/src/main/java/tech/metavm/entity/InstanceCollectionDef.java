@@ -3,14 +3,13 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
-import tech.metavm.object.type.ObjectType;
+import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.type.AnyType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
-import java.util.Map;
 
 public class InstanceCollectionDef<E extends Instance, C extends ReadWriteArray<E>> extends ModelDef<C, ArrayInstance> {
 
@@ -25,7 +24,7 @@ public class InstanceCollectionDef<E extends Instance, C extends ReadWriteArray<
                 if(Instance.class.isAssignableFrom(elementClass)
                         && elementType == elementClass
                         && (type instanceof ArrayType arrayType)
-                        && (arrayType.getElementType() instanceof ObjectType)) {
+                        && (arrayType.getElementType() instanceof AnyType)) {
                     //noinspection unchecked,rawtypes
                     return new InstanceCollectionDef(
                             javaClass, javaType, elementClass, type
@@ -54,51 +53,45 @@ public class InstanceCollectionDef<E extends Instance, C extends ReadWriteArray<
     }
 
     @Override
-    public void initModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void initModel(C model, ArrayInstance instance, ObjectInstanceMap objectInstanceMap) {
         for (Instance element : instance) {
             model.add(elementClass.cast(element));
         }
     }
 
     @Override
-    public void updateModel(C model, ArrayInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void updateModel(C model, ArrayInstance instance, ObjectInstanceMap objectInstanceMap) {
         model.clear();
-        initModel(model, instance, modelInstanceMap);
+        initModel(model, instance, objectInstanceMap);
     }
-
 
     @Override
     public C createModelProxy(Class<? extends C> proxyClass) {
         if(isProxySupported()) {
-            return ReflectUtils.invokeConstructor(
-                    ReflectUtils.getConstructor(proxyClass, java.lang.reflect.Type.class),
+            return ReflectionUtils.invokeConstructor(
+                    ReflectionUtils.getConstructor(proxyClass, java.lang.reflect.Type.class),
                     elementClass
             );
         }
         else {
-            return ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(proxyClass));
+            return ReflectionUtils.invokeConstructor(ReflectionUtils.getConstructor(proxyClass));
         }
     }
 
     @Override
     protected C allocateModel() {
-        return ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(getJavaClass()));
+        return ReflectionUtils.invokeConstructor(ReflectionUtils.getConstructor(getJavaClass()));
     }
 
     @Override
-    public void initInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
+    public void initInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
         instance.addAll(model);
     }
 
     @Override
-    public void updateInstance(ArrayInstance instance, C model, ModelInstanceMap instanceMap) {
+    public void updateInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
         instance.clear();
         instance.addAll(model);
-    }
-
-    @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of();
     }
 
     @Override

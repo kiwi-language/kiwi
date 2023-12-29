@@ -3,11 +3,11 @@ package tech.metavm.object.instance.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
-import tech.metavm.entity.Tree;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.Method;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.rest.ClassInstanceParam;
 import tech.metavm.object.instance.rest.FieldValue;
@@ -21,42 +21,58 @@ import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class ClassInstance extends Instance {
+public class ClassInstance extends DurableInstance {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ClassInstance.class);
 
+    private final transient ClassInstance source;
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<UnknownField> unknownFields = new ReadWriteArray<>(UnknownField.class);
     private transient Map<Flow, FlowInstance> functions;
 
+    public static ClassInstance create(Map<Field, Instance> data, ClassType type) {
+        return ClassInstanceBuilder.newBuilder(type).data(data).build();
+    }
+
     public static ClassInstance allocate(ClassType type) {
-        return new ClassInstance(type);
+        return ClassInstanceBuilder.newBuilder(type).build();
     }
 
-    public ClassInstance(ClassType type) {
-        this(null, type, (Consumer<Instance>) null);
+    public static ClassInstance allocate(ClassType type, @Nullable InstanceParentRef parentRef) {
+        return ClassInstanceBuilder.newBuilder(type)
+                .parentRef(parentRef)
+                .build();
     }
 
-    public ClassInstance(Long id, ClassType type, @Nullable Consumer<Instance> load) {
+    public static ClassInstance allocateView(ClassType type, ClassInstance source, @Nullable InstanceParentRef parentRef) {
+        return ClassInstanceBuilder.newBuilder(type)
+                .source(source)
+                .parentRef(parentRef)
+                .build();
+    }
+
+    public ClassInstance(Long id, ClassType type, long version, long syncVersion,
+                         @Nullable Consumer<DurableInstance> load, @Nullable InstanceParentRef parentRef,
+                         @Nullable Map<Field, Instance> data, @Nullable ClassInstance source) {
+        super(id, type, parentRef, version, syncVersion, load);
+        this.source = source;
+        if (data != null)
+            reset(data, 0L, 0L);
+    }
+
+    public ClassInstance(Long id, ClassType type, @Nullable Consumer<DurableInstance> load) {
         super(id, type, null, 0, 0, load);
-    }
-
-    public ClassInstance(ClassType type, @Nullable InstanceParentRef parentRef) {
-        super(null, type, parentRef, 0, 0, null);
-    }
-
-    public ClassInstance(Map<Field, Instance> data, ClassType type) {
-        this(null, data, type);
+        this.source = null;
     }
 
     public ClassInstance(Long id, Map<Field, Instance> data, ClassType type) {
         super(id, type, null, 0, 0, null);
         reset(data, 0L, 0L);
+        this.source = null;
     }
 
     @NoProxy
@@ -76,6 +92,7 @@ public class ClassInstance extends Instance {
             setLoaded(false);
     }
 
+
     private void clear() {
         new ArrayList<>(getOutgoingReferences()).forEach(ReferenceRT::clear);
         this.fields.clear();
@@ -90,28 +107,27 @@ public class ClassInstance extends Instance {
     }
 
 
-
-    public Set<IndexKeyRT> getIndexKeys(IEntityContext entityContext) {
+    public Set<IndexKeyRT> getIndexKeys(ParameterizedFlowProvider parameterizedFlowProvider) {
         ensureLoaded();
         return NncUtils.flatMapUnique(
                 getType().getConstraints(Index.class),
-                c -> c.createIndexKey(this, entityContext)
+                c -> c.createIndexKey(this, parameterizedFlowProvider)
         );
     }
 
-    public Set<Instance> getRefInstances() {
+    public Set<DurableInstance> getRefInstances() {
         ensureLoaded();
-        Set<Instance> result = new IdentitySet<>();
+        Set<DurableInstance> result = new IdentitySet<>();
         for (InstanceField field : fields) {
             Instance fieldValue = field.getValue();
-            if (fieldValue.isReference()) {
-                result.add(fieldValue);
+            if (fieldValue instanceof DurableInstance d) {
+                result.add(d);
             }
         }
         for (UnknownField unknownField : unknownFields) {
             Instance fieldValue = unknownField.getValue();
-            if (fieldValue.isReference())
-                result.add(fieldValue);
+            if (fieldValue instanceof DurableInstance d)
+                result.add(d);
         }
         return result;
     }
@@ -127,7 +143,7 @@ public class ClassInstance extends Instance {
 
     public String getTitle() {
         ensureLoaded();
-        Field titleField = getType().getTileField();
+        Field titleField = getType().getTitleField();
         return titleField != null ? field(titleField).getDisplayValue() : getId() + "";
     }
 
@@ -170,12 +186,12 @@ public class ClassInstance extends Instance {
     }
 
     @Override
-    public boolean isChild(Instance instance) {
+    public boolean isChild(DurableInstance instance) {
         ensureLoaded();
         for (InstanceField field : fields) {
             if (field.getField().isChild()) {
                 Instance fieldValue = field.getValue();
-                if (fieldValue == instance || fieldValue.isChild(instance)) {
+                if (fieldValue == instance || (fieldValue instanceof DurableInstance d && d.isChild(instance))) {
                     return true;
                 }
             }
@@ -183,14 +199,14 @@ public class ClassInstance extends Instance {
         return false;
     }
 
-    public Set<Instance> getChildren() {
+    public Set<DurableInstance> getChildren() {
         ensureLoaded();
-        Set<Instance> children = new IdentitySet<>();
+        var children = new IdentitySet<DurableInstance>();
         for (InstanceField field : fields) {
             if (field.getField().isChild()) {
                 Instance fieldValue = field.getValue();
                 if (fieldValue.isNotNull()) {
-                    children.add(fieldValue);
+                    children.add((DurableInstance) fieldValue);
                 }
             }
         }
@@ -225,7 +241,7 @@ public class ClassInstance extends Instance {
         for (int i = 0; i < numFields; i++) {
             var fieldId = input.readLong();
             while (j < fields.size() && fields.get(j).getIdRequired() < fieldId) {
-                instFields.add(new InstanceField(this, fields.get(j), InstanceUtils.nullInstance(), false));
+                instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
                 j++;
             }
             Field field;
@@ -238,7 +254,7 @@ public class ClassInstance extends Instance {
         }
         input.setParent(getParent(), getParentField());
         for (; j < fields.size(); j++)
-            instFields.add(new InstanceField(this, fields.get(j), InstanceUtils.nullInstance(), false));
+            instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
     }
 
     public ClassInstance getClassInstance(Field field) {
@@ -264,26 +280,45 @@ public class ClassInstance extends Instance {
         return field(getType().tryGetFieldByName(fieldName)).getValue();
     }
 
-    public void setField(Field field, Instance value) {
-        ensureLoaded();
-        if (field.isChild()) {
-            throw new BusinessException(ErrorCode.CAN_NOT_ASSIGN__CHILD_FIELD);
-        }
+    public void setField(String fieldCode, Instance value) {
+        var field = getType().getFieldByCode(fieldCode);
         setFieldInternal(field, value);
     }
 
-    void setChild(Field field, Instance value) {
+    public void setField(Field field, Instance value) {
         ensureLoaded();
-        NncUtils.requireTrue(field.isChild());
-        if (isFieldInitialized(field)) {
+        setFieldInternal(field, value);
+    }
+
+    void setOrInitField(Field field, Instance value) {
+        ensureLoaded();
+        if(isFieldInitialized(field))
             setFieldInternal(field, value);
-        } else {
+        else
             initFieldInternal(field, value);
-        }
+    }
+
+    @Override
+    @NoProxy
+    public @Nullable Id getInstanceId() {
+        if (source != null)
+            return new ViewId(getType().getIdRequired(), Objects.requireNonNull(source.getInstanceId()));
+        else
+            return super.getInstanceId();
+    }
+
+    @Override
+    public ClassInstance getSource() {
+        return (ClassInstance) super.getSource();
     }
 
     private void setFieldInternal(Field field, Instance value) {
         ensureLoaded();
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
+        if (field.isReadonly())
+            throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
+        if (field.isChild() && value.isNotNull())
+            ((DurableInstance) value).initParent(this, field);
         setModified();
         field(field).setValue(value);
     }
@@ -291,23 +326,19 @@ public class ClassInstance extends Instance {
     public boolean isFieldInitialized(Field field) {
         ensureLoaded();
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
-        return isFieldInitialized0(field);
-    }
-
-    private boolean isFieldInitialized0(Field field) {
-        ensureLoaded();
         return fields.get(InstanceField::getField, field) != null;
     }
 
     public void initField(Field field, Instance value) {
         ensureLoaded();
-        NncUtils.requireFalse(field.isChild());
         initFieldInternal(field, value);
     }
 
     private void initFieldInternal(Field field, Instance value) {
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
-        NncUtils.requireFalse(isFieldInitialized0(field));
+        NncUtils.requireFalse(isFieldInitialized(field));
+        if (field.isChild() && value.isNotNull())
+            ((DurableInstance) value).initParent(this, field);
         addField(new InstanceField(this, field, value));
     }
 
@@ -328,20 +359,20 @@ public class ClassInstance extends Instance {
         return field(field).getValue();
     }
 
-    public FlowInstance getFunction(Flow flow, IEntityContext context) {
+    public FlowInstance getFunction(Method method, ParameterizedFlowProvider parameterizedFlowProvider) {
         ensureLoaded();
         if (functions == null) {
             functions = new HashMap<>();
         }
-        var concreteFlow = getType().tryResolveFlow(flow, context);
+        var concreteFlow = getType().tryResolveMethod(method, parameterizedFlowProvider);
         return functions.computeIfAbsent(concreteFlow,
-                k -> new FlowInstance(getType().tryResolveFlow(flow, context), this));
+                k -> new FlowInstance(getType().tryResolveMethod(method, parameterizedFlowProvider), this));
     }
 
-    public Instance getProperty(Property property, IEntityContext context) {
+    public Instance getProperty(Property property, ParameterizedFlowProvider parameterizedFlowProvider) {
         return switch (property) {
             case Field field -> getField(field);
-            case Flow flow -> getFunction(flow, context);
+            case Method method -> getFunction(method, parameterizedFlowProvider);
             default -> throw new IllegalStateException("Unexpected value: " + property);
         };
     }
@@ -368,19 +399,17 @@ public class ClassInstance extends Instance {
     @Override
     protected ClassInstanceParam getParam() {
         ensureLoaded();
-        return new ClassInstanceParam(
-                NncUtils.map(fields, InstanceField::toDTO)
-        );
+        return new ClassInstanceParam(NncUtils.map(fields, InstanceField::toDTO));
     }
 
     @Override
     @NoProxy
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitClassInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitClassInstance(this);
     }
 
     @Override
-    public void acceptReferences(InstanceVisitor visitor) {
+    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
         ensureLoaded();
         for (InstanceField field : fields)
             field.getValue().accept(visitor);
@@ -389,7 +418,7 @@ public class ClassInstance extends Instance {
     }
 
     @Override
-    public void acceptChildren(InstanceVisitor visitor) {
+    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
         ensureLoaded();
         for (InstanceField field : fields) {
             if (field.getField().isChild())
@@ -408,7 +437,7 @@ public class ClassInstance extends Instance {
         } else {
             return new ReferenceFieldValue(
                     getTitle(),
-                    NncUtils.requireNonNull(getId(), "Id required")
+                    Objects.requireNonNull(getInstanceIdString(), "Id required")
             );
         }
     }
@@ -449,5 +478,9 @@ public class ClassInstance extends Instance {
         for (Field field : getType().getAllFields()) {
             ensureFieldInitialized(field);
         }
+    }
+
+    public boolean isView() {
+        return source != null;
     }
 }

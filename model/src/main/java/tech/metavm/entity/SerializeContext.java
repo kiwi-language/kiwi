@@ -2,7 +2,6 @@ package tech.metavm.entity;
 
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.Flow;
-import tech.metavm.system.RegionConstants;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.ContextUtil;
@@ -18,7 +17,7 @@ public class SerializeContext implements Closeable {
     public static final ThreadLocal<SerializeContext> THREAD_LOCAL = new ThreadLocal<>();
 
     public static List<TypeDTO> forceWriteTypes(List<Type> types) {
-        try(var serContext = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             for (Type type : types) {
                 serContext.forceWriteType(type);
             }
@@ -29,11 +28,12 @@ public class SerializeContext implements Closeable {
     private final Map<Object, Long> tmpIdMap = new HashMap<>();
     private final Set<Object> visited = new IdentitySet<>();
     private int level;
-    private boolean includingValueType = false;
-    private boolean includingNodeOutputType;
+    private boolean includeValueType = false;
+    private boolean includeNodeOutputType;
     private boolean includeExpressionType;
-    private boolean includingCode;
-    private boolean includeBuiltinTypes;
+    private boolean includeCode;
+    private boolean includeBuiltin;
+    private boolean writeParameterizedTypeAsPTypeDTO;
     private final Set<Type> writtenTypes = new IdentitySet<>();
     private final Map<Type, TypeDTO> types = new HashMap<>();
     private final Map<Long, TypeDTO> typeMap = new HashMap<>();
@@ -60,12 +60,17 @@ public class SerializeContext implements Closeable {
         return this.writingCodeTypes.contains(type);
     }
 
+    public SerializeContext writeParameterizedTypeAsPTypeDTO(boolean writeParameterizedTypeAsPTypeDTO) {
+        this.writeParameterizedTypeAsPTypeDTO = writeParameterizedTypeAsPTypeDTO;
+        return this;
+    }
+
     public Long getTmpId(Object model) {
         NncUtils.requireNonNull(model);
-        if(model instanceof Entity entity) {
-            if(entity.getId() != null)
+        if (model instanceof Entity entity) {
+            if (entity.getId() != null)
                 return null;
-            else if(entity.getTmpId() != null)
+            else if (entity.getTmpId() != null)
                 return entity.getTmpId();
         }
         return tmpIdMap.computeIfAbsent(model, k -> ContextUtil.nextTmpId());
@@ -80,7 +85,7 @@ public class SerializeContext implements Closeable {
     }
 
     private boolean isBuiltinType(Type type) {
-        return type instanceof PrimitiveType || type instanceof ObjectType || type instanceof  NothingType;
+        return type instanceof PrimitiveType || type instanceof AnyType || type instanceof NeverType;
     }
 
     public boolean isIncludeExpressionType() {
@@ -96,18 +101,19 @@ public class SerializeContext implements Closeable {
     }
 
     private void writeType(Type type, boolean forceWrite) {
-        if(!forceWrite && isBuiltinType(type) && !includeBuiltinTypes) {
+        if (!forceWrite && isBuiltinType(type) && !includeBuiltin)
             return;
-        }
-        if(writtenTypes.contains(type)) {
+        if (writtenTypes.contains(type))
             return;
-        }
         writtenTypes.add(type);
-        var typeDTO = type.toDTO();
+        TypeDTO typeDTO;
+        if(writeParameterizedTypeAsPTypeDTO && type instanceof ClassType classType && classType.isParameterized())
+            typeDTO = classType.toPTypeDTO(this);
+        else
+            typeDTO = type.toDTO();
         types.put(type, typeDTO);
-        if(type.getId() != null) {
+        if (type.getId() != null)
             typeMap.put(type.getIdRequired(), typeDTO);
-        }
     }
 
     public Set<Type> getWrittenTypes() {
@@ -118,16 +124,16 @@ public class SerializeContext implements Closeable {
         this.includeExpressionType = includeExpressionType;
     }
 
-    private void writeChildTypes() {
+    private void writeChildTypes(IEntityContext context) {
         Queue<ClassType> classTypes = new LinkedList<>(NncUtils.filterByType(writtenTypes, ClassType.class));
         Set<ClassType> added = new IdentitySet<>(classTypes);
         while (!classTypes.isEmpty()) {
             var type = classTypes.poll();
             for (Field field : type.getReadyFields()) {
-                if(field.isChild()) {
+                if (field.isChild()) {
                     writeType(field.getType());
                     var concreteFieldType = field.getType().getConcreteType();
-                    if(concreteFieldType instanceof ClassType classType && added.add(classType)) {
+                    if (concreteFieldType instanceof ClassType classType && added.add(classType)) {
                         classTypes.offer(classType);
                     }
                 }
@@ -135,17 +141,17 @@ public class SerializeContext implements Closeable {
         }
     }
 
-    public void writeDependencies() {
-        writeChildTypes();
-        writePropertyTypes();
-        writeTypeArguments();
+    public void writeDependencies(IEntityContext entityContext) {
+        writeChildTypes(entityContext);
+        writePropertyTypes(entityContext);
+        writeTypeArguments(entityContext);
     }
 
-    private void writeTypeArguments() {
+    private void writeTypeArguments(IEntityContext context) {
         Queue<ClassType> queue = new LinkedList<>();
         Set<ClassType> added = new IdentitySet<>();
         for (Type writtenType : new IdentitySet<>(writtenTypes)) {
-            if(writtenType instanceof ClassType classType && !classType.getTypeArguments().isEmpty()) {
+            if (writtenType instanceof ClassType classType && !classType.getTypeArguments().isEmpty()) {
                 queue.offer(classType);
                 added.add(classType);
             }
@@ -154,7 +160,7 @@ public class SerializeContext implements Closeable {
             var type = queue.poll();
             for (Type typeArgument : type.getTypeArguments()) {
                 writeType(typeArgument);
-                if(typeArgument instanceof ClassType classType
+                if (typeArgument instanceof ClassType classType
                         && !classType.getTypeArguments().isEmpty() && added.add(classType)) {
                     queue.offer(classType);
                 }
@@ -162,17 +168,17 @@ public class SerializeContext implements Closeable {
         }
     }
 
-    private void writePropertyTypes() {
+    private void writePropertyTypes(IEntityContext entityContext) {
         for (Type writtenType : new IdentitySet<>(writtenTypes)) {
-            if(writtenType instanceof ClassType classType) {
-                getPropertyTypes(classType).forEach(this::writeType);
+            if (writtenType instanceof ClassType classType) {
+                getPropertyTypes(classType).forEach(type -> writeType(type));
             }
         }
     }
 
     private Set<Type> getPropertyTypes(ClassType classType) {
         Set<Type> propTypes = new IdentitySet<>();
-        for (Flow flow : classType.getFlows()) {
+        for (Flow flow : classType.getMethods()) {
             propTypes.addAll(flow.getParameterTypes());
             propTypes.add(flow.getReturnType());
             propTypes.add(flow.getType());
@@ -183,32 +189,36 @@ public class SerializeContext implements Closeable {
         return propTypes;
     }
 
-    public boolean isIncludingValueType() {
-        return includingValueType;
+    public boolean includeValueType() {
+        return includeValueType;
     }
 
-    public void setIncludingValueType(boolean includingValueType) {
-        this.includingValueType = includingValueType;
+    public SerializeContext includingValueType(boolean includingValueType) {
+        this.includeValueType = includingValueType;
+        return this;
     }
 
-    public boolean isIncludingNodeOutputType() {
-        return includingNodeOutputType;
+    public boolean includeNodeOutputType() {
+        return includeNodeOutputType;
     }
 
-    public void setIncludingNodeOutputType(boolean includingNodeOutputType) {
-        this.includingNodeOutputType = includingNodeOutputType;
+    public SerializeContext includeNodeOutputType(boolean includingNodeOutputType) {
+        this.includeNodeOutputType = includingNodeOutputType;
+        return this;
     }
 
-    public void setIncludeBuiltinTypes(boolean includeBuiltinTypes) {
-        this.includeBuiltinTypes = includeBuiltinTypes;
+    public SerializeContext includeBuiltin(boolean includeBuiltin) {
+        this.includeBuiltin = includeBuiltin;
+        return this;
     }
 
-    public boolean isIncludingCode() {
-        return includingCode;
+    public boolean isIncludeCode() {
+        return includeCode;
     }
 
-    public void setIncludingCode(boolean includingCode) {
-        this.includingCode = includingCode;
+    public SerializeContext includingCode(boolean includingCode) {
+        this.includeCode = includingCode;
+        return this;
     }
 
     public List<TypeDTO> getTypes() {
@@ -219,8 +229,14 @@ public class SerializeContext implements Closeable {
         return NncUtils.filterAndMap(types.entrySet(), e -> filter.test(e.getKey()), Map.Entry::getValue);
     }
 
-    public List<TypeDTO> getNonSystemTypes() {
-        return getTypes(t -> t.isIdNull() || !RegionConstants.isSystemId(t.getIdRequired()));
+    public List<TypeDTO> getParameterizedTypes() {
+        List<TypeDTO> pTypes = new ArrayList<>();
+        for (Type writtenType : writtenTypes) {
+            if(writtenType instanceof ClassType classType) {
+                pTypes.add(classType.toPTypeDTO(this));
+            }
+        }
+        return pTypes;
     }
 
     public List<TypeDTO> getTypesExclude(Type type) {

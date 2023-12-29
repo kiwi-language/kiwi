@@ -3,6 +3,7 @@ package tech.metavm.object.type.generic;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.UnionType;
+import tech.metavm.object.type.UnionTypeProvider;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
@@ -11,7 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class UnionTypeContext extends CompositeTypeContext<UnionType>  {
+public class UnionTypeContext extends CompositeTypeContext<UnionType> implements UnionTypeProvider {
     public UnionTypeContext(IEntityContext context, @Nullable UnionTypeContext parent) {
         super(context, UnionType.KEY_IDX, parent);
     }
@@ -23,11 +24,11 @@ public class UnionTypeContext extends CompositeTypeContext<UnionType>  {
         }
     }
 
-    public UnionType get(Set<Type> members) {
-        return get(members, null);
+    public UnionType getUnionType(Set<Type> members) {
+        return getUnionType(members, null);
     }
 
-    public UnionType get(Set<Type> members, Long tmpId) {
+    public UnionType getUnionType(Set<Type> members, Long tmpId) {
         return get(new ArrayList<>(members), tmpId);
     }
 

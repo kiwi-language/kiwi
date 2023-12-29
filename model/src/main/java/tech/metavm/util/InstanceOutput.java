@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PrimitiveInstance;
 
@@ -11,16 +12,16 @@ import java.nio.charset.StandardCharsets;
 
 public class InstanceOutput extends OutputStream {
 
-    public static byte[] toByteArray(Instance instance) {
+    public static byte[] toByteArray(DurableInstance instance) {
         return toByteArray(instance, false, false);
     }
 
-    public static byte[] toMessage(Instance instance) {
+    public static byte[] toMessage(DurableInstance instance) {
         NncUtils.requireTrue(instance.isRoot());
         return toByteArray(instance, true, true);
     }
 
-    private static byte[] toByteArray(Instance instance, boolean includeChild, boolean withVersion) {
+    private static byte[] toByteArray(DurableInstance instance, boolean includeChild, boolean withVersion) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout, includeChild);
         if (withVersion)
@@ -55,10 +56,10 @@ public class InstanceOutput extends OutputStream {
             primitiveInstance.writeTo(this, includeChildren);
         } else if (isReference) {
             write(WireTypes.REFERENCE);
-            writeLong(instance.getIdRequired());
+            writeLong(((DurableInstance) instance).getIdRequired());
         } else {
             write(WireTypes.RECORD);
-            writeLong(instance.getIdRequired());
+            writeLong(((DurableInstance) instance).getIdRequired());
             instance.writeTo(this, includeChildren);
         }
     }

@@ -1,27 +1,30 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
-import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.Expressions;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.expression.ThisExpression;
 import tech.metavm.flow.Value;
+import tech.metavm.flow.Values;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.IndexFieldDTO;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 @EntityType("唯一约束项")
-public class IndexField extends Entity {
+public class IndexField extends Entity implements LocalKey{
 
     public static IndexField createFieldItem(Index constraint, Field field) {
         return new IndexField(
                 constraint,
                 field.getName(),
                 field.getCode(),
-                Value.reference(ExpressionUtil.propertyExpr(field))
+                Values.reference(Expressions.propertyExpr(field))
         );
     }
 
@@ -80,12 +83,12 @@ public class IndexField extends Entity {
         return null;
     }
 
-    public IndexFieldDTO toDTO(boolean forPersistence) {
+    public IndexFieldDTO toDTO() {
         return new IndexFieldDTO(
                 id,
                 name,
                 code,
-                value.toDTO(forPersistence)
+                value.toDTO()
         );
     }
 
@@ -94,11 +97,20 @@ public class IndexField extends Entity {
     }
 
     public Instance convertModelToInstance(Object model, IEntityContext context) {
-        if (InstanceUtils.isPrimitive(model) || context.containsModel(model))
-            return context.getInstance(model);
+        if (Instances.isPrimitive(model) || context.containsModel(model))
+            return context.getObjectInstanceMap().getInstance(model);
         else
             throw new InternalException("Model " + model + " does not exist in the context");
 
     }
 
+    @Override
+    public boolean isValidLocalKey() {
+        return code != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(code);
+    }
 }

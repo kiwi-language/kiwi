@@ -10,7 +10,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class ArrayTypeContext extends CompositeTypeContext<ArrayType>  {
+public class ArrayTypeContext extends CompositeTypeContext<ArrayType> {
 
     private final ArrayKind kind;
 

@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class EntityProxyFactoryTest extends TestCase {
         List<String> list = EntityProxyFactory.getProxy(
                 new TypeReference<ArrayList<String>>() {}.getType(),
                 null,
-                k -> ReflectUtils.invokeConstructor(ReflectUtils.getConstructor(k)), l -> l.add("Abc")
+                k -> ReflectionUtils.invokeConstructor(ReflectionUtils.getConstructor(k)), l -> l.add("Abc")
         );
         Assert.assertEquals(List.of("Abc"), list);
     }

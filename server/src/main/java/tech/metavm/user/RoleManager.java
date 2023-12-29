@@ -3,35 +3,30 @@ package tech.metavm.user;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.InstanceQueryBuilder;
-import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
 
 @Component
-public class RoleManager {
+public class RoleManager extends EntityContextFactoryBean{
 
-    private final InstanceContextFactory instanceContextFactory;
+    private final EntityQueryService entityQueryService;
 
-    private final InstanceQueryService instanceQueryService;
-
-    public RoleManager(InstanceContextFactory instanceContextFactory, InstanceQueryService instanceQueryService) {
-        this.instanceContextFactory = instanceContextFactory;
-        this.instanceQueryService = instanceQueryService;
+    public RoleManager(EntityContextFactory entityContextFactory, EntityQueryService entityQueryService) {
+        super(entityContextFactory);
+        this.entityQueryService = entityQueryService;
     }
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
-        var query1 = InstanceQueryBuilder.newBuilder(ModelDefRegistry.getType(Role.class))
+        var query = EntityQueryBuilder.newBuilder(Role.class)
                 .searchText(searchText)
                 .page(page)
                 .pageSize(pageSize)
                 .build();
         Page<Role> dataPage =
-                instanceQueryService.query(Role.class, query1, newContext());
+                entityQueryService.query(query, newContext());
         return new Page<>(
                 NncUtils.map(dataPage.data(), Role::toRoleDTO),
                 dataPage.total()
@@ -76,10 +71,6 @@ public class RoleManager {
             context.remove(role);
             context.finish();
         }
-    }
-
-    private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext(false);
     }
 
 }

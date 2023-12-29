@@ -4,14 +4,11 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.system.RegionManager;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.type.*;
 
 import java.io.ByteArrayInputStream;
@@ -163,7 +160,7 @@ public class InstanceInputTest extends TestCase {
         );
         barInst.resetParent(fooInst, barField);
 
-        Function<Long, Instance> resolveInst = id -> {
+        Function<Long, DurableInstance> resolveInst = id -> {
             if(Objects.equals(id, fooInst.getIdRequired()))
                 return new ClassInstance(id, fooType, null);
             else if(Objects.equals(id, barInst.getIdRequired()))

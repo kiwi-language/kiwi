@@ -8,14 +8,20 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.MappingSaver;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T, ClassInstance, D> {
+import static tech.metavm.object.type.ResolutionStage.DECLARATION;
+import static tech.metavm.object.type.ResolutionStage.INIT;
+
+public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, ClassInstance, D> {
 
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;
@@ -29,61 +35,50 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         this.javaClass = javaClass;
         this.javaType = javaType;
         this.defContext = defContext;
-        substitutor = ReflectUtils.resolveGenerics(javaType);
+        substitutor = ReflectionUtils.resolveGenerics(javaType);
         typeFactory = new DefTypeFactory(defContext);
         this.columnStore = columnStore;
     }
 
+    @SuppressWarnings("unchecked")
     private PojoDef<? super T> getSuperDef() {
         var superClass = javaClass.getSuperclass();
-        if (superClass != null && superClass != Object.class) {
-            if (RuntimeGeneric.class.isAssignableFrom(superClass)) {
-                return defContext.getPojoDef(substitutor.substitute(javaClass.getGenericSuperclass()));
-            } else {
-                return defContext.getPojoDef(superClass);
-            }
-        }
+        if (superClass != null && superClass != Object.class)
+            return (PojoDef<? super T>) defContext.getDef(substituteType(javaClass.getGenericSuperclass()), INIT);
         return null;
+    }
+
+    private java.lang.reflect.Type substituteType(java.lang.reflect.Type type) {
+        var rawClass = switch (type) {
+            case Class<?> klass -> klass;
+            case ParameterizedType pType -> (Class<?>) pType.getRawType();
+            default -> throw new IllegalArgumentException("Invalid type: " + type);
+        };
+        if (RuntimeGeneric.class.isAssignableFrom(rawClass)) {
+            return substitutor.substitute(type);
+        } else {
+            return ReflectionUtils.eraseType(type);
+        }
     }
 
     private List<InterfaceDef<? super T>> getInterfaceDefs() {
         //noinspection unchecked
         return NncUtils.map(
                 javaClass.getGenericInterfaces(),
-                it -> (InterfaceDef<? super T>) defContext.getDef(substitutor.substitute(it))
+                it -> (InterfaceDef<? super T>) defContext.getDef(substituteType(it), INIT)
         );
     }
 
     private List<Field> getIndexDefFields() {
-        return ReflectUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == IndexDef.class);
+        return ReflectionUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == IndexDef.class);
     }
 
     private List<Field> getConstraintDefFields() {
-        return ReflectUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == ConstraintDef.class);
+        return ReflectionUtils.getDeclaredStaticFields(javaClass, f -> f.getType() == ConstraintDef.class);
     }
 
     protected List<Field> getPropertyFields() {
-        return ReflectUtils.getDeclaredPersistentFields(javaClass);
-    }
-
-    @Override
-    public List<java.lang.reflect.Type> getDependencyTypes() {
-        var dependencies = new ArrayList<java.lang.reflect.Type>();
-        var superClass = javaClass.getSuperclass();
-        if (javaType != javaClass) {
-            dependencies.add(javaClass);
-        }
-        if (superClass != null && superClass != Object.class) {
-            if (RuntimeGeneric.class.isAssignableFrom(superClass)) {
-                dependencies.add(substitutor.substitute(javaClass.getGenericSuperclass()));
-            } else {
-                dependencies.add(superClass);
-            }
-        }
-        for (java.lang.reflect.Type it : javaClass.getGenericInterfaces()) {
-            dependencies.add(substitutor.substitute(it));
-        }
-        return dependencies;
+        return ReflectionUtils.getDeclaredPersistentFields(javaClass);
     }
 
     @Override
@@ -92,24 +87,52 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     }
 
     @Override
-    public void initialize() {
-        defContext.createCompositeTypes(javaType, def.getType());
-        getPropertyFields().forEach(f -> parseField(f, def));
-        getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
-        getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
+    public D get() {
+        return def;
+    }
+
+    @Override
+    public void generateSignature() {
         var type = def.getType();
         if (javaType instanceof Class<?> && RuntimeGeneric.class.isAssignableFrom(javaClass)) {
             for (var javaTypeParam : javaClass.getTypeParameters()) {
-                defContext.getDef(javaTypeParam);
+                defContext.getDef(javaTypeParam, INIT);
             }
         }
         List<Type> typeArgs = new ArrayList<>();
         if (javaType instanceof java.lang.reflect.ParameterizedType pType) {
             for (var javaTypeArg : pType.getActualTypeArguments()) {
-                typeArgs.add(defContext.getType(javaTypeArg));
+                typeArgs.add(defContext.getType(javaTypeArg, INIT));
             }
         }
         type.setTypeArguments(typeArgs);
+    }
+
+    @Override
+    public void generateDeclaration() {
+        var type = def.getType();
+        if (type.getSuperClass() != null)
+            defContext.ensureStage(type.getSuperClass(), DECLARATION);
+        type.getInterfaces().forEach(it -> defContext.ensureStage(it, DECLARATION));
+        defContext.createCompositeTypes(def.getType());
+        getPropertyFields().forEach(f -> parseField(f, def));
+        getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
+        saveBuiltinMapping(false);
+    }
+
+    @Override
+    public void generateDefinition() {
+        var type = def.getType();
+        type.getAllFields().forEach(f ->
+                defContext.ensureStage(f.getType().getUnderlyingType(), DECLARATION));
+        getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
+        saveBuiltinMapping(true);
+    }
+
+    private void saveBuiltinMapping(boolean saveContent) {
+        var type = def.getType();
+        if (type.shouldGenerateBuiltinMapping())
+            MappingSaver.create(defContext).saveBuiltinMapping(type, saveContent);
     }
 
     protected abstract D createDef(PojoDef<? super T> superDef);
@@ -119,11 +142,11 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
             Type fieldType;
             Class<?> javaFieldClass = javaField.getType();
             if (javaFieldClass == ArrayInstance.class)
-                fieldType = defContext.getType(ReadWriteArray.class);
+                fieldType = defContext.getType(ReadWriteArray.class, INIT);
             else if (javaFieldClass == ClassInstance.class)
-                fieldType = defContext.getType(Object.class);
+                fieldType = defContext.getType(Object.class, INIT);
             else
-                fieldType = defContext.getType(BiUnion.createNullableType(Object.class));
+                fieldType = defContext.getType(BiUnion.createNullableType(Object.class), INIT);
             tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new InstanceFieldDef(
                     javaField,
@@ -131,7 +154,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
                     declaringTypeDef
             );
         } else if (Class.class == javaField.getType()) {
-            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, defContext.getType(ClassType.class));
+            tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, defContext.getType(ClassType.class, INIT));
             new ClassFieldDef(
                     declaringTypeDef,
                     field,
@@ -139,7 +162,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
                     defContext
             );
         } else {
-            ModelDef<?, ?> targetDef = defContext.getDef(evaluateFieldType(javaField));
+            ModelDef<?, ?> targetDef = defContext.getDef(evaluateFieldType(javaField), INIT);
             tech.metavm.object.type.Field field = createField(javaField, declaringTypeDef, getFieldType(javaField, targetDef));
             new FieldDef(
                     field,
@@ -152,7 +175,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     }
 
     private void parseUniqueConstraint(Field indexDefField, PojoDef<T> declaringTypeDef) {
-        IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
+        IndexDef<?> indexDef = (IndexDef<?>) ReflectionUtils.get(null, indexDefField);
         Index uniqueConstraint = new Index(
                 declaringTypeDef.getType(),
                 EntityUtils.getMetaConstraintName(indexDefField), indexDefField.getName(), null, indexDef.isUnique(), NncUtils.map(indexDef.getFieldNames(), this::getFiled)
@@ -165,12 +188,10 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     }
 
     private void parseCheckConstraint(Field constraintField, PojoDef<T> declaringTypeDef) {
-        ConstraintDef<?> constraintDef = (ConstraintDef<?>) ReflectUtils.get(null, constraintField);
+        ConstraintDef<?> constraintDef = (ConstraintDef<?>) ReflectionUtils.get(null, constraintField);
         tech.metavm.flow.Value value = ValueFactory.create(
                 ValueDTO.exprValue(constraintDef.expression()),
-                new TypeParsingContext(declaringTypeDef.getType(), id -> {
-                    throw new UnsupportedOperationException();
-                })
+                TypeParsingContext.create(declaringTypeDef.getType(), defContext)
         );
         CheckConstraint checkConstraint = new CheckConstraint(
                 declaringTypeDef.getType(), EntityUtils.getMetaConstraintName(constraintField), constraintField.getName(), "", value
@@ -183,7 +204,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
     }
 
     private tech.metavm.object.type.Field getFiled(String javaFieldName) {
-        Field field = ReflectUtils.getField(javaClass, javaFieldName);
+        Field field = ReflectionUtils.getField(javaClass, javaFieldName);
         return def.getFieldDef(field).getField();
     }
 
@@ -195,17 +216,20 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         boolean asTitle = annotation != null && annotation.asTitle();
         boolean isChild = reflectField.isAnnotationPresent(ChildEntity.class);
         boolean lazy = isChild && reflectField.getAnnotation(ChildEntity.class).lazy();
+        var declaringType = declaringTypeDef.getType();
         var field = FieldBuilder.newBuilder(
                         EntityUtils.getMetaFieldName(reflectField),
-                        reflectField.getName(), declaringTypeDef.getType(), fieldType)
+                        reflectField.getName(), declaringType, fieldType)
                 .unique(unique)
                 .lazy(lazy)
+                .readonly(Modifier.isFinal(reflectField.getModifiers()))
                 .column(columnStore.getColumn(javaType, reflectField, fieldType.getSQLType()))
-                .asTitle(asTitle)
                 .defaultValue(new NullInstance(typeFactory.getNullType()))
                 .isChild(isChild)
                 .staticValue(new NullInstance(typeFactory.getNullType()))
                 .build();
+        if (asTitle)
+            declaringType.setTitleField(field);
         return field;
     }
 
@@ -214,17 +238,16 @@ public abstract class PojoParser<T, D extends PojoDef<T>> implements DefParser<T
         if (javaField.isAnnotationPresent(Nullable.class) ||
                 javaField.isAnnotationPresent(org.jetbrains.annotations.Nullable.class)) {
             return defContext.getNullableType(refType);
-        } else {
+        } else
             return refType;
-        }
     }
 
     private java.lang.reflect.Type evaluateFieldType(Field javaField) {
-        return ReflectUtils.evaluateFieldType(javaType, javaField.getGenericType());
+        return ReflectionUtils.evaluateFieldType(javaType, javaField.getGenericType());
     }
 
     protected ClassType createType() {
-        var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass) : null;
+        var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass, INIT) : null;
         PojoDef<? super T> superDef = getSuperDef();
         List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
         return ClassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))

@@ -224,7 +224,7 @@
 //            List<PsiClassType> psiTypes = NncUtils.map(classes, TranspileTestTools::getPsiClassType);
 //            NncUtils.map(psiTypes, k -> (ClassType) typeResolver.resolve(k));
 //
-//            try (SerializeContext context = SerializeContext.enter()) {
+//            try (SerializeContext serContext = SerializeContext.enter()) {
 //                context.setIncludingCode(true);
 //                context.setIncludingNodeOutputType(false);
 //                context.setIncludingValueType(false);
@@ -238,12 +238,12 @@
 //                for (Type metaType : generatedTypes) {
 //                    if (metaType instanceof ClassType classType)
 //                        typeResolver.ensureCodeGenerated(classType);
-//                    context.writeType(metaType);
+//                    serContext.writeType(metaType);
 ////                    var collTypeNames = TypeUtils.getCollectionTypeNames(metaType);
 ////                    for (String collTypeName : collTypeNames) {
 ////                        var collType = entityContext.selectByUniqueKey(ClassType.UNIQUE_NAME, collTypeName);
 ////                        if (collType != null) {
-////                            context.writeType(collType);
+////                            serContext.writeType(collType);
 ////                        }
 ////                    }
 //                }

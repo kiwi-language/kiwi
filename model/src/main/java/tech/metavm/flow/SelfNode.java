@@ -1,40 +1,48 @@
 package tech.metavm.flow;
 
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.type.ClassType;
 
-@EntityType("当前对象节点")
-public class SelfNode extends NodeRT<Void> {
+import javax.annotation.Nullable;
+import java.util.Objects;
 
-    public static ClassType getSelfType(Flow flow, IEntityContext context) {
-        var declaringType = flow.getDeclaringType();
+@EntityType("自身节点")
+public class SelfNode extends NodeRT {
+
+    public static ClassType getSelfType(Method method, IEntityContext context) {
+        var declaringType = method.getDeclaringType();
         return declaringType.isTemplate() ?
                 context.getParameterizedType(declaringType, declaringType.getTypeParameters()) : declaringType;
     }
 
-    public static SelfNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        return new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), getSelfType(scope.getFlow(), context), prev, scope);
+    public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        var node = (SelfNode) context.getNode(nodeDTO.getRef());
+        if (node == null)
+            node = new SelfNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), getSelfType((Method) scope.getFlow(), context), prev, scope);
+        return node;
     }
 
-    public SelfNode(Long tmpId, String name, ClassType type, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name, type, prev, scope);
+    public SelfNode(Long tmpId, String name, @Nullable String code, ClassType type, NodeRT prev, ScopeRT scope) {
+        super(tmpId, name, code, type, prev, scope);
     }
 
     @Override
-    protected void setParam(Void param, IEntityContext entityContext) {
-    }
-
-    @Override
-    protected Void getParam(boolean persisting) {
+    protected Void getParam(SerializeContext serializeContext) {
         return null;
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        return next(frame.getSelf());
+        return next(Objects.requireNonNull(frame.getSelf()));
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("self");
     }
 
     @Override

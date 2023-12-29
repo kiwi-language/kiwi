@@ -3,10 +3,10 @@ package tech.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.*;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -18,8 +18,8 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
     public static <T> ReadonlyArray<T> createProxy(Class<? extends ReadonlyArray<T>> proxyClass, Type elementType) {
-        return ReflectUtils.invokeConstructor(
-                ReflectUtils.getConstructor(proxyClass, Type.class),
+        return ReflectionUtils.invokeConstructor(
+                ReflectionUtils.getConstructor(proxyClass, Type.class),
                 elementType
         );
     }
@@ -53,7 +53,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         this.genericType = new ParameterizedTypeImpl(
                 null,
                 getRawClass(),
-                new Type[]{ReflectUtils.eraseType(elementType)}
+                new Type[]{ReflectionUtils.eraseType(elementType)}
         );
         table = new Table<T>(elementType, data, buildIndexThreshold);
     }
@@ -62,6 +62,19 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         this.elementType = elementType;
         this.genericType = genericType;
         this.table = table;
+    }
+
+    @Override
+    public void forEachReference(Consumer<Object> action) {
+        for (T t : this) {
+            if (t != null && !ValueUtil.isPrimitive(t))
+                action.accept(t);
+        }
+    }
+
+    @Override
+    public void forEachDescendant(Consumer<Entity> action) {
+        action.accept(this);
     }
 
     @NoProxy
@@ -165,7 +178,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     }
 
     public Class<?> getElementClass() {
-        return ReflectUtils.getRawClass(elementType);
+        return ReflectionUtils.getRawClass(elementType);
     }
 
     public boolean isEmpty() {

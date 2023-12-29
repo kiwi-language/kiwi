@@ -39,11 +39,6 @@ public class VariableExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new VariableExpression(variable);
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
         throw new UnsupportedOperationException();
     }

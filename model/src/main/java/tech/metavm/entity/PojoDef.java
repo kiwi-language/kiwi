@@ -1,14 +1,11 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -54,31 +51,31 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         if (type == instance.getType()) {
             if(model instanceof Entity entity) {
                 entity.initParent(
-                        NncUtils.get(instance.getParent(), p -> modelInstanceMap.getEntity(Entity.class, p)),
+                        NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p)),
                         NncUtils.get(instance.getParentField(), defContext::getJavaField)
                 );
             }
-            setPojoFields(model, instance, modelInstanceMap);
+            setPojoFields(model, instance, objectInstanceMap);
         } else {
             PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType());
-            subTypeDef.initModelHelper(model, instance, modelInstanceMap);
+            subTypeDef.initModelHelper(model, instance, objectInstanceMap);
         }
     }
 
     @Override
-    public void updateModel(T pojo, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        setPojoFields(pojo, instance, modelInstanceMap);
+    public void updateModel(T pojo, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        setPojoFields(pojo, instance, objectInstanceMap);
     }
 
-    private void setPojoFields(T pojo, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    private void setPojoFields(T pojo, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         if (superDef != null) {
-            superDef.setPojoFields(pojo, instance, modelInstanceMap);
+            superDef.setPojoFields(pojo, instance, objectInstanceMap);
         }
-        setFieldValues(pojo, instance, modelInstanceMap);
+        setFieldValues(pojo, instance, objectInstanceMap);
     }
 
     public Long getId() {
@@ -90,7 +87,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public void initInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
+    public void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         ClassType instanceType = instance.getType();
         if (type == instance.getType()) {
             if(model instanceof Entity entity) {
@@ -107,7 +104,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     @Override
-    public void updateInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
+    public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         initInstance(instance, model, instanceMap);
 //        ClassType instanceType = instance.getType();
 //        if (type == instance.getType()) {
@@ -138,7 +135,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         return subDef;
     }
 
-    protected Map<Field, Instance> getInstanceFields(Object object, ModelInstanceMap instanceMap) {
+    protected Map<Field, Instance> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
         Map<Field, Instance> fieldData = new HashMap<>();
         if (superDef != null) {
             fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
@@ -173,37 +170,14 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         );
     }
 
-    @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        Map<Object, Identifiable> mapping = new HashMap<>();
-        mapping.put(getJavaClass(), type);
-        mapping.put(ModelIdentity.classTypeFields(getJavaClass()), type.getDeclaredFields());
-        mapping.put(ModelIdentity.classTypeConstraints(getJavaClass()), type.getDeclaredConstraints());
-        mapping.put(ModelIdentity.classTypeFlows(getJavaClass()), type.getDeclaredFlows());
-//        if (type.getNullableType() != null) {
-//            mapping.put(ModelIdentity.typeNullableType(getJavaClass()), type.getNullableType());
-//        }
-//        if (type.getArrayType() != null) {
-//            mapping.put(ModelIdentity.typeArrayType(getJavaClass()), type.getArrayType());
-//        }
-
-        for (IFieldDef fieldDef : fieldDefList) {
-            mapping.put(fieldDef.getJavaField(), fieldDef.getField());
-        }
-        for (IndexConstraintDef indexConstraintDef : indexConstraintDefList) {
-            mapping.put(indexConstraintDef.getIndexDefField(), indexConstraintDef.getIndexConstraint());
-        }
-        return mapping;
-    }
-
     @SuppressWarnings("unused")
     public List<IFieldDef> getFieldDefList() {
         return fieldDefList;
     }
 
-    private void setFieldValues(Object entity, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    private void setFieldValues(Object entity, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         for (IFieldDef fieldDef : fieldDefList) {
-            fieldDef.setModelField(entity, instance, modelInstanceMap);
+            fieldDef.setModelField(entity, instance, objectInstanceMap);
         }
     }
 
@@ -232,7 +206,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     @Override
     public T createModelProxy(Class<? extends T> proxyClass) {
-        return ReflectUtils.allocateInstance(proxyClass);
+        return ReflectionUtils.allocateInstance(proxyClass);
     }
 
     @SuppressWarnings("unused")
@@ -244,7 +218,4 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
         return type;
     }
 
-    public DefMap getDefMap() {
-        return defContext;
-    }
 }

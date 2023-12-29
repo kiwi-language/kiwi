@@ -37,9 +37,9 @@ public class TypeController {
         return Result.success(typeManager.getByRange(request));
     }
 
-    @GetMapping("/load-all")
-    public Result<LoadAllTypesResponse> loadAll() {
-        return Result.success(typeManager.loadAllTypes());
+    @GetMapping("/load-all-metadata")
+    public Result<LoadAllMetadataResponse> loadAllMetadata() {
+        return Result.success(typeManager.loadAllMetadata());
     }
 
     @GetMapping("/{id:[0-9]+}/descendants")
@@ -203,11 +203,6 @@ public class TypeController {
     public Result<Void> removeConstraint(@PathVariable("id") long id) {
         typeManager.removeConstraint(id);
         return Result.voidSuccess();
-    }
-
-    @GetMapping("/primitives")
-    public Result<Map<String, TypeDTO>> getPrimitiveTypes() {
-        return Result.success(typeManager.getPrimitiveTypes());
     }
 
     @GetMapping("/primitive-map")

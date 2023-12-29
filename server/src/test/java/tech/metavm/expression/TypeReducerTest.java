@@ -28,12 +28,12 @@ public class TypeReducerTest extends TestCase {
                         new BinaryExpression(
                                 BinaryOperator.NE,
                                 nameFieldExpr,
-                                ExpressionUtil.nullExpression()
+                                Expressions.nullExpression()
                         ),
                         new BinaryExpression(
                                 BinaryOperator.GT,
                                 amountFieldExpr,
-                                ExpressionUtil.constantLong(0)
+                                Expressions.constantLong(0)
                         )
                 ),
                 new BinaryExpression(
@@ -45,7 +45,7 @@ public class TypeReducerTest extends TestCase {
                         new BinaryExpression(
                                 BinaryOperator.EQ,
                                 amountFieldExpr,
-                                ExpressionUtil.constantLong(-1L)
+                                Expressions.constantLong(-1L)
                         )
                 )
         );

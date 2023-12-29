@@ -1,15 +1,12 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.object.instance.core.Instance;
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.*;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 @EntityType("基础类型")
 public class PrimitiveType extends Type {
@@ -18,8 +15,7 @@ public class PrimitiveType extends Type {
     private final PrimitiveKind kind;
 
     public PrimitiveType(PrimitiveKind kind) {
-        super(kind.getName(), false, true, kind.getTypeCategory());
-        setCode(kind.name());
+        super(kind.getName(), kind.getTypeCode(), false, true, kind.getTypeCategory());
         this.kind = kind;
     }
 
@@ -110,7 +106,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
         return kind.getJavaClass().getName();
     }
 

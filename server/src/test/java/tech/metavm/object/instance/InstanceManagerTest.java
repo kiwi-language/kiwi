@@ -3,9 +3,7 @@ package tech.metavm.object.instance;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.common.Page;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.MemInstanceStore;
+import tech.metavm.entity.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
@@ -24,28 +22,29 @@ import java.util.List;
 public class InstanceManagerTest extends TestCase {
 
     private InstanceManager instanceManager;
-    private InstanceContextFactory instanceContextFactory;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
         MockIdProvider idProvider = new MockIdProvider();
         MockRegistry.setUp(idProvider);
-        MemInstanceStore instanceStore = new MemInstanceStore();
-        MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
-        InstanceQueryService instanceQueryService = new InstanceQueryService(instanceSearchService);
-        instanceContextFactory = TestUtils.getInstanceContextFactory(
-                idProvider, instanceStore, instanceSearchService
+        var instanceStore = new MemInstanceStore();
+        var instanceSearchService = new MemInstanceSearchService();
+        var instanceQueryService = new InstanceQueryService(instanceSearchService);
+        var instanceLogService = new MockInstanceLogService();
+        var indexEntryMapper = new MemIndexEntryMapper();
+        entityContextFactory = TestUtils.getEntityContextFactory(
+                idProvider, instanceStore, instanceLogService, indexEntryMapper
         );
-        instanceManager = new InstanceManager(instanceStore, instanceContextFactory, instanceQueryService);
+        instanceManager = new InstanceManager(entityContextFactory, instanceStore, instanceQueryService);
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext();
+        return entityContextFactory.newContext();
     }
 
     private Foo saveFoo(IEntityContext context) {
-
-        Foo foo = new Foo("Big Foo", new Bar("Bar001"));
+        var foo = new Foo("Big Foo", new Bar("Bar001"));
         foo.setBazList(List.of(
                 new Baz(
                         List.of(
@@ -68,9 +67,9 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testLoadByPaths() {
-        IEntityContext context = newContext();
-        Foo foo = saveFoo(context);
-        List<InstanceDTO> result = instanceManager.loadByPaths(
+        var context = newContext();
+        var foo = saveFoo(context);
+        var result = instanceManager.loadByPaths(
                 new LoadInstancesByPathsRequest(
                         null,
                         List.of(
@@ -81,7 +80,6 @@ public class InstanceManagerTest extends TestCase {
                         )
                 )
         );
-
         Assert.assertEquals(
                 List.of(
                         context.getInstance(foo.getBar()).toDTO(),
@@ -96,10 +94,10 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testSelect() {
-        IEntityContext context = newContext();
-        Foo foo = saveFoo(context);
-        ClassType fooType = MockRegistry.getClassType(Foo.class);
-        Page<InstanceDTO[]> page = instanceManager.select(new SelectRequest(
+        var context = newContext();
+        var foo = saveFoo(context);
+        var fooType = MockRegistry.getClassType(Foo.class);
+        var page = instanceManager.select(new SelectRequest(
                 fooType.getIdRequired(),
                 List.of(
                         "巴.编号",

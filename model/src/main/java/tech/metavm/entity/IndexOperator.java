@@ -8,10 +8,16 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public enum IndexOperator {
 
     EQ(1, "=") {
+        @Override
+        public boolean evaluate(Object value1, Object value2) {
+            return Objects.equals(value1, value2);
+        }
+
         @Override
         public boolean evaluate(byte[] value1, byte[] value2) {
             return Arrays.equals(value1, value2);
@@ -23,6 +29,13 @@ public enum IndexOperator {
         }
     },
     GT(2, ">") {
+
+        @Override
+        public boolean evaluate(Object value1, Object value2) {
+            //noinspection unchecked,rawtypes
+            return ((Comparable) value1).compareTo(value2) > 0;
+        }
+
         @Override
         public boolean evaluate(byte[] value1, byte[] value2) {
             return BytesUtils.compareBytes(value1, value2) > 0;
@@ -34,6 +47,13 @@ public enum IndexOperator {
         }
     },
     GE(3, ">=") {
+
+        @Override
+        public boolean evaluate(Object value1, Object value2) {
+            //noinspection unchecked,rawtypes
+            return ((Comparable) value1).compareTo(value2) >= 0;
+        }
+
         @Override
         public boolean evaluate(byte[] value1, byte[] value2) {
             return BytesUtils.compareBytes(value1, value2) >= 0;
@@ -47,6 +67,13 @@ public enum IndexOperator {
     },
 
     LT(4, "<") {
+
+        @Override
+        public boolean evaluate(Object value1, Object value2) {
+            //noinspection unchecked,rawtypes
+            return ((Comparable) value1).compareTo(value2) < 0;
+        }
+
         @Override
         public boolean evaluate(byte[] value1, byte[] value2) {
             return BytesUtils.compareBytes(value1, value2) < 0;
@@ -59,6 +86,13 @@ public enum IndexOperator {
 
     },
     LE(5, "<=") {
+
+        @Override
+        public boolean evaluate(Object value1, Object value2) {
+            //noinspection unchecked,rawtypes
+            return ((Comparable) value1).compareTo(value2) <= 0;
+        }
+
         @Override
         public boolean evaluate(byte[] value1, byte[] value2) {
             return BytesUtils.compareBytes(value1, value2) <= 0;
@@ -99,6 +133,8 @@ public enum IndexOperator {
     public String op() {
         return op;
     }
+
+    public abstract boolean evaluate(Object value1, Object value2);
 
     public abstract boolean evaluate(byte[] value1, byte[] value2);
 

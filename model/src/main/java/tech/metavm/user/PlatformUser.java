@@ -16,7 +16,7 @@ import java.util.List;
 public class PlatformUser extends User {
 
     public static final IndexDef<PlatformUser> IDX_APP =
-            IndexDef.normalKey(PlatformUser.class, "applications");
+            IndexDef.create(PlatformUser.class, "applications");
 
     @ChildEntity("应用列表")
     private final ReadWriteArray<Application> applications =

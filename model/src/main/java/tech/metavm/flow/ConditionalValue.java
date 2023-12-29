@@ -27,13 +27,16 @@ public class ConditionalValue extends Entity {
         this.value = addChild(value, "value");
     }
 
-    public ConditionalValueDTO toDTO(boolean persisting) {
-        try(var context = SerializeContext.enter()) {
+    public ConditionalValueDTO toDTO() {
+        try (var serContext = SerializeContext.enter()) {
             return new ConditionalValueDTO(
-                    context.getRef(branch),
-                    value.toDTO(persisting)
+                    serContext.getRef(branch),
+                    value.toDTO()
             );
         }
     }
 
+    public String getText() {
+        return branch.getIndex() + ": " + value.getText();
+    }
 }

@@ -10,7 +10,8 @@ import java.util.Objects;
 
 public class DirectoryLightVirtualFile extends BinaryLightVirtualFile {
 
-    private @Nullable VirtualFile[] children;
+    @Nullable
+    private VirtualFile[] children;
 
     public DirectoryLightVirtualFile(File file) {
         super(file);

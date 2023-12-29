@@ -14,15 +14,15 @@ public class ArrayTypeTest extends TestCase {
     }
 
     public void testIsAssignable() {
-        ObjectType objectType = MockRegistry.getObjectType();
+        AnyType anyType = MockRegistry.getObjectType();
         ClassType fooType = MockRegistry.getClassType(Foo.class);
-        Assert.assertTrue(objectType.isAssignableFrom(fooType));
+        Assert.assertTrue(anyType.isAssignableFrom(fooType));
 
-        ArrayType objectArrayType = new ArrayType(null, objectType, ArrayKind.READ_WRITE);
+        ArrayType objectArrayType = new ArrayType(null, anyType, ArrayKind.READ_WRITE);
         ArrayType fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
 
         Assert.assertTrue(objectArrayType.isAssignableFrom(fooArrayType));
-        Assert.assertTrue(objectType.isAssignableFrom(objectArrayType));
+        Assert.assertTrue(anyType.isAssignableFrom(objectArrayType));
     }
 
 }

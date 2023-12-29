@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ExpressionTypeMap;
 import tech.metavm.expression.FlowParsingContext;
@@ -15,28 +16,29 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @EntityType("节点")
-public abstract class NodeRT<P> extends Element {
+public abstract class NodeRT extends Element implements LocalKey {
 
     @EntityField(value = "名称", asTitle = true)
     private String name;
+    @EntityField("编号")
+    @Nullable
+    private String code;
     @EntityField("类别")
     private final NodeKind kind;
     @EntityField("输出类型")
     @Nullable
     private Type outputType;
-    // Reference flow directly to avoid scope loading
-    @EntityField("所属流程")
-    private final Flow flow;
     @EntityField("所属范围")
-    private final ScopeRT scope;
+    private final @NotNull ScopeRT scope;
     @EntityField("前驱")
     @Nullable
-    private NodeRT<?> predecessor;
+    private NodeRT predecessor;
     @EntityField("后继")
     @Nullable
-    private NodeRT<?> successor;
+    private NodeRT successor;
     @EntityField("错误")
     @Nullable
     private String error;
@@ -45,15 +47,16 @@ public abstract class NodeRT<P> extends Element {
 
     protected NodeRT(
             Long tmpId,
-            String name,
+            @NotNull String name,
+            @Nullable String code,
             @Nullable Type outputType,
-            NodeRT<?> previous,
-            ScopeRT scope
+            @Nullable NodeRT previous,
+            @NotNull ScopeRT scope
     ) {
         super(tmpId);
         setName(name);
+        this.code = NncUtils.get(code, NamingUtils::ensureValidCode);
         this.scope = scope;
-        this.flow = scope.getFlow();
         this.outputType = outputType;
         this.kind = NodeKind.getByNodeClass(this.getClass());
         if (previous != null) {
@@ -67,11 +70,15 @@ public abstract class NodeRT<P> extends Element {
 
     @JsonIgnore
     public Flow getFlow() {
-        return flow;
+        return scope.getFlow();
     }
 
     public void setName(String name) {
         this.name = NamingUtils.ensureValidName(name);
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = NncUtils.get(code, NamingUtils::ensureValidCode);
     }
 
     public String getName() {
@@ -82,31 +89,31 @@ public abstract class NodeRT<P> extends Element {
         return kind;
     }
 
-    public @Nullable NodeRT<?> getSuccessor() {
+    public @Nullable NodeRT getSuccessor() {
         return successor;
     }
 
-    public NodeRT<?> getDominator() {
+    public NodeRT getDominator() {
         return predecessor != null ? predecessor : scope.getPredecessor();
     }
 
-    public NodeRT<?> getNext() {
+    public NodeRT getNext() {
         return successor != null ? successor : scope.getSuccessor();
     }
 
-    public @Nullable NodeRT<?> getPredecessor() {
+    public @Nullable NodeRT getPredecessor() {
         return predecessor;
     }
 
-    void setSuccessor(@Nullable NodeRT<?> node) {
+    void setSuccessor(@Nullable NodeRT node) {
         this.successor = node;
     }
 
-    void setPredecessor(@Nullable NodeRT<?> node) {
+    void setPredecessor(@Nullable NodeRT node) {
         this.predecessor = node;
     }
 
-    public void insertAfter(NodeRT<?> next) {
+    public void insertAfter(NodeRT next) {
         if (this.successor != null) {
             next.setSuccessor(this.successor);
             this.successor.setPredecessor(next);
@@ -115,13 +122,23 @@ public abstract class NodeRT<P> extends Element {
         next.setPredecessor(this);
     }
 
-    public void insertBefore(NodeRT<?> prev) {
+    public void insertBefore(NodeRT prev) {
         if (this.predecessor != null) {
             prev.setPredecessor(this.predecessor);
             this.predecessor.setSuccessor(prev);
         }
         this.predecessor = prev;
         prev.setSuccessor(this);
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return code != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(code);
     }
 
     @Override
@@ -151,7 +168,7 @@ public abstract class NodeRT<P> extends Element {
             }
 
             @Override
-            public Callable visitNode(NodeRT<?> node) {
+            public Callable visitNode(NodeRT node) {
                 if (node instanceof Callable c)
                     return c;
                 else
@@ -164,38 +181,35 @@ public abstract class NodeRT<P> extends Element {
         return List.of();
     }
 
-    public void update(NodeDTO nodeDTO, IEntityContext entityContext) {
-        setName(nodeDTO.name());
-        setParam(nodeDTO.getParam(), entityContext);
+    public ParsingContext getParsingContext(IEntityContext entityContext) {
+        return FlowParsingContext.create(this, entityContext);
     }
 
-    public ParsingContext getParsingContext(IEntityContext entityContext) {
-        return FlowParsingContext.create(this, entityContext.getInstanceContext());
+    @Nullable
+    public String getCode() {
+        return code;
     }
 
     protected void setOutputType(@Nullable Type outputType) {
         this.outputType = outputType;
     }
 
-    public NodeDTO toDTO() {
-        try (var context = SerializeContext.enter()) {
-            if (getType() != null && context.isIncludingNodeOutputType()) {
-                context.writeType(getType());
-            }
-            return new NodeDTO(
-                    context.getTmpId(this),
-                    id,
-                    flow.getId(),
-                    name,
-                    kind.code(),
-                    NncUtils.get(predecessor, context::getRef),
-                    NncUtils.get(getType(), context::getRef),
-                    getParam(false),
-                    kind.isOutputTypeAsChild() ? getTypeDTO() : null,
-                    scope.getId(),
-                    error
-            );
-        }
+    public NodeDTO toDTO(SerializeContext serContext) {
+        if (getType() != null && serContext.includeNodeOutputType())
+            serContext.writeType(getType());
+        return new NodeDTO(
+                id, serContext.getTmpId(this),
+                getFlow().getId(),
+                name,
+                code,
+                kind.code(),
+                NncUtils.get(predecessor, serContext::getRef),
+                NncUtils.get(getType(), serContext::getRef),
+                getParam(serContext),
+                kind.isOutputTypeAsChild() ? getTypeDTO() : null,
+                scope.getId(),
+                error
+        );
     }
 
     private TypeDTO getTypeDTO() {
@@ -206,7 +220,7 @@ public abstract class NodeRT<P> extends Element {
         return type.toDTO();
     }
 
-    public ScopeRT getScope() {
+    public @NotNull ScopeRT getScope() {
         return scope;
     }
 
@@ -214,7 +228,7 @@ public abstract class NodeRT<P> extends Element {
         return false;
     }
 
-    protected abstract P getParam(boolean persisting);
+    protected abstract Object getParam(SerializeContext serializeContext);
 
     public final void check() {
         setError(check0());
@@ -232,8 +246,6 @@ public abstract class NodeRT<P> extends Element {
     void setError(@Nullable String error) {
         this.error = error;
     }
-
-    protected abstract void setParam(P param, IEntityContext context);
 
     public @Nullable Type getType() {
         return outputType;
@@ -265,4 +277,18 @@ public abstract class NodeRT<P> extends Element {
     protected String toString0() {
         return name;
     }
+
+    public abstract void writeContent(CodeWriter writer);
+
+    public void write(CodeWriter writer) {
+        writer.writeNewLine(name + ": ");
+        writeContent(writer);
+    }
+
+    public String getText() {
+        CodeWriter writer = new CodeWriter();
+        write(writer);
+        return writer.toString();
+    }
+
 }

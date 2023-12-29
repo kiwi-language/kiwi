@@ -1,56 +1,60 @@
 package tech.metavm.flow;
 
-import tech.metavm.flow.rest.NodeKindCodes;
+import tech.metavm.flow.rest.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 
-import static tech.metavm.flow.rest.NodeKindCodes.*;
-
 public enum NodeKind {
-    SELF(NodeKindCodes.SELF, SelfNode.class),
-    INPUT(NodeKindCodes.INPUT, InputNode.class, true),
-    ADD_OBJECT(NodeKindCodes.ADD_OBJECT, AddObjectNode.class),
-    UPDATE_OBJECT(NodeKindCodes.UPDATE_OBJECT, UpdateObjectNode.class),
-    DELETE_OBJECT(NodeKindCodes.DELETE_OBJECT, DeleteObjectNode.class),
-    BRANCH(NodeKindCodes.BRANCH, BranchNode.class),
-    RETURN(NodeKindCodes.RETURN, ReturnNode.class),
-    EXCEPTION(NodeKindCodes.EXCEPTION, RaiseNode.class),
-    SUB_FLOW(NodeKindCodes.SUB_FLOW, SubFlowNode.class),
-    GET_UNIQUE(NodeKindCodes.GET_UNIQUE, GetUniqueNode.class),
-    MERGE(NodeKindCodes.MERGE, MergeNode.class, true),
-    NEW(NodeKindCodes.NEW, NewObjectNode.class),
-    VALUE(NodeKindCodes.VALUE, ValueNode.class),
-    UPDATE_STATIC(NodeKindCodes.UPDATE_STATIC, UpdateStaticNode.class),
-    FOREACH(NodeKindCodes.FOREACH, ForeachNode.class, true),
-    WHILE(NodeKindCodes.WHILE, WhileNode.class, true),
-    NEW_ARRAY(NodeKindCodes.NEW_ARRAY, NewArrayNode.class),
-    CHECK(NodeKindCodes.CHECK, CheckNode.class),
-    TRY(NodeKindCodes.TRY, TryNode.class),
-    TRY_END(NodeKindCodes.TRY_END, TryEndNode.class, true),
-    FUNC(NodeKindCodes.FUNC, FunctionNode.class),
-    LAMBDA(NodeKindCodes.LAMBDA, LambdaNode.class),
-    ADD_ELEMENT(NodeKindCodes.ADD_ELEMENT, AddElementNode.class),
-    DELETE_ELEMENT(NodeKindCodes.DELETE_ELEMENT, DeleteElementNode.class),
-    GET_ELEMENT(NodeKindCodes.GET_ELEMENT, GetElementNode.class),
+    SELF(NodeKindCodes.SELF, SelfNode.class, Void.class),
+    INPUT(NodeKindCodes.INPUT, InputNode.class, InputNodeParam.class, true),
+    ADD_OBJECT(NodeKindCodes.ADD_OBJECT, AddObjectNode.class, AddObjectNodeParam.class),
+    UPDATE_OBJECT(NodeKindCodes.UPDATE_OBJECT, UpdateObjectNode.class, UpdateObjectNodeParam.class),
+    DELETE_OBJECT(NodeKindCodes.DELETE_OBJECT, DeleteObjectNode.class, DeleteObjectNodeParam.class),
+    BRANCH(NodeKindCodes.BRANCH, BranchNode.class, BranchNodeParam.class),
+    RETURN(NodeKindCodes.RETURN, ReturnNode.class, ReturnNodeParam.class),
+    EXCEPTION(NodeKindCodes.EXCEPTION, RaiseNode.class, RaiseNodeParam.class),
+    METHOD_CALL(NodeKindCodes.METHOD_CALL, MethodCallNode.class, MethodCallNodeParam.class),
+    GET_UNIQUE(NodeKindCodes.GET_UNIQUE, GetUniqueNode.class, GetUniqueNodeParam.class),
+    MERGE(NodeKindCodes.MERGE, MergeNode.class, MergeNodeParam.class, true),
+    NEW(NodeKindCodes.NEW, NewObjectNode.class, NewObjectNodeParam.class),
+    VALUE(NodeKindCodes.VALUE, ValueNode.class, ValueNodeParam.class),
+    UPDATE_STATIC(NodeKindCodes.UPDATE_STATIC, UpdateStaticNode.class, UpdateStaticNodeParam.class),
+    FOREACH(NodeKindCodes.FOREACH, ForeachNode.class, ForeachNodeParam.class, true),
+    WHILE(NodeKindCodes.WHILE, WhileNode.class, WhileNodeParam.class, true),
+    NEW_ARRAY(NodeKindCodes.NEW_ARRAY, NewArrayNode.class, NewArrayNodeParam.class),
+    CHECK(NodeKindCodes.CHECK, CheckNode.class, CheckNodeParam.class),
+    TRY(NodeKindCodes.TRY, TryNode.class, TryNodeParam.class),
+    TRY_END(NodeKindCodes.TRY_END, TryEndNode.class, TryEndNodeParam.class, true),
+    FUNC(NodeKindCodes.FUNC, FunctionNode.class, FunctionNodeParam.class),
+    LAMBDA(NodeKindCodes.LAMBDA, LambdaNode.class, LambdaNodeParam.class),
+    ADD_ELEMENT(NodeKindCodes.ADD_ELEMENT, AddElementNode.class, AddElementNodeParam.class),
+    DELETE_ELEMENT(NodeKindCodes.DELETE_ELEMENT, RemoveElementNode.class, RemoveElementNodeParam.class),
+    GET_ELEMENT(NodeKindCodes.GET_ELEMENT, GetElementNode.class, GetElementNodeParam.class),
+    FUNCTION_CALL_NODE(NodeKindCodes.FUNCTION_CALL, FunctionCallNode.class, FunctionCallNodeParam.class),
+    CAST_NODE(NodeKindCodes.CAST, CastNode.class, CastNodeParam.class),
+    CLEAR_ARRAY(NodeKindCodes.CLEAR_ARRAY, ClearArrayNode.class, ClearArrayNodeParam.class),
+    COPY(NodeKindCodes.COPY, CopyNode.class, CopyNodeParam.class),
 
     ;
 
     private final int code;
-    private final Class<? extends NodeRT<?>> klass;
+    private final Class<? extends NodeRT> nodeClass;
+    private final Class<?> paramClass;
     private final boolean outputTypeAsChild;
 
     public static final Set<NodeKind> CREATING_KINDS = Set.of(ADD_OBJECT, NEW, NEW_ARRAY);
 
-    NodeKind(int code, Class<? extends NodeRT<?>> klass) {
-        this(code, klass, false);
+    NodeKind(int code, Class<? extends NodeRT> nodeClass, Class<?> paramClass) {
+        this(code, nodeClass, paramClass, false);
     }
 
-    NodeKind(int code, Class<? extends NodeRT<?>> klass, boolean outputTypeAsChild) {
+    NodeKind(int code, Class<? extends NodeRT> nodeClass, Class<?> paramClass, boolean outputTypeAsChild) {
         this.code = code;
-        this.klass = klass;
+        this.nodeClass = nodeClass;
+        this.paramClass = paramClass;
         this.outputTypeAsChild = outputTypeAsChild;
     }
 
@@ -58,27 +62,27 @@ public enum NodeKind {
         return Arrays.stream(values())
                 .filter(type -> type.code == code)
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("Flow node category " + code + " not found"));
+                .orElseThrow(() -> new RuntimeException("Node kind " + code + " not found"));
     }
 
 
-    public static NodeKind getByParamKlassRequired(Class<?> paramKlass) {
+    public static NodeKind getByParamClassRequired(Class<?> paramClass) {
         return Arrays.stream(values())
-                .filter(type -> Objects.equals(type.getParamKlass(), paramKlass))
+                .filter(kind -> Objects.equals(kind.getParamKlass(), paramClass))
                 .findAny()
-                .orElseThrow(() -> new RuntimeException("FlowNodeType not found for param class: " + paramKlass.getName()));
+                .orElseThrow(() -> new RuntimeException("NodeKind not found for param class: " + paramClass.getName()));
     }
 
-    public static NodeKind getByNodeClass(@SuppressWarnings("rawtypes") Class<? extends NodeRT> klass) {
-        return NncUtils.findRequired(values(), kind -> kind.getKlass().equals(klass));
+    public static NodeKind getByNodeClass(Class<? extends NodeRT> klass) {
+        return NncUtils.findRequired(values(), kind -> kind.getNodeClass().equals(klass));
     }
 
     public Class<?> getParamKlass() {
-        return NodeFactory.getParamClass(klass);
+        return paramClass;
     }
 
-    public Class<? extends NodeRT<?>> getKlass() {
-        return klass;
+    public Class<? extends NodeRT> getNodeClass() {
+        return nodeClass;
     }
 
     public boolean isOutputTypeAsChild() {

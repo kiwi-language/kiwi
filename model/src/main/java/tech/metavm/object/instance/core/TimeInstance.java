@@ -3,7 +3,7 @@ package tech.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.WireTypes;
 
 import java.text.DateFormat;
@@ -27,19 +27,19 @@ public class TimeInstance extends PrimitiveInstance implements Comparable<TimeIn
     }
 
     public BooleanInstance isBefore(TimeInstance that) {
-        return InstanceUtils.booleanInstance(value < that.value);
+        return Instances.booleanInstance(value < that.value);
     }
 
     public BooleanInstance isBeforeOrAt(TimeInstance that) {
-        return InstanceUtils.booleanInstance(value <= that.value);
+        return Instances.booleanInstance(value <= that.value);
     }
 
     public BooleanInstance isAfter(TimeInstance that) {
-        return InstanceUtils.booleanInstance(value > that.value);
+        return Instances.booleanInstance(value > that.value);
     }
 
     public BooleanInstance isAfterOrAt(TimeInstance that) {
-        return InstanceUtils.booleanInstance(value >= that.value);
+        return Instances.booleanInstance(value >= that.value);
     }
 
     @Override
@@ -58,8 +58,8 @@ public class TimeInstance extends PrimitiveInstance implements Comparable<TimeIn
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitTimeInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitTimeInstance(this);
     }
 
     @Override

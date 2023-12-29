@@ -13,7 +13,8 @@ public class ContinueTransformer extends VisitorBase {
 
     private final NameTracker nameTracker = new NameTracker();
     private Loop loopInfo;
-    private @Nullable BlockInfo blockInfo;
+    @Nullable
+    private BlockInfo blockInfo;
 
     @Override
     public void visitMethod(PsiMethod method) {
@@ -197,8 +198,10 @@ public class ContinueTransformer extends VisitorBase {
 
     private static class BlockInfo {
         private final boolean isLoop;
-        private final @Nullable String label;
-        private final @Nullable BlockInfo parent;
+        @Nullable
+        private final String label;
+        @Nullable
+        private final BlockInfo parent;
         private final Set<String> usedContinues = new HashSet<>();
 
         private BlockInfo(boolean isLoop, @Nullable String label, @Nullable BlockInfo parent) {
@@ -239,7 +242,8 @@ public class ContinueTransformer extends VisitorBase {
 
     private static class Loop {
         private final Loop parent;
-        private final @Nullable String label;
+        @Nullable
+        private final String label;
         private final String continueVar;
         private boolean continueUsed;
 

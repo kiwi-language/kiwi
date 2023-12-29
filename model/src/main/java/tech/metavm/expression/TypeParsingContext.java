@@ -1,43 +1,40 @@
 package tech.metavm.expression;
 
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.instance.core.InstanceProvider;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.type.*;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.InternalException;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class TypeParsingContext implements ParsingContext {
+public class TypeParsingContext extends BaseParsingContext {
+
+    public static TypeParsingContext create(ClassType type, IEntityContext context) {
+        return new TypeParsingContext(
+                context.getInstanceContext(),
+                new ContextTypeRepository(context),
+                new ContextArrayTypeProvider(context),
+                type
+        );
+    }
 
     private final ClassType type;
     private final ThisExpression thisExpression;
     private final java.util.function.Function<Long, Instance> getInstanceFunc;
-    private final IInstanceContext instanceContext;
 
-    public TypeParsingContext(ClassType classType) {
-        this(classType, id -> {
-            throw new UnsupportedOperationException();
-        });
-    }
-
-    public TypeParsingContext(ClassType type, IInstanceContext instanceContext) {
+    public TypeParsingContext(InstanceProvider instanceProvider,
+                              IndexedTypeProvider typeProvider,
+                              ArrayTypeProvider arrayTypeProvider,
+                              ClassType type) {
+        super(instanceProvider, typeProvider, arrayTypeProvider);
         this.type = type;
         thisExpression = new ThisExpression(type);
-        this.getInstanceFunc = instanceContext::get;
-        this.instanceContext = instanceContext;
-    }
-
-    public TypeParsingContext(ClassType type, java.util.function.Function<Long, Instance> getInstanceFunc) {
-        this.type = type;
-        this.getInstanceFunc = getInstanceFunc;
-        thisExpression = new ThisExpression(type);
-        instanceContext = null;
+        this.getInstanceFunc = id -> instanceProvider.get(new PhysicalId(id));
     }
 
     public ClassType getType() {
@@ -72,11 +69,6 @@ public class TypeParsingContext implements ParsingContext {
         return thisExpression;
     }
 
-    @Override
-    @Nullable
-    public IInstanceContext getInstanceContext() {
-        return instanceContext;
-    }
 
     public static List<Field> getFields(ClassType type, List<Var> varPath) {
         return getFields(type, varPath, true);
@@ -87,19 +79,18 @@ public class TypeParsingContext implements ParsingContext {
         ClassType t = type;
         Field field;
         Iterator<Var> varIt = varPath.iterator();
-        while (varIt.hasNext()){
+        while (varIt.hasNext()) {
             Var var = varIt.next();
             field = getField(t, var);
-            if(field == null) {
-                if(errorWhenNotFound) {
+            if (field == null) {
+                if (errorWhenNotFound) {
                     throw BusinessException.invalidExpression("属性'" + var + "'不存在");
-                }
-                else {
+                } else {
                     return null;
                 }
             }
             fields.add(field);
-            if(varIt.hasNext()) {
+            if (varIt.hasNext()) {
                 t = (ClassType) field.getType().getConcreteType();
             }
         }

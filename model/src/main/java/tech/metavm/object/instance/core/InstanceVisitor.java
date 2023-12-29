@@ -1,67 +1,70 @@
 package tech.metavm.object.instance.core;
 
-public abstract class InstanceVisitor {
+public abstract class InstanceVisitor<R> {
 
-    public void visit(Instance instance) {
-        instance.accept(this);
+    public R visit(Instance instance) {
+        return instance.accept(this);
     }
 
-    public void visitInstance(Instance instance) {
+    public abstract R visitInstance(Instance instance);
+
+    public R visitDurableInstance(DurableInstance instance) {
+        return visitInstance(instance);
     }
 
-    public void visitClassInstance(ClassInstance instance) {
-        visitInstance(instance);
+    public R visitClassInstance(ClassInstance instance) {
+        return visitDurableInstance(instance);
     }
 
-    public void visitArrayInstance(ArrayInstance instance) {
-        visitInstance(instance);
+    public R visitArrayInstance(ArrayInstance instance) {
+        return visitDurableInstance(instance);
     }
 
-    public void visitPrimitiveInstance(PrimitiveInstance instance) {
-        visitInstance(instance);
+    public R visitPrimitiveInstance(PrimitiveInstance instance) {
+        return visitInstance(instance);
     }
 
-    public void visitNullInstance(NullInstance instance) {
-        visitPrimitiveInstance(instance);
+    public R visitNullInstance(NullInstance instance) {
+        return visitPrimitiveInstance(instance);
     }
 
-    public void visitLongInstance(LongInstance instance) {
-        visitNumberInstance(instance);
+    public R visitLongInstance(LongInstance instance) {
+        return visitNumberInstance(instance);
     }
 
-    public void visitStringInstance(StringInstance instance) {
-        visitPrimitiveInstance(instance);
+    public R visitStringInstance(StringInstance instance) {
+        return visitPrimitiveInstance(instance);
     }
 
-    public void visitDoubleInstance(DoubleInstance instance) {
-        visitNumberInstance(instance);
+    public R visitDoubleInstance(DoubleInstance instance) {
+        return visitNumberInstance(instance);
     }
 
-    public void visitBooleanInstance(BooleanInstance instance) {
-        visitPrimitiveInstance(instance);
+    public R visitBooleanInstance(BooleanInstance instance) {
+        return visitPrimitiveInstance(instance);
     }
 
-    public void visitPasswordInstance(PasswordInstance instance) {
-        visitPrimitiveInstance(instance);
+    public R visitPasswordInstance(PasswordInstance instance) {
+        return visitPrimitiveInstance(instance);
     }
 
-    public void visitNumberInstance(NumberInstance instance) {
-        visitPrimitiveInstance(instance);
+    public R visitNumberInstance(NumberInstance instance) {
+        return visitPrimitiveInstance(instance);
     }
 
-    public void visitTimeInstance(TimeInstance instance) {
-        visitPrimitiveInstance(instance);
+    public R visitTimeInstance(TimeInstance instance) {
+        return visitPrimitiveInstance(instance);
     }
 
-    public void visitFunctionInstance(FunctionInstance instance) {
-        visitInstance(instance);
+    public R visitFunctionInstance(FunctionInstance instance) {
+        return visitInstance(instance);
     }
 
-    public void visitFlowInstance(FlowInstance instance) {
-        visitFunctionInstance(instance);
+    public R visitFlowInstance(FlowInstance instance) {
+        return visitFunctionInstance(instance);
     }
 
-    public void visitLambdaInstance(LambdaInstance instance) {
-        visitFunctionInstance(instance);
+    public R visitLambdaInstance(LambdaInstance instance) {
+        return visitFunctionInstance(instance);
     }
 }

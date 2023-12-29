@@ -1,12 +1,10 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceProvider;
+import tech.metavm.object.type.ArrayTypeProvider;
+import tech.metavm.object.type.IndexedTypeProvider;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
 
 public interface ParsingContext {
 
@@ -20,12 +18,10 @@ public interface ParsingContext {
 
     Type getExpressionType(Expression expression);
 
-    @Nullable
-    IInstanceContext getInstanceContext();
+    InstanceProvider getInstanceProvider();
 
-    @Nullable
-    default IEntityContext getEntityContext() {
-        return NncUtils.get(getInstanceContext(), IInstanceContext::getEntityContext);
-    }
+    IndexedTypeProvider getTypeProvider();
+
+    ArrayTypeProvider getArrayTypeProvider();
 
 }

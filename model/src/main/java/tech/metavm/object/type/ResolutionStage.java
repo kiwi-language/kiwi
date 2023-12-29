@@ -1,14 +1,60 @@
 package tech.metavm.object.type;
 
+import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
+import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.util.NncUtils;
+
 public enum ResolutionStage {
 
-    INIT(0),
+    INIT(0) {
+        @Override
+        Type saveType(TypeDTO typeDTO, SaveTypeBatch batch) {
+            return Types.saveType(typeDTO, INIT, batch);
+        }
+    },
 
-    SIGNATURE(2),
+    SIGNATURE(2) {
+        @Override
+        Type saveType(TypeDTO typeDTO, SaveTypeBatch batch) {
+            return Types.saveType(typeDTO, SIGNATURE, batch);
+        }
+    },
 
-    DECLARATION(3),
+    DECLARATION(3) {
+        @Override
+        Type saveType(TypeDTO typeDTO, SaveTypeBatch batch) {
+            var type = Types.saveType(typeDTO, DECLARATION, batch);
+            if (type instanceof ClassType classType)
+                batch.saveParameterizedFlows(classType, DECLARATION);
+            return type;
+        }
 
-    DEFINITION(4);
+        @Override
+        void saveFunction(FlowDTO flowDTO, SaveTypeBatch batch) {
+            Types.saveFunction(flowDTO, DECLARATION, batch);
+        }
+
+        @Override
+        void saveParameterizedFlow(ParameterizedFlowDTO flowDTO, SaveTypeBatch batch) {
+            var context = batch.getContext();
+            var template = context.getFlow(flowDTO.getTemplateRef());
+            var typeArgs = NncUtils.map(flowDTO.getTypeArgumentRefs(), context::getType);
+            context.getGenericContext().getParameterizedFlow(template, typeArgs, DECLARATION, batch);
+        }
+
+    },
+
+    DEFINITION(4) {
+        @Override
+        Type saveType(TypeDTO typeDTO, SaveTypeBatch batch) {
+            var type = Types.saveType(typeDTO, DEFINITION, batch);
+            if (type instanceof ClassType classType)
+                batch.saveParameterizedFlows(classType, DEFINITION);
+            return type;
+        }
+
+    };
 
     private final int code;
 
@@ -34,6 +80,14 @@ public enum ResolutionStage {
 
     public boolean isBeforeOrAt(ResolutionStage stage) {
         return code <= stage.code;
+    }
+
+    abstract Type saveType(TypeDTO typeDTO, SaveTypeBatch batch);
+
+    void saveFunction(FlowDTO flowDTO, SaveTypeBatch batch) {
+    }
+
+    void saveParameterizedFlow(ParameterizedFlowDTO flowDTO, SaveTypeBatch batch) {
     }
 
 }

@@ -3,16 +3,16 @@ package tech.metavm.code;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.code.rest.dto.CodeRepoDTO;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceContextFactory;
 
 @Component
-public class CodeRepoManager {
+public class CodeRepoManager extends EntityContextFactoryBean {
 
-    private final InstanceContextFactory contextFactory;
-
-    public CodeRepoManager(InstanceContextFactory contextFactory) {
-        this.contextFactory = contextFactory;
+    public CodeRepoManager(EntityContextFactory entityContextFactory) {
+        super(entityContextFactory);
     }
 
     @Transactional
@@ -33,7 +33,4 @@ public class CodeRepoManager {
         }
     }
 
-    public IEntityContext newContext() {
-        return contextFactory.newEntityContext();
-    }
 }

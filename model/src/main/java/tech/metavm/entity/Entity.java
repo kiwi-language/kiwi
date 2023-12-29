@@ -6,23 +6,22 @@ import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Consumer;
 
 public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
 
-    private boolean removed;
-    private boolean persisted;
+    private transient boolean removed;
+    private transient boolean persisted;
     private transient Long tmpId;
     @Nullable
-    protected Long id;
+    protected transient Long id;
     @Nullable
     private transient Entity parentEntity;
     @Nullable
     private transient Field parentEntityField;
-    private long version;
-    private long syncVersion;
+    private transient long version;
+    private transient long syncVersion;
 
     public Entity() {
     }
@@ -33,12 +32,11 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     public Entity(Long tmpId, @Nullable EntityParentRef parentRef) {
         this.tmpId = tmpId;
-        if(parentRef != null) {
-            if(parentRef.parent() instanceof ReadonlyArray<?> array) {
+        if (parentRef != null) {
+            if (parentRef.parent() instanceof ReadonlyArray<?> array) {
                 NncUtils.requireNull(parentRef.field());
                 NncUtils.requireTrue(array.getElementClass().isAssignableFrom(getClass()));
-            }
-            else {
+            } else {
                 NncUtils.requireNonNull(parentRef.field());
                 NncUtils.requireTrue(parentRef.field().getType().isAssignableFrom(getClass()));
                 this.parentEntityField = parentRef.field();
@@ -67,16 +65,16 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @NoProxy
-    public final Long getIdRequired() {
-        if(id != null)
+    public final long getIdRequired() {
+        if (id != null)
             return id;
         else
-            throw new InternalException("Entity id not initialized yet");
+            throw new InternalException("Entity id not initialized yet: " + this);
     }
 
     @NoProxy
     public final EntityKey key() {
-        if(id == null) {
+        if (id == null) {
             return null;
         }
         return EntityKey.create(this.getEntityType(), id);
@@ -87,7 +85,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public final void ensureNotRemoved() {
-        if(removed)
+        if (removed)
             throw new InternalException(String.format("'%s' is already removed", this));
     }
 
@@ -104,20 +102,53 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public <T extends Entity> T addChild(T child, @Nullable String fieldName) {
         NncUtils.requireNonNull(child, "Child object can not be null");
         var field = fieldName != null ?
-                ReflectUtils.getDeclaredFieldRecursively(this.getClass(), fieldName) : null;
+                ReflectionUtils.getDeclaredFieldRecursively(this.getClass(), fieldName) : null;
         child.initParent(this, field);
         return child;
     }
 
     void initParent(Entity parent, @Nullable Field parentField) {
-        if(this.parentEntity != null) {
-            if(!Objects.equals(parent, parentEntity) || !Objects.equals(this.parentEntityField, parentField))
+        if (this.parentEntity != null) {
+            if (!Objects.equals(parent, parentEntity) || !Objects.equals(this.parentEntityField, parentField))
                 throw new InternalException("Can not reInit parent");
-        }
-        else {
+        } else {
             this.parentEntity = parent;
             this.parentEntityField = parentField;
         }
+    }
+
+    public void forEachReference(Consumer<Object> action) {
+        var desc = DescStore.get(EntityUtils.getRealType(this));
+        for (EntityProp prop : desc.getNonTransientProps()) {
+            var ref = prop.get(this);
+            if (ref != null && !ValueUtil.isPrimitive(ref))
+                action.accept(ref);
+        }
+    }
+
+    public void forEachDescendant(Consumer<Entity> action) {
+        action.accept(this);
+        var desc = DescStore.get(EntityUtils.getRealType(this));
+        for (EntityProp prop : desc.getNonTransientProps()) {
+            if (prop.getField().isAnnotationPresent(ChildEntity.class)) {
+                var child = (Entity) prop.get(this);
+                if (child != null)
+                    child.forEachDescendant(action);
+            }
+        }
+    }
+
+    public Map<Field, Object> getChildMap() {
+        var desc = DescStore.get(EntityUtils.getRealType(this));
+        Map<Field, Object> childMap = new HashMap<>();
+        for (EntityProp prop : desc.getNonTransientProps()) {
+            if (prop.getField().isAnnotationPresent(ChildEntity.class)) {
+                var child = (Entity) prop.get(this);
+                if (child != null)
+                    childMap.put(prop.getField(), child);
+            }
+        }
+        return childMap;
     }
 
     @Nullable
@@ -133,7 +164,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     @Override
     public final void initId(long id) {
-        if(!isIdNull()) {
+        if (!isIdNull()) {
             throw new IllegalStateException("objectId is already initialized");
         }
 //        if(StandardTypes.containsModel(this)) {
@@ -149,15 +180,15 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     protected void getDescendants(List<Object> descendants, IdentitySet<Object> visited) {
-        if(visited.contains(this))
+        if (visited.contains(this))
             throw new InternalException("Circular reference in entity structure");
         descendants.add(this);
         visited.add(this);
         var desc = DescStore.get(EntityUtils.getRealType(getClass()));
         for (EntityProp prop : desc.getPropsWithAnnotation(ChildEntity.class)) {
             var child = prop.get(this);
-            if(child != null) {
-                if(child instanceof Entity childEntity)
+            if (child != null) {
+                if (child instanceof Entity childEntity)
                     childEntity.getDescendants(descendants, visited);
                 else
                     descendants.add(child);
@@ -195,15 +226,14 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return EntityUtils.getEntityType(this).asSubclass(Entity.class);
     }
 
-    public void validate() {}
-
     @Override
     public List<Object> beforeRemove(IEntityContext context) {
         return List.of();
     }
 
     @Override
-    public void onBind(IEntityContext context) {}
+    public void onBind(IEntityContext context) {
+    }
 
     public boolean afterContextInitIds() {
         return false;
@@ -225,14 +255,15 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     @Override
     @NoProxy
     public final String toString() {
-        if(EntityUtils.isModelInitialized(this))
+        if (EntityUtils.isModelInitialized(this))
             return toString0();
         else
             return String.format("Uninitialized entity, id: %s", id);
     }
 
     protected String toString0() {
-        return String.format("Entity, id: %s", id);
+        return String.format("%s, id: %s",
+                EntityUtils.getRealType(this).getSimpleName(), id);
     }
 
 }

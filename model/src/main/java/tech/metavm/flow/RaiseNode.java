@@ -1,31 +1,34 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.ExceptionNative;
-import tech.metavm.entity.natives.NativeInvoker;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.natives.NativeMethods;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.ExceptionParamDTO;
+import tech.metavm.flow.rest.RaiseNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.entity.StandardTypes;
+import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
-@EntityType("异常节点")
-public class RaiseNode extends NodeRT<ExceptionParamDTO> {
+@EntityType("抛出节点")
+public class RaiseNode extends NodeRT {
 
-    public static RaiseNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext entityContext) {
-        ExceptionParamDTO param = nodeDTO.getParam();
-        var parsingContext = FlowParsingContext.create(scope, prev, entityContext.getInstanceContext());
+    public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
+        var parsingContext = FlowParsingContext.create(scope, prev, entityContext);
+        RaiseNodeParam param = nodeDTO.getParam();
+        var paramKind = RaiseParameterKind.getByCode(param.parameterKind());
         var exception = param.exception() != null ? ValueFactory.create(param.exception(), parsingContext) : null;
         var message = param.message() != null ? ValueFactory.create(param.message(), parsingContext) : null;
-        return new RaiseNode(nodeDTO.tmpId(), nodeDTO.name(), RaiseParameterKind.getByCode(param.parameterKind()),
-                exception, message, prev, scope);
+        RaiseNode node = (RaiseNode) entityContext.getNode(nodeDTO.getRef());
+        if (node != null)
+            node.update(paramKind, exception, message);
+        else
+            node = new RaiseNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, paramKind,
+                    exception, message);
+        return node;
     }
 
     @ChildEntity("错误信息")
@@ -39,34 +42,29 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
     @EntityField("参数类型")
     private RaiseParameterKind parameterKind;
 
-    public RaiseNode(Long tmpId, String name, RaiseParameterKind parameterKind,
-                     @Nullable Value exception, @Nullable Value message, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
+    public RaiseNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope,
+                     RaiseParameterKind parameterKind, @Nullable Value exception, @Nullable Value message) {
+        super(tmpId, name, code, null, prev, scope);
         this.parameterKind = parameterKind;
-        this.exception = NncUtils.get(checkException(exception), v -> addChild(v, "exception"));
-        this.message = NncUtils.get(checkMessage(message), v -> addChild(v, "message"));
+        if(parameterKind == RaiseParameterKind.THROWABLE) {
+            this.exception = Objects.requireNonNull(exception);
+            this.message = null;
+        }
+        else {
+            this.exception = null;
+            this.message = Objects.requireNonNull(message);
+        }
     }
 
-    @Override
-    protected void setParam(ExceptionParamDTO param, IEntityContext entityContext) {
-        if (param.parameterKind() != null) {
-            parameterKind = RaiseParameterKind.getByCode(param.parameterKind());
-            switch (parameterKind) {
-                case MESSAGE -> exception = null;
-                case THROWABLE -> message = null;
-            }
+    public void update(RaiseParameterKind parameterKind, @Nullable Value exception, @Nullable Value message) {
+        this.parameterKind = parameterKind;
+        if(parameterKind == RaiseParameterKind.THROWABLE) {
+            this.exception = Objects.requireNonNull(exception);
+            this.message = null;
         }
-        if (param.exception() != null) {
-            exception = NncUtils.get(
-                    checkException(ValueFactory.create(param.exception(), getParsingContext(entityContext))),
-                    v -> addChild(v, "exception")
-            );
-        }
-        if (param.message() != null) {
-            message = NncUtils.get(
-                    checkMessage(ValueFactory.create(param.message(), getParsingContext(entityContext))),
-                    v -> addChild(v, "message")
-            );
+        else {
+            this.exception = null;
+            this.message = Objects.requireNonNull(message);
         }
     }
 
@@ -83,11 +81,11 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
     }
 
     @Override
-    protected ExceptionParamDTO getParam(boolean persisting) {
-        return new ExceptionParamDTO(
+    protected RaiseNodeParam getParam(SerializeContext serializeContext) {
+        return new RaiseNodeParam(
                 parameterKind.getCode(),
-                NncUtils.get(message, msg -> msg.toDTO(persisting)),
-                NncUtils.get(exception, e -> e.toDTO(persisting))
+                NncUtils.get(message, Value::toDTO),
+                NncUtils.get(exception, Value::toDTO)
         );
     }
 
@@ -97,11 +95,21 @@ public class RaiseNode extends NodeRT<ExceptionParamDTO> {
             return NodeExecResult.exception((ClassInstance) this.exception.evaluate(frame));
         } else {
             NncUtils.requireNonNull(message);
-            var exceptionInst = new ClassInstance(StandardTypes.getExceptionType());
-            ExceptionNative nativeObj = (ExceptionNative) NativeInvoker.getNativeObject(exceptionInst);
+            var exceptionInst = ClassInstance.allocate(StandardTypes.getExceptionType());
+            ExceptionNative nativeObj = (ExceptionNative) NativeMethods.getNativeObject(exceptionInst);
             nativeObj.Exception(message.evaluate(frame));
             return frame.catchException(this, exceptionInst);
         }
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        if(exception != null)
+            writer.write("raise " + exception.getText());
+        else if(message != null)
+            writer.write("raise Error(" + message.getText() + ")");
+        else
+            throw new InternalException("Invalid raise node");
     }
 
     public @Nullable Value getException() {

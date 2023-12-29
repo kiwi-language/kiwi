@@ -62,8 +62,6 @@ public final class EntityMethodHandler<T> implements MethodHandler {
         }
         state = State.INITIALIZING;
         initializer.accept(type.cast(self));
-        if(self instanceof LoadAware loadAware)
-            loadAware.onLoad();
         state = State.INITIALIZED;
     }
 

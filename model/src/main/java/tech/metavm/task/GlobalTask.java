@@ -2,7 +2,6 @@ package tech.metavm.task;
 
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.application.Application;
 
 import java.util.List;
@@ -15,9 +14,9 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
     }
 
     @Override
-    protected void processModels(IInstanceContext context, List<Application> applications) {
+    protected void processModels(IEntityContext context, List<Application> applications) {
         for (Application application : applications) {
-            IEntityContext appContext = context.createSame(application.getIdRequired()).getEntityContext();
+            var appContext = context.createSame(application.getIdRequired());
             processApplication(appContext, application);
             appContext.finish();
         }

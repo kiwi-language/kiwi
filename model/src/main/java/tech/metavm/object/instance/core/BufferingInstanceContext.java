@@ -1,16 +1,17 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.entity.*;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeSource;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.IndexProvider;
+import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.util.List;
+import java.util.*;
 
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
@@ -20,43 +21,39 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     public BufferingInstanceContext(long appId,
                                     List<TreeSource> treeSources,
                                     VersionSource versionSource,
-                                    EntityIdProvider idProvider,
-                                    IndexSource indexSource,
-                                    DefContext defContext,
+                                    IndexSource indexSource, EntityIdProvider idProvider,
                                     @Nullable IInstanceContext parent,
+                                    TypeProvider typeProvider,
+                                    MappingProvider mappingProvider,
+                                    ParameterizedFlowProvider parameterizedFlowProvider,
                                     boolean readonly) {
-        super(appId, defContext, parent, readonly, indexSource);
+        super(appId, parent, readonly, indexSource, typeProvider, mappingProvider, parameterizedFlowProvider);
         this.idProvider = idProvider;
         this.loadingBuffer = new LoadingBuffer(this, treeSources, versionSource);
     }
 
 
     @Override
-    public void buffer(long id) {
-        if (parent != null && parent.containsId(id))
+    public void buffer(Id id) {
+        if (parent != null && parent.contains(id))
             parent.buffer(id);
-        else
-            loadingBuffer.buffer(id);
-    }
-
-    @Override
-    protected Instance allocateInstance(long id) {
-        Type type = getType(getTypeId(id));
-        if (type instanceof ArrayType arrayType) {
-            return new ArrayInstance(id, arrayType, this::initializeInstance);
-        } else {
-            return new ClassInstance(id, (ClassType) type, this::initializeInstance);
+        else {
+            var physicalId = id.tryGetPhysicalId();
+            if (physicalId != null)
+                loadingBuffer.buffer(physicalId);
         }
     }
 
+    @Override
     protected long getTypeId(long id) {
         return idProvider.getTypeId(id);
     }
 
-    private void initializeInstance(Instance instance) {
+    @Override
+    protected void initializeInstance(DurableInstance instance) {
         var tree = loadingBuffer.getTree(instance.getIdRequired());
         onTreeLoaded(tree);
-        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), this::internalGet);
+        var input = new InstanceInput(new ByteArrayInputStream(tree.data()), id -> internalGet(new PhysicalId(id)));
         readInstance(input);
     }
 
@@ -65,7 +62,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     private Instance readInstance(InstanceInput input) {
         try (var entry = getProfiler().enter("readInstance")) {
-            Instance instance = input.readMessage();
+            var instance = input.readMessage();
             entry.addMessage("id", instance.getIdRequired());
             onInstanceInitialized(instance);
             return instance;
@@ -83,7 +80,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void invalidateCache(Instance instance) {
+    public void invalidateCache(DurableInstance instance) {
         loadingBuffer.invalidateCache(List.of(instance.getIdRequired()));
     }
 }

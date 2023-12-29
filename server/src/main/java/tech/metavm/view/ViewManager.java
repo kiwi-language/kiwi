@@ -1,8 +1,12 @@
 package tech.metavm.view;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.MappingSaver;
+import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
 import tech.metavm.view.rest.dto.ListViewDTO;
 
@@ -11,10 +15,10 @@ import java.util.List;
 import static tech.metavm.view.ListView.IDX_TYPE_PRIORITY;
 
 @Component
-public class ViewManager extends InstanceContextFactoryAware {
+public class ViewManager extends EntityContextFactoryBean {
 
-    public ViewManager(InstanceContextFactory instanceContextFactory) {
-        super(instanceContextFactory);
+    public ViewManager(EntityContextFactory entityContextFactory) {
+        super(entityContextFactory);
     }
 
     public Long getListViewTypeId() {
@@ -38,4 +42,27 @@ public class ViewManager extends InstanceContextFactoryAware {
         }
     }
 
+    @Transactional
+    public Long saveMapping(ObjectMappingDTO viewMapping) {
+        try (var context = newContext()) {
+            var mapping = MappingSaver.create(context).save(viewMapping);
+            context.finish();
+            return mapping.getIdRequired();
+        }
+    }
+
+    @Transactional
+    public void removeMapping(long id) {
+        try (var context = newContext()) {
+            var mapping = context.getEntity(DefaultObjectMapping.class, id);
+            mapping.getSourceType().removeMapping(mapping);
+        }
+    }
+
+    @Transactional
+    public void setDefaultMapping(long id) {
+        try (var context = newContext()) {
+            context.getEntity(DefaultObjectMapping.class, id).setDefault();
+        }
+    }
 }

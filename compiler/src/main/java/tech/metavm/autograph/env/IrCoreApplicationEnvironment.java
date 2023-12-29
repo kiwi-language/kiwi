@@ -21,7 +21,7 @@ import com.intellij.psi.util.JavaClassSupers;
 import com.intellij.util.containers.CollectionFactory;
 import org.jetbrains.annotations.NotNull;
 import sun.misc.Unsafe;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 public class IrCoreApplicationEnvironment extends JavaCoreApplicationEnvironment  {
 
@@ -33,8 +33,8 @@ public class IrCoreApplicationEnvironment extends JavaCoreApplicationEnvironment
 
         //noinspection unchecked,rawtypes
         registerApplicationService(
-                (Class) ReflectUtils.classForName("com.intellij.diagnostic.PluginProblemReporter"),
-                ReflectUtils.newInstance(ReflectUtils.classForName("com.intellij.diagnostic.PluginProblemReporterImpl"))
+                (Class) ReflectionUtils.classForName("com.intellij.diagnostic.PluginProblemReporter"),
+                ReflectionUtils.newInstance(ReflectionUtils.classForName("com.intellij.diagnostic.PluginProblemReporterImpl"))
         );
 
         registerApplicationExtensionPoint(PsiAugmentProvider.EP_NAME, PsiAugmentProvider.class);
@@ -54,17 +54,17 @@ public class IrCoreApplicationEnvironment extends JavaCoreApplicationEnvironment
     }
 
     private TransactionGuard createTransactionGuard() {
-        var theUnsafeField = ReflectUtils.getField(Unsafe.class, "theUnsafe");
+        var theUnsafeField = ReflectionUtils.getField(Unsafe.class, "theUnsafe");
         theUnsafeField.setAccessible(true);
-        Unsafe unsafe = (Unsafe) ReflectUtils.get(null, theUnsafeField);
+        Unsafe unsafe = (Unsafe) ReflectionUtils.get(null, theUnsafeField);
         try {
             var guard =  (TransactionGuard) unsafe.allocateInstance(TransactionGuardImpl.class);
-            var field1 = ReflectUtils.getField(TransactionGuardImpl.class, "myWriteSafeModalities");
+            var field1 = ReflectionUtils.getField(TransactionGuardImpl.class, "myWriteSafeModalities");
             field1.setAccessible(true);
-            ReflectUtils.set(guard, field1, CollectionFactory.createConcurrentWeakMap());
-            var field2 = ReflectUtils.getField(TransactionGuardImpl.class, "myWritingAllowed");
+            ReflectionUtils.set(guard, field1, CollectionFactory.createConcurrentWeakMap());
+            var field2 = ReflectionUtils.getField(TransactionGuardImpl.class, "myWritingAllowed");
             field2.setAccessible(true);
-            ReflectUtils.set(guard, field2, false);
+            ReflectionUtils.set(guard, field2, false);
             return guard;
         } catch (InstantiationException e) {
             throw new RuntimeException(e);

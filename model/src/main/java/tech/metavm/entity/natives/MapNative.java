@@ -7,7 +7,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -57,8 +57,8 @@ public class MapNative extends NativeBase {
 
     public ClassInstance keySet() {
         var keySetType = (ClassType) instance.getType().getDependency(StandardTypes.getSetType());
-        ClassInstance keySet = new ClassInstance(keySetType);
-        var setNative = (SetNative) NativeInvoker.getNativeObject(keySet);
+        ClassInstance keySet = ClassInstance.allocate(keySetType);
+        var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
         setNative.Set();
         for (Instance key : keyArray) {
             setNative.add(key);
@@ -69,7 +69,7 @@ public class MapNative extends NativeBase {
     public Instance get(Instance key) {
         checkKey(key);
         var entry = map.get(key);
-        return entry != null ? entry.value : InstanceUtils.nullInstance();
+        return entry != null ? entry.value : Instances.nullInstance();
     }
 
     public Instance getOrDefault(Instance key, Instance value) {
@@ -87,20 +87,20 @@ public class MapNative extends NativeBase {
             var removed = existingEntry.value;
             int index = existingEntry.index;
             map.put(key, new Entry(value, index));
-            keyArray.set(index, key);
-            valueArray.set(index, value);
+            keyArray.setElement(index, key);
+            valueArray.setElement(index, value);
             return removed;
         } else {
             map.put(key, new Entry(value, map.size()));
-            keyArray.add(key);
-            valueArray.add(value);
-            return InstanceUtils.nullInstance();
+            keyArray.addElement(key);
+            valueArray.addElement(value);
+            return Instances.nullInstance();
         }
     }
 
     public BooleanInstance containsKey(Instance key) {
         checkKey(key);
-        return InstanceUtils.booleanInstance(map.containsKey(key));
+        return Instances.booleanInstance(map.containsKey(key));
     }
 
     public Instance remove(Instance key) {
@@ -110,21 +110,21 @@ public class MapNative extends NativeBase {
             int lastIndex = keyArray.size() - 1;
             Instance lastKey = keyArray.get(lastIndex);
             Instance lastValue = valueArray.get(lastIndex);
-            keyArray.remove(lastIndex);
-            valueArray.remove(lastIndex);
+            keyArray.removeElement(lastIndex);
+            valueArray.removeElement(lastIndex);
             if (!key.equals(lastKey)) {
-                keyArray.set(entry.index, lastKey);
-                valueArray.set(entry.index, lastValue);
+                keyArray.setElement(entry.index, lastKey);
+                valueArray.setElement(entry.index, lastValue);
                 map.get(lastKey).index = entry.index;
             }
             return entry.getValue();
         } else {
-            return InstanceUtils.nullInstance();
+            return Instances.nullInstance();
         }
     }
 
     public Instance size() {
-        return InstanceUtils.longInstance(keyArray.size());
+        return Instances.longInstance(keyArray.size());
     }
 
     public void clear() {

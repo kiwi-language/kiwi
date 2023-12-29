@@ -19,7 +19,7 @@ public class NodeParamTypeIdResolver implements TypeIdResolver {
 
     @Override
     public String idFromValue(Object value) {
-        return NodeKind.getByParamKlassRequired(value.getClass()).code() + "";
+        return NodeKind.getByParamClassRequired(value.getClass()).code() + "";
     }
 
     @Override

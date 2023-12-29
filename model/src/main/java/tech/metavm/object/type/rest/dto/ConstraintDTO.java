@@ -5,8 +5,8 @@ import tech.metavm.common.BaseDTO;
 import javax.annotation.Nullable;
 
 public record ConstraintDTO(
-        Long tmpId,
         Long id,
+        Long tmpId,
         int kind,
         long typeId,
         String name,

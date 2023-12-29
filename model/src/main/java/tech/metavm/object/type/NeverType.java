@@ -1,0 +1,42 @@
+package tech.metavm.object.type;
+
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.BuildKeyContext;
+import tech.metavm.entity.EntityType;
+import tech.metavm.entity.ElementVisitor;
+import tech.metavm.object.type.rest.dto.NothingTypeKey;
+import tech.metavm.object.type.rest.dto.TypeKey;
+import tech.metavm.object.type.rest.dto.TypeParam;
+
+@EntityType("不可能类型")
+public class NeverType extends Type {
+
+    public NeverType() {
+        super("不可能", "Never", false, true, TypeCategory.NOTHING);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitNothingType(this);
+    }
+
+    @Override
+    public TypeKey getTypeKey() {
+        return new NothingTypeKey();
+    }
+
+    @Override
+    protected boolean isAssignableFrom0(Type that) {
+        return false;
+    }
+
+    @Override
+    protected TypeParam getParam() {
+        return null;
+    }
+
+    @Override
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        return "Nothing";
+    }
+}

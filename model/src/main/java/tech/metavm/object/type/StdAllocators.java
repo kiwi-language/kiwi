@@ -8,7 +8,7 @@ import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.ReadonlyArray;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static tech.metavm.util.ReflectUtils.getFieldQualifiedName;
+import static tech.metavm.util.ReflectionUtils.getFieldQualifiedName;
 
 public class StdAllocators {
 
@@ -50,32 +50,24 @@ public class StdAllocators {
     }
 
     public Long getId(Object object) {
-        if (object instanceof java.lang.reflect.Field field) {
-            return getId0(Field.class, getFieldQualifiedName(field));
-        }
-        if (object instanceof Type type) {
-            return getId0(ClassType.class, getTypeCode(type));
-        }
-        if (object instanceof Enum<?> enumConstant) {
-            return getId0(ReflectUtils.getEnumClass(enumConstant), enumConstant.name());
-        }
-        if (object instanceof ModelIdentity modelIdentity) {
-            return getId0(modelIdentity.type(), modelIdentity.name());
-        }
-        throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
+        return switch (object) {
+            case java.lang.reflect.Field field -> getId0(Field.class, getFieldQualifiedName(field));
+            case Type type -> getId0(ClassType.class, getTypeCode(type));
+            case Enum<?> enumConstant -> getId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name());
+            case ModelIdentity modelIdentity -> getId0(modelIdentity.type(), modelIdentity.name());
+            case null, default ->
+                    throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
+        };
     }
 
     public void putId(Object object, long id) {
-        if (object instanceof java.lang.reflect.Field field) {
-            putId0(Field.class, getFieldQualifiedName(field), id);
-        } else if (object instanceof Type type) {
-            putId0(ClassType.class, getTypeCode(type), id);
-        } else if (object instanceof Enum<?> enumConstant) {
-            putId0(ReflectUtils.getEnumClass(enumConstant), enumConstant.name(), id);
-        } else if (object instanceof ModelIdentity modelIdentity) {
-            putId0(modelIdentity.type(), modelIdentity.name(), id);
-        } else {
-            throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
+        switch (object) {
+            case java.lang.reflect.Field field -> putId0(Field.class, getFieldQualifiedName(field), id);
+            case Type type -> putId0(ClassType.class, getTypeCode(type), id);
+            case Enum<?> enumConstant -> putId0(ReflectionUtils.getEnumClass(enumConstant), enumConstant.name(), id);
+            case ModelIdentity modelIdentity -> putId0(modelIdentity.type(), modelIdentity.name(), id);
+            case null, default ->
+                    throw new InternalException("Can not allocate id for object: " + object + ". Unsupported type.");
         }
     }
 
@@ -108,7 +100,7 @@ public class StdAllocators {
     }
 
     private boolean isMetaArray(Type javaType) {
-        return ReadonlyArray.class.isAssignableFrom(ReflectUtils.getRawClass(javaType));
+        return ReadonlyArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
     }
 
     public Map<Type, List<Long>> allocate(Map<? extends Type, Integer> typeId2count) {
@@ -158,15 +150,15 @@ public class StdAllocators {
     }
 
     private boolean isChildArrayType(Type javaType) {
-        return ChildArray.class.isAssignableFrom(ReflectUtils.getRawClass(javaType));
+        return ChildArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
     }
 
     private boolean isReadWriteArray(Type javaType) {
-        return ReadWriteArray.class.isAssignableFrom(ReflectUtils.getRawClass(javaType));
+        return ReadWriteArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
     }
 
     private boolean isReadOnlyArray(Type javaType) {
-        return ReadonlyArray.class.isAssignableFrom(ReflectUtils.getRawClass(javaType));
+        return ReadonlyArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
     }
 
     private String getTypeCode(Type type) {
@@ -178,7 +170,7 @@ public class StdAllocators {
                     NncUtils.join(pType.getActualTypeArguments(), this::getTypeCode) + ">";
         }
         if (type instanceof WildcardType wildcardType) {
-            if (ReflectUtils.isAllWildCardType(wildcardType)) {
+            if (ReflectionUtils.isAllWildCardType(wildcardType)) {
                 return "?";
             }
         }

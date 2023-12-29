@@ -8,13 +8,13 @@ import javax.annotation.Nullable;
 
 public record NodeExecResult(@Nullable Instance output,
                              @Nullable ClassInstance exception,
-                             @Nullable NodeRT<?> next) {
+                             @Nullable NodeRT next) {
 
-    public static NodeExecResult jump(@Nullable Instance output, @NotNull NodeRT<?> target) {
+    public static NodeExecResult jump(@Nullable Instance output, @NotNull NodeRT target) {
         return new NodeExecResult(output, null, target);
     }
 
-    public static NodeExecResult jump(@NotNull NodeRT<?> target) {
+    public static NodeExecResult jump(@NotNull NodeRT target) {
         return new NodeExecResult(null, null, target);
     }
 

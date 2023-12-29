@@ -7,7 +7,7 @@ import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NumberInstance;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -50,7 +50,7 @@ public enum UnaryOperator {
     IS_NULL(16, "is null", 6, false, Boolean.class) {
         @Override
         public Instance evaluate(Instance operand) {
-            return InstanceUtils.booleanInstance(operand == null);
+            return Instances.booleanInstance(operand == null);
         }
 
         @Override
@@ -62,7 +62,7 @@ public enum UnaryOperator {
     IS_NOT_NULL(17, "is not null", 6, false, Boolean.class) {
         @Override
         public Instance evaluate(Instance operand) {
-            return InstanceUtils.booleanInstance(operand != null);
+            return Instances.booleanInstance(operand != null);
         }
 
         @Override

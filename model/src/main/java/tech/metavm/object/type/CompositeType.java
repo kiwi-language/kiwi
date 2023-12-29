@@ -19,8 +19,8 @@ public abstract class CompositeType extends Type {
     @Nullable
     private String key;
 
-    public CompositeType(String name, boolean anonymous, boolean ephemeral, TypeCategory category) {
-        super(name, anonymous, ephemeral, category);
+    public CompositeType(String name, @Nullable String code, boolean anonymous, boolean ephemeral, TypeCategory category) {
+        super(name, code, anonymous, ephemeral, category);
     }
 
     public abstract List<Type> getComponentTypes();
@@ -57,8 +57,8 @@ public abstract class CompositeType extends Type {
 
     @Override
     protected final TypeParam getParam() {
-        try(var context = SerializeContext.enter()) {
-            getComponentTypes().forEach(context::writeType);
+        try(var serContext = SerializeContext.enter()) {
+            getComponentTypes().forEach(serContext::writeType);
             return getParamInternal();
         }
     }

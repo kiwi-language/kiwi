@@ -28,7 +28,11 @@ public enum ErrorCode {
     CAN_NOT_ASSIGN__CHILD_FIELD(311, "子对象字段不支持更新"),
     INVALID_CODE(312, "编号'{}'不合法，请参考编号命名规范"),
     CHANGING_CATEGORY(313, "不支持修改类型类别，例如将class改为enum"),
-    CHANGING_IS_TEMPLATE(313, "不支持将范型改为非范型，或将非范型类型改为范型"),
+    CHANGING_IS_TEMPLATE(314, "不支持将范型改为非范型，或将非范型类型改为范型"),
+    PROPERTY_NOT_READABLE(315, "属性不可读"),
+    PROPERTY_NOT_WRITABLE(316, "属性不可写"),
+    TITLE_FIELD_MUST_BE_STRING(317, "标题字段必须为字符串类型"),
+    CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED(318, "从对象字段不支持基础类型"),
 
     // 实例相关错误
     INSTANCE_NOT_FOUND(301, "对象'{}'不存在"),
@@ -42,6 +46,7 @@ public enum ErrorCode {
     INCORRECT_PARENT_REF(308, "父对象引用错误，子对象: {}, 父对象: {}, 引用值: {}"),
     MULTI_PARENT(309, "子对象归属于多个父对象: {}"),
     CONVERSION_FAILED(410, "对象'{}'不能转化为类型'{}'"),
+    CAN_NOT_MODIFY_READONLY_FIELD(411, "无法修改对象只读字段"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),
@@ -82,6 +87,8 @@ public enum ErrorCode {
     ADD_ELEMENT_NOT_SUPPORTED(433, "当前数组不支持添加元素"),
     MISSING_REQUIRED_ARGUMENT(434, "未配置必填参数'{}'"),
     STATIC_FLOW_CAN_NOT_BE_ABSTRACT(436, "静态流程不能设置为为抽象"),
+    VIEW_NODE_SOURCE_TYPE_MISMATCH(437, "视图节点源头类型不匹配"),
+    INSTANCE_METHOD_MISSING_STATIC_TYPE(438, "实例方法缺少静态类型"),
 
     // 表达式相关错误
     EXPRESSION_INVALID(501, "表达式错误，原因: {}"),
@@ -129,7 +136,24 @@ public enum ErrorCode {
     ALREADY_AN_ADMIN(613, "用户'{}'已经是管理员"),
     USER_NOT_ADMIN(614, "用户'{}'不是管理员"),
     INVALID_EMAIL_ADDRESS(615, "邮箱地址错误"),
+
+    // Compiler
+    RAW_TYPES_NOT_SUPPORTED(1201, "Raw classes not supported"),
+
+    // VIEW
+    INVALID_READ_VIEW_FIELD_FLOW(1401, "流程{}不能作为查询视图字段"),
+    INVALID_WRITE_VIEW_FIELD_FLOW(1402, "流程{}不能作为编辑视图字段"),
+    INVALID_GETTER_FLOW(1403, "字段映射读取流程不合法"),
+    INVALID_SETTER_FLOW(1404, "字段映射写入流程不合法"),
+    INVALID_OVERRIDDEN_MAPPING(1405, "被复写映射不合法"),
+    MUTABLE_TARGET_FIELD_FROM_READONLY_SOURCE(1406, "源头字段为只读字段，视图字段必须为只读"),
+    FIELD_NOT_SEARCHABLE(1407, "字段'{}'不支持搜索"),
+    INVALID_ELEMENT_MAPPING(1408, "无效的数组元素映射"),
+    INVALID_SOURCE_MAPPING(1409, "无效的源头映射"),
+    INCORRECT_ARRAY_MAPPING_ARGUMENTS(1410, "数组映射参数错误"),
+
     ;
+
 
 
     private final int code;

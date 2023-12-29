@@ -1,13 +1,14 @@
 package tech.metavm.autograph;
 
+import tech.metavm.entity.CompilerEntityContext;
 import tech.metavm.entity.DefContext;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.instance.core.CompilerIdService;
 import tech.metavm.instance.core.CompilerInstanceContext;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.InstanceContextDependency;
 
-import java.io.File;
 import java.util.List;
 
 public class CompilerInstanceContextFactory {
@@ -29,7 +30,13 @@ public class CompilerInstanceContextFactory {
     }
 
     public IInstanceContext newContext(long appId) {
-        return new CompilerInstanceContext(
+        //noinspection resource
+        return newEntityContext(appId).getInstanceContext();
+    }
+
+    public IEntityContext newEntityContext(long appId) {
+        var dependency = new InstanceContextDependency();
+        var context = new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),
                 versionSource,
@@ -37,13 +44,14 @@ public class CompilerInstanceContextFactory {
                 localIndexSource,
                 defContext,
                 stdContext,
+                dependency,
+                dependency,
+                dependency,
                 false
         );
-    }
-
-    public IEntityContext newEntityContext(long appId) {
-        //noinspection resource
-        return newContext(appId).getEntityContext();
+        var entityContext = new CompilerEntityContext(context, defContext, defContext);
+        dependency.setEntityContext(entityContext);
+        return entityContext;
     }
 
     public void setStdContext(IInstanceContext stdContext) {

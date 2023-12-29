@@ -1,48 +1,42 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.*;
+import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.ReturnParamDTO;
+import tech.metavm.flow.rest.ReturnNodeParam;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType("结束节点")
-public class ReturnNode extends NodeRT<ReturnParamDTO> {
+@EntityType("返回节点")
+public class ReturnNode extends NodeRT {
 
-    public static ReturnNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext entityContext) {
-        ReturnNode node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
-        node.setParam(nodeDTO.getParam(), entityContext);
+    public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
+        ReturnNode node = (ReturnNode) entityContext.getNode(nodeDTO.id());
+        var param = (ReturnNodeParam) nodeDTO.getParam();
+        var parsingContext = FlowParsingContext.create(scope, prev, entityContext);
+        var value = param.value() != null ? ValueFactory.create(param.value(), parsingContext) : null;
+        if (node == null)
+            node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, value);
+        else
+            node.setValue(value);
         return node;
     }
 
     @ChildEntity("结果")
-    private @Nullable Value value;
+    @Nullable
+    private Value value;
 
-    public ReturnNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
-        this(tmpId, name, prev, scope, null);
-    }
-
-    public ReturnNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope, @Nullable Value value) {
-        super(tmpId, name, null, prev, scope);
+    public ReturnNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @Nullable Value value) {
+        super(tmpId, name, code, null, prev, scope);
         this.value = NncUtils.get(value, v -> addChild(v, "value"));
     }
 
     public void setValue(@Nullable Value value) {
         this.value = NncUtils.get(value, v -> addChild(v, "value"));
-    }
-
-    @Override
-    protected void setParam(ReturnParamDTO param, IEntityContext context) {
-        if(param.value() != null) {
-            setValue(ValueFactory.create(param.value(), getParsingContext(context)));
-        }
     }
 
     @Nullable
@@ -51,9 +45,9 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     }
 
     @Override
-    protected ReturnParamDTO getParam(boolean persisting) {
-        return new ReturnParamDTO(
-                NncUtils.get(value, v -> v.toDTO(persisting))
+    protected ReturnNodeParam getParam(SerializeContext serializeContext) {
+        return new ReturnNodeParam(
+                NncUtils.get(value, Value::toDTO)
         );
     }
 
@@ -64,12 +58,19 @@ public class ReturnNode extends NodeRT<ReturnParamDTO> {
     }
 
     @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("return");
+        if (value != null)
+            writer.write(" " + value.getText());
+    }
+
+    @Override
     protected String check0() {
         var callable = getEnclosingCallable();
-        if(!callable.getReturnType().isVoid()) {
-            if(value == null)
+        if (!callable.getReturnType().isVoid()) {
+            if (value == null)
                 return "未配置返回结果";
-            else if(!callable.getReturnType().isAssignableFrom(value.getType()))
+            else if (!callable.getReturnType().isAssignableFrom(value.getType()))
                 return "返回结果错误";
         }
         return null;

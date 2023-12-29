@@ -2,14 +2,12 @@ package tech.metavm.expression;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ClassBuilder;
 import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.entity.StandardTypes;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
-
-import java.util.Objects;
 
 public class ExpressionParserTest extends TestCase {
 
@@ -42,8 +40,7 @@ public class ExpressionParserTest extends TestCase {
 
             context.bind(type);
             String expr = "List<Map<Long,Map<String,Object>>>.size < 1 + a.num";
-            ExpressionParser parser = new ExpressionParser(expr,
-                    new TypeParsingContext(type, Objects.requireNonNull(context.getInstanceContext())));
+            ExpressionParser parser = new ExpressionParser(expr, TypeParsingContext.create(type, context));
             var expression = parser.parse(null);
             System.out.println(expression.buildSelf(VarType.NAME));
         }
@@ -66,7 +63,7 @@ public class ExpressionParserTest extends TestCase {
 
             String expr = "While.索引 < LEN(Input.directCoupons)";
             ExpressionParser parser = new ExpressionParser(expr,
-                    new TypeParsingContext(type, Objects.requireNonNull(context.getInstanceContext())));
+                    TypeParsingContext.create(type, context));
             var expression = parser.parse(null);
             System.out.println(expression.buildSelf(VarType.NAME));
         }

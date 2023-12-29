@@ -2,7 +2,7 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.WireTypes;
 
@@ -26,11 +26,11 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     public BooleanInstance contains(StringInstance that) {
-        return InstanceUtils.createBoolean(value.contains(that.value));
+        return Instances.createBoolean(value.contains(that.value));
     }
 
     public BooleanInstance startsWith(StringInstance that) {
-        return InstanceUtils.createBoolean(value.startsWith(that.value));
+        return Instances.createBoolean(value.startsWith(that.value));
     }
 
     public StringInstance concat(StringInstance that) {
@@ -38,7 +38,7 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     public BooleanInstance isBlank() {
-        return InstanceUtils.createBoolean(NncUtils.isBlank(value));
+        return Instances.createBoolean(NncUtils.isBlank(value));
     }
 
     @Override
@@ -57,8 +57,8 @@ public class StringInstance extends PrimitiveInstance {
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitStringInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitStringInstance(this);
     }
 
 }

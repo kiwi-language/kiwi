@@ -1,20 +1,21 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.ArrayTypeKey;
 import tech.metavm.object.type.rest.dto.ArrayTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
 
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Function;
 
 @EntityType("数组类型")
 public class ArrayType extends CompositeType {
 
-    public static final IndexDef<ArrayType> KEY_IDX = IndexDef.uniqueKey(ArrayType.class, "key");
+    public static final IndexDef<ArrayType> KEY_IDX = IndexDef.createUnique(ArrayType.class, "key");
 
-    public static final IndexDef<ArrayType> ELEMENT_TYPE_IDX = IndexDef.normalKey(ArrayType.class, "elementType");
+    public static final IndexDef<ArrayType> ELEMENT_TYPE_IDX = IndexDef.create(ArrayType.class, "elementType");
 
     @EntityField("元素类型")
     private final Type elementType;
@@ -23,12 +24,9 @@ public class ArrayType extends CompositeType {
     private final ArrayKind kind;
 
     public ArrayType(Long tmpId, Type elementType, ArrayKind kind) {
-        super(getArrayTypeName(elementType), false, false, kind.category());
+        super(getArrayTypeName(elementType), getArrayTypeCode(elementType), false, false, kind.category());
         setTmpId(tmpId);
         this.kind = kind;
-        if (elementType.getCode() != null) {
-            setCode(elementType.getCode() + "[]");
-        }
         this.elementType = elementType;
     }
 
@@ -37,6 +35,16 @@ public class ArrayType extends CompositeType {
             return "(" + elementType.getName() + ")[]";
         } else {
             return elementType.getName() + "[]";
+        }
+    }
+
+    private static @Nullable String getArrayTypeCode(Type elementType) {
+        if(elementType.getCode() == null)
+            return null;
+        if (elementType instanceof UnionType) {
+            return "(" + elementType.getCode() + ")[]";
+        } else {
+            return elementType.getCode() + "[]";
         }
     }
 
@@ -85,14 +93,14 @@ public class ArrayType extends CompositeType {
 
     @Override
     protected ArrayTypeParam getParamInternal() {
-        try (var context = SerializeContext.enter()) {
-            return new ArrayTypeParam(context.getRef(elementType), kind.code());
+        try (var serContext = SerializeContext.enter()) {
+            return new ArrayTypeParam(serContext.getRef(elementType), kind.code());
         }
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return kind.getEntityClass().getName() + "<" + elementType.getKey(getJavaType) + ">";
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        return kind.getEntityClass().getName() + "<" + context.getModelName(elementType, this) + ">";
     }
 
     public ArrayKind getKind() {

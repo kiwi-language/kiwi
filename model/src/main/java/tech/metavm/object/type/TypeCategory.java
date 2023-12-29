@@ -70,7 +70,8 @@ public enum TypeCategory {
     private final int closurePrecedence;
     private final ColumnKind columnKind;
     private final Class<?> paramClass;
-    private final @Nullable Class<?> nativeClass;
+    @Nullable
+    private final Class<?> nativeClass;
 
     private static volatile Set<TypeCategory> ALL;
 

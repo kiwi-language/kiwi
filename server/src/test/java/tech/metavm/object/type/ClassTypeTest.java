@@ -23,8 +23,9 @@ public class ClassTypeTest extends TestCase {
 
         Field nameField = FieldBuilder
                 .newBuilder("name", null, fooType, MockRegistry.getStringType())
-                .asTitle(true)
                 .build();
+        fooType.setTitleField(nameField);
+
 
         Field barField = FieldBuilder
                 .newBuilder("bar", null, fooType, barType)

@@ -1,12 +1,10 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.expression.ArrayExpression;
-import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.NewArrayParam;
+import tech.metavm.flow.rest.NewArrayNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.type.ArrayType;
@@ -14,56 +12,55 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
+@EntityType("创建数组节点")
+public class NewArrayNode extends NodeRT implements NewNode {
 
-    public static NewArrayNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+    public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        NewArrayParam param = nodeDTO.getParam();
+        NewArrayNodeParam param = nodeDTO.getParam();
         var type = (ArrayType) context.getType(nodeDTO.outputTypeRef());
         var value = ValueFactory.create(param.value(), parsingContext);
         var parentRef = param.parentRef() != null ?
-                ParentRef.create(param.parentRef(), parsingContext, type) : null;
-        return new NewArrayNode(nodeDTO.tmpId(), nodeDTO.name(), type, value, parentRef, prev, scope);
+                ParentRef.create(param.parentRef(), parsingContext, context, type) : null;
+        NewArrayNode node = (NewArrayNode) context.getNode(nodeDTO.getRef());
+        if (node != null) {
+            node.setValue(value);
+            node.setParentRef(parentRef);
+        } else
+            node = new NewArrayNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, value, parentRef, prev, scope);
+        return node;
     }
 
     @ChildEntity("值")
+    @Nullable
     private Value value;
 
-    @ChildEntity("父对象")
+    @ChildEntity("父引用")
     @Nullable
     private ParentRef parentRef;
 
-
     public NewArrayNode(Long tmpId, String name,
+                        @Nullable String code,
                         ArrayType type,
-                        Value value,
+                        @Nullable Value value,
                         @Nullable ParentRef parentRef,
-                        NodeRT<?> previous,
+                        NodeRT previous,
                         ScopeRT scope) {
-        super(tmpId, name, type, previous, scope);
-        setParent(parentRef);
-        this.value = addChild(check(value), "value");
+        super(tmpId, name, code, type, previous, scope);
+        setParentRef(parentRef);
+        this.value = value != null ? addChild(check(value), "value") : null;
     }
 
     @Override
-    protected NewArrayParam getParam(boolean persisting) {
-        return new NewArrayParam(
-                value.toDTO(persisting),
+    protected NewArrayNodeParam getParam(SerializeContext serializeContext) {
+        return new NewArrayNodeParam(
+                NncUtils.get(value, Value::toDTO),
                 NncUtils.get(parentRef, ParentRef::toDTO)
         );
     }
 
-    @Override
-    protected void setParam(NewArrayParam param, IEntityContext context) {
-        var parsingContext = getParsingContext(context);
-        if (param.value() != null) {
-            this.value = addChild(check(ValueFactory.create(param.value(), parsingContext)), "value");
-        }
-        if (param.parentRef() != null) {
-            setParent(ParentRef.create(param.parentRef(), parsingContext, getType()));
-        } else {
-            setParent(null);
-        }
+    public void setValue(@Nullable Value value) {
+        this.value = value != null ? addChild(value, "value") : null;
     }
 
     private Value check(Value value) {
@@ -89,18 +86,27 @@ public class NewArrayNode extends NodeRT<NewArrayParam> implements NewNode {
     public NodeExecResult execute(MetaFrame frame) {
         var instParentRef = NncUtils.get(parentRef, ref -> ref.evaluate(frame));
         var array = new ArrayInstance(getType(), instParentRef);
-        if (!array.isChildArray()) {
+        if (!array.isChildArray() && value != null)
             array.addAll((ArrayInstance) value.evaluate(frame));
-        }
         return next(array);
     }
 
-    public Value getValue() {
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("new " + getType().getName() + "(");
+        if (value != null)
+            writer.write(value.getText());
+        writer.write(")");
+        if (parentRef != null)
+            writer.write(" " + parentRef.getText());
+    }
+
+    public @Nullable Value getValue() {
         return value;
     }
 
     @Override
-    public void setParent(@Nullable ParentRef parentRef) {
+    public void setParentRef(@Nullable ParentRef parentRef) {
         this.parentRef = NncUtils.get(parentRef, p -> addChild(p, "parentRef"));
     }
 

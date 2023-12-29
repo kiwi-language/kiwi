@@ -3,17 +3,16 @@ package tech.metavm.task;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.springframework.transaction.support.TransactionOperations;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.MemInstanceStore;
+import tech.metavm.entity.*;
 import tech.metavm.mocks.TestJob;
+import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.util.*;
 
 import static tech.metavm.util.TestConstants.APP_ID;
 
 public class JobSchedulerTest extends TestCase {
 
-    private InstanceContextFactory instanceContextFactory;
+    private EntityContextFactory entityContextFactory;
     @SuppressWarnings("FieldCanBeLocal")
     private TransactionOperations transactionOperations;
     @SuppressWarnings("FieldCanBeLocal")
@@ -25,10 +24,10 @@ public class JobSchedulerTest extends TestCase {
         MockIdProvider idProvider = new MockIdProvider();
         instanceStore = new MemInstanceStore();
         MockRegistry.setUp(idProvider, instanceStore);
-        instanceContextFactory = TestUtils.getInstanceContextFactory(idProvider, instanceStore);
+        entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), instanceStore.getIndexEntryMapper());
         transactionOperations = new MockTransactionOperations();
         Scheduler.THREAD_POOL_SIZE = 1;
-        jobScheduler = new Scheduler(instanceContextFactory, transactionOperations);
+        jobScheduler = new Scheduler(entityContextFactory, transactionOperations);
         jobScheduler.createSchedulerStatus();
     }
 
@@ -52,7 +51,7 @@ public class JobSchedulerTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext(APP_ID);
+        return entityContextFactory.newContext(APP_ID);
     }
 
 }

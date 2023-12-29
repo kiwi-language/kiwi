@@ -1,15 +1,18 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.LoopFieldDTO;
 import tech.metavm.object.type.Field;
 
+import java.util.Objects;
+
 @EntityType("循环字段")
-public class LoopField extends Entity {
+public class LoopField extends Entity implements LocalKey {
 
     @EntityField("字段")
-    private Field field;
+    private final Field field;
     @ChildEntity("初始值")
     private Value initialValue;
     @ChildEntity("更新值")
@@ -41,27 +44,36 @@ public class LoopField extends Entity {
         this.updatedValue = addChild(updatedValue, "updatedValue");
     }
 
-    public void update(LoopFieldDTO loopFieldDTO, IEntityContext context, ParsingContext parsingContext) {
-        if(loopFieldDTO.fieldRef() != null) {
-            field = context.getField(loopFieldDTO.fieldRef());
-        }
-        if(loopFieldDTO.initialValue() != null) {
+    public void update(LoopFieldDTO loopFieldDTO, ParsingContext parsingContext) {
+        if (loopFieldDTO.initialValue() != null)
             setInitialValue(ValueFactory.create(loopFieldDTO.initialValue(), parsingContext));
-        }
-        if(loopFieldDTO.updatedValue() != null) {
+        if (loopFieldDTO.updatedValue() != null)
             setUpdatedValue(ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext));
+    }
+
+    public LoopFieldDTO toDTO() {
+        try (var serContext = SerializeContext.enter()) {
+            return new LoopFieldDTO(
+                    serContext.getRef(field),
+                    field.getName(),
+                    serContext.getRef(field.getType()),
+                    initialValue.toDTO(),
+                    updatedValue.toDTO()
+            );
         }
     }
 
-    public LoopFieldDTO toDTO(boolean persisting) {
-        try(var context = SerializeContext.enter()) {
-            return new LoopFieldDTO(
-                    context.getRef(field),
-                    field.getName(),
-                    context.getRef(field.getType()),
-                    initialValue.toDTO(persisting),
-                    updatedValue.toDTO(persisting)
-            );
-        }
+    @Override
+    public boolean isValidLocalKey() {
+        return field.getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(field.getCode());
+    }
+
+    public String getText() {
+        return field.getName() + ": " + initialValue.getText() + "; " + updatedValue.getText();
     }
 }

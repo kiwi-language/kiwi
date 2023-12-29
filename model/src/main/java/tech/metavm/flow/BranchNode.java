@@ -3,38 +3,31 @@ package tech.metavm.flow;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
 import tech.metavm.flow.rest.BranchDTO;
-import tech.metavm.flow.rest.BranchParamDTO;
+import tech.metavm.flow.rest.BranchNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.util.*;
+import tech.metavm.util.BusinessException;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @EntityType("分支节点")
-public class BranchNode extends NodeRT<BranchParamDTO> {
+public class BranchNode extends NodeRT {
 
-    public static BranchNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        BranchParamDTO param = nodeDTO.getParam();
-        BranchNode node = new BranchNode(nodeDTO.tmpId(), nodeDTO.name(), param.inclusive(), prev, scope);
-        node.setParam(nodeDTO.getParam(), context);
-        return node;
-    }
-
-    @EntityField("是否包容")
-    private boolean inclusive;
-    @ChildEntity("分支列表")
-    private final ChildArray<Branch> branches = addChild(new ChildArray<>(Branch.class), "branches");
-
-    public BranchNode(Long tmpId, String name, boolean inclusive, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
-        this.inclusive = inclusive;
-    }
-
-    @Override
-    protected void setParam(BranchParamDTO param, IEntityContext entityContext) {
-        inclusive = param.inclusive();
+    public static BranchNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        BranchNodeParam param = nodeDTO.getParam();
+        BranchNode node;
+        if (nodeDTO.id() != null) {
+            node = (BranchNode) context.getNode(nodeDTO.id());
+        } else
+            node = new BranchNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), param.inclusive(), prev, scope);
+        node.setInclusive(param.inclusive());
         if (param.branches() != null) {
             Set<RefDTO> branchRefs = NncUtils.mapAndFilterUnique(param.branches(), BranchDTO::getRef, Objects::nonNull);
             if (branchRefs.size() > param.branches().size()) {
@@ -46,41 +39,60 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
             if (NncUtils.count(param.branches(), BranchDTO::preselected) != 1) {
                 throw new BusinessException(ErrorCode.NUM_PRESELECTED_BRANCH_NOT_EQUAL_TO_ONE);
             }
+            var parsingContext = node.getParsingContext(context);
             List<Branch> branches = new ArrayList<>();
             for (int i = 0; i < param.branches().size(); i++) {
                 BranchDTO branchDTO = param.branches().get(i);
-                var branch = entityContext.getEntity(Branch.class, branchDTO.getRef());
+                var branch = context.getEntity(Branch.class, branchDTO.getRef());
                 if (branch == null) {
                     branch = new Branch(
                             branchDTO.index(),
-                            ValueFactory.create(branchDTO.condition(), getParsingContext(entityContext)),
+                            ValueFactory.create(branchDTO.condition(), parsingContext),
                             branchDTO.preselected(),
                             branchDTO.isExit(),
-                            this
+                            node
                     );
                     branch.setTmpId(branchDTO.tmpId());
                     branches.add(i, branch);
-                    entityContext.bind(branch);
+                    context.bind(branch);
                 } else {
-                    if (branch.getOwner() != this) {
+                    if (branch.getOwner() != node) {
                         throw new BusinessException(ErrorCode.BRANCH_OWNER_MISMATCH,
                                 branch.getOwner().getName() + "/" + branch.getIndex(),
-                                getName());
+                                node.getName());
                     }
-                    branch.update(branchDTO, entityContext);
+                    branch.update(branchDTO, context);
                     branches.add(branch);
                 }
             }
-            this.branches.resetChildren(branches);
+            node.setBranches(branches);
         }
+        return node;
+    }
+
+    public void setBranches(List<Branch> branches) {
+        this.branches.resetChildren(branches);
+    }
+
+    public void setInclusive(boolean inclusive) {
+        this.inclusive = inclusive;
+    }
+
+    @EntityField("是否包含")
+    private boolean inclusive;
+    @ChildEntity("分支列表")
+    private final ChildArray<Branch> branches = addChild(new ChildArray<>(Branch.class), "branches");
+
+    public BranchNode(Long tmpId, String name, @Nullable String code, boolean inclusive, NodeRT prev, ScopeRT scope) {
+        super(tmpId, name, code, null, prev, scope);
+        this.inclusive = inclusive;
     }
 
     @Override
-    protected BranchParamDTO getParam(boolean persisting) {
-        return new BranchParamDTO(
+    protected BranchNodeParam getParam(SerializeContext serializeContext) {
+        return new BranchNodeParam(
                 inclusive,
-                NncUtils.map(branches, branch -> branch.toDTO(!persisting, persisting))
-//                NncUtils.map(fields, f -> f.toDTO(persisting))
+                NncUtils.map(branches, branch -> branch.toDTO(true, serializeContext))
         );
     }
 
@@ -178,6 +190,17 @@ public class BranchNode extends NodeRT<BranchParamDTO> {
             }
         }
         throw new InternalException("Not matching branch");
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("switch {");
+        writer.indent();
+        for (Branch branch : branches) {
+            branch.writeCode(writer);
+        }
+        writer.unindent();
+        writer.writeNewLine("}");
     }
 
     @Override

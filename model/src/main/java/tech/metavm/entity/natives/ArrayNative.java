@@ -4,7 +4,7 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 
 public class ArrayNative {
@@ -24,15 +24,15 @@ public class ArrayNative {
     }
 
     public Instance set(Instance index, Instance value) {
-        return array.set(getIndex(index), value);
+        return array.setElement(getIndex(index), value);
     }
 
     public BooleanInstance remove(Instance instance) {
-        return InstanceUtils.booleanInstance(array.remove(instance));
+        return Instances.booleanInstance(array.removeElement(instance));
     }
 
     public Instance removeAt(Instance index) {
-        return array.remove(getIndex(index));
+        return array.removeElement(getIndex(index));
     }
 
     private int getIndex(Instance instance) {
@@ -49,11 +49,11 @@ public class ArrayNative {
     }
 
     public void add(Instance instance) {
-        array.add(instance);
+        array.addElement(instance);
     }
 
     public LongInstance size() {
-        return InstanceUtils.longInstance(array.size());
+        return Instances.longInstance(array.size());
     }
 
 }

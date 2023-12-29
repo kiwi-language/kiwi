@@ -9,13 +9,18 @@ import org.junit.Assert;
 import tech.metavm.autograph.mocks.PTypeFoo;
 import tech.metavm.autograph.mocks.TypeFoo;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 public class TranspileUtilTest extends TestCase {
+
+    @Override
+    protected void setUp() throws Exception {
+        TranspileTestTools.touch();
+    }
 
     public void testGetTemplateType() {
         Visitor visitor = new Visitor();
@@ -24,10 +29,22 @@ public class TranspileUtilTest extends TestCase {
     }
 
     public void testMatchMethod() {
-        var method = ReflectUtils.getMethod(List.class, "get", int.class);
+        var method = ReflectionUtils.getMethod(List.class, "get", int.class);
         var psiClass = TranspileTestTools.getPsiClass(TypeFoo.class);
         var psiMethod = NncUtils.findRequired(psiClass.getMethods(), m -> m.getName().equals("get"));
         NncUtils.requireTrue(TranspileUtil.matchMethod(psiMethod, method));
+    }
+
+    public void testGetSignature() {
+        var listClass = TranspileUtil.createType(List.class).resolve();
+        var getMethod = NncUtils.find(listClass.getMethods(), method -> method.getName().equals("get"));
+        var signature = TranspileUtil.getSignature(getMethod, null);
+        Assert.assertEquals(
+                new MethodSignature(
+                        TranspileUtil.createType(List.class), "get", List.of(
+                        TranspileUtil.createPrimitiveType(int.class))),
+                signature
+        );
     }
 
     private static class Visitor extends JavaRecursiveElementVisitor {

@@ -13,7 +13,7 @@ import tech.metavm.object.instance.persistence.IndexQueryItemPO;
 import tech.metavm.object.instance.persistence.IndexQueryPO;
 import tech.metavm.util.BytesUtils;
 import tech.metavm.util.H2DataSourceBuilder;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.SQLStatements;
 
 import javax.sql.DataSource;
@@ -51,8 +51,8 @@ public class IndexEntryMapperTest extends TestCase {
             for (int i = 0; i < 10; i++) {
                 IndexKeyPO k = new IndexKeyPO();
                 k.setIndexId(CONSTRAINT_ID);
-                k.setColumn0(BytesUtils.toIndexBytes(InstanceUtils.longInstance(1L)));
-                k.setColumn1(BytesUtils.toIndexBytes(InstanceUtils.longInstance(i)));
+                k.setColumn0(BytesUtils.toIndexBytes(Instances.longInstance(1L)));
+                k.setColumn1(BytesUtils.toIndexBytes(Instances.longInstance(i)));
                 indexItems.add(new IndexEntryPO(APP_ID, k, instanceIdBase + i));
             }
             indexEntryMapper.batchInsert(indexItems);
@@ -61,10 +61,10 @@ public class IndexEntryMapperTest extends TestCase {
                     APP_ID, CONSTRAINT_ID,
                     List.of(
                             new IndexQueryItemPO(
-                                    "column0", IndexOperator.EQ, BytesUtils.toIndexBytes(InstanceUtils.longInstance(1L))
+                                    "column0", IndexOperator.EQ, BytesUtils.toIndexBytes(Instances.longInstance(1L))
                             ),
                             new IndexQueryItemPO(
-                                    "column1", IndexOperator.EQ, BytesUtils.toIndexBytes(InstanceUtils.longInstance(5L))
+                                    "column1", IndexOperator.EQ, BytesUtils.toIndexBytes(Instances.longInstance(5L))
                             )
                     ),
                     true, 2L, LockMode.NONE.code()

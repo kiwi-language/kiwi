@@ -3,46 +3,44 @@ package tech.metavm.object.type;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Var;
 import tech.metavm.flow.Error;
-import tech.metavm.flow.ErrorLevel;
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.FlowChecker;
+import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.object.view.MappingSaver;
+import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static tech.metavm.util.NncUtils.*;
 
 @EntityType("Class类型")
-public class ClassType extends Type implements GenericDeclaration {
+public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement {
 
-    public static final IndexDef<ClassType> UNIQUE_NAME = IndexDef.uniqueKey(ClassType.class, "name");
+    public static final IndexDef<ClassType> UNIQUE_NAME = IndexDef.createUnique(ClassType.class, "name");
 
     public static final IndexDef<ClassType> IDX_PARAMETERIZED_TYPE_KEY =
-            IndexDef.uniqueKey(ClassType.class, "parameterizedTypeKey");
+            IndexDef.createUnique(ClassType.class, "parameterizedTypeKey");
 
-    public static final IndexDef<ClassType> UNIQUE_CODE = IndexDef.uniqueKey(ClassType.class, "code");
+    public static final IndexDef<ClassType> UNIQUE_CODE = IndexDef.createUnique(ClassType.class, "code");
 
-    public static final IndexDef<ClassType> UNIQUE_SOURCE_CLASS_NAME = IndexDef.uniqueKey(ClassType.class, "sourceClassName");
+    public static final IndexDef<ClassType> TEMPLATE_IDX = IndexDef.create(ClassType.class, "template");
 
-    public static final IndexDef<ClassType> TEMPLATE_IDX = IndexDef.normalKey(ClassType.class, "template");
-
-    public static final IndexDef<ClassType> TYPE_ARGUMENTS_IDX = IndexDef.normalKey(ClassType.class, "typeArguments");
+    public static final IndexDef<ClassType> TYPE_ARGUMENTS_IDX = IndexDef.create(ClassType.class, "typeArguments");
 
     @EntityField("超类")
     @Nullable
     private ClassType superClass;
-    @EntityField("源码类名")
-    private @Nullable String sourceClassName;
     @ChildEntity("接口")
     private final ReadWriteArray<ClassType> interfaces = addChild(new ReadWriteArray<>(ClassType.class), "interfaces");
     @EntityField("来源")
@@ -50,23 +48,33 @@ public class ClassType extends Type implements GenericDeclaration {
     @ChildEntity("子类列表")
     private final ReadWriteArray<ClassType> subTypes = addChild(new ReadWriteArray<>(ClassType.class), "subTypes");
     @EntityField("描述")
-    private @Nullable String desc;
+    @Nullable
+    private String desc;
     @ChildEntity("字段列表")
     private final ChildArray<Field> fields = addChild(new ChildArray<>(Field.class), "fields");
-    @ChildEntity("流程列表")
-    private final ChildArray<Flow> flows = addChild(new ChildArray<>(Flow.class), "flows");
+    @EntityField("标题属性")
+    @Nullable
+    private Field titleField;
+    @ChildEntity("方法列表")
+    private final ChildArray<Method> methods = addChild(new ChildArray<>(Method.class), "methods");
+    @ChildEntity("参数化方法列表")
+    private final ChildArray<Method> parameterizedMethods = addChild(new ChildArray<>(Method.class), "parameterizedMethods");
+
     @ChildEntity("静态字段列表")
     private final ChildArray<Field> staticFields = addChild(new ChildArray<>(Field.class), "staticFields");
     @ChildEntity("约束列表")
     private final ChildArray<Constraint> constraints = addChild(new ChildArray<>(Constraint.class), "constraints");
     @Nullable
     @EntityField("模板")
-    private final ClassType template;
+    @CopyIgnore
+    private ClassType template;
+    // Don't remove, for search
+    @SuppressWarnings("unused")
     @EntityField("是否模版")
-    private final boolean isTemplate;
+    private boolean isTemplate;
     // Don't remove, used for search
     @EntityField("是否参数化")
-    private final boolean isParameterized;
+    private boolean isParameterized;
     @ChildEntity("类型参数")
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
     @ChildEntity("类型实参")
@@ -80,47 +88,49 @@ public class ClassType extends Type implements GenericDeclaration {
     @ChildEntity("错误列表")
     private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
 
+    @ChildEntity("视图映射列表")
+    private final ChildArray<ObjectMapping> mappings = addChild(new ChildArray<>(ObjectMapping.class), "mappings");
+
+    @EntityField("默认视图")
+    @Nullable
+    private ObjectMapping defaultMapping;
+
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    private transient volatile FlowTable flowTable;
+    private transient volatile MethodTable methodTable;
 
-    // longest path from the current type upwards in the hierarchy
+    // length of the longest path from the current type upwards to a root in the type hierarchy
     private transient int rank;
 
     private transient List<ClassType> superTypes;
 
     private transient volatile List<Field> sortedFields;
 
-
     public ClassType(
             Long tmpId,
             String name,
             @Nullable String code,
-            @Nullable String sourceClassName,
             @Nullable ClassType superClass,
             List<ClassType> interfaces,
             TypeCategory category,
             ClassSource source,
+            @Nullable ClassType template,
             boolean anonymous,
             boolean ephemeral,
             @Nullable String desc,
             boolean isTemplate,
-            @Nullable ClassType template,
-            List<Type> typeArguments
-    ) {
-        super(name, anonymous, ephemeral, category);
+            List<TypeVariable> typeParameters,
+            List<Type> typeArguments) {
+        super(name, code, anonymous, ephemeral, category);
         setTmpId(tmpId);
-        this.setCode(code);
-        this.sourceClassName = sourceClassName;
         setSuperClass(superClass);
         setInterfaces(interfaces);
+        this.template = template;
         this.source = source;
         this.desc = desc;
-        this.isTemplate = isTemplate;
-        this.isParameterized = template != null;
-        this.typeArguments.addAll(typeArguments);
-        this.template = template;
-        flowTable.rebuild();
+        setTypeParameters(typeParameters);
+        setTypeArguments(typeArguments);
+        getMethodTable().rebuild();
         setTemplateFlag(isTemplate);
         NncUtils.requireTrue(getAncestorClasses().size() <= Constants.MAX_INHERITANCE_DEPTH,
                 "Inheritance depth of class " + name + "  exceeds limit: " + Constants.MAX_INHERITANCE_DEPTH);
@@ -137,9 +147,8 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     void addSubType(ClassType subType) {
-        if (subTypes.contains(subType)) {
+        if (subTypes.contains(subType))
             throw new InternalException("Subtype '" + subType + "' is already added to this type");
-        }
         subTypes.add(subType);
     }
 
@@ -162,10 +171,27 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public List<Field> getAllFields() {
-        if (superClass != null) {
+        if (superClass != null)
             return NncUtils.union(superClass.getAllFields(), readyFields());
-        } else {
+        else
             return readyFields();
+    }
+
+    @Override
+    public boolean isValidGlobalKey() {
+        return isBuiltin() || template != null;
+    }
+
+    @Override
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        if (template == null) {
+//            java.lang.reflect.Type javaType = Objects.requireNonNull(
+//                    context.getJavaType(this), () -> "Can not get java type for type '" + this + "'");
+            return getCodeRequired();
+        } else {
+            return context.getModelName(template, this) + "<"
+                    + NncUtils.join(typeArguments, object -> context.getModelName(object, this))
+                    + ">";
         }
     }
 
@@ -175,15 +201,16 @@ public class ClassType extends Type implements GenericDeclaration {
         this.fields.stream().filter(Field::isReady).forEach(action);
     }
 
-    @Nullable
-    public String getSourceClassName() {
-        return sourceClassName;
+    public void setTitleField(@Nullable Field titleField) {
+        if (titleField != null && !titleField.getType().isString())
+            throw new BusinessException(ErrorCode.TITLE_FIELD_MUST_BE_STRING);
+        this.titleField = titleField;
     }
 
     @Override
     public void onBind(IEntityContext context) {
-        if (isTemplate)
-            context.getGenericContext().addType(this);
+        if (isTemplate())
+            context.getGenericContext().add(this);
     }
 
     public List<Field> getFieldsByPath(List<String> path) {
@@ -192,8 +219,21 @@ public class ClassType extends Type implements GenericDeclaration {
         return result;
     }
 
+//    public boolean isView() {
+//        return sourceMapping != null;
+//    }
+//
+//    public ObjectMapping getSourceMapping() {
+//        return Objects.requireNonNull(sourceMapping, String.format("Type '%s' is not a view", getName()));
+//    }
+
     public boolean isTemplate() {
-        return isTemplate;
+        return !typeParameters.isEmpty();
+    }
+
+    public boolean isLocalClass() {
+        var parent = getParentEntity();
+        return parent instanceof Method || parent instanceof NodeRT;
     }
 
     private void getFieldsByPath0(List<String> path, List<Field> result) {
@@ -203,11 +243,10 @@ public class ClassType extends Type implements GenericDeclaration {
         result.add(field);
         if (path.size() > 1) {
             Type fieldType = field.getType();
-            if (fieldType instanceof ClassType classType) {
+            if (fieldType instanceof ClassType classType)
                 classType.getFieldsByPath0(path.subList(1, path.size()), result);
-            } else {
+            else
                 throw new InternalException("Invalid field path '" + NncUtils.join(path, ".") + "'");
-            }
         }
     }
 
@@ -254,6 +293,14 @@ public class ClassType extends Type implements GenericDeclaration {
         }
     }
 
+    public List<ObjectMapping> getMappings() {
+        return mappings.toList();
+    }
+
+    public @Nullable ObjectMapping getBuiltinMapping() {
+        return NncUtils.find(mappings, ObjectMapping::isBuiltin);
+    }
+
     public Set<Long> getSubTypeIds() {
         Set<Long> typeIds = new HashSet<>();
         accept(new VoidElementVisitor() {
@@ -269,9 +316,8 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public int getRank() {
-        if (rank == 0) {
+        if (rank == 0)
             rank = NncUtils.maxInt(getSuperTypes(), Type::getRank, 0) + 1;
-        }
         return rank;
     }
 
@@ -296,10 +342,10 @@ public class ClassType extends Type implements GenericDeclaration {
 
     //</editor-fold>
 
-    //<editor-fold desc="flow">
+    //<editor-fold desc="method">
 
-    public Flow getDefaultConstructor() {
-        return getFlowByCodeAndParamTypes(getEffectiveTemplate().getCode(), List.of());
+    public Method getDefaultConstructor() {
+        return getMethodByCodeAndParamTypes(getEffectiveTemplate().getCode(), List.of());
     }
 
     public List<Field> getSortedFields() {
@@ -316,113 +362,111 @@ public class ClassType extends Type implements GenericDeclaration {
         return sortedFields;
     }
 
-    private void resetFieldsMemoryDataStructures() {
+    void resetFieldsMemoryDataStructures() {
         this.sortedFields = null;
     }
 
-    public void moveFlow(Flow flow, int index) {
-        moveProperty(flows, flow, index);
+    public void moveMethod(Method method, int index) {
+        moveProperty(methods, method, index);
     }
 
-    private FlowTable getFlowTable() {
-        if (flowTable == null) {
+    private MethodTable getMethodTable() {
+        if (methodTable == null) {
             synchronized (this) {
-                if (flowTable == null)
-                    flowTable = new FlowTable(this);
+                if (methodTable == null)
+                    methodTable = new MethodTable(this);
             }
         }
-        return flowTable;
+        return methodTable;
     }
 
-    public List<Flow> getFlows() {
-        return flows.toList();
+    public List<Method> getMethods() {
+        return methods.toList();
     }
 
-    public List<Flow> getAllFlows() {
-        if (superClass != null) {
-            return NncUtils.union(superClass.getAllFlows(), NncUtils.listOf(flows));
-        } else {
-            return NncUtils.listOf(getFlows());
-        }
+    public List<Method> getAllMethods() {
+        if (superClass != null)
+            return NncUtils.union(superClass.getAllMethods(), NncUtils.listOf(methods));
+        else
+            return NncUtils.listOf(getMethods());
     }
 
-    public ReadonlyArray<Flow> getDeclaredFlows() {
-        return flows;
+    public ReadonlyArray<Method> getDeclaredMethods() {
+        return methods;
     }
 
-    public Flow getFlow(long id) {
-        return flows.get(Entity::getId, id);
+    public Method getMethod(long id) {
+        return methods.get(Entity::getId, id);
     }
 
-    public Flow tryGetFlow(String name, List<Type> parameterTypes) {
-        var flow = NncUtils.find(flows,
+    public Method tryGetMethod(String name, List<Type> parameterTypes) {
+        var method = NncUtils.find(methods,
                 f -> Objects.equals(f.getName(), name) && f.getParameterTypes().equals(parameterTypes));
-        if (flow != null) {
-            return flow;
-        }
-        if (superClass != null) {
-            return superClass.getFlow(name, parameterTypes);
-        }
+        if (method != null)
+            return method;
+        if (superClass != null)
+            return superClass.getMethod(name, parameterTypes);
         return null;
     }
 
-    public Flow getFlow(String name, List<Type> parameterTypes) {
+    public Method getMethod(String name, List<Type> parameterTypes) {
         return NncUtils.requireNonNull(
-                tryGetFlow(name, parameterTypes),
-                () -> new InternalException("Can not find flow '" + name + "(" +
+                tryGetMethod(name, parameterTypes),
+                () -> new InternalException("Can not find method '" + name + "(" +
                         NncUtils.join(parameterTypes, Type::getName, ",")
                         + ")' in type '" + getName() + "'")
         );
     }
 
-    public Flow getFlowByCodeAndParamTypes(String code, List<Type> parameterTypes) {
-        var flow = NncUtils.find(flows,
+    public Method findMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
+        var method = NncUtils.find(methods,
                 f -> Objects.equals(f.getCode(), code) && f.getParameterTypes().equals(parameterTypes));
-        if (flow != null) {
-            return flow;
-        }
-        if (superClass != null) {
-            return superClass.getFlowByCodeAndParamTypes(code, parameterTypes);
-        }
-        throw new InternalException("Can not find flow '" + code + "(" +
-                NncUtils.join(parameterTypes, Type::getName, ",")
-                + ")' in type '" + getName() + "'");
-    }
-
-    public Flow getFlowByCode(String code) {
-        return getFlow(Property::getCode, code);
-    }
-
-    public Flow getFlowByVerticalTemplate(Flow template) {
-        return getFlow(Flow::getVerticalTemplate, template);
-    }
-
-    public Flow findFlow(Predicate<Flow> predicate) {
-        return NncUtils.find(flows.toList(), predicate);
-    }
-
-    public <T> Flow getFlow(IndexMapper<Flow, T> property, T value) {
-        var flow = flows.get(property, value);
-        if (flow != null) {
-            return flow;
-        }
-        if (superClass != null) {
-            return superClass.getFlow(property, value);
-        }
+        if (method != null)
+            return method;
+        if (superClass != null)
+            return superClass.findMethodByCodeAndParamTypes(code, parameterTypes);
         return null;
     }
 
-    public void removeFlow(Flow flow) {
-        flows.remove(flow);
-        getFlowTable().rebuild();
+    public Method getMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
+        return Objects.requireNonNull(
+                findMethodByCodeAndParamTypes(code, parameterTypes),
+                () -> String.format("Can not find method %s(%s) in type %s",
+                        code, NncUtils.join(parameterTypes, Type::getName, ","), getName())
+        );
     }
 
-    public void addFlow(Flow flow) {
-        if (flows.contains(flow)) {
-            throw new InternalException("Flow '" + flow + "' is already added to the class type");
-        }
-        flows.addChild(flow);
-        getFlowTable().rebuild();
+    public @Nullable Method findMethodByCode(String code) {
+        return getMethod(Method::getCode, code);
+    }
+
+    public @Nullable Method findMethodByVerticalTemplate(Method template) {
+        return getMethod(Method::getVerticalTemplate, template);
+    }
+
+    public Method findMethod(Predicate<Method> predicate) {
+        return NncUtils.find(methods.toList(), predicate);
+    }
+
+    public <T> Method getMethod(IndexMapper<Method, T> property, T value) {
+        var method = methods.get(property, value);
+        if (method != null)
+            return method;
+        if (superClass != null)
+            return superClass.getMethod(property, value);
+        return null;
+    }
+
+    public void removeMethod(Method method) {
+        methods.remove(method);
+        getMethodTable().rebuild();
+    }
+
+    public void addMethod(Method method) {
+        if (methods.contains(method))
+            throw new InternalException("Method '" + method + "' is already added to the class type");
+        methods.addChild(method);
+        getMethodTable().rebuild();
     }
     //</editor-fold>
 
@@ -440,30 +484,23 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public void addField(Field field) {
-        if (field.getId() != null && getField(field.getId()) != null) {
+        if (field.getId() != null && getField(field.getId()) != null)
             throw new RuntimeException("Field " + field.getId() + " is already added");
-        }
-        if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null) {
+        if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
             throw BusinessException.invalidField(field, "字段名称'" + field.getName() + "'已存在");
-        }
         if (field.getCode() != null &&
-                (findFieldByCode(field.getCode()) != null || findStaticFieldByCode(field.getCode()) != null)) {
+                (findFieldByCode(field.getCode()) != null || findStaticFieldByCode(field.getCode()) != null))
             throw BusinessException.invalidField(field, "字段编号" + field.getCode() + "已存在");
-        }
-        if (field.isAsTitle() && getTileField() != null) {
-            throw BusinessException.multipleTitleFields();
-        }
-        if (field.isStatic()) {
+        if (field.isStatic())
             staticFields.addChild(field);
-        } else {
+        else
             fields.addChild(field);
-        }
         resetFieldsMemoryDataStructures();
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
+    public void onLoad(IEntityContext context) {
+        super.onLoad(context);
         stage = ResolutionStage.INIT;
     }
 
@@ -511,11 +548,16 @@ public class ClassType extends Type implements GenericDeclaration {
         return isEnum() || isClass() || isArray();
     }
 
+    public void addMapping(ObjectMapping mapping) {
+        this.mappings.addChild(mapping);
+        if (defaultMapping == null)
+            defaultMapping = mapping;
+    }
+
     public Field findFieldById(long fieldId) {
         Field found = NncUtils.find(fields, f -> f.idEquals(fieldId));
-        if (found != null) {
+        if (found != null)
             return found;
-        }
         if (superClass != null)
             return superClass.findFieldById(fieldId);
         else
@@ -525,6 +567,14 @@ public class ClassType extends Type implements GenericDeclaration {
     public Field getField(long fieldId) {
         return NncUtils.requireNonNull(findFieldById(fieldId),
                 () -> new InternalException(String.format("Field %d not found", fieldId)));
+    }
+
+    public Field getField(RefDTO ref) {
+        return Objects.requireNonNull(fields.get(Entity::getRef, ref));
+    }
+
+    public Method getMethod(RefDTO ref) {
+        return Objects.requireNonNull(methods.get(Entity::getRef, ref));
     }
 
     public Field findField(Predicate<Field> predicate) {
@@ -546,9 +596,8 @@ public class ClassType extends Type implements GenericDeclaration {
     public Field tryGetFieldByName(String fieldName) {
         if (superClass != null) {
             Field superField = superClass.tryGetFieldByName(fieldName);
-            if (superField != null) {
+            if (superField != null)
                 return superField;
-            }
         }
         return fields.get(Field::getName, fieldName);
     }
@@ -560,9 +609,8 @@ public class ClassType extends Type implements GenericDeclaration {
     public Field tryGetStaticFieldByName(String fieldName) {
         if (superClass != null) {
             Field superField = superClass.tryGetStaticFieldByName(fieldName);
-            if (superField != null) {
+            if (superField != null)
                 return superField;
-            }
         }
         return staticFields.get(Field::getName, fieldName);
     }
@@ -572,11 +620,10 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public Field getStaticFieldByVar(Var var) {
-        if (var.isId()) {
+        if (var.isId())
             return getStaticField(var.getId());
-        } else {
+        else
             return tryGetStaticFieldByName(var.getName());
-        }
     }
 
     public void setSource(ClassSource source) {
@@ -584,25 +631,21 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public Field getStaticField(long id) {
-        if (superClass != null && superClass.containsStaticField(id)) {
+        if (superClass != null && superClass.containsStaticField(id))
             return superClass.getStaticField(id);
-        }
         Field field = staticFields.get(Entity::getId, id);
-        if (field != null && field.isReady()) {
+        if (field != null && field.isReady())
             return field;
-        }
         throw new InternalException("Field '" + id + "' does not exist or is not ready");
     }
 
     @Nullable
     public Field findFieldByCode(String code) {
         var field = fields.get(Field::getCode, code);
-        if (field != null) {
+        if (field != null)
             return field;
-        }
-        if (superClass != null) {
+        if (superClass != null)
             return superClass.findFieldByCode(code);
-        }
         return null;
     }
 
@@ -614,7 +657,7 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public Property getProperty(long id) {
-        return NncUtils.requireNonNull(getProperty(Entity::getId, id),
+        return NncUtils.requireNonNull(getProperty(Property::getId, id),
                 "Can not find attribute with id: " + id + " in type " + this);
     }
 
@@ -628,21 +671,18 @@ public class ClassType extends Type implements GenericDeclaration {
 
     private <T> Property getProperty(IndexMapper<Property, T> property, T value) {
         var field = fields.get(property, value);
-        if (field != null) {
+        if (field != null)
             return field;
-        }
-        var flow = flows.get(property, value);
-        if (flow != null) {
-            return flow;
-        }
-        if (superClass != null) {
+        var method = methods.get(property, value);
+        if (method != null)
+            return method;
+        if (superClass != null)
             return superClass.getProperty(property, value);
-        }
         return null;
     }
 
     public List<Property> getProperties() {
-        return NncUtils.concatList(fields.toList(), flows.toList());
+        return NncUtils.concatList(fields.toList(), methods.toList());
     }
 
     public Field getFieldByCode(String code) {
@@ -662,11 +702,11 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     @Nullable
-    public Flow findSelfFlow(String code, List<Type> parameterTypes) {
+    public Method findSelfMethod(String code, List<Type> parameterTypes) {
         return NncUtils.find(
-                flows,
-                flow -> Objects.equals(flow.getCode(), code) &&
-                        flow.getParameterTypes().equals(parameterTypes)
+                methods,
+                method -> Objects.equals(method.getCode(), code) &&
+                        method.getParameterTypes().equals(parameterTypes)
         );
     }
 
@@ -674,9 +714,8 @@ public class ClassType extends Type implements GenericDeclaration {
     public Field findStaticFieldByCode(String code) {
         if (superClass != null) {
             Field superField = superClass.findStaticFieldByCode(code);
-            if (superField != null) {
+            if (superField != null)
                 return superField;
-            }
         }
         return staticFields.get(Field::getCode, code);
     }
@@ -685,16 +724,15 @@ public class ClassType extends Type implements GenericDeclaration {
         return source;
     }
 
-    public boolean isFromReflection() {
+    public boolean isBuiltin() {
         return source == ClassSource.BUILTIN;
     }
 
     public Field getFieldByVar(Var var) {
-        if (var.isId()) {
+        if (var.isId())
             return getField(var.getId());
-        } else {
+        else
             return tryGetFieldByName(var.getName());
-        }
     }
 
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
@@ -713,12 +751,10 @@ public class ClassType extends Type implements GenericDeclaration {
 
     Column allocateColumn(Field field) {
         Type fieldType = field.getType();
-        if (fieldType.isBinaryNullable()) {
+        if (fieldType.isBinaryNullable())
             fieldType = fieldType.getUnderlyingType();
-        }
-        if (fieldType.getSQLType() == null) {
+        if (fieldType.getSQLType() == null)
             return null;
-        }
         return allocateColumn(fieldType, field);
     }
 
@@ -750,11 +786,10 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public void removeField(Field field) {
-        if (field.isStatic()) {
+        if (field.isStatic())
             staticFields.remove(field);
-        } else {
+        else
             fields.remove(field);
-        }
         resetFieldsMemoryDataStructures();
     }
 
@@ -766,15 +801,13 @@ public class ClassType extends Type implements GenericDeclaration {
         if (that instanceof ClassType thatClass) {
             if (template != null) {
                 var s = thatClass.findAncestorType(template);
-                if (s != null) {
+                if (s != null)
                     return NncUtils.biAllMatch(typeArguments, s.typeArguments, Type::contains);
-                } else {
+                else
                     return false;
-                }
             } else {
-                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass())) {
+                if (thatClass.getSuperClass() != null && isAssignableFrom(thatClass.getSuperClass()))
                     return true;
-                }
                 if (isInterface()) {
                     for (ClassType it : thatClass.interfaces) {
                         if (isAssignableFrom(it)) {
@@ -792,14 +825,13 @@ public class ClassType extends Type implements GenericDeclaration {
         return category.isPojo();
     }
 
-
     @Nullable
     public ClassType getSuperClass() {
         return superClass;
     }
 
     public ClassType asSuper(ClassType template) {
-        NncUtils.requireTrue(template.isTemplate);
+        NncUtils.requireTrue(template.isTemplate());
         ClassType sup = accept(new ElementVisitor<>() {
             @Override
             public ClassType visitClassType(ClassType type) {
@@ -841,51 +873,61 @@ public class ClassType extends Type implements GenericDeclaration {
         return getClosure().find(t -> t.templateEquals(targetType));
     }
 
-    @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        if (template == null) {
-            java.lang.reflect.Type javaType = NncUtils.requireNonNull(
-                    getJavaType.apply(this), "Can not get java type for type '" + this + "'");
-            return javaType.getTypeName();
-        } else {
-            java.lang.reflect.Type javaType = NncUtils.requireNonNull(
-                    getJavaType.apply(template), "Can not get java type for type '" + this + "'");
-            return javaType.getTypeName() + "<"
-                    + NncUtils.join(typeArguments, arg -> arg.getKey(getJavaType))
-                    + ">";
-        }
+    public PTypeDTO toGenericElementDTO(SerializeContext serializeContext) {
+        return new PTypeDTO(
+                serializeContext.getRef(this),
+                serializeContext.getRef(Objects.requireNonNull(template)),
+                NncUtils.map(typeArguments, serializeContext::getRef),
+                NncUtils.map(fields, f -> f.toGenericElementDTO(serializeContext)),
+                NncUtils.map(staticFields, f -> f.toGenericElementDTO(serializeContext)),
+                NncUtils.map(methods, f -> f.toGenericElementDTO(serializeContext)),
+                NncUtils.map(mappings, m -> m.toGenericElementDTO(serializeContext))
+        );
+    }
+
+    public TypeDTO toPTypeDTO(SerializeContext serializeContext) {
+        return new TypeDTO(
+                getId(),
+                serializeContext.getTmpId(this),
+                getName(),
+                getCode(),
+                getCategory().code(),
+                isEphemeral(),
+                isAnonymous(),
+                toGenericElementDTO(serializeContext)
+        );
     }
 
     @Override
     protected ClassTypeParam getParam() {
-        try (var context = SerializeContext.enter()) {
-            typeParameters.forEach(context::writeType);
-            typeArguments.forEach(context::writeType);
-            if (superClass != null) {
-                context.writeType(superClass);
-            }
-            interfaces.forEach(context::writeType);
-            if (template != null) {
-                context.writeType(template);
-            }
+        try (var serContext = SerializeContext.enter()) {
+            typeParameters.forEach(serContext::writeType);
+            typeArguments.forEach(serContext::writeType);
+            if (superClass != null)
+                serContext.writeType(superClass);
+            interfaces.forEach(serContext::writeType);
+            if (template != null)
+                serContext.writeType(template);
             var param = new ClassTypeParam(
-                    sourceClassName,
-                    NncUtils.get(superClass, context::getRef),
-                    NncUtils.map(interfaces, context::getRef),
+                    NncUtils.get(superClass, serContext::getRef),
+                    NncUtils.map(interfaces, serContext::getRef),
                     source.code(),
                     NncUtils.map(fields, Field::toDTO),
                     NncUtils.map(staticFields, Field::toDTO),
+                    NncUtils.get(titleField, serContext::getRef),
                     NncUtils.map(constraints, Constraint::toDTO),
-                    NncUtils.map(flows, f -> f.toDTO(context.shouldWriteCode(this))),
+                    NncUtils.map(methods, f -> f.toDTO(serContext.shouldWriteCode(this), serContext)),
+                    NncUtils.map(mappings, m -> m.toDTO(serContext)),
+                    NncUtils.get(defaultMapping, serContext::getRef),
                     desc,
                     getExtra(),
-                    isEnum() ? NncUtils.map(getEnumConstants(), ClassInstance::toDTO) : List.of(),
+                    isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
                     isTemplate(),
-                    NncUtils.map(typeParameters, context::getRef),
+                    NncUtils.map(typeParameters, serContext::getRef),
                     NncUtils.map(typeParameters, Type::toDTO),
-                    NncUtils.get(template, context::getRef),
-                    NncUtils.map(typeArguments, context::getRef),
-                    NncUtils.map(dependencies, context::getRef),
+                    NncUtils.get(template, serContext::getRef),
+                    NncUtils.map(typeArguments, serContext::getRef),
+                    NncUtils.map(dependencies, serContext::getRef),
                     !subTypes.isEmpty(),
                     NncUtils.map(errors, Error::toDTO)
             );
@@ -895,11 +937,6 @@ public class ClassType extends Type implements GenericDeclaration {
 
     protected Object getExtra() {
         return null;
-    }
-
-    @JsonIgnore
-    public Field getTileField() {
-        return find(getAllFields(), Field::isAsTitle);
     }
 
     public <T extends Constraint> List<T> getConstraints(Class<T> constraintType) {
@@ -915,10 +952,6 @@ public class ClassType extends Type implements GenericDeclaration {
             );
         }
         return result;
-    }
-
-    public void setSourceClassName(@Nullable String sourceClassName) {
-        this.sourceClassName = sourceClassName;
     }
 
     public List<Constraint> getConstraints() {
@@ -949,9 +982,8 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public List<ClassInstance> getEnumConstants() {
-        if (!isEnum()) {
+        if (!isEnum())
             throw new InternalException("type " + this + " is not a enum type");
-        }
         return NncUtils.filterAndMap(
                 staticFields,
                 this::isEnumConstantField,
@@ -960,13 +992,11 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public EnumConstantRT getEnumConstant(long id) {
-        if (!isEnum()) {
+        if (!isEnum())
             throw new InternalException("type " + this + " is not a enum type");
-        }
         for (Field field : staticFields) {
-            if (isEnumConstantField(field) && Objects.equals(field.getStaticValue().getId(), id)) {
+            if (isEnumConstantField(field) && Objects.equals(((DurableInstance) field.getStaticValue()).getId(), id))
                 return createEnumConstant((ClassInstance) field.getStaticValue());
-            }
         }
         throw new InternalException("Can not find enum constant with id " + id);
     }
@@ -994,33 +1024,33 @@ public class ClassType extends Type implements GenericDeclaration {
         }
     }
 
-    public Flow resolveFlow(@NotNull Flow flowRef, @NotNull IEntityContext context) {
+    public Method resolveMethod(@NotNull Method methodRef, @NotNull ParameterizedFlowProvider parameterizedFlowProvider) {
         return Objects.requireNonNull(
-                tryResolveFlow(flowRef, context),
-                () -> String.format("Fail to resolve flow %s in type %s", flowRef, this)
+                tryResolveMethod(methodRef, parameterizedFlowProvider),
+                () -> String.format("Fail to resolve method %s in type %s", methodRef, this)
         );
     }
 
-    public @Nullable Flow tryResolveFlow(@NotNull Flow flowRef, @NotNull IEntityContext context) {
-        if (flowRef.getDeclaringType() == this)
-            return flowRef;
-        var hTemplate = flowRef.getHorizontalTemplate();
+    public @Nullable Method tryResolveMethod(@NotNull Method methodRef, @NotNull ParameterizedFlowProvider parameterizedFlowProvider) {
+        if (methodRef.getDeclaringType() == this)
+            return methodRef;
+        var hTemplate = methodRef.getHorizontalTemplate();
         if (hTemplate != null) {
-            var resolvedTemplate = tryResolveNonParameterizedFlow(hTemplate);
+            var resolvedTemplate = tryResolveNonParameterizedMethod(hTemplate);
             if (resolvedTemplate == null)
                 return null;
-            return context.getGenericContext().getParameterizedFlow(resolvedTemplate, flowRef.getTypeArguments());
+            return parameterizedFlowProvider.getParameterizedFlow(resolvedTemplate, methodRef.getTypeArguments());
         } else
-            return tryResolveNonParameterizedFlow(flowRef);
+            return tryResolveNonParameterizedMethod(methodRef);
     }
 
     @Nullable
-    public Flow tryResolveNonParameterizedFlow(Flow flowRef) {
-        NncUtils.requireFalse(flowRef.isParameterized());
-        var flowTable = getFlowTable();
-        if (flowRef.getDeclaringType().isUncertain())
-            flowRef = flowTable.findByVerticalTemplate(Objects.requireNonNull(flowRef.getVerticalTemplate()));
-        return flowTable.findByOverridden(flowRef);
+    public Method tryResolveNonParameterizedMethod(Method methodref) {
+        NncUtils.requireFalse(methodref.isParameterized());
+        var methodTable = getMethodTable();
+        if (methodref.getDeclaringType().isUncertain())
+            methodref = methodTable.findByVerticalTemplate(Objects.requireNonNull(methodref.getVerticalTemplate()));
+        return methodTable.findByOverridden(methodref);
     }
 
     @Override
@@ -1028,25 +1058,16 @@ public class ClassType extends Type implements GenericDeclaration {
         return NncUtils.anyMatch(typeArguments, Type::isUncertain);
     }
 
-    @Override
-    public void validate() {
-        super.validate();
-        rebuildFlowTable();
-        if (!isInterface()) {
-            for (ClassType it : interfaces) {
-                for (Flow flow : it.getFlows()) {
-                    if (tryResolveNonParameterizedFlow(flow) == null) {
-                        throw new BusinessException(ErrorCode.INTERFACE_FLOW_NOT_IMPLEMENTED,
-                                getName(), it.getName(), flow.getName());
-                    }
-                }
-            }
-        }
-    }
-
     @Nullable
     public ClassType getTemplate() {
         return template;
+    }
+
+    @Override
+    public void setTemplate(Object template) {
+        NncUtils.requireNull(this.template);
+        isParameterized = template != null;
+        this.template = (ClassType) template;
     }
 
     public ClassType getEffectiveTemplate() {
@@ -1063,7 +1084,7 @@ public class ClassType extends Type implements GenericDeclaration {
 
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
-        NncUtils.requireTrue(isTemplate(), "Can not add type parameter to a non-template type");
+        isTemplate = true;
         typeParameters.addChild(typeParameter);
         typeArguments.add(typeParameter);
     }
@@ -1097,27 +1118,24 @@ public class ClassType extends Type implements GenericDeclaration {
         return getConstraints(Index.class);
     }
 
-
     @Override
     protected String toString0() {
         return "ClassType " + name + " (id:" + id + ")";
     }
 
-    public void setTypeArguments(List<Type> typeArguments) {
-        NncUtils.requireFalse(isTemplate(), "Can not set type arguments for a template type");
-        this.typeArguments.clear();
-        this.typeArguments.addAll(typeArguments);
+    public void setTypeArguments(List<? extends Type> typeArguments) {
+        if (isTemplate() && !NncUtils.iterableEquals(typeParameters, typeArguments))
+            throw new InternalException("Type arguments must equal to type parameters for a template type");
+        this.typeArguments.reset(typeArguments);
         parameterizedTypeKey = null;
     }
 
     public void setSuperClass(@Nullable ClassType superClass) {
-        if (this.superClass != null) {
+        if (this.superClass != null)
             this.superClass.removeSubType(this);
-        }
         this.superClass = superClass;
-        if (superClass != null) {
+        if (superClass != null)
             superClass.addSubType(this);
-        }
         onSuperTypesChanged();
         superTypes = null;
     }
@@ -1136,7 +1154,7 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     protected void onAncestorChanged0() {
-        getFlowTable().rebuild();
+        getMethodTable().rebuild();
         rank = 0;
     }
 
@@ -1164,10 +1182,30 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public void setTypeParameters(List<TypeVariable> typeParameters) {
-        requireTrue(isTemplate(), "Can not set type parameters for a non-template type");
-        requireTrue(allMatch(typeParameters, typeParam -> typeParam.getGenericDeclaration() == this));
+        this.isTemplate = !typeParameters.isEmpty();
+        typeParameters.forEach(tp -> tp.setGenericDeclaration(this));
         this.typeParameters.resetChildren(typeParameters);
-        this.typeArguments.reset(typeParameters);
+        if (isTemplate())
+            setTypeArguments(typeParameters);
+    }
+
+    public ObjectMapping getMappingInAncestors(RefDTO ref) {
+        var mapping = findMapping(ref);
+        if(mapping != null)
+            return mapping;
+        if(superClass != null) {
+            if((mapping = superClass.getMappingInAncestors(ref)) != null)
+                return mapping;
+        }
+        for (ClassType it : interfaces) {
+            if((mapping = it.getMappingInAncestors(ref)) != null)
+                return mapping;
+        }
+        throw new InternalException("Can not find mapping in the ancestors of type: " + getName());
+    }
+
+    public @Nullable ObjectMapping findMapping(RefDTO ref) {
+        return mappings.get(Entity::getRef, ref);
     }
 
     public void setFields(List<Field> fields) {
@@ -1179,18 +1217,15 @@ public class ClassType extends Type implements GenericDeclaration {
         moveProperty(fields, field, index);
     }
 
-    private <T extends Property> void moveProperty(ChildArray<T> properties, T property, int index) {
-        if (index < 0 || index >= properties.size()) {
+    private <T extends Entity & Property> void moveProperty(ChildArray<T> properties, T property, int index) {
+        if (index < 0 || index >= properties.size())
             throw new BusinessException(ErrorCode.INDEX_OUT_OF_BOUND);
-        }
-        if (!properties.remove(property)) {
+        if (!properties.remove(property))
             throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND, property.getName());
-        }
-        if (index >= properties.size()) {
+        if (index >= properties.size())
             properties.addChild(property);
-        } else {
+        else
             properties.addChild(index, property);
-        }
     }
 
     public void setStaticFields(List<Field> staticFields) {
@@ -1203,16 +1238,16 @@ public class ClassType extends Type implements GenericDeclaration {
         this.constraints.resetChildren(constraints);
     }
 
-    public void setFlows(List<Flow> flows) {
-        requireTrue(allMatch(flows, f -> f.getDeclaringType() == this));
-        this.flows.resetChildren(flows);
+    public void setMethods(List<Method> methods) {
+        requireTrue(allMatch(methods, f -> f.getDeclaringType() == this));
+        this.methods.resetChildren(methods);
     }
 
     @Override
     protected boolean afterContextInitIdsInternal() {
-        if (template != null || isTemplate) {
+        if (template != null || isTemplate()) {
             if (parameterizedTypeKey == null) {
-                parameterizedTypeKey = pTypeKey(getEffectiveTemplate(), typeArguments);
+                parameterizedTypeKey = Types.getParameterizedKey(getEffectiveTemplate(), typeArguments);
             }
         }
         return true;
@@ -1229,20 +1264,14 @@ public class ClassType extends Type implements GenericDeclaration {
                 : new ClassTypeKey(getRef());
     }
 
-    public static String pTypeKey(ClassType template, Iterable<? extends Type> typeArguments) {
-        return encodeBase64(template.getIdRequired()) + "-"
-                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.getIdRequired()), "-");
-    }
-
     @Override
     protected List<?> beforeRemoveInternal(IEntityContext context) {
-        if (superClass != null) {
+        if (superClass != null)
             superClass.removeSubType(this);
-        }
         for (ClassType anInterface : interfaces) {
             anInterface.removeSubType(this);
         }
-        if (isTemplate)
+        if (isTemplate())
             return context.selectByKey(ClassType.TEMPLATE_IDX, this);
         else
             return List.of();
@@ -1255,14 +1284,13 @@ public class ClassType extends Type implements GenericDeclaration {
     }
 
     public ResolutionStage getStage() {
-        if (stage == null) {
+        if (stage == null)
             stage = ResolutionStage.DEFINITION;
-        }
         return stage;
     }
 
-    public void rebuildFlowTable() {
-        getFlowTable().rebuild();
+    public void rebuildMethodTable() {
+        getMethodTable().rebuild();
     }
 
     @Override
@@ -1273,5 +1301,60 @@ public class ClassType extends Type implements GenericDeclaration {
     public ClassType findInClosure(long id) {
         return getClosure().find(t -> Objects.equals(t.getId(), id));
     }
+
+    @Override
+    public void onChange(ClassInstance instance, IEntityContext context) {
+        rebuildMethodTable();
+        if (!isInterface()) {
+            for (ClassType it : interfaces) {
+                for (Method method : it.getMethods()) {
+                    if (tryResolveNonParameterizedMethod(method) == null) {
+                        throw new BusinessException(ErrorCode.INTERFACE_FLOW_NOT_IMPLEMENTED,
+                                getName(), it.getName(), method.getName());
+                    }
+                }
+            }
+        }
+        saveMapping(context);
+    }
+
+    public void saveMapping(IEntityContext context) {
+        if (!(context instanceof DefContext) && shouldGenerateBuiltinMapping())
+            MappingSaver.create(context).saveBuiltinMapping(this, true);
+    }
+
+    public boolean shouldGenerateBuiltinMapping() {
+        return isClass() && !isAnonymous();
+    }
+
+    public void setDefaultMapping(@Nullable ObjectMapping mapping) {
+        this.defaultMapping = mapping;
+    }
+
+    @Nullable
+    public Field getTitleField() {
+        return titleField;
+    }
+
+    public void setMappings(List<ObjectMapping> mappings) {
+        this.mappings.resetChildren(mappings);
+    }
+
+    public @Nullable ObjectMapping getDefaultMapping() {
+        return defaultMapping;
+    }
+
+    public List<Field> getStaticFields() {
+        return staticFields.toList();
+    }
+
+    public ObjectMapping findMappingByTemplate(ObjectMapping mapping) {
+        return mappings.get(ObjectMapping::getTemplate, mapping);
+    }
+
+    public void removeMapping(ObjectMapping mapping) {
+        mappings.remove(mapping);
+    }
+
 }
 

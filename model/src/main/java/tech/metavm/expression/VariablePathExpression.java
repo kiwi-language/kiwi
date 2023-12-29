@@ -51,11 +51,6 @@ public class VariablePathExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new VariablePathExpression(children.get(0), (VariableExpression) children.get(1));
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
         throw new UnsupportedOperationException();
     }

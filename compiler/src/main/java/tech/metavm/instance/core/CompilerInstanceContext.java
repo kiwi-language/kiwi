@@ -1,36 +1,41 @@
 package tech.metavm.instance.core;
 
-import org.jetbrains.annotations.Nullable;
-import tech.metavm.entity.*;
+import tech.metavm.entity.DefContext;
+import tech.metavm.entity.EntityIdProvider;
+import tech.metavm.entity.VersionSource;
 import tech.metavm.event.EventQueue;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.BufferingInstanceContext;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.view.MappingProvider;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class CompilerInstanceContext extends BufferingInstanceContext {
-
-    private IEntityContext entityContext;
 
     public CompilerInstanceContext(long appId,
                                    List<TreeSource> treeSources,
                                    VersionSource versionSource,
                                    EntityIdProvider idService,
                                    IndexSource indexSource,
-                                   DefContext defContext, IInstanceContext parent, boolean readonly) {
+                                   DefContext defContext,
+                                   IInstanceContext parent,
+                                   TypeProvider typeProvider,
+                                   MappingProvider mappingProvider,
+                                   ParameterizedFlowProvider parameterizedFlowProvider,
+                                   boolean readonly) {
         super(appId,
                 treeSources, versionSource,
-                idService,
-                indexSource,
-                defContext,
-                parent, readonly);
-        entityContext = new CompilerEntityContext(this,
-                NncUtils.get(parent, IInstanceContext::getEntityContext), defContext);
+                indexSource, idService,
+                parent,
+                typeProvider,
+                mappingProvider, parameterizedFlowProvider, readonly);
     }
 
     @Override
@@ -39,12 +44,12 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public List<Instance> getByType(Type type, Instance startExclusive, long limit) {
+    public List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit) {
         return null;
     }
 
     @Override
-    public List<Instance> scan(Instance startExclusive, long limit) {
+    public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
         return null;
     }
 
@@ -54,12 +59,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public IEntityContext getEntityContext() {
-        return entityContext;
-    }
-
-    @Override
-    public List<Instance> getByReferenceTargetId(long targetId, Instance startExclusive, long limit) {
+    public List<DurableInstance> getByReferenceTargetId(long targetId, DurableInstance startExclusive, long limit) {
         return null;
     }
 
@@ -78,18 +78,10 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Type getType(long id) {
-        return entityContext.getType(id);
-    }
-
     @Nullable
     @Override
     public EventQueue getEventQueue() {
         return null;
     }
 
-    public void setEntityContext(IEntityContext entityContext) {
-        this.entityContext = entityContext;
-    }
 }

@@ -17,8 +17,8 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
     public static  <T> Table<T> createProxy(Class<? extends Table<T>> proxyClass, Type elementType) {
-        return ReflectUtils.invokeConstructor(
-                ReflectUtils.getConstructor(proxyClass, Type.class),
+        return ReflectionUtils.invokeConstructor(
+                ReflectionUtils.getConstructor(proxyClass, Type.class),
                 elementType
         );
     }
@@ -69,7 +69,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         this.genericType = new ParameterizedTypeImpl(
                 null,
                 getRawClass(),
-                new Type[]{ReflectUtils.eraseType(elementType)}
+                new Type[]{ReflectionUtils.eraseType(elementType)}
         );
         this.buildIndexThreshold = buildIndexThreshold;
         addAll(data);
@@ -259,8 +259,8 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     ) {
 
         public static <T> IndexDesc<T> create(IndexMapper<? super T, ?> mapper) {
-            Method writeReplaceMethod = ReflectUtils.getMethodByName(mapper.getClass(), "writeReplace");
-            SerializedLambda serializedLambda = (SerializedLambda) ReflectUtils.invoke(mapper, writeReplaceMethod);
+            Method writeReplaceMethod = ReflectionUtils.getMethodByName(mapper.getClass(), "writeReplace");
+            SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils.invoke(mapper, writeReplaceMethod);
             List<Object> capturedArgs = new ArrayList<>();
             for (int i = 0; i < serializedLambda.getCapturedArgCount(); i++) {
                 capturedArgs.add(serializedLambda.getCapturedArg(i));

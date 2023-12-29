@@ -2,8 +2,9 @@ package tech.metavm.object.instance.log;
 
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.event.rest.dto.TypeChangeEvent;
 import tech.metavm.event.EventQueue;
+import tech.metavm.event.rest.dto.FunctionChangeEvent;
+import tech.metavm.event.rest.dto.TypeChangeEvent;
 import tech.metavm.object.version.Version;
 
 import javax.annotation.Nullable;
@@ -28,17 +29,27 @@ public class VersionHandler implements LogHandler<Version> {
 
     @Override
     public void process(List<Version> created, @Nullable String clientId, IEntityContext context) {
-        if(!created.isEmpty()) {
+        if (!created.isEmpty()) {
             long maxVersion = 0L;
             Set<Long> typeIds = new HashSet<>();
+            Set<Long> functionIds = new HashSet<>();
             for (Version version : created) {
                 maxVersion = Math.max(maxVersion, version.getVersion());
                 typeIds.addAll(version.getRemovedTypeIds());
-                typeIds.addAll(version.getChangeTypeIds());
+                typeIds.addAll(version.getChangedTypeIds());
+                functionIds.addAll(version.getChangedFunctionIds());
+                functionIds.addAll(version.getRemovedFunctionIds());
             }
-            eventQueue.publishAppEvent(
-                    new TypeChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(typeIds), clientId)
-            );
+            if (!typeIds.isEmpty()) {
+                eventQueue.publishAppEvent(
+                        new TypeChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(typeIds), clientId)
+                );
+            }
+            if (!functionIds.isEmpty()) {
+                eventQueue.publishAppEvent(
+                        new FunctionChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(functionIds), clientId)
+                );
+            }
         }
     }
 }

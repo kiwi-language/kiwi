@@ -4,61 +4,52 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.mocks.Foo;
+import tech.metavm.flow.MethodBuilder;
+import tech.metavm.flow.Parameter;
 import tech.metavm.object.type.*;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class IdentityContextTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(IdentityContextTest.class);
 
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        MockStandardTypesInitializer.init();
+    }
+
     public void test() {
-
-        Map<Type, java.lang.reflect.Type>  type2javaType = new HashMap<>();
-
-        IdentityContext context = new IdentityContext( t-> true, type2javaType::get);
-
-        PrimitiveType stringType = new PrimitiveType(PrimitiveKind.STRING);
-        ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
-        type2javaType.put(stringType, String.class);
-        type2javaType.put(fooType, Foo.class);
-
-        Field fooNameField = FieldBuilder.newBuilder(
-                EntityUtils.getMetaFieldName(Foo.class, "name"),
-                null, fooType, stringType)
+        IdentityContext identityContext = new IdentityContext();
+        var fooType = ClassBuilder.newBuilder("Foo", "tech.metavm.Foo")
+                .source(ClassSource.BUILTIN)
                 .build();
-        Index uniqueConstraint =
-                new Index(fooType,
-                        "名称唯一", null,
-                        "name must be unique",
-                        Foo.IDX_NAME.isUnique(), List.of(fooNameField));
-        uniqueConstraint.setIndexDef(Foo.IDX_NAME);
 
-        context.getIdentityMap(fooType);
+         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
+                 .build();
 
-        Map<Object, ModelIdentity> model2modelId = context.getIdentityMap();
+        var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
+        var method = MethodBuilder.newBuilder(fooType, "bar", "bar", null)
+                .returnType(StandardTypes.getVoidType())
+                .typeParameters(List.of(typeVar))
+                .parameters(new Parameter(null, "t", "t", typeVar))
+                .type(new FunctionType(null, List.of(typeVar), StandardTypes.getVoidType()))
+                .staticType(new FunctionType(null, List.of(fooType, typeVar), StandardTypes.getVoidType()))
+                .build();
 
-        context.getIdentityMap().forEach((model, modelId) -> LOGGER.info(model + " -> " + modelId));
+        var identities = identityContext.getIdentityMap(method);
 
-        List<Identifiable> models = NncUtils.filterByType(
-                EntityUtils.getReachableObjects(List.of(fooType), o -> true, true),
-                Identifiable.class
-        );
-
-        for (Identifiable model : models) {
-            ModelIdentity modelId = model2modelId.get(model);
-            Assert.assertNotNull("ModelId is not found for model '" + model + "'", modelId);
-            Assert.assertEquals(ReflectUtils.getType(model), modelId.type());
-        }
-
-        Set<String> modelIdCodes = NncUtils.mapUnique(model2modelId.values(), ModelIdentity::name);
-        Assert.assertEquals(model2modelId.size(), modelIdCodes.size());
+        Assert.assertTrue(identities.containsKey(fooType));
+        Assert.assertTrue(identities.containsKey(fooNameField));
+        Assert.assertTrue(identities.containsKey(fooNameField.getType()));
+        Assert.assertTrue(identities.containsKey(method));
+        Assert.assertTrue(identities.containsKey(method.getParameters().get(0)));
+        Assert.assertTrue(identities.containsKey(method.getParameters().get(0).getType()));
+        Assert.assertTrue(identities.containsKey(method.getType()));
+        Assert.assertTrue(identities.containsKey(method.getRootScope()));
+        Assert.assertTrue(identities.containsKey(method.getStaticType()));
+        Assert.assertTrue(identities.containsKey(method.getReturnType()));
     }
 
 }

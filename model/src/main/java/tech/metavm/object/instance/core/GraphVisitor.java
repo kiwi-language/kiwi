@@ -2,31 +2,33 @@ package tech.metavm.object.instance.core;
 
 import tech.metavm.util.IdentitySet;
 
-public abstract class GraphVisitor extends InstanceVisitor {
+public abstract class GraphVisitor extends VoidInstanceVisitor {
 
     private final IdentitySet<Instance> visited = new IdentitySet<>();
     public int numCalls;
 
-    private final InstanceVisitor noRepeatVisitor = new InstanceVisitor() {
+    private final VoidInstanceVisitor noRepeatVisitor = new VoidInstanceVisitor() {
         @Override
-        public void visitInstance(Instance instance) {
+        public Void visitInstance(Instance instance) {
             numCalls++;
             if(!visited.contains(instance))
                 instance.accept(GraphVisitor.this);
+            return null;
         }
     };
 
-    public final void visit(Instance instance) {
+    public final Void visit(Instance instance) {
         instance.accept(noRepeatVisitor);
+        return null;
     }
 
     @Override
-    public void visitInstance(Instance instance) {
+    public Void visitInstance(Instance instance) {
         numCalls++;
         if(!visited.add(instance))
-            return;
+            return null;
         instance.acceptReferences(noRepeatVisitor);
-        super.visitInstance(instance);
+        return super.visitInstance(instance);
     }
 
 }

@@ -6,10 +6,10 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.expression.Expression;
-import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.Constants;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 
@@ -29,12 +29,12 @@ public class SearchBuilderTest extends TestCase {
         ClassInstance foo = MockRegistry.getFooInstance();
         ClassInstance qux = foo.getClassInstance(fooQuxField);
 
-        Expression condition = ExpressionUtil.and(
-                ExpressionUtil.fieldStartsWith(
+        Expression condition = Expressions.and(
+                Expressions.fieldStartsWith(
                         MockRegistry.getField(Foo.class, "name"),
-                        InstanceUtils.stringInstance("Big")
+                        Instances.stringInstance("Big")
                 ),
-                ExpressionUtil.fieldEq(fooQuxField, qux)
+                Expressions.fieldEq(fooQuxField, qux)
         );
 
         SearchQuery query = new SearchQuery(

@@ -6,7 +6,7 @@ import tech.metavm.object.type.PrimitiveKind;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceOutput;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.WireTypes;
 
 public class LongInstance extends NumberInstance {
@@ -85,19 +85,19 @@ public class LongInstance extends NumberInstance {
     }
 
     public BooleanInstance gt(LongInstance that) {
-        return InstanceUtils.createBoolean(value > that.value);
+        return Instances.createBoolean(value > that.value);
     }
 
     public BooleanInstance ge(LongInstance that) {
-        return InstanceUtils.createBoolean(value >= that.value);
+        return Instances.createBoolean(value >= that.value);
     }
 
     public BooleanInstance lt(LongInstance that) {
-        return InstanceUtils.createBoolean(value < that.value);
+        return Instances.createBoolean(value < that.value);
     }
 
     public BooleanInstance le(LongInstance that) {
-        return InstanceUtils.createBoolean(value <= that.value);
+        return Instances.createBoolean(value <= that.value);
     }
 
     @Override
@@ -111,8 +111,8 @@ public class LongInstance extends NumberInstance {
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitLongInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitLongInstance(this);
     }
 
     @Override
@@ -122,55 +122,82 @@ public class LongInstance extends NumberInstance {
 
     @Override
     public NumberInstance add(NumberInstance that) {
-        return that.add(this);
+        if (that instanceof LongInstance thatLong)
+            return add(thatLong);
+        else
+            return that.add(this);
     }
 
     @Override
     public NumberInstance minus(NumberInstance that) {
-        return that.minus(this);
+        if (that instanceof LongInstance thatLong)
+            return minus(thatLong);
+        else
+            return that.minus(this);
     }
 
     @Override
     public NumberInstance mul(NumberInstance that) {
-        return that.mul(this);
+        if (that instanceof LongInstance thatLong)
+            return mul(thatLong);
+        else
+            return that.mul(this);
     }
 
     @Override
     public NumberInstance div(NumberInstance that) {
-        return that.div(this);
+        if (that instanceof LongInstance thatLong)
+            return div(thatLong);
+        else
+            return that.div(this);
     }
 
     @Override
     public NumberInstance mod(NumberInstance that) {
-        return that.mod(this);
+        if (that instanceof LongInstance thatLong)
+            return mod(thatLong);
+        else
+            return that.mod(this);
     }
 
     @Override
     public BooleanInstance lt(NumberInstance that) {
-        return that.lt(this);
+        if (that instanceof LongInstance thatLong)
+            return lt(thatLong);
+        else
+            return that.lt(this);
     }
 
     @Override
     public BooleanInstance le(NumberInstance that) {
-        return that.le(this);
+        if (that instanceof LongInstance thatLong)
+            return le(thatLong);
+        else
+            return that.le(this);
     }
 
     @Override
     public BooleanInstance gt(NumberInstance that) {
-        return that.gt(this);
+        if (that instanceof LongInstance thatLong)
+            return gt(thatLong);
+        else
+            return that.gt(this);
     }
 
     @Override
     public BooleanInstance ge(NumberInstance that) {
-        return that.ge(this);
+        if (that instanceof LongInstance thatLong)
+            return ge(thatLong);
+        else
+            return that.ge(this);
     }
 
     @Override
     public int compareTo(@NotNull NumberInstance o) {
         return switch (o) {
             case LongInstance l -> Long.compare(value, l.value);
-            default -> Double.compare(value, o.doubleValue());
+            default -> o.compareTo(this);
         };
     }
-    
+
 }

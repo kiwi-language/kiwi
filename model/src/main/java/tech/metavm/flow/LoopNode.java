@@ -1,8 +1,8 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.*;
+import tech.metavm.expression.Expressions;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.LoopFieldDTO;
@@ -12,11 +12,16 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
+import tech.metavm.util.NncUtils;
 
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @EntityType("循环节点")
-public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
+public abstract class LoopNode extends ScopeNode {
 
     @ChildEntity("字段列表")
     private final ChildArray<LoopField> fields = addChild(new ChildArray<>(LoopField.class), "fields");
@@ -25,53 +30,39 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
     @ChildEntity("节点类型")
     private final ClassType nodeType;
 
-    protected LoopNode(Long tmpId, String name, @NotNull ClassType outputType, NodeRT<?> previous,
+    protected LoopNode(Long tmpId, String name, @Nullable String code, @NotNull ClassType outputType, NodeRT previous,
                        @NotNull ScopeRT scope, @NotNull Value condition) {
-        super(tmpId, name, null, previous, scope, true);
+        super(tmpId, name, code, null, previous, scope, true);
         this.nodeType = addChild(outputType, "nodeType");
         this.condition = addChild(condition, "condition");
     }
 
-    @Override
-    protected T getParam(boolean persisting) {
-        return null;
-    }
-
-    protected void setLoopParam(LoopParamDTO param, IEntityContext context) {
-        if (param.getFields() != null) {
-            updateFields(param.getFields(), context);
-        }
+    public void setLoopParam(LoopParamDTO param, IEntityContext context) {
         var parsingContext = getParsingContext(context);
-        if (param.getCondition() != null) {
-            setCondition(ValueFactory.create(param.getCondition(), parsingContext));
-        }
-    }
-
-    public void updateFields(List<LoopFieldDTO> loopFieldDTOs, IEntityContext context) {
-        var parsingContext = getParsingContext(context);
-        Set<Field> fields = new HashSet<>();
-        for (LoopFieldDTO loopFieldDTO : loopFieldDTOs) {
+        List<LoopField> fields = new ArrayList<>();
+        for (LoopFieldDTO loopFieldDTO : param.getFields()) {
             var field = context.getField(loopFieldDTO.fieldRef());
-            fields.add(field);
             var loopField = this.fields.get(LoopField::getField, field);
             if (loopField == null) {
-                this.fields.addChild(new LoopField(
+                fields.add(new LoopField(
                         field,
                         ValueFactory.create(loopFieldDTO.initialValue(), parsingContext),
                         ValueFactory.create(loopFieldDTO.updatedValue(), parsingContext)
                 ));
             } else {
-                loopField.update(loopFieldDTO, context, parsingContext);
+                fields.add(loopField);
+                loopField.update(loopFieldDTO, parsingContext);
             }
         }
-        this.fields.removeIf(loopField -> !fields.contains(loopField.getField()));
+        this.fields.resetChildren(fields);
+        var condition = param.getCondition() != null ? ValueFactory.create(param.getCondition(), parsingContext)
+                : Values.expression(Expressions.trueExpression());
+        setCondition(condition);
     }
 
     @Override
     public ParsingContext getParsingContext(IEntityContext entityContext) {
-        return FlowParsingContext.create(
-                bodyScope, bodyScope.getLastNode(), entityContext.getInstanceContext()
-        );
+        return FlowParsingContext.create(bodyScope, bodyScope.getLastNode(), entityContext);
     }
 
     public ReadonlyArray<LoopField> getFields() {
@@ -113,7 +104,7 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         for (LoopField field : fields) {
             fieldValues.put(field.getField(), field.getInitialValue().evaluate(frame));
         }
-        return new ClassInstance(fieldValues, getType());
+        return ClassInstance.create(fieldValues, getType());
     }
 
     private void updateLoopObject(ClassInstance loopObject, MetaFrame frame) {
@@ -148,4 +139,10 @@ public abstract class LoopNode<T extends LoopParamDTO> extends ScopeNode<T> {
         return nodeType;
     }
 
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("while (" + condition.getText() + ")");
+        bodyScope.writeCode(writer);
+        writer.writeNewLine("{" + NncUtils.join(fields, LoopField::getText, ", ") + "}");
+    }
 }

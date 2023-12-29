@@ -1,18 +1,18 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.rest.MergeFieldDTO;
 import tech.metavm.object.type.Field;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.entity.ReadonlyArray;
 
 import javax.annotation.Nullable;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 
 @EntityType("合并节点字段")
-public class MergeNodeField extends Entity {
+public class MergeNodeField extends Entity implements LocalKey {
 
     @EntityField("字段")
     private final Field field;
@@ -26,7 +26,7 @@ public class MergeNodeField extends Entity {
     public MergeNodeField(Field field, MergeNode mergeNode, @Nullable Map<Branch, Value> values) {
         this.field = field;
         mergeNode.addField(this);
-        if(values != null) {
+        if (values != null) {
             setValues(values);
         }
     }
@@ -56,16 +56,30 @@ public class MergeNodeField extends Entity {
         return values;
     }
 
-    public MergeFieldDTO toDTO(boolean persisting) {
-        try(var context = SerializeContext.enter()) {
+    public MergeFieldDTO toDTO() {
+        try (var serContext = SerializeContext.enter()) {
             return new MergeFieldDTO(
                     field.getName(),
-                    context.getRef(field),
-                    context.getRef(field.getType()),
+                    serContext.getRef(field),
+                    serContext.getRef(field.getType()),
                     NncUtils.sortAndMap(values,
                             Comparator.comparingLong(value -> value.getBranch().getIndex()),
-                            v -> v.toDTO(persisting))
+                            ConditionalValue::toDTO)
             );
         }
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return field.getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(field.getCode());
+    }
+
+    public String getText() {
+        return field.getName() + ": {" + NncUtils.join(values, ConditionalValue::getText, ",") + "}";
     }
 }

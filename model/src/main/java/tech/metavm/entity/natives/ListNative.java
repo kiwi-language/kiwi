@@ -8,7 +8,7 @@ import tech.metavm.object.type.Field;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 public class ListNative extends NativeBase {
@@ -46,8 +46,8 @@ public class ListNative extends NativeBase {
 
     public ClassInstance iterator() {
         var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
-        var it = new ClassInstance(iteratorImplType);
-        var itNative = (IteratorImplNative) NativeInvoker.getNativeObject(it);
+        var it = ClassInstance.allocate(iteratorImplType);
+        var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance);
         return it;
     }
@@ -57,19 +57,19 @@ public class ListNative extends NativeBase {
     }
 
     public Instance set(Instance index, Instance value) {
-        return array.set(getInt(index), value);
+        return array.setElement(getInt(index), value);
     }
 
     public BooleanInstance remove(Instance instance) {
-        return InstanceUtils.booleanInstance(array.remove(instance));
+        return Instances.booleanInstance(array.removeElement(instance));
     }
 
     public Instance removeAt(Instance index) {
-        return array.remove(getInt(index));
+        return array.removeElement(getInt(index));
     }
 
     public Instance contains(Instance value) {
-        return InstanceUtils.booleanInstance(array.contains(value));
+        return Instances.booleanInstance(array.contains(value));
     }
 
     public void clear() {
@@ -77,15 +77,15 @@ public class ListNative extends NativeBase {
     }
 
     public void add(Instance instance) {
-        array.add(instance);
+        array.addElement(instance);
     }
 
     public Instance isEmpty() {
-        return InstanceUtils.booleanInstance(array.isEmpty());
+        return Instances.booleanInstance(array.isEmpty());
     }
 
     public LongInstance size() {
-        return InstanceUtils.longInstance(array.size());
+        return Instances.longInstance(array.size());
     }
 
 

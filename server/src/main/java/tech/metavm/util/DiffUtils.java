@@ -212,22 +212,22 @@ public class DiffUtils {
     }
 
     public static Object copyPojo(Object object, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
-        Object copy = ReflectUtils.allocateInstance(object.getClass());
+        Object copy = ReflectionUtils.allocateInstance(object.getClass());
         copyMap.put(object, copy);
         copyPojo(object, copy, copyMap, ignoreTransient);
         return copy;
     }
 
     public static void copyPojo(Object src, Object target, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
-        List<Field> fields = ReflectUtils.getInstanceFields(src.getClass());
+        List<Field> fields = ReflectionUtils.getInstanceFields(src.getClass());
         for (Field field : fields) {
             if (ignoreTransient && Modifier.isTransient(field.getModifiers())) {
                 continue;
             }
-            ReflectUtils.set(
+            ReflectionUtils.set(
                     target,
                     field,
-                    copy(ReflectUtils.get(src, field), copyMap)
+                    copy(ReflectionUtils.get(src, field), copyMap)
             );
         }
     }

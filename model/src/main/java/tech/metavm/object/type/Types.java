@@ -1,24 +1,25 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.*;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.type.generic.TypeArgumentMap;
 import tech.metavm.object.type.rest.dto.FieldDTO;
+import tech.metavm.object.type.rest.dto.PTypeDTO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
-import tech.metavm.util.*;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.function.Function;
+
+import static tech.metavm.util.NncUtils.encodeBase64;
 
 public class Types {
 
@@ -33,15 +34,15 @@ public class Types {
                                           Function<Type, java.lang.reflect.Type> getJavaType) {
         return switch (genericDeclaration) {
             case ClassType classType -> getCanonicalName(classType, getJavaType);
-            case Flow flow -> getFlowCanonicalName(flow, getJavaType);
+            case Method method -> getCanonicalMethodName(method, getJavaType);
             default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
         };
     }
 
-    public static String getFlowCanonicalName(Flow flow, Function<Type, java.lang.reflect.Type> getJavaType) {
-        return getCanonicalName(flow.getDeclaringType(), getJavaType) + "-" + flow.getName()
+    public static String getCanonicalMethodName(Method method, Function<Type, java.lang.reflect.Type> getJavaType) {
+        return getCanonicalName(method.getDeclaringType(), getJavaType) + "-" + method.getName()
                 + "("
-                + NncUtils.map(flow.getParameters(), param -> getCanonicalName(param.getType(), getJavaType))
+                + NncUtils.map(method.getParameters(), param -> getCanonicalName(param.getType(), getJavaType))
                 + ")";
     }
 
@@ -130,11 +131,11 @@ public class Types {
         return switch (type1) {
             case ClassType classType -> NncUtils.orElse(
                     classType.getClosure().find(anc -> anc.isAssignableFrom(type2)),
-                    StandardTypes.getObjectType(type2.isNullable()));
+                    StandardTypes.getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
                     getLowestType(NncUtils.map(intersectionType.getTypes(), t -> getLeastUpperBound(t, type2)));
-            default -> StandardTypes.getObjectType(type1.isNullable() || type2.isNullable());
+            default -> StandardTypes.getAnyType(type1.isNullable() || type2.isNullable());
         };
     }
 
@@ -156,46 +157,43 @@ public class Types {
                 .ephemeral(true)
                 .build();
         var sam = getSAM(functionalInterface);
-        var funcType = functionTypeContext.get(sam.getParameterTypes(), sam.getReturnType());
+        var funcType = functionTypeContext.getFunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
 
-        var flow = FlowBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeContext)
-                .overriden(List.of(sam))
+        var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeContext)
+                .overridden(List.of(sam))
                 .build();
 
-        var selfNode = new SelfNode(null, "当前对象", SelfNode.getSelfType(flow, context), null, flow.getRootScope());
+        var selfNode = new SelfNode(null, "当前对象", null, SelfNode.getSelfType(flow, context), null, flow.getRootScope());
         var inputType = ClassBuilder.newBuilder("流程输入", "InputType").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
                     .build();
         }
 
-        var inputNode = new InputNode(null, "输入", inputType, selfNode, flow.getRootScope());
-        var funcNode = new FunctionNode(null, "函数", inputNode, flow.getRootScope(),
-                Value.expression(new PropertyExpression(new NodeExpression(selfNode), funcField)),
+        var inputNode = new InputNode(null, "输入", null, inputType, selfNode, flow.getRootScope());
+        var funcNode = new FunctionNode(null, "函数", null, inputNode, flow.getRootScope(),
+                Values.expression(new PropertyExpression(new NodeExpression(selfNode), funcField)),
                 NncUtils.map(inputType.getReadyFields(),
                         inputField ->
-                                Value.expression(new PropertyExpression(new NodeExpression(inputNode), inputField))
+                                Values.expression(new PropertyExpression(new NodeExpression(inputNode), inputField))
                 )
         );
-        var returnNode = new ReturnNode(null, "结束", funcNode, flow.getRootScope());
-        if (!returnNode.getType().isVoid()) {
-            returnNode.setValue(Value.expression(new NodeExpression(funcNode)));
-        }
+        var returnValue = flow.getReturnType().isVoid() ? null : Values.expression(new NodeExpression(funcNode));
+        new ReturnNode(null, "结束", null, funcNode, flow.getRootScope(), returnValue);
         return klass;
     }
 
-    public static Flow getSAM(ClassType functionalInterface) {
+    public static Method getSAM(ClassType functionalInterface) {
         var abstractFlows = NncUtils.filter(
-                functionalInterface.getFlows(),
-                Flow::isAbstract
+                functionalInterface.getMethods(),
+                Method::isAbstract
         );
         if (abstractFlows.size() != 1) {
             throw new InternalException(functionalInterface + " is not a functional interface");
         }
         return abstractFlows.get(0);
     }
-
 
     public static boolean isArray(Type type) {
         return type.isArray();
@@ -210,7 +208,9 @@ public class Types {
 
     public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
         var category = TypeCategory.getByCode(typeDTO.category());
-        if (category.isPojo()) {
+        if (typeDTO.param() instanceof PTypeDTO pTypeDTO) {
+            return TYPE_FACTORY.saveParameterized(pTypeDTO, stage, batch);
+        } else if (category.isPojo()) {
             return TYPE_FACTORY.saveClassType(typeDTO, stage, batch);
         } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
             return TYPE_FACTORY.saveTypeVariable(typeDTO, stage, batch);
@@ -232,7 +232,11 @@ public class Types {
     }
 
     public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveFlow(flowDTO, ResolutionStage.DEFINITION, batch);
+        return TYPE_FACTORY.saveMethod(flowDTO, ResolutionStage.DEFINITION, batch);
+    }
+
+    public static tech.metavm.flow.Function saveFunction(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
+        return TYPE_FACTORY.saveFunction(flowDTO, stage, batch);
     }
 
     public static Field createFieldAndBind(ClassType type, FieldDTO fieldDTO, IEntityContext context) {
@@ -244,12 +248,17 @@ public class Types {
         return NncUtils.findRequired(type.getMembers(), t -> !t.equals(StandardTypes.getNullType()));
     }
 
+    public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
+        return encodeBase64(template.getIdRequired()) + "-"
+                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.getIdRequired()), "-");
+    }
+
     public static boolean isNullable(Type type) {
         return TYPE_FACTORY.isNullable(type);
     }
 
     public static boolean isObject(Type type) {
-        return type == StandardTypes.getObjectType();
+        return type == StandardTypes.getAnyType();
     }
 
     public static boolean isBool(Type type) {
@@ -359,10 +368,9 @@ public class Types {
 
     public static String renameAnonymousType(String name) {
         int index = name.indexOf('_');
-        if(index >= 0) {
+        if (index >= 0) {
             return name.substring(0, index + 1) + NncUtils.randomNonNegative();
-        }
-        else {
+        } else {
             return name + "_" + NncUtils.randomNonNegative();
         }
     }
@@ -372,7 +380,7 @@ public class Types {
     }
 
     public static String getParameterizedCode(String templateCode, List<Type> typeArguments) {
-        if(templateCode == null)
+        if (templateCode == null)
             return null;
         if (typeArguments.isEmpty())
             return templateCode;
@@ -410,9 +418,9 @@ public class Types {
         return switch (javaType) {
             case Class<?> klass -> {
                 if (klass.isPrimitive()) {
-                    klass = ReflectUtils.getBoxedClass(klass);
+                    klass = ReflectionUtils.getBoxedClass(klass);
                 }
-                if (ReflectUtils.isBoxingClass(klass)) {
+                if (ReflectionUtils.isBoxingClass(klass)) {
                     yield PrimitiveKind.getByJavaClass(klass).getName();
                 } else if (klass.isArray()) {
                     yield getTypeName(klass.getComponentType()) + "[]";
@@ -432,27 +440,19 @@ public class Types {
     public static String getTypeCode(java.lang.reflect.Type javaType) {
         return switch (javaType) {
             case Class<?> klass -> {
-                if (klass.isPrimitive()) {
-                    klass = ReflectUtils.getBoxedClass(klass);
-                }
-                if (ReflectUtils.isBoxingClass(klass)) {
-                    yield ReflectUtils.getBoxedClass(klass).getSimpleName();
-                } else if (klass.isArray()) {
-                    yield getTypeCode(klass.getComponentType()) + "[]";
-                } else {
-                    yield klass.getSimpleName();
-                }
+                klass = ReflectionUtils.getBoxedClass(klass);
+                yield klass.isArray() ? getTypeCode(klass.getComponentType()) + "[]" : klass.getName();
             }
             case GenericArrayType genericArrayType -> getTypeCode(genericArrayType.getGenericComponentType()) + "[]";
             case ParameterizedType pType -> parameterizedName(getTypeCode(pType.getRawType()),
                     NncUtils.map(pType.getActualTypeArguments(), Types::getTypeCode));
             case java.lang.reflect.TypeVariable<?> typeVar ->
-                    getGenericDeclarationCode(typeVar.getGenericDeclaration()) + "-" + typeVar.getName();
+                    getGenericDeclarationCode(typeVar.getGenericDeclaration()) + "." + typeVar.getName();
             default -> throw new IllegalStateException("Unexpected value: " + javaType);
         };
     }
 
-    public static String getFlowCode(Method method) {
+    public static String getFlowCode(java.lang.reflect.Method method) {
         return getTypeCode(method.getDeclaringClass()) + "." +
                 method.getName() + "(" + NncUtils.map(method.getGenericParameterTypes(),
                 Types::getTypeCode) + ")";
@@ -461,7 +461,7 @@ public class Types {
     public static String getGenericDeclarationName(GenericDeclaration genericDeclaration) {
         return switch (genericDeclaration) {
             case Class<?> klass -> getTypeName(klass);
-            case Method method -> EntityUtils.getMetaFlowName(method);
+            case java.lang.reflect.Method method -> EntityUtils.getMetaFlowName(method);
             default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
         };
     }
@@ -469,7 +469,7 @@ public class Types {
     public static String getGenericDeclarationCode(GenericDeclaration genericDeclaration) {
         return switch (genericDeclaration) {
             case Class<?> klass -> getTypeCode(klass);
-            case Method method -> getFlowCode(method);
+            case java.lang.reflect.Method method -> getFlowCode(method);
             default -> throw new IllegalStateException("Unexpected value: " + genericDeclaration);
         };
     }

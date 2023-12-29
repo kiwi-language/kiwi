@@ -23,38 +23,43 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testToFieldValueDTO_for_reference() {
-        ClassInstance foo = MockRegistry.getFooInstance();
-        FieldValue fieldValueDTO = foo.toFieldValueDTO();
-        Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
-        Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
-        ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-        Assert.assertEquals((long) foo.getId(), refFieldValueDTO.getId());
+        try (var context = MockRegistry.newContext(10L)) {
+            ClassInstance foo = MockRegistry.getFooInstance();
+            FieldValue fieldValueDTO = foo.toFieldValueDTO();
+            Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
+            Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
+            ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
+            Assert.assertEquals((long) foo.getId(), refFieldValueDTO.getId());
+        }
     }
 
     public void testToFieldValueDTO_for_value() {
-        ClassInstance foo = MockRegistry.getFooInstance();
-        ClassInstance bar = foo.getClassInstance(MockRegistry.getField(Foo.class, "bar"));
-        FieldValue fieldValueDTO = bar.toFieldValueDTO();
-        Assert.assertEquals(bar.getTitle(), fieldValueDTO.getDisplayValue());
-        if(bar.isValue()) {
-            Assert.assertTrue(fieldValueDTO instanceof InstanceFieldValue);
-            InstanceFieldValue instFieldValueDTO = (InstanceFieldValue) fieldValueDTO;
-            MatcherAssert.assertThat(instFieldValueDTO.getInstance(), PojoMatcher.of(bar.toDTO()));
-        }
-        else {
-            Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
-            ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-            Assert.assertEquals((long)bar.getId(), refFieldValueDTO.getId());
+        try (var context = MockRegistry.newContext(10L)) {
+            ClassInstance foo = MockRegistry.getFooInstance();
+            ClassInstance bar = foo.getClassInstance(MockRegistry.getField(Foo.class, "bar"));
+            FieldValue fieldValueDTO = bar.toFieldValueDTO();
+            Assert.assertEquals(bar.getTitle(), fieldValueDTO.getDisplayValue());
+            if (bar.isValue()) {
+                Assert.assertTrue(fieldValueDTO instanceof InstanceFieldValue);
+                InstanceFieldValue instFieldValueDTO = (InstanceFieldValue) fieldValueDTO;
+                MatcherAssert.assertThat(instFieldValueDTO.getInstance(), PojoMatcher.of(bar.toDTO()));
+            } else {
+                Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
+                ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
+                Assert.assertEquals(bar.getIdRequired(), refFieldValueDTO.getId());
+            }
         }
     }
 
     public void testToDTO() {
-        ClassInstance foo = MockRegistry.getFooInstance();
-        InstanceDTO instanceDTO = foo.toDTO();
-        Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
-        ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
-        Assert.assertEquals(foo.getType().getReadyFields().size(), paramDTO.fields().size());
-        TestUtils.logJSON(LOGGER, instanceDTO);
+        try (var context = MockRegistry.newContext(10L)) {
+            ClassInstance foo = MockRegistry.getFooInstance();
+            InstanceDTO instanceDTO = foo.toDTO();
+            Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
+            ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
+            Assert.assertEquals(foo.getType().getReadyFields().size(), paramDTO.fields().size());
+            TestUtils.logJSON(LOGGER, instanceDTO);
+        }
     }
 
     public void testIsChild() {
@@ -67,16 +72,16 @@ public class ClassInstanceTest extends TestCase {
     public void test_add_not_null_field() {
         ClassType type = ClassBuilder.newBuilder("Lab", null).build();
         Field titleField = FieldBuilder
-                .newBuilder("title", null, type, InstanceUtils.getStringType())
-                .asTitle(true)
+                .newBuilder("title", null, type, Instances.getStringType())
                 .build();
+        type.setTitleField(titleField);
         Field statusField = FieldBuilder
-                .newBuilder("status", null, type, InstanceUtils.getIntType())
+                .newBuilder("status", null, type, Instances.getIntType())
                 .build();
-        ClassInstance instance = new ClassInstance(
+        ClassInstance instance = ClassInstance.create(
                 Map.of(
                         titleField,
-                        InstanceUtils.stringInstance("Big Foo")
+                        Instances.stringInstance("Big Foo")
                 ),
                 type
         );

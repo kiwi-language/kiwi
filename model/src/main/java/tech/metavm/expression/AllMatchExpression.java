@@ -7,36 +7,24 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.util.InstanceUtils.trueInstance;
-
 @EntityType("AllMatch表达式")
 public class AllMatchExpression extends Expression {
 
-    //    private final CursorExpression cursor;
     @ChildEntity("数组")
     private final Expression array;
     @ChildEntity("条件")
-    private final Expression condition;
-    @Nullable
-    @EntityField("游标")
-    private final CursorExpression cursor;
+    private Expression condition;
 
     public AllMatchExpression(@NotNull Expression array, @NotNull Expression condition) {
-        this(array, condition, null);
-    }
-
-    public AllMatchExpression(@NotNull Expression array, @NotNull Expression condition, @Nullable CursorExpression cursor) {
         this.array = addChild(array.copy(), "array");
         this.condition = addChild(condition.copy(), "condition");
-        this.cursor = cursor;
     }
 
     public Expression getArray() {
@@ -55,6 +43,10 @@ public class AllMatchExpression extends Expression {
                 + ")";
     }
 
+    public void setCondition(Expression condition) {
+        this.condition = condition;
+    }
+
     public ArrayType getArrayType() {
         return (ArrayType) getArray().getType();
     }
@@ -69,8 +61,8 @@ public class AllMatchExpression extends Expression {
         return ModelDefRegistry.getType(Boolean.class);
     }
 
-    public CursorExpression getCursor() {
-        return cursor;
+    public @Nullable CursorExpression createCursor() {
+        return new CursorExpression(this, getArrayType().getElementType(), getCursorAlias());
     }
 
     @Nullable
@@ -84,45 +76,37 @@ public class AllMatchExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        NncUtils.requireLength(children, 2);
-        return new AllMatchExpression(children.get(0), children.get(1), null);
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
         Instance instance = array.evaluate(context);
         if (instance.isNull()) {
-            return InstanceUtils.trueInstance();
+            return Instances.trueInstance();
         }
         if (!(instance instanceof ArrayInstance arrayInst)) {
             throw new InternalException("Expecting array instance for AllMatchExpression but got " + instance);
         }
         for (Instance element : arrayInst.getElements()) {
             if (element instanceof ClassInstance classInstance) {
-                EvaluationContext subContext = new SubEvaluationContext(context, cursor, classInstance);
-                if (!InstanceUtils.isTrue(
-                        condition.evaluate(subContext))
-                ) {
-                    return InstanceUtils.falseInstance();
+                EvaluationContext subContext = new SubEvaluationContext(context, this, classInstance);
+                if (!Instances.isTrue(condition.evaluate(subContext))) {
+                    return Instances.falseInstance();
                 }
             } else {
                 throw new InternalException("AllMatchExpression only supports reference array right now");
             }
         }
-        return InstanceUtils.trueInstance();
+        return Instances.trueInstance();
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof AllMatchExpression that)) return false;
-        return Objects.equals(array, that.array) && Objects.equals(condition, that.condition) && Objects.equals(cursor, that.cursor);
+        return Objects.equals(array, that.array) && Objects.equals(condition, that.condition);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(array, condition, cursor);
+        return Objects.hash(array, condition);
     }
 
     @Override

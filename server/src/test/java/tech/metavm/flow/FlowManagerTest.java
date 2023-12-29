@@ -5,14 +5,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
-import tech.metavm.task.TaskManager;
-import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.log.InstanceLogServiceImpl;
+import tech.metavm.object.instance.InstanceQueryService;
+import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.search.InstanceSearchService;
+import tech.metavm.object.type.IndexRepository;
 import tech.metavm.object.type.TypeManager;
-import tech.metavm.util.*;
-
-import java.util.List;
+import tech.metavm.object.type.mocks.MockIndexRepository;
+import tech.metavm.task.TaskManager;
+import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.MockRegistry;
+import tech.metavm.util.MockTransactionOperations;
 
 public class FlowManagerTest extends TestCase {
 
@@ -24,38 +27,33 @@ public class FlowManagerTest extends TestCase {
 
     private InstanceContextFactory instanceContextFactory;
 
+    private IndexRepository indexRepository;
+
     @Override
     protected void setUp() throws Exception {
+        indexRepository = new MockIndexRepository();
         EntityIdProvider idProvider = new MockIdProvider();
         MemInstanceStore instanceStore = new MemInstanceStore();
         MockRegistry.setUp(idProvider, instanceStore);
+        var indexEntryMapper = new MemIndexEntryMapper();
 
         instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
-                .setIdService(idProvider)
-                .setDefaultAsyncProcessing(false);
-        InstanceContextFactory.setStdContext(MockRegistry.getInstanceContext());
+                .setIdService(idProvider);
+        var entityContextFactory = new EntityContextFactory(instanceContextFactory, indexEntryMapper);
+        InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
 
         InstanceSearchService instanceSearchService = new MemInstanceSearchService();
-        instanceContextFactory.setPlugins(List.of(
-                        new CheckConstraintPlugin(),
-                        new IndexConstraintPlugin(new MemIndexEntryMapper()),
-                        new ChangeLogPlugin(new InstanceLogServiceImpl(
-                                instanceSearchService,
-                                instanceContextFactory,
-                                instanceStore,
-                                List.of()))
-        ));
 
         EntityQueryService entityQueryService =
                 new EntityQueryService(new InstanceQueryService(instanceSearchService));
 
-        TaskManager jobManager = new TaskManager(instanceContextFactory, new MockTransactionOperations());
+        TaskManager jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
 
         TypeManager typeManager =
-                new TypeManager(instanceContextFactory, entityQueryService, jobManager,  null);
-        flowManager = new FlowManager(instanceContextFactory);
+                new TypeManager(entityContextFactory, entityQueryService, jobManager,  null);
+        flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
-        flowExecutionService = new FlowExecutionService(instanceContextFactory);
+        flowExecutionService = new FlowExecutionService(entityContextFactory);
     }
 
 

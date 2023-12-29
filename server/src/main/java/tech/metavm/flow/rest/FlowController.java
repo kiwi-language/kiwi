@@ -66,7 +66,7 @@ public class FlowController {
 
     @PostMapping("/move")
     public Result<Void> move(@RequestBody MovePropertyRequest request) {
-        flowManager.moveFlow(request.id(), request.ordinal());
+        flowManager.moveMethod(request.id(), request.ordinal());
         return Result.voidSuccess();
     }
 

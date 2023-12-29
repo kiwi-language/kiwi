@@ -6,10 +6,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
-import tech.metavm.entity.EntityQueryBuilder;
-import tech.metavm.entity.EntityQueryService;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
 import tech.metavm.event.rest.dto.ReadMessageEvent;
 import tech.metavm.message.rest.dto.MessageDTO;
@@ -20,14 +17,13 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 @Component
-public class MessageManager {
+public class MessageManager extends EntityContextFactoryBean {
 
-    private final InstanceContextFactory contextFactory;
     private final EventQueue eventQueue;
     private final EntityQueryService entityQueryService;
 
-    public MessageManager(InstanceContextFactory contextFactory, EventQueue eventQueue, EntityQueryService entityQueryService) {
-        this.contextFactory = contextFactory;
+    public MessageManager(EntityContextFactory entityContextFactory, EventQueue eventQueue, EntityQueryService entityQueryService) {
+        super(entityContextFactory);
         this.eventQueue = eventQueue;
         this.entityQueryService = entityQueryService;
     }
@@ -85,10 +81,6 @@ public class MessageManager {
                     context
             );
         }
-    }
-
-    private IEntityContext newContext() {
-        return contextFactory.newEntityContext();
     }
 
 }

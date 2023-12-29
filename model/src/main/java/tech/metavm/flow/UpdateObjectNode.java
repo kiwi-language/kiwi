@@ -1,77 +1,53 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.*;
+import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
-import tech.metavm.flow.rest.UpdateObjectParamDTO;
+import tech.metavm.flow.rest.UpdateObjectNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.Field;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
-import tech.metavm.entity.ReadonlyArray;
 
+import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Objects;
 
 @EntityType("更新对象节点")
-public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
+public class UpdateObjectNode extends NodeRT {
 
-    public static UpdateObjectNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext entityContext) {
-        UpdateObjectNode node = new UpdateObjectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
-        node.setParam(nodeDTO.getParam(), entityContext);
-        return node;
-    }
-
-    @ChildEntity("对象")
-    private Value objectId;
-
-    @ChildEntity("更新字段")
-    private final ChildArray<UpdateField> fieldParams = addChild(new ChildArray<>(UpdateField.class), "fieldParams");
-
-    public UpdateObjectNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
-    }
-
-    public Value getObjectId() {
-        return objectId;
-    }
-
-    public ReadonlyArray<UpdateField> getUpdateFields() {
-        return fieldParams;
-    }
-
-    @Override
-    protected void setParam(UpdateObjectParamDTO param, IEntityContext entityContext) {
-        ParsingContext parsingContext = getParsingContext(entityContext);
-        if (param.objectId() != null) {
-            setObjectId(ValueFactory.create(param.objectId(), parsingContext));
-        }
-        if (param.fields() != null) {
-            for (UpdateFieldDTO field : param.fields()) {
-                NncUtils.requireTrue(
-                        entityContext.getField(field.fieldRef()).getDeclaringType().isAssignableFrom(
-                                getExpressionTypes().getType(objectId.getExpression())
-                        )
-                );
-            }
-            fieldParams.resetChildren(
-                    NncUtils.map(
-                            param.fields(),
-                            updateFieldDTO -> saveField(updateFieldDTO, parsingContext, entityContext)
+    public static UpdateObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
+        UpdateObjectNodeParam param = nodeDTO.getParam();
+        ParsingContext parsingContext = FlowParsingContext.create(scope, prev, entityContext);
+        var node = (UpdateObjectNode) entityContext.getNode(nodeDTO.getRef());
+        var objectId = ValueFactory.create(param.objectId(), parsingContext);
+        if (node == null) {
+            node = new UpdateObjectNode(
+                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, objectId
+            );
+        } else
+            node.setObject(objectId);
+        for (UpdateFieldDTO field : param.fields()) {
+            NncUtils.requireTrue(
+                    entityContext.getField(field.fieldRef()).getDeclaringType().isAssignableFrom(
+                            node.getExpressionTypes().getType(objectId.getExpression())
                     )
             );
         }
+        final var _node = node;
+        node.setFields(NncUtils.map(
+                param.fields(),
+                updateFieldDTO -> saveField(_node, updateFieldDTO, parsingContext, entityContext)
+        ));
+        return node;
     }
 
-    private UpdateField saveField(UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
+    private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
         var field = entityContext.getField(updateFieldDTO.fieldRef());
         var op = UpdateOp.getByCode(updateFieldDTO.opCode());
         var value = ValueFactory.create(updateFieldDTO.value(), parsingContext);
-        var existing = fieldParams.get(UpdateField::getField, field);
+        var existing = node.getField(field);
         if (existing != null) {
             existing.setOp(op);
             existing.setValue(value);
@@ -81,22 +57,34 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
         }
     }
 
-    void setField(long fieldId, UpdateOpAndValue opAndValue) {
-        var field = fieldParams.get(Entity::getId, fieldId);
-        field.setOp(opAndValue.op());
-        field.setValue(opAndValue.value());
+    @ChildEntity("对象")
+    private Value object;
+
+    @ChildEntity("字段列表")
+    private final ChildArray<UpdateField> fields = addChild(new ChildArray<>(UpdateField.class), "fields");
+
+    public UpdateObjectNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value object) {
+        super(tmpId, name, code, null, prev, scope);
+        this.object = addChild(object, "object");
     }
 
-    public void setObjectId(Value objectId) {
-        this.objectId = addChild(objectId, "objectId");
+    public Value getObject() {
+        return object;
     }
 
+    public List<UpdateField> getFields() {
+        return fields.toList();
+    }
+
+    public void setObject(Value object) {
+        this.object = addChild(object, "object");
+    }
 
     public void setUpdateField(Field field, UpdateOp op, Value value) {
-        var updateField = fieldParams.get(UpdateField::getField, field);
+        var updateField = fields.get(UpdateField::getField, field);
         if (updateField == null) {
             updateField = new UpdateField(field, op, value);
-            fieldParams.addChild(updateField);
+            fields.addChild(updateField);
         } else {
             updateField.setOp(op);
             updateField.setValue(value);
@@ -104,21 +92,36 @@ public class UpdateObjectNode extends NodeRT<UpdateObjectParamDTO> {
     }
 
     @Override
-    protected UpdateObjectParamDTO getParam(boolean persisting) {
-        return new UpdateObjectParamDTO(
-                objectId.toDTO(persisting),
-                NncUtils.map(fieldParams, fp -> fp.toDTO(persisting))
+    protected UpdateObjectNodeParam getParam(SerializeContext serializeContext) {
+        return new UpdateObjectNodeParam(
+                object.toDTO(),
+                NncUtils.map(fields, UpdateField::toDTO)
         );
+    }
+
+    private void setFields(List<UpdateField> fields) {
+        this.fields.resetChildren(fields);
+    }
+
+    public UpdateField getField(Field field) {
+        return fields.get(UpdateField::getField, field);
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        ClassInstance instance = (ClassInstance) objectId.evaluate(frame);
-        for (UpdateField updateField : fieldParams) {
-            var inConstructor = getFlow().isConstructor() || Objects.equals(getFlow().getCode(), "<init>");
-            updateField.execute(instance, frame, inConstructor, frame.getContext());
+        ClassInstance instance = (ClassInstance) object.evaluate(frame);
+        for (UpdateField updateField : fields) {
+            var inConstructor = Flows.isConstructor(getFlow()) || Objects.equals(getFlow().getCode(), "<init>");
+            updateField.execute(instance, frame, inConstructor);
         }
         return next(null);
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("update("
+                + object.getText()
+                + ", {" + NncUtils.join(fields, UpdateField::getText, ", ") + "})");
     }
 
     @Override

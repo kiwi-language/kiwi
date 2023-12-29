@@ -2,10 +2,7 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.StoreLoadRequest;
-import tech.metavm.entity.Tree;
-import tech.metavm.entity.VersionSource;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.InstanceVersion;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.instance.persistence.Version;
@@ -54,7 +51,7 @@ public interface IInstanceStore {
 
     List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context);
 
-    boolean updateSyncVersion(List<VersionPO> versions);
+    void updateSyncVersion(List<VersionPO> versions);
 
     Set<Long> getAliveInstanceIds(long appId, Set<Long> instanceIds);
 

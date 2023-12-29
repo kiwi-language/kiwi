@@ -18,17 +18,17 @@ public class NodeDTOTest extends TestCase {
 
     public void testToJSONString() {
         NodeDTO nodeDTO = new NodeDTO(
-                null,
-                1L,
+                1L, null,
                 1L,
                 "Test",
+                null,
                 NodeKind.ADD_OBJECT.code(),
                 null,
                 RefDTO.fromId(1L),
-                new AddObjectParam(
+                new AddObjectNodeParam(
                         RefDTO.fromId(1L),
                         true,
-                        List.of(),
+                        false, List.of(),
                         null,
                         null
                 ),

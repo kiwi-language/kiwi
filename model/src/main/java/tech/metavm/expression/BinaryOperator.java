@@ -6,7 +6,7 @@ import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.query.OperatorTypes;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import java.util.Arrays;
@@ -132,7 +132,7 @@ public enum BinaryOperator {
     EQ(11, "=", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
-            return InstanceUtils.booleanInstance(first.equals(second));
+            return Instances.booleanInstance(first.equals(second));
         }
 
         @Override
@@ -144,7 +144,7 @@ public enum BinaryOperator {
     NE(12, "!=", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
-            return InstanceUtils.booleanInstance(!first.equals(second));
+            return Instances.booleanInstance(!first.equals(second));
         }
 
         @Override
@@ -170,7 +170,7 @@ public enum BinaryOperator {
     IN(15, "IN", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
-            return InstanceUtils.booleanInstance(((ArrayInstance) second).contains(second));
+            return Instances.booleanInstance(((ArrayInstance) second).contains(second));
         }
     },
     @EnumConstant("且")

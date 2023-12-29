@@ -6,15 +6,15 @@ import java.util.Objects;
 
 public class ReferenceFieldValue extends FieldValue {
 
-    private final long id;
+    private final String id;
 
     public ReferenceFieldValue(@JsonProperty("displayValue") String displayValue,
-                               @JsonProperty("id") long id) {
+                               @JsonProperty("id") String id) {
         super(FieldValueKind.REFERENCE.code(), displayValue);
         this.id = id;
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 

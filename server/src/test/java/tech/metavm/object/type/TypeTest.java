@@ -16,11 +16,13 @@ public class TypeTest extends TestCase {
     }
 
     public void testDTO() {
-        ClassType fooType = MockRegistry.getClassType(ClassType.class);
-        TypeDTO typeDTO = fooType.toDTO();
-        ClassTypeParam param = (ClassTypeParam) typeDTO.param();
-        for (FieldDTO field : param.fields()) {
-            Assert.assertNotNull("字段" + field.name() + "的typeId为空", field.typeId());
+        try (var context = MockRegistry.newContext(10L)) {
+            ClassType fooType = MockRegistry.getClassType(ClassType.class);
+            TypeDTO typeDTO = fooType.toDTO();
+            ClassTypeParam param = (ClassTypeParam) typeDTO.param();
+            for (FieldDTO field : param.fields()) {
+                Assert.assertNotNull("字段" + field.name() + "的typeId为空", field.typeId());
+            }
         }
     }
 

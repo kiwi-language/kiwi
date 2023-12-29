@@ -16,7 +16,7 @@ import java.util.Objects;
 @EntityType("常量表达式")
 public class ConstantExpression extends Expression {
 
-    @EntityField(value = "常量值", asTitle = true)
+    @EntityField("常量值")
     private final Instance value;
 
     public ConstantExpression(Instance value) {
@@ -36,7 +36,7 @@ public class ConstantExpression extends Expression {
             return primitiveInstance.getValue() + "";
         }
         else {
-            return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(value.getId());
+            return Constants.CONSTANT_ID_PREFIX + NncUtils.requireNonNull(value.getInstanceIdString());
         }
     }
 
@@ -48,11 +48,6 @@ public class ConstantExpression extends Expression {
     @Override
     public List<Expression> getChildren() {
         return List.of();
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new ConstantExpression(value);
     }
 
     @Override

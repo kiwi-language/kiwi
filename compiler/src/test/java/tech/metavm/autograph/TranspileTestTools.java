@@ -21,8 +21,8 @@ public class TranspileTestTools {
     public static final Logger LOGGER = LoggerFactory.getLogger(TranspileTestTools.class);
 
     private static final String BASE_MOD = "/Users/leen/Library/Java/JavaVirtualMachines/openjdk-18.0.2/Contents/Home/jmods/java.base.jmod";
-    private static final String TEST_SOURCE_ROOT = "/Users/leen/workspace/object/src/test/java/";
-    private static final String SOURCE_ROOT = "/Users/leen/workspace/object/src/main/java/";
+    private static final String TEST_SOURCE_ROOT = "/Users/leen/workspace/object/compiler/src/test/java/";
+    private static final String SOURCE_ROOT = "/Users/leen/workspace/object/compiler/src/main/java/";
 
     private static final IrCoreApplicationEnvironment APP_ENV;
     private static final IrCoreProjectEnvironment PROJECT_ENV;
@@ -117,8 +117,10 @@ public class TranspileTestTools {
         }
     }
 
-
     public static Project getProject() {
         return PROJECT;
     }
+
+    public static void touch() {}
+
 }

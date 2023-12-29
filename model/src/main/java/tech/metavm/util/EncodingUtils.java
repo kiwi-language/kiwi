@@ -96,4 +96,28 @@ public class EncodingUtils {
         }
     }
 
+    public static String encodeStringBase64(String str) {
+        return encodeBase64(str.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String decodeStringBase64(String encoding) {
+        return new String(decodeBase64(encoding), StandardCharsets.UTF_8);
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        var sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    public static byte[] hexToBytes(String hex) {
+        var bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+        }
+        return bytes;
+    }
+
 }

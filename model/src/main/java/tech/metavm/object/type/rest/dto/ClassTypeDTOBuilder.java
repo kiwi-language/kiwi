@@ -5,6 +5,7 @@ import tech.metavm.common.ErrorDTO;
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -19,19 +20,29 @@ public class ClassTypeDTOBuilder {
 
     private final String name;
     private int category = TypeCategoryCodes.CLASS;
-    private @Nullable Long id;
-    private @Nullable Long tmpId;
-    private @Nullable String code;
-    private @Nullable String desc;
-    private @Nullable Object extra;
-    private @Nullable String sourceClassName;
+    @Nullable
+    private Long id;
+    @Nullable
+    private Long tmpId;
+    @Nullable
+    private String code;
+    @Nullable
+    private String desc;
+    @Nullable
+    private Object extra;
     private boolean ephemeral;
     private boolean anonymous;
-    private @Nullable RefDTO superClassRef;
+    @Nullable
+    private RefDTO superClassRef;
     private List<RefDTO> interfaceRefs = new ArrayList<>();
     private List<FieldDTO> fields = new ArrayList<>();
+    private List<FieldDTO> staticFields = new ArrayList<>();
+    @Nullable
+    private RefDTO titleFieldRef;
     private List<ConstraintDTO> constraints = new ArrayList<>();
     private List<FlowDTO> flows = new ArrayList<>();
+    private List<ObjectMappingDTO> mappings = new ArrayList<>();
+    private RefDTO defaultMappingRef;
     private int source = ClassSourceCodes.RUNTIME;
     private boolean isTemplate;
     private RefDTO templateRef;
@@ -42,6 +53,8 @@ public class ClassTypeDTOBuilder {
     private boolean hasSubTypes;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
     private List<ErrorDTO> errors = new ArrayList<>();
+    @Nullable
+    private RefDTO sourceMappingRef;
 
     private ClassTypeDTOBuilder(String name) {
         this.name = name;
@@ -112,6 +125,21 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder classFields(List<FieldDTO> staticFields) {
+        this.staticFields = staticFields;
+        return this;
+    }
+
+    public ClassTypeDTOBuilder mappings(List<ObjectMappingDTO> mappings) {
+        this.mappings = mappings;
+        return this;
+    }
+
+    public ClassTypeDTOBuilder defaultMappingRef(RefDTO defaultMappingRef) {
+        this.defaultMappingRef = defaultMappingRef;
+        return this;
+    }
+
     public ClassTypeDTOBuilder constraints(List<ConstraintDTO> constraints) {
         this.constraints = new ArrayList<>(constraints);
         return this;
@@ -133,7 +161,6 @@ public class ClassTypeDTOBuilder {
     }
 
     public ClassTypeDTOBuilder sourceClassName(String sourceClassName) {
-        this.sourceClassName = sourceClassName;
         return this;
     }
 
@@ -162,6 +189,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder sourceMappingRef(RefDTO sourceMappingRef) {
+        this.sourceMappingRef = sourceMappingRef;
+        return this;
+    }
+
     public ClassTypeDTOBuilder typeParameters(List<TypeDTO> typeParameters) {
         this.typeParameters = new ArrayList<>(typeParameters);
         this.typeParameterRefs= NncUtils.map(typeParameters, BaseDTO::getRef);
@@ -170,14 +202,16 @@ public class ClassTypeDTOBuilder {
 
     private ClassTypeParam buildClassTypeParam() {
         return new ClassTypeParam(
-                sourceClassName,
                 superClassRef,
                 interfaceRefs,
                 source,
                 fields,
-                fields,
+                staticFields,
+                titleFieldRef,
                 constraints,
                 flows,
+                mappings,
+                defaultMappingRef,
                 desc,
                 extra,
                 enumConstants,

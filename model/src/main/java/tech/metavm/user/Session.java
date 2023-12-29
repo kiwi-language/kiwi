@@ -5,9 +5,7 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexDef;
-import tech.metavm.object.type.Index;
 import tech.metavm.util.AssertUtils;
-import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -16,8 +14,8 @@ import java.util.UUID;
 @EntityType("会话")
 public class Session extends Entity {
 
-    public static final IndexDef<Session> IDX_USER_STATE = IndexDef.normalKey(Session.class, "user", "state");
-    public static final IndexDef<Session> IDX_TOKEN = IndexDef.uniqueKey(Session.class, "token");
+    public static final IndexDef<Session> IDX_USER_STATE = IndexDef.create(Session.class, "user", "state");
+    public static final IndexDef<Session> IDX_TOKEN = IndexDef.createUnique(Session.class, "token");
 
     @EntityField("令牌")
     private final String token;

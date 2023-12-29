@@ -1,9 +1,10 @@
 package tech.metavm.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.core.*;
-import tech.metavm.util.*;
+import tech.metavm.object.instance.ObjectInstanceMap;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Instance;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
@@ -29,25 +30,25 @@ public class FieldDef implements IFieldDef {
     }
 
     @Override
-    public void setModelField(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        Object fieldValue = getModelFieldValue(instance, modelInstanceMap);
-        ReflectUtils.set(model, javaField, fieldValue);
+    public void setModelField(Object model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        Object fieldValue = getModelFieldValue(instance, objectInstanceMap);
+        ReflectionUtils.set(model, javaField, fieldValue);
     }
 
     @Override
-    public Object getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public Object getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         Instance fieldValue = instance.getField(field);
-        if(targetDef instanceof InstanceDef<?> || targetDef instanceof InstanceCollectionDef<?,?>) {
-            //noinspection rawtypes,unchecked
-            return modelInstanceMap.getEntity(javaField.getType(), fieldValue, (ModelDef) targetDef);
+        if (targetDef instanceof InstanceDef<?> || targetDef instanceof InstanceCollectionDef<?, ?>) {
+//            noinspection rawtypes,unchecked
+            return objectInstanceMap.getEntity(javaField.getType(), fieldValue, (ModelDef) targetDef);
         }
-        return modelInstanceMap.getEntity(javaField.getType(), fieldValue);
+        return objectInstanceMap.getEntity(javaField.getType(), fieldValue);
     }
 
     @Override
-    public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
+    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
         EntityUtils.ensureProxyInitialized(model);
-        return instanceMap.getInstance(ReflectUtils.get(model, javaField));
+        return instanceMap.getInstance(ReflectionUtils.get(model, javaField));
     }
 
     @Override

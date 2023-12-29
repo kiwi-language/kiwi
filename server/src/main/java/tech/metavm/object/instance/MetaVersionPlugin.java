@@ -1,52 +1,70 @@
 package tech.metavm.object.instance;
 
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import tech.metavm.entity.EntityChange;
+import tech.metavm.entity.TypeRegistry;
+import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.type.ClassMember;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.version.VersionRepository;
 import tech.metavm.object.version.Versions;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.view.Mapping;
 
-import java.util.*;
+import java.util.HashSet;
 
-@Component
-@Order(1)
 public class MetaVersionPlugin implements ContextPlugin {
+
+    private final TypeRegistry typeRegistry;
+    private final VersionRepository versionRepository;
+
+    public MetaVersionPlugin(TypeRegistry typeRegistry, VersionRepository versionRepository) {
+        this.typeRegistry = typeRegistry;
+        this.versionRepository = versionRepository;
+    }
 
     @Override
     public boolean beforeSaving(EntityChange<InstancePO> change, IInstanceContext context) {
-        if (!context.getEntityContext().isBindSupported() && context.getBindHook() == null)
-            return false;
-        var entityContext = context.getEntityContext();
-        var changedEntities = new ArrayList<>();
-        change.forEachInsertOrUpdate(i ->
-                changedEntities.add(entityContext.getEntity(Object.class, i.getId()))
-        );
-        var changedTypes = new HashSet<Type>();
-        for (Object entity : changedEntities) {
-            if (entity instanceof Type type)
-                changedTypes.add(type);
-            else if (entity instanceof ClassMember classMember)
-                changedTypes.add(classMember.getDeclaringType());
-        }
-        List<Object> removeEntities = NncUtils.mapAndFilter(change.deletes(),
-                i -> entityContext.getRemoved(Object.class, i.getId()),
-                Objects::nonNull
-        );
-        Set<Long> removedTypeIds = new HashSet<>();
-        for (Object entity : removeEntities) {
-            if (entity instanceof Type type)
-                removedTypeIds.add(type.getIdRequired());
-            else if (entity instanceof ClassMember classMember) {
-                if (!entityContext.isRemoved(classMember.getDeclaringType()))
-                    changedTypes.add(classMember.getDeclaringType());
-            }
-        }
-        if (!changedTypes.isEmpty() || !removedTypeIds.isEmpty()) {
-            Versions.create(changedTypes, removedTypeIds, context.getEntityContext());
+//        if (!context.getEntityContext().isBindSupported() && context.getBindHook() == null)
+//            return false;
+//        var entityContext = context.getEntityContext();
+//        var changedEntities = new ArrayList<>();
+        var typeType = typeRegistry.getType(java.lang.reflect.Type.class);
+        var mappingType = typeRegistry.getType(Mapping.class);
+        var functionType = typeRegistry.getType(Function.class);
+        var changedTypeIds = new HashSet<Long>();
+        var changedMappingIds = new HashSet<Long>();
+        var changedFunctionIds = new HashSet<Long>();
+        change.forEachInsertOrUpdate(i -> {
+            var id = i.getId();
+            var instance = context.get(id);
+            if (typeType.isInstance(instance))
+                changedTypeIds.add(id);
+            else if (mappingType.isInstance(instance))
+                changedMappingIds.add(id);
+            else if (functionType.isInstance(instance))
+                changedMappingIds.add(id);
+        });
+        var removedTypeIds = new HashSet<Long>();
+        var removedMappingIds = new HashSet<Long>();
+        var removedFunctionIds = new HashSet<Long>();
+        change.deletes().forEach(i -> {
+            var id = i.getId();
+            var instance = context.getRemoved(id);
+            if(typeType.isInstance(instance))
+                removedTypeIds.add(id);
+            else if(mappingType.isInstance(instance))
+                removedMappingIds.add(id);
+            else if(functionType.isInstance(instance))
+                removedFunctionIds.add(id);
+        });
+        if (!changedTypeIds.isEmpty() || !removedTypeIds.isEmpty()) {
+            Versions.create(
+                    changedTypeIds,
+                    removedTypeIds,
+                    changedMappingIds,
+                    removedMappingIds,
+                    changedFunctionIds,
+                    removedFunctionIds,
+                    versionRepository);
             return true;
         } else
             return false;

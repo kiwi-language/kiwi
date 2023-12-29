@@ -3,6 +3,7 @@ package tech.metavm.event;
 public enum AppEventKind {
 
     TYPE_CHANGE(1),
+    FUNCTION_CHANGE(2),
 
     ;
 

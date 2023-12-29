@@ -41,8 +41,8 @@ public class SearchBuilder {
                     NncUtils.join(query.typeIds(), id -> TYPE_ID + ":" + id, " OR ") + ")";
             queryString += " AND " + typeIdCondition;
         }
-        if (query.condition() != null && !ExpressionUtil.isConstantTrue(query.condition())) {
-            queryString += " AND " + parse(query.condition().simplify());
+        if (query.condition() != null && !Expressions.isConstantTrue(query.condition())) {
+            queryString += " AND " + parse(ExpressionSimplifier.simplify(query.condition()));
         }
         return queryString;
     }
@@ -69,13 +69,13 @@ public class SearchBuilder {
 
     private static String parseFunction(FunctionExpression expression) {
         var func = expression.getFunction();
-        if (func == Function.STARTS_WITH || func == Function.CONTAINS) {
+        if (func == Func.STARTS_WITH || func == Func.CONTAINS) {
             Expression fieldExpr = expression.getArguments().get(0);
             ConstantExpression constExpr = (ConstantExpression) expression.getArguments().get(1);
             Instance constValue = constExpr.getValue();
             SearchField searchField = getColumn(fieldExpr);
-            String columnName = func == Function.CONTAINS ? searchField.fuzzyName() : searchField.name();
-            String value = func == Function.STARTS_WITH ?
+            String columnName = func == Func.CONTAINS ? searchField.fuzzyName() : searchField.name();
+            String value = func == Func.STARTS_WITH ?
                     escape(((StringInstance) constValue).getValue()) + "*" :
                     toString(constValue.toSearchConditionValue());
             return parenthesize(columnName + ":" + value);

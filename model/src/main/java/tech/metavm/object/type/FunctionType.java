@@ -1,25 +1,26 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.rest.dto.FunctionTypeKey;
 import tech.metavm.object.type.rest.dto.FunctionTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Function;
 
 @EntityType("函数类型")
 public class FunctionType extends CompositeType {
 
-    public static final IndexDef<FunctionType> KEY_IDX = IndexDef.uniqueKey(
+    public static final IndexDef<FunctionType> KEY_IDX = IndexDef.createUnique(
             FunctionType.class, "key");
 
-    public static final IndexDef<FunctionType> PARAMETER_TYPE_KEY = IndexDef.normalKey(
+    public static final IndexDef<FunctionType> PARAMETER_TYPE_KEY = IndexDef.create(
             FunctionType.class, "parameterTypes"
     );
 
-    public static final IndexDef<FunctionType> RETURN_TYPE_KEY = IndexDef.normalKey(
+    public static final IndexDef<FunctionType> RETURN_TYPE_KEY = IndexDef.create(
             FunctionType.class, "returnType"
     );
 
@@ -31,15 +32,23 @@ public class FunctionType extends CompositeType {
     private final ReadWriteArray<Type> parameterTypes = addChild(new ReadWriteArray<>(Type.class), "parameterTypes");
 
     public FunctionType(Long tmpId, List<Type> parameterTypes, Type returnType) {
-        super(createName(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
+        super(getName(parameterTypes, returnType), getCode(parameterTypes, returnType), false, true, TypeCategory.FUNCTION);
         setTmpId(tmpId);
         this.parameterTypes.addAll(parameterTypes);
         this.returnType = returnType;
     }
 
-    private static String createName(List<Type> parameterTypes, Type returnType) {
+    private static String getName(List<Type> parameterTypes, Type returnType) {
         return "(" + NncUtils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
     }
+
+    private static @Nullable String getCode(List<Type> parameterTypes, Type returnType) {
+        if(returnType.getCode() != null && NncUtils.allMatch(parameterTypes, t -> t.getCode() != null))
+            return "(" + NncUtils.join(parameterTypes, Type::getCode) + ")->" + returnType.getCode();
+        else
+            return null;
+    }
+
 
     @Override
     public TypeKey getTypeKey() {
@@ -80,10 +89,10 @@ public class FunctionType extends CompositeType {
 
     @Override
     protected FunctionTypeParam getParamInternal() {
-        try (var context = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new FunctionTypeParam(
-                    NncUtils.map(parameterTypes, context::getRef),
-                    context.getRef(returnType)
+                    NncUtils.map(parameterTypes, serContext::getRef),
+                    serContext.getRef(returnType)
             );
         }
     }
@@ -94,9 +103,9 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return "(" + NncUtils.join(parameterTypes, paramType -> paramType.getKey(getJavaType)) + ")"
-                + "->" + returnType.getKey(getJavaType);
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        return "(" + NncUtils.join(parameterTypes, object -> context.getModelName(object, this)) + ")"
+                + "->" + context.getModelName(returnType, this);
     }
 
     @Override

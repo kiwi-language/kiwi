@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -15,7 +15,7 @@ public class EntityDesc {
 
     public EntityDesc(Class<?> klass) {
         this.klass = klass;
-        List<Field> fields = ReflectUtils.getInstanceFields(klass);
+        List<Field> fields = ReflectionUtils.getInstanceFields(klass);
         for (Field field : fields) {
             props.add(new EntityProp(field));
         }

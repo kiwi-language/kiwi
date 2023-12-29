@@ -1,9 +1,7 @@
 package tech.metavm.autograph;
 
-
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
-import tech.metavm.flow.Flow;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.TypeVariable;
@@ -32,7 +30,7 @@ public class Keys {
 
     public static final Key<Scope> COND_SCOPE = createKey("ConditionScope");
 
-    public static final Key<Scope> RESOURCE_SCOPE = createKey("ResouceScope");
+    public static final Key<Scope> RESOURCE_SCOPE = createKey("ResourceScope");
 
     public static final Key<Scope> BODY_SCOPE = createKey("BodyScope");
 
@@ -58,7 +56,7 @@ public class Keys {
 
     public static final Key<TypeVariable> TYPE_VARIABLE = createKey("TypeVariable");
 
-    public static final Key<Flow> FLOW = createKey("Flow");
+    public static final Key<tech.metavm.flow.Method> Method = createKey("Method");
 
     public static final Key<Field> FIELD = createKey("Field");
 

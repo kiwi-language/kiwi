@@ -8,7 +8,6 @@ import tech.metavm.application.Application;
 import tech.metavm.application.rest.dto.ApplicationDTO;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
-import tech.metavm.common.Result;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
 import tech.metavm.event.rest.dto.JoinAppEvent;
@@ -16,15 +15,10 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.user.rest.dto.*;
 import tech.metavm.util.*;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 @Component
-public class PlatformUserManager {
-
-    private final InstanceQueryService instanceQueryService;
-
-    private final InstanceContextFactory instanceContextFactory;
+public class PlatformUserManager extends EntityContextFactoryBean {
 
     private final LoginService loginService;
 
@@ -34,9 +28,8 @@ public class PlatformUserManager {
 
     private final VerificationCodeService verificationCodeService;
 
-    public PlatformUserManager(InstanceQueryService instanceQueryService, InstanceContextFactory instanceContextFactory, LoginService loginService, EntityQueryService entityQueryService, EventQueue eventQueue, VerificationCodeService verificationCodeService) {
-        this.instanceQueryService = instanceQueryService;
-        this.instanceContextFactory = instanceContextFactory;
+    public PlatformUserManager(EntityContextFactory entityContextFactory, LoginService loginService, EntityQueryService entityQueryService, EventQueue eventQueue, VerificationCodeService verificationCodeService) {
+        super(entityContextFactory);
         this.loginService = loginService;
         this.entityQueryService = entityQueryService;
         this.eventQueue = eventQueue;
@@ -73,11 +66,12 @@ public class PlatformUserManager {
     @Transactional(readOnly = true)
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
         try (var context = newPlatformContext()) {
-            var query = InstanceQueryBuilder.newBuilder(ModelDefRegistry.getType(User.class))
+            var query = EntityQueryBuilder.newBuilder(User.class)
                     .searchText(searchText)
                     .page(page)
-                    .pageSize(pageSize).build();
-            Page<User> dataPage = instanceQueryService.query(User.class, query, context);
+                    .pageSize(pageSize)
+                    .build();
+            Page<User> dataPage = entityQueryService.query(query, context);
             return new Page<>(
                     NncUtils.map(dataPage.data(), User::toDTO),
                     dataPage.total()
@@ -260,14 +254,6 @@ public class PlatformUserManager {
             var existing = platformCtx.selectByUniqueKey(User.IDX_LOGIN_NAME, loginName);
             return existing != null;
         }
-    }
-
-    private IEntityContext newPlatformContext() {
-        return instanceContextFactory.newEntityContext(Constants.PLATFORM_APP_ID);
-    }
-
-    private IEntityContext newContext(long appId) {
-        return instanceContextFactory.newEntityContext(appId);
     }
 
 }

@@ -1,9 +1,10 @@
 package tech.metavm.entity;
 
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.type.DefaultTypeFactory;
 import tech.metavm.object.type.TypeFactory;
+
+import javax.annotation.Nullable;
 
 public class CompilerEntityContext extends BaseEntityContext {
 

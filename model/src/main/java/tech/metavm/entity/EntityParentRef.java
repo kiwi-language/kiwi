@@ -1,6 +1,6 @@
 package tech.metavm.entity;
 
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -15,7 +15,7 @@ public record EntityParentRef(
     }
 
     public static EntityParentRef fromObject(Entity entity, Field field) {
-        ReflectUtils.ensureFieldDeclared(entity.getClass(), field);
+        ReflectionUtils.ensureFieldDeclared(entity.getClass(), field);
         return new EntityParentRef(entity, field);
     }
 

@@ -1,20 +1,20 @@
 package tech.metavm.expression;
 
-import org.jetbrains.annotations.Nullable;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceProvider;
+import tech.metavm.object.type.ArrayTypeProvider;
+import tech.metavm.object.type.IndexedTypeProvider;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
 
 public class SubParsingContext implements ParsingContext {
     private final ParsingContext parent;
-    private final CursorExpression cursor;
+    private final AllMatchExpression allMatchExpression;
 
-    public SubParsingContext(CursorExpression cursor, ParsingContext parent) {
-        this.cursor = cursor;
+    public SubParsingContext(AllMatchExpression allMatchExpression, ParsingContext parent) {
+        this.allMatchExpression = allMatchExpression;
         this.parent = parent;
     }
-
 
     @Override
     public Instance getInstance(long id) {
@@ -22,7 +22,8 @@ public class SubParsingContext implements ParsingContext {
     }
 
     private boolean isSelfVar(Var var) {
-        return cursor.getAlias() != null && var.isName() && cursor.getAlias().equals(var.getName());
+        return allMatchExpression.getCursorAlias() != null && var.isName()
+                && allMatchExpression.getCursorAlias().equals(var.getName());
     }
 
     @Override
@@ -33,7 +34,7 @@ public class SubParsingContext implements ParsingContext {
     @Override
     public Expression resolveVar(Var var) {
         if (isSelfVar(var)) {
-            return cursor;
+            return allMatchExpression.createCursor();
         }
         else if(parent != null && parent.isContextVar(var)) {
             return parent.resolveVar(var);
@@ -43,7 +44,7 @@ public class SubParsingContext implements ParsingContext {
 
     @Override
     public Expression getDefaultExpr() {
-        return cursor;
+        return allMatchExpression.createCursor();
     }
 
     @Override
@@ -51,11 +52,18 @@ public class SubParsingContext implements ParsingContext {
         return parent.getExpressionType(expression);
     }
 
-    @Nullable
     @Override
-    public IInstanceContext getInstanceContext() {
-        return parent.getInstanceContext();
+    public InstanceProvider getInstanceProvider() {
+        return parent.getInstanceProvider();
     }
 
+    @Override
+    public IndexedTypeProvider getTypeProvider() {
+        return parent.getTypeProvider();
+    }
 
+    @Override
+    public ArrayTypeProvider getArrayTypeProvider() {
+        return parent.getArrayTypeProvider();
+    }
 }

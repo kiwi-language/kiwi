@@ -15,8 +15,8 @@ public class ClassBuilder {
 
     private Long tmpId;
     private final String name;
-    private final @Nullable String code;
-    private @Nullable String sourceClassName;
+    @Nullable
+    private final String code;
     private ClassType superType;
     private TypeCategory category = TypeCategory.CLASS;
     private ClassSource source = ClassSource.RUNTIME;
@@ -59,7 +59,6 @@ public class ClassBuilder {
     }
 
     public ClassBuilder sourceClassName(String sourceClassName) {
-        this.sourceClassName = sourceClassName;
         return this;
     }
 
@@ -140,41 +139,35 @@ public class ClassBuilder {
     public ClassType build() {
         NncUtils.requireFalse(done, "Build has already been invoked");
         done = true;
-        var classType = create();
-        for (TypeVariable typeParameter : typeParameters) {
-            typeParameter.setGenericDeclaration(classType);
-        }
-        return classType;
+        return create();
     }
 
     @NotNull
     private ClassType create() {
-        if(NncUtils.isNotEmpty(typeParameters)) {
+        if (NncUtils.isNotEmpty(typeParameters)) {
             isTemplate = true;
-            NncUtils.requireEmpty(typeArguments, "Can not add type arguments to a template class");
+            this.typeArguments = new ArrayList<>(typeParameters);
         }
         ClassType classType;
         String effectiveName = suffix != null ? name + "_" + suffix : name;
         String effectiveCode = code != null ? (suffix != null ? code + "_" + suffix : code) : null;
-        if(existing == null) {
+        if (existing == null) {
             classType = new ClassType(
                     tmpId,
                     effectiveName,
                     effectiveCode,
-                    sourceClassName,
                     superType,
                     interfaces,
                     category,
                     source,
+                    template,
                     anonymous,
                     ephemeral,
                     desc,
                     isTemplate,
-                    template,
-                    typeArguments
-            );
-        }
-        else {
+                    typeParameters,
+                    typeArguments);
+        } else {
             classType = existing;
             existing.setName(effectiveName);
             existing.setCode(effectiveCode);
@@ -183,9 +176,10 @@ public class ClassBuilder {
             existing.setSource(source);
             existing.setAnonymous(anonymous);
             existing.setDesc(desc);
+            existing.setTypeParameters(typeParameters);
             existing.setTypeArguments(typeArguments);
         }
-        if(dependencies != null) {
+        if (dependencies != null) {
             classType.setDependencies(dependencies);
         }
         return classType;

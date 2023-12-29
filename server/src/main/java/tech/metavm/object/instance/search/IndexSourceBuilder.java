@@ -1,10 +1,7 @@
 package tech.metavm.object.instance.search;
 
 import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
@@ -56,7 +53,7 @@ public class IndexSourceBuilder {
         } else if (value instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue();
         } else {
-            return value.getId();
+            return ((DurableInstance) value).getId();
         }
     }
 

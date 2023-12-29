@@ -2,10 +2,11 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.*;
 import tech.metavm.expression.*;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.ValueFactory;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
@@ -28,9 +29,9 @@ public class CheckConstraint extends Constraint {
     }
 
     @Override
-    protected CheckConstraintParam getParam(boolean forPersistence) {
+    protected CheckConstraintParam getParam() {
         return new CheckConstraintParam(
-                condition.toDTO(forPersistence)
+                condition.toDTO()
         );
     }
 
@@ -69,8 +70,8 @@ public class CheckConstraint extends Constraint {
         return condition;
     }
 
-    public boolean check(ClassInstance instance, IEntityContext entityContext) {
-        return InstanceUtils.isTrue(condition.evaluate(new InstanceEvaluationContext(instance, entityContext)));
+    public boolean check(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+        return Instances.isTrue(condition.evaluate(new InstanceEvaluationContext(instance, parameterizedFlowProvider)));
     }
 
     public ConstraintDef<?> getConstraintDef() {

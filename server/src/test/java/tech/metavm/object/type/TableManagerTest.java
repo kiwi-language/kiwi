@@ -8,6 +8,7 @@ import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.type.rest.dto.ColumnDTO;
 import tech.metavm.object.type.rest.dto.TableDTO;
 import tech.metavm.object.type.rest.dto.TitleFieldDTO;
@@ -24,22 +25,27 @@ public class TableManagerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         EntityIdProvider idProvider = new MockIdProvider();
-        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(new MemInstanceStore(), new MockEventQueue()).setIdService(idProvider);
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(new MemAllocatorStore()), new MemColumnStore());
+        var instanceStore = new MemInstanceStore();
+        var instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
+                .setIdService(idProvider);
+        var entityContextFactory = new EntityContextFactory(
+                instanceContextFactory, new MemIndexEntryMapper()
+        );
+        Bootstrap bootstrap = new Bootstrap(entityContextFactory, instanceContextFactory, new StdAllocators(new MemAllocatorStore()), new MemColumnStore());
         bootstrap.bootAndSave();
 
-        TaskManager jobManager = new TaskManager(instanceContextFactory, new MockTransactionOperations());
+        TaskManager jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
 
         EntityQueryService entityQueryService =
                 new EntityQueryService(new InstanceQueryService(new MemInstanceSearchService()));
-        TypeManager typeManager = new TypeManager(instanceContextFactory, entityQueryService, jobManager,null);
-        tableManager = new TableManager(typeManager, instanceContextFactory);
+        TypeManager typeManager = new TypeManager(entityContextFactory, entityQueryService, jobManager,null);
+        tableManager = new TableManager(entityContextFactory, typeManager);
     }
 
     public void testSmoking() {
         Type fooType = ModelDefRegistry.getType(Foo.class);
 
-        TableDTO tableDTO = tableManager.get(fooType.getId());
+        TableDTO tableDTO = tableManager.get(fooType.getIdRequired());
         Assert.assertEquals(fooType.getId(), tableDTO.id());
 
         Field bazListField = ModelDefRegistry.getField(Foo.class, "bazList");
@@ -52,7 +58,7 @@ public class TableManagerTest extends TestCase {
 
     public void testGet() {
         ClassType type = ModelDefRegistry.getClassType(Type.class);
-        TableDTO tableDTO = tableManager.get(type.getId());
+        TableDTO tableDTO = tableManager.get(type.getIdRequired());
         Assert.assertNotNull(tableDTO.id());
         Assert.assertEquals(type.getName(), tableDTO.name());
         Assert.assertEquals(type.getAllFields().size(), tableDTO.fields().size());
@@ -78,7 +84,7 @@ public class TableManagerTest extends TestCase {
                 List.of(
                         ColumnDTO.createPrimitive(
                                 "name", TableManager.ColumnType.STRING.code(),
-                                true, false, true
+                                true, false
                         )
                 )
         );
@@ -112,7 +118,7 @@ public class TableManagerTest extends TestCase {
                                 null, "bars", TableManager.ColumnType.TABLE.code(),
                                 Access.PUBLIC.code(), null,
                                 bar.id(), null, true, true, false,
-                                 false, null, null
+                                  null, null
                         )
                 )
         ));

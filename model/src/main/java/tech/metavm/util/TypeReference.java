@@ -57,7 +57,7 @@ public abstract class TypeReference<T> {
 
     @SuppressWarnings("unchecked")
     public Class<T> getType() {
-        return (Class<T>) ReflectUtils.getRawClass(type);
+        return (Class<T>) ReflectionUtils.getRawClass(type);
     }
 
     public T cast(Object object) {

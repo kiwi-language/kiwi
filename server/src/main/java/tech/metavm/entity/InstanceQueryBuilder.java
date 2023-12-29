@@ -1,8 +1,10 @@
 package tech.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.view.Mapping;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -15,8 +17,10 @@ public class InstanceQueryBuilder {
     }
 
     private final Type type;
-    private @Nullable String searchText;
-    private @Nullable String expression;
+    @Nullable
+    private String searchText;
+    @Nullable
+    private String expression;
     private int page = 1;
     private int pageSize = 20;
     private boolean includeBuiltin;
@@ -24,8 +28,9 @@ public class InstanceQueryBuilder {
     private List<Field> searchFields = List.of();
     private List<InstanceQueryField> fields = List.of();
     @NotNull
-    private List<Long> newlyCreated = List.of();
-    private List<Long> excluded = List.of();
+    private List<Id> createdIds = List.of();
+    private List<Id> excludedIds = List.of();
+    private Mapping sourceMapping;
 
     private InstanceQueryBuilder(Type type) {
         this.type = type;
@@ -75,13 +80,18 @@ public class InstanceQueryBuilder {
         return this;
     }
 
-    public InstanceQueryBuilder newlyCreated(@Nullable List<Long> include) {
-        this.newlyCreated = NncUtils.orElse(include, List.of());
+    public InstanceQueryBuilder newlyCreated(@Nullable List<Id> newlyCreated) {
+        this.createdIds = NncUtils.orElse(newlyCreated, List.of());
         return this;
     }
 
-    public InstanceQueryBuilder excluded(List<Long> excluded) {
-        this.excluded = NncUtils.orElse(excluded, List.of());
+    public InstanceQueryBuilder excluded(List<Id> excluded) {
+        this.excludedIds = NncUtils.orElse(excluded, List.of());
+        return this;
+    }
+
+    public InstanceQueryBuilder sourceMapping(Mapping sourceMapping) {
+        this.sourceMapping = sourceMapping;
         return this;
     }
 
@@ -96,8 +106,9 @@ public class InstanceQueryBuilder {
                 page,
                 pageSize,
                 fields,
-                newlyCreated,
-                excluded
+                createdIds,
+                excludedIds,
+                sourceMapping
         );
     }
 

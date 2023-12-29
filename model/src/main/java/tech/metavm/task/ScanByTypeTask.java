@@ -1,6 +1,8 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
@@ -18,14 +20,14 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected List<Instance> scan(IInstanceContext context, Instance cursor, long limit) {
+    protected List<DurableInstance> scan(IInstanceContext context, DurableInstance cursor, long limit) {
         return context.getByType(type, cursor, limit);
     }
 
     @Override
-    protected final void process(List<Instance> batch, IInstanceContext context) {
+    protected final void process(List<DurableInstance> batch, IEntityContext context) {
         for (Instance instance : batch) {
-            processInstance(instance, context);
+            processInstance(instance, context.getInstanceContext());
         }
     }
 

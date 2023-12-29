@@ -1,21 +1,22 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeParam;
 
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Function;
 
 @EntityType("不确定类型")
 public class UncertainType extends CompositeType implements LoadAware  {
 
-    public static final IndexDef<UncertainType> KEY_IDX = IndexDef.uniqueKey(UncertainType.class, "key");
+    public static final IndexDef<UncertainType> KEY_IDX = IndexDef.createUnique(UncertainType.class, "key");
 
-    public static final IndexDef<UncertainType> LOWER_BOUND_IDX = IndexDef.normalKey(UncertainType.class, "lowerBound");
+    public static final IndexDef<UncertainType> LOWER_BOUND_IDX = IndexDef.create(UncertainType.class, "lowerBound");
 
-    public static final IndexDef<UncertainType> UPPER_BOUND_IDX = IndexDef.normalKey(UncertainType.class, "upperBound");
+    public static final IndexDef<UncertainType> UPPER_BOUND_IDX = IndexDef.create(UncertainType.class, "upperBound");
 
     @EntityField("上限")
     private Type upperBound;
@@ -23,14 +24,22 @@ public class UncertainType extends CompositeType implements LoadAware  {
     private Type lowerBound;
 
     public UncertainType(Long tmpId, Type lowerBound, Type upperBound) {
-        super(createName(lowerBound, upperBound), true, true, TypeCategory.UNCERTAIN);
+        super(getName(lowerBound, upperBound), getCode(lowerBound, upperBound), true, true, TypeCategory.UNCERTAIN);
         setTmpId(tmpId);
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
     }
 
-    private static String createName(Type lowerBound, Type upperBound) {
+    private static String getName(Type lowerBound, Type upperBound) {
         return "[" + lowerBound.getName() + "," + upperBound.getName() + "]";
+    }
+
+
+    private static @Nullable String getCode(Type lowerBound, Type upperBound) {
+        if(lowerBound.getCode() != null && upperBound.getCode() != null)
+            return "[" + lowerBound.getCode() + "," + upperBound.getCode() + "]";
+        else
+            return null;
     }
 
     @Override
@@ -74,18 +83,18 @@ public class UncertainType extends CompositeType implements LoadAware  {
 
     @Override
     protected UncertainTypeParam getParamInternal() {
-        try(var context = SerializeContext.enter()) {
+        try(var serContext = SerializeContext.enter()) {
             return new UncertainTypeParam(
-                    context.getRef(lowerBound),
-                    context.getRef(upperBound)
+                    serContext.getRef(lowerBound),
+                    serContext.getRef(upperBound)
             );
         }
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return "[" + lowerBound.getKey(getJavaType) +
-                "," + upperBound.getKey(getJavaType) + "]";
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        return "[" + context.getModelName(lowerBound, this) +
+                "," + context.getModelName(upperBound, this) + "]";
     }
 
     @Override

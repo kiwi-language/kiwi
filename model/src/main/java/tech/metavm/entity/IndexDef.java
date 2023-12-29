@@ -9,11 +9,11 @@ import java.util.List;
 
 public class IndexDef<T> {
 
-    public static <T> IndexDef<T> normalKey(Class<T> klass, String...fieldNames) {
+    public static <T> IndexDef<T> create(Class<T> klass, String...fieldNames) {
         return new IndexDef<>(klass, false, fieldNames);
     }
 
-    public static <T> IndexDef<T> uniqueKey(Class<T> klass, String...fieldNames) {
+    public static <T> IndexDef<T> createUnique(Class<T> klass, String...fieldNames) {
         return new IndexDef<>(klass, true, fieldNames);
     }
 

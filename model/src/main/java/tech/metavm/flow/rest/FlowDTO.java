@@ -10,27 +10,21 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public record FlowDTO(
-        Long tmpId,
         Long id,
+        Long tmpId,
         String name,
         String code,
-        boolean isConstructor,
-        boolean isAbstract,
         boolean isNative,
-        RefDTO declaringTypeRef,
         @Nullable ScopeDTO rootScope,
         RefDTO returnTypeRef,
         List<ParameterDTO> parameters,
         RefDTO typeRef,
-        RefDTO staticTypeRef,
         List<RefDTO> typeParameterRefs,
         @Nullable RefDTO horizontalTemplateRef,
-        @Nullable RefDTO verticalTemplateRef,
         List<RefDTO> typeArgumentRefs,
-        List<RefDTO> overriddenRefs,
-        List<FlowDTO> horizontalInstances,
-        boolean isStatic,
-        int state
+        boolean isTemplate,
+        int state,
+        FlowParam param
 ) implements BaseDTO, GenericDeclarationDTO {
 
     @JsonIgnore
@@ -49,6 +43,16 @@ public record FlowDTO(
     @JsonIgnore
     public ParameterDTO findParameterByName(String name) {
         return NncUtils.find(parameters, param -> param.name().equals(name));
+    }
+
+    @JsonIgnore
+    public boolean isMethod() {
+        return param instanceof MethodParam;
+    }
+
+    @JsonIgnore
+    public boolean isConstructor() {
+        return param instanceof MethodParam methodParam && methodParam.isConstructor();
     }
 
 }

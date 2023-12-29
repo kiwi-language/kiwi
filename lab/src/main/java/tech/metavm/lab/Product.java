@@ -1,6 +1,7 @@
 package tech.metavm.lab;
 
 import tech.metavm.entity.ChildEntity;
+import tech.metavm.entity.ChildList;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
@@ -19,14 +20,8 @@ public class Product {
     @EntityField("价格")
     private double price;
 
-    @EntityField("是否下架")
-    private boolean offShelf = false;
-
-    @EntityField("销量")
-    private long sales = 0;
-
     @ChildEntity("规格列表")
-    private List<SKU> skus = new ArrayList<>();
+    private final ChildList<SKU> skus = new ChildList<>();
 
     public Product(String title, int amount, double price) {
         this.title = title;
@@ -57,19 +52,5 @@ public class Product {
     public double getPrice() {
         return price;
     }
-
-    public boolean isOffShelf() {
-        return offShelf;
-    }
-
-    public void setOffShelf(boolean offShelf) {
-        this.offShelf = offShelf;
-    }
-
-
-    public long getSales() {
-        return sales;
-    }
-
 
 }

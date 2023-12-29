@@ -6,9 +6,43 @@ import java.util.*;
 
 public class IdentitySet<T> implements Set<T> {
 
-    public static <T> IdentitySet<T> of(T...values) {
+    public static <T> IdentitySet<T> of(T t1) {
         IdentitySet<T> set = new IdentitySet<>();
-        set.addAll(Arrays.asList(values));
+        set.add(t1);
+        return set;
+    }
+
+    public static <T> IdentitySet<T> of(T t1, T t2) {
+        IdentitySet<T> set = new IdentitySet<>();
+        set.add(t1);
+        set.add(t2);
+        return set;
+    }
+
+    public static <T> IdentitySet<T> of(T t1, T t2, T t3) {
+        IdentitySet<T> set = new IdentitySet<>();
+        set.add(t1);
+        set.add(t2);
+        set.add(t3);
+        return set;
+    }
+
+    public static <T> IdentitySet<T> of(T t1, T t2, T t3, T t4) {
+        IdentitySet<T> set = new IdentitySet<>();
+        set.add(t1);
+        set.add(t2);
+        set.add(t3);
+        set.add(t4);
+        return set;
+    }
+
+    public static <T> IdentitySet<T> of(T t1, T t2, T t3, T t4, T t5) {
+        IdentitySet<T> set = new IdentitySet<>();
+        set.add(t1);
+        set.add(t2);
+        set.add(t3);
+        set.add(t4);
+        set.add(t5);
         return set;
     }
 

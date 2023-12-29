@@ -2,33 +2,46 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.common.Page;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityIdProvider;
+import tech.metavm.entity.InstanceQuery;
+import tech.metavm.entity.InstanceQueryBuilder;
+import tech.metavm.entity.InstanceQueryField;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Field;
+import tech.metavm.object.instance.core.InstanceRepository;
+import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.mocks.TypeProviders;
+import tech.metavm.object.type.mocks.MockTypeRepository;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
+import tech.metavm.util.TestConstants;
 
 import static tech.metavm.util.MockRegistry.getField;
 import static tech.metavm.util.TestContext.getAppId;
 
 public class InstanceQueryServiceTest extends TestCase {
 
-    private MemInstanceContext context;
     private MemInstanceSearchService instanceSearchService;
     private InstanceQueryService instanceQueryService;
+    private InstanceRepository instanceRepository;
+    private ParameterizedFlowProvider parameterizedFlowProvider;
+    private TypeRepository typeRepository;
+    private ArrayTypeProvider arrayTypeProvider;
+    private EntityIdProvider idProvider;
 
     @Override
     protected void setUp() throws Exception {
-        EntityIdProvider idProvider = new MockIdProvider();
-        MockRegistry.setUp(idProvider);
-        context = new MemInstanceContext();
-        context.setTypeProvider(MockRegistry::getType);
+        idProvider = new MockIdProvider();
+        typeRepository = new MockTypeRepository();
         instanceSearchService = new MemInstanceSearchService();
         instanceQueryService = new InstanceQueryService(instanceSearchService);
+        instanceRepository = new MockInstanceRepository();
+        var compositeTypeProviders = new TypeProviders();
+        parameterizedFlowProvider = compositeTypeProviders.parameterizedFlowProvider;
+        arrayTypeProvider = compositeTypeProviders.arrayTypeProvider;
     }
 
     public void testEqCondition() {
@@ -51,14 +64,19 @@ public class InstanceQueryServiceTest extends TestCase {
                         InstanceQueryField.create(fooBazListField, baz)
                 )
                 .build();
-        Page<Instance> page = instanceQueryService.query(query, context);
+        var page = instanceQueryService.query(query,
+                instanceRepository,
+                parameterizedFlowProvider,
+                typeRepository,
+                arrayTypeProvider
+        );
         Assert.assertEquals(1, page.total());
         Assert.assertEquals(foo.getId(), page.data().get(0).getId());
     }
 
     private ClassInstance addInstance(ClassInstance instance) {
-        context.bind(instance);
-        context.initIds();
+        instanceRepository.bind(instance);
+        instance.initId(idProvider.allocateOne(TestConstants.APP_ID, instance.getType()));
         instanceSearchService.add(getAppId(), instance);
         return instance;
     }
@@ -75,7 +93,8 @@ public class InstanceQueryServiceTest extends TestCase {
                         foo.getField(fooNameField)
                 ))
                 .build();
-        Page<Instance> page2 = instanceQueryService.query(query2, context);
+        var page2 = instanceQueryService.query(query2,
+                instanceRepository, parameterizedFlowProvider, typeRepository, arrayTypeProvider);
         Assert.assertEquals(1, page2.total());
         Assert.assertEquals(foo.getId(), page2.data().get(0).getId());
     }

@@ -5,12 +5,12 @@ import tech.metavm.event.MockEventQueue;
 import tech.metavm.mocks.*;
 import tech.metavm.object.instance.CheckConstraintPlugin;
 import tech.metavm.object.instance.IndexConstraintPlugin;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
-import tech.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Date;
@@ -28,12 +28,13 @@ public class MockRegistry {
     private static MemInstanceStore INSTANCE_STORE;
     private static InstanceContext INSTANCE_CONTEXT;
     private static DefContext DEF_CONTEXT;
-    private static ModelInstanceMap MODEL_INSTANCE_MAP;
+    private static ObjectInstanceMap MODEL_INSTANCE_MAP;
     public static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
     private static InstanceContextFactory CONTEXT_FACTORY;
+    private static EntityContextFactory ENTITY_CONTEXT_FACTORY;
 
     private static String getFieldName(Class<?> javaType, String javaFieldName) {
-        java.lang.reflect.Field javaField = ReflectUtils.getField(javaType, javaFieldName);
+        java.lang.reflect.Field javaField = ReflectionUtils.getField(javaType, javaFieldName);
         return EntityUtils.getMetaFieldName(javaField);
     }
 
@@ -44,43 +45,52 @@ public class MockRegistry {
     public static void setUp(EntityIdProvider idProvider, MemInstanceStore instanceStore) {
         NncUtils.requireNonNull(idProvider, "idProvider required");
         ID_PROVIDER = idProvider;
+        var instanceLogService = new MockInstanceLogService();
         CONTEXT_FACTORY = new InstanceContextFactory(instanceStore, new MockEventQueue());
+        ENTITY_CONTEXT_FACTORY = new EntityContextFactory(CONTEXT_FACTORY, instanceStore.getIndexEntryMapper());
+        ENTITY_CONTEXT_FACTORY.setInstanceLogService(instanceLogService);
         CONTEXT_FACTORY.setIdService(idProvider);
         INSTANCE_STORE = instanceStore;
+        var dep = new InstanceContextDependency();
         INSTANCE_CONTEXT = (InstanceContext)
-                new InstanceContextBuilder(instanceStore, EXECUTOR, null, idProvider)
+                InstanceContextBuilder.newBuilder(ROOT_APP_ID, instanceStore, idProvider,
+                                dep, dep, dep)
                         .plugins(List.of(
                                 new CheckConstraintPlugin(),
-                                new IndexConstraintPlugin(instanceStore.getIndexEntryMapper())
+                                new IndexConstraintPlugin(instanceStore.getIndexEntryMapper(), dep)
                         ))
-                        .appId(ROOT_APP_ID)
-                        .buildInstanceContext();
+                        .executor(EXECUTOR)
+                        .build();
         java.util.function.Function<Object, Long> getIdFunc;
         if (idProvider instanceof BootIdProvider bootIdProvider) {
             getIdFunc = bootIdProvider::getId;
         } else getIdFunc = o -> null;
         DEF_CONTEXT = new DefContext(getIdFunc, INSTANCE_CONTEXT, new MemColumnStore());
+        dep.setEntityContext(DEF_CONTEXT);
         ModelDefRegistry.setDefContext(DEF_CONTEXT);
-        INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
-        MODEL_INSTANCE_MAP = new MockModelInstanceMap(DEF_CONTEXT);
+//        INSTANCE_CONTEXT.setEntityContext(DEF_CONTEXT);
+        MODEL_INSTANCE_MAP = DEF_CONTEXT.getObjectInstanceMap();
         EntityUtils.getModelClasses().stream()
                 .filter(k -> !ReadonlyArray.class.isAssignableFrom(k))
                 .forEach(DEF_CONTEXT::getDef);
         DEF_CONTEXT.finish();
-        InstanceContextFactory.setStdContext(INSTANCE_CONTEXT);
+        InstanceContextFactory.setDefContext(DEF_CONTEXT);
         ContextUtil.setAppId(APP_ID);
         ContextUtil.setUserId(USER_ID);
         initJobScheduler();
     }
 
     private static void initJobScheduler() {
-        try (IEntityContext rootContext =
-                     new InstanceContextBuilder(INSTANCE_STORE, EXECUTOR, INSTANCE_CONTEXT, ID_PROVIDER)
+        var dep = new InstanceContextDependency();
+        try (var rootContext =
+                     EntityContextBuilder.newBuilder(INSTANCE_STORE, EXECUTOR, ID_PROVIDER)
+                             .parent(DEF_CONTEXT)
                              .appId(ROOT_APP_ID)
                              .plugins(List.of(
                                      new CheckConstraintPlugin(),
-                                     new IndexConstraintPlugin(INSTANCE_STORE.getIndexEntryMapper())
+                                     new IndexConstraintPlugin(INSTANCE_STORE.getIndexEntryMapper(), dep)
                              )).build()) {
+            dep.setEntityContext(rootContext);
             rootContext.bind(new JobSchedulerStatus());
             rootContext.bind(new TaskSignal(APP_ID));
             rootContext.finish();
@@ -166,8 +176,8 @@ public class MockRegistry {
         return instance;
     }
 
-    private static void initInstanceIds(Instance instance) {
-        for (Instance inst : InstanceUtils.getAllNonValueInstances(List.of(instance))) {
+    private static void initInstanceIds(DurableInstance instance) {
+        for (var inst : Instances.getAllNonValueInstances(List.of(instance))) {
             if (inst.getId() == null) {
                 inst.initId(ID_PROVIDER.allocateOne(APP_ID, inst.getType()));
             }
@@ -182,11 +192,12 @@ public class MockRegistry {
     }
 
     public static IEntityContext newEntityContext(long appId) {
-        return CONTEXT_FACTORY.newEntityContext(appId, false);
+        return ENTITY_CONTEXT_FACTORY.newContext(appId);
     }
 
     public static IInstanceContext newContext(long appId) {
-        return CONTEXT_FACTORY.newContext(appId, false);
+        //noinspection resource
+        return newEntityContext(appId).getInstanceContext();
     }
 
     public static Foo getFoo() {
@@ -204,11 +215,11 @@ public class MockRegistry {
         return foo;
     }
 
-    private static void initIdRecursively(Instance instance, EntityIdProvider idProvider) {
+    private static void initIdRecursively(DurableInstance instance, EntityIdProvider idProvider) {
         initIdRecursively(instance, idProvider, new IdentitySet<>());
     }
 
-    private static void initIdRecursively(Instance instance, EntityIdProvider idProvider, IdentitySet<Instance> visited) {
+    private static void initIdRecursively(DurableInstance instance, EntityIdProvider idProvider, IdentitySet<Instance> visited) {
         if (visited.contains(instance)) {
             return;
         }
@@ -216,7 +227,7 @@ public class MockRegistry {
         if (instance.getId() == null && !instance.getType().isValue()) {
             instance.initId(idProvider.allocateOne(APP_ID, instance.getType()));
         }
-        for (Instance refInstance : instance.getRefInstances()) {
+        for (var refInstance : instance.getRefInstances()) {
             initIdRecursively(refInstance, idProvider, visited);
         }
     }
@@ -237,9 +248,9 @@ public class MockRegistry {
         return MODEL_INSTANCE_MAP.getInstance(model);
     }
 
-    public static Instance getInstance(Object model, ModelInstanceMap modelInstanceMap) {
+    public static Instance getInstance(Object model, ObjectInstanceMap objectInstanceMap) {
         NncUtils.requireNonNull(model);
-        return getDef(model.getClass()).createInstanceHelper(model, modelInstanceMap, null);
+        return getDef(model.getClass()).createInstanceHelper(model, objectInstanceMap, null);
     }
 
     public static Type getType(Class<?> javaClass) {
@@ -307,8 +318,8 @@ public class MockRegistry {
         return DEF_CONTEXT.getJavaType(type);
     }
 
-    public static ObjectType getObjectType() {
-        return (ObjectType) ModelDefRegistry.getType(Object.class);
+    public static AnyType getObjectType() {
+        return (AnyType) ModelDefRegistry.getType(Object.class);
     }
 
     public static ClassType getEnumType() {

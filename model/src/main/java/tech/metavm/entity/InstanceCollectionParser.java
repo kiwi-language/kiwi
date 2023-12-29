@@ -3,21 +3,20 @@ package tech.metavm.entity;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ObjectType;
+import tech.metavm.object.type.AnyType;
 import tech.metavm.util.InternalException;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.List;
 
-public class InstanceCollectionParser<E extends Instance, C extends ReadWriteArray<E>>
-    implements DefParser<C, ArrayInstance, InstanceCollectionDef<E,C>> {
+public class InstanceCollectionParser<E extends Instance, C extends ReadWriteArray<E>> extends DefParser<C, ArrayInstance, InstanceCollectionDef<E,C>> {
 
     private final Type javaType;
     private final Class<?> javaClass;
     private final Class<?> elementClass;
     private final ArrayType type;
+    private InstanceCollectionDef<E, C> def;
 
     public InstanceCollectionParser(Type javaType, Class<?> javaClass, Class<?> elementClass, ArrayType type) {
         this.javaType = javaType;
@@ -36,9 +35,9 @@ public class InstanceCollectionParser<E extends Instance, C extends ReadWriteArr
                 Type elementType = parameterizedType.getActualTypeArguments()[0];
                 if(Instance.class.isAssignableFrom(elementClass)
                         && elementType == elementClass
-                        && (type.getElementType() instanceof ObjectType)) {
+                        && (type.getElementType() instanceof AnyType)) {
                     //noinspection unchecked,rawtypes
-                    return new InstanceCollectionDef(
+                    return def =  new InstanceCollectionDef(
                             javaClass, javaType, elementClass, type
                     );
                 }
@@ -50,12 +49,22 @@ public class InstanceCollectionParser<E extends Instance, C extends ReadWriteArr
     }
 
     @Override
-    public List<Type> getDependencyTypes() {
-        return List.of();
+    public InstanceCollectionDef<E, C> get() {
+        return def;
     }
 
     @Override
-    public void initialize() {
+    public void generateSignature() {
+
+    }
+
+    @Override
+    public void generateDeclaration() {
+
+    }
+
+    @Override
+    public void generateDefinition() {
 
     }
 

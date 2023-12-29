@@ -13,7 +13,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
 
     private static final String ID_FILE_DIR = "/id";
 
-    private static final Pattern ID_FILE_NAME_PTN = Pattern.compile(".+\\.properties");
+    private static final Pattern ID_FILE_NAME_PATTERN = Pattern.compile(".+\\.properties");
 
     private final String saveDir;
 
@@ -33,7 +33,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    Matcher matcher = ID_FILE_NAME_PTN.matcher(line);
+                    Matcher matcher = ID_FILE_NAME_PATTERN.matcher(line);
                     if (matcher.matches()) {
                         fileNames.add( ID_FILE_DIR + "/" + line);
                     }

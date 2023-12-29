@@ -3,7 +3,9 @@ package tech.metavm.object.instance;
 import org.springframework.stereotype.Component;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.InstanceContext;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.persistence.*;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.persistence.mappers.InstanceMapper;
@@ -123,9 +125,9 @@ public class InstanceStore extends BaseInstanceStore {
         }
     }
 
-    public boolean updateSyncVersion(List<VersionPO> versions) {
+    public void updateSyncVersion(List<VersionPO> versions) {
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.updateSyncVersion")) {
-            return instanceMapper.updateSyncVersion(versions) == versions.size();
+            NncUtils.doInBatch(versions, instanceMapper::updateSyncVersion);
         }
     }
 
@@ -139,7 +141,7 @@ public class InstanceStore extends BaseInstanceStore {
                 entry.addMessage("ids", ids);
             var records = instanceMapper.selectForest(context.getAppId(), ids,
                     context.getLockMode().code());
-            var typeIds = NncUtils.mapUnique(records, InstancePO::getTypeId);
+            var typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getId()));
             context.buffer(typeIds);
             return records;
         }
@@ -157,7 +159,7 @@ public class InstanceStore extends BaseInstanceStore {
             }
             List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(), request.ids(),
                     context.getLockMode().code());
-            Set<Long> typeIds = NncUtils.mapUnique(records, InstancePO::getTypeId);
+            Set<Id> typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getTypeId()));
             context.buffer(typeIds);
             return records;
         }
@@ -179,7 +181,7 @@ public class InstanceStore extends BaseInstanceStore {
             if (title != null) {
                 return title;
             }
-            return context.get(id).getTitle();
+            return context.get(PhysicalId.of(id)).getTitle();
         }
     }
 

@@ -30,6 +30,7 @@ public record TryEndFieldDTO(
         return FieldDTOBuilder.newBuilder(name, typeRef)
                 .tmpId(fieldRef().tmpId())
                 .id(fieldRef.id())
+                .readonly(true)
                 .build();
     }
 

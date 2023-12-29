@@ -1,7 +1,9 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.view.Mapping;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -16,7 +18,8 @@ public record InstanceQuery(
         int page,
         int pageSize,
         List<InstanceQueryField> fields,
-        List<Long> newlyCreated,
-        List<Long> excluded
-) {
+        List<Id> newlyCreated,
+        List<Id> excluded,
+        @Nullable Mapping sourceMapping
+        ) {
 }

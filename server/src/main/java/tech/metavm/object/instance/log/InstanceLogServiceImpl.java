@@ -3,15 +3,15 @@ package tech.metavm.object.instance.log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.Entity;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.IInstanceContextFactory;
-import tech.metavm.object.instance.ChangeType;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.search.InstanceSearchService;
-import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -19,23 +19,22 @@ import java.util.List;
 import java.util.Set;
 
 @Component
-public class InstanceLogServiceImpl implements InstanceLogService {
+public class InstanceLogServiceImpl extends EntityContextFactoryBean implements InstanceLogService {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(InstanceLogServiceImpl.class);
 
     private final InstanceSearchService instanceSearchService;
 
-    private final IInstanceContextFactory instanceContextFactory;
-
     private final IInstanceStore instanceStore;
 
     private final List<LogHandler<?>> handlers;
 
-    public InstanceLogServiceImpl(InstanceSearchService instanceSearchService,
-                                  IInstanceContextFactory instanceContextFactory,
+    public InstanceLogServiceImpl(
+            EntityContextFactory entityContextFactory,
+            InstanceSearchService instanceSearchService,
                                   IInstanceStore instanceStore, List<LogHandler<?>> handlers) {
+        super(entityContextFactory);
         this.instanceSearchService = instanceSearchService;
-        this.instanceContextFactory = instanceContextFactory;
         this.instanceStore = instanceStore;
         this.handlers = handlers;
     }
@@ -46,10 +45,10 @@ public class InstanceLogServiceImpl implements InstanceLogService {
             return;
         }
         long appId = logs.get(0).getAppId();
-        List<Long> idsToLoad = NncUtils.filterAndMap(
+        List<Id> idsToLoad = NncUtils.filterAndMap(
                 logs,
                 InstanceLog::isInsertOrUpdate,
-                InstanceLog::getId
+                log -> new PhysicalId(log.getId())
         );
         Set<Long> newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         try (var context = newContext(appId)) {
@@ -76,10 +75,6 @@ public class InstanceLogServiceImpl implements InstanceLogService {
                 i -> context.getEntity(handler.getEntityClass(), i));
         if(!entities.isEmpty())
             handler.process(entities, clientId, context);
-    }
-
-    private IEntityContext newContext(long appId) {
-        return instanceContextFactory.newEntityContext(appId, false);
     }
 
 }

@@ -46,7 +46,7 @@ public class RootMethodGetter {
     }
 
     private boolean isMethodSignatureMatched(Method m1, Method m2) {
-        return ReflectUtils.getMethodSignature(m1).equals(ReflectUtils.getMethodSignature(m2));
+        return ReflectionUtils.getMethodSignature(m1).equals(ReflectionUtils.getMethodSignature(m2));
     }
 
     private List<Class<?>> getSupers(Class<?> klass) {

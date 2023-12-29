@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
-import tech.metavm.flow.MetaFrame;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
@@ -16,13 +15,13 @@ import java.util.Objects;
 public class NodeExpression extends Expression {
 
     @EntityField("节点")
-    private final NodeRT<?> node;
+    private final NodeRT node;
 
-    public NodeExpression(@NotNull NodeRT<?> node) {
+    public NodeExpression(@NotNull NodeRT node) {
         this.node = node;
     }
 
-    public NodeRT<?> getNode() {
+    public NodeRT getNode() {
         return node;
     }
 
@@ -47,11 +46,6 @@ public class NodeExpression extends Expression {
     @Override
     public List<Expression> getChildren() {
         return List.of();
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new NodeExpression(node);
     }
 
     @Override

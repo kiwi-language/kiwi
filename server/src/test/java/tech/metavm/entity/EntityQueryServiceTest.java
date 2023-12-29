@@ -6,9 +6,11 @@ import tech.metavm.common.Page;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
+import tech.metavm.util.TestConstants;
 
 import java.util.List;
 
@@ -16,18 +18,18 @@ import static tech.metavm.util.TestContext.getAppId;
 
 public class EntityQueryServiceTest extends TestCase {
 
-    private MockEntityContext entityContext;
     private MemInstanceSearchService instanceSearchService;
     private EntityQueryService entityQueryService;
+    private IEntityContext entityContext;
 
     @Override
     protected void setUp() throws Exception {
         EntityIdProvider idProvider = new MockIdProvider();
         MockRegistry.setUp(idProvider);
-        entityContext = new MockEntityContext(MockRegistry.getDefContext(), idProvider, MockRegistry.getDefContext());
         instanceSearchService = new MemInstanceSearchService();
         InstanceQueryService instanceQueryService = new InstanceQueryService(instanceSearchService);
         entityQueryService = new EntityQueryService(instanceQueryService);
+        entityContext = MockRegistry.newEntityContext(TestConstants.APP_ID);
     }
 
     public <T extends Entity> T addEntity(T entity) {
@@ -35,7 +37,7 @@ public class EntityQueryServiceTest extends TestCase {
             entityContext.bind(entity);
             entityContext.initIds();
         }
-        instanceSearchService.add(getAppId(), entityContext.getEntityInstance(entity));
+        instanceSearchService.add(getAppId(), (ClassInstance) entityContext.getInstance(entity));
         return entity;
     }
 

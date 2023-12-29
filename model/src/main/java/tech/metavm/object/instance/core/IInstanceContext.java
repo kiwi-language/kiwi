@@ -1,11 +1,15 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.IndexProvider;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeProvider;
+import tech.metavm.object.view.MappingProvider;
+import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.profile.Profiler;
 
@@ -14,7 +18,7 @@ import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
 
-public interface IInstanceContext extends InstanceSink, Closeable {
+public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository {
 
     IInstanceContext createSame(long appId);
 
@@ -22,11 +26,15 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     LockMode getLockMode();
 
-    default void replace(Instance instance) {
+    default void replace(DurableInstance instance) {
         replace(List.of(instance));
     }
 
-    void replace(Collection<Instance> instances);
+    void replace(Collection<DurableInstance> instances);
+
+    default ClassInstance createView(ClassInstance source, ObjectMapping mapping) {
+        return mapping.map(source, this, getParameterizedFlowProvider());
+    }
 
     /*
      * Used to filter out dead ids from search result arsing from index rebuild delay
@@ -35,41 +43,52 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     boolean isAlive(long id);
 
-    Instance get(long id);
+    DurableInstance get(Id id);
 
-    Instance get(RefDTO ref);
+    default DurableInstance get(long id) {
+        return get(PhysicalId.of(id));
+    }
 
-    @Nullable Instance getBuffered(long id);
+//    Instance get(RefDTO ref);
+
+//    Instance get(InstanceId id);
+
+    @Nullable
+    DurableInstance getBuffered(Id id);
 
     String getClientId();
 
-    Instance internalGet(long id);
+    DurableInstance internalGet(Id id);
 
-    Instance getIfPresentByTmpId(long tmpId);
+//    Instance getIfPresentByTmpId(long tmpId);
 
-    boolean containsRef(RefDTO ref);
+    boolean contains(Id id);
 
     Profiler getProfiler();
 
-    List<Instance> batchGet(Collection<Long> ids);
+    List<DurableInstance> batchGet(Collection<Id> ids);
 
-    List<Instance> getByType(Type type, Instance startExclusive, long limit);
+    List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit);
 
-    List<Instance> scan(Instance startExclusive, long limit);
+    List<DurableInstance> scan(DurableInstance startExclusive, long limit);
 
     boolean existsInstances(Type type, boolean persistedOnly);
 
-    IEntityContext getEntityContext();
+    ParameterizedFlowProvider getParameterizedFlowProvider();
 
-    boolean containsInstance(Instance instance);
+    TypeProvider getTypeProvider();
+
+    MappingProvider getMappingProvider();
+
+    boolean containsInstance(DurableInstance instance);
 
     boolean containsId(long id);
 
-    List<Instance> getByReferenceTargetId(long targetId, Instance startExclusive, long limit);
+    List<DurableInstance> getByReferenceTargetId(long targetId, DurableInstance startExclusive, long limit);
 
-    void buffer(long id);
+    void buffer(Id id);
 
-    default void buffer(Collection<Long> ids) {
+    default void buffer(Collection<? extends Id> ids) {
         ids.forEach(this::buffer);
     }
 
@@ -89,27 +108,27 @@ public interface IInstanceContext extends InstanceSink, Closeable {
         return (ClassType) getType(id);
     }
 
-    void batchRemove(Collection<Instance> instances);
+    void batchRemove(Collection<DurableInstance> instances);
 
-    boolean remove(Instance instance);
+    boolean remove(DurableInstance instance);
 
-    List<Instance> selectByKey(IndexKeyRT indexKey);
+    List<DurableInstance> selectByKey(IndexKeyRT indexKey);
 
-    List<Instance> query(InstanceIndexQuery query);
+    List<DurableInstance> query(InstanceIndexQuery query);
 
     long count(InstanceIndexQuery query);
 
-    default Instance selectByUniqueKey(IndexKeyRT key) {
+    default DurableInstance selectByUniqueKey(IndexKeyRT key) {
         return NncUtils.first(selectByKey(key));
     }
 
-    void bind(Instance instance);
+    void bind(DurableInstance instance);
 
     void registerCommitCallback(Runnable action);
 
     <E> E getAttribute(ContextAttributeKey<E> key);
 
-    void initIdManually(Instance instance, long id);
+    void initIdManually(DurableInstance instance, long id);
 
     void increaseVersionsForAll();
 
@@ -117,9 +136,9 @@ public interface IInstanceContext extends InstanceSink, Closeable {
 
     @Nullable Consumer<Object> getBindHook();
 
-    Instance getRemoved(long id);
+    DurableInstance getRemoved(long id);
 
-    void invalidateCache(Instance instance);
+    void invalidateCache(DurableInstance instance);
 
     @Nullable EventQueue getEventQueue();
 }

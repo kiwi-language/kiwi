@@ -1,13 +1,15 @@
 package tech.metavm.object.instance;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
-import tech.metavm.util.*;
+import tech.metavm.util.Instances;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -40,7 +42,7 @@ public class InstanceFactory {
                                             Class<? extends Type> typeType) {
         return ALLOCATE_METHOD_MAP.computeIfAbsent(
                 instanceType,
-                t -> ReflectUtils.getMethod(instanceType, ALLOCATE_METHOD_NAME, typeType)
+                t -> ReflectionUtils.getMethod(instanceType, ALLOCATE_METHOD_NAME, typeType)
         );
     }
 
@@ -52,8 +54,8 @@ public class InstanceFactory {
                                 Function<Long, Type> getType,
                                 @Nullable InstanceParentRef parentRef,
                                 IInstanceContext context) {
-        if (instanceDTO.id() != null && instanceDTO.id() != 0L) {
-            var instance = context.get(RefDTO.fromId(instanceDTO.id()));
+        if (instanceDTO.id() != null) {
+            var instance = context.get(instanceDTO.parseId());
             NncUtils.requireTrue(
                     Objects.equals(instance.getParentRef(), parentRef),
                     "Trying to change parent. instance id: " + instanceDTO.id());
@@ -69,13 +71,13 @@ public class InstanceFactory {
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context
     ) {
-        NncUtils.requireTrue(instanceDTO.id() == null || instanceDTO.id() == 0L,
+        NncUtils.requireTrue(instanceDTO.id() == null,
                 "Id of new instance must be null or zero");
         Type type = getType.apply(instanceDTO.typeRef().id());
         if (type instanceof ClassType classType) {
             ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
             Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(param.fields(), InstanceFieldDTO::fieldId);
-            ClassInstance instance = new ClassInstance(classType, parentRef);
+            ClassInstance instance = ClassInstance.allocate(classType, parentRef);
             for (Field field : classType.getAllFields()) {
                 if (fieldMap.containsKey(field.getId())) {
                     var fieldValue = resolveValue(
@@ -89,7 +91,7 @@ public class InstanceFactory {
                         instance.initField(field, fieldValue);
                 } else {
                     if (!field.isChild()) {
-                        instance.initField(field, InstanceUtils.nullInstance());
+                        instance.initField(field, Instances.nullInstance());
                     }
                 }
             }
@@ -126,7 +128,7 @@ public class InstanceFactory {
                                         @Nullable InstanceParentRef parentRef,
                                         IInstanceContext context) {
         if (rawValue == null) {
-            return InstanceUtils.nullInstance();
+            return Instances.nullInstance();
         }
         if (type.isBinaryNullable()) {
             type = type.getUnderlyingType();
@@ -140,12 +142,12 @@ public class InstanceFactory {
 //            }
             return resolvePrimitiveValue(primitiveFieldValue);
         } else if (rawValue instanceof ReferenceFieldValue referenceFieldValue) {
-            return context.get(referenceFieldValue.getId());
+            return context.get(Id.parse(referenceFieldValue.getId()));
         } else if (rawValue instanceof InstanceFieldValue instanceFieldValue) {
             return save(instanceFieldValue.getInstance(), getType, parentRef, context);
         } else if (rawValue instanceof ArrayFieldValue arrayFieldValue) {
-            if (arrayFieldValue.getId() != null && arrayFieldValue.getId() != 0) {
-                ArrayInstance arrayInstance = (ArrayInstance) context.get(arrayFieldValue.getId());
+            if (arrayFieldValue.getId() != null) {
+                ArrayInstance arrayInstance = (ArrayInstance) context.get(Id.parse(arrayFieldValue.getId()));
                 arrayInstance.clear();
                 arrayInstance.setElements(
                         NncUtils.map(
@@ -160,7 +162,7 @@ public class InstanceFactory {
                 var array = ArrayInstance.allocate((ArrayType) type);
                 var elements = NncUtils.map(
                         arrayFieldValue.getElements(),
-                        e -> resolveValue(e, StandardTypes.getObjectType(), getType,
+                        e -> resolveValue(e, StandardTypes.getAnyType(), getType,
                                 InstanceParentRef.ofArray(array), context)
                 );
                 array.resetParent(parentRef);
@@ -175,13 +177,13 @@ public class InstanceFactory {
         var kind = PrimitiveKind.getByCode(fieldValue.getPrimitiveKind());
         var value = fieldValue.getValue();
         return switch (kind) {
-            case LONG -> InstanceUtils.longInstance(((Number) value).longValue());
-            case DOUBLE -> InstanceUtils.doubleInstance(((Number) value).doubleValue());
-            case BOOLEAN -> InstanceUtils.booleanInstance((Boolean) value);
-            case PASSWORD -> InstanceUtils.passwordInstance((String) value);
-            case STRING -> InstanceUtils.stringInstance((String) value);
-            case TIME -> InstanceUtils.timeInstance(((Number) value).longValue());
-            case NULL -> InstanceUtils.nullInstance();
+            case LONG -> Instances.longInstance(((Number) value).longValue());
+            case DOUBLE -> Instances.doubleInstance(((Number) value).doubleValue());
+            case BOOLEAN -> Instances.booleanInstance((Boolean) value);
+            case PASSWORD -> Instances.passwordInstance((String) value);
+            case STRING -> Instances.stringInstance((String) value);
+            case TIME -> Instances.timeInstance(((Number) value).longValue());
+            case NULL -> Instances.nullInstance();
             case VOID -> throw new InternalException("Invalid primitive kind 'void'");
         };
     }

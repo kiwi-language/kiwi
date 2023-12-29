@@ -2,7 +2,7 @@ package tech.metavm.autograph;
 
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.ExpressionTypeMap;
-import tech.metavm.expression.ExpressionUtil;
+import tech.metavm.expression.Expressions;
 import tech.metavm.expression.TypeNarrower;
 import tech.metavm.flow.*;
 import tech.metavm.util.NncUtils;
@@ -62,10 +62,10 @@ public class VariableTable {
         trySections.push(new TrySection(tryNode));
     }
 
-    Map<NodeRT<?>, Map<String, Expression>> exitTrySection(TryNode tryNode, List<String> outputVars) {
+    Map<NodeRT, Map<String, Expression>> exitTrySection(TryNode tryNode, List<String> outputVars) {
         var trySection = trySections.pop();
         NncUtils.requireTrue(trySection.tryNode == tryNode);
-        Map<NodeRT<?>, Map<String, Expression>> result = new HashMap<>();
+        Map<NodeRT, Map<String, Expression>> result = new HashMap<>();
         trySection.raiseVariables.forEach((raiseNode, variableMap) ->
             result.put(
                     raiseNode,
@@ -128,7 +128,7 @@ public class VariableTable {
         ExpressionTypeMap nextBranch(Branch branch) {
             var narrower = new TypeNarrower(branchNode.getExpressionTypes()::getType);
             ExpressionTypeMap extraExprTypeMap = null;
-            if(nextBranchCond != null && !ExpressionUtil.isConstantFalse(nextBranchCond)) {
+            if(nextBranchCond != null && !Expressions.isConstantFalse(nextBranchCond)) {
                 extraExprTypeMap = narrower.narrowType(nextBranchCond);
             }
             for (var entry : nextBranchEntries) {
@@ -142,8 +142,8 @@ public class VariableTable {
             var exprTypeMap = narrower.narrowType(branch.getCondition().getExpression());
             nextBranchEntries.clear();
             nextBranchCond = nextBranchCond == null ?
-                    ExpressionUtil.not(branch.getCondition().getExpression()) :
-                    ExpressionUtil.and(nextBranchCond, ExpressionUtil.not(branch.getCondition().getExpression()));
+                    Expressions.not(branch.getCondition().getExpression()) :
+                    Expressions.and(nextBranchCond, Expressions.not(branch.getCondition().getExpression()));
             return extraExprTypeMap != null ? exprTypeMap.merge(extraExprTypeMap) : exprTypeMap;
         }
 
@@ -151,7 +151,7 @@ public class VariableTable {
 
     private static class TrySection {
         private final TryNode tryNode;
-        private final Map<NodeRT<?>, VariableMap> raiseVariables = new HashMap<>();
+        private final Map<NodeRT, VariableMap> raiseVariables = new HashMap<>();
 
         private TrySection(TryNode tryNode) {
             this.tryNode = tryNode;

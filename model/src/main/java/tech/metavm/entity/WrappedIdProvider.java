@@ -17,7 +17,6 @@ public class WrappedIdProvider implements EntityIdProvider {
         this.underlyingIdProvider = underlyingIdProvider;
     }
 
-
     @Override
     public long getTypeId(long id) {
         Long typeId = getTypeIdInterceptor.apply(id);

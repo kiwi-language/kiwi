@@ -4,10 +4,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
 import tech.metavm.common.RefDTO;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
@@ -18,24 +18,20 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Password;
 
 import javax.annotation.Nullable;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static tech.metavm.object.type.Types.*;
 import static tech.metavm.util.NncUtils.requireNonNull;
 
 @Component
-public class TableManager {
+public class TableManager extends EntityContextFactoryBean {
 
     private final TypeManager typeManager;
 
-    private final InstanceContextFactory instanceContextFactory;
 
-    public TableManager(TypeManager typeManager, InstanceContextFactory instanceContextFactory) {
+    public TableManager(EntityContextFactory entityContextFactory, TypeManager typeManager) {
+        super(entityContextFactory);
         this.typeManager = typeManager;
-        this.instanceContextFactory = instanceContextFactory;
     }
 
     public TableDTO get(long id) {
@@ -63,7 +59,7 @@ public class TableManager {
 
     private void saveTitleField(TitleFieldDTO titleFieldDTO, ClassType type, IEntityContext context) {
         if (titleFieldDTO != null) {
-            Field titleField = type.getTileField();
+            Field titleField = type.getTitleField();
             if (titleField == null) {
                 Type titleFieldType = getType(
                         titleFieldDTO.name(),
@@ -73,10 +69,10 @@ public class TableManager {
                         null,
                         context
                 );
-                FieldBuilder.newBuilder(titleFieldDTO.name(), null, type, titleFieldType)
-                        .asTitle(true)
+                titleField = FieldBuilder.newBuilder(titleFieldDTO.name(), null, type, titleFieldType)
                         .unique(titleFieldDTO.unique())
                         .build();
+                type.setTitleField(titleField);
             } else {
                 titleField.setName(titleFieldDTO.name());
                 titleField.setUnique(titleFieldDTO.unique());
@@ -95,9 +91,9 @@ public class TableManager {
     }
 
     public ColumnDTO getColumn(long id) {
-        try (IInstanceContext context = instanceContextFactory.newContext()) {
-            FieldDTO fieldDTO = context.getEntityContext().getField(id).toDTO();
-            if (fieldDTO == null || !isVisible(fieldDTO, context.getEntityContext())) {
+        try (var context = newContext()) {
+            FieldDTO fieldDTO = context.getField(id).toDTO();
+            if (fieldDTO == null || !isVisible(fieldDTO, context)) {
                 return null;
             }
             return convertToColumnDTO(fieldDTO, context.getType(fieldDTO.typeId()));
@@ -126,9 +122,9 @@ public class TableManager {
                     new ArrayFieldValue(
                             null,
                             false,
-                            NncUtils.map(enumEditContext.getDefaultOptions(), EnumConstantRT::toFieldValue)
+                            NncUtils.map(enumEditContext.getDefaultOptions(), enumConstantRT -> enumConstantRT.toFieldValue(context.getInstanceContext()))
                     )
-                    : NncUtils.first(enumEditContext.getDefaultOptions(), EnumConstantRT::toFieldValue);
+                    : NncUtils.first(enumEditContext.getDefaultOptions(), enumConstantRT1 -> enumConstantRT1.toFieldValue(context.getInstanceContext()));
         } else {
             type = getType(column, NncUtils.get(column.targetId(), context::getType), context);
             defaultValue = column.defaultValue();
@@ -139,7 +135,6 @@ public class TableManager {
                         .access(column.access())
                         .defaultValue(defaultValue)
                         .unique(column.unique())
-                        .asTitle(column.asTitle())
                         .declaringTypeId(declaringType.getId())
                         .build(),
                 context
@@ -159,7 +154,6 @@ public class TableManager {
                 typeInfo.required,
                 typeInfo.multiValued,
                 field.unique(),
-                field.asTitle(),
                 field.defaultValue(),
                 typeInfo.choiceOptions
         );
@@ -215,7 +209,7 @@ public class TableManager {
         if (type instanceof ClassType) {
             return ColumnType.TABLE;
         }
-        if (type instanceof ObjectType || type instanceof TypeVariable) {
+        if (type instanceof AnyType || type instanceof TypeVariable) {
             return ColumnType.ANY;
         }
         throw new InternalException("Can not get column type for type: " + type);
@@ -236,12 +230,12 @@ public class TableManager {
 
     private boolean isPreselected(EnumConstantRT enumConstant, FieldValue fieldDefaultValue) {
         if (fieldDefaultValue instanceof ReferenceFieldValue ref) {
-            return ref.getId() == enumConstant.getId();
+            return Objects.equals(ref.getId(), enumConstant.getInstanceIdString());
         }
         if (fieldDefaultValue instanceof ArrayFieldValue array) {
             for (FieldValue element : array.getElements()) {
                 if (element instanceof ReferenceFieldValue ref) {
-                    if (ref.getId() == enumConstant.getId()) {
+                    if (Objects.equals(ref.getId(), enumConstant.getInstanceIdString())) {
                         return true;
                     }
                 }
@@ -299,7 +293,8 @@ public class TableManager {
 
     private TableDTO convertToTable(TypeDTO typeDTO, IEntityContext context) {
         ClassTypeParam param = (ClassTypeParam) typeDTO.param();
-        FieldDTO titleField = NncUtils.find(param.fields(), FieldDTO::asTitle);
+        FieldDTO titleField = param.titleFieldRef() != null ?
+                NncUtils.find(param.fields(), f -> f.getRef().equals(param.titleFieldRef())) : null;
         return new TableDTO(
                 typeDTO.id(),
                 typeDTO.name(),
@@ -337,10 +332,6 @@ public class TableManager {
                 fieldDTO.unique(),
                 fieldDTO.defaultValue()
         );
-    }
-
-    private IEntityContext newContext() {
-        return instanceContextFactory.newBuilder().build();
     }
 
     private record TypeInfo(

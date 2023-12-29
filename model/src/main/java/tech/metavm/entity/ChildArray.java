@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
@@ -45,6 +46,12 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
     public void resetChildren(Iterable<? extends T> children) {
         table.clear();
         addChildren(children);
+    }
+
+    @Override
+    public void forEachDescendant(Consumer<Entity> action) {
+        action.accept(this);
+        forEach(child -> child.forEachDescendant(action));
     }
 
     @Override

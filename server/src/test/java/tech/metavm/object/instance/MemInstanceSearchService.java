@@ -1,13 +1,12 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.common.Page;
-import tech.metavm.expression.ExpressionEvaluator;
 import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.search.IndexSourceBuilder;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.MultiApplicationMap;
 import tech.metavm.util.NncUtils;
 
@@ -66,10 +65,9 @@ public class MemInstanceSearchService implements InstanceSearchService {
         if(!query.typeIds().contains(instance.getType().getId())) {
             return false;
         }
-        ExpressionEvaluator evaluator = new ExpressionEvaluator(
-                query.condition(), new InstanceEvaluationContext(instance, null), true
+        return Instances.isTrue(
+                query.condition().evaluate(new InstanceEvaluationContext(instance, null))
         );
-        return InstanceUtils.isTrue(evaluator.evaluate());
     }
 
     public void add(long appId, ClassInstance instance) {

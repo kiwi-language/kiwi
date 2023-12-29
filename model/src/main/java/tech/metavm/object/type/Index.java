@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import tech.metavm.entity.*;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.InstanceEvaluationContext;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -10,14 +11,12 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.IndexFieldDTO;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
 
 @EntityType("索引")
-public class Index extends Constraint implements GlobalKey {
+public class Index extends Constraint implements LocalKey {
 
     @ChildEntity("索引字段列表")
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
@@ -60,8 +59,6 @@ public class Index extends Constraint implements GlobalKey {
         return NncUtils.map(fields, IndexField::getField);
     }
 
-
-
     public IndexKeyRT createIndexKeyByModels(List<Object> values, IEntityContext entityContext) {
         NncUtils.requireEquals(fields.size(), values.size());
         List<Instance> instanceValues = new ArrayList<>();
@@ -72,8 +69,8 @@ public class Index extends Constraint implements GlobalKey {
         return createIndexKey(instanceValues);
     }
 
-    public List<IndexKeyRT> createIndexKey(ClassInstance instance, IEntityContext entityContext) {
-        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance, entityContext);
+    public List<IndexKeyRT> createIndexKey(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+        EvaluationContext evaluationContext = new InstanceEvaluationContext(instance, parameterizedFlowProvider);
         Map<IndexField, Instance> values = new HashMap<>();
         for (int i = 0; i < fields.size() - 1; i++) {
             var field = fields.get(i);
@@ -114,10 +111,10 @@ public class Index extends Constraint implements GlobalKey {
     }
 
     @Override
-    protected IndexParam getParam(boolean forPersistence) {
+    protected IndexParam getParam() {
         return new IndexParam(
                 unique,
-                NncUtils.map(fields, item -> item.toDTO(forPersistence))
+                NncUtils.map(fields, item -> item.toDTO())
         );
     }
 
@@ -178,20 +175,4 @@ public class Index extends Constraint implements GlobalKey {
         return visitor.visitIndex(this);
     }
 
-    @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        NncUtils.requireNonNull(getIndexDef(),
-                String.format("Can not create model id for unique constraint '%s' because" +
-                        " indexDef is not present", this)
-        );
-        Class<?> javaClass = (Class<?>) getJavaType.apply(getDeclaringType());
-        for (java.lang.reflect.Field indexDefField : EntityUtils.getIndexDefFields(javaClass)) {
-            IndexDef<?> indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
-            if (indexDef == getIndexDef()) {
-                return ReflectUtils.getFieldQualifiedName(indexDefField);
-            }
-        }
-        throw new InternalException(
-                String.format("Can not find a indexDef field for UniqueConstraint '%s'", this));
-    }
 }

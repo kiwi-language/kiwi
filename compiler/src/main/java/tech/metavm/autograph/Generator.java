@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
+import tech.metavm.expression.Func;
 import tech.metavm.object.type.*;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
@@ -19,11 +20,11 @@ import tech.metavm.flow.Flow;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.getEnumConstantName;
-import static tech.metavm.expression.ExpressionUtil.trueExpression;
+import static tech.metavm.expression.Expressions.trueExpression;
 
 public class Generator extends VisitorBase {
 
-    private final LinkedList<FlowGenerator> builders = new LinkedList<>();
+    private final LinkedList<MethodGenerator> builders = new LinkedList<>();
     private final Map<String, ClassType> classes = new HashMap<>();
     private final LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
     private final TypeResolver typeResolver;
@@ -47,15 +48,15 @@ public class Generator extends VisitorBase {
         klass.setStage(ResolutionStage.DEFINITION);
         klass.setCode(psiClass.getQualifiedName());
 
-        var initFlow = klass.getFlowByCodeAndParamTypes("<init>", List.of());
-        var initFlowBuilder = new FlowGenerator(initFlow, typeResolver, entityContext, this);
-        initFlowBuilder.enterScope(initFlowBuilder.getFlow().getRootScope());
+        var initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
+        var initFlowBuilder = new MethodGenerator(initFlow, typeResolver, entityContext, this);
+        initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
         initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
         initFlowBuilder.createInput();
 
-        var classInit = klass.getFlowByCodeAndParamTypes("<cinit>", List.of());
-        var classInitFlowBuilder = new FlowGenerator(classInit, typeResolver, entityContext, this);
-        classInitFlowBuilder.enterScope(classInitFlowBuilder.getFlow().getRootScope());
+        var classInit = klass.getMethodByCodeAndParamTypes("<cinit>", List.of());
+        var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, entityContext, this);
+        classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getRootScope());
         classInitFlowBuilder.createInput();
 
         enterClass(new ClassInfo(klass, psiClass, initFlowBuilder, classInitFlowBuilder));
@@ -71,9 +72,9 @@ public class Generator extends VisitorBase {
         boolean hasConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!hasConstructor) {
             var constructor = klass.getDefaultConstructor();
-            var constructorGen = new FlowGenerator(constructor, typeResolver, entityContext, this);
+            var constructorGen = new MethodGenerator(constructor, typeResolver, entityContext, this);
             constructorGen.enterScope(constructor.getRootScope());
-            constructorGen.createSubFlow(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
+            constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
             constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
             constructorGen.exitScope();
         }
@@ -96,8 +97,8 @@ public class Generator extends VisitorBase {
                 )
         );
         List<Expression> args = new ArrayList<>();
-        args.add(ExpressionUtil.constantString(getEnumConstantName(enumConstant)));
-        args.add(ExpressionUtil.constantLong(currentClassInfo().nextEnumConstantOrdinal()));
+        args.add(Expressions.constantString(getEnumConstantName(enumConstant)));
+        args.add(Expressions.constantLong(currentClassInfo().nextEnumConstantOrdinal()));
         args.addAll(NncUtils.map(
                 requireNonNull(enumConstant.getArgumentList()).getExpressions(),
                 expr -> builder.getExpressionResolver().resolve(expr)
@@ -124,7 +125,7 @@ public class Generator extends VisitorBase {
         }
         else if(field.getType().isNullable()) {
             var builder = currentClassInfo().fieldBuilder;
-            builder.createUpdate(builder.getVariable("this"), Map.of(field, ExpressionUtil.nullExpression()));
+            builder.createUpdate(builder.getVariable("this"), Map.of(field, Expressions.nullExpression()));
         }
     }
 
@@ -158,10 +159,10 @@ public class Generator extends VisitorBase {
                             trySectionOutput.keySet(),
                             raiseNode -> new TryEndValue(
                                     raiseNode,
-                                    Value.expression(trySectionOutput.get(raiseNode).get(outputVar.toString()))
+                                    Values.expression(trySectionOutput.get(raiseNode).get(outputVar.toString()))
                             )
                     ),
-                    Value.expression(builder().getVariable(outputVar.toString())),
+                    Values.expression(builder().getVariable(outputVar.toString())),
                     tryEndNode
             );
         }
@@ -183,7 +184,7 @@ public class Generator extends VisitorBase {
                     catchLiveOut = getBlockLiveOut(catchBlock);
                 }
                 var branch = branchNode.addBranch(
-                        Value.expression(
+                        Values.expression(
                                 createExceptionCheck(exceptionExpr, catchSection.getPreciseCatchTypes())
                         )
                 );
@@ -215,8 +216,8 @@ public class Generator extends VisitorBase {
                             branchNode.getBranches(),
                             java.util.function.Function.identity(),
                             branch ->
-                                    Value.expression(
-                                            branch.isPreselected() ? exceptionExprFinal : ExpressionUtil.nullExpression()
+                                    Values.expression(
+                                            branch.isPreselected() ? exceptionExprFinal : Expressions.nullExpression()
                                     )
                     )
             );
@@ -227,7 +228,7 @@ public class Generator extends VisitorBase {
         }
         var exceptBranchNode = builder().createBranchNode(false);
         var exceptionBranch = exceptBranchNode.addBranch(
-                Value.expression(new UnaryExpression(UnaryOperator.IS_NOT_NULL, exceptionExpr))
+                Values.expression(new UnaryExpression(UnaryOperator.IS_NOT_NULL, exceptionExpr))
         );
         exceptBranchNode.addDefaultBranch();
         builder().enterCondSection(exceptBranchNode);
@@ -237,7 +238,8 @@ public class Generator extends VisitorBase {
         builder().createMerge();
     }
 
-    private @Nullable Set<QualifiedName> getBlockLiveOut(PsiCodeBlock block) {
+    @Nullable
+    private Set<QualifiedName> getBlockLiveOut(PsiCodeBlock block) {
         if (block.isEmpty()) {
             return null;
         }
@@ -260,32 +262,32 @@ public class Generator extends VisitorBase {
     }
 
     @Override
-    public void visitMethod(PsiMethod method) {
-        var flow = NncUtils.requireNonNull(method.getUserData(Keys.FLOW));
-        FlowGenerator builder = new FlowGenerator(flow, typeResolver, entityContext, this);
+    public void visitMethod(PsiMethod psiMethod) {
+        var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
+        MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);
-        builder.enterScope(flow.getRootScope());
+        builder.enterScope(method.getRootScope());
         var selfNode = builder().createSelf();
         builder.setVariable("this", new NodeExpression(selfNode));
-        processParameters(method.getParameterList(), flow);
-        if (method.isConstructor()) {
+        processParameters(psiMethod.getParameterList(), method);
+        if (psiMethod.isConstructor()) {
             var superClass = currentClass().getSuperClass();
             if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
-                    && !isSuperCallPresent(method)) {
-                builder().createSubFlow(
+                    && !isSuperCallPresent(psiMethod)) {
+                builder().createMethodCall(
                         builder().getVariable("this"),
-                        superClass.getFlowByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
+                        superClass.getMethodByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
                         List.of()
                 );
             }
-            builder.createSubFlow(
+            builder.createMethodCall(
                     new NodeExpression(selfNode),
-                    currentClassInfo().fieldBuilder.getFlow(),
+                    currentClassInfo().fieldBuilder.getMethod(),
                     List.of()
             );
             if (currentClass().isEnum()) {
                 var klass = currentClass();
-                var inputNode = flow.getInputNode();
+                var inputNode = method.getInputNode();
                 builder.createUpdate(
                         new NodeExpression(selfNode),
                         Map.of(
@@ -303,10 +305,10 @@ public class Generator extends VisitorBase {
                 );
             }
         }
-        requireNonNull(method.getBody()).accept(this);
-        if (method.isConstructor()) {
-            builder.createReturn(new NodeExpression(flow.getRootNode()));
-        } else if (!requireNonNull(flow.getRootScope().getLastNode()).isExit()) {
+        requireNonNull(psiMethod.getBody()).accept(this);
+        if (psiMethod.isConstructor()) {
+            builder.createReturn(new NodeExpression(method.getRootNode()));
+        } else if (!requireNonNull(method.getRootScope().getLastNode()).isExit()) {
             builder.createReturn();
         }
         builder.exitScope();
@@ -386,7 +388,7 @@ public class Generator extends VisitorBase {
                             ArrayExpression.create(expressions, entityContext)
                     );
                 }
-                branch = branchNode.addBranch(Value.expression(cond));
+                branch = branchNode.addBranch(Values.expression(cond));
             } else {
                 branch = branchNode.addDefaultBranch();
             }
@@ -407,7 +409,7 @@ public class Generator extends VisitorBase {
                     .build();
             var mergeField = new MergeNodeField(field, mergeNode);
             condOutputs.forEach((branch, values) ->
-                    mergeField.setValue(branch, Value.expression(values.get(outputVar.toString())))
+                    mergeField.setValue(branch, Values.expression(values.get(outputVar.toString())))
             );
         }
     }
@@ -457,7 +459,7 @@ public class Generator extends VisitorBase {
     public void visitIfStatement(PsiIfStatement statement) {
         BranchNode branchNode = builder().createBranchNode(false);
 
-        var thenBranch = branchNode.addBranch(Value.expression(trueExpression()));
+        var thenBranch = branchNode.addBranch(Values.expression(trueExpression()));
         var elseBranch = branchNode.addDefaultBranch(true);
 
         enterCondSection(branchNode);
@@ -508,7 +510,7 @@ public class Generator extends VisitorBase {
             for (var entry2 : condOutputs.entrySet()) {
                 var branch = entry2.getKey();
                 var branchOutputs = entry2.getValue();
-                mergeField.setValue(branch, Value.expression(branchOutputs.get(qn.toString())));
+                mergeField.setValue(branch, Values.expression(branchOutputs.get(qn.toString())));
             }
             builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField()));
         }
@@ -573,18 +575,18 @@ public class Generator extends VisitorBase {
             var field = loopVar2Field.get(loopVar);
             var initialValue = initialValues.get(field);
             var updatedValue = builder().getVariable(loopVar.toString());
-            node.setField(field, Value.expression(initialValue), Value.expression(updatedValue));
+            node.setField(field, Values.expression(initialValue), Values.expression(updatedValue));
             builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field));
         }
         if (condition != null) {
             node.setField(requireNonNull(condField),
-                    Value.expression(requireNonNull(condInitialValue)),
-                    Value.expression(requireNonNull(condUpdatedValue))
+                    Values.expression(requireNonNull(condInitialValue)),
+                    Values.expression(requireNonNull(condUpdatedValue))
             );
             var extraCond = new PropertyExpression(new NodeExpression(node), condField);
             var finalCond = node.getCondition() == null ? extraCond :
-                    ExpressionUtil.and(node.getCondition().getExpression(), extraCond);
-            node.setCondition(Value.expression(finalCond));
+                    Expressions.and(node.getCondition().getExpression(), extraCond);
+            node.setCondition(Values.expression(finalCond));
         }
     }
 
@@ -611,42 +613,42 @@ public class Generator extends VisitorBase {
                                 .newBuilder("索引", "index", whileNode.getType(), StandardTypes.getLongType())
                                 .build();
                         whileNode.setCondition(
-                                Value.expression(
-                                        ExpressionUtil.lt(
-                                                ExpressionUtil.nodeProp(whileNode, indexField),
-                                                new FunctionExpression(Function.LEN, iteratedExpr)
+                                Values.expression(
+                                        Expressions.lt(
+                                                Expressions.nodeProperty(whileNode, indexField),
+                                                new FunctionExpression(Func.LEN, iteratedExpr)
                                         )
                                 )
                         );
                         whileNode.setField(indexField,
-                                Value.expression(ExpressionUtil.constantLong(0L)),
-                                Value.expression(
-                                        ExpressionUtil.add(
-                                                ExpressionUtil.nodeProp(whileNode, indexField),
-                                                ExpressionUtil.constantLong(1L)
+                                Values.expression(Expressions.constantLong(0L)),
+                                Values.expression(
+                                        Expressions.add(
+                                                Expressions.nodeProperty(whileNode, indexField),
+                                                Expressions.constantLong(1L)
                                         )
                                 )
                         );
                         builder().setVariable(statement.getIterationParameter().getName(),
-                                ExpressionUtil.arrayAccess(iteratedExpr,
-                                        ExpressionUtil.nodeProp(whileNode, indexField))
+                                Expressions.arrayAccess(iteratedExpr,
+                                        Expressions.nodeProperty(whileNode, indexField))
                         );
                     });
         } else {
             var collType = (ClassType) iteratedExpr.getType();
             typeResolver.ensureDeclared(collType);
-            var itNode = builder().createSubFlow(
-                    iteratedExpr, collType.getFlowByCode("iterator"),
+            var itNode = builder().createMethodCall(
+                    iteratedExpr, collType.findMethodByCode("iterator"),
                     List.of()
             );
             var itType = (ClassType) NncUtils.requireNonNull(itNode.getType());
             processLoop(statement, getExtraLoopTest(statement), (node, loopVar2Field) -> {
                 node.setCondition(
-                        Value.expression(new FunctionExpression(Function.HAS_NEXT, new NodeExpression(itNode)))
+                        Values.expression(new FunctionExpression(Func.HAS_NEXT, new NodeExpression(itNode)))
                 );
-                var elementNode = builder().createSubFlow(
+                var elementNode = builder().createMethodCall(
                         new NodeExpression(itNode),
-                        itType.getFlowByCode("next"),
+                        itType.findMethodByCode("next"),
                         List.of()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
@@ -655,7 +657,8 @@ public class Generator extends VisitorBase {
     }
 
 
-    private @Nullable PsiExpression getExtraLoopTest(PsiForeachStatement statement) {
+    @Nullable
+    private PsiExpression getExtraLoopTest(PsiForeachStatement statement) {
         var firstStmt = getFirstStatement(statement.getBody());
         if (isExtraLoopTest(firstStmt)) {
             return ((PsiMethodCallExpression) ((PsiExpressionStatement) firstStmt).getExpression())
@@ -672,8 +675,8 @@ public class Generator extends VisitorBase {
     @Override
     public void visitReturnStatement(PsiReturnStatement statement) {
         Expression returnValue;
-        if (builder().getFlow().isConstructor()) {
-            returnValue = new NodeExpression(builder().getFlow().getRootNode());
+        if (Flows.isConstructor(builder().getMethod())) {
+            returnValue = new NodeExpression(builder().getMethod().getRootNode());
         } else {
             if (statement.getReturnValue() != null) {
                 returnValue = resolveExpression(statement.getReturnValue());
@@ -706,7 +709,7 @@ public class Generator extends VisitorBase {
         return builder().getExpressionResolver().resolve(expression);
     }
 
-    private FlowGenerator builder() {
+    private MethodGenerator builder() {
         return requireNonNull(builders.peek());
     }
 
@@ -718,15 +721,15 @@ public class Generator extends VisitorBase {
     private static final class ClassInfo {
         private final ClassType klass;
         private final PsiClass psiClass;
-        private final FlowGenerator fieldBuilder;
-        private final FlowGenerator staticBuilder;
+        private final MethodGenerator fieldBuilder;
+        private final MethodGenerator staticBuilder;
         private int enumConstantCount;
 
         private ClassInfo(
                 ClassType klass,
                 PsiClass psiClass,
-                FlowGenerator fieldBuilder,
-                FlowGenerator staticBuilder
+                MethodGenerator fieldBuilder,
+                MethodGenerator staticBuilder
         ) {
             this.klass = klass;
             this.psiClass = psiClass;

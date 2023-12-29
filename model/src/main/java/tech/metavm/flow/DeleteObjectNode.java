@@ -1,55 +1,58 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.flow.rest.DeleteObjectParamDTO;
+import tech.metavm.entity.*;
+import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.flow.rest.DeleteObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.ValueDTO;
+import tech.metavm.object.instance.core.DurableInstance;
+
+import javax.annotation.Nullable;
 
 @EntityType("删除对象节点")
-public class DeleteObjectNode extends NodeRT<DeleteObjectParamDTO> {
+public class DeleteObjectNode extends NodeRT {
 
-    public static DeleteObjectNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext entityContext) {
-        DeleteObjectNode node = new DeleteObjectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
-        node.setParam(nodeDTO.getParam(), entityContext);
+    public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        DeleteObjectNodeParam param = nodeDTO.getParam();
+        var parsingContext = FlowParsingContext.create(scope, prev, context);
+        var objectId = ValueFactory.create(param.objectId(), parsingContext);
+        DeleteObjectNode node = (DeleteObjectNode) context.getNode(nodeDTO.getRef());
+        if (node != null)
+            node.setObject(objectId);
+        else
+            node = new DeleteObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, objectId);
         return node;
     }
 
     @ChildEntity("对象")
-    private Value objectId;
+    private Value object;
 
-    public DeleteObjectNode(Long tmpId, String name, NodeRT<?> prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
+    public DeleteObjectNode(Long tmpId, String name, @Nullable String code,  NodeRT prev, ScopeRT scope, Value object) {
+        super(tmpId, name, code, null, prev, scope);
+        this.object = object;
     }
 
-    public Value getObjectId() {
-        return objectId;
-    }
-
-    @Override
-    protected DeleteObjectParamDTO getParam(boolean persisting) {
-        return new DeleteObjectParamDTO(objectId.toDTO(persisting));
+    public Value getObject() {
+        return object;
     }
 
     @Override
-    protected void setParam(DeleteObjectParamDTO param, IEntityContext entityContext) {
-        setObjectId(param.objectId(), entityContext);
+    protected DeleteObjectNodeParam getParam(SerializeContext serializeContext) {
+        return new DeleteObjectNodeParam(object.toDTO());
     }
 
-    public void setObjectId(ValueDTO objectId, IEntityContext entityContext) {
-        setObjectId(ValueFactory.create(objectId, getParsingContext(entityContext)));
-    }
-
-    public void setObjectId(Value objectId) {
-        this.objectId = addChild(objectId, "objectId");
+    public void setObject(Value object) {
+        this.object = addChild(object, "object");
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        frame.deleteInstance(objectId.evaluate(frame));
+        frame.deleteInstance((DurableInstance) object.evaluate(frame));
         return next();
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("delete " + object.getText());
     }
 
     @Override

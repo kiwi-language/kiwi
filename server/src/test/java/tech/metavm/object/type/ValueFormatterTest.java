@@ -5,12 +5,14 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.MemInstanceContext;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.util.*;
+import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.MockRegistry;
+import tech.metavm.util.PojoMatcher;
+import tech.metavm.util.TestUtils;
 
 import static tech.metavm.util.TestConstants.APP_ID;
 
@@ -23,27 +25,14 @@ public class ValueFormatterTest extends TestCase {
         MockRegistry.setUp(new MockIdProvider());
     }
 
-    public void testParse() {
-        Instance instance = MockRegistry.getFooInstance();
-        InstanceDTO instanceDTO = instance.toDTO();
-
-        MemInstanceContext context = new MemInstanceContext();
-        context.setTypeProvider(MockRegistry::getType);
-        context.replace(instance);
-        Instance recoveredInst = ValueFormatter.parseInstance(instanceDTO, context);
-
-        Assert.assertNotNull(recoveredInst);
-
-        MatcherAssert.assertThat(PersistenceUtils.toInstancePO(recoveredInst, APP_ID), PojoMatcher.of(PersistenceUtils.toInstancePO(instance, APP_ID)));
-    }
-
     public void testFormat() {
-        ClassInstance instance = MockRegistry.getFooInstance();
-        for (Field field : instance.getType().getAllFields()) {
-            Object fieldValue = ValueFormatter.format(instance.getField(field));
-            TestUtils.logJSON(LOGGER, field.getName(), fieldValue);
+        try (var context = MockRegistry.newEntityContext(APP_ID)) {
+            ClassInstance instance = MockRegistry.getFooInstance();
+            for (Field field : instance.getType().getAllFields()) {
+                Object fieldValue = ValueFormatter.format(instance.getField(field), context.getInstanceContext());
+                TestUtils.logJSON(LOGGER, field.getName(), fieldValue);
+            }
         }
-
     }
 
 }

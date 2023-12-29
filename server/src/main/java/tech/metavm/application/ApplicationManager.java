@@ -15,7 +15,7 @@ import tech.metavm.user.*;
 import tech.metavm.user.rest.dto.*;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import java.util.List;
 import static tech.metavm.util.Constants.*;
 
 @Component
-public class ApplicationManager {
+public class ApplicationManager extends EntityContextFactoryBean {
 
     private final RoleManager roleManager;
 
@@ -32,15 +32,13 @@ public class ApplicationManager {
 
     private final IdService idService;
 
-    private final InstanceContextFactory instanceContextFactory;
-
     private final EntityQueryService entityQueryService;
 
-    public ApplicationManager(RoleManager roleManager, PlatformUserManager platformUserManager, IdService idService, InstanceContextFactory instanceContextFactory, EntityQueryService entityQueryService) {
+    public ApplicationManager(EntityContextFactory entityContextFactory, RoleManager roleManager, PlatformUserManager platformUserManager, IdService idService, EntityQueryService entityQueryService) {
+        super(entityContextFactory);
         this.roleManager = roleManager;
         this.platformUserManager = platformUserManager;
         this.idService = idService;
-        this.instanceContextFactory = instanceContextFactory;
         this.entityQueryService = entityQueryService;
     }
 
@@ -224,7 +222,7 @@ public class ApplicationManager {
             app.addAdmin(user);
             context.bind(new Message(user, String.format("您已成为应用'%s'的管理员", app.getName()),
                     MessageKind.DEFAULT,
-                    InstanceUtils.nullInstance()));
+                    Instances.nullInstance()));
             context.finish();
         }
     }
@@ -238,7 +236,7 @@ public class ApplicationManager {
             app.removeAdmin(user);
             context.bind(new Message(user, String.format("您不再是应用'%s'的管理员", app.getName()),
                     MessageKind.DEFAULT,
-                    InstanceUtils.nullInstance()));
+                    Instances.nullInstance()));
             context.finish();
         }
     }
@@ -292,10 +290,6 @@ public class ApplicationManager {
     public void ensureAppOwner(Application application) {
         if (!application.getOwner().idEquals(ContextUtil.getUserId()))
             throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_OWNER);
-    }
-
-    private IEntityContext newPlatformContext() {
-        return instanceContextFactory.newEntityContext(PLATFORM_APP_ID);
     }
 
     private void setupContextInfo(long appId) {

@@ -1,11 +1,7 @@
 package tech.metavm.object.type;
 
-import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.InstanceFactory;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PrimitiveInstance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.*;
@@ -83,9 +79,9 @@ public class ValueFormatter {
     public static Instance parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
         if (instanceDTO.id() != null) {
-            actualType = context.get(instanceDTO.id()).getType();
+            actualType = context.get(instanceDTO.parseId()).getType();
         } else {
-            actualType = context.getEntityContext().getType(instanceDTO.typeRef());
+            actualType = context.getTypeProvider().getType(instanceDTO.typeRef());
         }
         if (actualType instanceof ClassType classType) {
             Map<Field, Instance> fieldValueMap = new HashMap<>();
@@ -96,39 +92,43 @@ public class ValueFormatter {
             );
             ClassInstance instance;
             if (instanceDTO.id() != null) {
-                instance = (ClassInstance) context.get(instanceDTO.id());
+                instance = (ClassInstance) context.get(instanceDTO.parseId());
             } else {
-                instance = new ClassInstance(classType);
+                instance = ClassInstance.allocate(classType);
             }
             for (Field field : classType.getAllFields()) {
                 FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getId()), InstanceFieldDTO::value);
                 Instance fieldValue = rawValue != null ?
                         parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
-                        : InstanceUtils.nullInstance();
+                        : Instances.nullInstance();
                 if (!field.isChild()) {
                     fieldValueMap.put(field, fieldValue);
                 }
             }
             if (instanceDTO.id() != null) {
-                fieldValueMap.forEach(instance::setField);
+                var instanceF = instance;
+                fieldValueMap.forEach((field, value) -> {
+                    if (!field.isReadonly())
+                        instanceF.setField(field, value);
+                });
             } else {
                 fieldValueMap.forEach(instance::initField);
                 instance.ensureAllFieldsInitialized();
                 context.bind(instance);
             }
-            if (instanceDTO.id() != null) {
-                instance = (ClassInstance) context.get(instanceDTO.id());
-                fieldValueMap.forEach(instance::setField);
-            } else {
-                instance = new ClassInstance(fieldValueMap, classType);
-                context.bind(instance);
-            }
+//            if (instanceDTO.id() != null) {
+//                instance = (ClassInstance) context.get(instanceDTO.id());
+//                fieldValueMap.forEach(instance::setField);
+//            } else {
+//                instance = new ClassInstance(fieldValueMap, classType);
+//                context.bind(instance);
+//            }
             return instance;
         } else if (actualType instanceof ArrayType arrayType) {
             ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
             ArrayInstance array;
             if (instanceDTO.id() != null) {
-                array = (ArrayInstance) context.get(instanceDTO.id());
+                array = (ArrayInstance) context.get(instanceDTO.parseId());
             } else {
                 array = new ArrayInstance(arrayType);
             }
@@ -144,7 +144,7 @@ public class ValueFormatter {
                 Set<Instance> elementSet = new IdentitySet<>(elements);
                 for (Instance element : new ArrayList<>(array.getElements())) {
                     if (!elementSet.contains(element)) {
-                        array.remove(element);
+                        array.removeElement(element);
                     }
                 }
             } else {
@@ -157,7 +157,7 @@ public class ValueFormatter {
     }
 
     public static Instance parseReference(ReferenceFieldValue referenceDTO, IInstanceContext context) {
-        return context.get(referenceDTO.getId());
+        return context.get(Id.parse(referenceDTO.getId()));
     }
 
     private static Instance parseOne(FieldValue rawValue, Type type,
@@ -165,8 +165,8 @@ public class ValueFormatter {
         Instance value = InstanceFactory.resolveValue(
                 rawValue, type, context::getType, parentRef, context
         );
-        if (value.isReference() && value.getId() == null) {
-            context.bind(value);
+        if (value instanceof DurableInstance d && d.getId() == null) {
+            context.bind(d);
         }
         return value;
 //        if(type.isNullable()) {
@@ -203,7 +203,7 @@ public class ValueFormatter {
 //        throw new InternalException("Can not parse indexItem value '" + rawValue + "'");
     }
 
-    public static Object format(Instance value) {
+    public static Object format(Instance value, IInstanceContext context) {
         if (value == null) {
             return null;
         }
@@ -214,10 +214,11 @@ public class ValueFormatter {
                 return primitiveInstance.getValue();
             }
         } else {
+            var d = (DurableInstance) value;
             if (value.getType().isValue()) {
                 return value.toDTO();
-            } else if (value.getId() != null) {
-                return new ReferenceDTO(value.getId());
+            } else if (d.getId() != null) {
+                return new ReferenceDTO(d.getId());
             } else {
                 return null;
             }

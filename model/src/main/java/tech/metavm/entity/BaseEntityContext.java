@@ -7,8 +7,10 @@ import tech.metavm.event.EventQueue;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.NodeRT;
 import tech.metavm.flow.ScopeRT;
+import tech.metavm.object.instance.DefaultObjectInstanceMap;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.InstanceFactory;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.*;
@@ -27,12 +29,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     private final Map<Long, Object> entityMap = new HashMap<>();
     private final IInstanceContext instanceContext;
-    private final IdentityHashMap<Object, Instance> model2instance = new IdentityHashMap<>();
-    private final IdentitySet<Object> removedEntities = new IdentitySet<>();
-    private final Map<Long, Object> removedEntityMap = new HashMap<>();
-    private final @Nullable IEntityContext parent;
+    private final IdentityHashMap<Object, DurableInstance> model2instance = new IdentityHashMap<>();
+    //    private final IdentitySet<Object> removedEntities = new IdentitySet<>();
+//    private final Map<Long, Object> removedEntityMap = new HashMap<>();
+    @Nullable
+    private final IEntityContext parent;
     private final GenericContext genericContext;
     private final Map<TypeCategory, CompositeTypeContext<?>> compositeTypeContexts = new IdentityHashMap<>();
+
+    private final ObjectInstanceMap objectInstanceMap = new DefaultObjectInstanceMap(this);
 
     public BaseEntityContext(IInstanceContext instanceContext, @Nullable IEntityContext parent) {
         this.instanceContext = instanceContext;
@@ -65,11 +70,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> List<T> getByType(Class<? extends T> javaType, T startExclusive, long limit) {
+    public <T> List<T> getByType(Class<? extends T> javaType, @Nullable T startExclusive, long limit) {
         NncUtils.requireNonNull(instanceContext);
-        Instance startInstance = NncUtils.get(startExclusive, this::getInstance);
+        var startInstance = NncUtils.get(startExclusive, this::getInstance);
         Type type = getDefContext().getType(javaType);
-        List<Instance> instances = instanceContext.getByType(type, startInstance, limit);
+        var instances = instanceContext.getByType(type, startInstance, limit);
         return NncUtils.map(instances, i -> getEntity(javaType, i));
     }
 
@@ -79,7 +84,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T getEntity(Class<T> klass, Instance instance) {
+    public <T> T getEntity(Class<T> klass, DurableInstance instance) {
         return getEntity(klass, instance, null);
     }
 
@@ -88,23 +93,22 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T getEntity(Class<T> entityClass, Instance instance, @Nullable ModelDef<T, ?> def) {
-        if (instance instanceof PrimitiveInstance primitiveInstance)
-            return InstanceUtils.deserializePrimitive(primitiveInstance, entityClass);
-        var found = instance.getMappedEntity();
+    public <T> T getEntity(Class<T> entityClass, DurableInstance instance, @Nullable ModelDef<T, ?> def) {
+        var d = (DurableInstance) instance;
+        var found = d.getMappedEntity();
         if (found != null)
             return entityClass.cast(found);
-        NncUtils.requireNonNull(instance.getContext());
+        NncUtils.requireNonNull(d.getContext());
         if (def == null) {
             var resolvedDef = getDefContext().tryGetDef(instance.getType());
             if (resolvedDef == null || resolvedDef instanceof DirectDef<?>)
                 return entityClass.cast(instance);
             def = resolvedDef.as(entityClass);
         }
-        if (instance.getContext() == instanceContext)
-            return createEntity(instance, def);
+        if (d.getContext() == instanceContext)
+            return createEntity(d, def);
         if (parent != null)
-            return parent.createEntity(instance, def);
+            return parent.createEntity(d, def);
         else
             throw new InternalException(String.format("Instance '%s' is not contained in the context", instance));
     }
@@ -132,7 +136,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public void onInstanceIdInit(Instance instance) {
+    public void onInstanceIdInit(DurableInstance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
             entityMap.put(instance.getIdRequired(), model);
@@ -143,7 +147,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    public void onInstanceInitialized(Instance instance) {
+    public void onInstanceInitialized(DurableInstance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
             var def = getDefContext().getDefByModel(model);
@@ -152,34 +156,35 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public void onInstanceRemoved(Instance instance) {
+    public void onInstanceRemoved(DurableInstance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
             if (model instanceof Entity entity)
                 entity.setRemoved();
             model2instance.remove(model);
-            removedEntities.add(model);
-            if (instance.getId() != null)
-                removedEntityMap.put(instance.getIdRequired(), model);
-            if (instance.getId() != null) {
-                entityMap.remove(instance.getIdRequired());
-            }
+//            removedEntities.add(model);
+//            if (instance.getId() != null)
+//                removedEntityMap.put(instance.getIdRequired(), model);
+//            if (instance.getId() != null) {
+//                entityMap.remove(instance.getIdRequired());
+//            }
         }
     }
 
     @Override
     public boolean isRemoved(Object entity) {
-        return removedEntities.contains(entity);
+        var instance = getInstance(entity);
+        return instance instanceof DurableInstance d && d.isRemoved();
     }
 
     @Override
     public <T> T getRemoved(Class<T> entityClass, long id) {
-        return entityClass.cast(removedEntityMap.get(id));
+        return entityClass.cast(getEntity(entityClass, instanceContext.getRemoved(id)));
     }
 
     @Override
     public boolean isNewEntity(Object entity) {
-        Instance instance = model2instance.get(entity);
+        var instance = model2instance.get(entity);
         if (instance != null)
             return instance.isNew();
         else
@@ -190,7 +195,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return !isNewEntity(entity);
     }
 
-    protected <T> void beforeGetModel(Class<T> klass, Instance instance) {
+    protected <T> void beforeGetModel(Class<T> klass, DurableInstance instance) {
     }
 
     @Override
@@ -230,7 +235,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public FunctionType getFunctionType(List<Type> parameterTypes, Type returnType) {
-        return getFunctionTypeContext().get(parameterTypes, returnType);
+        return getFunctionTypeContext().getFunctionType(parameterTypes, returnType);
     }
 
     @Override
@@ -256,7 +261,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public <T> T createEntity(Instance instance, ModelDef<T, ?> def) {
+    public <T> T createEntity(DurableInstance instance, ModelDef<T, ?> def) {
         T model;
         if (def.isProxySupported()) {
             final ModelDef<?, ?> defFinal = def;
@@ -267,19 +272,35 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                     m -> initializeModel(m, instance, defFinal)
             );
         } else
-            model = def.getJavaClass().cast(def.createModelHelper(instance, this));
+            model = def.getJavaClass().cast(def.createModelHelper(instance, objectInstanceMap));
         addMapping(model, instance);
         return model;
     }
 
     @Override
+    public void onPatchBuild() {
+        updateInstances();
+    }
+
+    @Override
+    public boolean onChange(Instance instance) {
+        if (instance instanceof ClassInstance classInstance) {
+            var entity = getEntity(Object.class, classInstance);
+            if (entity instanceof ChangeAware changeAware) {
+                changeAware.onChange(classInstance, this);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void afterContextIntIds() {
         try (var ignored = getProfiler().enter("BaseEntityContext.afterContextIntIds", true)) {
-            for (Object model : new ArrayList<>(model2instance.keySet())) {
-                if (isNewEntity(model) && (model instanceof Entity entity)) {
-                    if (entity.afterContextInitIds()) {
-                        updateInstance(model, getInstance(model));
-                    }
+            for (Object object : new ArrayList<>(model2instance.keySet())) {
+                if (isNewEntity(object) && (object instanceof Entity entity)) {
+                    if (entity.afterContextInitIds())
+                        updateInstance(object, getInstance(object));
                 }
             }
         }
@@ -293,7 +314,9 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private void initializeModel0(Object model, Instance instance, ModelDef<?, ?> def) {
-        def.initModelHelper(model, instance, this);
+        def.initModelHelper(model, instance, objectInstanceMap);
+        if(model instanceof LoadAware loadAware)
+            loadAware.onLoad(this);
         EntityUtils.setProxyState(model, EntityMethodHandler.State.INITIALIZED);
     }
 
@@ -307,7 +330,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public void initIdManually(Object model, long id) {
-        Instance instance = getInstance(model);
+        var instance = getInstance(model);
         if (instance.getId() != null) {
             throw new InternalException("Model " + model + " already its id initialized");
         }
@@ -326,7 +349,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return getEntity(Field.class, id);
     }
 
-    public NodeRT<?> getNode(long id) {
+    public NodeRT getNode(long id) {
         return getEntity(NodeRT.class, id);
     }
 
@@ -362,27 +385,27 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public <T> T getEntity(Class<T> entityType, long id) {
-        var found = getBufferedEntity(entityType, id);
-        if (found != null) {
-            ensureNotRemoved(found);
-            return found;
-        } else
-            return getEntity(entityType, instanceContext.get(id));
+        return getEntity(entityType, instanceContext.get(new PhysicalId(id)));
     }
 
-    private void ensureNotRemoved(Object entity) {
-        if (entity instanceof Entity e)
-            e.ensureNotRemoved();
-        else {
-            if (removedEntities.contains(entity))
-                throw new InternalException(String.format("'%s' is already removed", entity));
-        }
-    }
+//    private void ensureNotRemoved(Object entity) {
+//        if (entity instanceof Entity e)
+//            e.ensureNotRemoved();
+//        else {
+//            if (removedEntities.contains(entity))
+//                throw new InternalException(String.format("'%s' is already removed", entity));
+//        }
+//    }
 
     @Override
-    public <T> T getEntity(Class<T> entityType, RefDTO reference) {
-        var instance = Objects.requireNonNull(instanceContext).get(reference);
-        return instance != null ? getEntity(entityType, instance) : null;
+    public <T> @Nullable T getEntity(Class<T> entityType, RefDTO ref) {
+        if (ref.isEmpty())
+            return null;
+        var id = ref.toId();
+        if (id.tryGetPhysicalId() == null && !instanceContext.contains(id))
+            return null;
+        var instance = instanceContext.get(id);
+        return getEntity(entityType, instance);
     }
 
     public <T> T get(Class<T> klass, long id) {
@@ -411,7 +434,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         try (var ignored1 = getProfiler().enter("flush")) {
             flush();
         }
-        updateInstances();
+//        updateInstances();
 //            validateInstances();
         try (var ignored1 = getProfiler().enter("writeInstances")) {
             writeInstances(instanceContext);
@@ -445,7 +468,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     protected void writeInstances(IInstanceContext instanceContext) {
     }
 
-    private void updateInstances() {
+    @Override
+    public void updateInstances() {
         try (var ignored = getProfiler().enter("updateInstances")) {
             new IdentityHashMap<>(model2instance).forEach(this::updateInstance);
         }
@@ -462,10 +486,16 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //        }
 //    }
 
-    private void updateInstance(Object model, Instance instance) {
-        if (isModelInitialized(model)) {
+    @Override
+    public void update(Object object) {
+        updateInstance(object, getInstance(object));
+    }
+
+    private void updateInstance(Object object, DurableInstance instance) {
+        if (isModelInitialized(object) && !instance.isRemoved()) {
             ModelDef<?, ?> def = getDefContext().getDef(instance.getType());
-            def.updateInstanceHelper(model, instance, this);
+            def.updateInstanceHelper(object, instance, objectInstanceMap);
+            updateMemIndex(object);
         }
     }
 
@@ -475,7 +505,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         try (var ignored = enter("selectByKey")) {
             NncUtils.requireNonNull(instanceContext, "instanceContext required");
             IndexKeyRT indexKey = createIndexKey(indexDef, values);
-            List<Instance> instances = instanceContext.selectByKey(indexKey);
+            var instances = instanceContext.selectByKey(indexKey);
             return createEntityList(indexDef.getType(), instances);
         }
     }
@@ -483,10 +513,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Nullable
     @Override
     public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object... values) {
+        NncUtils.requireTrue(indexDef.isUnique());
         try (var ignored = enter("selectByUniqueKey")) {
             NncUtils.requireNonNull(instanceContext, "instanceContext required");
             IndexKeyRT indexKey = createIndexKey(indexDef, values);
-            Instance instance = instanceContext.selectByUniqueKey(indexKey);
+            var instance = instanceContext.selectByUniqueKey(indexKey);
             return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).get(0);
         }
     }
@@ -505,7 +536,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     @Override
     public <T> List<T> query(EntityIndexQuery<T> query) {
         Class<T> javaClass = query.indexDef().getType();
-        List<Instance> instances = instanceContext.query(convertToInstanceIndexQuery(query));
+        var instances = instanceContext.query(convertToInstanceIndexQuery(query));
         return createEntityList(javaClass, instances);
     }
 
@@ -532,7 +563,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                                                            Class<?> javaClass,
                                                            EntityIndexQueryItem queryItem) {
         ClassType type = indexConstraint.getDeclaringType();
-        Field field = type.getFieldByJavaField(ReflectUtils.getField(javaClass, queryItem.fieldName()));
+        Field field = type.getFieldByJavaField(ReflectionUtils.getField(javaClass, queryItem.fieldName()));
         return new InstanceIndexQueryItem(
                 indexConstraint.getFieldByTypeField(field),
                 queryItem.operator(),
@@ -542,15 +573,15 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     private Instance resolveInstance(Object value) {
         if (value == null) {
-            return InstanceUtils.nullInstance();
+            return Instances.nullInstance();
         }
         if (containsModel(value)) {
             return getInstance(value);
         }
-        return InstanceUtils.serializePrimitive(value, getDefContext()::getType);
+        return Instances.serializePrimitive(value, getDefContext()::getType);
     }
 
-    private <T> List<T> createEntityList(Class<T> javaType, List<Instance> instances) {
+    private <T> List<T> createEntityList(Class<T> javaType, List<DurableInstance> instances) {
         return EntityProxyFactory.getProxy(
                 new TypeReference<ReadonlyArray<T>>() {
                 },
@@ -584,47 +615,42 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 entities = NncUtils.exclude(entities, parent::containsModel);
             }
         }
-        Set<Instance> instances = beforeRemove(entities);
+        var instances = beforeRemove(entities);
 //        updateInstances();
         if (NncUtils.isEmpty(instances))
             return;
-        if (instanceContext != null) {
+        if (instanceContext != null)
             instanceContext.batchRemove(instances);
-        } else {
+        else
             instances.forEach(this::onInstanceRemoved);
-        }
     }
 
-    private Set<Instance> beforeRemove(List<?> entities) {
-        Set<Instance> instancesToRemove = new IdentitySet<>();
+    private Set<DurableInstance> beforeRemove(List<?> entities) {
+        var instancesToRemove = new IdentitySet<DurableInstance>();
         for (Object entity : entities) {
             beforeRemove0(entity, instancesToRemove);
         }
         return instancesToRemove;
     }
 
-    private void beforeRemove0(Object model, Set<Instance> instancesToRemove) {
-        if (model instanceof Instance instance) {
+    private void beforeRemove0(Object object, Set<DurableInstance> instancesToRemove) {
+        if (object instanceof DurableInstance instance) {
             instancesToRemove.add(instance);
             return;
         }
-        Instance instance = model2instance.get(model);
-        if (instance == null) {
+        var instance = model2instance.get(object);
+        if (instance == null || instancesToRemove.contains(instance))
             return;
-        }
-        if (instancesToRemove.contains(instance)) {
-            return;
-        }
-        EntityUtils.ensureProxyInitialized(model);
+        EntityUtils.ensureProxyInitialized(object);
         instancesToRemove.add(instance);
-        Set<Object> cascades = new IdentitySet<>(getChildEntities(model));
-        if (model instanceof Entity entity && entity.getParentEntity() != null) {
+        Set<Object> cascades = new IdentitySet<>(getChildren(object));
+        if (object instanceof Entity entity && entity.getParentEntity() != null) {
             var parentInst = getInstance(entity.getParentEntity());
             if (!instancesToRemove.contains(parentInst)) {
                 if (entity.getParentEntity() instanceof ChildArray<?> array) {
                     array.remove(entity);
                 } else {
-                    ReflectUtils.set(
+                    ReflectionUtils.set(
                             entity.getParentEntity(),
                             NncUtils.requireNonNull(entity.getParentEntityField()),
                             null
@@ -633,9 +659,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 updateInstance(entity.getParentEntity(), parentInst);
             }
         }
-        if (model instanceof RemovalAware removalAware) {
+        if (object instanceof RemovalAware removalAware)
             cascades.addAll(removalAware.beforeRemove(this));
-        }
         if (NncUtils.isNotEmpty(cascades)) {
             for (Object cascade : cascades) {
                 beforeRemove0(cascade, instancesToRemove);
@@ -656,24 +681,22 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return newTypes;
     }
 
-    private Set<Object> getChildEntities(Object entity) {
-        Set<Object> childModels = new IdentitySet<>();
-        Type type = getDefContext().getType(getEntityRuntimeType(entity));
-        if (entity instanceof ReadonlyArray<?> table) {
-            if (table instanceof ChildArray<?>) {
-                childModels.addAll(NncUtils.filter(table, Objects::nonNull));
-            }
+    private Set<Object> getChildren(Object object) {
+        Set<Object> children = new IdentitySet<>();
+        Type type = getDefContext().getType(getRuntimeType(object));
+        if (object instanceof ReadonlyArray<?> array) {
+            if (array instanceof ChildArray<?>)
+                children.addAll(NncUtils.filter(array, Objects::nonNull));
         } else if (type instanceof ClassType classType) {
             for (Field field : classType.getAllFields()) {
                 if (field.isChild()) {
-                    Object child = ReflectUtils.get(entity, getDefContext().getJavaField(field));
-                    if (child != null) {
-                        childModels.add(child);
-                    }
+                    Object child = ReflectionUtils.get(object, getDefContext().getJavaField(field));
+                    if (child != null)
+                        children.add(child);
                 }
             }
         }
-        return childModels;
+        return children;
     }
 
     public IInstanceContext getInstanceContext() {
@@ -684,7 +707,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public <T extends Entity> T getByUniqueKey(Class<T> entityType, IndexDef<?> uniqueConstraintDef, Object... fieldValues) {
         NncUtils.requireNonNull(instanceContext);
         IndexKeyRT indexKey = createIndexKey(uniqueConstraintDef, fieldValues);
-        Instance instance = instanceContext.selectByUniqueKey(indexKey);
+        var instance = instanceContext.selectByUniqueKey(indexKey);
         return getEntity(entityType, instance.getIdRequired());
     }
 
@@ -710,14 +733,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public Instance getInstance(Object model) {
-        Instance primitiveInst = InstanceUtils.trySerializePrimitive(model, getDefContext()::getType);
-        if (primitiveInst != null)
-            return primitiveInst;
+    public DurableInstance getInstance(Object model) {
         if (parent != null && parent.containsModel(model)) {
             return parent.getInstance(model);
         }
-        Instance instance = model2instance.get(model);
+        var instance = model2instance.get(model);
         if (instance == null) {
             instance = newInstance(model);
         }
@@ -731,30 +751,30 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     /**
      * Bind a new entity to the context with the mapped instance
      */
-    protected final void addBinding(Object model, Instance instance) {
+    protected final void addBinding(Object model, DurableInstance instance) {
         addMapping(model, instance);
         if (model instanceof BindAware bindAware) {
             bindAware.onBind(this);
         }
     }
 
-    private Instance newInstance(Object model) {
-        ModelDef<?, ?> def = getDefContext().getDefByModel(model);
+    private DurableInstance newInstance(Object object) {
+        ModelDef<?, ?> def = getDefContext().getDefByModel(object);
         if (def.isProxySupported()) {
-            Instance instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), tryGetId(model));
-            addBinding(model, instance);
-            def.initInstanceHelper(instance, model, this);
-            updateMemIndex(instance);
+            var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), tryGetId(object));
+            addBinding(object, instance);
+            def.initInstanceHelper(instance, object, objectInstanceMap);
+            updateMemIndex(object);
             return instance;
         } else {
-            Instance instance = def.createInstanceHelper(model, this, null);
-            addBinding(model, instance);
-            updateMemIndex(instance);
+            var instance = def.createInstanceHelper(object, objectInstanceMap, null);
+            addBinding(object, instance);
+            updateMemIndex(object);
             return instance;
         }
     }
 
-    public Collection<Instance> instances() {
+    public Collection<DurableInstance> instances() {
         return model2instance.values();
     }
 
@@ -762,7 +782,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     Add a mapping between an entity and an instance. Client shouldn't call this method directly if the
     entity is new, use addBinding instead.
      */
-    protected void addMapping(Object model, Instance instance) {
+    protected void addMapping(Object model, DurableInstance instance) {
         NncUtils.requireNull(instance.getMappedEntity());
         model2instance.put(model, instance);
         instance.setMappedEntity(model);
@@ -776,10 +796,16 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         }
     }
 
-    private void updateMemIndex(Instance instance) {
+    protected void updateMemIndex(Object object) {
+        var instance = getInstance(object);
         if (!manualInstanceWriting() && instanceContext != null && instance instanceof ClassInstance clsInst) {
             instanceContext.updateMemoryIndex(clsInst);
         }
+    }
+
+    @Override
+    public ObjectInstanceMap getObjectInstanceMap() {
+        return objectInstanceMap;
     }
 
     protected boolean manualInstanceWriting() {

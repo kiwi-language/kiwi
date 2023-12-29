@@ -27,7 +27,7 @@ public record InstanceIndexQuery(
     }
 
     public boolean matches(ClassInstance instance, IEntityContext context) {
-        var evaluationContext = new InstanceEvaluationContext(instance, context);
+        var evaluationContext = new InstanceEvaluationContext(instance, context.getGenericContext());
         return NncUtils.allMatch(items, item -> item.matches(evaluationContext));
     }
 

@@ -1,23 +1,12 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.NumberInstance;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InstanceUtils;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ValueUtil;
 
 import java.util.List;
 import java.util.Objects;
-
-import static tech.metavm.expression.ExpressionUtil.castBoolean;
 
 @EntityType("一元表达式")
 public class UnaryExpression extends Expression {
@@ -51,21 +40,21 @@ public class UnaryExpression extends Expression {
         }
     }
 
-    @Override
-    public Expression simplify() {
-        var operand = this.operand.simplify();;
-        if(operator == UnaryOperator.NOT) {
-            if(operand instanceof ConstantExpression constExpr)
-                return new ConstantExpression(((BooleanInstance) constExpr.getValue()).not());
-            else if(operand instanceof UnaryExpression unaryExpr && unaryExpr.getOperator() == UnaryOperator.NOT)
-                return unaryExpr.operand;
-        }
-        else if(operator == UnaryOperator.NEG) {
-            if(operand instanceof ConstantExpression constExpr)
-                return new ConstantExpression(((NumberInstance) constExpr.getValue()).negate());
-        }
-        return new UnaryExpression(operator, operand);
-    }
+//    @Override
+//    public Expression simplify() {
+//        var operand = this.operand.simplify();;
+//        if(operator == UnaryOperator.NOT) {
+//            if(operand instanceof ConstantExpression constExpr)
+//                return new ConstantExpression(((BooleanInstance) constExpr.getValue()).not());
+//            else if(operand instanceof UnaryExpression unaryExpr && unaryExpr.getOperator() == UnaryOperator.NOT)
+//                return unaryExpr.operand;
+//        }
+//        else if(operator == UnaryOperator.NEG) {
+//            if(operand instanceof ConstantExpression constExpr)
+//                return new ConstantExpression(((NumberInstance) constExpr.getValue()).negate());
+//        }
+//        return new UnaryExpression(operator, operand);
+//    }
 
     @Override
     public int precedence() {
@@ -85,12 +74,6 @@ public class UnaryExpression extends Expression {
     @Override
     public List<Expression> getChildren() {
         return List.of(operand);
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        NncUtils.requireLength(children, 1);
-        return new UnaryExpression(operator, children.get(0));
     }
 
     @Override

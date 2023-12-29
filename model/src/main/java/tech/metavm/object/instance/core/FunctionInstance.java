@@ -1,14 +1,14 @@
 package tech.metavm.object.instance.core;
 
 import tech.metavm.flow.FlowExecResult;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceParam;
 import tech.metavm.object.type.FunctionType;
-import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Set;
 
 public abstract class FunctionInstance extends Instance {
 
@@ -17,19 +17,19 @@ public abstract class FunctionInstance extends Instance {
     }
 
     @Override
-    public void acceptReferences(InstanceVisitor visitor) {
+    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
     }
 
     @Override
-    public void acceptChildren(InstanceVisitor visitor) {
+    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
     }
-
-    public abstract FlowExecResult execute(List<Instance> arguments, IInstanceContext context);
 
     @Override
-    public boolean isInitialized() {
-        return true;
+    public @Nullable Id getInstanceId() {
+        return null;
     }
+
+    public abstract FlowExecResult execute(List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider);
 
     @Override
     public FunctionType getType() {
@@ -41,11 +41,6 @@ public abstract class FunctionInstance extends Instance {
     @Override
     public boolean isReference() {
         return false;
-    }
-
-    @Override
-    public Set<Instance> getRefInstances() {
-        return null;
     }
 
     @Override
@@ -69,7 +64,7 @@ public abstract class FunctionInstance extends Instance {
     }
 
     @Override
-    public void readFrom(InstanceInput input) {
+    public Object toSearchConditionValue() {
         throw new UnsupportedOperationException();
     }
 }

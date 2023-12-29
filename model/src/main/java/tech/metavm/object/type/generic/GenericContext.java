@@ -1,30 +1,31 @@
 package tech.metavm.object.type.generic;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
+import tech.metavm.flow.Method;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ParameterizedTypeImpl;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static tech.metavm.object.type.ResolutionStage.DEFINITION;
 
-public class GenericContext {
+public class GenericContext implements ParameterizedFlowProvider, ParameterizedTypeProvider {
 
-    private final Map<ClassType, Map<List<? extends Type>, ClassType>> map = new HashMap<>();
+    private final Map<ClassType, Map<List<? extends Type>, ClassType>> parameterizedTypes = new HashMap<>();
+    private final Map<Flow, Map<List<? extends Type>, Flow>> parameterizedFlows = new HashMap<>();
+    private final Set<Flow> newFlows = new HashSet<>();
     private final IEntityContext entityContext;
     private final TypeFactory typeFactory;
     private final SaveTypeBatch emptyBatch;
     private final GenericContext parent;
 
-    public GenericContext(IEntityContext entityContext, TypeFactory typeFactory, @Nullable  GenericContext parent) {
+    public GenericContext(IEntityContext entityContext, TypeFactory typeFactory, @Nullable GenericContext parent) {
         this.entityContext = entityContext;
         this.typeFactory = typeFactory;
         this.parent = parent;
@@ -43,24 +44,24 @@ public class GenericContext {
         return getParameterizedType(template, typeArguments, stage, emptyBatch);
     }
 
-    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
+    public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
         var existing = getExisting(template, typeArguments);
         if (existing == template)
             return template;
         if (existing != null && existing.getStage().isAfterOrAt(stage))
             return existing;
-        var transformer = new SubstitutorV2(
-                template, this, template.getTypeParameters(), typeArguments, stage, batch,
-                typeFactory
+        var transformer = SubstitutorV2.create(
+                template, template.getTypeParameters(), typeArguments, stage, entityContext, dtoProvider
         );
         return (ClassType) template.accept(transformer);
     }
 
     public Field retransformField(Field field, ClassType existing) {
-        var transformer = new SubstitutorV2(field, this,
+        var transformer = SubstitutorV2.create(field,
                 field.getDeclaringType().getTypeParameters(), existing.getTypeArguments(),
                 DEFINITION,
-                SaveTypeBatch.empty(entityContext), typeFactory);
+                entityContext,
+                SaveTypeBatch.empty(entityContext));
         transformer.enterElement(existing);
         var transformedField = (Field) field.accept(transformer);
         transformer.exitElement();
@@ -71,42 +72,65 @@ public class GenericContext {
         return entityContext;
     }
 
-    public Flow retransformFlow(Flow flowTemplate, ClassType parameterizedType) {
-        var transformer = new SubstitutorV2(flowTemplate, this,
-                flowTemplate.getDeclaringType().getTypeParameters(), parameterizedType.getTypeArguments(),
+    public ObjectMapping retransformObjectMapping(ObjectMapping objectMapping, ClassType parameterizedType) {
+        var transformer = SubstitutorV2.create(objectMapping, 
+                objectMapping.getSourceType().getTypeParameters(), parameterizedType.getTypeArguments(),
                 DEFINITION,
-                SaveTypeBatch.empty(entityContext), typeFactory);
+                entityContext,
+                SaveTypeBatch.empty(entityContext));
         transformer.enterElement(parameterizedType);
-        var transformedFlow = (Flow) flowTemplate.accept(transformer);
+        var transformedMapping = (ObjectMapping) objectMapping.accept(transformer);
         transformer.exitElement();
-        return transformedFlow;
+        return transformedMapping;
+    }
+
+    public Method retransformMethod(Method methodTemplate, ClassType parameterizedType) {
+        var transformer = SubstitutorV2.create(methodTemplate,
+                methodTemplate.getDeclaringType().getTypeParameters(), parameterizedType.getTypeArguments(),
+                DEFINITION,
+                entityContext,
+                SaveTypeBatch.empty(entityContext));
+        transformer.enterElement(parameterizedType);
+        var transformedMethod = (Method) methodTemplate.accept(transformer);
+        transformer.exitElement();
+        return transformedMethod;
+    }
+
+    public Flow retransformHorizontalFlowInstances(Flow template, Flow templateInstance) {
+        var transformer = SubstitutorV2.create(template,
+                template.getTypeParameters(), templateInstance.getTypeArguments(),
+                DEFINITION,
+                entityContext,
+                SaveTypeBatch.empty(entityContext));
+        if (templateInstance instanceof Method method)
+            transformer.enterElement(method.getDeclaringType());
+        return (Flow) template.accept(transformer);
     }
 
     public ClassType retransformClass(ClassType template, ClassType parameterized) {
-        var transformer = new SubstitutorV2(
-                template, this, template.getTypeParameters(), parameterized.getTypeArguments(),
-                DEFINITION, emptyBatch, typeFactory
+        var transformer = SubstitutorV2.create(
+                template,  template.getTypeParameters(), parameterized.getTypeArguments(),
+                DEFINITION, entityContext, emptyBatch
         );
         return (ClassType) template.accept(transformer);
     }
 
-    public FieldData transformFieldData(ClassType template, ClassType parameterized, FieldData fieldData) {
-        var transformer = new SubstitutorV2(
-                fieldData, this, template.getTypeParameters(), parameterized.getTypeArguments(),
-                DEFINITION, emptyBatch, typeFactory);
-        transformer.enterElement(parameterized);
-        var subst = (FieldData) transformer.copy(fieldData);
-        transformer.exitElement();
-        return subst;
+    private ClassType getNew(ClassType template, List<? extends Type> typeArguments) {
+        if (parent != null) {
+            var t = parent.getNew(template, typeArguments);
+            if (t != null)
+                return t;
+        }
+        return parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
     }
 
-    private ClassType getNew(ClassType template, List<? extends Type> typeArguments) {
+    private Flow getNewFlow(Flow template, List<? extends Type> typeArguments) {
         if(parent != null) {
-            var t = parent.getNew(template, typeArguments);
+            var t = parent.getNewFlow(template, typeArguments);
             if(t != null)
                 return t;
         }
-        return map.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
+        return parameterizedFlows.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
     }
 
     public ClassType getExisting(ClassType template, List<? extends Type> typeArguments) {
@@ -116,8 +140,23 @@ public class GenericContext {
         if (template.getId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.getId() != null)) {
             var loaded = load(template, typeArguments);
             if (loaded != null) {
-                map.get(template).put(typeArguments, loaded);
+                parameterizedTypes.get(template).put(typeArguments, loaded);
                 return loaded;
+            }
+        }
+        return null;
+    }
+
+    public <T extends Flow> T getExistingFlow(T template, List<? extends Type> typeArguments) {
+        var existing = getNewFlow(template, typeArguments);
+        if (existing != null)
+            //noinspection unchecked
+            return (T) existing;
+        if (template.getId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.getId() != null)) {
+            var loaded = loadFlow(template, typeArguments);
+            if (loaded != null) {
+                parameterizedFlows.get(template).put(typeArguments, loaded);
+                return (T) loaded;
             }
         }
         return null;
@@ -129,16 +168,26 @@ public class GenericContext {
         }
         return entityContext.selectByUniqueKey(
                 ClassType.IDX_PARAMETERIZED_TYPE_KEY,
-                ClassType.pTypeKey(template, typeArguments)
+                Types.getParameterizedKey(template, typeArguments)
         );
     }
 
-    public void addType(ClassType classType) {
+    public Flow loadFlow(Flow template, List<? extends Type> typeArguments) {
+        if (entityContext == null) {
+            return null;
+        }
+        return entityContext.selectByUniqueKey(
+                Flow.IDX_PARAMETERIZED_KEY,
+                Types.getParameterizedKey(template, typeArguments)
+        );
+    }
+
+    public void add(ClassType classType) {
         var template = classType.getEffectiveTemplate();
         if (template == null) {
             return;
         }
-        map.computeIfAbsent(template, k -> new HashMap<>()).put(classType.getTypeArguments(), classType);
+        parameterizedTypes.computeIfAbsent(template, k -> new HashMap<>()).put(classType.getTypeArguments(), classType);
         entityContext.tryBind(classType);
         if (typeFactory.isPutTypeSupported()) {
             var templateClass = (Class<?>) typeFactory.getJavaType(template);
@@ -157,7 +206,7 @@ public class GenericContext {
 
     public List<ClassType> getNewTypes() {
         List<ClassType> newTypes = new ArrayList<>();
-        for (var value : map.values()) {
+        for (var value : parameterizedTypes.values()) {
             for (ClassType classType : value.values()) {
                 if (entityContext.isNewEntity(classType))
                     newTypes.add(classType);
@@ -173,14 +222,14 @@ public class GenericContext {
         if (template.getStage().isBefore(ResolutionStage.DECLARATION)) {
             throw new InternalException("Template declarations not generated yet");
         }
-        var transformer = new SubstitutorV2(
-                template, this, template.getTypeParameters(), declaringType.getTypeArguments(),
-                ResolutionStage.DECLARATION, SaveTypeBatch.empty(entityContext), typeFactory);
+        var transformer = SubstitutorV2.create(
+                template, template.getTypeParameters(), declaringType.getTypeArguments(),
+                ResolutionStage.DECLARATION, entityContext, emptyBatch);
         template.accept(transformer);
     }
 
     public void generateDeclarations(ClassType template) {
-        var templateInstances = map.get(template);
+        var templateInstances = parameterizedTypes.get(template);
         if (templateInstances != null) {
             for (ClassType templateInst : templateInstances.values()) {
                 generateDeclarations(templateInst, template);
@@ -189,7 +238,7 @@ public class GenericContext {
     }
 
     public void generateCode(ClassType template) {
-        var templateInstances = map.get(template);
+        var templateInstances = parameterizedTypes.get(template);
         if (templateInstances != null) {
             for (ClassType templateInst : templateInstances.values()) {
                 generateCode(templateInst, template);
@@ -204,32 +253,38 @@ public class GenericContext {
         if (template.getStage().isBefore(ResolutionStage.DEFINITION)) {
             throw new InternalException("Template code not generated yet");
         }
-        var substitutor = new SubstitutorV2(template, this, template.getTypeParameters(),
-                declaringType.getTypeArguments(), DEFINITION, SaveTypeBatch.empty(entityContext), typeFactory);
+        var substitutor = SubstitutorV2.create(template, template.getTypeParameters(),
+                declaringType.getTypeArguments(), DEFINITION, entityContext, emptyBatch);
         template.accept(substitutor);
     }
 
-    public Flow getParameterizedFlow(@NotNull Flow template, List<Type> typeArguments) {
+    public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments) {
         return getParameterizedFlow(template, typeArguments, DEFINITION, emptyBatch);
     }
 
-    public Flow getParameterizedFlow(Flow template, List<Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
+    public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
         NncUtils.requireTrue(template.isTemplate(), "Not a flow template");
-        if (template.getTypeParameters().isEmpty()) {
+        if (template.getTypeParameters().isEmpty())
             return template;
-        }
-        var pFlow = template.findHorizontalInstance(typeArguments);
-        if (pFlow != null)
-            return pFlow;
-        var substitutor = new SubstitutorV2(
-                template, this, template.getTypeParameters(), typeArguments, stage,
-                batch, typeFactory
+        var existing = getExistingFlow(template, typeArguments);
+        if (existing != null && existing.getStage().isAfterOrAt(stage))
+            return existing;
+        var substitutor = SubstitutorV2.create(
+                template, template.getTypeParameters(), typeArguments, stage,
+                entityContext, batch
         );
-        substitutor.enterElement(template.getDeclaringType());
-        var transformed = (Flow) template.accept(substitutor);
-        substitutor.exitElement();
-        return transformed;
+        if (template instanceof Method method)
+            substitutor.enterElement(method.getDeclaringType());
+        var transformed = (Method) template.accept(substitutor);
+        if (template instanceof Method)
+            substitutor.exitElement();
+        newFlows.add(transformed);
+        //noinspection unchecked
+        return (T) transformed;
     }
 
 
+    public Set<Flow> getNewFlows() {
+        return newFlows;
+    }
 }

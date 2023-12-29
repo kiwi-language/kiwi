@@ -8,6 +8,7 @@ import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexField;
 import tech.metavm.util.*;
@@ -41,10 +42,10 @@ public class LocalIndexSource implements IndexSource {
             Map<LocalIndex.Key, Long> indexMap = new HashMap<>();
             Map<Long, List<Long>> typeId2ids = new HashMap<>();
             for (Long id : ids) {
-                var inst = context.getInstanceContext().get(id);
+                var inst = context.getInstanceContext().get(PhysicalId.of(id));
                 typeId2ids.computeIfAbsent(inst.getType().getIdRequired(), k -> new ArrayList<>()).add(id);
                 if (inst instanceof ClassInstance classInstance) {
-                    var keys = classInstance.getIndexKeys(context);
+                    var keys = classInstance.getIndexKeys(context.getGenericContext());
                     for (IndexKeyRT key : keys) {
                         indexMap.put(convertKey(key), id);
                     }
@@ -63,7 +64,7 @@ public class LocalIndexSource implements IndexSource {
             if (i < fields.size())
                 value = indexKeyRT.getField(fields.get(i));
             else
-                value = InstanceUtils.nullInstance();
+                value = Instances.nullInstance();
             bytes[i] = BytesUtils.toIndexBytes(value);
         }
         return new LocalIndex.Key(indexKeyRT.getIndex().getIdRequired(), bytes);

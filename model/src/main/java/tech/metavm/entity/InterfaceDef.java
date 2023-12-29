@@ -1,13 +1,12 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.type.ClassType;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Map;
 
 public class InterfaceDef<T> extends PojoDef<T>  {
 
@@ -28,27 +27,23 @@ public class InterfaceDef<T> extends PojoDef<T>  {
     }
 
     @Override
-    public void initModel(T model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateModel(T model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public void updateModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void initInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
+    public void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateInstance(ClassInstance instance, T model, ModelInstanceMap instanceMap) {
+    public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Map<Object, Identifiable> getEntityMapping() {
-        return Map.of();
-    }
 }

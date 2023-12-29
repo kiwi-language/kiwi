@@ -15,14 +15,14 @@ public class FieldBuilder {
     }
 
     private final String name;
-    private final @Nullable String code;
+    @Nullable
+    private final String code;
     private final ClassType declaringType;
     private final Type type;
     private Column column;
     private Long tmpId;
     private Access access = Access.PUBLIC;
     private boolean unique = false;
-    private boolean asTitle = false;
     private PrimitiveType nullType;
     private Instance defaultValue;
     private boolean isChild;
@@ -32,6 +32,8 @@ public class FieldBuilder {
     private boolean lazy;
     private Field template;
     private Field existing;
+    private boolean readonly;
+    private boolean asTitle;
 
     private FieldBuilder(String name, @Nullable String code, ClassType declaringType, Type type) {
         this.name = name;
@@ -70,6 +72,11 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder asTitle() {
+        this.asTitle = true;
+        return this;
+    }
+
     public FieldBuilder column(Column column) {
         this.column = column;
         return this;
@@ -77,11 +84,6 @@ public class FieldBuilder {
 
     public FieldBuilder existing(Field existing) {
         this.existing = existing;
-        return this;
-    }
-
-    public FieldBuilder asTitle(boolean asTitle) {
-        this.asTitle = asTitle;
         return this;
     }
 
@@ -110,11 +112,17 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder readonly(boolean readonly) {
+        this.readonly = readonly;
+        return this;
+    }
+
     private PrimitiveType getNullType() {
         return NncUtils.orElse(nullType, StandardTypes::getNullType);
     }
 
     public Field build() {
+        Field field;
         if (existing == null) {
             if(defaultValue == null)
                 defaultValue = new NullInstance(getNullType());
@@ -122,25 +130,25 @@ public class FieldBuilder {
                 staticValue = new NullInstance(getNullType());
             if (state == null)
                 state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
-            return new Field(
+            field = new Field(
                     tmpId,
                     name,
                     code,
                     declaringType,
                     type,
                     access,
+                    readonly,
                     unique,
-                    asTitle,
                     defaultValue,
                     isChild,
                     isStatic,
                     lazy,
                     staticValue,
-                    template,
                     column,
                     state
             );
         } else {
+            field = existing;
             existing.setTmpId(tmpId);
             existing.setName(name);
             existing.setCode(code);
@@ -148,15 +156,17 @@ public class FieldBuilder {
             existing.setAccess(access);
             existing.setUnique(unique);
             existing.setLazy(lazy);
-            existing.setAsTitle(asTitle);
+            existing.setReadonly(readonly);
             if(defaultValue != null)
                 existing.setDefaultValue(defaultValue);
             if(staticValue != null)
                 existing.setStaticValue(staticValue);
             if (state != null)
                 existing.setState(state);
-            return existing;
         }
+        if(asTitle)
+            declaringType.setTitleField(field);
+        return field;
     }
 
     private PrimitiveType nullType() {

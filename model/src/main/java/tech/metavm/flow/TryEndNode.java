@@ -2,84 +2,81 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.ChildArray;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.expression.ParsingContext;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.TryEndParamDTO;
 import tech.metavm.flow.rest.TryEndFieldDTO;
+import tech.metavm.flow.rest.TryEndNodeParam;
 import tech.metavm.flow.rest.TryEndValueDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.*;
+import tech.metavm.util.BusinessException;
+import tech.metavm.util.Instances;
+import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@EntityType("尝试结束节点")
-public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
+@EntityType("TryEnd节点")
+public class TryEndNode extends ChildTypeNode {
 
-    public static TryEndNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        var node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(),
-                context.getClassType(nodeDTO.outputTypeRef()), (TryNode) prev, scope);
-        node.setParam(nodeDTO.getParam(), context);
+    public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        var node = (TryEndNode) context.getNode(nodeDTO.getRef());
+        if (node == null) {
+            node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
+                    context.getEntity(ClassType.class, nodeDTO.outputTypeRef()),
+                    (TryNode) prev, scope);
+        }
+        var param = (TryEndNodeParam) nodeDTO.getParam();
+        if (param.fields().size() != node.getType().getReadyFields().size() - 1)
+            throw new BusinessException(ErrorCode.NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH, node.getName());
+        var mergeFieldDTOs = param.fields();
+        var parsingContext = FlowParsingContext.create(scope, prev, context);
+        var fields = new ArrayList<TryEndField>();
+        Map<NodeRT, ParsingContext> raiseParsingContexts = new HashMap<>();
+        for (TryEndFieldDTO mergeFieldDTO : mergeFieldDTOs) {
+            List<TryEndValue> values = new ArrayList<>();
+            for (TryEndValueDTO valueDTO : mergeFieldDTO.values()) {
+                var raiseNode = context.getNode(valueDTO.raiseNodeRef());
+                var raiseParsingContext = raiseParsingContexts.computeIfAbsent(raiseNode, k ->
+                        FlowParsingContext.create(raiseNode.getScope(), raiseNode, context));
+                values.add(
+                        new TryEndValue(raiseNode, ValueFactory.create(valueDTO.value(), raiseParsingContext))
+                );
+            }
+            fields.add(new TryEndField(
+                    context.getField(mergeFieldDTO.fieldRef()),
+                    values,
+                    ValueFactory.create(mergeFieldDTO.defaultValue(), parsingContext),
+                    node
+            ));
+        }
+        node.setFields(fields);
         return node;
     }
 
     @ChildEntity("字段列表")
     private final ChildArray<TryEndField> fields = addChild(new ChildArray<>(TryEndField.class), "fields");
 
-    public TryEndNode(Long tmpId, String name, ClassType outputType, TryNode previous, ScopeRT scope) {
-        super(tmpId, name, outputType, previous, scope);
+    public TryEndNode(Long tmpId, String name, @Nullable String code, ClassType outputType, TryNode previous, ScopeRT scope) {
+        super(tmpId, name, code, outputType, previous, scope);
     }
 
     @Override
-    protected TryEndParamDTO getParam(boolean persisting) {
-        return new TryEndParamDTO(NncUtils.map(fields, TryEndField::toDTO));
+    protected TryEndNodeParam getParam(SerializeContext serializeContext) {
+        return new TryEndNodeParam(NncUtils.map(fields, TryEndField::toDTO));
     }
 
     @Override
     @NotNull
     public TryNode getPredecessor() {
         return (TryNode) NncUtils.requireNonNull(super.getPredecessor());
-    }
-
-    @Override
-    protected void setParam(TryEndParamDTO param, IEntityContext context) {
-        if (param.fields() != null) {
-            if (param.fields().size() != getType().getReadyFields().size() - 1) {
-                throw new BusinessException(ErrorCode.NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH, this.getName());
-            }
-            this.fields.clear();
-            var mergeFieldDTOs = param.fields();
-            var parsingContext = getParsingContext(context);
-            Map<NodeRT<?>, ParsingContext> raiseParsingContexts = new HashMap<>();
-            for (TryEndFieldDTO mergeFieldDTO : mergeFieldDTOs) {
-                List<TryEndValue> values = new ArrayList<>();
-                for (TryEndValueDTO valueDTO : mergeFieldDTO.values()) {
-                    var raiseNode = context.getNode(valueDTO.raiseNodeRef());
-                    var raiseParsingContext = raiseParsingContexts.computeIfAbsent(raiseNode, k ->
-                            new FlowParsingContext(raiseNode.getScope(), raiseNode, context.getInstanceContext()));
-                    values.add(
-                            new TryEndValue(raiseNode, ValueFactory.create(valueDTO.value(), raiseParsingContext))
-                    );
-                }
-                new TryEndField(
-                        context.getField(mergeFieldDTO.fieldRef()),
-                        values,
-                        ValueFactory.create(mergeFieldDTO.defaultValue(), parsingContext),
-                        this
-                );
-            }
-        }
     }
 
     public void addField(TryEndField field) {
@@ -90,6 +87,10 @@ public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
         return fields.toList();
     }
 
+    public void setFields(ArrayList<TryEndField> fields) {
+        this.fields.resetChildren(fields);
+    }
+
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var tryNode = frame.exitTrySection();
@@ -97,12 +98,12 @@ public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
         var exceptionInfo = frame.getExceptionInfo(getPredecessor());
         var exceptionField = getType().getFieldByCode("exception");
         Instance exception;
-        NodeRT<?> raiseNode;
+        NodeRT raiseNode;
         if (exceptionInfo != null) {
             exception = exceptionInfo.exception();
             raiseNode = exceptionInfo.raiseNode();
         } else {
-            exception = InstanceUtils.nullInstance();
+            exception = Instances.nullInstance();
             raiseNode = null;
         }
         Map<Field, Instance> fieldValues = new HashMap<>(NncUtils.toMap(
@@ -110,7 +111,12 @@ public class TryEndNode extends ChildTypeNode<TryEndParamDTO> {
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));
         fieldValues.put(exceptionField, exception);
-        return next(new ClassInstance(fieldValues, getType()));
+        return next(ClassInstance.create(fieldValues, getType()));
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("tryEnd {" + NncUtils.join(fields, TryEndField::getText, ", ") + "}");
     }
 
     @Override

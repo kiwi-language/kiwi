@@ -2,8 +2,8 @@ package tech.metavm.system.rest;
 
 import org.springframework.web.bind.annotation.*;
 import tech.metavm.common.Result;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.object.instance.cache.RedisCache;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InstanceInput;
@@ -13,14 +13,12 @@ import java.io.ByteArrayInputStream;
 
 @RestController
 @RequestMapping("/perf")
-public class BytePerfController {
-
-    private final InstanceContextFactory instanceContextFactory;
+public class BytePerfController extends EntityContextFactoryBean {
 
     private final RedisCache cache;
 
-    public BytePerfController(InstanceContextFactory instanceContextFactory, RedisCache cache) {
-        this.instanceContextFactory = instanceContextFactory;
+    public BytePerfController(EntityContextFactory entityContextFactory, RedisCache cache) {
+        super(entityContextFactory);
         this.cache = cache;
     }
 
@@ -57,7 +55,4 @@ public class BytePerfController {
     }
 
 
-    private IEntityContext newContext() {
-        return instanceContextFactory.newEntityContext(false);
-    }
 }

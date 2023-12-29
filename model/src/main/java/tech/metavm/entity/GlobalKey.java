@@ -1,11 +1,13 @@
 package tech.metavm.entity;
 
-import tech.metavm.object.type.Type;
-
-import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
 
 public interface GlobalKey {
 
-    String getKey(Function<Type, java.lang.reflect.Type> getJavaType);
+    String getGlobalKey(@NotNull BuildKeyContext context);
+
+    default boolean isValidGlobalKey() {
+        return true;
+    }
 
 }

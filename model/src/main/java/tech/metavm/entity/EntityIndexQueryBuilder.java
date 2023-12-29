@@ -1,7 +1,5 @@
 package tech.metavm.entity;
 
-import tech.metavm.util.InternalException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +11,6 @@ public class EntityIndexQueryBuilder<T> {
 
     private final IndexDef<T> indexDef;
     private List<EntityIndexQueryItem> items = new ArrayList<>();
-    private IndexOperator lastItemOperator = IndexOperator.EQ;
     private boolean desc;
     private long limit = 1000;
 
@@ -70,7 +67,6 @@ public class EntityIndexQueryBuilder<T> {
         return new EntityIndexQuery<>(
                 indexDef,
                 items,
-                lastItemOperator,
                 desc,
                 limit
         );

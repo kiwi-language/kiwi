@@ -1,6 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.generic.MetaSubstitutor;
 
@@ -13,7 +13,7 @@ public interface EvaluationContext {
 
     boolean isContextExpression(Expression expression);
 
-    IEntityContext getEntityContext();
+    ParameterizedFlowProvider getParameterizedFlowProvider();
 
     default @Nullable MetaSubstitutor getSubstitutor() {
         return null;

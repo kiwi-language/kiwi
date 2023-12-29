@@ -1,6 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InternalException;
@@ -8,11 +8,11 @@ import tech.metavm.util.InternalException;
 public class InstanceEvaluationContext implements EvaluationContext {
 
     private final ClassInstance instance;
-    private final IEntityContext entityContext;
+    private final ParameterizedFlowProvider parameterizedFlowProvider;
 
-    public InstanceEvaluationContext(ClassInstance instance, IEntityContext entityContext) {
+    public InstanceEvaluationContext(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
         this.instance = instance;
-        this.entityContext = entityContext;
+        this.parameterizedFlowProvider = parameterizedFlowProvider;
     }
 
     @Override
@@ -31,8 +31,9 @@ public class InstanceEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public IEntityContext getEntityContext() {
-        return entityContext;
+    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+        return parameterizedFlowProvider;
     }
+
 
 }

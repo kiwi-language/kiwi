@@ -1,14 +1,11 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveInstanceParam;
 import tech.metavm.object.type.PrimitiveType;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.InstanceInput;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
-import java.util.Set;
 
 public abstract class PrimitiveInstance extends Instance {
 
@@ -28,11 +25,6 @@ public abstract class PrimitiveInstance extends Instance {
         return true;
     }
 
-    @Override
-    public boolean isInitialized() {
-        return true;
-    }
-
     public abstract int getWireType();
 
     @Override
@@ -44,16 +36,16 @@ public abstract class PrimitiveInstance extends Instance {
     }
 
     @Override
-    public void acceptReferences(InstanceVisitor visitor) {
+    public <R> void acceptReferences(InstanceVisitor<R> visitor) {
     }
 
     @Override
-    public void acceptChildren(InstanceVisitor visitor) {
+    public <R> void acceptChildren(InstanceVisitor<R> visitor) {
     }
 
     @Override
-    public Set<Instance> getRefInstances() {
-        return Set.of();
+    public @Nullable Id getInstanceId() {
+        return null;
     }
 
     @Override
@@ -61,10 +53,6 @@ public abstract class PrimitiveInstance extends Instance {
         return getValue();
     }
 
-    @Override
-    public void readFrom(InstanceInput input) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public boolean equals(Object o) {

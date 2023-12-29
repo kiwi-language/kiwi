@@ -19,7 +19,8 @@ public class EntityQueryBuilder<T extends Entity> {
 
     private final Class<T> entityClass;
     private String searchText;
-    private @Nullable String expression;
+    @Nullable
+    private String expression;
     private List<String> searchFields = new ArrayList<>();
     private List<EntityQueryField> fields = new ArrayList<>();
     private boolean includeBuiltin;

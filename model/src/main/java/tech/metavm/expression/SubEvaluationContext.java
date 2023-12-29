@@ -1,6 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.InternalException;
 
@@ -9,31 +9,29 @@ import javax.annotation.Nullable;
 public class SubEvaluationContext implements EvaluationContext {
 
     private final EvaluationContext parent;
-    private final CursorExpression cursor;
+    private final AllMatchExpression allMatchExpression;
     private final Instance instance;
 
-    public SubEvaluationContext(EvaluationContext parent, CursorExpression cursor, Instance instance) {
+    public SubEvaluationContext(EvaluationContext parent, AllMatchExpression allMatchExpression, Instance instance) {
         this.parent = parent;
-        this.cursor = cursor;
+        this.allMatchExpression = allMatchExpression;
         this.instance = instance;
     }
 
     @Override
     @Nullable
     public Instance evaluate(Expression expression) {
-        if(isSelfContextExpression(expression)) {
+        if (isSelfContextExpression(expression))
             return instance;
-        }
-        else if(parent != null && this.parent.isContextExpression(expression)) {
+        else if (parent != null && this.parent.isContextExpression(expression))
             return parent.evaluate(expression);
-        }
-        else {
+        else
             throw new InternalException(expression + " is not a context expression of " + this);
-        }
     }
 
     private boolean isSelfContextExpression(Expression expression) {
-        return cursor == expression;
+        return expression instanceof CursorExpression cursor
+                && cursor.getAllMatchExpression() == allMatchExpression;
     }
 
     @Override
@@ -42,8 +40,8 @@ public class SubEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public IEntityContext getEntityContext() {
-        return parent.getEntityContext();
+    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+        return parent.getParameterizedFlowProvider();
     }
 
 }

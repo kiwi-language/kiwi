@@ -12,8 +12,8 @@ public class DynamicValue extends Value {
     }
 
     @Override
-    protected FieldValue toFieldValue(boolean persisting) {
-        return new ExpressionFieldValue(expression.build(persisting ? VarType.ID : VarType.NAME));
+    protected FieldValue toFieldValue() {
+        return new ExpressionFieldValue(expression.build(VarType.NAME));
     }
 
     @Override
@@ -21,8 +21,4 @@ public class DynamicValue extends Value {
         return new DynamicValue(getKind(), getExpression().copy());
     }
 
-    @Override
-    public Value substituteExpression(Expression expression) {
-        return new DynamicValue(getKind(), expression.copy());
-    }
 }

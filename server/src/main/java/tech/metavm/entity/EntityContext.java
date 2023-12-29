@@ -37,7 +37,6 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
 
     @Override
     public IEntityContext createSame(long appId) {
-        //noinspection resource
-        return getInstanceContext().createSame(appId).getEntityContext();
+        return new EntityContext(getInstanceContext().createSame(appId), getParent());
     }
 }

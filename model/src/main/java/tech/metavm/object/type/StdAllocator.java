@@ -103,15 +103,15 @@ public class StdAllocator {
     }
 
     public boolean isReadWriteArray() {
-        return ReflectUtils.getRawClass(javaType) == ReadWriteArray.class;
+        return ReflectionUtils.getRawClass(javaType) == ReadWriteArray.class;
     }
 
     public boolean isChildArray() {
-        return ReflectUtils.getRawClass(javaType) == ChildArray.class;
+        return ReflectionUtils.getRawClass(javaType) == ChildArray.class;
     }
 
     public boolean isReadonlyArray() {
-        return ReflectUtils.getRawClass(javaType) == ReadonlyArray.class;
+        return ReflectionUtils.getRawClass(javaType) == ReadonlyArray.class;
     }
 
 }

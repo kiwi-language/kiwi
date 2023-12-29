@@ -1,13 +1,14 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.rest.dto.IntersectionTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
 
 @EntityType("类型交集")
 public class IntersectionType extends CompositeType {
@@ -18,13 +19,20 @@ public class IntersectionType extends CompositeType {
     private final ReadWriteArray<Type> types = addChild(new ReadWriteArray<>(Type.class), "types");
 
     public IntersectionType(Long tmpId, Set<Type> types) {
-        super(makeName(types), false, false, TypeCategory.INTERSECTION);
+        super(getName(types), getCode(types), false, false, TypeCategory.INTERSECTION);
         setTmpId(tmpId);
         this.types.addAll(types);
     }
 
-    private static String makeName(Iterable<Type> types) {
+    private static String getName(Iterable<Type> types) {
         return NncUtils.join(types, Type::getName, "&");
+    }
+
+    private static @Nullable String getCode(Iterable<Type> types) {
+        if(NncUtils.allMatch(types, t -> t.getCode() != null))
+            return NncUtils.join(types, Type::getCode, "&");
+        else
+            return null;
     }
 
     @Override
@@ -53,8 +61,13 @@ public class IntersectionType extends CompositeType {
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        throw new UnsupportedOperationException();
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        List<String> memberCanonicalNames = NncUtils.mapAndSort(
+                types,
+                object -> context.getModelName(object,this),
+                String::compareTo
+        );
+        return String.join("&", memberCanonicalNames);
     }
 
     public Set<Type> getTypes() {

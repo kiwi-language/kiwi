@@ -40,11 +40,6 @@ public class ThisExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new ThisExpression(type);
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
         return context.evaluate(this);
     }

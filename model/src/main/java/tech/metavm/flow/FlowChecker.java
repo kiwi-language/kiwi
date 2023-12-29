@@ -1,7 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.Element;
-import tech.metavm.expression.StructuralVisitor;
+import tech.metavm.entity.StructuralVisitor;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.MetadataState;
 
@@ -16,24 +16,33 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
     }
 
     @Override
-    public Boolean visitFlow(Flow flow) {
-        this.flow = flow;
-        flow.getDeclaringType().clearElementErrors(flow);
-        flow.setState(MetadataState.READY);
-        super.visitFlow(flow);
-        if (flow.isError()) {
-            flow.getDeclaringType().addError(
-                    flow,
-                    ErrorLevel.ERROR,
-                    String.format("流程'%s'配置错误", flow.getName())
-            );
-        }
+    public Boolean visitFunction(Function function) {
+        this.flow = function;
+        function.setState(MetadataState.READY);
+        super.visitFunction(function);
         this.flow = null;
-        return flow.isError();
+        return function.isError();
     }
 
     @Override
-    public Boolean visitNode(NodeRT<?> node) {
+    public Boolean visitMethod(Method method) {
+        this.flow = method;
+        method.getDeclaringType().clearElementErrors(method);
+        method.setState(MetadataState.READY);
+        super.visitMethod(method);
+        if (method.isError()) {
+            method.getDeclaringType().addError(
+                    method,
+                    ErrorLevel.ERROR,
+                    String.format("方法'%s'配置错误", method.getName())
+            );
+        }
+        this.flow = null;
+        return method.isError();
+    }
+
+    @Override
+    public Boolean visitNode(NodeRT node) {
         node.check();
         if (node.getError() != null)
             flow.setState(MetadataState.ERROR);

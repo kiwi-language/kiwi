@@ -1,10 +1,8 @@
 package tech.metavm.view.rest;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tech.metavm.common.Result;
+import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.view.ViewManager;
 import tech.metavm.view.rest.dto.ListViewDTO;
 
@@ -26,6 +24,23 @@ public class ViewController {
     @GetMapping("/get-default-list-view")
     public Result<ListViewDTO> getListView(@RequestParam("typeId") long typeId) {
         return Result.success(viewManager.getDefaultListView(typeId));
+    }
+
+    @PostMapping("/mapping")
+    public Result<Long> saveViewMapping(@RequestBody ObjectMappingDTO viewMapping) {
+        return Result.success(viewManager.saveMapping(viewMapping));
+    }
+
+    @DeleteMapping("/mapping/{id:[0-9]+}")
+    public Result<Void> removeViewMapping(@PathVariable("id") long id) {
+        viewManager.removeMapping(id);
+        return Result.voidSuccess();
+    }
+
+    @PostMapping("/mapping/{id:[0-9]+}/set-default")
+    public Result<Void> saveViewMapping(@PathVariable("id") long id) {
+        viewManager.setDefaultMapping(id);
+        return Result.voidSuccess();
     }
 
 }

@@ -14,7 +14,7 @@ import java.util.function.Function;
 
 public class InstanceInput implements Closeable {
 
-    public static final Function<Long, Instance> UNSUPPORTED_RESOLVER = id -> {
+    public static final Function<Long, DurableInstance> UNSUPPORTED_RESOLVER = id -> {
         throw new UnsupportedOperationException();
     };
 
@@ -23,13 +23,15 @@ public class InstanceInput implements Closeable {
         if (context == null)
             return new InstanceInput(bout);
         else
-            return new InstanceInput(bout, context::internalGet);
+            return new InstanceInput(bout, id -> context.internalGet(new PhysicalId(id)));
     }
 
     private final InputStream inputStream;
-    private final Function<Long, Instance> getInstance;
-    private @Nullable Instance parent;
-    private @Nullable Field parentField;
+    private final Function<Long, DurableInstance> getInstance;
+    @Nullable
+    private DurableInstance parent;
+    @Nullable
+    private Field parentField;
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream inputStream) {
@@ -37,14 +39,14 @@ public class InstanceInput implements Closeable {
     }
 
     public InstanceInput(InputStream inputStream,
-                         Function<Long, Instance> getInstance) {
+                         Function<Long, DurableInstance> getInstance) {
         this.inputStream = inputStream;
         this.getInstance = getInstance;
     }
 
-    public Instance readMessage() {
+    public DurableInstance readMessage() {
         var version = readLong();
-        var instance = readInstance();
+        var instance = (DurableInstance) readInstance();
         instance.setVersion(version);
         return instance;
     }
@@ -64,7 +66,7 @@ public class InstanceInput implements Closeable {
         };
     }
 
-    private Instance resolveInstance(long id) {
+    private DurableInstance resolveInstance(long id) {
         return getInstance.apply(id);
     }
 
@@ -131,7 +133,7 @@ public class InstanceInput implements Closeable {
         }
     }
 
-    public void setParent(@Nullable Instance parent, @Nullable Field parentField) {
+    public void setParent(@Nullable DurableInstance parent, @Nullable Field parentField) {
         this.parent = parent;
         this.parentField = parentField;
     }

@@ -24,8 +24,10 @@ public class FieldDTOBuilder {
     private Long declaringTypeId;
     private boolean isChild;
     private boolean isStatic;
+    private boolean readonly;
     private boolean lazy;
     private InstanceDTO staticValue;
+    private boolean searchable;
     private int state = MetadataState.READY.code();
 
     private FieldDTOBuilder(String name, RefDTO typeRef) {
@@ -50,6 +52,11 @@ public class FieldDTOBuilder {
 
     public FieldDTOBuilder access(int access) {
         this.access = access;
+        return this;
+    }
+
+    public FieldDTOBuilder readonly(boolean readonly) {
+        this.readonly = readonly;
         return this;
     }
 
@@ -83,6 +90,11 @@ public class FieldDTOBuilder {
         return this;
     }
 
+    public FieldDTOBuilder searchable(boolean searchable) {
+        this.searchable = searchable;
+        return this;
+    }
+
     public FieldDTOBuilder staticValue(InstanceDTO staticValue) {
         this.staticValue = staticValue;
         return this;
@@ -100,18 +112,17 @@ public class FieldDTOBuilder {
 
     public FieldDTO build() {
         return new FieldDTO(
-                tmpId,
-                id,
+                id, tmpId,
                 name,
                 code,
                 access,
                 defaultValue,
                 unique,
-                asTitle,
                 declaringTypeId,
                 typeRef,
                 isChild,
                 isStatic,
+                readonly,
                 lazy,
                 staticValue,
                 state

@@ -3,7 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.IteratorImplNative;
-import tech.metavm.entity.natives.NativeInvoker;
+import tech.metavm.entity.natives.NativeMethods;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
@@ -39,27 +39,27 @@ public class FunctionMethods {
     }
 
     public static DoubleInstance MAX(DoubleInstance a, DoubleInstance b) {
-        return InstanceUtils.max(a, b);
+        return Instances.max(a, b);
     }
 
     public static DoubleInstance MIN(DoubleInstance a, DoubleInstance b) {
-        return InstanceUtils.min(a, b);
+        return Instances.min(a, b);
     }
 
     public static DoubleInstance SUM(DoubleInstance a, DoubleInstance b) {
-        return InstanceUtils.sum(a, b);
+        return Instances.sum(a, b);
     }
 
     public static LongInstance MAX(LongInstance a, LongInstance b) {
-        return InstanceUtils.max(a, b);
+        return Instances.max(a, b);
     }
 
     public static LongInstance MIN(LongInstance a, LongInstance b) {
-        return InstanceUtils.min(a, b);
+        return Instances.min(a, b);
     }
 
     public static LongInstance SUM(LongInstance a, LongInstance b) {
-        return InstanceUtils.sum(a, b);
+        return Instances.sum(a, b);
     }
 
     public static BooleanInstance IS_BLANK(StringInstance str) {
@@ -107,11 +107,11 @@ public class FunctionMethods {
     }
 
     public static TimeInstance NOW() {
-        return InstanceUtils.timeInstance(System.currentTimeMillis());
+        return Instances.timeInstance(System.currentTimeMillis());
     }
 
     public static TimeInstance TIME(LongInstance timeMillis) {
-        return InstanceUtils.timeInstance(timeMillis.getValue());
+        return Instances.timeInstance(timeMillis.getValue());
     }
 
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {
@@ -126,7 +126,7 @@ public class FunctionMethods {
 
     public static LongInstance LEN(Instance instance) {
         if(instance instanceof ArrayInstance array) {
-            return InstanceUtils.longInstance(array.length());
+            return Instances.longInstance(array.length());
         }
         else {
             throw new BusinessException(ErrorCode.ERROR_DELETING_TYPE, "LEN");
@@ -134,7 +134,7 @@ public class FunctionMethods {
     }
 
     public static BooleanInstance HAS_NEXT(Instance iterator) {
-        var iteratorNative = (IteratorImplNative) NativeInvoker.getNativeObject((ClassInstance) iterator);
+        var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject((ClassInstance) iterator);
         return iteratorNative.hasNext();
     }
 

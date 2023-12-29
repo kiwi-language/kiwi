@@ -1,12 +1,13 @@
 package tech.metavm.util;
 
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 
 import java.io.InputStream;
 import java.util.function.Function;
 
 public class IndexKeyReader extends InstanceInput {
-    public IndexKeyReader(InputStream inputStream, Function<Long, Instance> getInstance) {
+    public IndexKeyReader(InputStream inputStream, Function<Long, DurableInstance> getInstance) {
         super(inputStream, getInstance);
     }
 

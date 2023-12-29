@@ -24,8 +24,6 @@ public interface GenericDeclaration {
 
     void addTypeParameter(TypeVariable typeParameter);
 
-    String getKey(Function<Type, java.lang.reflect.Type> getJavaType);
-
     String getName();
 
     @Nullable String getCode();

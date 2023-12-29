@@ -11,9 +11,9 @@ import java.util.List;
 @EntityType("用户")
 public class User extends Entity {
 
-    public static final IndexDef<User> IDX_PLATFORM_USER_ID = IndexDef.uniqueKey(User.class, "platformUserId");
+    public static final IndexDef<User> IDX_PLATFORM_USER_ID = IndexDef.createUnique(User.class, "platformUserId");
 
-    public static final IndexDef<User> IDX_LOGIN_NAME = IndexDef.uniqueKey(User.class, "loginName");
+    public static final IndexDef<User> IDX_LOGIN_NAME = IndexDef.createUnique(User.class, "loginName");
 
     @EntityField("账号")
     private final String loginName;

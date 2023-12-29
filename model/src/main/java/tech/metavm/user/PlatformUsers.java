@@ -5,7 +5,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.event.rest.dto.LeaveAppEvent;
 import tech.metavm.message.Message;
 import tech.metavm.message.MessageKind;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class PlatformUsers {
                             platformUser,
                             String.format("您已退出应用'%s'", app.getName()),
                             MessageKind.LEAVE,
-                            InstanceUtils.nullInstance()
+                            Instances.nullInstance()
                     )
             );
         }

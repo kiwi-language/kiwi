@@ -1,7 +1,7 @@
 package tech.metavm.mocks;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.task.Task;
 
 @EntityType("测试任务")
@@ -14,7 +14,7 @@ public class TestJob extends Task {
     }
 
     @Override
-    protected boolean run0(IInstanceContext context) {
+    protected boolean run0(IEntityContext context) {
         return ++count >= 10;
     }
 

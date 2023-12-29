@@ -1,9 +1,10 @@
 package tech.metavm.task;
 
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.NncUtils;
 
 import java.lang.reflect.Type;
@@ -22,19 +23,19 @@ public abstract class EntityScanTask<T> extends ScanTask {
     }
 
     @Override
-    protected List<Instance> scan(IInstanceContext context, Instance cursor, long limit) {
+    protected List<DurableInstance> scan(IInstanceContext context, DurableInstance cursor, long limit) {
         tech.metavm.object.type.Type metaType = ModelDefRegistry.getType(entityType);
         return context.getByType(metaType, cursor, limit);
     }
 
     @Override
-    protected void process(List<Instance> batch, IInstanceContext context) {
+    protected void process(List<DurableInstance> batch, IEntityContext context) {
         List<T> models = NncUtils.map(
-                batch, instance -> context.getEntityContext().getEntity(entityType, instance)
+                batch, instance -> context.getEntity(entityType, instance)
         );
         processModels(context, models);
     }
-    protected abstract void processModels(IInstanceContext context, List<T> models);
+    protected abstract void processModels(IEntityContext context, List<T> models);
 
     public Map<TypeVariable<?>, Type> getTypeVariableMap() {
         return Map.of(

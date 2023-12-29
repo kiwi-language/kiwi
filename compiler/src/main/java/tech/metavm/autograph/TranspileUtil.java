@@ -7,12 +7,11 @@ import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
-import tech.metavm.flow.Flow;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Types;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -57,6 +56,32 @@ public class TranspileUtil {
             case PsiClass psiClass -> getClassCanonicalName(psiClass);
             case PsiMethod method -> getMethodCanonicalName(method);
             default -> throw new IllegalStateException("Unexpected value: " + typeParameterOwner);
+        };
+    }
+
+    public static PsiType getRawType(PsiType psiType) {
+        return switch (psiType) {
+            case PsiClassType psiClassType -> psiClassType.rawType();
+            default -> psiType;
+        };
+    }
+
+    public static MethodSignature getSignature(PsiMethod method, @Nullable  PsiClassType qualifierType) {
+        var declaringClass = qualifierType != null ? qualifierType :
+                createType(requireNonNull(method.getContainingClass()));
+        var paramClasses = NncUtils.map(method.getParameterList().getParameters(), PsiParameter::getType);
+        return new MethodSignature(declaringClass, method.getName(), paramClasses);
+    }
+
+    private static Class<?> getJavaClass(PsiType psiType) {
+        return switch (psiType) {
+            case PsiClassType psiClassType ->
+                ReflectionUtils.classForName(requireNonNull(psiClassType.resolve()).getQualifiedName());
+            case PsiArrayType psiArrayType ->
+                getJavaClass(psiArrayType.getComponentType()).arrayType();
+            case PsiPrimitiveType primitiveType ->
+                ReflectionUtils.getPrimitiveClass(primitiveType.getKind().getBinaryName());
+            default -> throw new IllegalStateException("Unexpected value: " + psiType);
         };
     }
 
@@ -222,6 +247,11 @@ public class TranspileUtil {
         return true;
     }
 
+    public static PsiPrimitiveType createPrimitiveType(Class<?> klass) {
+        NncUtils.requireTrue(klass.isPrimitive());
+        return elementFactory.createPrimitiveType(klass.getName());
+    }
+
     public static PsiClassType createType(Class<?> klass) {
         return elementFactory.createTypeByFQClassName(klass.getName());
     }
@@ -358,7 +388,7 @@ public class TranspileUtil {
     public static <T> List<T> getEnclosingElements(PsiElement element, Class<T> klass, Set<Class<?>> terminalClasses) {
         var current = element.getParent();
         List<T> result = new ArrayList<>();
-        while (current != null && !ReflectUtils.isInstance(terminalClasses, current)) {
+        while (current != null && !ReflectionUtils.isInstance(terminalClasses, current)) {
             if(klass.isInstance(current)) {
                 result.add(klass.cast(current));
             }
@@ -370,7 +400,7 @@ public class TranspileUtil {
     public static @Nullable List<PsiElement> getAncestorPath(PsiElement element, Set<Class<?>> ancestorClasses) {
         List<PsiElement> path = new ArrayList<>();
         var current = element.getParent();
-        if(current != null && !ReflectUtils.isInstance(ancestorClasses, current)) {
+        if(current != null && !ReflectionUtils.isInstance(ancestorClasses, current)) {
             path.add(current);
         }
         if(current == null) {
@@ -402,7 +432,7 @@ public class TranspileUtil {
 
     public static @Nullable PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
         PsiElement current = element;
-        while (current != null && !ReflectUtils.isInstance(parentClasses, current)) {
+        while (current != null && !ReflectionUtils.isInstance(parentClasses, current)) {
             current = current.getParent();
         }
         return current;
@@ -428,8 +458,8 @@ public class TranspileUtil {
         return elementFactory.createType(klass);
     }
 
-    public static Flow getFlowByMethod(ClassType klass, PsiMethod psiMethod, TypeResolver typeResolver) {
-        return klass.getFlowByCodeAndParamTypes(
+    public static tech.metavm.flow.Method getMethidByJavaMethod(ClassType klass, PsiMethod psiMethod, TypeResolver typeResolver) {
+        return klass.getMethodByCodeAndParamTypes(
                 psiMethod.getName(),
                 NncUtils.map(
                         psiMethod.getParameterList().getParameters(),

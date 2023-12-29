@@ -1,6 +1,6 @@
 package tech.metavm.reflection;
 
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -16,7 +16,7 @@ public class JavaType {
     public JavaType(Type type, JavaType superType) {
         this.superType = superType;
         this.type = type;
-        for (Field rawField : ReflectUtils.getDeclaredRawFields(type)) {
+        for (Field rawField : ReflectionUtils.getDeclaredRawFields(type)) {
             new JavaField(rawField, this);
         }
     }

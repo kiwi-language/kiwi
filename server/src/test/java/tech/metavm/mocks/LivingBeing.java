@@ -7,7 +7,7 @@ import java.util.List;
 @EntityType("生物")
 public class LivingBeing extends Entity {
 
-    public static final IndexDef<LivingBeing> IDX_AGE = IndexDef.normalKey(
+    public static final IndexDef<LivingBeing> IDX_AGE = IndexDef.create(
         LivingBeing.class, "age"
     );
 

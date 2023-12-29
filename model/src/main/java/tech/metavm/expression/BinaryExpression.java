@@ -1,9 +1,6 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
@@ -14,7 +11,7 @@ import java.util.Objects;
 
 @EntityType("二元表达式")
 public class BinaryExpression extends Expression {
-    @EntityField(value = "运算符", asTitle = true)
+    @EntityField("运算符")
     private final BinaryOperator operator;
     @ChildEntity("运算数一")
     private final Expression first;
@@ -62,12 +59,6 @@ public class BinaryExpression extends Expression {
     @Override
     public List<Expression> getChildren() {
         return List.of(first, second);
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        NncUtils.requireLength(children, 2);
-        return new BinaryExpression(operator, children.get(0), children.get(1));
     }
 
     @Override

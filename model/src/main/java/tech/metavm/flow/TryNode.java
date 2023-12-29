@@ -1,36 +1,34 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.TryNodeParamDTO;
-import tech.metavm.util.NncUtils;
+import tech.metavm.flow.rest.TryNodeParam;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType("尝试节点")
-public class TryNode extends ScopeNode<TryNodeParamDTO> {
+@EntityType("Try节点")
+public class TryNode extends ScopeNode {
 
-    public static TryNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        return new TryNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+    public static TryNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        var node = (TryNode) context.getNode(nodeDTO.getRef());
+        if (node == null)
+            node = new TryNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
+        return node;
     }
 
-    public TryNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope, false);
+    public TryNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope) {
+        super(tmpId, name, code, null, previous, scope, false);
     }
 
     @Override
-    protected TryNodeParamDTO getParam(boolean persisting) {
-        return new TryNodeParamDTO(bodyScope.toDTO(true));
-    }
-
-    @Override
-    protected void setParam(TryNodeParamDTO param, IEntityContext context) {
-
+    protected TryNodeParam getParam(SerializeContext serializeContext) {
+        return new TryNodeParam(bodyScope.toDTO(true, serializeContext));
     }
 
     @NotNull
@@ -46,6 +44,12 @@ public class TryNode extends ScopeNode<TryNodeParamDTO> {
             return NodeExecResult.jump(bodyScope.tryGetFirstNode());
         else
             return next();
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("try ");
+        bodyScope.writeCode(writer);
     }
 
 

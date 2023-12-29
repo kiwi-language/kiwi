@@ -13,7 +13,7 @@ import tech.metavm.util.BusinessException;
 @EntityType("加入应用邀请")
 public class AppInvitation extends Entity {
 
-    public static final IndexDef<AppInvitation> IDX_APP = IndexDef.normalKey(AppInvitation.class, "application");
+    public static final IndexDef<AppInvitation> IDX_APP = IndexDef.create(AppInvitation.class, "application");
 
     public static AppInvitation create(AppInvitationDTO invitationDTO, IEntityContext platformCtx) {
         var app = platformCtx.getEntity(Application.class, invitationDTO.appId());

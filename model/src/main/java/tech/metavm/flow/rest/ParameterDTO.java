@@ -6,8 +6,8 @@ import tech.metavm.common.RefDTO;
 import javax.annotation.Nullable;
 
 public record ParameterDTO(
-        Long tmpId,
         Long id,
+        Long tmpId,
         String name,
         String code,
         RefDTO typeRef,

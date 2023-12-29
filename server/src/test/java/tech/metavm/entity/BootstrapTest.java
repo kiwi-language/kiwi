@@ -7,15 +7,12 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.ChangeLogPlugin;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.type.*;
 import tech.metavm.util.Column;
 import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.ReflectUtils;
 import tech.metavm.util.TestContext;
 
 import java.util.List;
@@ -30,6 +27,7 @@ public class BootstrapTest extends TestCase {
     private MockIdProvider mockIdProvider;
     private MemAllocatorStore allocatorStore;
     private InstanceContextFactory instanceContextFactory;
+    private EntityContextFactory entityContextFactory;
     private MemInstanceSearchService instanceSearchService;
 
     @Override
@@ -42,13 +40,14 @@ public class BootstrapTest extends TestCase {
         instanceSearchService = new MemInstanceSearchService();
 
         instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue());
+        entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
         InstanceLogServiceImpl instanceLogService = new InstanceLogServiceImpl(
+                entityContextFactory,
                 instanceSearchService,
-                instanceContextFactory,
                 instanceStore,
                 List.of());
         instanceContextFactory.setIdService(mockIdProvider);
-        instanceContextFactory.setPlugins(List.of(new ChangeLogPlugin(instanceLogService)));
+        entityContextFactory.setInstanceLogService(instanceLogService);
     }
 
     @Override
@@ -57,13 +56,11 @@ public class BootstrapTest extends TestCase {
     }
 
     public void testSmoking() {
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
+        Bootstrap bootstrap = new Bootstrap(
+                entityContextFactory, instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
 
-        try(var context = instanceContextFactory.newBuilder()
-                .appId(ROOT_APP_ID)
-                .typeResolver((ctx, typeId) -> ctx.getEntityContext().getType(typeId))
-                .build()) {
+        try(var context = entityContextFactory.newContext(ROOT_APP_ID)) {
 
             ClassType typeType = ModelDefRegistry.getClassType(ClassType.class);
             Type longType = ModelDefRegistry.getType(Long.class);
@@ -77,8 +74,8 @@ public class BootstrapTest extends TestCase {
             ClassType testType = ClassBuilder.newBuilder("Test Type", null).build();
             Field titleField = FieldBuilder
                     .newBuilder("title", null, testType, StandardTypes.getStringType())
-                    .asTitle(true)
                     .build();
+            testType.setTitleField(titleField);
             context.bind(testType);
             context.bind(titleField);
 
@@ -88,15 +85,15 @@ public class BootstrapTest extends TestCase {
 
     public void testRepeatBoot() {
         AllocatorStore allocatorStore = this.allocatorStore;
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
+        Bootstrap bootstrap = new Bootstrap(entityContextFactory, instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
         bootstrap.bootAndSave();
-        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
+        Bootstrap bootstrap2 = new Bootstrap(entityContextFactory, instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap2.bootAndSave();
     }
 
     public void testReboot() {
-        Bootstrap bootstrap = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
+        Bootstrap bootstrap = new Bootstrap(entityContextFactory, instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap.bootAndSave();
         DefContext defContext1 = ModelDefRegistry.getDefContext();
 
@@ -106,7 +103,7 @@ public class BootstrapTest extends TestCase {
 //        Table<Field> fields1 = typeType1.getDeclaredFields();
 //        Assert.assertNotNull(typeType1.getNullableType());
 
-        Bootstrap bootstrap2 = new Bootstrap(instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
+        Bootstrap bootstrap2 = new Bootstrap(entityContextFactory, instanceContextFactory, new StdAllocators(allocatorStore), new MemColumnStore());
         bootstrap2.boot();
 
         DefContext defContext2 = ModelDefRegistry.getDefContext();
@@ -121,7 +118,7 @@ public class BootstrapTest extends TestCase {
 
         for (Column column : ColumnKind.columns()) {
             if(defContext2.containsModel(column)) {
-                Instance colInstance = defContext2.getInstance(column);
+                var colInstance = defContext2.getInstance(column);
                 Assert.assertNotNull(colInstance.getId());
             }
         }

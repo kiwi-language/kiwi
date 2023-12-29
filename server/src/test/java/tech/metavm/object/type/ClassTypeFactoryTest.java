@@ -17,7 +17,7 @@ public class ClassTypeFactoryTest extends TestCase {
                 .superClass(MockRegistry.getEntityType()).build();
         Assert.assertNotNull(type.getDeclaredFields());
         Assert.assertNotNull(type.getDeclaredConstraints());
-        Assert.assertNotNull(type.getDeclaredFlows());
+        Assert.assertNotNull(type.getDeclaredMethods());
     }
 
 }

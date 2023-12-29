@@ -65,7 +65,7 @@ public class ValueUtil {
     public static Instance convert(Instance instance, Type type) {
         if (instance instanceof LongInstance longInstance) {
             if (type.isDouble()) {
-                return InstanceUtils.doubleInstance(longInstance.getValue());
+                return Instances.doubleInstance(longInstance.getValue());
             }
         }
         throw new InternalException("Can not convert instance '" + instance + "' to type '" + type + "'");

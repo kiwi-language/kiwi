@@ -22,43 +22,43 @@ public class ReferencePO {
     public ReferencePO() {
     }
 
-    public Long getAppId() {
+    public long getAppId() {
         return appId;
     }
 
-    public void setAppId(Long appId) {
+    public void setAppId(long appId) {
         this.appId = appId;
     }
 
-    public Long getSourceId() {
+    public long getSourceId() {
         return sourceId;
     }
 
-    public void setSourceId(Long sourceId) {
+    public void setSourceId(long sourceId) {
         this.sourceId = sourceId;
     }
 
-    public Long getTargetId() {
+    public long getTargetId() {
         return targetId;
     }
 
-    public void setTargetId(Long targetId) {
+    public void setTargetId(long targetId) {
         this.targetId = targetId;
     }
 
-    public Long getFieldId() {
+    public long getFieldId() {
         return fieldId;
     }
 
-    public void setFieldId(Long fieldId) {
+    public void setFieldId(long fieldId) {
         this.fieldId = fieldId;
     }
 
-    public Integer getKind() {
+    public int getKind() {
         return kind;
     }
 
-    public void setKind(Integer kind) {
+    public void setKind(int kind) {
         this.kind = kind;
     }
 

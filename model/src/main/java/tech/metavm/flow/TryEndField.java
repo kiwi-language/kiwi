@@ -1,18 +1,16 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.SerializeContext;
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.*;
 import tech.metavm.flow.rest.TryEndFieldDTO;
 import tech.metavm.object.type.Field;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
-public class TryEndField extends Entity {
+public class TryEndField extends Entity implements LocalKey {
 
     @EntityField("字段")
     private final Field field;
@@ -46,11 +44,10 @@ public class TryEndField extends Entity {
         return field;
     }
 
-    public Value getValue(@Nullable NodeRT<?> raiseNode) {
-        if(raiseNode == null) {
+    public Value getValue(@Nullable NodeRT raiseNode) {
+        if (raiseNode == null) {
             return defaultValue;
-        }
-        else {
+        } else {
             return NncUtils.requireNonNull(
                     values.get(TryEndValue::getRaiseNode, raiseNode),
                     "Can not find merge value of field " + field + " for raise node: " + raiseNode
@@ -59,14 +56,28 @@ public class TryEndField extends Entity {
     }
 
     public TryEndFieldDTO toDTO() {
-        try(var context = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new TryEndFieldDTO(
                     field.getName(),
-                    context.getRef(field),
-                    context.getRef(field.getType()),
+                    serContext.getRef(field),
+                    serContext.getRef(field.getType()),
                     NncUtils.map(values, TryEndValue::toDTO),
-                    defaultValue.toDTO(false)
+                    defaultValue.toDTO()
             );
         }
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return field.getCode() != null;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return Objects.requireNonNull(field.getCode());
+    }
+
+    public String getText() {
+        return field.getName() + ": {" + NncUtils.join(values, TryEndValue::getText, ", ") + "}";
     }
 }

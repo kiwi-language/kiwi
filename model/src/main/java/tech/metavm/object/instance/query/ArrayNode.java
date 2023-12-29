@@ -4,7 +4,7 @@ import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -40,7 +40,7 @@ public class ArrayNode extends InstanceNode<ArrayInstance> {
     public Instance getByPath0(ArrayInstance instance, Path path) {
         InstanceNode<?> child = children.get(path.firstItem());
         if(child.isAsterisk()) {
-            return InstanceUtils.createArray(
+            return Instances.createArray(
                     NncUtils.map(
                             instance.getElements(),
                             e -> child.getByPath(e, path.subPath())

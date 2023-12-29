@@ -28,8 +28,8 @@ public class NullInstance extends PrimitiveInstance {
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitNullInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitNullInstance(this);
     }
 
     @Override

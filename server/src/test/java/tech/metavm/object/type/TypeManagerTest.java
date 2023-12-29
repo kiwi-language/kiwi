@@ -8,6 +8,7 @@ import tech.metavm.entity.*;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
@@ -31,14 +32,16 @@ public class TypeManagerTest extends TestCase {
         instanceSearchService = new MemInstanceSearchService();
 
         InstanceContextFactory instanceContextFactory =
-                TestUtils.getInstanceContextFactory(idProvider, instanceStore, instanceSearchService);
+                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
+        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
+        entityContextFactory.setInstanceLogService(new MockInstanceLogService());
 
         TransactionOperations transactionOperations = new MockTransactionOperations();
 
         EntityQueryService entityQueryService = new EntityQueryService(new InstanceQueryService(instanceSearchService));
         typeManager = new TypeManager(
-                instanceContextFactory, entityQueryService,
-                new TaskManager(instanceContextFactory, transactionOperations),
+                entityContextFactory, entityQueryService,
+                new TaskManager(entityContextFactory, transactionOperations),
                 transactionOperations);
     }
 
@@ -96,8 +99,9 @@ public class TypeManagerTest extends TestCase {
                 Map.of(path1, stringType.getIdRequired(), path2, stringType.getIdRequired()),
                 response.path2typeId()
         );
-
-        Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
+        try (var context = MockRegistry.newContext(10L)) {
+            Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
+        }
     }
 
 }

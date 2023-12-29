@@ -9,13 +9,13 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.antlr.MetaVMLexer;
 import tech.metavm.expression.antlr.MetaVMParser;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.query.OperatorTypes;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Constants;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -25,12 +25,12 @@ import static java.util.Objects.requireNonNull;
 
 public class ExpressionParser {
 
-    public static Expression parse(@NotNull ClassType type, @NotNull String expression, @NotNull IInstanceContext instanceContext) {
-        return parse(expression, new TypeParsingContext(type, instanceContext));
+    public static Expression parse(@NotNull ClassType type, @NotNull String expression, @NotNull IEntityContext entityContext) {
+        return parse(expression, TypeParsingContext.create(type, entityContext));
     }
 
     public static Expression parse(@NotNull String expression, @NotNull ParsingContext context) {
-        return parse(expression, null , context);
+        return parse(expression, null, context);
     }
 
     public static Expression parse(@NotNull String expression, @Nullable Type assignedType, @NotNull ParsingContext context) {
@@ -52,7 +52,7 @@ public class ExpressionParser {
     }
 
     private Expression resolve(Expression expression, @Nullable Type assignedType) {
-        return ExpressionResolver.resolve(expression, assignedType, context);
+        return ExpressionResolverV2.resolve(expression, assignedType, context);
     }
 
     Expression antlrPreparse() {
@@ -100,7 +100,7 @@ public class ExpressionParser {
     private Expression parseMethodCall(MetaVMParser.MethodCallContext methodCall) {
         if (methodCall.identifier().IDENTIFIER() != null) {
             return new FunctionExpression(
-                    Function.getByName(methodCall.identifier().IDENTIFIER().getText()),
+                    Func.getByName(methodCall.identifier().IDENTIFIER().getText()),
                     methodCall.expressionList() != null ?
                             parseExpressionList(methodCall.expressionList())
                             : List.of()
@@ -201,15 +201,13 @@ public class ExpressionParser {
             if (identifier.IDENTIFIER() != null) {
                 String name = identifier.IDENTIFIER().getText();
                 if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-                    return getEntityContext().getType(
+                    return context.getTypeProvider().getType(
                             Long.parseLong(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
                     );
                 } else {
                     String className = classType.typeArguments().isEmpty() ? name :
                             name + classType.typeArguments(0).getText();
-                    return requireNonNull(context.getEntityContext()).selectByUniqueKey(
-                            ClassType.UNIQUE_NAME, className
-                    );
+                    return requireNonNull(context.getTypeProvider()).findClassTypeByName(className);
                 }
             }
         }
@@ -224,18 +222,18 @@ public class ExpressionParser {
         } else if (literal.integerLiteral() != null) {
             String intText = literal.integerLiteral().getText();
             return new ConstantExpression(
-                    InstanceUtils.longInstance(Long.parseLong(intText))
+                    Instances.longInstance(Long.parseLong(intText))
             );
         } else if (literal.floatLiteral() != null) {
             return new ConstantExpression(
-                    InstanceUtils.doubleInstance(Double.parseDouble(literal.getText()))
+                    Instances.doubleInstance(Double.parseDouble(literal.getText()))
             );
         } else if (literal.BOOL_LITERAL() != null) {
             return new ConstantExpression(
-                    InstanceUtils.booleanInstance(Boolean.parseBoolean(literal.getText()))
+                    Instances.booleanInstance(Boolean.parseBoolean(literal.getText()))
             );
         } else if (literal.NULL_LITERAL() != null) {
-            return new ConstantExpression(InstanceUtils.nullInstance());
+            return new ConstantExpression(Instances.nullInstance());
         } else {
             throw new ExpressionParsingException();
         }
@@ -243,13 +241,13 @@ public class ExpressionParser {
 
     private Expression parseStringLiteral(TerminalNode stringLiteral) {
         return new ConstantExpression(
-                InstanceUtils.stringInstance(ExpressionUtil.deEscapeDoubleQuoted(stringLiteral.getText()))
+                Instances.stringInstance(Expressions.deEscapeDoubleQuoted(stringLiteral.getText()))
         );
     }
 
     private Expression parseSingleQuoteLiteral(TerminalNode singleQuoteStringLiteral) {
         return new ConstantExpression(
-                InstanceUtils.stringInstance(ExpressionUtil.deEscapeSingleQuoted(singleQuoteStringLiteral.getText()))
+                Instances.stringInstance(Expressions.deEscapeSingleQuoted(singleQuoteStringLiteral.getText()))
         );
     }
 
@@ -257,18 +255,14 @@ public class ExpressionParser {
         if (identifier.IDENTIFIER() != null) {
             String text = identifier.IDENTIFIER().getText();
             if (text.startsWith(Constants.CONSTANT_ID_PREFIX)) {
-                return new ConstantExpression(requireNonNull(context.getInstanceContext()).get(
-                        Long.parseLong(text.substring(Constants.CONSTANT_ID_PREFIX.length()))));
+                return new ConstantExpression(context.getInstanceProvider().get(
+                        Id.parse(text.substring(Constants.CONSTANT_ID_PREFIX.length()))));
             } else {
                 return new VariableExpression(identifier.IDENTIFIER().getText());
             }
         } else {
             throw new ExpressionParsingException();
         }
-    }
-
-    private IEntityContext getEntityContext() {
-        return requireNonNull(context.getInstanceContext()).getEntityContext();
     }
 
 }

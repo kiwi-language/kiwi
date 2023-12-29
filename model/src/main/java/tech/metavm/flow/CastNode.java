@@ -1,0 +1,85 @@
+package tech.metavm.flow;
+
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.*;
+import tech.metavm.entity.natives.ExceptionNative;
+import tech.metavm.expression.FlowParsingContext;
+import tech.metavm.flow.rest.CastNodeParam;
+import tech.metavm.flow.rest.NodeDTO;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.type.Type;
+import tech.metavm.util.Instances;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
+
+@EntityType("类型转换节点")
+public class CastNode extends NodeRT {
+
+    public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        var param = (CastNodeParam) nodeDTO.param();
+        var node = (CastNode) context.getNode(nodeDTO.getRef());
+        var parsingContext = FlowParsingContext.create(scope, prev, context);
+        var object = ValueFactory.create(param.object(), parsingContext);
+        var type = context.getType(nodeDTO.outputTypeRef());
+        if (node == null)
+            node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, prev, scope, object);
+        else {
+            node.setOutputType(type);
+            node.setValue(object);
+        }
+        return node;
+    }
+
+    private @NotNull Value object;
+
+    public CastNode(Long tmpId, String name, @Nullable String code, @NotNull Type outputType,
+                    NodeRT previous, ScopeRT scope, @NotNull Value object) {
+        super(tmpId, name, code, outputType, previous, scope);
+        this.object = addChild(object, "object");
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitCastNode(this);
+    }
+
+    @Override
+    protected CastNodeParam getParam(SerializeContext serializeContext) {
+        return new CastNodeParam(object.toDTO());
+    }
+
+    public @NotNull Type getType() {
+        return Objects.requireNonNull(super.getType());
+    }
+
+    public void setValue(@NotNull Value object) {
+        this.object = addChild(object, "object");
+    }
+
+    @Override
+    protected void setOutputType(Type outputType) {
+        super.setOutputType(Objects.requireNonNull(outputType));
+    }
+
+    @Override
+    public NodeExecResult execute(MetaFrame frame) {
+        var inst = object.evaluate(frame);
+        var type = getType();
+        if (type.isInstance(inst))
+            return next(inst);
+        else {
+            var exception = ClassInstance.allocate(StandardTypes.getExceptionType());
+            var exceptionNative = new ExceptionNative(exception);
+            exceptionNative.Exception(Instances.stringInstance(
+                    String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
+            ));
+            return NodeExecResult.exception(exception);
+        }
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write( object.getText() + " as " + getType().getName());
+    }
+}

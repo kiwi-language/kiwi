@@ -24,12 +24,10 @@ public record ValueDTO (
 
     @JsonIgnore
     public boolean isNull() {
-        if(value == null) {
+        if(value == null)
             return true;
-        }
-        if(value instanceof PrimitiveFieldValue primitiveFieldValue) {
+        if(value instanceof PrimitiveFieldValue primitiveFieldValue)
             return primitiveFieldValue.getValue() == null;
-        }
         return false;
     }
 

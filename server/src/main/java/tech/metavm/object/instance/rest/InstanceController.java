@@ -36,13 +36,13 @@ public class InstanceController {
     }
 
     @PutMapping
-    public Result<Long> create(@RequestBody InstanceDTO instance) {
+    public Result<String> create(@RequestBody InstanceDTO instance) {
         return Result.success(instanceManager.create(instance));
     }
 
     @PostMapping
-    public Result<Long> save(@RequestBody InstanceDTO instance) {
-        if (instance.id() == null || instance.id() == 0L) {
+    public Result<String> save(@RequestBody InstanceDTO instance) {
+        if (instance.id() == null ) {
             return Result.success(instanceManager.create(instance));
         } else {
             instanceManager.update(instance);
@@ -50,11 +50,14 @@ public class InstanceController {
         }
     }
 
-    @GetMapping("/{id:[0-9]+}")
-    public Result<GetInstanceResponse> get(@PathVariable("id") long id,
-                                   @RequestParam(value = "depth", defaultValue = "1") int depth) {
+    @GetMapping("/{id}")
+    public Result<GetInstanceResponse> get(
+            @PathVariable("id") String id,
+            @RequestParam(value = "depth", defaultValue = "1") int depth
+    ) {
         return Result.success(instanceManager.get(id, depth));
     }
+
 
     @PostMapping("/batch-get")
     public Result<GetInstancesResponse> batchGet(@RequestBody GetInstancesRequest request) {
@@ -67,14 +70,14 @@ public class InstanceController {
         return Result.voidSuccess();
     }
 
-    @DeleteMapping("/{id:[0-9]+}")
-    public Result<Void> delete(@PathVariable("id") long id) {
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable("id") String id) {
         instanceManager.delete(id);
         return Result.success(null);
     }
 
     @PostMapping("/batch-delete")
-    public Result<Void> batchDelete(@RequestBody List<Long> ids) {
+    public Result<Void> batchDelete(@RequestBody List<String> ids) {
         instanceManager.batchDelete(ids);
         return Result.success(null);
     }

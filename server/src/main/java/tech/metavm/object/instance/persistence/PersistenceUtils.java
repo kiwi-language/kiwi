@@ -1,11 +1,12 @@
 package tech.metavm.object.instance.persistence;
 
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.InstanceIndexQuery;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
@@ -18,23 +19,23 @@ import java.util.Set;
 
 public class PersistenceUtils {
 
-    public static Set<IndexEntryPO> getIndexEntries(ClassInstance instance, IEntityContext entityContext) {
+    public static Set<IndexEntryPO> getIndexEntries(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId) {
         instance.ensureLoaded();
         return NncUtils.flatMapUnique(
                 instance.getType().getConstraints(Index.class),
-                c -> getIndexEntries(c, instance, entityContext)
+                c -> getIndexEntries(c, instance, parameterizedFlowProvider, appId)
         );
     }
 
-    private static List<IndexEntryPO> getIndexEntries(Index index, ClassInstance instance, IEntityContext entityContext) {
-        List<IndexKeyRT> keys = index.createIndexKey(instance, entityContext);
+    private static List<IndexEntryPO> getIndexEntries(Index index, ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider, long appId) {
+        List<IndexKeyRT> keys = index.createIndexKey(instance, parameterizedFlowProvider);
         return NncUtils.map(
                 keys,
-                key -> new IndexEntryPO(entityContext.getAppId(), toIndexKeyPO(key), instance.getIdRequired())
+                key -> new IndexEntryPO(appId, toIndexKeyPO(key), instance.getIdRequired())
         );
     }
 
-    public static InstancePO toInstancePO(Instance instance, long appId) {
+    public static InstancePO toInstancePO(DurableInstance instance, long appId) {
         instance.ensureLoaded();
         return switch (instance) {
             case ClassInstance classInstance -> toInstancePO(classInstance, appId);
@@ -51,7 +52,7 @@ public class PersistenceUtils {
                 classInstance.getTitle(),
                 classInstance.getType().getIdRequired(),
                 InstanceOutput.toByteArray(classInstance),
-                NncUtils.getOrElse(classInstance.getParent(), Instance::getId, -1L),
+                NncUtils.getOrElse(classInstance.getParent(), DurableInstance::getId, -1L),
                 NncUtils.getOrElse(classInstance.getParentField(), Field::getId, -1L),
                 classInstance.getRoot().getIdRequired(),
                 classInstance.getVersion(),
@@ -66,7 +67,7 @@ public class PersistenceUtils {
                 arrayInstance.getTitle(),
                 arrayInstance.getType().getIdRequired(),
                 InstanceOutput.toByteArray(arrayInstance),
-                NncUtils.getOrElse(arrayInstance.getParent(), Instance::getId, -1L),
+                NncUtils.getOrElse(arrayInstance.getParent(), DurableInstance::getId, -1L),
                 NncUtils.getOrElse(arrayInstance.getParentField(), Field::getId, -1L),
                 arrayInstance.getRoot().getIdRequired(),
                 arrayInstance.getVersion(),

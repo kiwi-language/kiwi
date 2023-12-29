@@ -1,10 +1,6 @@
 package tech.metavm.task;
 
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.entity.*;
 
 import javax.annotation.Nullable;
 
@@ -26,19 +22,20 @@ public abstract class Task extends Entity {
     @EntityField("执行次数")
     private long numRuns;
     @EntityField("分组")
-    private @Nullable TaskGroup group;
+    @Nullable
+    private TaskGroup group;
 
     protected Task(String title) {
         this.title = title;
     }
 
-    protected abstract boolean run0(IInstanceContext context);
+    protected abstract boolean run0(IEntityContext context);
 
-    public void run(IInstanceContext context) {
+    public void run(IEntityContext context) {
         numRuns++;
         if(run0(context)) {
             if(group != null) {
-                group.onDone(this, context.getEntityContext());
+                group.onDone(this, context);
             }
             state = TaskState.FINISHED;
         }

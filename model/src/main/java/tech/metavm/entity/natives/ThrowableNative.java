@@ -5,7 +5,7 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.instance.core.StringInstance;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 
 public class ThrowableNative extends NativeBase {
@@ -21,7 +21,7 @@ public class ThrowableNative extends NativeBase {
     }
 
     public ClassInstance Throwable() {
-        return Throwable(InstanceUtils.nullInstance(), InstanceUtils.nullInstance());
+        return Throwable(Instances.nullInstance(), Instances.nullInstance());
     }
 
     public ClassInstance Throwable(Instance causeOrMessage) {
@@ -29,10 +29,10 @@ public class ThrowableNative extends NativeBase {
             return Throwable(nullInstance, nullInstance);
         }
         else if(causeOrMessage instanceof StringInstance message) {
-            return Throwable(message, InstanceUtils.nullInstance());
+            return Throwable(message, Instances.nullInstance());
         }
         else if(causeOrMessage instanceof ClassInstance cause) {
-            return Throwable(InstanceUtils.nullInstance(), cause);
+            return Throwable(Instances.nullInstance(), cause);
         }
         throw new InternalException("Invalid argument: " + causeOrMessage);
     }

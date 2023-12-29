@@ -1,8 +1,6 @@
 package tech.metavm.object.instance.core;
 
-public abstract class StructuralVisitor extends InstanceVisitor {
-
-    public int numCalls;
+public abstract class StructuralVisitor extends VoidInstanceVisitor {
 
 //    private final InstanceVisitor noRepeatVisitor = new InstanceVisitor() {
 //        @Override
@@ -12,15 +10,10 @@ public abstract class StructuralVisitor extends InstanceVisitor {
 //        }
 //    };
 
-    public final void visit(Instance instance) {
-        instance.accept(this);
-    }
-
     @Override
-    public void visitInstance(Instance instance) {
-        numCalls++;
+    public Void visitInstance(Instance instance) {
         instance.acceptChildren(this);
-        super.visitInstance(instance);
+        return super.visitInstance(instance);
     }
 
 }

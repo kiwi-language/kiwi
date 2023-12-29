@@ -60,7 +60,7 @@ Content-Type: application/json
 
 {
   "flowId": 1267305434,
-  "instanceId": 1268605373,
+  "id": 1268605373,
   "arguments": [
     {
       "type": 1,
@@ -84,7 +84,7 @@ Content-Type: application/json
 POST http://localhost:8080/system/invalidate-cache/1006000121
 
 ###
-GET http://localhost:8080/system/instance/1082501659
+GET http://localhost:8080/system/instance/1159303193
 
 ###
 GET http://localhost:8080/system/cache/1006000121
@@ -388,7 +388,7 @@ Content-Type: application/json
 
 {
   "flowId": 1158103260,
-  "instanceId": 1159503191,
+  "id": 1159503191,
   "arguments": [
     {
       "type": 1,
@@ -431,7 +431,7 @@ Content-Type: application/json
 
 {
   "flowId": 1077401631,
-  "instanceId": 1080101603,
+  "id": 1080101603,
   "arguments": [
     {
       "type": 1,

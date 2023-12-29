@@ -2,37 +2,37 @@ package tech.metavm.util;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.persistence.PersistenceUtils;
 
 import java.util.Map;
-import java.util.Set;
 
 public class InstanceMatcher extends BaseMatcher<Instance> {
 
-    public static InstanceMatcher of(Instance instance) {
+    public static InstanceMatcher of(DurableInstance instance) {
         return new InstanceMatcher(instance);
     }
 
-    private final Instance instance;
+    private final DurableInstance instance;
 
-    private InstanceMatcher(Instance instance) {
+    private InstanceMatcher(DurableInstance instance) {
         this.instance = instance;
     }
 
     @Override
     public boolean matches(Object actual) {
-        if(actual instanceof Instance that) {
-            Map<Long, Instance> instanceMap = NncUtils.toMap(
-                    InstanceUtils.getAllNonValueInstances(instance),
-                    Instance::getId
+        if(actual instanceof DurableInstance that) {
+            Map<Long, DurableInstance> instanceMap = NncUtils.toMap(
+                    Instances.getAllNonValueInstances(instance),
+                    DurableInstance::getId
             );
-            Set<Instance> thatInstances = InstanceUtils.getAllNonValueInstances(that);
+            var thatInstances = Instances.getAllNonValueInstances(that);
             if(instanceMap.size() != thatInstances.size()) {
                 return false;
             }
-            for (Instance thatInst : thatInstances) {
-                Instance inst = instanceMap.get(thatInst.getId());
+            for (var thatInst : thatInstances) {
+                var inst = instanceMap.get(thatInst.getId());
                 if(inst == null) {
                     return false;
                 }
@@ -53,6 +53,6 @@ public class InstanceMatcher extends BaseMatcher<Instance> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(instance.toDTO().toString());
+        description.appendText(instance.toString());
     }
 }

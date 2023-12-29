@@ -1,13 +1,10 @@
 package tech.metavm.flow;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.GetElementParam;
+import tech.metavm.flow.rest.GetElementNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.LongInstance;
@@ -15,17 +12,23 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.util.AssertUtils;
 import tech.metavm.util.NncUtils;
 
-@SuppressWarnings("unused")
-@EntityType("查询元素节点")
-public class GetElementNode extends NodeRT<GetElementParam> {
+import javax.annotation.Nullable;
 
-    public static GetElementNode create(NodeDTO nodeDTO, @Nullable NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+@EntityType("获取数组元素节点")
+public class GetElementNode extends NodeRT {
+
+    public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, ScopeRT scope, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        GetElementParam param = nodeDTO.getParam();
+        GetElementNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.array(), parsingContext);
         var index = ValueFactory.create(param.index(), parsingContext);
-        check(array, index);
-        return new GetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, array, index);
+        GetElementNode node = (GetElementNode) context.getNode(nodeDTO.getRef());
+        if (node != null) {
+            node.setArray(array);
+            node.setIndex(index);
+        } else
+            node = new GetElementNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, array, index);
+        return node;
     }
 
     @ChildEntity("数组")
@@ -33,8 +36,8 @@ public class GetElementNode extends NodeRT<GetElementParam> {
     @ChildEntity("索引")
     private Value index;
 
-    public GetElementNode(Long tmpId, String name, NodeRT<?> previous, ScopeRT scope, Value array, Value index) {
-        super(tmpId, name, ((ArrayType) array.getType()).getElementType(), previous, scope);
+    public GetElementNode(Long tmpId, String name, @javax.annotation.Nullable String code, NodeRT previous, ScopeRT scope, Value array, Value index) {
+        super(tmpId, name, code, ((ArrayType) array.getType()).getElementType(), previous, scope);
         check(array, index);
         this.array = addChild(array, "array");
         this.index = addChild(index, "index");
@@ -48,24 +51,18 @@ public class GetElementNode extends NodeRT<GetElementParam> {
     }
 
     @Override
-    protected GetElementParam getParam(boolean persisting) {
-        return new GetElementParam(array.toDTO(persisting), index.toDTO(persisting));
+    protected GetElementNodeParam getParam(SerializeContext serializeContext) {
+        return new GetElementNodeParam(array.toDTO(), index.toDTO());
     }
 
-    @Override
-    protected void setParam(GetElementParam param, IEntityContext context) {
-        Value array = this.array;
-        Value index = this.index;
-        var parsingContext = getParsingContext(context);
-        if (param.array() != null) {
-            array = ValueFactory.create(param.array(), parsingContext);
-        }
-        if (param.index() != null) {
-            index = ValueFactory.create(param.index(), parsingContext);
-        }
-        check(array, index);
-        this.array = addChild(array, "array");
+    public void setIndex(@NotNull Value index) {
+        AssertUtils.assertTrue(index.getType().isLong(), ErrorCode.INCORRECT_INDEX_VALUE);
         this.index = addChild(index, "index");
+    }
+
+    public void setArray(@NotNull Value array) {
+        AssertUtils.assertTrue(array.getType().isArray(), ErrorCode.NOT_AN_ARRAY_VALUE);
+        this.array = addChild(array, "array");
         setOutputType(((ArrayType) array.getType()).getElementType());
     }
 
@@ -82,6 +79,11 @@ public class GetElementNode extends NodeRT<GetElementParam> {
         var arrayInst = (ArrayInstance) array.evaluate(frame);
         var indexInst = (LongInstance) index.evaluate(frame);
         return next(arrayInst.get(indexInst.getValue().intValue()));
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write(array.getText() + "[" + index.getText() + "]");
     }
 
     @Override

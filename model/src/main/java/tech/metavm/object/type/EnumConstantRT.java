@@ -2,15 +2,13 @@ package tech.metavm.object.type;
 
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.type.rest.dto.EnumConstantDTO;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 
 import java.util.Map;
-
-import static tech.metavm.entity.StandardTypes.getEnumNameField;
-import static tech.metavm.entity.StandardTypes.getEnumOrdinalField;
 
 public class EnumConstantRT {
 
@@ -29,11 +27,11 @@ public class EnumConstantRT {
 
     public EnumConstantRT(ClassType type, String name, int ordinal) {
         this(
-                new ClassInstance(
+                ClassInstance.create(
                     Map.of(StandardTypes.getEnumNameField(type),
-                            InstanceUtils.stringInstance(name),
+                            Instances.stringInstance(name),
                             StandardTypes.getEnumOrdinalField(type),
-                            InstanceUtils.longInstance(ordinal)
+                            Instances.longInstance(ordinal)
                     ),
                     type
                 )
@@ -62,11 +60,11 @@ public class EnumConstantRT {
     }
 
     public void setName(String name) {
-        instance.setField(StandardTypes.getEnumNameField(instance.getType()), InstanceUtils.stringInstance(name));
+        instance.setField(StandardTypes.getEnumNameField(instance.getType()), Instances.stringInstance(name));
     }
 
     public void setOrdinal(int ordinal) {
-        instance.setField(StandardTypes.getEnumOrdinalField(instance.getType()), InstanceUtils.longInstance(ordinal));
+        instance.setField(StandardTypes.getEnumOrdinalField(instance.getType()), Instances.longInstance(ordinal));
     }
 
     public EnumConstantDTO toDTO() {
@@ -82,7 +80,11 @@ public class EnumConstantRT {
         return instance.getId();
     }
 
-    public FieldValue toFieldValue() {
+    public String getInstanceIdString() {
+        return instance.getInstanceIdString();
+    }
+
+    public FieldValue toFieldValue(IInstanceContext context) {
         return instance.toFieldValueDTO();
     }
 

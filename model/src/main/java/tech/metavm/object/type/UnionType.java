@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.TypeKey;
@@ -7,27 +8,34 @@ import tech.metavm.object.type.rest.dto.UnionTypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeParam;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
 
 @EntityType("联合类型")
 public class UnionType extends CompositeType {
 
-    public static final IndexDef<UnionType> KEY_IDX = IndexDef.uniqueKey(UnionType.class, "key");
+    public static final IndexDef<UnionType> KEY_IDX = IndexDef.createUnique(UnionType.class, "key");
 
-    public static final IndexDef<UnionType> MEMBER_IDX = IndexDef.normalKey(UnionType.class, "members");
+    public static final IndexDef<UnionType> MEMBER_IDX = IndexDef.create(UnionType.class, "members");
 
     @ChildEntity("成员集合")
     private final ReadWriteArray<Type> members;
 
     public UnionType(Long tmpId, Set<Type> members) {
-        super(getTypeName(members), false, false, TypeCategory.UNION);
+        super(getName(members), getCode(members), false, false, TypeCategory.UNION);
         setTmpId(tmpId);
         this.members = addChild(new ReadWriteArray<>(Type.class, members), "members");
     }
 
-    private static String getTypeName(Set<Type> members) {
+    private static String getName(Set<Type> members) {
         return NncUtils.join(members, Type::getName, "|");
+    }
+
+    private static @Nullable String getCode(Set<Type> members) {
+        if(NncUtils.allMatch(members, m -> m.getCode() != null))
+            return NncUtils.join(members, Type::getCode, "|");
+        else
+            return null;
     }
 
     public Set<Type> getMembers() {
@@ -47,7 +55,6 @@ public class UnionType extends CompositeType {
         return this;
     }
 
-
     public ReadonlyArray<Type> getDeclaredMembers() {
         return members;
     }
@@ -59,9 +66,9 @@ public class UnionType extends CompositeType {
 
     @Override
     protected UnionTypeParam getParamInternal() {
-        try (var context = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             return new UnionTypeParam(
-                    NncUtils.map(members, context::getRef)
+                    NncUtils.map(members, serContext::getRef)
             );
         }
     }
@@ -86,10 +93,10 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
         List<String> memberCanonicalNames = NncUtils.mapAndSort(
                 members,
-                m -> m.getKey(getJavaType),
+                object -> context.getModelName(object, this),
                 String::compareTo
         );
         return String.join("|", memberCanonicalNames);

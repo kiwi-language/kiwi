@@ -3,7 +3,7 @@ package tech.metavm.entity;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
 import tech.metavm.util.IdentitySet;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
@@ -19,9 +19,9 @@ public class EntityProxyFactory {
     private EntityProxyFactory() {}
 
     private static final Map<Class<?>, Class<?>> PROXY_CLASS_MAP = new ConcurrentHashMap<>();
-    private static final Field FIELD_PERSISTED = ReflectUtils.getField(Entity.class, "persisted");
-    private static final Field FIELD_ID = ReflectUtils.getField(Entity.class, "id");
-    private static final Method HASHCODE_METHOD = ReflectUtils.getMethod(Object.class, "hashCode");
+    private static final Field FIELD_PERSISTED = ReflectionUtils.getField(Entity.class, "persisted");
+    private static final Field FIELD_ID = ReflectionUtils.getField(Entity.class, "id");
+    private static final Method HASHCODE_METHOD = ReflectionUtils.getMethod(Object.class, "hashCode");
 
     public static <T> T getProxy(TypeReference<T> typeRef, Consumer<T> modelSupplier) {
         return getProxy(typeRef.getType(), null, modelSupplier);
@@ -34,7 +34,7 @@ public class EntityProxyFactory {
     public static <T> T getProxy(Class<T> type,
                                  @Nullable Long id,
                                  Consumer<T> initializer) {
-        return getProxy(type, id, ReflectUtils::allocateInstance, initializer);
+        return getProxy(type, id, ReflectionUtils::allocateInstance, initializer);
     }
 
     public static <T> T getProxy(TypeReference<T> type,
@@ -67,7 +67,7 @@ public class EntityProxyFactory {
     public static Object makeDummy(Class<?> type) {
         Class<?> proxyClass = getProxyClass(type);
         try {
-            var dummy = ReflectUtils.getUnsafe().allocateInstance(proxyClass);
+            var dummy = ReflectionUtils.getUnsafe().allocateInstance(proxyClass);
             DUMMIES.add(dummy);
             return dummy;
         } catch (InstantiationException e) {

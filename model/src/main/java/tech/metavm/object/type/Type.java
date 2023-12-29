@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.Instance;
@@ -15,12 +16,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 @EntityType("类型")
 public abstract class Type extends Element implements LoadAware, GlobalKey {
 
-    public static final IndexDef<Type> IDX_CATEGORY = IndexDef.normalKey(Type.class, "category");
+    public static final IndexDef<Type> IDX_CATEGORY = IndexDef.create(Type.class, "category");
 
     @SuppressWarnings("StaticInitializerReferencesSubClass")
     public static PrimitiveType NULL_TYPE = new PrimitiveType(PrimitiveKind.NULL);
@@ -44,7 +44,6 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     private boolean templateFlag = false;
     //</editor-fold>
 
-
     @Nullable
     private transient Closure<? extends Type> closure;
     @Nullable
@@ -52,15 +51,16 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     private transient List<Runnable> ancestorChangeListeners = new ArrayList<>();
 
-    public Type(String name, boolean anonymous, boolean ephemeral, TypeCategory category) {
+    public Type(String name, @Nullable String code, boolean anonymous, boolean ephemeral, TypeCategory category) {
         this.name = name;
+        this.code = NamingUtils.ensureValidTypeCode(code);
         this.anonymous = anonymous;
         this.ephemeral = ephemeral;
         this.category = category;
     }
 
     @Override
-    public void onLoad() {
+    public void onLoad(IEntityContext context) {
     }
 
     protected void setTemplateFlag(boolean templateFlag) {
@@ -261,7 +261,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public boolean isAssignableFrom(Type that) {
-        if (that instanceof NothingType)
+        if (that instanceof NeverType)
             return true;
         var bound = that.getUpperBound();
         return switch (bound) {
@@ -403,8 +403,8 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     public TypeDTO toDTO() {
-        try (var context = SerializeContext.enter()) {
-            return toDTO(getParam(), context.getTmpId(this));
+        try (var serContext = SerializeContext.enter()) {
+            return toDTO(getParam(), serContext.getTmpId(this));
         }
     }
 
@@ -437,7 +437,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     }
 
     @Override
-    public abstract String getKey(Function<Type, java.lang.reflect.Type> getJavaType);
+    public abstract String getGlobalKey(@NotNull BuildKeyContext context);
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;

@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 
 public interface NewNode {
 
-    void setParent(@Nullable ParentRef parentRef);
+    void setParentRef(@Nullable ParentRef parentRef);
 
     @Nullable ParentRef getParentRef();
 

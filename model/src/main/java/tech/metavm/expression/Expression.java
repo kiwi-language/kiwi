@@ -1,12 +1,9 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.Element;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +20,9 @@ public abstract class Expression extends Element {
     }
 
     protected final String build(VarType symbolType, boolean withParenthesis) {
-        try (var context = SerializeContext.enter()) {
-            if (context.isIncludeExpressionType())
-                context.writeType(getType());
+        try (var serContext = SerializeContext.enter()) {
+            if (serContext.isIncludeExpressionType())
+                serContext.writeType(getType());
             String expr = buildSelf(symbolType);
             return withParenthesis ? "(" + expr + ")" : expr;
         }
@@ -57,8 +54,6 @@ public abstract class Expression extends Element {
         return getChild(ConstantExpression.class);
     }
 
-    public abstract Expression substituteChildren(List<Expression> children);
-
     public PropertyExpression getFieldChild() {
         return getChild(PropertyExpression.class);
     }
@@ -69,7 +64,7 @@ public abstract class Expression extends Element {
 
     @Override
     protected String toString0() {
-        return getClass().getSimpleName() + ": " + buildSelf(VarType.NAME);
+        return getClass().getSimpleName();
     }
 
     public static String idVarName(long id) {
@@ -87,17 +82,16 @@ public abstract class Expression extends Element {
 
     public abstract Instance evaluate(EvaluationContext context);
 
-    public Expression simplify() {
-        return substituteChildren(NncUtils.map(getChildren(), Expression::simplify));
-    }
+//    public Expression simplify() {
+//        return substituteChildren(NncUtils.map(getChildren(), Expression::simplify));
+//    }
 
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
         return List.of();
     }
 
     public Expression copy() {
-        var children = getChildren();
-        return substituteChildren(NncUtils.map(children, Expression::copy));
+        return (Expression) accept(new CopyVisitor(this));
     }
 
 }

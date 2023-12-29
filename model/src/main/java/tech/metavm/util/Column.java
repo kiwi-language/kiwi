@@ -1,16 +1,13 @@
 package tech.metavm.util;
 
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.GlobalKey;
-import tech.metavm.entity.ValueType;
+import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.ColumnKind;
-import tech.metavm.object.type.Type;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Function;
 
 @ValueType("列")
 public record Column(
@@ -74,7 +71,7 @@ public record Column(
     }
 
     @Override
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
         return name;
     }
 }

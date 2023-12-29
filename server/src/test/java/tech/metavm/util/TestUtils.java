@@ -10,21 +10,20 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.slf4j.Logger;
+import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.event.MockEventQueue;
-import tech.metavm.object.instance.ChangeLogPlugin;
-import tech.metavm.object.instance.CheckConstraintPlugin;
-import tech.metavm.object.instance.IndexConstraintPlugin;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.log.InstanceLogServiceImpl;
+import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.log.InstanceLogService;
+import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.List;
 
 public class TestUtils {
 
@@ -38,7 +37,8 @@ public class TestUtils {
 
     static {
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new TypeReference<Class<?>>(){}.getType(), new ReflectClassSerializer());
+        module.addSerializer(new TypeReference<Class<?>>() {
+        }.getType(), new ReflectClassSerializer());
         module.addSerializer(Field.class, new ReflectFieldSerializer());
         OBJECT_MAPPER.registerModule(module);
         OBJECT_MAPPER.registerModule(new Jdk8Module());
@@ -56,14 +56,13 @@ public class TestUtils {
         }
     }
 
-    private final static byte[] byteBuf = new byte[1024*1024];
+    private final static byte[] byteBuf = new byte[1024 * 1024];
 
     public static byte[] readBytes(String path) {
-        try(var input = new FileInputStream(path)) {
+        try (var input = new FileInputStream(path)) {
             int n = input.read(byteBuf);
             return Arrays.copyOfRange(byteBuf, 0, n);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new InternalException(String.format("Fail to read file %s", path), e);
         }
     }
@@ -122,10 +121,9 @@ public class TestUtils {
     }
 
     public static void writeFile(String path, String content) {
-        try(var writer = new FileWriter(path)) {
+        try (var writer = new FileWriter(path)) {
             writer.write(content);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Fail to write file '" + path + "'", e);
         }
     }
@@ -136,7 +134,7 @@ public class TestUtils {
 
     public static void clearTestResourceDir(String dirName) {
         File dir = new File(TEST_RESOURCE_ROOT + "/" + dirName);
-        if(dir.listFiles() != null) {
+        if (dir.listFiles() != null) {
             for (File file : NncUtils.requireNonNull(dir.listFiles())) {
                 if (!file.delete()) {
                     throw new InternalException("Fail to delete file " + file.getPath());
@@ -145,7 +143,7 @@ public class TestUtils {
         }
 
         File targetDir = new File(TEST_RESOURCE_TARGET_ROOT + "/" + dirName);
-        if(targetDir.listFiles() != null) {
+        if (targetDir.listFiles() != null) {
             for (File file : NncUtils.requireNonNull(targetDir.listFiles())) {
                 if (!file.delete()) {
                     throw new InternalException("Fail to delete file " + file.getPath());
@@ -172,29 +170,23 @@ public class TestUtils {
         logger.info(title + "\n" + toJSONString(object));
     }
 
-    public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider) {
-        return getInstanceContextFactory(idProvider, new MemInstanceStore());
-    }
-
-    public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider, MemInstanceStore instanceStore) {
-        return getInstanceContextFactory(idProvider, instanceStore, new MemInstanceSearchService());
+    public static EntityContextFactory getEntityContextFactory(EntityIdProvider idProvider,
+                                                                MemInstanceStore instanceStore,
+                                                                InstanceLogService instanceLogService,
+                                                                IndexEntryMapper indexEntryMapper) {
+        var factory = new EntityContextFactory(
+                getInstanceContextFactory(idProvider, instanceStore),
+                indexEntryMapper
+        );
+        factory.setInstanceLogService(instanceLogService);
+        return factory;
     }
 
     public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider,
-                                                                   MemInstanceStore instanceStore,
-                                                                   MemInstanceSearchService instanceSearchService) {
+                                                                   MemInstanceStore instanceStore) {
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
-                .setIdService(idProvider).setDefaultAsyncProcessing(false);
-        InstanceContextFactory.setStdContext(MockRegistry.getInstanceContext());
-        instanceContextFactory.setPlugins(List.of(
-                new CheckConstraintPlugin(),
-                new IndexConstraintPlugin(instanceStore.getIndexEntryMapper()),
-                new ChangeLogPlugin(new InstanceLogServiceImpl(
-                        instanceSearchService,
-                        instanceContextFactory,
-                        instanceStore,
-                        List.of()))
-        ));
+                .setIdService(idProvider);
+        InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
         return instanceContextFactory;
     }
 

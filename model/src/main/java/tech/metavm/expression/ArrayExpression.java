@@ -71,11 +71,6 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new ArrayExpression(children, type);
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
         return new ArrayInstance(type, NncUtils.map(expressions, e -> e.evaluate(context)));
     }

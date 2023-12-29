@@ -5,20 +5,23 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.FlowSignatureDTO;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public record ClassTypeParam(
-        @Nullable String sourceClassName,
         RefDTO superClassRef,
         List<RefDTO> interfaceRefs,
         int source,
         List<FieldDTO> fields,
         List<FieldDTO> staticFields,
+        @Nullable RefDTO titleFieldRef,
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
+        List<ObjectMappingDTO> mappings,
+        @Nullable RefDTO defaultMappingRef,
         String desc,
         Object extra,
         List<InstanceDTO> enumConstants,

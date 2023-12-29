@@ -4,8 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.EntityContextFactoryBean;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
 import tech.metavm.user.rest.dto.LoginInfo;
 import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.util.BusinessException;
@@ -19,16 +20,14 @@ import java.util.List;
 import static tech.metavm.user.Tokens.TOKEN_TTL;
 
 @Component
-public class LoginService {
+public class LoginService extends EntityContextFactoryBean  {
 
     public static final long MAX_ATTEMPTS_IN_15_MINUTES = 30;
 
     public static final long _15_MINUTES_IN_MILLIS = 15 * 60 * 1000;
 
-    private final InstanceContextFactory contextFactory;
-
-    public LoginService(InstanceContextFactory contextFactory) {
-        this.contextFactory = contextFactory;
+    public LoginService(EntityContextFactory entityContextFactory) {
+        super(entityContextFactory);
     }
 
     @Transactional
@@ -102,10 +101,6 @@ public class LoginService {
             } else
                 return LoginInfo.failed();
         }
-    }
-
-    private IEntityContext newContext(long appId) {
-        return contextFactory.newEntityContext(appId);
     }
 
 }

@@ -1,168 +1,134 @@
 package tech.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.natives.NativeInvoker;
 import tech.metavm.expression.VoidStructuralVisitor;
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.flow.rest.FlowParam;
 import tech.metavm.flow.rest.FlowSignatureDTO;
-import tech.metavm.flow.rest.FlowSummaryDTO;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.FlowInfo;
+import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.function.Function;
+import java.util.List;
+import java.util.Objects;
 
 @EntityType("流程")
-public class Flow extends Property implements GenericDeclaration, Callable, GlobalKey {
+public abstract class Flow extends Element implements GenericDeclaration, Callable, LoadAware {
 
-    @EntityField("是否构造函数")
-    private boolean isConstructor;
-    @EntityField("是否抽象")
-    private boolean isAbstract;
+    public static final IndexDef<Flow> IDX_PARAMETERIZED_KEY =
+            IndexDef.createUnique(Flow.class, "parameterizedKey");
+
+    public static final IndexDef<Flow> IDX_HORIZONTAL_TEMPLATE =
+            IndexDef.create(Flow.class, "horizontalTemplate");
+
+    @EntityField(value = "名称", asTitle = true)
+    private @NotNull String name;
+    @EntityField("编号")
+    @Nullable
+    private String code;
     @EntityField("是否原生")
     private boolean isNative;
+    @EntityField("是否合成")
+    private final boolean isSynthetic;
     @ChildEntity("参数列表")
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
     @EntityField("返回类型")
-    private Type returnType;
-    @ChildEntity("被复写流程")
-    private final ReadWriteArray<Flow> overridden = addChild(new ReadWriteArray<>(Flow.class), "overridden");
-    @ChildEntity(value = "根流程范围")
-    private ScopeRT rootScope;
+    private @NotNull Type returnType;
+    @ChildEntity("根流程范围")
+    private final @NotNull ScopeRT rootScope;
     @EntityField("版本")
-    private Long version = 1L;
+    private @NotNull Long version = 1L;
+    // Don't remove, for search
+    @SuppressWarnings("unused")
+    @EntityField("是否模版")
+    private boolean isTemplate;
     @ChildEntity("类型参数")
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
-    /*
-     *                       horizontalTemplate
-     *  Foo<T>.bar<E>       <------------------      Foo<T>.bar<String>
-     *       ^                                            ^
-     *       | verticalTemplate                           | verticalTemplate
-     *       |                                            |
-     * Foo<Integer>.bar<E>  <-------------------  Foo<Integer>.bar<String>
-     *                       horizontalTemplate
-     */
-    @Nullable
-    @EntityField("垂直模板")
-    private final Flow verticalTemplate;
-    @Nullable
     @EntityField("水平模板")
+    @CopyIgnore
+    @Nullable
     private final Flow horizontalTemplate;
     @ChildEntity("类型实参列表")
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
-    @ChildEntity("模板实例")
-    private final ChildArray<Flow> horizontalInstances = addChild(new ChildArray<>(Flow.class), "horizontalInstances");
-    @EntityField("静态类型")
-    private FunctionType staticType;
+    @EntityField("状态")
+    private @NotNull MetadataState state;
+    @EntityField("类型")
+    private @NotNull FunctionType type;
+    @EntityField("参数化键")
+    @Nullable
+    private String parameterizedKey;
 
-    private transient ReadWriteArray<ScopeRT> scopes;
-    private transient ReadWriteArray<NodeRT<?>> nodes;
+    private transient ResolutionStage stage = ResolutionStage.INIT;
+    private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
+    private transient ReadWriteArray<NodeRT> nodes = new ReadWriteArray<>(NodeRT.class);
 
     public Flow(Long tmpId,
-                ClassType declaringType,
-                String name,
+                @NotNull String name,
                 @Nullable String code,
-                boolean isConstructor,
-                boolean isAbstract,
                 boolean isNative,
+                boolean isSynthetic,
                 List<Parameter> parameters,
-                Type returnType,
-                List<Flow> overridden,
+                @NotNull Type returnType,
                 List<TypeVariable> typeParameters,
-                @Nullable Flow verticalTemplate,
-                @Nullable Flow horizontalTemplate,
                 List<Type> typeArguments,
-                FunctionType type,
-                FunctionType staticType,
-                boolean isStatic,
-                MetadataState state
+                @NotNull FunctionType type,
+                @Nullable Flow horizontalTemplate,
+                @NotNull MetadataState state
     ) {
-        super(tmpId, name, code, type, declaringType, isStatic, state);
-        if(isStatic && isAbstract)
-            throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
-        this.isConstructor = isConstructor;
-        this.isAbstract = isAbstract;
+        super(tmpId);
+        if (horizontalTemplate == null && typeParameters.isEmpty() && !typeArguments.isEmpty())
+            throw new InternalException("Missing flow template");
+        this.name = NamingUtils.ensureValidName(name);
+        this.code = NamingUtils.ensureValidCode(code);
         this.isNative = isNative;
+        this.isSynthetic = isSynthetic;
         this.returnType = returnType;
-        this.overridden.addAll(overridden);
-        this.scopes = new ReadWriteArray<>(ScopeRT.class);
-        this.nodes = new ReadWriteArray<>(new TypeReference<>() {
-        });
+        this.type = type;
         rootScope = addChild(new ScopeRT(this), "rootScope");
-        this.verticalTemplate = verticalTemplate;
+        setTypeParameters(typeParameters);
+        setTypeArguments(typeArguments);
+        setParameters(parameters, false);
         this.horizontalTemplate = horizontalTemplate;
-        this.typeParameters.addChildren(typeParameters);
-        this.typeArguments.addAll(typeArguments);
-        this.staticType = staticType;
-        setParameters(parameters);
-        if (horizontalTemplate != null)
-            horizontalTemplate.addTemplateInstance(this);
-        else
-            declaringType.addFlow(this);
+        this.state = state;
     }
 
-    public String getKey(Function<Type, java.lang.reflect.Type> getJavaType) {
-        return declaringType.getKey(getJavaType) + "."
-                + getCodeRequired() + "("
-                + NncUtils.join(getParameterTypes(), type -> type.getKey(getJavaType))
-                + ")";
-    }
-
-    @Override
-    public void onBind(IEntityContext context) {
-        for (Flow overridenFlow : overridden) {
-            NncUtils.requireEquals(
-                    NncUtils.map(parameters, Parameter::getType),
-                    overridenFlow.getParameterTypes()
-            );
-            NncUtils.requireTrue(overridenFlow.getReturnType() == returnType ||
-                    overridenFlow.getReturnType().isAssignableFrom(returnType));
-        }
-    }
+    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider);
 
     public List<Type> getParameterTypes() {
         return NncUtils.map(parameters, Parameter::getType);
     }
 
-    public boolean isConstructor() {
-        return isConstructor;
-    }
-
-    public boolean isAbstract() {
-        return isAbstract;
-    }
-
-    public List<Flow> getOverridden() {
-        return overridden.toList();
-    }
-
-    public List<Flow> getAllOverridden() {
-        List<Flow> allOverriden = NncUtils.listOf(overridden);
-        for (Flow overridenFlow : overridden) {
-            allOverriden.addAll(overridenFlow.getAllOverridden());
-        }
-        return allOverriden;
-    }
-
-//    public ClassType getInputType() {
-//        return overridden != null ? overridden.getInputType() : NncUtils.requireNonNull(inputType);
-//    }
-
-    public Type getReturnType() {
+    public @NotNull Type getReturnType() {
         return returnType;
     }
 
-    public ScopeRT getRootScope() {
+    public @NotNull ScopeRT getRootScope() {
         return rootScope;
     }
 
     public ScopeRT getScope(long id) {
         return scopes().get(Entity::getId, id);
+    }
+
+    @Override
+    public boolean afterContextInitIds() {
+        if (horizontalTemplate != null || isTemplate()) {
+            if (parameterizedKey == null)
+                parameterizedKey = Types.getParameterizedKey(getEffectiveHorizontalTemplate(), typeArguments);
+        }
+        return true;
+    }
+
+    @Override
+    public void onLoad(IEntityContext context) {
+        stage = ResolutionStage.INIT;
     }
 
     @SuppressWarnings("unused")
@@ -175,66 +141,32 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         this.scopes().add(scope);
     }
 
-    public FlowExecResult execute(@Nullable Instance self, List<Instance> arguments, IInstanceContext context) {
-        if(!isStatic())
-            Objects.requireNonNull(self);
-        checkArguments(arguments);
-        if(isNative)
-            return NativeInvoker.invoke(this, self, arguments);
-        else
-            return new MetaFrame(this, self, arguments, context).execute();
+    public FlowDTO toDTO(boolean includeCode, SerializeContext serContext) {
+        if (includeCode) {
+            getTypeParameters().forEach(serContext::writeType);
+            serContext.writeType(getType());
+            serContext.writeType(returnType);
+        }
+        return new FlowDTO(
+                id,
+                serContext.getTmpId(this),
+                getName(),
+                getCode(),
+                isNative,
+                includeCode ? rootScope.toDTO(true, serContext) : null,
+                serContext.getRef(getReturnType()),
+                NncUtils.map(parameters, Parameter::toDTO),
+                serContext.getRef(getType()),
+                NncUtils.map(typeParameters, serContext::getRef),
+                NncUtils.get(horizontalTemplate, serContext::getRef),
+                NncUtils.map(typeArguments, serContext::getRef),
+                isTemplate(),
+                getState().code(),
+                getParam(includeCode, serContext)
+        );
     }
 
-    private void checkArguments(List<Instance> arguments) {
-        out: if(arguments.size() == parameters.size()) {
-            var paramIt = parameters.iterator();
-            var argIt = arguments.iterator();
-            while (paramIt.hasNext() && argIt.hasNext()) {
-                var param = paramIt.next();
-                var arg = argIt.next();
-                if(!param.getType().isInstance(arg))
-                    break out;
-            }
-            return;
-        }
-        throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
-    }
-
-    public FlowDTO toDTO(boolean includingCode) {
-        try (var context = SerializeContext.enter()) {
-            if(includingCode) {
-                context.writeType(declaringType);
-                getTypeParameters().forEach(context::writeType);
-                context.writeType(getType());
-                context.writeType(getStaticType());
-                context.writeType(returnType);
-            }
-            var dto =  new FlowDTO(
-                    context.getTmpId(this),
-                    id,
-                    getName(),
-                    getCode(),
-                    isConstructor(),
-                    isAbstract,
-                    isNative,
-                    context.getRef(getDeclaringType()),
-                    includingCode ? rootScope.toDTO(true) : null,
-                    context.getRef(getReturnType()),
-                    NncUtils.map(parameters, Parameter::toDTO),
-                    context.getRef(getType()),
-                    context.getRef(staticType),
-                    NncUtils.map(typeParameters, context::getRef),
-                    NncUtils.get(horizontalTemplate, context::getRef),
-                    NncUtils.get(verticalTemplate, context::getRef),
-                    NncUtils.map(typeArguments, context::getRef),
-                    NncUtils.map(getOverridden(), context::getRef),
-                    NncUtils.map(horizontalInstances, ti -> ti.toDTO(false)),
-                    isStatic(),
-                    getState().code()
-            );
-            return dto;
-        }
-    }
+    protected abstract FlowParam getParam(boolean includeCode, SerializeContext serializeContext);
 
     public boolean isError() {
         return getState() == MetadataState.ERROR;
@@ -244,38 +176,50 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         nodes.clear();
     }
 
-    public FlowSummaryDTO toSummaryDTO() {
-        try (var context = SerializeContext.enter()) {
-            return new FlowSummaryDTO(
-                    id,
-                    getName(),
-                    getDeclaringType().getId(),
-                    NncUtils.map(getParameters(), Parameter::toDTO),
-                    context.getRef(getReturnType()),
-                    !getParameterTypes().isEmpty(),
-                    isConstructor,
-                    getState().code()
-            );
-        }
+    public boolean isSynthetic() {
+        return isSynthetic;
     }
 
     public InputNode getInputNode() {
         return (InputNode) NncUtils.findRequired(rootScope.getNodes(), node -> node instanceof InputNode);
     }
 
-    private ReadWriteArray<NodeRT<?>> nodes() {
+    private ReadWriteArray<NodeRT> nodes() {
         if (nodes == null) {
             nodes = new ReadWriteArray<>(new TypeReference<>() {
             });
             accept(new VoidStructuralVisitor() {
                 @Override
-                public Void visitNode(NodeRT<?> node) {
+                public Void visitNode(NodeRT node) {
                     nodes.add(node);
                     return super.visitNode(node);
                 }
             });
         }
         return nodes;
+    }
+
+    @Override
+    public @NotNull String getName() {
+        return name;
+    }
+
+    @Override
+    @Nullable
+    public String getCode() {
+        return code;
+    }
+
+    public @NotNull MetadataState getState() {
+        return state;
+    }
+
+    public void setName(@NotNull String name) {
+        this.name = name;
+    }
+
+    public void setCode(@Nullable String code) {
+        this.code = code;
     }
 
     public boolean check() {
@@ -287,38 +231,33 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     private ReadWriteArray<ScopeRT> scopes() {
-        if (scopes == null) {
+        if (scopes == null)
             scopes = new ReadWriteArray<>(ScopeRT.class);
-        }
         return scopes;
     }
 
-    public NodeRT<?> getNode(long id) {
+    public NodeRT getNode(long id) {
         return nodes().get(Entity::getId, id);
     }
 
     @SuppressWarnings("unused")
-    public ReadonlyArray<NodeRT<?>> getNodes() {
+    public ReadonlyArray<NodeRT> getNodes() {
         return nodes();
     }
 
-    void addNode(NodeRT<?> node) {
+    void addNode(NodeRT node) {
         nodes().add(node);
         version++;
     }
 
-    void removeNode(NodeRT<?> node) {
+    void removeNode(NodeRT node) {
         nodes().remove(node);
         version++;
     }
 
     @Override
-    public Flow getTemplate() {
-        return getVerticalTemplate();
-    }
-
-    public boolean isTemplate() {
-        return !typeParameters.isEmpty();
+    public @Nullable Flow getTemplate() {
+        return horizontalTemplate;
     }
 
     public boolean isParameterized() {
@@ -343,18 +282,18 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         setType(functionType);
     }
 
-    public NodeRT<?> getRootNode() {
+    public NodeRT getRootNode() {
         return rootScope.tryGetFirstNode();
     }
 
     @SuppressWarnings("unused")
-    public NodeRT<?> getNodeByNameRequired(String nodeName) {
+    public NodeRT getNodeByNameRequired(String nodeName) {
         return NncUtils.filterOneRequired(nodes(), n -> n.getName().equals(nodeName),
                 "流程节点'" + nodeName + "'不存在");
     }
 
     @SuppressWarnings("unused")
-    public NodeRT<?> getNodeByName(String nodeName) {
+    public NodeRT getNodeByName(String nodeName) {
         return NncUtils.find(nodes(), n -> n.getName().equals(nodeName));
     }
 
@@ -379,32 +318,21 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
     }
 
     private void setParameters(List<Parameter> parameters, boolean check) {
-        if(check)
-            checkTypes(overridden, parameters, returnType, getType(), staticType);
+        if (check)
+            checkTypes(parameters, returnType, type);
         parameters.forEach(p -> p.setCallable(this));
         this.parameters.resetChildren(parameters);
     }
 
-    private void checkTypes(List<Flow> overridden, List<Parameter> parameters, Type returnType,
-                            FunctionType type, FunctionType staticType) {
+    protected void checkTypes(List<Parameter> parameters, Type returnType, FunctionType type) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        for (Flow overriddenFlow : overridden) {
-            if (!paramTypes.equals(overriddenFlow.getParameterTypes())) {
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES);
-            }
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType)) {
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT);
-            }
-        }
-        if(!type.getParameterTypes().equals(paramTypes) || !type.getReturnType().equals(returnType))
+        if (!type.getParameterTypes().equals(paramTypes) || !type.getReturnType().equals(returnType))
             throw new InternalException("Incorrect function type: " + type);
-        if(!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType, paramTypes))
-                || !staticType.getReturnType().equals(returnType))
-            throw new InternalException("Incorrect static function type: " + staticType);
     }
 
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
+        isTemplate = true;
         typeParameters.addChild(typeParameter);
         typeArguments.add(typeParameter);
     }
@@ -413,21 +341,12 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         return NncUtils.listOf(parameters);
     }
 
-    public void setRootScope(ScopeRT rootScope) {
-        this.rootScope = rootScope;
-    }
-
-    @Nullable
-    public Flow findHorizontalInstance(List<Type> typeArguments) {
-        return NncUtils.find(horizontalInstances, ti -> Objects.equals(ti.getTypeArguments(), typeArguments));
-    }
-
-    public List<Flow> getHorizontalInstances() {
-        return horizontalInstances.toList();
+    public String getCodeRequired() {
+        return Objects.requireNonNull(code);
     }
 
     public void setReturnType(Type returnType) {
-        checkTypes(overridden, parameters.toList(), returnType, getType(), staticType);
+        checkTypes(parameters.toList(), returnType, type);
         this.returnType = returnType;
     }
 
@@ -435,133 +354,56 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         return horizontalTemplate;
     }
 
-    public @Nullable Flow getVerticalTemplate() {
-        return verticalTemplate;
-    }
-
-    public Flow getEffectiveVerticalTemplate() {
-        return verticalTemplate == null ? this : verticalTemplate;
+    public Flow getEffectiveHorizontalTemplate() {
+        return horizontalTemplate == null ? this : horizontalTemplate;
     }
 
     public List<Type> getTypeArguments() {
         return typeArguments.toList();
     }
 
-    public void setConstructor(boolean constructor) {
-        isConstructor = constructor;
-    }
-
-    public void setAbstract(boolean anAbstract) {
-        isAbstract = anAbstract;
-    }
-
     public void setNative(boolean aNative) {
         isNative = aNative;
     }
 
-    public void update(List<Parameter> parameters, Type returnType,
-                       FunctionTypeContext functionTypeContext) {
-        update(parameters, returnType, null, functionTypeContext);
-    }
-
-    public void update(List<Parameter> parameters, Type returnType,
-                       @Nullable List<Flow> overridden, FunctionTypeContext functionTypeContext) {
+    public void update(List<Parameter> parameters, Type returnType, FunctionTypeProvider functionTypeProvider) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        var type = functionTypeContext.get(paramTypes, returnType);
-        var staticType = functionTypeContext.get(NncUtils.prepend(declaringType, paramTypes), returnType);
-        checkTypes(NncUtils.orElse(overridden, this.overridden), parameters, returnType, type, staticType);
+        var type = functionTypeProvider.getFunctionType(paramTypes, returnType);
+        checkTypes(parameters, returnType, type);
         setParameters(parameters, false);
-        super.setType(type);
-        this.staticType = staticType;
+        this.type = type;
         this.returnType = returnType;
-        if(overridden != null)
-            this.overridden.reset(overridden);
     }
 
-//    public void update(List<Flow> overridden,
-//                       List<Parameter> parameters,
-//                       Type returnType,
-//                       FunctionType type,
-//                       FunctionType staticType
-//    ) {
-//        checkTypes(overridden, parameters, returnType, type, staticType);
-//        this.overridden.reset(overridden);
-//        this.returnType = returnType;
-//        super.setType(type);
-//        this.staticType = staticType;
-//        setParameters(parameters, false);
-//    }
-
-    @Override
     public void setType(Type type) {
-        if(type instanceof FunctionType funcType) {
-            checkTypes(overridden, parameters.toList(), returnType, funcType, staticType);
-            super.setType(type);
-        }
-        else
+        if (type instanceof FunctionType functionType) {
+            checkTypes(parameters.toList(), returnType, functionType);
+            this.type = functionType;
+        } else
             throw new InternalException("Not a function type");
     }
 
-    public void setOverridden(List<Flow> overridden) {
-        checkTypes(overridden, parameters.toList(), returnType, getType(), staticType);
-        this.overridden.reset(overridden);
-    }
-
-    public void removeOverriden(Flow overriden) {
-        this.overridden.remove(overriden);
-        declaringType.rebuildFlowTable();
-    }
-
-    public void addOverriden(Flow overridden) {
-        checkTypes(List.of(overridden), parameters.toList(), returnType, getType(), staticType);
-        this.overridden.add(overridden);
-        declaringType.rebuildFlowTable();
-    }
-
-    public void addOverriden(List<Flow> overridden) {
-        checkTypes(overridden, parameters.toList(), returnType, getType(), staticType);
-        this.overridden.addAll(overridden);
-        declaringType.rebuildFlowTable();
-    }
-
-    public void addTemplateInstance(Flow templateInstance) {
-        horizontalInstances.addChild(templateInstance);
-    }
-
-    public void removeTemplateInstance(Flow templateInstance) {
-        this.horizontalInstances.remove(templateInstance);
-    }
-
     public void setTypeArguments(List<? extends Type> typeArguments) {
+        if (isTemplate() && !NncUtils.iterableEquals(this.typeParameters, typeArguments))
+            throw new InternalException("Type arguments must equal to type parameters for a template flow");
         this.typeArguments.reset(typeArguments);
+        this.parameterizedKey = null;
+    }
+
+    public boolean isTemplate() {
+        return !typeParameters.isEmpty();
     }
 
     public void setTypeParameters(List<TypeVariable> typeParameters) {
+        isTemplate = !typeParameters.isEmpty();
+        typeParameters.forEach(tp -> tp.setGenericDeclaration(this));
         this.typeParameters.resetChildren(typeParameters);
-        this.setTypeArguments(typeParameters);
+        if (isTemplate())
+            setTypeArguments(typeParameters);
     }
 
-    public FunctionType getStaticType() {
-        return staticType;
-    }
-
-    public void setStaticType(FunctionType staticType) {
-        this.staticType = staticType;
-    }
-
-    @Override
-    public FunctionType getType() {
-        return (FunctionType) super.getType();
-    }
-
-    @Override
-    protected String toString0() {
-        return declaringType.getName() + "." + getName();
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitFlow(this);
+    public @NotNull FunctionType getType() {
+        return type;
     }
 
     public FlowSignatureDTO getSignature() {
@@ -574,4 +416,68 @@ public class Flow extends Property implements GenericDeclaration, Callable, Glob
         );
     }
 
+    public FlowInfo toGenericElementDTO(SerializeContext serializeContext) {
+        return new FlowInfo(
+                serializeContext.getRef(Objects.requireNonNull(getTemplate())),
+                serializeContext.getRef(this),
+                NncUtils.map(parameters, p -> p.toGenericElementDTO(serializeContext)),
+                NncUtils.map(typeParameters, tp -> tp.toGenericElementDTO(serializeContext))
+        );
+    }
+
+    public ParameterizedFlowDTO toPFlowDTO(SerializeContext serializeContext) {
+        return new ParameterizedFlowDTO(
+                serializeContext.getRef(Objects.requireNonNull(getHorizontalTemplate())),
+                serializeContext.getRef(this),
+                NncUtils.map(typeArguments, serializeContext::getRef),
+                NncUtils.map(parameters, p -> p.toGenericElementDTO(serializeContext))
+        );
+    }
+
+    public void setState(@NotNull MetadataState state) {
+        this.state = state;
+    }
+
+    protected void checkArguments(List<Instance> arguments) {
+        out:
+        if (arguments.size() == parameters.size()) {
+            var paramIt = parameters.iterator();
+            var argIt = arguments.iterator();
+            while (paramIt.hasNext() && argIt.hasNext()) {
+                var param = paramIt.next();
+                var arg = argIt.next();
+                if (!param.getType().isInstance(arg))
+                    break out;
+            }
+            return;
+        }
+        throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
+
+    public ResolutionStage getStage() {
+        return stage;
+    }
+
+    public void setStage(ResolutionStage stage) {
+        this.stage = stage;
+    }
+
+    public void writeCode(CodeWriter writer) {
+        writer.writeNewLine(
+                "Flow "
+                        + name
+                        + " (" + NncUtils.join(parameters, Parameter::getText, ", ")
+                        + ")"
+                        + ": " + getReturnType().getName()
+        );
+        rootScope.writeCode(writer);
+    }
+
+    public String getText() {
+        CodeWriter writer = new CodeWriter();
+        writeCode(writer);
+        return writer.toString();
+    }
+
 }
+

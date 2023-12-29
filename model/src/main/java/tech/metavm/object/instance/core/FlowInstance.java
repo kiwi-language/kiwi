@@ -12,17 +12,17 @@ public class FlowInstance extends FunctionInstance {
     private final ClassInstance boundSelf;
 
     public FlowInstance(Flow flow, @Nullable ClassInstance boundSelf) {
-        super(boundSelf != null ? flow.getType() : flow.getStaticType());
+        super(!Flows.isInstanceMethod(flow) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow));
         this.flow = flow;
         this.boundSelf = boundSelf;
     }
 
     @Override
-    public FlowExecResult execute(List<Instance> arguments, IInstanceContext context) {
+    public FlowExecResult execute(List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider) {
         if(boundSelf != null)
-            return flow.execute(boundSelf, arguments, context);
+            return flow.execute(boundSelf, arguments, instanceRepository, parameterizedFlowProvider);
         else
-            return flow.execute(arguments.get(0), arguments.subList(0, arguments.size()), context);
+            return flow.execute((ClassInstance) arguments.get(0), arguments.subList(0, arguments.size()), instanceRepository, parameterizedFlowProvider);
     }
 
 //    public Frame createFrame(FlowStack stack, List<Instance> arguments) {
@@ -33,7 +33,7 @@ public class FlowInstance extends FunctionInstance {
 //    }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitFlowInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitFlowInstance(this);
     }
 }

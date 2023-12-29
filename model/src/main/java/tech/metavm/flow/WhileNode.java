@@ -1,51 +1,44 @@
 package tech.metavm.flow;
 
-import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ElementVisitor;
-import tech.metavm.expression.ExpressionUtil;
-import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.expression.ParsingContext;
+import tech.metavm.entity.SerializeContext;
+import tech.metavm.expression.Expressions;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.flow.rest.WhileParamDTO;
+import tech.metavm.flow.rest.WhileNodeParam;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
-@EntityType("While节点")
-public class WhileNode extends LoopNode<WhileParamDTO> {
+import javax.annotation.Nullable;
 
-    public static WhileNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
+@EntityType("While循环节点")
+public class WhileNode extends LoopNode {
+
+    public static WhileNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
         var outputType = context.getClassType(nodeDTO.outputTypeRef());
-        Value condition = Value.expression(ExpressionUtil.trueExpression());
+        var condition = Values.expression(Expressions.trueExpression());
         // IMPORTANT COMMENT DON"T REMOVE:
-        // DO NOT call setParam here. setParam should be called after the loop body has been constructed.
+        // DO NOT call setLoopParam here. setLoopParam should be called after the loop body has been constructed.
         // See FlowManager.saveLoopNodeContent
-        var node = new WhileNode(nodeDTO.tmpId(), nodeDTO.name(), outputType, prev, scope, condition);
-        ParsingContext parsingContext = FlowParsingContext.create(scope, node, context);
-        WhileParamDTO param = nodeDTO.getParam();
-        condition = ValueFactory.create(param.getCondition(), parsingContext);
-        node.setCondition(condition);
+        WhileNode node = (WhileNode) context.getNode(nodeDTO.getRef());
+        if (nodeDTO.id() == null)
+            node = new WhileNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, condition);
         return node;
     }
 
-    public WhileNode(Long tmpId, String name, @Nullable ClassType outputType, NodeRT<?> previous,
+    public WhileNode(Long tmpId, String name, @Nullable String code, ClassType outputType, NodeRT previous,
                      ScopeRT scope, Value condition) {
-        super(tmpId, name, outputType, previous, scope, condition);
+        super(tmpId, name, code, outputType, previous, scope, condition);
     }
 
     @Override
-    protected WhileParamDTO getParam(boolean persisting) {
-        return new WhileParamDTO(
-                getCondition().toDTO(persisting),
-                getBodyScope().toDTO(!persisting),
-                NncUtils.map(getFields(), field -> field.toDTO(persisting))
+    protected WhileNodeParam getParam(SerializeContext serializeContext) {
+        return new WhileNodeParam(
+                getCondition().toDTO(),
+                getBodyScope().toDTO(true, serializeContext),
+                NncUtils.map(getFields(), LoopField::toDTO)
         );
-    }
-
-    @Override
-    protected void setParam(WhileParamDTO param, IEntityContext context) {
-        setLoopParam(param, context);
     }
 
     @Override

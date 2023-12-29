@@ -47,12 +47,12 @@ public abstract class DefaulTypeVisitor<R, S> implements TypeVisitor<R, S> {
     }
 
     @Override
-    public R visitNothingType(NothingType type, S s) {
+    public R visitNothingType(NeverType type, S s) {
         return visitType(type, s);
     }
 
     @Override
-    public R visitObjectType(ObjectType type, S s) {
+    public R visitObjectType(AnyType type, S s) {
         return visitType(type, s);
     }
 }

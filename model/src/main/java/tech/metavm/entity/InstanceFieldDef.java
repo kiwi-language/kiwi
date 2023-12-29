@@ -2,9 +2,9 @@ package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.ModelInstanceMap;
+import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
@@ -23,18 +23,18 @@ public class InstanceFieldDef implements IFieldDef {
     }
 
     @Override
-    public void setModelField(Object model, ClassInstance instance, ModelInstanceMap modelInstanceMap) {
-        ReflectUtils.set(model, javaField, instance.getField(field));
+    public void setModelField(Object model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
+        ReflectionUtils.set(model, javaField, instance.getField(field));
     }
 
     @Override
-    public Instance getModelFieldValue(ClassInstance instance, ModelInstanceMap modelInstanceMap) {
+    public Instance getModelFieldValue(ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         return instance.getField(field);
     }
 
     @Override
-    public Instance getInstanceFieldValue(Object model, ModelInstanceMap instanceMap) {
-        return (Instance) NncUtils.requireNonNull(ReflectUtils.get(model, javaField));
+    public Instance getInstanceFieldValue(Object model, ObjectInstanceMap instanceMap) {
+        return (Instance) NncUtils.requireNonNull(ReflectionUtils.get(model, javaField));
     }
 
     @Override

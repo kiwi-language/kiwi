@@ -4,9 +4,7 @@ import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.Types;
-import tech.metavm.util.NncUtils;
+import tech.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -14,14 +12,18 @@ import java.util.Objects;
 
 @EntityType("游标表达式")
 public class CursorExpression extends Expression{
-
-    @EntityField("数组")
-    private final Expression array;
+    
+    @EntityField("AllMatch表达式")
+    private final AllMatchExpression allMatchExpression;
     @Nullable
+    @EntityField("别名")
     private final String alias;
+    @EntityField("类型")
+    private final Type type;
 
-    public CursorExpression(Expression array, @Nullable String alias) {
-        this.array = NncUtils.requireNonNull(array);
+    public CursorExpression(AllMatchExpression allMatchExpression, Type type, @Nullable String alias) {
+        this.allMatchExpression = allMatchExpression;
+        this.type = type;
         this.alias = alias;
     }
 
@@ -39,24 +41,18 @@ public class CursorExpression extends Expression{
         return 0;
     }
 
-    public Expression getArray() {
-        return array;
+    @Override
+    public Type getType() {
+        return type;
     }
 
-    @Override
-    public ClassType getType() {
-        return Types.ensureClassArray(array.getType());
+    public AllMatchExpression getAllMatchExpression() {
+        return allMatchExpression;
     }
 
     @Override
     public List<Expression> getChildren() {
         return List.of();
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        NncUtils.requireLength(children, 0);
-        return new CursorExpression(array, alias);
     }
 
     @Override
@@ -68,12 +64,12 @@ public class CursorExpression extends Expression{
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CursorExpression that)) return false;
-        return Objects.equals(array, that.array) && Objects.equals(alias, that.alias);
+        return Objects.equals(type, that.type) && Objects.equals(alias, that.alias);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(array, alias);
+        return Objects.hash(type, alias);
     }
 
     @Override

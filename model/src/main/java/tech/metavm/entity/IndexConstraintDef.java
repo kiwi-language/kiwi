@@ -1,7 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.type.Index;
-import tech.metavm.util.ReflectUtils;
+import tech.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
@@ -14,7 +14,7 @@ public class IndexConstraintDef {
     public IndexConstraintDef(Index indexConstraint, Field indexDefField, PojoDef<?> declaringTypeDef) {
         this.indexConstraint = indexConstraint;
         this.indexDefField = indexDefField;
-        indexDef = (IndexDef<?>) ReflectUtils.get(null, indexDefField);
+        indexDef = (IndexDef<?>) ReflectionUtils.get(null, indexDefField);
         indexConstraint.setIndexDef(indexDef);
         declaringTypeDef.addUniqueConstraintDef(this);
     }

@@ -4,19 +4,18 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.common.MockEmailService;
 import tech.metavm.common.RefDTO;
-import tech.metavm.entity.EntityQueryService;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.MemIndexEntryMapper;
-import tech.metavm.entity.MemInstanceStore;
+import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
-import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.log.InstanceLogServiceImpl;
+import tech.metavm.object.instance.InstanceQueryService;
+import tech.metavm.object.instance.MemInstanceSearchService;
+import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.user.rest.dto.UserDTO;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
+import tech.metavm.util.TestUtils;
 
 import java.util.List;
 
@@ -33,26 +32,17 @@ public class PlatformUserManagerTest extends TestCase {
         ContextUtil.setAppId(1L);
         ContextUtil.setUserId(1L);
 
-        InstanceSearchService instanceSearchService = new MemInstanceSearchService();
-        IInstanceStore instanceStore = new MemInstanceStore();
-        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
-                .setIdService(idProvider);
+        var instanceSearchService = new MemInstanceSearchService();
+        var instanceStore = new MemInstanceStore();
+        InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
 
-        InstanceContextFactory.setStdContext(MockRegistry.getInstanceContext());
-
-        instanceContextFactory.setPlugins(List.of(
-                new IndexConstraintPlugin(new MemIndexEntryMapper()),
-                new CheckConstraintPlugin(),
-                new ChangeLogPlugin(
-                        new InstanceLogServiceImpl(instanceSearchService, instanceContextFactory, instanceStore, List.of())
-                )
-        ));
-
-        InstanceQueryService instanceQueryService = new InstanceQueryService(instanceSearchService);
-        var loginService = new LoginService(instanceContextFactory);
-        platformUserManager = new PlatformUserManager(instanceQueryService, instanceContextFactory, loginService, new EntityQueryService(instanceQueryService), new MockEventQueue(),
-                new VerificationCodeService(instanceContextFactory, new MockEmailService()));
-        roleManager = new RoleManager(instanceContextFactory, instanceQueryService);
+        var instanceQueryService = new InstanceQueryService(instanceSearchService);
+        var entityQueryService = new EntityQueryService(instanceQueryService);
+        var entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), new MemIndexEntryMapper());
+        var loginService = new LoginService(entityContextFactory);
+        platformUserManager = new PlatformUserManager(entityContextFactory,  loginService, new EntityQueryService(instanceQueryService), new MockEventQueue(),
+                new VerificationCodeService(entityContextFactory, new MockEmailService()));
+        roleManager = new RoleManager(entityContextFactory, entityQueryService);
     }
 
     public void testSave() {

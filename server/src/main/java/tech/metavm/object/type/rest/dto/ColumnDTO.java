@@ -17,7 +17,6 @@ public record ColumnDTO(
         boolean required,
         boolean multiValued,
         boolean unique,
-        boolean asTitle,
         FieldValue defaultValue,
         List<ChoiceOptionDTO> choiceOptions
 ) {
@@ -25,11 +24,10 @@ public record ColumnDTO(
     public static ColumnDTO createPrimitive(String name,
                                             int type,
                                             boolean required,
-                                            boolean unique,
-                                            boolean asTitle) {
+                                            boolean unique) {
         return new ColumnDTO(
                 null, name, type, Access.PUBLIC.code(), null, null,
-                null, required, false, unique, asTitle,
+                null, required, false, unique,
                 null, null
         );
     }

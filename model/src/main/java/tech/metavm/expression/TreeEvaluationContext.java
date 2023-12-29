@@ -1,6 +1,7 @@
 package tech.metavm.expression;
 
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.query.ObjectNode;
 import tech.metavm.object.instance.query.Path;
@@ -9,12 +10,12 @@ public class TreeEvaluationContext implements EvaluationContext {
 
     private final ObjectNode objectNode;
     private final Instance instance;
-    private final IEntityContext entityContext;
+    private final ParameterizedFlowProvider parameterizedFlowProvider;
 
-    public TreeEvaluationContext(ObjectNode objectNode, Instance instance, IEntityContext entityContext) {
+    public TreeEvaluationContext(ObjectNode objectNode, Instance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
         this.objectNode = objectNode;
         this.instance = instance;
-        this.entityContext = entityContext;
+        this.parameterizedFlowProvider = parameterizedFlowProvider;
     }
 
     @Override
@@ -33,8 +34,8 @@ public class TreeEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public IEntityContext getEntityContext() {
-        return entityContext;
+    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+        return parameterizedFlowProvider;
     }
 
 }

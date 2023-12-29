@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 public class Tokens {
 
-    public static final Pattern TOKEN_COOKIE_NAME_PTN = Pattern.compile("__token_(\\d+)__");
+    public static final Pattern TOKEN_COOKIE_NAME_PATTERN = Pattern.compile("__token_(\\d+)__");
 
     public static final long TOKEN_TTL = 7 * 24 * 60 * 60 * 1000L;
 
@@ -23,7 +23,7 @@ public class Tokens {
     public static List<Token> getAllTokens(HttpServletRequest request) {
         List<Token> tokens = new ArrayList<>();
         for (Cookie cookie : request.getCookies()) {
-            var m = TOKEN_COOKIE_NAME_PTN.matcher(cookie.getName());
+            var m = TOKEN_COOKIE_NAME_PATTERN.matcher(cookie.getName());
             if(m.matches()) {
                 tokens.add(new Token(Long.parseLong(m.group(1)), cookie.getValue()));
             }

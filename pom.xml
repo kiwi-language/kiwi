@@ -7,14 +7,14 @@
     <groupId>tech.metavm</groupId>
     <artifactId>object</artifactId>
     <packaging>pom</packaging>
+    <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>compiler</module>
+        <module>api</module>
         <module>model</module>
+        <module>compiler</module>
         <module>server</module>
         <module>lab</module>
-        <module>api</module>
     </modules>
-    <version>${version}</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -29,8 +29,8 @@
         <java.version>${java.version.release}</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.version>3.1.5</spring.version>
-        <version>1.0-SNAPSHOT</version>
         <jackson.version>2.16.0</jackson.version>
+        <version>1.0-SNAPSHOT</version>
     </properties>
 
     <repositories>
@@ -75,9 +75,9 @@
             </dependency>
 
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>2.16.0</version>
+                <groupId>tech.metavm</groupId>
+                <artifactId>compiler</artifactId>
+                <version>${version}</version>
             </dependency>
 
             <dependency>
@@ -174,28 +174,7 @@
                     <compilerArgs>--enable-preview</compilerArgs>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring.version}</version>
-                <configuration>
-                    <mainClass>tech.metavm.ObjectApplication</mainClass>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.13.1</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
-
 
 </project>

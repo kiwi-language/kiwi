@@ -1,59 +1,53 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
-import tech.metavm.entity.ElementVisitor;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.expression.ParsingContext;
-import tech.metavm.flow.rest.GetUniqueParamDTO;
+import tech.metavm.flow.rest.GetUniqueNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.instance.core.IInstanceContext;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Index;
-import tech.metavm.entity.ChildArray;
 import tech.metavm.object.type.UnionType;
-import tech.metavm.util.InstanceUtils;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @EntityType("唯一索引节点")
-public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
+public class GetUniqueNode extends NodeRT {
 
-    public static GetUniqueNode create(NodeDTO nodeDTO, NodeRT<?> prev, ScopeRT scope, IEntityContext context) {
-        GetUniqueParamDTO param = nodeDTO.getParam();
+    public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+        GetUniqueNodeParam param = nodeDTO.getParam();
         Index index = context.getEntity(Index.class, param.indexId());
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var type = context.getNullableType(index.getDeclaringType());
         var values = NncUtils.map(param.values(), v -> ValueFactory.create(v, parsingContext));
-        return new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), type, index, prev, scope, values);
+        GetUniqueNode node = (GetUniqueNode) context.getNode(nodeDTO.getRef());
+        if (node != null) {
+            node.setIndex(index);
+            node.setValues(values);
+        } else
+            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, index, prev, scope, values);
+        return node;
     }
 
     @EntityField("索引")
     private Index index;
-    @ChildEntity("字段值列表")
+    @ChildEntity("值列表")
     private final ChildArray<Value> values = addChild(new ChildArray<>(Value.class), "values");
 
-    public GetUniqueNode(Long tmpId, String name, UnionType type, Index index, NodeRT<?> previous, ScopeRT scope, List<Value> values) {
-        super(tmpId, name,  type, previous, scope);
+    public GetUniqueNode(Long tmpId, String name, @Nullable String code, UnionType type, Index index, NodeRT previous, ScopeRT scope, List<Value> values) {
+        super(tmpId, name, code, type, previous, scope);
         this.index = index;
         this.values.addChildren(values);
     }
 
     @Override
-    protected GetUniqueParamDTO getParam(boolean persisting) {
-        return new GetUniqueParamDTO(
+    protected GetUniqueNodeParam getParam(SerializeContext serializeContext) {
+        return new GetUniqueNodeParam(
                 index.getIdRequired(),
-                NncUtils.map(values, value -> value.toDTO(persisting))
-        );
-    }
-
-    @Override
-    protected void setParam(GetUniqueParamDTO param, IEntityContext entityContext) {
-        ParsingContext parsingContext = getParsingContext(entityContext);
-        setValues(
-                NncUtils.map(
-                        param.values(), v -> ValueFactory.create(v, parsingContext)
-                )
+                NncUtils.map(values, Value::toDTO)
         );
     }
 
@@ -71,11 +65,16 @@ public class GetUniqueNode extends NodeRT<GetUniqueParamDTO> {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        IInstanceContext instanceContext = frame.getContext();
-        var result = instanceContext.selectByUniqueKey(buildIndexKey(frame));
-        if(result == null)
-            result = InstanceUtils.nullInstance();
+        Instance result = frame.getInstanceRepository().selectByUniqueKey(buildIndexKey(frame));
+        if (result == null)
+            result = Instances.nullInstance();
         return next(result);
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("getUnique(" + index.getName() + ", " +
+                NncUtils.join(values, Value::getText, ", ") + ")");
     }
 
     private IndexKeyRT buildIndexKey(MetaFrame frame) {

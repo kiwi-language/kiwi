@@ -64,11 +64,6 @@ public class ConditionalExpression extends Expression {
     }
 
     @Override
-    public Expression substituteChildren(List<Expression> children) {
-        return new ConditionalExpression(children.get(0), children.get(1), children.get(2));
-    }
-
-    @Override
     public Instance evaluate(EvaluationContext context) {
         return ((BooleanInstance) condition.evaluate(context)).getValue() ?
                 trueValue.evaluate(context) : falseValue.evaluate(context);

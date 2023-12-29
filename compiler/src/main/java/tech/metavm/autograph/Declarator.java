@@ -3,20 +3,16 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.FlowBuilder;
+import tech.metavm.flow.Method;
+import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Parameter;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.ResolutionStage;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
@@ -43,17 +39,19 @@ public class Declarator extends JavaRecursiveElementVisitor {
         var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         metaClass.setStage(ResolutionStage.DECLARATION);
         if (!metaClass.isInterface()) {
-            FlowBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
+            MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
+                    .access(Access.PRIVATE)
                     .build();
-            FlowBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
+            MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
                     .isStatic(true)
+                    .access(Access.PRIVATE)
                     .build();
         }
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!metaClass.isInterface() && !hashConstructor) {
             String constructorName = metaClass.getEffectiveTemplate().getName();
             String constructorCode = metaClass.getEffectiveTemplate().getCode();
-            FlowBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
+            MethodBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
                     .isConstructor(true)
                     .build();
         }
@@ -66,11 +64,11 @@ public class Declarator extends JavaRecursiveElementVisitor {
     @Override
     public void visitMethod(PsiMethod method) {
         List<PsiMethod> overriddenMethods = TranspileUtil.getOverriddenMethods(method);
-        List<Flow> overridden = new ArrayList<>();
+        List<Method> overridden = new ArrayList<>();
         for (PsiMethod overriddenMethod : overriddenMethods) {
             var overriddenMethodCls = NncUtils.requireNonNull(overriddenMethod.getContainingClass());
             var overriddenMethodType = TranspileUtil.createTemplateType(overriddenMethodCls);
-            overridden.add(TranspileUtil.getFlowByMethod(
+            overridden.add(TranspileUtil.getMethidByJavaMethod(
                     (ClassType) typeResolver.resolveDeclaration(overriddenMethodType),
                     overriddenMethod, typeResolver)
             );
@@ -80,15 +78,16 @@ public class Declarator extends JavaRecursiveElementVisitor {
             resolvedParams.addAll(getEnumConstructorParams());
         resolvedParams.addAll(processParameters(method.getParameterList()));
         var paramTypes = NncUtils.map(resolvedParams, Parameter::getType);
-        var flow = currentClass().findSelfFlow(method.getName(), paramTypes);
+        var flow = currentClass().findSelfMethod(method.getName(), paramTypes);
         if (flow == null) {
-            flow = FlowBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method), context.getFunctionTypeContext())
+            flow = MethodBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method), context.getFunctionTypeContext())
                     .isConstructor(method.isConstructor())
                     .isStatic(method.getModifierList().hasModifierProperty(PsiModifier.STATIC))
+                    .access(resolveAccess(method.getModifierList()))
                     .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
                     .parameters(resolvedParams)
                     .returnType(getOutputType(method))
-                    .overriden(overridden)
+                    .overridden(overridden)
                     .build();
         } else {
             flow.setName(getFlowName(method));
@@ -106,7 +105,15 @@ public class Declarator extends JavaRecursiveElementVisitor {
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
             typeResolver.resolveTypeVariable(typeParameter).setGenericDeclaration(flow);
         }
-        method.putUserData(Keys.FLOW, flow);
+        method.putUserData(Keys.Method, flow);
+    }
+
+    private Access resolveAccess(PsiModifierList modifierList) {
+        if(modifierList.hasModifierProperty(PsiModifier.PUBLIC))
+            return Access.PUBLIC;
+        if(modifierList.hasModifierProperty(PsiModifier.PRIVATE))
+            return Access.PRIVATE;
+        return Access.PACKAGE;
     }
 
     private List<Parameter> getEnumConstructorParams() {
@@ -136,7 +143,6 @@ public class Declarator extends JavaRecursiveElementVisitor {
             field = FieldBuilder
                     .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), type)
                     .unique(TranspileUtil.isUnique(psiField))
-                    .asTitle(TranspileUtil.isTitleField(psiField))
                     .isChild(TranspileUtil.isChild(psiField))
                     .isStatic(requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
                     .build();
@@ -144,8 +150,9 @@ public class Declarator extends JavaRecursiveElementVisitor {
             field.setName(getBizFieldName(psiField));
             field.setType(type);
             field.setUnique(TranspileUtil.isUnique(psiField));
-            field.setAsTitle(TranspileUtil.isTitleField(psiField));
         }
+        if(TranspileUtil.isTitleField(psiField))
+            currentClass().setTitleField(field);
         psiField.putUserData(Keys.FIELD, field);
     }
 

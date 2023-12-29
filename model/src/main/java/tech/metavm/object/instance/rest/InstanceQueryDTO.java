@@ -7,6 +7,7 @@ import java.util.List;
 
 public record InstanceQueryDTO(
         long typeId,
+        @Nullable Long sourceMappingId,
         String searchText,
         @Nullable String expression,
         List<InstanceQueryFieldDTO> fields,
@@ -14,7 +15,7 @@ public record InstanceQueryDTO(
         int pageSize,
         boolean includeSubTypes,
         boolean includeContextTypes,
-        List<Long> newlyCreated
+        List<String> newlyCreated
 ) {
 
     @JsonIgnore

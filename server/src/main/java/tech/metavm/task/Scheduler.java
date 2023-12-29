@@ -13,9 +13,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 @Component
-public class Scheduler {
+public class Scheduler extends EntityContextFactoryBean {
     public static int THREAD_POOL_SIZE = 1;
-    private final InstanceContextFactory instanceContextFactory;
     private final NavigableMap<Long, TaskSignal> activeSignalMap = new ConcurrentSkipListMap<>();
     private final TransactionOperations transactionOperations;
     private TaskSignal lastScheduledSignal;
@@ -30,8 +29,8 @@ public class Scheduler {
 
     private final Set<Long> runningTaskIds = new ConcurrentSkipListSet<>();
 
-    public Scheduler(InstanceContextFactory instanceContextFactory, TransactionOperations transactionOperations) {
-        this.instanceContextFactory = instanceContextFactory;
+    public Scheduler(EntityContextFactory entityContextFactory, TransactionOperations transactionOperations) {
+        super(entityContextFactory);
         this.transactionOperations = transactionOperations;
         executor = new ThreadPoolExecutor(
                 THREAD_POOL_SIZE, THREAD_POOL_SIZE, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>()
@@ -182,7 +181,7 @@ public class Scheduler {
                 Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
                 Task task = context.getEntity(Task.class, taskId);
                 if (task.isRunning()) {
-                    task.run(context.getInstanceContext());
+                    task.run(context);
                     if (task.isFinished())
                         tryRemoveTask(task, context);
                     context.finish();
@@ -240,20 +239,6 @@ public class Scheduler {
 
     private void removeSignal(TaskSignal signal) {
         activeSignalMap.remove(signal.getAppId());
-    }
-
-    private IEntityContext newPlatformContext() {
-        return instanceContextFactory.newBuilder()
-                .appId(Constants.PLATFORM_APP_ID)
-                .asyncLogProcessing(true)
-                .build();
-    }
-
-    private IEntityContext newContext(long appId) {
-        return instanceContextFactory.newBuilder()
-                .appId(appId)
-                .asyncLogProcessing(true)
-                .build();
     }
 
     public void waitForJobDone(Task task, int maxSchedules) {

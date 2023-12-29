@@ -9,7 +9,7 @@ public interface Identifiable {
     @Nullable
     Long getId();
 
-    default Long getIdRequired() {
+    default long getIdRequired() {
         return NncUtils.requireNonNull(getId());
     }
 

@@ -5,7 +5,10 @@ import tech.metavm.common.Page;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ContextArrayTypeProvider;
+import tech.metavm.object.type.ContextTypeRepository;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
@@ -22,13 +25,21 @@ public class EntityQueryService {
 
     public <T extends Entity> Page<T> query(EntityQuery<T> query, IEntityContext context) {
         InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
-        Page<Instance> instancePage = instanceQueryService.query(instanceQuery, context.getInstanceContext());
-        return instancePage.map(inst -> context.getEntity(query.entityType(), inst));
+        var idPage = instanceQueryService.query(instanceQuery,
+                context.getInstanceContext(),
+                context.getGenericContext(),
+                new ContextTypeRepository(context),
+                new ContextArrayTypeProvider(context)
+        );
+        return new Page<>(
+                NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst)),
+                idPage.total()
+        );
     }
 
     public <T extends Entity> long count(EntityQuery<T> query, IEntityContext context) {
         InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
-        return instanceQueryService.count(instanceQuery, context.getInstanceContext());
+        return instanceQueryService.count(instanceQuery, context);
     }
 
     private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
@@ -44,8 +55,9 @@ public class EntityQueryService {
                 entityQuery.page(),
                 entityQuery.pageSize(),
                 NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context)),
-                entityQuery.newlyCreated(),
-                entityQuery.excluded()
+                NncUtils.map(entityQuery.newlyCreated(), PhysicalId::new),
+                NncUtils.map(entityQuery.excluded(), PhysicalId::new),
+                null
         );
     }
 
@@ -72,7 +84,7 @@ public class EntityQueryService {
     }
 
     private Instance convertSingleValue(Object value, IEntityContext context) {
-        return context.getInstance(value);
+        return context.getObjectInstanceMap().getInstance(value);
     }
 
 }

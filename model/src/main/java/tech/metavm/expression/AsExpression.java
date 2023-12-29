@@ -1,13 +1,9 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -43,12 +39,6 @@ public class AsExpression extends Expression {
     @Override
     public List<Expression> getChildren() {
         return List.of(expression);
-    }
-
-    @Override
-    public Expression substituteChildren(List<Expression> children) {
-        NncUtils.requireLength(children, 1);
-        return new AsExpression(children.get(0), alias);
     }
 
     @Override
