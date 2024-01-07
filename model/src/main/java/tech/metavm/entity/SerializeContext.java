@@ -68,7 +68,7 @@ public class SerializeContext implements Closeable {
     public Long getTmpId(Object model) {
         NncUtils.requireNonNull(model);
         if (model instanceof Entity entity) {
-            if (entity.getId() != null)
+            if (entity.tryGetId() != null)
                 return null;
             else if (entity.getTmpId() != null)
                 return entity.getTmpId();
@@ -77,8 +77,8 @@ public class SerializeContext implements Closeable {
     }
 
     public RefDTO getRef(Object model) {
-        if (model instanceof Identifiable identifiable && identifiable.getId() != null) {
-            return new RefDTO(identifiable.getId(), null);
+        if (model instanceof Identifiable identifiable && identifiable.tryGetId() != null) {
+            return new RefDTO(identifiable.tryGetId(), null);
         } else {
             return new RefDTO(null, getTmpId(model));
         }
@@ -112,8 +112,8 @@ public class SerializeContext implements Closeable {
         else
             typeDTO = type.toDTO();
         types.put(type, typeDTO);
-        if (type.getId() != null)
-            typeMap.put(type.getIdRequired(), typeDTO);
+        if (type.tryGetId() != null)
+            typeMap.put(type.tryGetId(), typeDTO);
     }
 
     public Set<Type> getWrittenTypes() {

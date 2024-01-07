@@ -18,6 +18,6 @@ public class EntityDef<T extends Entity> extends PojoDef<T> {
 
     @Override
     protected Long getId(T model) {
-        return model.getId();
+        return model.tryGetId();
     }
 }

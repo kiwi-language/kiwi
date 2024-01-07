@@ -1,8 +1,7 @@
 package tech.metavm.system.persistence;
 
-import tech.metavm.entity.Identifiable;
 
-public class BlockPO implements Identifiable {
+public class BlockPO {
     private Long id;
     private Long appId;
     private Long typeId;
@@ -11,7 +10,8 @@ public class BlockPO implements Identifiable {
     private Long nextId;
     private Boolean active;
 
-    public BlockPO() {}
+    public BlockPO() {
+    }
 
     public BlockPO(Long id, Long appId, Long typeId, Long startId, Long end, Long nextId, Boolean active) {
         this.id = id;

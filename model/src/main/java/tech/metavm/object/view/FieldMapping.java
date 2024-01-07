@@ -25,14 +25,14 @@ public abstract class FieldMapping extends Element {
     private final Field targetField;
 
     @EntityField("所属映射")
-    protected final DefaultObjectMapping containingMapping;
+    protected final FieldsObjectMapping containingMapping;
 
     @EntityField("嵌套映射")
     @Nullable
     protected Mapping nestedMapping;
 
     public FieldMapping(Long tmpId, String name, String code, Type targetFieldType, boolean isChild, boolean readonly,
-                        DefaultObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
+                        FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
         this(
                 tmpId,
                 createTargetField(name, code, isChild, readonly, containingMapping.getTargetType(),
@@ -41,7 +41,7 @@ public abstract class FieldMapping extends Element {
         );
     }
 
-    public FieldMapping(Long tmpId, Field targetField, DefaultObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
+    public FieldMapping(Long tmpId, Field targetField, FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
         super(tmpId);
         this.containingMapping = containingMapping;
         this.targetField = targetField;
@@ -64,7 +64,7 @@ public abstract class FieldMapping extends Element {
         return targetField;
     }
 
-    public final boolean isReadonly() {
+    public boolean isReadonly() {
         return targetField.isReadonly();
     }
 
@@ -92,7 +92,7 @@ public abstract class FieldMapping extends Element {
 
     public FieldMappingDTO toDTO(SerializeContext serializeContext) {
         return new FieldMappingDTO(
-                getId(),
+                tryGetId(),
                 serializeContext.getTmpId(this),
                 getName(),
                 getCode(),
@@ -110,11 +110,11 @@ public abstract class FieldMapping extends Element {
 
     public abstract FieldMappingParam getParam(SerializeContext serializeContext);
 
-    public DefaultObjectMapping getContainingMapping() {
+    public FieldsObjectMapping getContainingMapping() {
         return containingMapping;
     }
 
-    public final Type getType() {
+    public Type getType() {
         return targetField.getType();
     }
 
@@ -125,14 +125,23 @@ public abstract class FieldMapping extends Element {
     public FieldParam generateReadCode(SelfNode selfNode) {
         var value = generateReadCode0(selfNode);
         if (nestedMapping != null) {
-            var nestedFieldView = new FunctionCallNode(
+//            var nestedFieldView = new FunctionCallNode(
+//                    null,
+//                    targetField.getName() + "嵌套视图",
+//                    NncUtils.get(targetField.getCode(), c -> c + "NestedView"),
+//                    selfNode.getScope().getLastNode(),
+//                    selfNode.getScope(),
+//                    nestedMapping.getMapper(),
+//                    List.of(Nodes.argument(nestedMapping.getMapper(), 0, value))
+//            );
+            var nestedFieldView = new MapNode(
                     null,
                     targetField.getName() + "嵌套视图",
                     NncUtils.get(targetField.getCode(), c -> c + "NestedView"),
                     selfNode.getScope().getLastNode(),
                     selfNode.getScope(),
-                    nestedMapping.getMapper(),
-                    List.of(Nodes.argument(nestedMapping.getMapper(), 0, value))
+                    value,
+                    nestedMapping
             );
             return new FieldParam(targetField, Values.node(nestedFieldView));
         } else
@@ -144,10 +153,18 @@ public abstract class FieldMapping extends Element {
     public void generateWriteCode(SelfNode selfNode, ValueNode viewNode) {
         if (nestedMapping != null) {
             var scope = selfNode.getScope();
-            var nestedFieldSource = new FunctionCallNode(null, targetField.getName() + "嵌套来源",
+//            var nestedFieldSource = new FunctionCallNode(null, targetField.getName() + "嵌套来源",
+//                    NncUtils.get(targetField.getCode(), c -> c + "NestedSource"),
+//                    scope.getLastNode(), scope, nestedMapping.getUnmapper(), List.of(
+//                    Nodes.argument(nestedMapping.getUnmapper(), 0, Values.nodeProperty(viewNode, targetField)))
+//            );
+            var nestedFieldSource = new UnmapNode(null,
+                    targetField.getName() + "嵌套来源",
                     NncUtils.get(targetField.getCode(), c -> c + "NestedSource"),
-                    scope.getLastNode(), scope, nestedMapping.getUnmapper(), List.of(
-                    Nodes.argument(nestedMapping.getUnmapper(), 0, Values.nodeProperty(viewNode, targetField)))
+                    scope.getLastNode(),
+                    scope,
+                    Values.nodeProperty(viewNode, targetField),
+                    nestedMapping
             );
             generateWriteCode0(selfNode, () -> Values.node(nestedFieldSource));
         } else

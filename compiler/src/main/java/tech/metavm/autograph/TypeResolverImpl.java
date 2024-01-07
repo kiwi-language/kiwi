@@ -362,7 +362,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     private void processClassType(ClassType metaClass, final ResolutionStage stage) {
         var template = metaClass.getEffectiveTemplate();
-        if (template.getId() == null) {
+        if (template.tryGetId() == null) {
             var psiClass = NncUtils.requireNonNull(psiClassMap.get(template));
             processClassType(template, psiClass, stage);
         }

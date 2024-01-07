@@ -31,4 +31,6 @@ public class NodeKindCodes {
     public static final int CAST = 31;
     public static final int CLEAR_ARRAY = 32;
     public static final int COPY = 33;
+    public static final int MAP = 34;
+    public static final int UNMAP = 35;
 }

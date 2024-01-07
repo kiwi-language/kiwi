@@ -5,7 +5,6 @@ import tech.metavm.event.EventQueue;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.IndexProvider;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
@@ -31,10 +30,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     }
 
     void replace(Collection<DurableInstance> instances);
-
-    default ClassInstance createView(ClassInstance source, ObjectMapping mapping) {
-        return mapping.map(source, this, getParameterizedFlowProvider());
-    }
 
     /*
      * Used to filter out dead ids from search result arsing from index rebuild delay
@@ -112,9 +107,9 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean remove(DurableInstance instance);
 
-    List<DurableInstance> selectByKey(IndexKeyRT indexKey);
+    List<ClassInstance> selectByKey(IndexKeyRT indexKey);
 
-    List<DurableInstance> query(InstanceIndexQuery query);
+    List<ClassInstance> query(InstanceIndexQuery query);
 
     long count(InstanceIndexQuery query);
 

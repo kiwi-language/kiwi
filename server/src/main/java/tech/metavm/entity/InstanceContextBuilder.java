@@ -7,7 +7,7 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.instance.core.InstanceContextDependency;
+import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 public class InstanceContextBuilder {
 
@@ -42,6 +43,7 @@ public class InstanceContextBuilder {
     private Cache cache;
     private EventQueue eventQueue;
     private boolean readonly;
+    private Function<Long, Long> getTypeIdInterceptor;
 
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
@@ -57,7 +59,7 @@ public class InstanceContextBuilder {
         this.parameterizedFlowProvider = parameterizedFlowProvider;
     }
 
-    public InstanceContextBuilder dependency(InstanceContextDependency dependency) {
+    public InstanceContextBuilder dependency(EntityInstanceContextBridge dependency) {
         this.typeProvider = dependency;
         this.mappingProvider = dependency;
         this.parameterizedFlowProvider = dependency;
@@ -118,9 +120,17 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder getTypeIdInterceptor(Function<Long, Long> getTypeIdInterceptor) {
+        this.getTypeIdInterceptor = getTypeIdInterceptor;
+        return this;
+    }
+
     public IInstanceContext build() {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();
+        var idProvider = this.idProvider;
+        if(getTypeIdInterceptor != null)
+            idProvider = new WrappedIdProvider(getTypeIdInterceptor, idProvider);
         return new InstanceContext(
                 appId, instanceStore, idProvider, executor, asyncPostProcess,
                 plugins, parent, typeProvider, mappingProvider,

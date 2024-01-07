@@ -7,19 +7,19 @@ import tech.metavm.util.*;
 
 public enum ArrayKind {
 
-    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, ReadWriteArray.class) {
+    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, ReadWriteArray.class, "[]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return that == READ_WRITE && assignedElementType.contains(assignmentElementType);
         }
     },
-    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, ReadonlyArray.class) {
+    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, ReadonlyArray.class, "[R]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return assignedElementType.isAssignableFrom(assignmentElementType);
         }
     },
-    CHILD(3, TypeCategory.CHILD_ARRAY, ChildArray.class) {
+    CHILD(3, TypeCategory.CHILD_ARRAY, ChildArray.class, "[C]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return that == CHILD && assignedElementType.contains(assignmentElementType);
@@ -31,11 +31,13 @@ public enum ArrayKind {
     private final int code;
     private final TypeCategory category;
     private final Class<?> entityClass;
+    private final String suffix;
 
-    ArrayKind(int code, TypeCategory category, Class<?> entityClass) {
+    ArrayKind(int code, TypeCategory category, Class<?> entityClass, String suffix) {
         this.code = code;
         this.category = category;
         this.entityClass = entityClass;
+        this.suffix = suffix;
     }
 
     public static ArrayKind getByCode(int code) {
@@ -62,4 +64,7 @@ public enum ArrayKind {
         return NncUtils.findRequired(values(), v -> v.entityClass == klass);
     }
 
+    public String getSuffix() {
+        return suffix;
+    }
 }

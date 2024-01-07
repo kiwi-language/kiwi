@@ -70,6 +70,6 @@ public abstract class CompositeType extends Type {
     }
 
     public static String getKey(List<Type> componentTypes) {
-        return NncUtils.join(componentTypes, typeArg -> encodeBase64(typeArg.getIdRequired()), "-");
+        return NncUtils.join(componentTypes, typeArg -> encodeBase64(typeArg.tryGetId()), "-");
     }
 }

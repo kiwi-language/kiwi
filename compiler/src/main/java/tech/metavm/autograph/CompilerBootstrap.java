@@ -50,7 +50,7 @@ public class CompilerBootstrap {
         }
         defContext.flushAndWriteInstances();
 
-        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.getId() == null);
+        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetPhysicalId() == null);
         if (!idNullInstances.isEmpty())
             LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
         ContextUtil.clearContextInfo();

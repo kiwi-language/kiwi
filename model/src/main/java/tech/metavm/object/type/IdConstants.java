@@ -8,6 +8,10 @@ public class IdConstants {
 
     public static final long SYSTEM_RESERVE_PER_REGION = 1000000000L;
 
+    public static final long ROOT_APP_ID = 1L;
+
+    public static final long PLATFORM_APP_ID = 2L;
+
     // Region constants
 
     public static final long CLASS_REGION_BASE = 0L;
@@ -31,5 +35,9 @@ public class IdConstants {
     public static final long ENUM_REGION_END = MAX_ID;
 
     private IdConstants() {}
+
+    public static boolean isBuiltinAppId(long appId) {
+        return appId == ROOT_APP_ID || appId == PLATFORM_APP_ID;
+    }
 
 }

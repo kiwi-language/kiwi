@@ -249,8 +249,8 @@ public class Types {
     }
 
     public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
-        return encodeBase64(template.getIdRequired()) + "-"
-                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.getIdRequired()), "-");
+        return encodeBase64(template.tryGetId()) + "-"
+                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.tryGetId()), "-");
     }
 
     public static boolean isNullable(Type type) {

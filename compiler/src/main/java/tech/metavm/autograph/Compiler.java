@@ -127,7 +127,7 @@ public class Compiler {
                 serContext.writeType(metaType);
             }
             var typeDTOs =
-                    serContext.getTypes((t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getIdRequired()))));
+                    serContext.getTypes((t -> (t.isIdNull() || !RegionConstants.isSystemId(t.tryGetId()))));
             var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
             LOGGER.info("Compile successful");
             var request = new BatchSaveRequest(typeDTOs, List.of(), pFlowDTOs);

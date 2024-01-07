@@ -3,13 +3,15 @@ package tech.metavm.entity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import tech.metavm.application.Application;
 import tech.metavm.object.instance.ChangeLogPlugin;
 import tech.metavm.object.instance.CheckConstraintPlugin;
 import tech.metavm.object.instance.IndexConstraintPlugin;
 import tech.metavm.object.instance.MetaVersionPlugin;
-import tech.metavm.object.instance.core.InstanceContextDependency;
+import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import tech.metavm.object.type.IdConstants;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
@@ -45,24 +47,22 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable EntityIdProvider idProvider) {
-        var dep = new InstanceContextDependency();
-        var builder = instanceContextFactory.newBuilder(appId, dep, dep, dep)
+        var bridge = new EntityInstanceContextBridge();
+        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
                 .readonly(isReadonlyTransaction())
+                .parent(NncUtils.get(parent, IEntityContext::getInstanceContext))
+                .getTypeIdInterceptor(id -> IdConstants.isBuiltinAppId(id) ? bridge.getType(Application.class).tryGetId() : null)
                 .plugins(
+                        new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),
-                        new IndexConstraintPlugin(indexEntryMapper, dep),
-                        new MetaVersionPlugin(dep, dep),
+                        new IndexConstraintPlugin(indexEntryMapper, bridge),
                         new ChangeLogPlugin(instanceLogService)
                 );
-        if(parent == null)
-            parent = ModelDefRegistry.getDefContext();
-        if(idProvider != null)
+        if (idProvider != null)
             builder.idProvider(idProvider);
-        if(parent == null)
-            builder.parent(NncUtils.get(parent, IEntityContext::getInstanceContext));
         var instanceContext = builder.build();
         var context = new EntityContext(instanceContext, parent);
-        dep.setEntityContext(context);
+        bridge.setEntityContext(context);
         return context;
     }
 

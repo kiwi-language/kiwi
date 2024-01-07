@@ -79,9 +79,9 @@ public class ListView extends Entity {
 
     public ListViewDTO toDTO() {
         return new ListViewDTO(
-                getId(),
-                NncUtils.map(visibleFields, Entity::getId),
-                NncUtils.map(searchableFields, Entity::getId)
+                tryGetId(),
+                NncUtils.map(visibleFields, Entity::tryGetId),
+                NncUtils.map(searchableFields, Entity::tryGetId)
         );
     }
 

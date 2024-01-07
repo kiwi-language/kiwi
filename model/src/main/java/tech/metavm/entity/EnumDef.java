@@ -92,7 +92,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
 
     EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField, Function<Object, Long> getId) {
         ClassInstance instance = new ClassInstance(
-                getId.apply(value),
+                NncUtils.get(getId.apply(value), PhysicalId::new),
                 parentDef.getInstanceFields(value, defContext.getObjectInstanceMap()),
                 type
         );
@@ -116,6 +116,13 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     @Override
     public ClassType getType() {
         return type;
+    }
+
+    @Override
+    public List<Object> getEntities() {
+        var entities = new ArrayList<>(super.getEntities());
+        entities.addAll(NncUtils.map(enumConstantDefList, EnumConstantDef::getValue));
+        return entities;
     }
 
     public String getName() {

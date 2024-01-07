@@ -41,7 +41,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         change.forEachInsertOrUpdate(instancePO -> {
             var instance = context.get(PhysicalId.of(instancePO.getId()));
             if (instance instanceof ClassInstance classInstance) {
-                instanceMap.put(classInstance.getIdRequired(), classInstance);
+                instanceMap.put(classInstance.getPhysicalId(), classInstance);
                 currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(),context.getAppId() ));
             }
         });

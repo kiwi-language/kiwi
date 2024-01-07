@@ -85,6 +85,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var instParentRef = NncUtils.get(parentRef, ref -> ref.evaluate(frame));
+        // TODO support ephemeral
         var array = new ArrayInstance(getType(), instParentRef);
         if (!array.isChildArray() && value != null)
             array.addAll((ArrayInstance) value.evaluate(frame));

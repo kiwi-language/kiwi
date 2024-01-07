@@ -4,12 +4,15 @@ import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 
 public abstract class ModelDef<T, I extends DurableInstance> {
@@ -37,6 +40,10 @@ public abstract class ModelDef<T, I extends DurableInstance> {
 
     public abstract Type getType();
 
+    public List<Object> getEntities() {
+        return List.of(getType());
+    }
+
     public abstract void initModel(T model, I instance, ObjectInstanceMap objectInstanceMap);
 
     public void initModelHelper(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
@@ -47,13 +54,12 @@ public abstract class ModelDef<T, I extends DurableInstance> {
         if(entity.getParentEntity() != null) {
             var parent = (DurableInstance) instanceMap.getInstance(entity.getParentEntity());
             Field parentField = null;
-            if(entity.getParentEntityField() != null) {
+            if(entity.getParentEntityField() != null)
                 parentField = defContext.getField(entity.getParentEntityField());
-            }
-            instance.resetParent(parent, parentField);
+            instance.setParentInternal(parent, parentField);
         }
         else {
-            instance.resetParent(null, null);
+            instance.setParentInternal(null, null);
         }
     }
 
@@ -66,7 +72,7 @@ public abstract class ModelDef<T, I extends DurableInstance> {
     }
 
     public I createInstance(T model, ObjectInstanceMap instanceMap, Long id) {
-        I instance = InstanceFactory.allocate(instanceType, getType(), id);
+        I instance = InstanceFactory.allocate(instanceType, getType(), NncUtils.get(id, PhysicalId::new), EntityUtils.isEphemeral(model));
         initInstance(instance, model, instanceMap);
         return instance;
     }
@@ -104,8 +110,8 @@ public abstract class ModelDef<T, I extends DurableInstance> {
         T model = allocateModel();
         if(model instanceof IdInitializing idInitializing) {
             var d = (DurableInstance) instance;
-            if(d.getId() != null)
-                idInitializing.initId(d.getId());
+            if(d.tryGetPhysicalId() != null)
+                idInitializing.initId(d.tryGetPhysicalId());
         }
         initModel(model, instance, objectInstanceMap);
         return model;

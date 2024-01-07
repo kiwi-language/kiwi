@@ -317,7 +317,7 @@ public abstract class ElementVisitor<R> {
         return visitMapping(mapping);
     }
 
-    public R visitDefaultObjectMapping(DefaultObjectMapping mapping) {
+    public R visitDefaultObjectMapping(FieldsObjectMapping mapping) {
         return visitObjectMapping(mapping);
     }
 
@@ -351,5 +351,13 @@ public abstract class ElementVisitor<R> {
 
     public R visitClearArrayNode(ClearArrayNode clearArrayNode) {
         return visitNode(clearArrayNode);
+    }
+
+    public R visitMapNode(MapNode mapNode) {
+        return visitNode(mapNode);
+    }
+
+    public R visitUnmapNode(UnmapNode unmapNode) {
+        return visitNode(unmapNode);
     }
 }

@@ -96,7 +96,7 @@ public class InstanceCopier extends InstanceVisitor<Instance> {
         var copy = (ClassInstance) getExisting(instance);
         if (copy == null) {
             copy = ClassInstanceBuilder.newBuilder(instance.getType())
-                    .source(instance.isView() ? instance.getSource() : null)
+                    .sourceRef(instance.isView() ? instance.getSourceRef() : null)
                     .build();
             addCopy(instance, copy);
         }
@@ -109,7 +109,7 @@ public class InstanceCopier extends InstanceVisitor<Instance> {
                 copy.initField(field, Instances.nullInstance());
             else if (field.isChild()) {
                 currentField = field;
-                fieldValue.accept(this);
+                copy.initField(field, fieldValue.accept(this));
             } else {
                 final var copyF = copy;
                 var ref = getReference(fieldValue, i -> copyF.initField(field, i));
@@ -134,12 +134,15 @@ public class InstanceCopier extends InstanceVisitor<Instance> {
             var oldField = currentField;
             currentInstance = copy;
             currentField = null;
-            instance.acceptChildren(this);
+            for (Instance element : instance) {
+                copy.addElement(element.accept(this));
+            }
+//            instance.acceptChildren(this);
             currentInstance = oldInstance;
             currentField = oldField;
         } else {
             int i = 0;
-            for (Instance element : copy) {
+            for (Instance element : instance) {
                 final int _i = i++;
                 final var _copy = copy;
                 var ref = getReference(element, value -> _copy.setElementDirectly(_i, value));

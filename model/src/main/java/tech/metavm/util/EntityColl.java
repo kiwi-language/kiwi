@@ -5,7 +5,6 @@ import tech.metavm.entity.Entity;
 import tech.metavm.entity.EntityUtils;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 public class EntityColl<T extends Entity> implements Collection<T> {
     private final List<T> dataSource;
@@ -40,8 +39,8 @@ public class EntityColl<T extends Entity> implements Collection<T> {
 
     private void add0(T entity) {
         list.add(entity);
-        if(entity.getId() != null) {
-            index.put(entity.getId(), entity);
+        if(entity.tryGetId() != null) {
+            index.put(entity.tryGetId(), entity);
         }
     }
 
@@ -101,8 +100,8 @@ public class EntityColl<T extends Entity> implements Collection<T> {
         if(!added) {
             throw new RuntimeException("predecessor " + prev + " not found");
         }
-        if(entity.getId() != null) {
-            index.put(entity.getId(), entity);
+        if(entity.tryGetId() != null) {
+            index.put(entity.tryGetId(), entity);
         }
     }
 
@@ -110,7 +109,7 @@ public class EntityColl<T extends Entity> implements Collection<T> {
         ensureLoaded();
         T removed = index.remove(id);
         if(removed != null) {
-            list.removeIf(t -> Objects.equals(t.getId(), id));
+            list.removeIf(t -> Objects.equals(t.tryGetId(), id));
             return removed;
         }
         else {
@@ -122,16 +121,16 @@ public class EntityColl<T extends Entity> implements Collection<T> {
         ensureLoaded();
         index.clear();
         for (T t : list) {
-            if(t.getId() != null) {
-                index.put(t.getId(), t);
+            if(t.tryGetId() != null) {
+                index.put(t.tryGetId(), t);
             }
         }
     }
 
     public boolean remove(T entity) {
         ensureLoaded();
-        if(entity.getId() != null) {
-            return index.remove(entity.getId()) != null;
+        if(entity.tryGetId() != null) {
+            return index.remove(entity.tryGetId()) != null;
         }
         else {
             return list.removeIf(t -> EntityUtils.entityEquals(t, entity));
@@ -194,8 +193,8 @@ public class EntityColl<T extends Entity> implements Collection<T> {
     public void addFirst(T node) {
         ensureLoaded();
         list.addFirst(node);
-        if(node.getId() != null) {
-            index.put(node.getId(), node);
+        if(node.tryGetId() != null) {
+            index.put(node.tryGetId(), node);
         }
     }
 }

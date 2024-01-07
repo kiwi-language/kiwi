@@ -16,6 +16,12 @@ import java.util.List;
 @EntityType("函数")
 public class Function extends Flow implements GlobalKey {
 
+    public static final IndexDef<Function> UNIQUE_IDX_NAME =
+            IndexDef.createUnique(Function.class, "name");
+
+    public static final IndexDef<Function> UNIQUE_IDX_CODE =
+            IndexDef.createUnique(Function.class, "code");
+
     public Function(Long tmpId,
                     String name,
                     @Nullable String code,
@@ -27,8 +33,9 @@ public class Function extends Flow implements GlobalKey {
                     List<Type> typeArguments,
                     FunctionType type,
                     @Nullable Function horizontalTemplate,
+                    @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, state);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource, state);
         checkTypes(parameters, returnType, type);
     }
 

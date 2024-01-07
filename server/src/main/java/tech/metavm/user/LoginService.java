@@ -65,7 +65,7 @@ public class LoginService extends EntityContextFactoryBean  {
                 token = directLogin(request.appId(), user, context);
             context.bind(new LoginAttempt(token != null, request.loginName(), clientIP, new Date()));
             context.finish();
-            return new LoginResult(token, user.getIdRequired());
+            return new LoginResult(token, user.tryGetId());
         }
     }
 
@@ -96,8 +96,8 @@ public class LoginService extends EntityContextFactoryBean  {
             var session = context.selectByUniqueKey(Session.IDX_TOKEN, token.token());
             if (session != null && session.isActive()) {
                 ContextUtil.setAppId(token.appId());
-                ContextUtil.setUserId(session.getUser().getIdRequired());
-                return new LoginInfo(token.appId(), session.getUser().getIdRequired());
+                ContextUtil.setUserId(session.getUser().tryGetId());
+                return new LoginInfo(token.appId(), session.getUser().tryGetId());
             } else
                 return LoginInfo.failed();
         }

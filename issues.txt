@@ -1,3 +1,7 @@
 Issues of the mapping module:
 
 1 Not supporting generic source type or generic target type
+
+2 When visiting entity graph in DefContext.flush, instances in the graph are ignored. I works correctly right now because
+instances in the graph are either NullInstance or enum constants which are processed separately. However, other kinds of
+instances will not be persisted if they appear in the future such as Field.defaultValue.

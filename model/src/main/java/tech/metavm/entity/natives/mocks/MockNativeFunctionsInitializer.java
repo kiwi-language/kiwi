@@ -16,16 +16,16 @@ public class MockNativeFunctionsInitializer {
                         .isNative()
                         .build()
         );
-        NativeFunctions.setSetSourceFunc(
-                FunctionBuilder.newBuilder("设置来源", "setSource", functionTypeProvider)
-                        .parameters(
-                                new Parameter(null, "视图", "view", StandardTypes.getAnyType()),
-                                new Parameter(null, "来源", "source", StandardTypes.getAnyType())
-                        )
-                        .isNative()
-                        .returnType(StandardTypes.getVoidType())
-                        .build()
-        );
+//        NativeFunctions.setSetSourceFunc(
+//                FunctionBuilder.newBuilder("设置来源", "setSource", functionTypeProvider)
+//                        .parameters(
+//                                new Parameter(null, "视图", "view", StandardTypes.getAnyType()),
+//                                new Parameter(null, "来源", "source", StandardTypes.getAnyType())
+//                        )
+//                        .isNative()
+//                        .returnType(StandardTypes.getVoidType())
+//                        .build()
+//        );
     }
 
 }

@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.*;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TransactionUtils;
 
@@ -90,6 +89,7 @@ public class Scheduler extends EntityContextFactoryBean {
     }
 
     @Scheduled(fixedDelay = 10000)
+    @Transactional
     public void sendHeartbeat() {
         long now = System.currentTimeMillis();
         try (var platformContext = newPlatformContext()) {
@@ -142,7 +142,7 @@ public class Scheduler extends EntityContextFactoryBean {
                 }
                 context.finish();
             }
-            return NncUtils.map(tasks, Entity::getIdRequired);
+            return NncUtils.map(tasks, Entity::tryGetId);
         }
     }
 
@@ -217,7 +217,7 @@ public class Scheduler extends EntityContextFactoryBean {
             }
         }
         if (signal != null) {
-            signal = rootEntityCtx.getEntity(TaskSignal.class, signal.getIdRequired());
+            signal = rootEntityCtx.getEntity(TaskSignal.class, signal.tryGetId());
             addSignal(signal);
         }
         return lastScheduledSignal = signal;
@@ -242,8 +242,8 @@ public class Scheduler extends EntityContextFactoryBean {
     }
 
     public void waitForJobDone(Task task, int maxSchedules) {
-        NncUtils.requireNonNull(task.getId());
-        Object monitor = monitorMap.computeIfAbsent(task.getId(), k -> new Object());
+        NncUtils.requireNonNull(task.tryGetId());
+        Object monitor = monitorMap.computeIfAbsent(task.tryGetId(), k -> new Object());
         scheduleExecutor.execute(() -> {
             for (int i = 0; i < maxSchedules; i++) {
                 schedule();

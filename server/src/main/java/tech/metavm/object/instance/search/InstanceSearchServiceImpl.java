@@ -76,7 +76,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private IndexRequest buildIndexRequest(long appId, ClassInstance instance) {
         IndexRequest indexRequest = new IndexRequest(INDEX);
-        indexRequest.id(instance.getId() + "");
+        indexRequest.id(instance.tryGetPhysicalId() + "");
         indexRequest.routing(appId + "");
         indexRequest.source(IndexSourceBuilder.buildSource(appId, instance));
         return indexRequest;

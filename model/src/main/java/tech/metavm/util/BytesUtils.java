@@ -33,6 +33,23 @@ public class BytesUtils {
         return bout.toByteArray();
     }
 
+    public static byte[] hexToBytes(String hexString) {
+        if (hexString == null) {
+            throw new IllegalArgumentException("Hex string is null.");
+        }
+        int len = hexString.length();
+        if (len % 2 != 0) {
+            throw new IllegalArgumentException("Invalid hex string length.");
+        }
+
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            int byteValue = Integer.parseInt(hexString.substring(i, i + 2), 16);
+            data[i / 2] = (byte) byteValue;
+        }
+        return data;
+    }
+
     public static Object convertToJSON(byte[] data, boolean withVersion) {
         var input = new JsonReader(new ByteArrayInputStream(data));
         Map<String, Object> result = new HashMap<>();

@@ -4,7 +4,6 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.TreeSource;
-import tech.metavm.object.type.IndexProvider;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
@@ -51,7 +50,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected void initializeInstance(DurableInstance instance) {
-        var tree = loadingBuffer.getTree(instance.getIdRequired());
+        var tree = loadingBuffer.getTree(instance.getPhysicalId());
         onTreeLoaded(tree);
         var input = new InstanceInput(new ByteArrayInputStream(tree.data()), id -> internalGet(new PhysicalId(id)));
         readInstance(input);
@@ -63,7 +62,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     private Instance readInstance(InstanceInput input) {
         try (var entry = getProfiler().enter("readInstance")) {
             var instance = input.readMessage();
-            entry.addMessage("id", instance.getIdRequired());
+            entry.addMessage("id", instance.getPhysicalId());
             onInstanceInitialized(instance);
             return instance;
         }
@@ -81,6 +80,6 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     public void invalidateCache(DurableInstance instance) {
-        loadingBuffer.invalidateCache(List.of(instance.getIdRequired()));
+        loadingBuffer.invalidateCache(List.of(instance.getPhysicalId()));
     }
 }

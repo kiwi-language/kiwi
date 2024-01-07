@@ -43,7 +43,7 @@ public class Index extends Constraint implements LocalKey {
 
     public IndexField getField(long id) {
         return NncUtils.requireNonNull(
-                fields.get(Entity::getId, id),
+                fields.get(Entity::tryGetId, id),
                 "Can not find index item for id " + id
         );
     }
@@ -124,7 +124,7 @@ public class Index extends Constraint implements LocalKey {
         if (indexParam.fields() != null) {
             for (IndexFieldDTO fieldDTO : indexParam.fields()) {
                 if (fieldDTO.id() != null) {
-                    var field = fields.get(Entity::getId, fieldDTO.id());
+                    var field = fields.get(Entity::tryGetId, fieldDTO.id());
                     if (fieldDTO.name() != null)
                         field.setName(fieldDTO.name());
                     if (fieldDTO.code() != null)

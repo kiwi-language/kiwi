@@ -64,7 +64,7 @@ public class ModelDefRegistry {
     }
 
     public static long getTypeId(Class<?> entityClass) {
-        return getType(entityClass).getId();
+        return getType(entityClass).tryGetId();
     }
 
     public static Field getField(java.lang.reflect.Field javaField) {

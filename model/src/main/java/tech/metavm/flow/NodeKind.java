@@ -37,6 +37,8 @@ public enum NodeKind {
     CAST_NODE(NodeKindCodes.CAST, CastNode.class, CastNodeParam.class),
     CLEAR_ARRAY(NodeKindCodes.CLEAR_ARRAY, ClearArrayNode.class, ClearArrayNodeParam.class),
     COPY(NodeKindCodes.COPY, CopyNode.class, CopyNodeParam.class),
+    MAP(NodeKindCodes.MAP, MapNode.class, MapNodeParam.class),
+    UNMAP(NodeKindCodes.UNMAP, UnmapNode.class, UnmapNodeParam.class),
 
     ;
 

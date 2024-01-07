@@ -1,8 +1,9 @@
 package tech.metavm.entity;
 
 import tech.metavm.expression.InstanceEvaluationContext;
+import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.type.Index;
 import tech.metavm.util.NncUtils;
 
@@ -26,9 +27,14 @@ public record InstanceIndexQuery(
                 Objects.equals(this.limit, that.limit);
     }
 
-    public boolean matches(ClassInstance instance, IEntityContext context) {
-        var evaluationContext = new InstanceEvaluationContext(instance, context.getGenericContext());
+    public boolean matches(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
+        var evaluationContext = new InstanceEvaluationContext(instance, parameterizedFlowProvider);
         return NncUtils.allMatch(items, item -> item.matches(evaluationContext));
+    }
+
+    public boolean memoryOnly() {
+        return index.isIdNull()
+                || NncUtils.anyMatch(items, i -> i.value() instanceof DurableInstance d && d.isIdNull());
     }
 
     @Override

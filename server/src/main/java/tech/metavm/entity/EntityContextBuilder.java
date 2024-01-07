@@ -7,7 +7,7 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.instance.core.InstanceContextDependency;
+import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.ContextUtil;
@@ -110,7 +110,7 @@ public class EntityContextBuilder {
             appId = ContextUtil.getAppId();
         if (defContext == null)
             defContext = ModelDefRegistry.getDefContext();
-        var dep = new InstanceContextDependency();
+        var dep = new EntityInstanceContextBridge();
         if(typeProvider == null)
             typeProvider = dep;
         if(mappingProvider == null)

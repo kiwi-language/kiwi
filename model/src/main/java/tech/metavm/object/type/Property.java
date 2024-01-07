@@ -1,7 +1,6 @@
 package tech.metavm.object.type;
 
 import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IdentityContext;
 import tech.metavm.entity.LocalKey;
 import tech.metavm.util.NncUtils;
 
@@ -11,7 +10,7 @@ import java.util.Objects;
 @EntityType("属性")
 public interface Property extends ClassMember, LocalKey {
 
-    Long getId();
+    Long tryGetId();
 
     String getName();
 
@@ -62,7 +61,7 @@ public interface Property extends ClassMember, LocalKey {
         return getAccess() == Access.PROTECTED;
     }
 
-    default long getIdRequired() {
-        return Objects.requireNonNull(getId());
+    default long getId() {
+        return Objects.requireNonNull(tryGetId());
     }
 }

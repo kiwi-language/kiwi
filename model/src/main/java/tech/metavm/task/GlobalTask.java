@@ -16,7 +16,7 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
     @Override
     protected void processModels(IEntityContext context, List<Application> applications) {
         for (Application application : applications) {
-            var appContext = context.createSame(application.getIdRequired());
+            var appContext = context.createSame(application.tryGetId());
             processApplication(appContext, application);
             appContext.finish();
         }

@@ -32,7 +32,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     public FlowFieldMapping(Long tmpId,
                             String name,
                             @Nullable String code,
-                            DefaultObjectMapping containingMapping,
+                            FieldsObjectMapping containingMapping,
                             @Nullable Mapping nestedMapping,
                             boolean isChild,
                             Method getter,

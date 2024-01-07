@@ -7,7 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.instance.core.CompilerIdService;
 import tech.metavm.instance.core.CompilerInstanceContext;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.InstanceContextDependency;
+import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class CompilerInstanceContextFactory {
     }
 
     public IEntityContext newEntityContext(long appId) {
-        var dependency = new InstanceContextDependency();
+        var dependency = new EntityInstanceContextBridge();
         var context = new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),

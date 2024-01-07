@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 import static tech.metavm.util.NncUtils.*;
 
 @EntityType("Class类型")
-public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement {
+public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity {
 
     public static final IndexDef<ClassType> UNIQUE_NAME = IndexDef.createUnique(ClassType.class, "name");
 
@@ -306,7 +306,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         accept(new VoidElementVisitor() {
             @Override
             public Void visitClassType(ClassType type) {
-                typeIds.add(type.getIdRequired());
+                typeIds.add(type.tryGetId());
                 for (ClassType subType : type.subTypes)
                     subType.accept(this);
                 return super.visitClassType(type);
@@ -354,7 +354,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
                 if (sortedFields == null) {
                     var sf = new ArrayList<Field>();
                     forEachField(sf::add);
-                    sf.sort(Comparator.comparingLong(Field::getIdRequired));
+                    sf.sort(Comparator.comparingLong(Field::tryGetId));
                     sortedFields = sf;
                 }
             }
@@ -396,7 +396,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public Method getMethod(long id) {
-        return methods.get(Entity::getId, id);
+        return methods.get(Entity::tryGetId, id);
     }
 
     public Method tryGetMethod(String name, List<Type> parameterTypes) {
@@ -484,8 +484,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public void addField(Field field) {
-        if (field.getId() != null && getField(field.getId()) != null)
-            throw new RuntimeException("Field " + field.getId() + " is already added");
+        if (field.tryGetId() != null && getField(field.tryGetId()) != null)
+            throw new RuntimeException("Field " + field.tryGetId() + " is already added");
         if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
             throw BusinessException.invalidField(field, "字段名称'" + field.getName() + "'已存在");
         if (field.getCode() != null &&
@@ -586,11 +586,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public boolean containsField(long fieldId) {
-        return fields.get(Entity::getId, fieldId) != null || superClass != null && superClass.containsField(fieldId);
+        return fields.get(Entity::tryGetId, fieldId) != null || superClass != null && superClass.containsField(fieldId);
     }
 
     public boolean containsStaticField(long fieldId) {
-        return staticFields.get(Entity::getId, fieldId) != null || superClass != null && superClass.containsStaticField(fieldId);
+        return staticFields.get(Entity::tryGetId, fieldId) != null || superClass != null && superClass.containsStaticField(fieldId);
     }
 
     public Field tryGetFieldByName(String fieldName) {
@@ -633,7 +633,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public Field getStaticField(long id) {
         if (superClass != null && superClass.containsStaticField(id))
             return superClass.getStaticField(id);
-        Field field = staticFields.get(Entity::getId, id);
+        Field field = staticFields.get(Entity::tryGetId, id);
         if (field != null && field.isReady())
             return field;
         throw new InternalException("Field '" + id + "' does not exist or is not ready");
@@ -657,7 +657,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public Property getProperty(long id) {
-        return NncUtils.requireNonNull(getProperty(Property::getId, id),
+        return NncUtils.requireNonNull(getProperty(Property::tryGetId, id),
                 "Can not find attribute with id: " + id + " in type " + this);
     }
 
@@ -887,7 +887,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public TypeDTO toPTypeDTO(SerializeContext serializeContext) {
         return new TypeDTO(
-                getId(),
+                tryGetId(),
                 serializeContext.getTmpId(this),
                 getName(),
                 getCode(),
@@ -959,7 +959,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public <T extends Constraint> T getConstraint(Class<T> constraintType, long id) {
-        return find(getConstraints(constraintType), c -> c.getIdRequired() == id);
+        return find(getConstraints(constraintType), c -> c.tryGetId() == id);
     }
 
     public List<CheckConstraint> getFieldCheckConstraints(Field field) {
@@ -969,7 +969,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @SuppressWarnings("unused")
     public Constraint getConstraint(long id) {
-        return NncUtils.find(requireNonNull(constraints), c -> c.getIdRequired() == id);
+        return NncUtils.find(requireNonNull(constraints), c -> c.tryGetId() == id);
     }
 
     public Index getUniqueConstraint(long id) {
@@ -995,7 +995,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         if (!isEnum())
             throw new InternalException("type " + this + " is not a enum type");
         for (Field field : staticFields) {
-            if (isEnumConstantField(field) && Objects.equals(((DurableInstance) field.getStaticValue()).getId(), id))
+            if (isEnumConstantField(field) && Objects.equals(((DurableInstance) field.getStaticValue()).tryGetPhysicalId(), id))
                 return createEnumConstant((ClassInstance) field.getStaticValue());
         }
         throw new InternalException("Can not find enum constant with id " + id);
@@ -1299,7 +1299,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public ClassType findInClosure(long id) {
-        return getClosure().find(t -> Objects.equals(t.getId(), id));
+        return getClosure().find(t -> Objects.equals(t.tryGetId(), id));
     }
 
     @Override

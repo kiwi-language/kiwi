@@ -153,35 +153,35 @@ public enum BinaryOperator {
         }
     },
     @EnumConstant("判断文本前缀")
-    STARTS_WITH(13, "STARTS WITH", 6, OperatorTypes.BINARY, Boolean.class) {
+    STARTS_WITH(13, "starts with", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return first.toStringInstance().startsWith(second.toStringInstance());
         }
     },
     @EnumConstant("模糊匹配")
-    LIKE(14, "LIKE", 6, OperatorTypes.BINARY, Boolean.class) {
+    LIKE(14, "like", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return first.toStringInstance().contains(second.toStringInstance());
         }
     },
     @EnumConstant("包含于数组")
-    IN(15, "IN", 6, OperatorTypes.BINARY, Boolean.class) {
+    IN(15, "in", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return Instances.booleanInstance(((ArrayInstance) second).contains(second));
         }
     },
     @EnumConstant("且")
-    AND(20, "AND", 7, OperatorTypes.BINARY, Boolean.class) {
+    AND(20, "and", 7, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((BooleanInstance) first).and((BooleanInstance) second);
         }
     },
     @EnumConstant("或")
-    OR(21, "OR", 8, OperatorTypes.BINARY, Boolean.class) {
+    OR(21, "or", 8, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
             return ((BooleanInstance) first).or((BooleanInstance) second);

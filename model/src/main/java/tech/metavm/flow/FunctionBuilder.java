@@ -37,6 +37,7 @@ public class FunctionBuilder {
     private List<TypeVariable> typeParameters = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
     private final @NotNull FunctionTypeProvider functionTypeProvider;
+    private CodeSource codeSource;
     private FunctionType type;
     private MetadataState state = MetadataState.READY;
 
@@ -67,6 +68,11 @@ public class FunctionBuilder {
 
     public FunctionBuilder existing(Function existing) {
         this.existing = existing;
+        return this;
+    }
+
+    public FunctionBuilder codeSource(CodeSource codeSource) {
+        this.codeSource = codeSource;
         return this;
     }
 
@@ -125,6 +131,7 @@ public class FunctionBuilder {
                     typeArguments,
                     type,
                     horizontalTemplate,
+                    codeSource,
                     state
             );
         } else {

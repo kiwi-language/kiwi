@@ -8,7 +8,7 @@ import tech.metavm.flow.Method;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.object.type.rest.dto.*;
-import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
@@ -272,7 +272,7 @@ public class SaveTypeBatch implements DTOProvider {
             return List.of();
     }
 
-    public @Nullable ObjectMappingDTO getMappingDTO(DefaultObjectMapping mapping) {
+    public @Nullable ObjectMappingDTO getMappingDTO(FieldsObjectMapping mapping) {
         var typeDTO = getTypeDTO(mapping.getSourceType().getRef());
         if (typeDTO == null)
             return null;

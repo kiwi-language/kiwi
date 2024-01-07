@@ -26,14 +26,14 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     private DirectFieldMapping template;
 
     public DirectFieldMapping(Long tmpId, String name, @Nullable String code, boolean isChild,
-                              boolean readonly, DefaultObjectMapping containingMapping, @Nullable Mapping nestedMapping,
+                              boolean readonly, FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping,
                               Field sourceField, @Nullable DirectFieldMapping template) {
         super(tmpId, name, code, sourceField.getType(), isChild, checkReadonly(sourceField, readonly), containingMapping, nestedMapping);
         this.sourceField = sourceField;
         this.template = template;
     }
 
-    public DirectFieldMapping(Long tmpId, Field targetField, DefaultObjectMapping declaringMapping,
+    public DirectFieldMapping(Long tmpId, Field targetField, FieldsObjectMapping declaringMapping,
                               @Nullable Mapping mapping, Field sourceField) {
         super(tmpId, targetField, declaringMapping, mapping);
         this.sourceField = sourceField;

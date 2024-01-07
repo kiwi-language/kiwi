@@ -43,7 +43,7 @@ public class LocalIndexSource implements IndexSource {
             Map<Long, List<Long>> typeId2ids = new HashMap<>();
             for (Long id : ids) {
                 var inst = context.getInstanceContext().get(PhysicalId.of(id));
-                typeId2ids.computeIfAbsent(inst.getType().getIdRequired(), k -> new ArrayList<>()).add(id);
+                typeId2ids.computeIfAbsent(inst.getType().tryGetId(), k -> new ArrayList<>()).add(id);
                 if (inst instanceof ClassInstance classInstance) {
                     var keys = classInstance.getIndexKeys(context.getGenericContext());
                     for (IndexKeyRT key : keys) {
@@ -67,7 +67,7 @@ public class LocalIndexSource implements IndexSource {
                 value = Instances.nullInstance();
             bytes[i] = BytesUtils.toIndexBytes(value);
         }
-        return new LocalIndex.Key(indexKeyRT.getIndex().getIdRequired(), bytes);
+        return new LocalIndex.Key(indexKeyRT.getIndex().tryGetId(), bytes);
     }
 
     private IndexKeyRT convertFromKey(LocalIndex.Key key, IEntityContext context) {
@@ -96,7 +96,7 @@ public class LocalIndexSource implements IndexSource {
             var queryItem = itemMap.get(field);
             items.add(convertQueryItem(queryItem));
         }
-        return new LocalIndex.Query(query.index().getIdRequired(), items, query.desc(), query.limit());
+        return new LocalIndex.Query(query.index().tryGetId(), items, query.desc(), query.limit());
     }
 
     public LocalIndex.QueryItem convertQueryItem(InstanceIndexQueryItem queryItem) {

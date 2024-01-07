@@ -127,7 +127,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         }
     }
 
-    public Long getId() {
+    public Long tryGetId() {
         return id;
     }
 

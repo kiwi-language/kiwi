@@ -25,7 +25,7 @@ public abstract class FunctionInstance extends Instance {
     }
 
     @Override
-    public @Nullable Id getInstanceId() {
+    public @Nullable Id getId() {
         return null;
     }
 

@@ -18,8 +18,8 @@ public record InstanceQuery(
         int page,
         int pageSize,
         List<InstanceQueryField> fields,
-        List<Id> newlyCreated,
-        List<Id> excluded,
+        List<Id> createdIds,
+        List<Id> excludedIds,
         @Nullable Mapping sourceMapping
         ) {
 }

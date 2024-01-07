@@ -67,11 +67,11 @@ public class EntityContextTest extends TestCase {
             NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
             defContext.finish();
             defContext.getIdentityMap().forEach((model, javaConstruct) ->
-                    stdAllocators.putId(javaConstruct, defContext.getInstance(model).getIdRequired())
+                    stdAllocators.putId(javaConstruct, defContext.getInstance(model).getPhysicalId())
             );
-            defContext.getInstanceMapping().forEach((javaConstruct, instance) ->
-                    stdAllocators.putId(javaConstruct, instance.getIdRequired())
-            );
+//            defContext.getInstanceMapping().forEach((javaConstruct, instance) ->
+//                    stdAllocators.putId(javaConstruct, instance.getIdRequired())
+//            );
             stdAllocators.save();
             columnStore.save();
             tempContext.finish();

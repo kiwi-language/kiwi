@@ -5,6 +5,7 @@ import tech.metavm.entity.TypeRegistry;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.persistence.InstancePO;
+import tech.metavm.object.type.Type;
 import tech.metavm.object.version.VersionRepository;
 import tech.metavm.object.version.Versions;
 import tech.metavm.object.view.Mapping;
@@ -27,7 +28,7 @@ public class MetaVersionPlugin implements ContextPlugin {
 //            return false;
 //        var entityContext = context.getEntityContext();
 //        var changedEntities = new ArrayList<>();
-        var typeType = typeRegistry.getType(java.lang.reflect.Type.class);
+        var typeType = typeRegistry.getType(Type.class);
         var mappingType = typeRegistry.getType(Mapping.class);
         var functionType = typeRegistry.getType(Function.class);
         var changedTypeIds = new HashSet<Long>();
@@ -41,7 +42,7 @@ public class MetaVersionPlugin implements ContextPlugin {
             else if (mappingType.isInstance(instance))
                 changedMappingIds.add(id);
             else if (functionType.isInstance(instance))
-                changedMappingIds.add(id);
+                changedFunctionIds.add(id);
         });
         var removedTypeIds = new HashSet<Long>();
         var removedMappingIds = new HashSet<Long>();

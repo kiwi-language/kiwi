@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType("唯一约束项")
-public class IndexField extends Entity implements LocalKey{
+public class IndexField extends Entity implements LocalKey {
 
     public static IndexField createFieldItem(Index constraint, Field field) {
         return new IndexField(

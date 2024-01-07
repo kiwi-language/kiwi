@@ -68,17 +68,13 @@ public class DiffUtils {
 //            }
 //            throw new RuntimeException("Back reference of POJO is currently not supported");
         }
-        if (pojo1 == null && pojo2 == null) {
-            return true;
-        }
-        if (pojo1 == null || pojo2 == null) {
+        if (pojo1 == pojo2)
             return false;
-        }
-        Class<?> realClass = getRealClass(pojo1.getClass(), pojo2.getClass());
-        if (realClass == null) {
+        if (pojo1 == null || pojo2 == null)
             return true;
-        }
-
+        Class<?> realClass = getRealClass(pojo1.getClass(), pojo2.getClass());
+        if (realClass == null)
+            return true;
         visited.put(diffPair, DiffState.DOING);
 //        visited.put(pojo2, pojo1);
         EntityUtils.ensureProxyInitialized(pojo1);
@@ -99,10 +95,10 @@ public class DiffUtils {
     }
 
     private static boolean isEntityDifferent(Entity entity1, Entity entity2, Map<Object, Object> visited) {
-        if (entity1.getId() != null && entity2.getId() != null) {
+        if (entity1.tryGetId() != null && entity2.tryGetId() != null) {
             return !Objects.equals(entity1.key(), entity2.key());
         }
-        if (entity1.getId() != null || entity2.getId() != null) {
+        if (entity1.tryGetId() != null || entity2.tryGetId() != null) {
             return false;
         } else {
             return isPojoDifferent(entity1, entity2, visited);
@@ -206,7 +202,7 @@ public class DiffUtils {
             return (T) Arrays.copyOf(bytes, bytes.length);
         }
         if (object instanceof Entity entity) {
-            return (T) EntityUtils.makeDummyRef(EntityUtils.getRealEntityType(entity), entity.getIdRequired());
+            return (T) EntityUtils.makeDummyRef(EntityUtils.getRealEntityType(entity), entity.tryGetId());
         }
         return (T) copyPojo(object, copyMap, false);
     }

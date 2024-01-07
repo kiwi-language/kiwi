@@ -70,8 +70,9 @@ public class Method extends Flow implements Property, GenericElement {
                   boolean isStatic,
                   @Nullable Method horizontalTemplate,
                   Access access,
+                  @Nullable CodeSource codeSource,
                   MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, state);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource , state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -313,7 +314,7 @@ public class Method extends Flow implements Property, GenericElement {
             return new FlowSummaryDTO(
                     id,
                     getName(),
-                    getDeclaringType().getId(),
+                    getDeclaringType().tryGetId(),
                     NncUtils.map(getParameters(), Parameter::toDTO),
                     serContext.getRef(getReturnType()),
                     !getParameterTypes().isEmpty(),

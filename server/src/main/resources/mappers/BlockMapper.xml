@@ -23,8 +23,8 @@
     <!--@mbg.generated-->
     insert into id_block (id, app_id, type_id, start_id, end_id, next_id, is_active) values
     <foreach collection="collection" item="item" separator=",">
-      (#{item.id}, #{item.appId}, #{item.typeId}, #{item.startId}, #{item.endId}, #{item.nextId},
-      #{item.active})
+        (#{item.id}, #{item.appId}, #{item.typeId}, #{item.startId}, #{item.endId}, #{item.nextId},
+        #{item.active})
     </foreach>
   </insert>
 
@@ -87,7 +87,7 @@
           is_active = #{item.active},
         </if>
       </set>
-      where id = #{item.id}
+        where id = #{item.id}
     </foreach>
   </update>
 

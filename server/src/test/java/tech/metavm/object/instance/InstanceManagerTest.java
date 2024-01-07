@@ -2,16 +2,13 @@ package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
-import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.LoadInstancesByPathsRequest;
 import tech.metavm.object.instance.rest.SelectRequest;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.util.Constants;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
@@ -73,10 +70,10 @@ public class InstanceManagerTest extends TestCase {
                 new LoadInstancesByPathsRequest(
                         null,
                         List.of(
-                                Constants.CONSTANT_ID_PREFIX + foo.getId() + ".巴",
-                                Constants.CONSTANT_ID_PREFIX + foo.getId() + ".巴.编号",
-                                Constants.CONSTANT_ID_PREFIX + foo.getId() + ".巴子.*.巴巴巴巴.0.编号",
-                                Constants.CONSTANT_ID_PREFIX + foo.getId() + ".巴子.*.巴巴巴巴.1.编号"
+                                Constants.CONSTANT_ID_PREFIX + foo.tryGetId() + ".巴",
+                                Constants.CONSTANT_ID_PREFIX + foo.tryGetId() + ".巴.编号",
+                                Constants.CONSTANT_ID_PREFIX + foo.tryGetId() + ".巴子.*.巴巴巴巴.0.编号",
+                                Constants.CONSTANT_ID_PREFIX + foo.tryGetId() + ".巴子.*.巴巴巴巴.1.编号"
                         )
                 )
         );
@@ -98,7 +95,7 @@ public class InstanceManagerTest extends TestCase {
         var foo = saveFoo(context);
         var fooType = MockRegistry.getClassType(Foo.class);
         var page = instanceManager.select(new SelectRequest(
-                fooType.getIdRequired(),
+                fooType.tryGetId(),
                 List.of(
                         "巴.编号",
                         "量子X"

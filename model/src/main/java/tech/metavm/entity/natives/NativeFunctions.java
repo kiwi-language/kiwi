@@ -5,7 +5,6 @@ import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 
 import java.util.IdentityHashMap;
@@ -23,19 +22,19 @@ public class NativeFunctions {
 
     private static Instance getSource(@NotNull Instance instance) {
         if(instance instanceof DurableInstance durableInstance)
-            return durableInstance.getSource();
+            return durableInstance.tryGetSource();
         else
             throw new InternalException("Can not get source of a non-durable instance: " + instance);
     }
 
-    private static Instance setSource(@NotNull Instance instance, @NotNull Instance source) {
-        if(instance instanceof DurableInstance durableInstance) {
-            durableInstance.setSource(source);
-            return Instances.nullInstance();
-        }
-        else
-            throw new InternalException("Can not set source to a non-durable instance: " + instance);
-    }
+//    private static Instance setSource(@NotNull Instance instance, @NotNull Instance source) {
+//        if(instance instanceof DurableInstance durableInstance) {
+//            durableInstance.setSourceRef(source);
+//            return Instances.nullInstance();
+//        }
+//        else
+//            throw new InternalException("Can not set source to a non-durable instance: " + instance);
+//    }
 
     public static FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments) {
         var func = Objects.requireNonNull(FUNCTIONS.get(flow));
@@ -55,9 +54,9 @@ public class NativeFunctions {
         FUNCTIONS.put(function, args -> getSource(args.get(0)));
     }
 
-    public static void setSetSourceFunc(@NotNull Function function) {
-        SET_SOURCE = function;
-        FUNCTIONS.put(function, args -> setSource(args.get(0), args.get(1)));
-    }
+//    public static void setSetSourceFunc(@NotNull Function function) {
+//        SET_SOURCE = function;
+//        FUNCTIONS.put(function, args -> setSource(args.get(0), args.get(1)));
+//    }
 
 }

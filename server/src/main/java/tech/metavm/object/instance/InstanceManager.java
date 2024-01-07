@@ -82,7 +82,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var context = newInstanceContext()) {
             var instances = context.batchGet(NncUtils.map(ids, Id::parse));
             var roots = NncUtils.mapUnique(instances, DurableInstance::getRoot);
-            return NncUtils.map(roots, r -> new InstanceVersionDTO(r.getIdRequired(), r.getVersion()));
+            return NncUtils.map(roots, r -> new InstanceVersionDTO(r.getPhysicalId(), r.getVersion()));
         }
     }
 
@@ -134,7 +134,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var context = newInstanceContext()) {
             Instance instance = create(instanceDTO, context);
             context.finish();
-            return Objects.requireNonNull(instance.getInstanceId()).toString();
+            return Objects.requireNonNull(instance.getId()).toString();
         }
     }
 
@@ -209,7 +209,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             if (type instanceof ClassType) {
                 var internalQuery = InstanceQueryBuilder.newBuilder(type)
                         .searchText(query.searchText())
-                        .newlyCreated(NncUtils.map(query.newlyCreated(), Id::parse))
+                        .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
                         .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))
                         .expression(query.expression())
                         .sourceMapping(NncUtils.get(query.sourceMappingId(), mappingProvider::getMapping))

@@ -1,6 +1,6 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.entity.IdInitializing;
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
@@ -17,30 +17,32 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
-public abstract class DurableInstance extends Instance implements IdInitializing  {
+import static java.util.Objects.requireNonNull;
+
+public abstract class DurableInstance extends Instance/* implements IdInitializing*/ {
 
     private transient boolean _new;
     private transient boolean loaded;
     transient boolean loadedFromCache;
     private transient boolean removed;
     private transient IInstanceContext context;
-    @javax.annotation.Nullable
+    @Nullable
     private transient DurableInstance prev;
-    @javax.annotation.Nullable
+    @Nullable
     private transient DurableInstance next;
     private transient Object mappedEntity;
     private transient boolean modified;
+    private transient boolean ephemeral;
 
-    @javax.annotation.Nullable
-    private Long id;
+    private Id id;
 
     private long version;
     private long syncVersion;
-    @javax.annotation.Nullable
+    @Nullable
     private DurableInstance parent;
-    @javax.annotation.Nullable
+    @Nullable
     private Field parentField;
-    private DurableInstance root;
+    private @NotNull DurableInstance root = this;
 
     private transient Long tmpId;
 
@@ -48,77 +50,78 @@ public abstract class DurableInstance extends Instance implements IdInitializing
 
     private transient Object nativeObject;
 
-    private final @javax.annotation.Nullable Consumer<DurableInstance> load;
+    private final @Nullable Consumer<DurableInstance> load;
 
-
-    private transient Instance source;
+    private transient @Nullable SourceRef sourceRef;
 
     public DurableInstance(Type type) {
-        this(type, null);
+        this(null, type, 0L, 0L, false, null);
     }
 
-    public DurableInstance(Type type, @Nullable InstanceParentRef parentRef) {
-        this(null, type, parentRef, 0L, 0L, null);
-    }
-
-    public DurableInstance(@Nullable Long id, Type type, @Nullable InstanceParentRef parentRef, long version, long syncVersion, @Nullable Consumer<DurableInstance> load) {
+    public DurableInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
         super(type);
         this.version = version;
         this.syncVersion = syncVersion;
         this.load = load;
+        this.ephemeral = ephemeral || type.isEphemeral();
         if (id != null)
             initId(id);
         else
             _new = true;
-        if (parentRef != null) {
-            switch (parentRef.parent()) {
-                case ClassInstance classParent ->
-                        classParent.setOrInitField(NncUtils.requireNonNull(parentRef.field()), this);
-                case ArrayInstance arrayParent -> {
-                    NncUtils.requireNull(parentField);
-                    arrayParent.addElement(this);
-                }
-                default -> throw new IllegalStateException("Unexpected value: " + parent);
-            }
-            this.parent = parentRef.parent();
-            this.parentField = parentRef.field();
-            root = parent.root;
-        } else
-            root = this;
-
     }
 
-    public Instance getSource() {
-        return source;
+    public boolean isDurable() {
+        return !isEphemeral();
     }
 
-    public void setSource(Instance source) {
-        this.source = source;
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public @Nullable DurableInstance tryGetSource() {
+        return NncUtils.get(sourceRef, SourceRef::source);
+    }
+
+    public @NotNull DurableInstance getSource() {
+        return Objects.requireNonNull(tryGetSource());
+    }
+
+    public void setSourceRef(@Nullable SourceRef sourceRef) {
+        this.sourceRef = sourceRef;
+    }
+
+    public SourceRef getSourceRef() {
+        return Objects.requireNonNull(sourceRef);
     }
 
     public boolean isView() {
-        return source != null;
+        return sourceRef != null;
     }
 
     public Long getMappingId() {
-        if(getInstanceId() instanceof ViewId viewId) {
+        if (getId() instanceof ViewId viewId) {
             return viewId.getMappingId();
-        }
-        else
+        } else
             throw new InternalException("Not a view instance");
     }
 
     @Override
     @NoProxy
-    public @javax.annotation.Nullable Id getInstanceId() {
-        if(getId() != null)
-            return new PhysicalId(getIdRequired());
-        else if(getTmpId() != null)
-            return new TmpId(getTmpId());
-        else
-            return null;
+    public @Nullable Id getId() {
+        return id;
+//        if (sourceRef != null) {
+//            if (parent == null)
+//                return new ViewId(sourceRef.mapping().getIdRequired(), sourceRef.source().getId());
+//            else
+//                return new ChildViewId(sourceRef.mapping().getIdRequired(), sourceRef.source().getId(),
+//                        (ViewId) root.getId());
+//        } else if (tryGetPhysicalId() != null)
+//            return new PhysicalId(getPhysicalId());
+//        else if (getTmpId() != null)
+//            return new TmpId(getTmpId());
+//        else
+//            return null;
     }
-
 
     public Object getMappedEntity() {
         return mappedEntity;
@@ -159,42 +162,62 @@ public abstract class DurableInstance extends Instance implements IdInitializing
         this.loadedFromCache = loadedFromCache;
     }
 
-    @NoProxy
-    public void resetParent(@javax.annotation.Nullable InstanceParentRef parentRef) {
+    public void setParentRef(@Nullable InstanceParentRef parentRef) {
         if (parentRef != null)
-            resetParent(parentRef.parent(), parentRef.field());
-        else
-            resetParent(null, null);
+            setParent(parentRef.parent(), parentRef.field());
     }
 
     @NoProxy
-    public void resetParent(@javax.annotation.Nullable DurableInstance parent, @javax.annotation.Nullable Field parentField) {
+    public void setParent(DurableInstance parent, @Nullable Field parentField) {
+        ensureLoaded();
+        if (this.parent != null) {
+            if (this.parent == parent && Objects.equals(this.parentField, parentField))
+                return;
+            throw new InternalException("Can not change parent");
+        }
+        setParentInternal(parent, parentField);
+    }
+
+    @NoProxy
+    public void setParentInternal(@Nullable InstanceParentRef parentRef) {
+        if (parentRef != null)
+            setParentInternal(parentRef.parent(), parentRef.field());
+        else
+            setParentInternal(null, null);
+    }
+
+    @NoProxy
+    public void setParentInternal(@Nullable DurableInstance parent, @Nullable Field parentField) {
+        if (parent == this.parent && parentField == this.parentField)
+            return;
         if (parent != null) {
             this.parent = parent;
-            if (parent instanceof ClassInstance) {
-                this.parentField = NncUtils.requireNonNull(parentField);
-            } else {
+            if (parent instanceof ClassInstance parentClassInst) {
+                this.parentField = requireNonNull(parentField);
+                assert parentField.isChild();
+//                parentClassInst.setOrInitField(parentField, this);
+            } else if (parent instanceof ArrayInstance parentArray) {
                 NncUtils.requireNull(parentField);
+                assert parentArray.isChildArray();
                 this.parentField = null;
-            }
+//                parentArray.addElement(this);
+            } else
+                throw new InternalException("Invalid parent: " + parent);
             root = parent.root;
+            if (parent.isEphemeral() && !ephemeral) {
+                accept(new StructuralVisitor() {
+                    @Override
+                    public Void visitDurableInstance(DurableInstance instance) {
+                        instance.ephemeral = true;
+                        return super.visitDurableInstance(instance);
+                    }
+                });
+            }
         } else {
             this.parent = null;
             this.parentField = null;
             root = this;
         }
-    }
-
-    @NoProxy
-    public void initParent(DurableInstance parent, @javax.annotation.Nullable Field parentField) {
-        ensureLoaded();
-        if(this.parent != null) {
-            if(this.parent == parent && Objects.equals(this.parentField, parentField))
-                return;
-            throw new InternalException("Can not change parent");
-        }
-        this.parent = parent;
-        this.parentField = parentField;
     }
 
     @NoProxy
@@ -217,7 +240,7 @@ public abstract class DurableInstance extends Instance implements IdInitializing
     @NoProxy
     void setLoaded(boolean fromCache) {
         if (loaded)
-            throw new InternalException(String.format("Instance %d is already loaded", getIdRequired()));
+            throw new InternalException(String.format("Instance %d is already loaded", getPhysicalId()));
         loaded = true;
         _new = false;
         loadedFromCache = fromCache;
@@ -236,16 +259,6 @@ public abstract class DurableInstance extends Instance implements IdInitializing
         return context;
     }
 
-    @NoProxy
-    public Long getTmpId() {
-        return tmpId;
-    }
-
-    @NoProxy
-    public void setTmpId(Long tmpId) {
-        this.tmpId = tmpId;
-    }
-
     public DurableInstance getRoot() {
         if (root == this)
             return this;
@@ -254,22 +267,23 @@ public abstract class DurableInstance extends Instance implements IdInitializing
     }
 
     @NoProxy
-    @javax.annotation.Nullable
-    public Long getId() {
-        return id;
+    @Nullable
+    public Long tryGetPhysicalId() {
+        return id != null ? id.tryGetPhysicalId() : null;
     }
 
     @NoProxy
-    public long getIdRequired() {
-        if (id != null)
-            return id;
+    public long getPhysicalId() {
+        var physicalId = tryGetPhysicalId();
+        if (physicalId != null)
+            return physicalId;
         else
             throw new InternalException("Instance id not initialized yet");
     }
 
     @NoProxy
     public boolean idEquals(long id) {
-        return Objects.equals(this.id, id);
+        return Objects.equals(this.tryGetPhysicalId(), id);
     }
 
     @NoProxy
@@ -283,12 +297,12 @@ public abstract class DurableInstance extends Instance implements IdInitializing
     }
 
     @NoProxy
-    public void initId(long id) {
-        if (this.id != null)
+    public void initId(Id id) {
+        if (this.id != null && !this.id.isTemporary())
             throw new InternalException("id already initialized");
         if (isArray()) {
             if (!RegionConstants.isArrayId(id))
-                throw new InternalException("Invalid id for array instance");
+                throw new InternalException("Invalid array id");
         }
         this.id = id;
     }
@@ -299,7 +313,6 @@ public abstract class DurableInstance extends Instance implements IdInitializing
             throw new IllegalStateException(String.format("Instance %s is immutable", this));
     }
 
-    @Override
     @NoProxy
     public void clearId() {
         this.id = null;
@@ -351,7 +364,7 @@ public abstract class DurableInstance extends Instance implements IdInitializing
         var output = new InstanceOutput(bout, withChildren);
         output.writeLong(getVersion());
         output.writeValue(this);
-        return new Tree(getIdRequired(), getVersion(), bout.toByteArray());
+        return new Tree(getPhysicalId(), getVersion(), bout.toByteArray());
     }
 
     public abstract void readFrom(InstanceInput input);
@@ -373,13 +386,13 @@ public abstract class DurableInstance extends Instance implements IdInitializing
         return parent;
     }
 
-    @javax.annotation.Nullable
+    @Nullable
     public Field getParentField() {
         ensureLoaded();
         return parentField;
     }
 
-    public @javax.annotation.Nullable InstanceParentRef getParentRef() {
+    public @Nullable InstanceParentRef getParentRef() {
         ensureLoaded();
         return parent == null ? null : new InstanceParentRef(parent, parentField);
     }
@@ -460,11 +473,13 @@ public abstract class DurableInstance extends Instance implements IdInitializing
         this.next = this.prev = null;
     }
 
-    @Nullable DurableInstance getNext() {
+    @Nullable
+    DurableInstance getNext() {
         return next;
     }
 
-    @Nullable DurableInstance getPrev() {
+    @Nullable
+    DurableInstance getPrev() {
         return prev;
     }
 

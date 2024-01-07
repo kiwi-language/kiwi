@@ -29,13 +29,20 @@ public class Nodes {
         return new ReturnNode(null, name, code, scope.getLastNode(), scope, value);
     }
 
-    public static NodeRT forEach(Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>, Supplier<Value>> action, ScopeRT scope) {
+    public static NodeRT forEach(
+            Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
+            Supplier<Value>> action,
+            ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
-        var whileOutputType = ClassBuilder.newBuilder("Foreach输出", "ForeachOutput").temporary().build();
+        var name = "Foreach_" + seq;
+        var code = "Foreach_" + seq;
+        var whileOutputType = ClassBuilder.newBuilder("循环输出", "LoopOutput")
+                .temporary()
+                .build();
         var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
                 .build();
         var node = new WhileNode(
-                null, "Foreach_" + seq, "Foreach_" + seq, whileOutputType, scope.getLastNode(), scope,
+                null, name, code, whileOutputType, scope.getLastNode(), scope,
                 Values.constant(Expressions.trueExpression())
         );
         node.setField(indexField, Values.constantLong(0L),
@@ -62,8 +69,10 @@ public class Nodes {
     }
 
     public static InputNode input(Flow flow) {
-        var inputType = ClassBuilder.newBuilder("输入", "Input").temporary().build();
-        for (Parameter parameter : flow.getParameters()) {
+        var inputType = ClassBuilder.newBuilder("输入", "Input")
+                .temporary()
+                .build();
+        for (var parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
                     .build();
         }
@@ -73,7 +82,7 @@ public class Nodes {
         );
     }
 
-    public static AddElementNode addElement(String name, @Nullable String code,  Value array, Value element, ScopeRT scope) {
+    public static AddElementNode addElement(String name, @Nullable String code, Value array, Value element, ScopeRT scope) {
         return new AddElementNode(null, name, code, scope.getLastNode(), scope, array, element);
     }
 

@@ -5,8 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.code.rest.dto.CodeRepoDTO;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.EntityContextFactoryBean;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.InstanceContextFactory;
 
 @Component
 public class CodeRepoManager extends EntityContextFactoryBean {
@@ -20,7 +18,7 @@ public class CodeRepoManager extends EntityContextFactoryBean {
         try(var context = newContext()) {
             var repo = CodeRepo.create(codeRepoDTO, context);
             context.finish();
-            return repo.getIdRequired();
+            return repo.tryGetId();
         }
     }
 

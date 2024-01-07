@@ -46,7 +46,7 @@ public class GetUniqueNode extends NodeRT {
     @Override
     protected GetUniqueNodeParam getParam(SerializeContext serializeContext) {
         return new GetUniqueNodeParam(
-                index.getIdRequired(),
+                index.tryGetId(),
                 NncUtils.map(values, Value::toDTO)
         );
     }

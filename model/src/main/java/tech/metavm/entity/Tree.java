@@ -8,6 +8,12 @@ import java.io.InputStream;
 
 public record Tree(long id, long version, byte[] data) implements Comparable<Tree> {
 
+
+    public Tree {
+        if(id == 1231904639L)
+            System.out.println("Caught");
+    }
+
     public static Tree fromDTO(TreeDTO treeDTO) {
         return new Tree(treeDTO.id(), treeDTO.version(), treeDTO.bytes());
     }

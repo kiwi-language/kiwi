@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Nodes;
@@ -53,13 +54,16 @@ public class MappingSaverTest extends TestCase {
         var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
                 .tmpId(11L)
                 .access(Access.PRIVATE)
-                .isChild(true).build();
+                .isChild(true)
+                .build();
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, getStringType())
                 .tmpId(12L)
-                .asTitle().build();
+                .asTitle()
+                .build();
         var barCodeField = FieldBuilder.newBuilder("code", "code", barType, getStringType())
                 .tmpId(13L)
-                .asTitle().build();
+                .asTitle()
+                .build();
 
         // generate getBars method
         var getBarsMethod = MethodBuilder.newBuilder(fooType, "获取bars", "getBars", typeProviders.functionTypeProvider)
@@ -95,6 +99,7 @@ public class MappingSaverTest extends TestCase {
         typeRepository.save(barType);
         var arrayMappingRepo = new MockArrayMappingRepository();
         var mappingProvider = new MockMappingRepository();
+        var entityRepository = new MockEntityRepository();
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
@@ -107,16 +112,22 @@ public class MappingSaverTest extends TestCase {
         var barMapping = saver.saveBuiltinMapping(barType, true);
         var fooMapping = saver.saveBuiltinMapping(fooType, true);
         var fooViewType = fooMapping.getTargetType();
+        var barsFieldMapping = fooMapping.getFieldMappingByTargetField(fooViewType.getFieldByCode("bars"));
+        var barArrayMapping = Objects.requireNonNull(barsFieldMapping.getNestedMapping());
+        fooMapping.initId(3001L);
+        barArrayMapping.initId(3002L);
+        barMapping.initId(3003L);
 
         var barInst = ClassInstanceBuilder.newBuilder(barType)
                 .data(Map.of(
                         barCodeField,
                         new StringInstance("bar001", StandardTypes.getStringType())
                 ))
-                .tmpId(1001L)
+                .id(TmpId.of(1003L))
                 .build();
 
         var barChildArray = new ArrayInstance(barChildArrayType, List.of(barInst));
+        barChildArray.initId(TmpId.of(1002L));
 
         var foo = ClassInstanceBuilder.newBuilder(fooType)
                 .data(
@@ -127,22 +138,21 @@ public class MappingSaverTest extends TestCase {
                                 barChildArray
                         )
                 )
-                .tmpId(1002L)
+                .id(TmpId.of(1001L))
                 .build();
 
-        var barsFieldMapping = fooMapping.getFieldMappingByTargetField(fooViewType.getFieldByCode("bars"));
-        var barArrayMapping = Objects.requireNonNull(barsFieldMapping.getNestedMapping());
+
         System.out.println(barArrayMapping.getMapper().getText());
         System.out.println(barArrayMapping.getUnmapper().getText());
 
-
         // Mapping
-        var fooView = fooMapping.map(foo, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var fooView = (ClassInstance) fooMapping.mapRoot(foo, instanceRepository, typeProviders.parameterizedFlowProvider);
 
         Assert.assertSame(fooView.getType(), fooViewType);
-        Assert.assertSame(foo, fooView.getSource());
+        Assert.assertSame(foo, fooView.tryGetSource());
         var fooViewName = fooView.getField("name");
         Assert.assertEquals(foo.getField("name"), fooViewName);
+        Assert.assertTrue(fooView.getId() instanceof ViewId);
 
         var fooViewBars = (ArrayInstance) fooView.getField("bars");
         Assert.assertTrue(fooViewBars.isChildArray());
@@ -150,7 +160,11 @@ public class MappingSaverTest extends TestCase {
         var barViewType = barMapping.getTargetType();
         Assert.assertSame(barView.getType(), barViewType);
         Assert.assertEquals(barInst.getField("code"), barView.getField("code"));
+        Assert.assertTrue(barView.getId() instanceof ChildViewId);
 
+        // mapping
+        System.out.println(fooMapping.getMapper().getText());
+        System.out.println(fooMapping.getReadMethod().getText());
 
         // Unmapping
         System.out.println(fooMapping.getUnmapper().getText());

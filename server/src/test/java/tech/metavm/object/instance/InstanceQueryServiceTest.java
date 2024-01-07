@@ -11,6 +11,7 @@ import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceRepository;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.mocks.TypeProviders;
@@ -71,12 +72,12 @@ public class InstanceQueryServiceTest extends TestCase {
                 arrayTypeProvider
         );
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(foo.getId(), page.data().get(0).getId());
+        Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());
     }
 
     private ClassInstance addInstance(ClassInstance instance) {
         instanceRepository.bind(instance);
-        instance.initId(idProvider.allocateOne(TestConstants.APP_ID, instance.getType()));
+        instance.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, instance.getType())));
         instanceSearchService.add(getAppId(), instance);
         return instance;
     }
@@ -96,7 +97,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var page2 = instanceQueryService.query(query2,
                 instanceRepository, parameterizedFlowProvider, typeRepository, arrayTypeProvider);
         Assert.assertEquals(1, page2.total());
-        Assert.assertEquals(foo.getId(), page2.data().get(0).getId());
+        Assert.assertEquals(foo.tryGetPhysicalId(), page2.data().get(0).tryGetPhysicalId());
     }
 
 }

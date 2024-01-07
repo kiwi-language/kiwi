@@ -253,7 +253,7 @@ public class StandardDefBuilder {
                 )
                 .returnType(StandardTypes.getVoidType())
                 .build();
-        NativeFunctions.setSetSourceFunc(setSourceFunc);
+//        NativeFunctions.setSetSourceFunc(setSourceFunc);
         defContext.writeEntity(setSourceFunc);
     }
 

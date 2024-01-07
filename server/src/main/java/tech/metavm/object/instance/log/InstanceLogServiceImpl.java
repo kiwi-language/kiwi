@@ -54,7 +54,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryBean implements 
         try (var context = newContext(appId)) {
             var instanceContext = context.getInstanceContext();
             List<ClassInstance> changed = NncUtils.filterByType(instanceContext.batchGet(idsToLoad), ClassInstance.class);
-            List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getIdRequired()));
+            List<ClassInstance> created = NncUtils.filter(changed, c -> newInstanceIds.contains(c.getPhysicalId()));
             for (LogHandler<?> handler : handlers) {
                 invokeHandler(created, handler, clientId, context);
             }

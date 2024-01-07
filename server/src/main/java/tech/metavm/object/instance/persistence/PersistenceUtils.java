@@ -31,7 +31,7 @@ public class PersistenceUtils {
         List<IndexKeyRT> keys = index.createIndexKey(instance, parameterizedFlowProvider);
         return NncUtils.map(
                 keys,
-                key -> new IndexEntryPO(appId, toIndexKeyPO(key), instance.getIdRequired())
+                key -> new IndexEntryPO(appId, toIndexKeyPO(key), instance.getPhysicalId())
         );
     }
 
@@ -48,13 +48,13 @@ public class PersistenceUtils {
         classInstance.ensureAllFieldsInitialized();
         return new InstancePO(
                 appId,
-                classInstance.getIdRequired(),
+                classInstance.getPhysicalId(),
                 classInstance.getTitle(),
-                classInstance.getType().getIdRequired(),
+                classInstance.getType().tryGetId(),
                 InstanceOutput.toByteArray(classInstance),
-                NncUtils.getOrElse(classInstance.getParent(), DurableInstance::getId, -1L),
-                NncUtils.getOrElse(classInstance.getParentField(), Field::getId, -1L),
-                classInstance.getRoot().getIdRequired(),
+                NncUtils.getOrElse(classInstance.getParent(), DurableInstance::tryGetPhysicalId, -1L),
+                NncUtils.getOrElse(classInstance.getParentField(), Field::tryGetId, -1L),
+                classInstance.getRoot().getPhysicalId(),
                 classInstance.getVersion(),
                 classInstance.getSyncVersion()
         );
@@ -63,13 +63,13 @@ public class PersistenceUtils {
     private static InstancePO toInstancePO(ArrayInstance arrayInstance, long appId) {
         return new InstancePO(
                 appId,
-                arrayInstance.getIdRequired(),
+                arrayInstance.getPhysicalId(),
                 arrayInstance.getTitle(),
-                arrayInstance.getType().getIdRequired(),
+                arrayInstance.getType().tryGetId(),
                 InstanceOutput.toByteArray(arrayInstance),
-                NncUtils.getOrElse(arrayInstance.getParent(), DurableInstance::getId, -1L),
-                NncUtils.getOrElse(arrayInstance.getParentField(), Field::getId, -1L),
-                arrayInstance.getRoot().getIdRequired(),
+                NncUtils.getOrElse(arrayInstance.getParent(), DurableInstance::tryGetPhysicalId, -1L),
+                NncUtils.getOrElse(arrayInstance.getParentField(), Field::tryGetId, -1L),
+                arrayInstance.getRoot().getPhysicalId(),
                 arrayInstance.getVersion(),
                 arrayInstance.getSyncVersion()
         );
@@ -90,7 +90,7 @@ public class PersistenceUtils {
     public static IndexKeyPO toIndexKeyPO(IndexKeyRT indexKeyRT) {
         IndexKeyPO key = new IndexKeyPO();
         var index = indexKeyRT.getIndex();
-        key.setIndexId(index.getIdRequired());
+        key.setIndexId(index.tryGetId());
         for (IndexField field : index.getFields()) {
             var fieldValue = indexKeyRT.getFields().get(field);
             if(fieldValue != null)
@@ -102,7 +102,7 @@ public class PersistenceUtils {
     public static IndexQueryPO toIndexQueryPO(InstanceIndexQuery query, long appId, int lockMode) {
         return new IndexQueryPO(
                 appId,
-                query.index().getIdRequired(),
+                query.index().tryGetId(),
                 NncUtils.map(query.items(), item -> new IndexQueryItemPO(
                         "column" + item.field().getFieldIndex(),
                         item.operator(), BytesUtils.toIndexBytes(item.value()))),
@@ -132,7 +132,7 @@ public class PersistenceUtils {
                             instancePO.getAppId(),
                             instancePO.getId(),
                             readLong(),
-                            field.getIdRequired(),
+                            field.tryGetId(),
                             ReferenceKind.getFromType(field.getType()).code()
                     ));
                 } else

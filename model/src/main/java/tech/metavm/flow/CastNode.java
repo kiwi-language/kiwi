@@ -31,6 +31,7 @@ public class CastNode extends NodeRT {
         return node;
     }
 
+    @ChildEntity("值")
     private @NotNull Value object;
 
     public CastNode(Long tmpId, String name, @Nullable String code, @NotNull Type outputType,

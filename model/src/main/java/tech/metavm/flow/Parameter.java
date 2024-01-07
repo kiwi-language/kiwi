@@ -88,7 +88,7 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     public ParameterDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new ParameterDTO(
-                    getId(),
+                    tryGetId(),
                     serContext.getTmpId(this),
                     name,
                     code,

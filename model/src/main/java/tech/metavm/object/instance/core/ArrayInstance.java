@@ -25,11 +25,11 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     private final transient List<ArrayListener> listeners = new ArrayList<>();
 
     public ArrayInstance(ArrayType type) {
-        this(null, type, null);
+        this(null, type, type.isEphemeral(), null);
     }
 
-    public ArrayInstance(Long id, ArrayType type, @Nullable Consumer<DurableInstance> load) {
-        super(id, type, null, 0, 0, load);
+    public ArrayInstance(Id id, ArrayType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
+        super(id, type, 0, 0, type.isEphemeral() || ephemeral, load);
     }
 
     public ArrayInstance(ArrayType type, List<Instance> elements) {
@@ -38,7 +38,13 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     public ArrayInstance(ArrayType type, @Nullable InstanceParentRef parentRef) {
-        super(type, parentRef);
+        super(type);
+        setParentRef(parentRef);
+    }
+
+    public ArrayInstance(ArrayType type, @Nullable InstanceParentRef parentRef, boolean ephemeral) {
+        super(null, type, 0L, 0L, ephemeral, null);
+        setParentRef(parentRef);
     }
 
     @NoProxy
@@ -175,7 +181,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         checkIndex(index);
         element = checkElement(element);
         if (isChildArray() && element.isNotNull())
-            ((DurableInstance) element).initParent(this, null);
+            ((DurableInstance) element).setParent(this, null);
         var removed = elements.set(index, element);
         if (removed != null)
             onRemove(removed);
@@ -198,7 +204,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     private boolean addInternally(Instance element) {
         element = checkElement(element);
         if (isChildArray() && element.isNotNull())
-            ((DurableInstance) element).initParent(this, null);
+            ((DurableInstance) element).setParent(this, null);
         elements.add(element);
         onAdd(element);
         return true;
@@ -392,8 +398,8 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         clearInternal();
     }
 
-    public ArrayInstance getSource() {
-        return (ArrayInstance) super.getSource();
+    public ArrayInstance tryGetSource() {
+        return (ArrayInstance) super.tryGetSource();
     }
 
     public void addListener(ArrayListener listener) {

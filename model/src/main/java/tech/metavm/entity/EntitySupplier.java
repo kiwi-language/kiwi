@@ -14,7 +14,7 @@ public class EntitySupplier {
     {
         return NncUtils.map(
                 list,
-                item -> new EntitySupplier(item.getId(), creatorMapping.apply(item))
+                item -> new EntitySupplier(item.tryGetId(), creatorMapping.apply(item))
         );
     }
 
@@ -25,7 +25,7 @@ public class EntitySupplier {
         return NncUtils.toMultiMap(
                 list,
                 keyMapper,
-                item -> new EntitySupplier(item.getId(), creatorMapping.apply(item))
+                item -> new EntitySupplier(item.tryGetId(), creatorMapping.apply(item))
         );
     }
 

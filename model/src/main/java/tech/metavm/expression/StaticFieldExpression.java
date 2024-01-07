@@ -27,8 +27,8 @@ public class StaticFieldExpression extends Expression {
             }
             return switch (symbolType) {
                 case NAME -> field.getDeclaringType().getName() + "." + field.getName();
-                case ID -> idVarName(field.getDeclaringType().getIdRequired()) + "." +
-                        idVarName(field.getIdRequired());
+                case ID -> idVarName(field.getDeclaringType().tryGetId()) + "." +
+                        idVarName(field.tryGetId());
             };
         }
     }

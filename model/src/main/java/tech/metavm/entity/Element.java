@@ -17,6 +17,10 @@ public abstract class Element extends Entity {
         super(tmpId, parentRef);
     }
 
+    public Element(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
+        super(tmpId, parentRef, ephemeral);
+    }
+
     public abstract <R> R accept(ElementVisitor<R> visitor);
 
     public void acceptChildren(StructuralVisitor<?> visitor) {

@@ -4,7 +4,7 @@ import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
 
-public final class ViewId extends Id {
+public class ViewId extends Id {
 
     public static final int TAG = 3;
 
@@ -17,10 +17,10 @@ public final class ViewId extends Id {
     }
 
     @Override
-    public void writeBytes(InstanceOutput output) {
+    public void write(InstanceOutput output) {
         output.write(TAG);
         output.writeLong(mappingId);
-        sourceId.writeBytes(output);
+        sourceId.write(output);
     }
 
     public Id getSourceId() {
@@ -34,6 +34,11 @@ public final class ViewId extends Id {
     @Override
     public Long tryGetPhysicalId() {
         return sourceId.tryGetPhysicalId();
+    }
+
+    @Override
+    public boolean isTemporary() {
+        return sourceId.isTemporary();
     }
 
     @Override

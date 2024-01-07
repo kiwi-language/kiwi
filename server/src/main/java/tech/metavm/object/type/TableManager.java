@@ -87,7 +87,7 @@ public class TableManager extends EntityContextFactoryBean {
         ClassType declaringType = context.getClassType(column.ownerId());
         Field field = saveField(column, declaringType, context);
         context.finish();
-        return field.getIdRequired();
+        return field.tryGetId();
     }
 
     public ColumnDTO getColumn(long id) {
@@ -130,12 +130,12 @@ public class TableManager extends EntityContextFactoryBean {
             defaultValue = column.defaultValue();
         }
         return typeManager.saveField(
-                FieldDTOBuilder.newBuilder(column.name(), RefDTO.fromId(type.getId()))
+                FieldDTOBuilder.newBuilder(column.name(), RefDTO.fromId(type.tryGetId()))
                         .id(column.id())
                         .access(column.access())
                         .defaultValue(defaultValue)
                         .unique(column.unique())
-                        .declaringTypeId(declaringType.getId())
+                        .declaringTypeId(declaringType.tryGetId())
                         .build(),
                 context
         );
@@ -165,7 +165,7 @@ public class TableManager extends EntityContextFactoryBean {
                 getColumnType(concreteType),
                 concreteType.getName(),
                 concreteType.isEnum() || concreteType.isClass() || concreteType.isValue() ?
-                        concreteType.getId() : null,
+                        concreteType.tryGetId() : null,
                 type.isNotNull(),
                 type.isBinaryNullable() ? type.getUnderlyingType().isArray() : type.isArray(),
                 getChoiceOptions(concreteType, fieldDefaultValue)
@@ -266,7 +266,7 @@ public class TableManager extends EntityContextFactoryBean {
         } else {
             throw BusinessException.invalidColumn(name, "未选择列类型或未选择关联表格");
         }
-        if (type.getId() == null) {
+        if (type.tryGetId() == null) {
             if (!context.containsModel(type)) {
                 context.bind(type);
             }

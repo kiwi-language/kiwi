@@ -29,9 +29,9 @@ public class IdService extends BaseIdService implements EntityIdProvider {
 
     private Map<Long, BlockRT> getActiveBlockMap(long appId, Collection<Type> types) {
         try (var ignored = ContextUtil.getProfiler().enter("IdService.getActiveBlockMap")) {
-            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, Entity::getId));
+            List<BlockRT> blocks = blockSource.getActive(NncUtils.map(types, Entity::tryGetId));
             Map<Long, BlockRT> result = NncUtils.toMap(blocks, BlockRT::getTypeId);
-            List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.getId()));
+            List<Type> residualTypes = NncUtils.exclude(types, t -> result.containsKey(t.tryGetId()));
             if (!residualTypes.isEmpty()) {
                 createBlocks(appId, residualTypes).forEach(block -> result.put(block.getTypeId(), block));
             }
@@ -40,7 +40,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
     }
 
     private List<BlockRT> createBlocks(long appId, List<Type> types) {
-        Map<TypeCategory, List<Long>> category2types = NncUtils.toMultiMap(types, Type::getCategory, Entity::getId);
+        Map<TypeCategory, List<Long>> category2types = NncUtils.toMultiMap(types, Type::getCategory, Entity::tryGetId);
         List<BlockRT> blocks = new ArrayList<>();
         category2types.forEach(((typeCategory, typeIds) ->
                 blocks.addAll(createBlocks(appId, typeCategory, typeIds))
@@ -106,7 +106,7 @@ public class IdService extends BaseIdService implements EntityIdProvider {
         Map<Type, Integer> residual = new HashMap<>();
 
         typeId2count.forEach((type, count) -> {
-            BlockRT block = activeBlockMap.get(type.getId());
+            BlockRT block = activeBlockMap.get(type.tryGetId());
             NncUtils.requireNonNull(block, "Active block not found for type: " + type);
             Integer allocateCount = Math.min(count, block.available());
             result.put(type, block.allocate(count));

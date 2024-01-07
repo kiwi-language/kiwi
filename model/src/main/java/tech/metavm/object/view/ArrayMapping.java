@@ -59,26 +59,25 @@ public class ArrayMapping extends Mapping implements GlobalKey {
     }
 
     @Override
-    public Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
-        var scope = Objects.requireNonNull(mapper).getRootScope();
-        scope.clearNodes();
+    protected Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
+        var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
         var input = Nodes.input(mapper);
         var view = new NewArrayNode(null, "视图", "View", getTargetType(),
                 null, null, scope.getLastNode(), scope);
-        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
+//        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
         Nodes.forEach(
                 () -> Values.inputValue(input, 0),
                 (loopBody, elementSupplier, indexSupplier) -> {
                     Value viewElementValue;
                     if (elementMapping != null) {
-                        var viewElement = new FunctionCallNode(
+                        var viewElement = new MapNode(
                                 null,
                                 "视图元素",
                                 "ViewElement",
                                 loopBody.getLastNode(),
                                 loopBody,
-                                elementMapping.getMapper(),
-                                List.of(Nodes.argument(elementMapping.getMapper(), 0, elementSupplier.get()))
+                                elementSupplier.get(),
+                                elementMapping
                         );
                         viewElementValue = Values.node(viewElement);
                     } else
@@ -93,9 +92,8 @@ public class ArrayMapping extends Mapping implements GlobalKey {
     }
 
     @Override
-    public Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
-        var scope = Objects.requireNonNull(unmapper).getRootScope();
-        scope.clearNodes();
+    protected Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
+        var scope = Objects.requireNonNull(unmapper).newEphemeralRootScope();
         var input = Nodes.input(unmapper);
         var inputViewField = input.getType().getFields().get(0);
         var getSourceFunc = NativeFunctions.getSource();
@@ -111,14 +109,14 @@ public class ArrayMapping extends Mapping implements GlobalKey {
                 (bodyScope, elementSupplier, indexSupplier) -> {
                     Value sourceElementValue;
                     if (elementMapping != null) {
-                        var sourceElement = new FunctionCallNode(
+                        var sourceElement = new UnmapNode(
                                 null,
                                 "来源数组元素",
                                 "SourceElement",
                                 bodyScope.getLastNode(),
                                 bodyScope,
-                                elementMapping.getUnmapper(),
-                                List.of(Nodes.argument(elementMapping.getUnmapper(), 0, elementSupplier.get()))
+                                elementSupplier.get(),
+                                elementMapping
                         );
                         sourceElementValue = Values.node(sourceElement);
                     } else

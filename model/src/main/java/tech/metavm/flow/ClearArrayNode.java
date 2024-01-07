@@ -2,10 +2,7 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.ElementVisitor;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.ClearArrayNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
@@ -29,6 +26,7 @@ public class ClearArrayNode extends NodeRT {
         return node;
     }
 
+    @ChildEntity("数组")
     private @NotNull Value array;
 
     public ClearArrayNode(Long tmpId, String name, @Nullable String code,

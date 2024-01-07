@@ -44,7 +44,7 @@ public class MemInstanceSearchService implements InstanceSearchService {
         Collection<ClassInstance> instances = instanceMap.values(appId);
         for (ClassInstance instance : instances) {
             if(match(instance, query)) {
-                result.add(instance.getId());
+                result.add(instance.tryGetPhysicalId());
             }
         }
     }
@@ -62,7 +62,7 @@ public class MemInstanceSearchService implements InstanceSearchService {
     }
 
     private boolean match(ClassInstance instance, SearchQuery query) {
-        if(!query.typeIds().contains(instance.getType().getId())) {
+        if(!query.typeIds().contains(instance.getType().tryGetId())) {
             return false;
         }
         return Instances.isTrue(
@@ -81,13 +81,13 @@ public class MemInstanceSearchService implements InstanceSearchService {
     @Override
     public void bulk(long appId, List<ClassInstance> toIndex, List<Long> toDelete) {
         for (ClassInstance instance : toIndex) {
-            NncUtils.requireNonNull(instance.getId());
+            NncUtils.requireNonNull(instance.tryGetPhysicalId());
             sourceMap.put(
                     getAppId(),
-                    instance.getId(),
+                    instance.tryGetPhysicalId(),
                     IndexSourceBuilder.buildSource(appId, instance)
             );
-            instanceMap.put(getAppId(), instance.getId(), instance);
+            instanceMap.put(getAppId(), instance.tryGetPhysicalId(), instance);
         }
         for (Long id : toDelete) {
             sourceMap.remove(getAppId(), id);

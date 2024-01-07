@@ -44,7 +44,7 @@ public abstract class PrimitiveInstance extends Instance {
     }
 
     @Override
-    public @Nullable Id getInstanceId() {
+    public @Nullable Id getId() {
         return null;
     }
 

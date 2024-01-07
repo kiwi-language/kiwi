@@ -98,8 +98,8 @@ public class ExpressionService extends EntityContextFactoryBean {
         if (constExpr.getValue() instanceof PrimitiveInstance primitiveInstance)
             searchValue = primitiveInstance.getValue();
         else
-            searchValue = NncUtils.requireNonNull(((DurableInstance) constExpr.getValue()).getId());
-        return new InstanceSearchItemDTO(fieldExpr.getProperty().getIdRequired(), searchValue);
+            searchValue = NncUtils.requireNonNull(((DurableInstance) constExpr.getValue()).tryGetPhysicalId());
+        return new InstanceSearchItemDTO(fieldExpr.getProperty().getId(), searchValue);
     }
 
     private String extractExpr(ValueDTO value) throws ExpressionParsingException {

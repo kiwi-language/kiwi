@@ -38,7 +38,7 @@ public class ReferenceCleanupTask extends Task {
         if(instances.size() < BATCH_SIZE) {
             return true;
         }
-        nextReferenceId = instances.get(instances.size() - 1).getId();
+        nextReferenceId = instances.get(instances.size() - 1).tryGetPhysicalId();
         return false;
     }
     

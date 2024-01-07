@@ -18,7 +18,7 @@ public class AppMessageServiceImpl implements AppMessageService {
     public void sendMessage(Message message) {
         try(var ignored = ContextUtil.getProfiler().enter("sendMessage")) {
             simpMessagingTemplate.convertAndSend(
-                    String.format("/topic/app-message/%d", message.getReceiver().getIdRequired()),
+                    String.format("/topic/app-message/%d", message.getReceiver().tryGetId()),
                     message.toDTO()
             );
         }

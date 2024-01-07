@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.MappingSaver;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
@@ -47,14 +47,14 @@ public class ViewManager extends EntityContextFactoryBean {
         try (var context = newContext()) {
             var mapping = MappingSaver.create(context).save(viewMapping);
             context.finish();
-            return mapping.getIdRequired();
+            return mapping.tryGetId();
         }
     }
 
     @Transactional
     public void removeMapping(long id) {
         try (var context = newContext()) {
-            var mapping = context.getEntity(DefaultObjectMapping.class, id);
+            var mapping = context.getEntity(FieldsObjectMapping.class, id);
             mapping.getSourceType().removeMapping(mapping);
         }
     }
@@ -62,7 +62,7 @@ public class ViewManager extends EntityContextFactoryBean {
     @Transactional
     public void setDefaultMapping(long id) {
         try (var context = newContext()) {
-            context.getEntity(DefaultObjectMapping.class, id).setDefault();
+            context.getEntity(FieldsObjectMapping.class, id).setDefault();
         }
     }
 }

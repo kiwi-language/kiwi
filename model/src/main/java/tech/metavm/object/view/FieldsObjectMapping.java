@@ -5,7 +5,7 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
-import tech.metavm.object.view.rest.dto.DefaultObjectMappingParam;
+import tech.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NamingUtils;
@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-@EntityType("对象映射")
-public class DefaultObjectMapping extends ObjectMapping {
+@EntityType("字段对象映射")
+public class FieldsObjectMapping extends ObjectMapping {
 
     @ChildEntity("字段列表")
     private final ChildArray<FieldMapping> fieldMappings = addChild(new ChildArray<>(FieldMapping.class), "fieldMappings");
@@ -33,12 +33,12 @@ public class DefaultObjectMapping extends ObjectMapping {
     private Method writeMethod;
 
     // TODO add NotNull annotation to required constructor parameters
-    public DefaultObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin, List<ObjectMapping> overridden) {
+    public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin, List<ObjectMapping> overridden) {
         this(tmpId, name, code, sourceType, builtin, null, overridden);
     }
 
-    public DefaultObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin,
-                                @Nullable ClassType targetType, List<ObjectMapping> overridden) {
+    public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin,
+                               @Nullable ClassType targetType, List<ObjectMapping> overridden) {
         super(tmpId, name, code, sourceType, targetType == null ? createTargetType(sourceType, name, code) : targetType, builtin);
         overridden.forEach(this::checkOverridden);
         this.overridden.addAll(overridden);
@@ -81,14 +81,14 @@ public class DefaultObjectMapping extends ObjectMapping {
     }
 
     @Nullable
-    public DefaultObjectMapping getTemplate() {
+    public FieldsObjectMapping getTemplate() {
         return template;
     }
 
     @Override
     public void setTemplate(@Nullable Object template) {
         NncUtils.requireNull(this.template);
-        this.template = (DefaultObjectMapping) template;
+        this.template = (FieldsObjectMapping) template;
     }
 
     public void setCode(@Nullable String code) {
@@ -108,13 +108,13 @@ public class DefaultObjectMapping extends ObjectMapping {
     }
 
     @Override
-    public Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
+    protected Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
         generateReadMethodCode();
         return super.generateMappingCode(functionTypeProvider);
     }
 
     @Override
-    public Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
+    protected Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
         generateWriteMethodCode();
         return super.generateUnmappingCode(functionTypeProvider);
     }
@@ -126,10 +126,21 @@ public class DefaultObjectMapping extends ObjectMapping {
         generateWriteMethodDeclaration(functionTypeProvider);
     }
 
+    @Override
+    public void generateCode(Flow flow, FunctionTypeProvider functionTypeProvider) {
+        if(flow == readMethod)
+            generateReadMethodCode();
+        else if(flow == writeMethod)
+            generateWriteMethodCode();
+        else
+            super.generateCode(flow, functionTypeProvider);
+    }
+
     private void generateReadMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
         readMethod = MethodBuilder.newBuilder(getSourceType(), "获取" + getTargetType().getName(),
                         NamingUtils.getGetterName(getTargetType().getCode()), functionTypeProvider)
                 .existing(readMethod)
+                .codeSource(this)
                 .returnType(getTargetType())
                 .isSynthetic(true)
                 .overridden(NncUtils.map(overridden, ObjectMapping::getReadMethod))
@@ -140,6 +151,7 @@ public class DefaultObjectMapping extends ObjectMapping {
         writeMethod = MethodBuilder.newBuilder(getSourceType(), "保存" + getTargetType().getName(),
                         NamingUtils.tryAddPrefix(getTargetType().getCode(), "save"), functionTypeProvider)
                 .existing(writeMethod)
+                .codeSource(this)
                 .returnType(StandardTypes.getVoidType())
                 .isSynthetic(true)
                 .parameters(writeMethod != null ? writeMethod.getParameter(0) :
@@ -148,9 +160,8 @@ public class DefaultObjectMapping extends ObjectMapping {
                 .build();
     }
 
-    public Flow generateReadMethodCode() {
-        var scope = Objects.requireNonNull(readMethod).getRootScope();
-        scope.clearNodes();
+    public void generateReadMethodCode() {
+        var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "当前对象", "Self", getTargetType(), null, scope);
         List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
@@ -159,12 +170,10 @@ public class DefaultObjectMapping extends ObjectMapping {
                 true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, Values.node(view));
-        return readMethod;
     }
 
-    public Flow generateWriteMethodCode() {
-        var scope = Objects.requireNonNull(writeMethod).getRootScope();
-        scope.clearNodes();
+    public void generateWriteMethodCode() {
+        var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "当前对象", "Self", getSourceType(), null, scope);
         var inputNode = Nodes.input(writeMethod);
         var viewNode = new ValueNode(null, "视图", "View", getTargetType(), scope.getLastNode(), scope,
@@ -174,7 +183,6 @@ public class DefaultObjectMapping extends ObjectMapping {
                 fieldMapping.generateWriteCode(selfNode, viewNode);
         }
         new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, null);
-        return writeMethod;
     }
 
     public void setName(String name) {
@@ -208,7 +216,7 @@ public class DefaultObjectMapping extends ObjectMapping {
 
     @Override
     protected ObjectMappingParam getParam(SerializeContext serializeContext) {
-        return new DefaultObjectMappingParam(
+        return new FieldsObjectMappingParam(
                 NncUtils.map(fieldMappings, f -> f.toDTO(serializeContext))
         );
     }

@@ -401,7 +401,7 @@ public class FlowManager extends EntityContextFactoryBean {
                         }
                     }
                     for (NodeRT node : branch.getScope().getNodes()) {
-                        if (node.getId() != null && !nodeIds.contains(node.getId())) {
+                        if (node.tryGetId() != null && !nodeIds.contains(node.tryGetId())) {
                             deleteNode(node, context);
                         }
                     }
@@ -526,11 +526,11 @@ public class FlowManager extends EntityContextFactoryBean {
         InputNodeParam inputParam = nodeDTO.getParam();
         var inputFields = initializeFieldRefs(inputParam.fields());
         List<FieldDTO> fields = NncUtils.map(inputFields,
-                inputField -> inputField.toFieldDTO(NncUtils.get(node, n -> n.getType().getIdRequired())));
+                inputField -> inputField.toFieldDTO(NncUtils.get(node, n -> n.getType().tryGetId())));
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(
                         node != null ? node.getType().getName() : "输入类型" + NncUtils.randomNonNegative()
                 )
-                .id(NncUtils.get(node, n -> n.getType().getId()))
+                .id(NncUtils.get(node, n -> n.getType().tryGetId()))
                 .tmpId(NncUtils.get(nodeDTO.outputTypeRef(), RefDTO::tmpId))
                 .anonymous(true)
                 .ephemeral(true)
@@ -594,7 +594,7 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private TypeDTO createNodeTypeDTO(String namePrefix, @Nullable Type currentType, List<FieldDTO> fields) {
-        Long id = NncUtils.get(currentType, Type::getId);
+        Long id = NncUtils.get(currentType, Type::tryGetId);
         String name = NncUtils.get(currentType, Type::getName);
         String code = NncUtils.get(currentType, Type::getCode);
         Long tmpId = NncUtils.get(currentType, Type::getTmpId);

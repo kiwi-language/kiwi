@@ -6,4 +6,6 @@ public interface EntityRepository extends EntityProvider {
 
     boolean tryBind(Object entity);
 
+    boolean remove(Object object);
+
 }

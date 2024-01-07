@@ -110,7 +110,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public void update(FieldDTO update) {
-        if (update.typeId() != null && !Objects.equals(getType().getId(), update.typeId()))
+        if (update.typeId() != null && !Objects.equals(getType().tryGetId(), update.typeId()))
             throw BusinessException.invalidField(this, "类型不支持修改");
         setName(update.name());
         setAccess(Access.getByCode(update.access()));
@@ -310,7 +310,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
                     getAccess().code(),
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
-                    declaringType.getId(),
+                    declaringType.tryGetId(),
                     serContext.getRef(getType()),
                     isChild,
                     isStatic(),

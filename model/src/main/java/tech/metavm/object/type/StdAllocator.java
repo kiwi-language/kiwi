@@ -20,6 +20,7 @@ public class StdAllocator {
     private final AllocatorStore store;
     private final String fileName;
     private long nextId;
+    private final long initialNextId;
     private final Map<String, Long> code2id = new LinkedHashMap<>();
     private final Map<Long, String> id2code = new LinkedHashMap<>();
     private final Type javaType;
@@ -29,6 +30,7 @@ public class StdAllocator {
         this.fileName = fileName;
         this.javaType = javaType;
         nextId = base;
+        initialNextId = nextId;
     }
 
     public StdAllocator(AllocatorStore store, String fileName) {
@@ -46,6 +48,7 @@ public class StdAllocator {
                 }
             }
         }
+        initialNextId = nextId;
     }
 
     public Long getId(String code) {

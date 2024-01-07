@@ -26,7 +26,7 @@ public class ComputedFieldMapping extends FieldMapping {
     public ComputedFieldMapping(Long tmpId,
                                 String name,
                                 @Nullable String code,
-                                DefaultObjectMapping containingMapping,
+                                FieldsObjectMapping containingMapping,
                                 @Nullable Mapping nestedMapping,
                                 boolean isChild,
                                 Value value) {

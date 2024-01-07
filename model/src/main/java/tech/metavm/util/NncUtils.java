@@ -82,7 +82,7 @@ public class NncUtils {
         var it1 = iterable1.iterator();
         var it2 = iterable2.iterator();
         while (it1.hasNext() && it2.hasNext()) {
-            if(!it1.next().equals(it2.next()))
+            if (!it1.next().equals(it2.next()))
                 return false;
         }
         return !it1.hasNext() && !it2.hasNext();
@@ -102,9 +102,9 @@ public class NncUtils {
 
     public static void ensureDirectoryExists(String path) {
         var file = new File(path);
-        if(file.isFile())
+        if (file.isFile())
             throw new InternalException(String.format("Expecting '%s' to be a directory but it's a file", path));
-        if(!file.exists())
+        if (!file.exists())
             file.mkdirs();
     }
 
@@ -744,6 +744,17 @@ public class NncUtils {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Foreach that allows the action to modify the iterable without raising a ConcurrentModificationException
+     */
+    public static <T> void enhancedForEach(Iterable<T> iterable, Consumer<T> action) {
+        if (iterable != null) {
+            var list = new ArrayList<T>();
+            iterable.forEach(list::add);
+            list.forEach(action);
+        }
+    }
+
     public static <K, V> int binarySearch(List<V> list, K key, ToIntBiFunction<V, K> compare) {
         int l = 0, h = list.size();
         while (l != h) {
@@ -1364,6 +1375,14 @@ public class NncUtils {
             throw new InternalException("参数必须为空");
         else
             return null;
+    }
+
+    public static int compareId(@Nullable Long l1, @Nullable Long l2) {
+        if (l1 == null)
+            l1 = Long.MAX_VALUE;
+        if (l2 == null)
+            l2 = Long.MAX_VALUE;
+        return l1.compareTo(l2);
     }
 
     @Nullable

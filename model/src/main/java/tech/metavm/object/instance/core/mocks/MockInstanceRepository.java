@@ -36,7 +36,7 @@ public class MockInstanceRepository implements InstanceRepository {
 
     @Override
     public void bind(DurableInstance instance) {
-        var id = instance.getInstanceId();
+        var id = instance.getId();
         if (id != null)
             instanceMap.put(id, instance);
     }
@@ -45,7 +45,7 @@ public class MockInstanceRepository implements InstanceRepository {
     public boolean remove(DurableInstance instance) {
         var removed = instances.remove(instance);
         if (removed) {
-            var id = instance.getInstanceId();
+            var id = instance.getId();
             if (id != null)
                 instanceMap.remove(id);
             return true;

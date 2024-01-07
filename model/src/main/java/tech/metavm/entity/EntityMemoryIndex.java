@@ -33,16 +33,29 @@ public class EntityMemoryIndex {
     public void save(Object object) {
         var klass = EntityUtils.getRealType(object.getClass());
         var objects = typeIndex.computeIfAbsent(klass, k -> new ArrayList<>());
-        if(!objects.contains(object))
+        if (!objects.contains(object))
             objects.add(object);
         var defList = getIndexDefList(klass);
-        for (IndexDef<?> indexDef : defList)
-            save(indexDef, object);
+        defList.forEach(def -> save(def, object));
     }
 
     public <T> void save(IndexDef<T> indexDef, Object object) {
         var index = getIndex(indexDef);
         index.save(indexDef.getType().cast(object));
+    }
+
+    public void remove(Object object) {
+        var klass = EntityUtils.getRealType(object.getClass());
+        var objects = typeIndex.get(klass);
+        if (objects != null)
+            objects.remove(object);
+        var defList = getIndexDefList(klass);
+        defList.forEach(def -> remove(def, object));
+    }
+
+    public <T> void remove(IndexDef<T> indexDef, Object object) {
+        var index = getIndex(indexDef);
+        index.remove(indexDef.getType().cast(object));
     }
 
     private List<IndexDef<?>> getIndexDefList(Class<?> klass) {
@@ -74,8 +87,9 @@ public class EntityMemoryIndex {
 
     private static class SubIndex<T> {
 
+        private final IdentityHashMap<Object, List<Key>> object2keys = new IdentityHashMap<>();
         private final IndexDef<T> indexDef;
-        private final Map<Key, Set<T>> index = new HashMap<>();
+        private final Map<Key, IdentitySet<T>> index = new HashMap<>();
 
         private SubIndex(IndexDef<T> indexDef) {
             this.indexDef = indexDef;
@@ -83,7 +97,8 @@ public class EntityMemoryIndex {
 
         public List<T> selectByKey(List<Object> values) {
             var key = new Key(values);
-            return NncUtils.map(index.getOrDefault(key, Set.of()), indexDef.getType()::cast);
+            var objects = index.get(key);
+            return objects != null ? NncUtils.map(objects, indexDef.getType()::cast) : List.of();
         }
 
         public @Nullable T selectByUniqueKey(List<Object> values) {
@@ -91,10 +106,10 @@ public class EntityMemoryIndex {
             return NncUtils.first(selectByKey(values));
         }
 
-        private Key getKey(Object object) {
+        private List<Key> getKey(Object object) {
             var fields = getIndexFields(indexDef);
             var values = NncUtils.map(fields, f -> ReflectionUtils.get(object, f));
-            return new Key(values);
+            return List.of(new Key(values));
         }
 
         private List<Field> getIndexFields(IndexDef<?> def) {
@@ -118,8 +133,8 @@ public class EntityMemoryIndex {
 
         private int compareObject(Object o1, Object o2) {
             if (o1 instanceof Entity e1 && o2 instanceof Entity e2) {
-                if (e1.getId() != null && e2.getId() != null)
-                    return Long.compare(e1.getId(), e2.getId());
+                if (e1.tryGetId() != null && e2.tryGetId() != null)
+                    return Long.compare(e1.tryGetId(), e2.tryGetId());
                 if (e1.getTmpId() != null && e2.getTmpId() != null)
                     return Long.compare(e1.getTmpId(), e2.getTmpId());
             }
@@ -127,13 +142,28 @@ public class EntityMemoryIndex {
         }
 
         public void save(T object) {
-            var key = getKey(object);
-            var objects = index.computeIfAbsent(key, k -> new IdentitySet<>());
-            if (indexDef.isUnique() && !key.containsNull() && !objects.isEmpty()) {
-                if (objects.iterator().next() != object)
-                    throw new InternalException("Duplicate values found for index key: " + key);
-            } else
-                objects.add(object);
+            remove(object);
+            var keys = getKey(object);
+            object2keys.put(object, keys);
+            for (Key key : keys) {
+                var objects = index.computeIfAbsent(key, k -> new IdentitySet<>());
+                if (indexDef.isUnique() && !key.containsNull() && !objects.isEmpty()) {
+                    if (objects.iterator().next() != object)
+                        throw new InternalException("Duplicate values found for index key: " + key);
+                } else
+                    objects.add(object);
+            }
+        }
+
+        public void remove(T object) {
+            var keys = object2keys.remove(object);
+            if (keys != null) {
+                for (Key key : keys) {
+                    var objects = index.get(key);
+                    if(objects != null)
+                        objects.remove(object);
+                }
+            }
         }
 
         private record Key(List<Object> values) {

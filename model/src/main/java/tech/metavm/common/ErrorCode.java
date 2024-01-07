@@ -151,7 +151,7 @@ public enum ErrorCode {
     INVALID_ELEMENT_MAPPING(1408, "无效的数组元素映射"),
     INVALID_SOURCE_MAPPING(1409, "无效的源头映射"),
     INCORRECT_ARRAY_MAPPING_ARGUMENTS(1410, "数组映射参数错误"),
-
+    INCORRECT_MAPPING(1411, "映射配置错误")
     ;
 
 

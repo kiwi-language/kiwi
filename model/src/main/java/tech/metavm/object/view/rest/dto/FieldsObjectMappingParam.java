@@ -2,7 +2,7 @@ package tech.metavm.object.view.rest.dto;
 
 import java.util.List;
 
-public record DefaultObjectMappingParam(
+public record FieldsObjectMappingParam(
         List<FieldMappingDTO> fieldMappings
 ) implements ObjectMappingParam {
 

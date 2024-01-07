@@ -6,6 +6,10 @@ import java.util.Objects;
 
 public final class TmpId extends Id {
 
+    public static TmpId of(long tmpId) {
+        return new TmpId(tmpId);
+    }
+
     public static final int TAG = 2;
 
     private final long tmpId;
@@ -15,7 +19,7 @@ public final class TmpId extends Id {
     }
 
     @Override
-    public void writeBytes(InstanceOutput output) {
+    public void write(InstanceOutput output) {
         output.write(TAG);
         output.writeLong(tmpId);
     }
@@ -27,6 +31,11 @@ public final class TmpId extends Id {
     @Override
     public Long tryGetPhysicalId() {
         return null;
+    }
+
+    @Override
+    public boolean isTemporary() {
+        return true;
     }
 
     @Override

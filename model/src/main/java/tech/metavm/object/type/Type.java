@@ -103,7 +103,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     public abstract TypeKey getTypeKey();
 
     @SuppressWarnings("unused")
-    public boolean isPersistent() {
+    public boolean isDurable() {
         return !isEphemeral();
     }
 
@@ -114,9 +114,8 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
         var current = getUpperBound();
         Set<Type> visited = new IdentitySet<>();
         while (current instanceof UncertainType) {
-            if (visited.contains(current)) {
+            if (visited.contains(current))
                 throw new InternalException("Circular reference detected in the upper bound chain of type " + this);
-            }
             visited.add(current);
             current = current.getUpperBound();
         }
@@ -390,7 +389,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     protected TypeDTO toDTO(TypeParam param, Long tmpId) {
         try (var ignored = SerializeContext.enter()) {
             return new TypeDTO(
-                    getId(),
+                    tryGetId(),
                     tmpId,
                     name,
                     code,
@@ -433,7 +432,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
 
     @Override
     protected String toString0() {
-        return "Type " + name + " (id: " + getId() + ")";
+        return "Type " + name + " (id: " + tryGetId() + ")";
     }
 
     @Override

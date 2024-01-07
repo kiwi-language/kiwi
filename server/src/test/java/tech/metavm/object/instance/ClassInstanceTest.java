@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
@@ -29,7 +30,7 @@ public class ClassInstanceTest extends TestCase {
             Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
             Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
             ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-            Assert.assertEquals((long) foo.getId(), refFieldValueDTO.getId());
+            Assert.assertEquals((long) foo.tryGetPhysicalId(), refFieldValueDTO.getId());
         }
     }
 
@@ -46,7 +47,7 @@ public class ClassInstanceTest extends TestCase {
             } else {
                 Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
                 ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-                Assert.assertEquals(bar.getIdRequired(), refFieldValueDTO.getId());
+                Assert.assertEquals(bar.getPhysicalId(), refFieldValueDTO.getId());
             }
         }
     }
@@ -85,7 +86,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type
         );
-        instance.initId(10001L);
+        instance.initId(PhysicalId.of(10001L));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 

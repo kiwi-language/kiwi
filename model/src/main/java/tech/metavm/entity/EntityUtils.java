@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import javassist.util.proxy.ProxyObject;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
+import tech.metavm.flow.Function;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.EnumConstantRT;
@@ -51,7 +52,7 @@ public class EntityUtils {
     }
 
     public static void forEachDescendant(Object object, Consumer<Object> action) {
-        if(object instanceof Entity entity)
+        if (object instanceof Entity entity)
             entity.forEachDescendant(action::accept);
         else
             action.accept(object);
@@ -59,6 +60,28 @@ public class EntityUtils {
 
     public static void forEachReference(Entity entity, Consumer<Object> action) {
         entity.forEachReference(action);
+    }
+
+    public static Object getRoot(Object object) {
+        if (object instanceof Entity entity) {
+            if (entity.getParentEntity() == null)
+                return entity;
+            else
+                return getRoot(entity.getParentEntity());
+        } else
+            return object;
+    }
+
+    public static boolean isMapper(Object object) {
+        return object instanceof Function func && func.getName().startsWith("映射");
+    }
+
+    public static boolean isDurable(Object object) {
+        return !isEphemeral(object);
+    }
+
+    public static boolean isEphemeral(Object object) {
+        return object instanceof Entity entity && entity.isEphemeralEntity();
     }
 
     public static void traverseModelGraph(Object model, BiConsumer<List<String>, Object> action) {
@@ -86,6 +109,19 @@ public class EntityUtils {
         }
     }
 
+    public static void visitGraph(Collection<?> objects, Consumer<Object> action) {
+        var visited = new IdentitySet<>();
+        NncUtils.enhancedForEach(objects, object -> visitGraph(object, visited, action));
+    }
+
+    private static void visitGraph(Object object, IdentitySet<Object> visited, Consumer<Object> action) {
+        if (visited.add(object)) {
+            action.accept(object);
+            if (object instanceof Entity entity)
+                forEachReference(entity, o -> visitGraph(o, visited, action));
+        }
+    }
+
     public static <T extends Entity> boolean entityEquals(T entity1, T entity2) {
         if (entity1 == entity2) {
             return true;
@@ -93,8 +129,8 @@ public class EntityUtils {
         if (entity1 == null || entity2 == null) {
             return false;
         }
-        if (entity1.getId() != null && entity2.getId() != null) {
-            return entity1.getId().equals(entity2.getId());
+        if (entity1.tryGetId() != null && entity2.tryGetId() != null) {
+            return entity1.tryGetId().equals(entity2.tryGetId());
         }
         return false;
     }
@@ -334,7 +370,7 @@ public class EntityUtils {
 
     public static Long tryGetId(Object object) {
         if (object instanceof Identifiable identifiable) {
-            return identifiable.getId();
+            return identifiable.tryGetId();
         }
         return null;
     }
@@ -400,8 +436,8 @@ public class EntityUtils {
 
     public static Type getEntityType(Type type) {
 //        type = ReflectUtils.eraseType(type);
-        if(type instanceof Class<?> klass) {
-            if(klass.getSuperclass() != null && klass.getSuperclass().isEnum())
+        if (type instanceof Class<?> klass) {
+            if (klass.getSuperclass() != null && klass.getSuperclass().isEnum())
                 type = klass.getSuperclass();
         }
         return type;
@@ -480,4 +516,7 @@ public class EntityUtils {
         }
     }
 
+    public static Object getParent(Object entity) {
+        return entity instanceof Entity e ? e.getParentEntity() : null;
+    }
 }

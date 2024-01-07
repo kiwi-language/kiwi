@@ -15,7 +15,7 @@ public record InstanceQueryDTO(
         int pageSize,
         boolean includeSubTypes,
         boolean includeContextTypes,
-        List<String> newlyCreated
+        List<String> createdIds
 ) {
 
     @JsonIgnore

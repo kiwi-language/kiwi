@@ -15,7 +15,7 @@ public class EntityProxyFactoryTest extends TestCase {
 
     public void testRecursiveInitialization() {
         Foo recursiveFooProxy = EntityProxyFactory.getProxy(Foo.class, foo -> {
-            if(foo.getId() == null) {
+            if(foo.tryGetId() == null) {
                 foo.setName("Big Foo");
                 foo.setBar(new Bar("Bar001"));
             }

@@ -28,7 +28,7 @@ public class BlockManager {
 
     private BlockDTO toDTO(BlockPO blockPO) {
         return new BlockDTO(
-                blockPO.getIdRequired(), blockPO.getAppId(), blockPO.getTypeId(), blockPO.getStartId(),
+                blockPO.getId(), blockPO.getAppId(), blockPO.getTypeId(), blockPO.getStartId(),
                 blockPO.getEndId(), blockPO.getNextId(), blockPO.getActive()
         );
     }

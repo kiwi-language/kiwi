@@ -55,7 +55,7 @@ public class FieldParam extends Entity implements LocalKey {
     public FieldParamDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
             return new FieldParamDTO(
-                    getId(), getTmpId(),
+                    tryGetId(), getTmpId(),
                     serContext.getRef(field), NncUtils.get(value, v -> v.toDTO()));
         }
     }

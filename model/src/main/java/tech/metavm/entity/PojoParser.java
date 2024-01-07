@@ -18,8 +18,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static tech.metavm.object.type.ResolutionStage.DECLARATION;
-import static tech.metavm.object.type.ResolutionStage.INIT;
+import static tech.metavm.object.type.ResolutionStage.*;
 
 public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, ClassInstance, D> {
 
@@ -106,6 +105,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
             }
         }
         type.setTypeArguments(typeArgs);
+        type.setStage(SIGNATURE);
     }
 
     @Override
@@ -118,6 +118,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         getPropertyFields().forEach(f -> parseField(f, def));
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         saveBuiltinMapping(false);
+        type.setStage(DECLARATION);
     }
 
     @Override
@@ -127,6 +128,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
                 defContext.ensureStage(f.getType().getUnderlyingType(), DECLARATION));
         getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
         saveBuiltinMapping(true);
+        type.setStage(DEFINITION);
     }
 
     private void saveBuiltinMapping(boolean saveContent) {

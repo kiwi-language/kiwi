@@ -45,7 +45,7 @@ public class FlowController {
 
     @PostMapping
     public Result<Long> save(@RequestBody FlowDTO flow) {
-        return Result.success(flowManager.save(flow).getIdRequired());
+        return Result.success(flowManager.save(flow).tryGetId());
     }
 
     @DeleteMapping("/{id:[0-9]+}")

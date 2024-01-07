@@ -37,7 +37,7 @@ public class InstanceLogServiceImplTest extends TestCase {
 
         List<InstanceLog> logs = new ArrayList<>();
         logs.add(new InstanceLog(
-                APP_ID, fooInstance.getIdRequired(), fooInstance.getType().getIdRequired(),
+                APP_ID, fooInstance.getPhysicalId(), fooInstance.getType().tryGetId(),
                 ChangeType.INSERT, 1L
         ));
 
@@ -52,7 +52,7 @@ public class InstanceLogServiceImplTest extends TestCase {
                 List.of());
 
         instanceLogService.process(logs, null);
-        Assert.assertTrue(instanceSearchService.contains(fooInstance.getIdRequired()));
+        Assert.assertTrue(instanceSearchService.contains(fooInstance.getPhysicalId()));
     }
 
 }

@@ -23,9 +23,9 @@ public class PlatformUsers {
                     )
             );
         }
-        try (var context = platformContext.createSame(app.getIdRequired())) {
+        try (var context = platformContext.createSame(app.tryGetId())) {
             for (PlatformUser platformUser : platformUsers) {
-                var user = context.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, platformUser.getIdRequired());
+                var user = context.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user != null) {
                     user.setState(UserState.DETACHED);
                     var sessions = context.selectByKey(Session.IDX_USER_STATE, user, SessionState.ACTIVE);
@@ -38,7 +38,7 @@ public class PlatformUsers {
         if (eventQueue != null) {
             platformContext.getInstanceContext().registerCommitCallback(() -> {
                 for (PlatformUser platformUser : platformUsers) {
-                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getIdRequired(), app.getIdRequired()));
+                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.tryGetId(), app.tryGetId()));
                 }
             });
         }

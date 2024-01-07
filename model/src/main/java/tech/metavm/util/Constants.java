@@ -12,6 +12,8 @@ public class Constants {
 
     public final static String RESOURCE_CP_ROOT = "/Users/leen/workspace/object/model/src/main/resources";
 
+    public final static String RESOURCE_TARGET_CP_ROOT = "/Users/leen/workspace/object/model/target/classes";
+
     public static final String DEFAULT_ADMIN_NAME = "管理员";
 
     public static final String ADMIN_ROLE_NAME = "管理员";

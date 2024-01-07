@@ -42,7 +42,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @EntityField("返回类型")
     private @NotNull Type returnType;
     @ChildEntity("根流程范围")
-    private final @NotNull ScopeRT rootScope;
+    private @Nullable ScopeRT rootScope;
     @EntityField("版本")
     private @NotNull Long version = 1L;
     // Don't remove, for search
@@ -64,6 +64,9 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @EntityField("参数化键")
     @Nullable
     private String parameterizedKey;
+    @Nullable
+    @EntityField("代码来源")
+    private final CodeSource codeSource;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -80,6 +83,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 List<Type> typeArguments,
                 @NotNull FunctionType type,
                 @Nullable Flow horizontalTemplate,
+                @Nullable CodeSource codeSource,
                 @NotNull MetadataState state
     ) {
         super(tmpId);
@@ -91,13 +95,15 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.isSynthetic = isSynthetic;
         this.returnType = returnType;
         this.type = type;
-        rootScope = addChild(new ScopeRT(this), "rootScope");
+        rootScope = codeSource == null ? addChild(new ScopeRT(this), "rootScope") : null;
         setTypeParameters(typeParameters);
         setTypeArguments(typeArguments);
         setParameters(parameters, false);
         this.horizontalTemplate = horizontalTemplate;
+        this.codeSource = codeSource;
         this.state = state;
     }
+
 
     public abstract FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider);
 
@@ -110,11 +116,15 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public @NotNull ScopeRT getRootScope() {
-        return rootScope;
+        return Objects.requireNonNull(rootScope);
+    }
+
+    public boolean isRootScopePresent() {
+        return rootScope != null;
     }
 
     public ScopeRT getScope(long id) {
-        return scopes().get(Entity::getId, id);
+        return scopes().get(Entity::tryGetId, id);
     }
 
     @Override
@@ -129,6 +139,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Override
     public void onLoad(IEntityContext context) {
         stage = ResolutionStage.INIT;
+        if(codeSource != null)
+            codeSource.generateCode(this, context.getFunctionTypeContext());
     }
 
     @SuppressWarnings("unused")
@@ -153,7 +165,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 getName(),
                 getCode(),
                 isNative,
-                includeCode ? rootScope.toDTO(true, serContext) : null,
+                includeCode ? getRootScope().toDTO(true, serContext) : null,
                 serContext.getRef(getReturnType()),
                 NncUtils.map(parameters, Parameter::toDTO),
                 serContext.getRef(getType()),
@@ -181,7 +193,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public InputNode getInputNode() {
-        return (InputNode) NncUtils.findRequired(rootScope.getNodes(), node -> node instanceof InputNode);
+        return (InputNode) NncUtils.findRequired(getRootScope().getNodes(), node -> node instanceof InputNode);
     }
 
     private ReadWriteArray<NodeRT> nodes() {
@@ -237,7 +249,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public NodeRT getNode(long id) {
-        return nodes().get(Entity::getId, id);
+        return nodes().get(Entity::tryGetId, id);
     }
 
     @SuppressWarnings("unused")
@@ -283,7 +295,12 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public NodeRT getRootNode() {
-        return rootScope.tryGetFirstNode();
+        return getRootScope().tryGetFirstNode();
+    }
+
+    public ScopeRT newEphemeralRootScope() {
+        NncUtils.requireTrue(codeSource != null);
+        return rootScope = addChild(new ScopeRT(this, null, false, true), "rootScope");
     }
 
     @SuppressWarnings("unused")
@@ -470,7 +487,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                         + ")"
                         + ": " + getReturnType().getName()
         );
-        rootScope.writeCode(writer);
+        getRootScope().writeCode(writer);
     }
 
     public String getText() {

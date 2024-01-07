@@ -51,7 +51,7 @@ public class MockRegistry {
         ENTITY_CONTEXT_FACTORY.setInstanceLogService(instanceLogService);
         CONTEXT_FACTORY.setIdService(idProvider);
         INSTANCE_STORE = instanceStore;
-        var dep = new InstanceContextDependency();
+        var dep = new EntityInstanceContextBridge();
         INSTANCE_CONTEXT = (InstanceContext)
                 InstanceContextBuilder.newBuilder(ROOT_APP_ID, instanceStore, idProvider,
                                 dep, dep, dep)
@@ -81,7 +81,7 @@ public class MockRegistry {
     }
 
     private static void initJobScheduler() {
-        var dep = new InstanceContextDependency();
+        var dep = new EntityInstanceContextBridge();
         try (var rootContext =
                      EntityContextBuilder.newBuilder(INSTANCE_STORE, EXECUTOR, ID_PROVIDER)
                              .parent(DEF_CONTEXT)
@@ -178,8 +178,8 @@ public class MockRegistry {
 
     private static void initInstanceIds(DurableInstance instance) {
         for (var inst : Instances.getAllNonValueInstances(List.of(instance))) {
-            if (inst.getId() == null) {
-                inst.initId(ID_PROVIDER.allocateOne(APP_ID, inst.getType()));
+            if (inst.tryGetPhysicalId() == null) {
+                inst.initId(PhysicalId.of(ID_PROVIDER.allocateOne(APP_ID, inst.getType())));
             }
         }
     }
@@ -224,8 +224,8 @@ public class MockRegistry {
             return;
         }
         visited.add(instance);
-        if (instance.getId() == null && !instance.getType().isValue()) {
-            instance.initId(idProvider.allocateOne(APP_ID, instance.getType()));
+        if (instance.tryGetPhysicalId() == null && !instance.getType().isValue()) {
+            instance.initId(PhysicalId.of(idProvider.allocateOne(APP_ID, instance.getType())));
         }
         for (var refInstance : instance.getRefInstances()) {
             initIdRecursively(refInstance, idProvider, visited);
@@ -288,7 +288,7 @@ public class MockRegistry {
         ClassType typeType = getClassType(ClassType.class);
         ClassType fieldType = getClassType(Field.class);
 
-        if (type.getId() == null) {
+        if (type.tryGetId() == null) {
             type.initId(idProvider.allocateOne(APP_ID, typeType));
         }
         if (type instanceof ClassType t) {
@@ -296,7 +296,7 @@ public class MockRegistry {
                 initTypeAndFieldIds(t.getSuperClass(), idProvider, visited);
             }
             for (Field field : t.getDeclaredFields()) {
-                if (field.getId() == null) {
+                if (field.tryGetId() == null) {
                     field.initId(idProvider.allocateOne(APP_ID, fieldType));
                 }
                 initTypeAndFieldIds(

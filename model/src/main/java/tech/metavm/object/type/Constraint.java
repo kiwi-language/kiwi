@@ -76,9 +76,9 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
     public ConstraintDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
             return new ConstraintDTO(
-                    getId(), serContext.getTmpId(this),
+                    tryGetId(), serContext.getTmpId(this),
                     kind.code(),
-                    getDeclaringType().getIdRequired(),
+                    getDeclaringType().tryGetId(),
                     name,
                     code,
                     message,

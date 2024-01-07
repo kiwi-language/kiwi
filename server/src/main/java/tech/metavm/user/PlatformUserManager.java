@@ -11,7 +11,6 @@ import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
 import tech.metavm.event.rest.dto.JoinAppEvent;
-import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.user.rest.dto.*;
 import tech.metavm.util.*;
 
@@ -44,7 +43,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             var user = save(new UserDTO(null, request.loginName(), request.name(), request.password(), List.of()),
                     platformCtx);
             platformCtx.finish();
-            return user.getIdRequired();
+            return user.tryGetId();
         }
     }
 
@@ -84,7 +83,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
         try (var platformContext = newPlatformContext()) {
             User user = save(userDTO, platformContext);
             platformContext.finish();
-            return user.getIdRequired();
+            return user.tryGetId();
         }
     }
 
@@ -136,12 +135,12 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             var app = platformCtx.getEntity(Application.class, id);
             var user = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
             if (user.hasJoinedApplication(app)) {
-                ContextUtil.enterApp(app.getIdRequired(), -1L);
-                try (var ctx = newContext(app.getIdRequired())) {
-                    var appUser = ctx.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, user.getIdRequired());
+                ContextUtil.enterApp(app.tryGetId(), -1L);
+                try (var ctx = newContext(app.tryGetId())) {
+                    var appUser = ctx.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, user.tryGetId());
                     var token = loginService.directLogin(id, appUser, ctx);
                     ctx.finish();
-                    return new LoginResult(token, user.getIdRequired());
+                    return new LoginResult(token, user.tryGetId());
                 } finally {
                     ContextUtil.exitApp();
                 }
@@ -163,13 +162,13 @@ public class PlatformUserManager extends EntityContextFactoryBean {
         if (!app.idEquals(platformContext.getAppId())) {
             if (app.isIdNull())
                 platformContext.initIds();
-            ContextUtil.enterApp(app.getIdRequired(), -1L);
-            try (var context = newContext(app.getIdRequired())) {
-                var user = context.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, platformUser.getIdRequired());
+            ContextUtil.enterApp(app.tryGetId(), -1L);
+            try (var context = newContext(app.tryGetId())) {
+                var user = context.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),
                             NncUtils.randomPassword(), platformUser.getName(), List.of());
-                    user.setPlatformUserId(platformUser.getIdRequired());
+                    user.setPlatformUserId(platformUser.tryGetId());
                     context.bind(user);
                 } else {
                     user.setState(UserState.ACTIVE);
@@ -180,12 +179,12 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             }
         }
         if (TransactionSynchronizationManager.isSynchronizationActive()
-                && app.getIdRequired() != Constants.PLATFORM_APP_ID
-                && app.getIdRequired() != Constants.ROOT_APP_ID) {
+                && app.tryGetId() != Constants.PLATFORM_APP_ID
+                && app.tryGetId() != Constants.ROOT_APP_ID) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.getIdRequired(), app.getIdRequired()));
+                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.tryGetId(), app.tryGetId()));
                 }
             });
         }

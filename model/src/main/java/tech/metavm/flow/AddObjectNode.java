@@ -6,7 +6,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.AddObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
 import tech.metavm.util.Instances;
@@ -100,7 +100,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     }
 
     public void setField(long fieldId, Value value) {
-        fields.get(FieldParam::getId, fieldId).setValue(value);
+        fields.get(FieldParam::tryGetId, fieldId).setValue(value);
     }
 
     public void addField(FieldParam fieldParam) {
@@ -125,7 +125,10 @@ public class AddObjectNode extends ScopeNode implements NewNode {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var parentRef = NncUtils.get(this.parentRef, p -> p.evaluate(frame));
-        var instance = ClassInstance.allocate(getType(), parentRef);
+        var instance = ClassInstanceBuilder.newBuilder(getType())
+                .parentRef(parentRef)
+                .ephemeral(ephemeral)
+                .build();
         var fieldParamMap = NncUtils.toMap(fields, FieldParam::getField, Function.identity());
         for (Field field : getType().getAllFields()) {
             var fieldParam = fieldParamMap.get(field);
@@ -141,7 +144,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
                 }
             }
         }
-        if (!ephemeral && !instance.getType().isEphemeral())
+        if (!instance.isEphemeral())
             frame.addInstance(instance);
         return bodyScope.isNotEmpty() ?
                 NodeExecResult.jump(instance, bodyScope.tryGetFirstNode()) : next(instance);

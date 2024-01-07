@@ -119,8 +119,8 @@ public class FlowParsingContext extends BaseParsingContext {
         while (!queue.isEmpty()) {
             var node = queue.poll();
             visited.add(node);
-            if (node.getId() != null) {
-                id2node.put(node.getId(), node);
+            if (node.tryGetId() != null) {
+                id2node.put(node.tryGetId(), node);
             }
             name2node.put(node.getName(), node);
             var dom = node.getDominator();

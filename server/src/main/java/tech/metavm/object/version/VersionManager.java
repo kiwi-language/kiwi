@@ -35,6 +35,7 @@ public class VersionManager extends EntityContextFactoryBean {
 
         typeIds = NncUtils.diffSet(typeIds, removedTypeIds);
         mappingIds = NncUtils.diffSet(mappingIds, removedMappingIds);
+        functionIds = NncUtils.diffSet(functionIds, removedFunctionIds);
 
         return new InternalMetaPatch(baseVersion, versions.get(versions.size() - 1).getVersion(),
                 new ArrayList<>(typeIds),

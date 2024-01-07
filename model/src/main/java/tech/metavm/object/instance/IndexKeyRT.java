@@ -1,5 +1,8 @@
 package tech.metavm.object.instance;
 
+import tech.metavm.entity.IndexOperator;
+import tech.metavm.entity.InstanceIndexQuery;
+import tech.metavm.entity.InstanceIndexQueryItem;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexField;
@@ -38,6 +41,22 @@ public class IndexKeyRT {
 
     public Instance getField(IndexField field) {
         return fields.get(field);
+    }
+
+    public InstanceIndexQuery toQuery() {
+        return new InstanceIndexQuery(
+                index,
+                NncUtils.map(
+                        index.getFields(),
+                        f -> new InstanceIndexQueryItem(
+                                f,
+                                IndexOperator.EQ,
+                                fields.get(f))
+
+                ),
+                false,
+                null
+        );
     }
 
     @Override

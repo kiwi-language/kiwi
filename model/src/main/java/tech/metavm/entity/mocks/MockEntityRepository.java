@@ -39,6 +39,14 @@ public class MockEntityRepository implements EntityRepository {
     }
 
     @Override
+    public boolean remove(Object object) {
+        if(object instanceof Entity entity && entity.getRef().isNotEmpty())
+            entities.remove(entity.getRef());
+        index.remove(object);
+        return true;
+    }
+
+    @Override
     public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values) {
         return index.selectByKey(indexDef, List.of(values));
     }

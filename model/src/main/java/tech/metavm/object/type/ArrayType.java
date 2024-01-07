@@ -24,28 +24,27 @@ public class ArrayType extends CompositeType {
     private final ArrayKind kind;
 
     public ArrayType(Long tmpId, Type elementType, ArrayKind kind) {
-        super(getArrayTypeName(elementType), getArrayTypeCode(elementType), false, false, kind.category());
+        super(getArrayTypeName(elementType, kind), getArrayTypeCode(elementType, kind),
+                false, false, kind.category());
         setTmpId(tmpId);
         this.kind = kind;
         this.elementType = elementType;
     }
 
-    private static String getArrayTypeName(Type elementType) {
-        if (elementType instanceof UnionType) {
-            return "(" + elementType.getName() + ")[]";
-        } else {
-            return elementType.getName() + "[]";
-        }
+    private static String getArrayTypeName(Type elementType, ArrayKind kind) {
+        if (elementType instanceof UnionType)
+            return "(" + elementType.getName() + ")" + kind.getSuffix();
+        else
+            return elementType.getName() + kind.getSuffix();
     }
 
-    private static @Nullable String getArrayTypeCode(Type elementType) {
+    private static @Nullable String getArrayTypeCode(Type elementType, ArrayKind kind) {
         if(elementType.getCode() == null)
             return null;
-        if (elementType instanceof UnionType) {
-            return "(" + elementType.getCode() + ")[]";
-        } else {
-            return elementType.getCode() + "[]";
-        }
+        if (elementType instanceof UnionType)
+            return "(" + elementType.getCode() + ")" + kind.getSuffix();
+        else
+            return elementType.getCode() + kind.getSuffix();
     }
 
     @Override

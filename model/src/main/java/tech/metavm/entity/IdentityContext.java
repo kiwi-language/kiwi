@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.type.ResolutionStage;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectionUtils;
 
@@ -16,11 +18,6 @@ public class IdentityContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(IdentityContext.class);
 
     private final Map<Object, ModelIdentity> model2identity = new IdentityHashMap<>();
-
-
-    public ModelIdentity getIdentity(Object model) {
-        return model2identity.get(model);
-    }
 
     public IdentityHashMap<Object, ModelIdentity> getIdentityMap(Object object) {
         var buildKeyContext = new BuildKeyContext(this);
@@ -67,16 +64,25 @@ public class IdentityContext {
             }
             default -> throw new InternalException("Fail to create model identity for: " + model);
         }
-        if (!identity.relative() && !model2identity.containsKey(model)) {
+        if (!identity.relative() && !model2identity.containsKey(model)/* && isEntityReady(model)*/
+                /*&& !pendingObjects.contains(EntityUtils.getRoot(model))*/) {
             model2identity.put(model, identity);
             buildKeyContext.addIdentity(model, identity);
-            if (model instanceof Entity entity)
-                EntityUtils.forEachReference(entity, r -> {
-                    if (!(r instanceof Instance))
-                        getModelId(r, buildKeyContext, null);
-                });
+//            if (model instanceof Entity entity)
+//                EntityUtils.forEachReference(entity, r -> {
+//                    if (!(r instanceof Instance) && !pendingObjects.contains(EntityUtils.getRoot(r)))
+//                        getModelId(r, buildKeyContext, null);
+//                });
         }
         return identity;
+    }
+
+    private boolean isEntityReady(Object entity) {
+        var root = EntityUtils.getRoot(entity);
+        if(root instanceof StagedEntity stagedEntity)
+            return stagedEntity.getStage() == ResolutionStage.DEFINITION;
+        else
+            return true;
     }
 
     public Map<Object, ModelIdentity> getIdentityMap() {

@@ -13,15 +13,16 @@ public class ClassInstanceBuilder {
         return new ClassInstanceBuilder(type);
     }
 
-    private Long id;
+    private Id id;
     private long version;
     private long syncVersion;
-    private ClassInstance source;
+    private SourceRef sourceRef;
     private final ClassType type;
     private Map<Field, Instance> data;
     private InstanceParentRef parentRef;
     private Consumer<DurableInstance> load;
-    private Long tmpId;
+    private boolean ephemeral;
+//    private Long tmpId;
 
     private ClassInstanceBuilder(ClassType type) {
         this.type = type;
@@ -37,12 +38,12 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-    public ClassInstanceBuilder source(ClassInstance source) {
-        this.source = source;
+    public ClassInstanceBuilder sourceRef(SourceRef sourceRef) {
+        this.sourceRef = sourceRef;
         return this;
     }
 
-    public ClassInstanceBuilder id(Long id) {
+    public ClassInstanceBuilder id(Id id) {
         this.id = id;
         return this;
     }
@@ -62,16 +63,20 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-    public ClassInstanceBuilder tmpId(Long tmpId) {
-        this.tmpId = tmpId;
+//    public ClassInstanceBuilder tmpId(Long tmpId) {
+//        this.tmpId = tmpId;
+//        return this;
+//    }
+
+    public ClassInstanceBuilder ephemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
         return this;
     }
 
     public ClassInstance build() {
-        var instance =  new ClassInstance(id, type, version, syncVersion, load, parentRef, data, source);
-        if(tmpId != null)
-            instance.setTmpId(tmpId);
-        return instance;
+        //        if(tmpId != null)
+//            instance.setTmpId(tmpId);
+        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, sourceRef, ephemeral);
     }
 
 }

@@ -97,19 +97,18 @@ public class ValueFormatter {
                 instance = ClassInstance.allocate(classType);
             }
             for (Field field : classType.getAllFields()) {
-                FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getId()), InstanceFieldDTO::value);
+                FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.tryGetId()), InstanceFieldDTO::value);
                 Instance fieldValue = rawValue != null ?
                         parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance, field), context)
                         : Instances.nullInstance();
-                if (!field.isChild()) {
+//                if (!field.isChild()) {
                     fieldValueMap.put(field, fieldValue);
-                }
+//                }
             }
             if (instanceDTO.id() != null) {
-                var instanceF = instance;
                 fieldValueMap.forEach((field, value) -> {
                     if (!field.isReadonly())
-                        instanceF.setField(field, value);
+                        instance.setField(field, value);
                 });
             } else {
                 fieldValueMap.forEach(instance::initField);
@@ -140,16 +139,16 @@ public class ValueFormatter {
                                 context)
                 );
             }
-            if (array.isChildArray()) {
-                Set<Instance> elementSet = new IdentitySet<>(elements);
-                for (Instance element : new ArrayList<>(array.getElements())) {
-                    if (!elementSet.contains(element)) {
-                        array.removeElement(element);
-                    }
-                }
-            } else {
-                array.setElements(elements);
-            }
+//            if (array.isChildArray()) {
+//                Set<Instance> elementSet = new IdentitySet<>(elements);
+//                for (Instance element : new ArrayList<>(array.getElements())) {
+//                    if (!elementSet.contains(element)) {
+//                        array.removeElement(element);
+//                    }
+//                }
+//            } else {
+            array.setElements(elements);
+//            }
             return array;
         } else {
             throw new InternalException("Can not parse instance of type '" + actualType + "'");
@@ -165,7 +164,7 @@ public class ValueFormatter {
         Instance value = InstanceFactory.resolveValue(
                 rawValue, type, context::getType, parentRef, context
         );
-        if (value instanceof DurableInstance d && d.getId() == null) {
+        if (value instanceof DurableInstance d && d.tryGetPhysicalId() == null) {
             context.bind(d);
         }
         return value;
@@ -217,8 +216,8 @@ public class ValueFormatter {
             var d = (DurableInstance) value;
             if (value.getType().isValue()) {
                 return value.toDTO();
-            } else if (d.getId() != null) {
-                return new ReferenceDTO(d.getId());
+            } else if (d.tryGetPhysicalId() != null) {
+                return new ReferenceDTO(d.tryGetPhysicalId());
             } else {
                 return null;
             }

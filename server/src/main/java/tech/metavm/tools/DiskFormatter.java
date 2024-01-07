@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Map;
 
 import static tech.metavm.util.NncUtils.requireNonNull;
@@ -135,11 +136,16 @@ public class DiskFormatter {
     }
 
     private static void deleteIdFiles() {
-        String idDirPath = Constants.RESOURCE_CP_ROOT + "/id";
-        File idDir = new File(idDirPath);
-        for (String idFile : requireNonNull(idDir.list())) {
-            if (!new File(idDirPath + "/" + idFile).delete()) {
-                System.err.println("Fail to delete id file '" + idFile + "'");
+        var dirs = List.of(Constants.RESOURCE_CP_ROOT, Constants.RESOURCE_TARGET_CP_ROOT);
+        for (String dir : dirs) {
+            String idDirPath = dir + "/id";
+            File idDir = new File(idDirPath);
+            if(idDir.exists()) {
+                for (String idFile : requireNonNull(idDir.list())) {
+                    if (!new File(idDirPath + "/" + idFile).delete()) {
+                        System.err.println("Fail to delete id file '" + idFile + "'");
+                    }
+                }
             }
         }
     }

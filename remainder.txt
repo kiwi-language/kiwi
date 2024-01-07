@@ -1,0 +1,1 @@
+1 Issue: ephemeral entities generate non-ephemeral instances

@@ -7,10 +7,10 @@ import javax.annotation.Nullable;
 public interface Identifiable {
 
     @Nullable
-    Long getId();
+    Long tryGetId();
 
-    default long getIdRequired() {
-        return NncUtils.requireNonNull(getId());
+    default long getId() {
+        return NncUtils.requireNonNull(tryGetId());
     }
 
 }

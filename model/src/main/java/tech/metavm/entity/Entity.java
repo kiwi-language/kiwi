@@ -22,8 +22,10 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     private transient Field parentEntityField;
     private transient long version;
     private transient long syncVersion;
+    private boolean ephemeralEntity;
 
     public Entity() {
+        this(null);
     }
 
     public Entity(Long tmpId) {
@@ -31,7 +33,12 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public Entity(Long tmpId, @Nullable EntityParentRef parentRef) {
+        this(tmpId, parentRef, false);
+    }
+
+    public Entity(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
         this.tmpId = tmpId;
+        this.ephemeralEntity = ephemeral;
         if (parentRef != null) {
             if (parentRef.parent() instanceof ReadonlyArray<?> array) {
                 NncUtils.requireNull(parentRef.field());
@@ -46,7 +53,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @Nullable
-    public final Long getId() {
+    public final Long tryGetId() {
         return id;
     }
 
@@ -65,7 +72,12 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @NoProxy
-    public final long getIdRequired() {
+    public boolean isEphemeralEntity() {
+        return ephemeralEntity;
+    }
+
+    @NoProxy
+    public final long getId() {
         if (id != null)
             return id;
         else
@@ -103,23 +115,25 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         NncUtils.requireNonNull(child, "Child object can not be null");
         var field = fieldName != null ?
                 ReflectionUtils.getDeclaredFieldRecursively(this.getClass(), fieldName) : null;
-        child.initParent(this, field);
+        child.setParent(this, field);
         return child;
     }
 
-    void initParent(Entity parent, @Nullable Field parentField) {
+    void setParent(Entity parent, @Nullable Field parentField) {
         if (this.parentEntity != null) {
             if (!Objects.equals(parent, parentEntity) || !Objects.equals(this.parentEntityField, parentField))
-                throw new InternalException("Can not reInit parent");
+                throw new InternalException("Can not change parent");
         } else {
             this.parentEntity = parent;
             this.parentEntityField = parentField;
+            if (parent != null && parent.isEphemeralEntity() && !ephemeralEntity)
+                forEachDescendant(e -> e.ephemeralEntity = true);
         }
     }
 
     public void forEachReference(Consumer<Object> action) {
         var desc = DescStore.get(EntityUtils.getRealType(this));
-        for (EntityProp prop : desc.getNonTransientProps()) {
+        for (var prop : desc.getNonTransientProps()) {
             var ref = prop.get(this);
             if (ref != null && !ValueUtil.isPrimitive(ref))
                 action.accept(ref);
@@ -129,7 +143,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     public void forEachDescendant(Consumer<Entity> action) {
         action.accept(this);
         var desc = DescStore.get(EntityUtils.getRealType(this));
-        for (EntityProp prop : desc.getNonTransientProps()) {
+        for (var prop : desc.getNonTransientProps()) {
             if (prop.getField().isAnnotationPresent(ChildEntity.class)) {
                 var child = (Entity) prop.get(this);
                 if (child != null)

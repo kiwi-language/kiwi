@@ -29,7 +29,6 @@ public class ClassInstance extends DurableInstance {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ClassInstance.class);
 
-    private final transient ClassInstance source;
     private final ReadWriteArray<InstanceField> fields = new ReadWriteArray<>(InstanceField.class);
     private final ReadWriteArray<UnknownField> unknownFields = new ReadWriteArray<>(UnknownField.class);
     private transient Map<Flow, FlowInstance> functions;
@@ -48,31 +47,23 @@ public class ClassInstance extends DurableInstance {
                 .build();
     }
 
-    public static ClassInstance allocateView(ClassType type, ClassInstance source, @Nullable InstanceParentRef parentRef) {
-        return ClassInstanceBuilder.newBuilder(type)
-                .source(source)
-                .parentRef(parentRef)
-                .build();
-    }
-
-    public ClassInstance(Long id, ClassType type, long version, long syncVersion,
+    public ClassInstance(Id id, ClassType type, long version, long syncVersion,
                          @Nullable Consumer<DurableInstance> load, @Nullable InstanceParentRef parentRef,
-                         @Nullable Map<Field, Instance> data, @Nullable ClassInstance source) {
-        super(id, type, parentRef, version, syncVersion, load);
-        this.source = source;
+                         @Nullable Map<Field, Instance> data, @Nullable SourceRef sourceRef, boolean ephemeral) {
+        super(id, type, version, syncVersion, ephemeral, load);
+        setParentRef(parentRef);
+        setSourceRef(sourceRef);
         if (data != null)
             reset(data, 0L, 0L);
     }
 
-    public ClassInstance(Long id, ClassType type, @Nullable Consumer<DurableInstance> load) {
-        super(id, type, null, 0, 0, load);
-        this.source = null;
+    public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
+        super(id, type, 0, 0, type.isEphemeral() || ephemeral, load);
     }
 
-    public ClassInstance(Long id, Map<Field, Instance> data, ClassType type) {
-        super(id, type, null, 0, 0, null);
+    public ClassInstance(Id id, Map<Field, Instance> data, ClassType type) {
+        super(id, type, 0, 0, type.isEphemeral(), null);
         reset(data, 0L, 0L);
-        this.source = null;
     }
 
     @NoProxy
@@ -144,7 +135,7 @@ public class ClassInstance extends DurableInstance {
     public String getTitle() {
         ensureLoaded();
         Field titleField = getType().getTitleField();
-        return titleField != null ? field(titleField).getDisplayValue() : getId() + "";
+        return titleField != null ? field(titleField).getDisplayValue() : tryGetPhysicalId() + "";
     }
 
     public Object getField(List<Long> fieldPath) {
@@ -240,12 +231,12 @@ public class ClassInstance extends DurableInstance {
         int j = 0;
         for (int i = 0; i < numFields; i++) {
             var fieldId = input.readLong();
-            while (j < fields.size() && fields.get(j).getIdRequired() < fieldId) {
+            while (j < fields.size() && fields.get(j).tryGetId() < fieldId) {
                 instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
                 j++;
             }
             Field field;
-            if (j < fields.size() && (field = fields.get(j)).getIdRequired() == fieldId) {
+            if (j < fields.size() && (field = fields.get(j)).tryGetId() == fieldId) {
                 input.setParent(this, field);
                 var value = input.readInstance();
                 instFields.add(new InstanceField(this, field, value, false));
@@ -299,17 +290,8 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    @NoProxy
-    public @Nullable Id getInstanceId() {
-        if (source != null)
-            return new ViewId(getType().getIdRequired(), Objects.requireNonNull(source.getInstanceId()));
-        else
-            return super.getInstanceId();
-    }
-
-    @Override
-    public ClassInstance getSource() {
-        return (ClassInstance) super.getSource();
+    public ClassInstance tryGetSource() {
+        return (ClassInstance) super.tryGetSource();
     }
 
     private void setFieldInternal(Field field, Instance value) {
@@ -318,7 +300,7 @@ public class ClassInstance extends DurableInstance {
         if (field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD);
         if (field.isChild() && value.isNotNull())
-            ((DurableInstance) value).initParent(this, field);
+            ((DurableInstance) value).setParent(this, field);
         setModified();
         field(field).setValue(value);
     }
@@ -338,7 +320,7 @@ public class ClassInstance extends DurableInstance {
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
         NncUtils.requireFalse(isFieldInitialized(field));
         if (field.isChild() && value.isNotNull())
-            ((DurableInstance) value).initParent(this, field);
+            ((DurableInstance) value).setParent(this, field);
         addField(new InstanceField(this, field, value));
     }
 
@@ -379,9 +361,8 @@ public class ClassInstance extends DurableInstance {
 
     protected InstanceField field(Field field) {
         var instanceField = fields.get(InstanceField::getField, field);
-        if (instanceField != null) {
+        if (instanceField != null)
             return instanceField;
-        }
         var unknownField = unknownFields.get(UnknownField::getColumn, field.getColumn());
         if (unknownField != null) {
             unknownFields.remove(unknownField);
@@ -411,16 +392,16 @@ public class ClassInstance extends DurableInstance {
     @Override
     public <R> void acceptReferences(InstanceVisitor<R> visitor) {
         ensureLoaded();
-        for (InstanceField field : fields)
+        for (var field : fields)
             field.getValue().accept(visitor);
-        for (UnknownField unknownField : unknownFields)
+        for (var unknownField : unknownFields)
             unknownField.getValue().accept(visitor);
     }
 
     @Override
     public <R> void acceptChildren(InstanceVisitor<R> visitor) {
         ensureLoaded();
-        for (InstanceField field : fields) {
+        for (var field : fields) {
             if (field.getField().isChild())
                 field.getValue().accept(visitor);
         }
@@ -480,7 +461,4 @@ public class ClassInstance extends DurableInstance {
         }
     }
 
-    public boolean isView() {
-        return source != null;
-    }
 }

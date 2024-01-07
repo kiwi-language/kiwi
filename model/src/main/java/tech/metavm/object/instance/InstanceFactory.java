@@ -23,16 +23,16 @@ public class InstanceFactory {
     public static final Map<Class<? extends Instance>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
     public static final String ALLOCATE_METHOD_NAME = "allocate";
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, Type type) {
-        return allocate(instanceType, type, null);
+    public static <T extends Instance> T allocate(Class<T> instanceType, Type type, boolean ephemeral) {
+        return allocate(instanceType, type, null, ephemeral);
     }
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Long id) {
+    public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Id id, boolean ephemeral) {
         T instance;
         if(type instanceof ArrayType arrayType)
-            instance =  instanceType.cast(new ArrayInstance(id, arrayType, null));
+            instance =  instanceType.cast(new ArrayInstance(id, arrayType, ephemeral, null));
         else
-            instance = instanceType.cast(new ClassInstance(id, (ClassType) type, null));
+            instance = instanceType.cast(new ClassInstance(id, (ClassType) type, ephemeral, null));
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
 //        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
         return instance;
@@ -79,26 +79,24 @@ public class InstanceFactory {
             Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(param.fields(), InstanceFieldDTO::fieldId);
             ClassInstance instance = ClassInstance.allocate(classType, parentRef);
             for (Field field : classType.getAllFields()) {
-                if (fieldMap.containsKey(field.getId())) {
+                if (fieldMap.containsKey(field.tryGetId())) {
                     var fieldValue = resolveValue(
-                            fieldMap.get(field.getId()).value(),
+                            fieldMap.get(field.tryGetId()).value(),
                             field.getType(),
                             getType,
                             InstanceParentRef.ofObject(instance, field),
                             context
                     );
-                    if (!field.isChild())
+//                    if (!field.isChild())
                         instance.initField(field, fieldValue);
                 } else {
-                    if (!field.isChild()) {
+//                    if (!field.isChild())
                         instance.initField(field, Instances.nullInstance());
-                    }
                 }
             }
             instance.ensureAllFieldsInitialized();
-            if (!instance.getType().isEphemeral()) {
+            if (!instance.isEphemeral())
                 context.bind(instance);
-            }
             return instance;
         } else if (type instanceof ArrayType arrayType) {
             ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
@@ -108,9 +106,8 @@ public class InstanceFactory {
                     v -> resolveValue(v, arrayType.getElementType(), getType,
                             InstanceParentRef.ofArray(array), context)
             );
-            if (!array.isChildArray()) {
+//            if (!array.isChildArray())
                 array.addAll(elements);
-            }
             context.bind(array);
             return array;
         } else {
@@ -165,7 +162,7 @@ public class InstanceFactory {
                         e -> resolveValue(e, StandardTypes.getAnyType(), getType,
                                 InstanceParentRef.ofArray(array), context)
                 );
-                array.resetParent(parentRef);
+                array.setParentInternal(parentRef);
                 array.reset(elements);
                 return array;
             }

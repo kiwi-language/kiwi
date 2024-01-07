@@ -54,14 +54,21 @@ public class InstanceOutput extends OutputStream {
         if (instance instanceof PrimitiveInstance primitiveInstance) {
             write(primitiveInstance.getWireType());
             primitiveInstance.writeTo(this, includeChildren);
-        } else if (isReference) {
-            write(WireTypes.REFERENCE);
-            writeLong(((DurableInstance) instance).getIdRequired());
-        } else {
-            write(WireTypes.RECORD);
-            writeLong(((DurableInstance) instance).getIdRequired());
-            instance.writeTo(this, includeChildren);
         }
+        else if(instance instanceof DurableInstance d) {
+            if(d.isEphemeral())
+                write(WireTypes.NULL);
+            else if (isReference) {
+                write(WireTypes.REFERENCE);
+                writeLong(d.getPhysicalId());
+            } else {
+                write(WireTypes.RECORD);
+                writeLong(d.getPhysicalId());
+                d.writeTo(this, includeChildren);
+            }
+        }
+        else
+            throw new InternalException("Invalid instance: " + instance);
     }
 
     public void writeString(String string) {

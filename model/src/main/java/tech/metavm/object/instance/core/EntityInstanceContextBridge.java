@@ -14,10 +14,11 @@ import tech.metavm.object.version.Version;
 import tech.metavm.object.version.VersionRepository;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
+import tech.metavm.util.NncUtils;
 
 import java.util.List;
 
-public class InstanceContextDependency implements MappingProvider, ParameterizedFlowProvider,
+public class EntityInstanceContextBridge implements MappingProvider, ParameterizedFlowProvider,
         TypeProvider, IndexProvider, VersionRepository, TypeRegistry {
 
     private IEntityContext entityContext;
@@ -54,7 +55,9 @@ public class InstanceContextDependency implements MappingProvider, Parameterized
     @Nullable
     @Override
     public Version getLastVersion() {
-        return null;
+        return NncUtils.first(
+                entityContext.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
+        );
     }
 
     @Override

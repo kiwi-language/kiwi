@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.InstanceContext;
-import tech.metavm.object.instance.core.InstanceContextDependency;
 import tech.metavm.object.type.BootIdProvider;
 import tech.metavm.object.type.ColumnStore;
 import tech.metavm.object.type.StdAllocators;
@@ -35,9 +35,10 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
 
     public void boot() {
         ContextUtil.setAppId(ROOT_APP_ID);
-        var dep = new InstanceContextDependency();
+        var dep = new EntityInstanceContextBridge();
         InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newBuilder(
                         ROOT_APP_ID, dep, dep, dep)
+                .readonly(false)
                 .idProvider(new BootIdProvider(stdAllocators))
                 .build();
         DefContext defContext = new DefContext(
@@ -55,10 +56,9 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
         defContext.flushAndWriteInstances();
         ModelDefRegistry.setDefContext(defContext);
 
-        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.getId() == null);
-        if (!idNullInstances.isEmpty()) {
+        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetPhysicalId() == null);
+        if (!idNullInstances.isEmpty())
             LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
-        }
         ContextUtil.clearContextInfo();
     }
 
@@ -77,27 +77,28 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
         try (IEntityContext tempContext = newContext(ROOT_APP_ID)) {
             NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
             defContext.finish();
-            defContext.getIdentityMap().forEach((model, javaConstruct) ->
-                    stdAllocators.putId(javaConstruct, defContext.getInstance(model).getIdRequired())
-            );
-            defContext.getInstanceMapping().forEach((javaConstruct, instance) ->
-                    stdAllocators.putId(javaConstruct, instance.getIdRequired())
-            );
+            defContext.getIdentityMap().forEach((object, javaConstruct) -> {
+                if (EntityUtils.isDurable(object))
+                    stdAllocators.putId(javaConstruct, defContext.getInstance(object).getPhysicalId());
+            });
+//            defContext.getInstanceMapping().forEach((javaConstruct, instance) -> {
+//                if (instance.isDurable())
+//                    stdAllocators.putId(javaConstruct, instance.getIdRequired());
+//            });
             if (saveIds) {
                 stdAllocators.save();
                 columnStore.save();
             }
-            check();
+            ensureIdInitialized();
             tempContext.finish();
         }
     }
 
-    private void check() {
-        DefContext defContext = ModelDefRegistry.getDefContext();
+    private void ensureIdInitialized() {
+        var defContext = ModelDefRegistry.getDefContext();
         for (var instance : defContext.instances()) {
-            if (instance.getId() == null) {
-                throw new InternalException("Detected instance with uninitialized id. instance: " + instance);
-            }
+            if (instance.isDurable() && instance.tryGetPhysicalId() == null)
+                throw new InternalException("Detected a durable instance with uninitialized id. instance: " + instance);
         }
     }
 

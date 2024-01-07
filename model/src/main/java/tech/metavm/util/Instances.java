@@ -89,6 +89,22 @@ public class Instances {
         return isInteger(instance) || instance instanceof DoubleInstance;
     }
 
+    public static <T extends DurableInstance> List<T> sort(List<T> instances, boolean desc) {
+        if(desc)
+            instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetPhysicalId(), i1.tryGetPhysicalId()));
+        else
+            instances.sort((i1, i2) -> NncUtils.compareId(i1.tryGetPhysicalId(), i2.tryGetPhysicalId()));
+        return instances;
+    }
+
+    public static <T extends DurableInstance> List<T> sortAndLimit(List<T> instances, boolean desc, long limit) {
+        sort(instances, desc);
+        if(limit == -1L)
+            return instances;
+        else
+            return instances.subList(0, Math.min(instances.size(), (int) limit));
+    }
+
     private static boolean isInteger(Instance instance) {
         return instance instanceof LongInstance;
     }
@@ -479,6 +495,10 @@ public class Instances {
 
     public static LongInstance sum(LongInstance a, LongInstance b) {
         return a.add(b);
+    }
+
+    public static List<ClassInstance> merge(List<ClassInstance> result1, List<ClassInstance> result2, boolean desc, long limit) {
+        return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
     }
 
 //    public static PrimitiveType getPrimitiveType(Class<?> klass) {

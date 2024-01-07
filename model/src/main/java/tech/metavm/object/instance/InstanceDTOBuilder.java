@@ -42,7 +42,7 @@ public class InstanceDTOBuilder {
                                 NncUtils.map(
                                         instance.getType().getAllFields(),
                                         f -> new InstanceFieldDTO(
-                                                f.getIdRequired(),
+                                                f.tryGetId(),
                                                 f.getName(),
                                                 f.getType().getConcreteType().getCategory().code(),
                                                 f.getType().isArray(),

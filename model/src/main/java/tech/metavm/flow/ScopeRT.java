@@ -32,14 +32,19 @@ public class ScopeRT extends Element {
     private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
 
     public ScopeRT(Flow flow) {
-        this(flow, null, false);
+        this(flow, null, false, false);
     }
 
     public ScopeRT(Flow flow, @Nullable NodeRT owner) {
-        this(flow, owner, false);
+        this(flow, owner, false, false);
     }
 
     public ScopeRT(Flow flow, @Nullable NodeRT owner, boolean withBackEdge) {
+        this(flow, owner, withBackEdge, false);
+    }
+
+    public ScopeRT(Flow flow, @Nullable NodeRT owner, boolean withBackEdge, boolean ephemeral) {
+        super(null, null, ephemeral);
         this.flow = flow;
         this.owner = owner;
         this.withBackEdge = withBackEdge;
@@ -47,7 +52,7 @@ public class ScopeRT extends Element {
 
     public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
         return new ScopeDTO(
-                getId(), serializeContext.getTmpId(this),
+                tryGetId(), serializeContext.getTmpId(this),
                 withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of()
         );
     }
@@ -111,19 +116,19 @@ public class ScopeRT extends Element {
 
 
     public NodeRT getNode(long id) {
-        return nodes.get(Entity::getId, id);
+        return nodes.get(Entity::tryGetId, id);
     }
 
     public NodeRT getNode(RefDTO ref) {
         return nodes.get(Entity::getRef, ref);
     }
 
-    public ChildArray<NodeRT> getNodes() {
-        return nodes;
+    public List<NodeRT> getNodes() {
+        return nodes.toList();
     }
 
     public NodeRT getNodeById(long id) {
-        return nodes.get(Entity::getId, id);
+        return nodes.get(Entity::tryGetId, id);
     }
 
     public NodeRT getNodeByName(String name) {

@@ -1,6 +1,5 @@
 package tech.metavm.util;
 
-import tech.metavm.common.InternalErrorCode;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeCategory;
@@ -23,7 +22,7 @@ public class MockIdProvider implements EntityIdProvider {
         return NncUtils.requireNonNull(
                 id2type.get(id),
                 () -> new InternalException("Can not find a type for id: " + id)
-        ).getIdRequired();
+        ).tryGetId();
     }
 
     public Type getType(long id) {

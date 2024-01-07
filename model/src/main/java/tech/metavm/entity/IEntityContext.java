@@ -8,7 +8,7 @@ import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.*;
-import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.object.view.ObjectMapping;
@@ -223,8 +223,8 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(Mapping.class, id);
     }
 
-    default DefaultObjectMapping getObjectMapping(Long id) {
-        return getEntity(DefaultObjectMapping.class, id);
+    default FieldsObjectMapping getObjectMapping(Long id) {
+        return getEntity(FieldsObjectMapping.class, id);
     }
 
     boolean isFinished();

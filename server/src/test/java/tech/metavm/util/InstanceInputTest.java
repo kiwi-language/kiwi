@@ -5,15 +5,10 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.system.RegionManager;
-import tech.metavm.mocks.Bar;
-import tech.metavm.mocks.Baz;
-import tech.metavm.mocks.Foo;
 import tech.metavm.object.type.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
@@ -132,7 +127,7 @@ public class InstanceInputTest extends TestCase {
         quxNameField.initId(20005L);
 
         var barInst = new ClassInstance(
-                30002L,
+                PhysicalId.of(30002L),
                 Map.of(
                         barCodeField,
                         new StringInstance(barCode, StandardTypes.getStringType())
@@ -141,7 +136,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var quxInst = new ClassInstance(
-                30003L,
+                PhysicalId.of(30003L),
                 Map.of(
                         quxNameField,
                         new StringInstance("qux001", StandardTypes.getStringType())
@@ -150,7 +145,7 @@ public class InstanceInputTest extends TestCase {
         );
 
         var fooInst = new ClassInstance(
-                30001L,
+                PhysicalId.of(30001L),
                 Map.of(
                         nameField, new StringInstance(fooName, StandardTypes.stringType),
                         barField, barInst,
@@ -158,22 +153,22 @@ public class InstanceInputTest extends TestCase {
                 ),
                 fooType
         );
-        barInst.resetParent(fooInst, barField);
+        barInst.setParentInternal(fooInst, barField);
 
         Function<Long, DurableInstance> resolveInst = id -> {
-            if(Objects.equals(id, fooInst.getIdRequired()))
-                return new ClassInstance(id, fooType, null);
-            else if(Objects.equals(id, barInst.getIdRequired()))
-                return new ClassInstance(id, barType, null);
-            else if(Objects.equals(id, quxInst.getIdRequired()))
+            if(Objects.equals(id, fooInst.getPhysicalId()))
+                return new ClassInstance(NncUtils.get(id, PhysicalId::of), fooType, false, null);
+            else if(Objects.equals(id, barInst.getPhysicalId()))
+                return new ClassInstance(NncUtils.get(id, PhysicalId::of), barType, false, null);
+            else if(Objects.equals(id, quxInst.getPhysicalId()))
                 return quxInst;
             else
                 throw new InternalException(String.format("Invalid id %d", id));
         };
 
-        Map<Long, Instance> instanceMap = new HashMap<>();
-        instanceMap.put(fooInst.getIdRequired(), fooInst);
-        instanceMap.put(barInst.getIdRequired(), barInst);
+        var instanceMap = new HashMap<Long, Instance>();
+        instanceMap.put(fooInst.getPhysicalId(), fooInst);
+        instanceMap.put(barInst.getPhysicalId(), barInst);
         var bytes = InstanceOutput.toMessage(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst);
         var recoveredFooInst = input.readMessage();

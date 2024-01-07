@@ -149,7 +149,7 @@ public class BranchNode extends NodeRT {
     }
 
     public Branch getBranchById(long id) {
-        return branches.get(Entity::getId, id);
+        return branches.get(Entity::tryGetId, id);
     }
 
     public Branch getBranchByIndex(int index) {
@@ -218,7 +218,7 @@ public class BranchNode extends NodeRT {
 
     public Branch getDefaultBranch() {
         return NncUtils.requireNonNull(branches.get(Branch::isPreselected, true),
-                "Default branch is missing in branch node " + getName() + "(" + getId() + ")");
+                "Default branch is missing in branch node " + getName() + "(" + tryGetId() + ")");
     }
 
     @Override

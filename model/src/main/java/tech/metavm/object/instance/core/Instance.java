@@ -3,6 +3,7 @@ package tech.metavm.object.instance.core;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.flow.ScopeRT;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.instance.rest.InstanceParam;
@@ -13,14 +14,21 @@ import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public abstract class Instance {
 
     private final Type type;
 
+    public static final Map<Instance, Exception> STACKS = new IdentityHashMap<>();
+
     public Instance(Type type) {
         this.type = type;
+        if (Objects.equals(type.getCode(), ScopeRT.class.getName())) {
+            STACKS.put(this, new Exception());
+        }
     }
 
     @NoProxy
@@ -78,14 +86,10 @@ public abstract class Instance {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isEphemeral() {
-        return type.isEphemeral();
-    }
-
-    public abstract @Nullable Id getInstanceId();
+    public abstract @Nullable Id getId();
 
     public @Nullable String getInstanceIdString() {
-        var id = getInstanceId();
+        var id = getId();
         return id != null ? id.toString() : null;
     }
 
@@ -122,7 +126,7 @@ public abstract class Instance {
     protected InstanceDTO toDTO(InstanceParam param) {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
-                    NncUtils.get(getInstanceId(), Objects::toString),
+                    NncUtils.get(getId(), Objects::toString),
                     serContext.getRef(getType()),
                     getType().getName(),
                     getTitle(),

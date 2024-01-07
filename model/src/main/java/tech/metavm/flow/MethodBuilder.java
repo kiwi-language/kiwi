@@ -43,6 +43,7 @@ public class MethodBuilder {
     private FunctionType staticType;
     private Method existing;
     private boolean _static;
+    private @Nullable CodeSource codeSource;
     private MetadataState state;
 
     private MethodBuilder(ClassType declaringType, String name, @Nullable String code, FunctionTypeProvider functionTypeProvider) {
@@ -69,6 +70,11 @@ public class MethodBuilder {
 
     public MethodBuilder overridden(List<Method> overridden) {
         this.overridden = overridden;
+        return this;
+    }
+
+    public MethodBuilder codeSource(CodeSource codeSource) {
+        this.codeSource = codeSource;
         return this;
     }
 
@@ -183,6 +189,7 @@ public class MethodBuilder {
                     _static,
                     horizontalTemplate,
                     access,
+                    codeSource,
                     state
             );
         } else {

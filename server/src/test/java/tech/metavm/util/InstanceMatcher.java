@@ -25,14 +25,14 @@ public class InstanceMatcher extends BaseMatcher<Instance> {
         if(actual instanceof DurableInstance that) {
             Map<Long, DurableInstance> instanceMap = NncUtils.toMap(
                     Instances.getAllNonValueInstances(instance),
-                    DurableInstance::getId
+                    DurableInstance::tryGetPhysicalId
             );
             var thatInstances = Instances.getAllNonValueInstances(that);
             if(instanceMap.size() != thatInstances.size()) {
                 return false;
             }
             for (var thatInst : thatInstances) {
-                var inst = instanceMap.get(thatInst.getId());
+                var inst = instanceMap.get(thatInst.tryGetPhysicalId());
                 if(inst == null) {
                     return false;
                 }

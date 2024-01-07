@@ -11,14 +11,15 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
+import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class DefContextTest extends TestCase {
@@ -33,7 +34,12 @@ public class DefContextTest extends TestCase {
     @Override
     protected void setUp() {
         idProvider = new MockIdProvider();
-        defContext = new DefContext(o -> null, null, new MemColumnStore());
+        var bridge = new EntityInstanceContextBridge();
+        var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
+                        new MemInstanceStore(), idProvider, bridge, bridge, bridge)
+                .build();
+        defContext = new DefContext(o -> null, instanceContext, new MemColumnStore());
+        bridge.setEntityContext(defContext);
         objectInstanceMap = defContext.getObjectInstanceMap();
         typeFactory = new DefaultTypeFactory(defContext::getType);
     }
@@ -47,16 +53,17 @@ public class DefContextTest extends TestCase {
     public void testConvertToInstance() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        var instance = typeDef.createInstance(type, objectInstanceMap, null);
+        var instance = (DurableInstance) objectInstanceMap.getInstance(type);
+//                typeDef.createInstance(type, objectInstanceMap, null);
 //        InstanceDTO instanceDTO = instance.toDTO();
 //        TestUtils.logJSON(LOGGER, "instance", instanceDTO);
-        Assert.assertEquals(type.getId(), instance.getId());
+        Assert.assertEquals(type.tryGetId(), instance.tryGetPhysicalId());
     }
 
     public void testConvertFoo() {
         EntityDef<Foo> fooDef = defContext.getEntityDef(Foo.class);
         Foo foo = new Foo(" Big Foo", new Bar("Bar001"));
-        ClassInstance instance = fooDef.createInstance(foo, objectInstanceMap, null);
+        ClassInstance instance = (ClassInstance) objectInstanceMap.getInstance(foo);
         Foo recoveredFoo = fooDef.createModel(instance, objectInstanceMap);
         Assert.assertFalse(DiffUtils.isPojoDifferent(foo, recoveredFoo));
     }
@@ -64,7 +71,10 @@ public class DefContextTest extends TestCase {
     public void testConvertType() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        ClassInstance instance = typeDef.createInstance(type, objectInstanceMap, null);
+        var instance = InstanceFactory.allocate(ClassInstance.class, type, null, false);
+//        ClassInstance instance = typeDef.createInstance(type, objectInstanceMap, null);
+        defContext.addBinding(type, instance);
+        typeDef.initInstance(instance, type, objectInstanceMap);
         ClassType recoveredType = typeDef.createModel(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredType, PojoMatcher.of(type));
     }
@@ -74,8 +84,9 @@ public class DefContextTest extends TestCase {
     }
 
     public void testInheritance() {
-        EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>(){});
-        Assert.assertSame(superDef.getType().getSuperClass(), typeFactory.getEntityType());
+        EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>() {
+        });
+        Assert.assertSame(Objects.requireNonNull(superDef.getType().getSuperClass()).getSuperClass(), typeFactory.getEntityType());
     }
 
     public void testArrayFieldType() {
@@ -97,7 +108,7 @@ public class DefContextTest extends TestCase {
                 ),
                 quxType
         );
-        qux.initId(idProvider.allocateOne(TestConstants.APP_ID, quxType));
+        qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, quxType)));
         ConstantExpression model = new ConstantExpression(qux);
         Instance instance = def.createInstance(model, objectInstanceMap, null);
         ConstantExpression recoveredModel = def.createModelHelper(instance, objectInstanceMap);
@@ -109,12 +120,13 @@ public class DefContextTest extends TestCase {
         ClassType type = def.getType();
         Map<Object, ModelIdentity> identityMap = defContext.getIdentityMap();
         Set<ModelAndPath> models = EntityUtils.getReachableObjects(
-                List.of(type), o -> !(o instanceof Instance), true
+                List.of(type), o -> o instanceof Entity || o instanceof Enum<?>, true
         );
+        defContext.flush();
         for (ModelAndPath modelAndPath : models) {
             Object model = modelAndPath.model();
-            String path  = modelAndPath.path();
-            if((model instanceof Identifiable identifiable)) {
+            String path = modelAndPath.path();
+            if ((model instanceof Identifiable identifiable) && !EntityUtils.isEphemeral(model)) {
                 ModelIdentity identity = identityMap.get(identifiable);
                 Assert.assertNotNull(
                         "Can not find identity for model '" + model + "' at path '" + path + "'",

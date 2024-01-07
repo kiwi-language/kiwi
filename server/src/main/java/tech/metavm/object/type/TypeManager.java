@@ -68,14 +68,14 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public Map<Integer, Long> getPrimitiveMap() {
         Map<Integer, Long> primitiveTypes = new HashMap<>();
-        primitiveTypes.put(PrimitiveKind.LONG.code(), StandardTypes.getLongType().getId());
-        primitiveTypes.put(PrimitiveKind.DOUBLE.code(), StandardTypes.getDoubleType().getId());
-        primitiveTypes.put(PrimitiveKind.STRING.code(), StandardTypes.getStringType().getId());
-        primitiveTypes.put(PrimitiveKind.BOOLEAN.code(), StandardTypes.getBooleanType().getId());
-        primitiveTypes.put(PrimitiveKind.TIME.code(), StandardTypes.getTimeType().getId());
-        primitiveTypes.put(PrimitiveKind.PASSWORD.code(), StandardTypes.getPasswordType().getId());
-        primitiveTypes.put(PrimitiveKind.NULL.code(), StandardTypes.getNullType().getId());
-        primitiveTypes.put(PrimitiveKind.VOID.code(), StandardTypes.getVoidType().getId());
+        primitiveTypes.put(PrimitiveKind.LONG.code(), StandardTypes.getLongType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.DOUBLE.code(), StandardTypes.getDoubleType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.STRING.code(), StandardTypes.getStringType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.BOOLEAN.code(), StandardTypes.getBooleanType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.TIME.code(), StandardTypes.getTimeType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.PASSWORD.code(), StandardTypes.getPasswordType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.NULL.code(), StandardTypes.getNullType().tryGetId());
+        primitiveTypes.put(PrimitiveKind.VOID.code(), StandardTypes.getVoidType().tryGetId());
         return primitiveTypes;
     }
 
@@ -133,7 +133,9 @@ public class TypeManager extends EntityContextFactoryBean {
 
     private List<Type> getAllTypes(IEntityContext context) {
         var defContext = context.getDefContext();
-        List<Type> types = new ArrayList<>(defContext.getAllBufferedEntities(Type.class));
+        List<Type> types = new ArrayList<>(
+                NncUtils.exclude(defContext.getAllBufferedEntities(Type.class), Entity::isEphemeralEntity)
+        );
         for (Class<? extends Type> customTypeClass : CUSTOM_TYPE_CLASSES) {
             context.getAllByType(customTypeClass, types);
         }
@@ -208,7 +210,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 serContext.writeDependencies(context);
                 return new GetTypeResponse(
                         NncUtils.findRequired(serContext.getTypes(), t -> t.id() == request.getId()),
-                        NncUtils.filter(serContext.getTypes(), t -> !Objects.equals(t.id(), type.getId()))
+                        NncUtils.filter(serContext.getTypes(), t -> !Objects.equals(t.id(), type.tryGetId()))
                 );
             }
         }
@@ -244,7 +246,7 @@ public class TypeManager extends EntityContextFactoryBean {
         try (IEntityContext context = newContext()) {
             Type type = context.getType(id);
             Type compositeType = mapper.apply(context, type);
-            if (compositeType.getId() != null) {
+            if (compositeType.tryGetId() != null) {
                 return compositeType.toDTO();
             } else {
                 return createCompositeType(id, mapper);
@@ -322,7 +324,7 @@ public class TypeManager extends EntityContextFactoryBean {
     private void saveFlows(ClassType type, List<FlowDTO> flows, IEntityContext context) {
         Set<Long> flowIds = NncUtils.mapNonNullUnique(flows, FlowDTO::id);
         for (Flow flow : type.getMethods()) {
-            if (!flowIds.contains(flow.getId())) {
+            if (!flowIds.contains(flow.tryGetId())) {
                 flowManager.remove(flow, context);
             }
         }
@@ -348,7 +350,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 }
             }
             context.finish();
-            return NncUtils.map(typeDTOs, typeDTO -> context.getType(typeDTO.getRef()).getIdRequired());
+            return NncUtils.map(typeDTOs, typeDTO -> context.getType(typeDTO.getRef()).tryGetId());
         }
     }
 
@@ -404,7 +406,7 @@ public class TypeManager extends EntityContextFactoryBean {
         try (var context = newContext()) {
             var members = NncUtils.mapUnique(memberIds, context::getType);
             var type = context.getUnionType(members);
-            if (type.getId() == null) {
+            if (type.tryGetId() == null) {
                 if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
@@ -418,7 +420,7 @@ public class TypeManager extends EntityContextFactoryBean {
         try (var context = newContext()) {
             var elementType = context.getType(elementId);
             var type = context.getArrayType(elementType, ArrayKind.getByCode(kind));
-            if (type.getId() == null) {
+            if (type.tryGetId() == null) {
                 if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
@@ -453,7 +455,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var template = context.getClassType(request.templateRef());
             var typeArgs = NncUtils.map(request.typeArgumentRefs(), context::getType);
             var type = context.getParameterizedType(template, typeArgs);
-            if (type.getId() == null && request.templateRef().isPersisted()
+            if (type.tryGetId() == null && request.templateRef().isPersisted()
                     && NncUtils.allMatch(request.typeArgumentRefs(), RefDTO::isPersisted)) {
                 context.finish();
             }
@@ -474,7 +476,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var parameterTypes = NncUtils.map(parameterTypeIds, context::getType);
             var returnType = context.getType(returnTypeId);
             var type = context.getFunctionType(parameterTypes, returnType);
-            if (type.getId() == null) {
+            if (type.tryGetId() == null) {
                 if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
@@ -489,7 +491,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var lowerBound = context.getType(lowerBoundId);
             var upperBound = context.getType(upperBoundId);
             var type = context.getUncertainType(lowerBound, upperBound);
-            if (type.getId() == null) {
+            if (type.tryGetId() == null) {
                 if (TransactionSynchronizationManager.isActualTransactionActive())
                     context.finish();
                 else
@@ -504,7 +506,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public GetTypesResponse getDescendants(long id) {
         return getByRange(new GetByRangeRequest(
-                StandardTypes.getNothingType().getIdRequired(),
+                StandardTypes.getNothingType().tryGetId(),
                 id,
                 false,
                 false,
@@ -579,7 +581,7 @@ public class TypeManager extends EntityContextFactoryBean {
             try (var serContext = SerializeContext.enter()) {
                 types.forEach(serContext::forceWriteType);
                 return new GetTypesResponse(
-                        NncUtils.map(types, t -> serContext.getType(t.getIdRequired())),
+                        NncUtils.map(types, t -> serContext.getType(t.tryGetId())),
                         serContext.getTypes(t -> !typeRefs.contains(t.getRef()))
                 );
             }
@@ -609,7 +611,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 field.setName(instance.getTitle());
             }
             context.finish();
-            return instance.getIdRequired();
+            return instance.getPhysicalId();
         }
     }
 
@@ -619,7 +621,7 @@ public class TypeManager extends EntityContextFactoryBean {
         return instanceDTO.copyWithParam(
                 param.copyWithNewField(
                         new InstanceFieldDTO(
-                                ordinalField.getIdRequired(),
+                                ordinalField.tryGetId(),
                                 ordinalField.getName(),
                                 TypeCategory.LONG.code(),
                                 false,
@@ -700,7 +702,7 @@ public class TypeManager extends EntityContextFactoryBean {
         IEntityContext context = newContext();
         Field field = saveField(fieldDTO, context);
         context.finish();
-        return NncUtils.getOrElse(field, Entity::getIdRequired, 0L);
+        return NncUtils.getOrElse(field, Entity::tryGetId, 0L);
     }
 
     public void saveFields(List<FieldDTO> fieldDTOs, ClassType declaringClass, IEntityContext context) {
@@ -715,7 +717,7 @@ public class TypeManager extends EntityContextFactoryBean {
             }
         }
         List<Field> toRemove = NncUtils.filter(
-                declaringClass.getAllFields(), f -> f.getId() != null && !fieldIds.contains(f.getId()));
+                declaringClass.getAllFields(), f -> f.tryGetId() != null && !fieldIds.contains(f.tryGetId()));
         toRemove.forEach(declaringClass::removeField);
 
     }
@@ -857,7 +859,7 @@ public class TypeManager extends EntityContextFactoryBean {
         Constraint constraint;
         constraint = ConstraintFactory.save(constraintDTO, context);
         context.finish();
-        return constraint.getIdRequired();
+        return constraint.tryGetId();
     }
 
     @Transactional
@@ -929,9 +931,9 @@ public class TypeManager extends EntityContextFactoryBean {
 
             path2type.forEach((path, type) -> {
                 if (pathSet.contains(path)) {
-                    path2typeId.put(path, type.getId());
-                    if (!visitedTypeIds.contains(type.getId())) {
-                        visitedTypeIds.add(type.getId());
+                    path2typeId.put(path, type.tryGetId());
+                    if (!visitedTypeIds.contains(type.tryGetId())) {
+                        visitedTypeIds.add(type.tryGetId());
                         typeDTOs.add(type.toDTO());
                     }
                 }

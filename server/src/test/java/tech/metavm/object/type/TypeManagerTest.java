@@ -92,11 +92,11 @@ public class TypeManagerTest extends TestCase {
         ClassType fooType = MockRegistry.getClassType(Foo.class);
         PrimitiveType stringType = MockRegistry.getStringType();
         String path1 = "傻.巴.编号";
-        String path2 = "$" + fooType.getId() + ".巴子.*.巴巴巴巴.*.编号";
+        String path2 = "$" + fooType.tryGetId() + ".巴子.*.巴巴巴巴.*.编号";
         LoadByPathsResponse response = typeManager.loadByPaths(List.of(path1, path2));
 
         Assert.assertEquals(
-                Map.of(path1, stringType.getIdRequired(), path2, stringType.getIdRequired()),
+                Map.of(path1, stringType.tryGetId(), path2, stringType.tryGetId()),
                 response.path2typeId()
         );
         try (var context = MockRegistry.newContext(10L)) {

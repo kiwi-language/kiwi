@@ -18,8 +18,8 @@ public class IndexSourceBuilder {
         ClassType type = instance.getType();
         Map<String, Object> source = new HashMap<>();
         source.put(APPLICATION_ID, appId);
-        source.put(TYPE_ID, type.getId());
-        source.put(ID, instance.getId());
+        source.put(TYPE_ID, type.tryGetId());
+        source.put(ID, instance.tryGetPhysicalId());
 
         List<ClassType> hierarchy = type.getAncestorClasses();
         for (int lev = 0; lev < hierarchy.size(); lev++) {
@@ -53,7 +53,7 @@ public class IndexSourceBuilder {
         } else if (value instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue();
         } else {
-            return ((DurableInstance) value).getId();
+            return ((DurableInstance) value).tryGetPhysicalId();
         }
     }
 

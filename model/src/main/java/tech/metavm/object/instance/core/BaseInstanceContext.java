@@ -4,11 +4,16 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.*;
+import tech.metavm.entity.ContextAttributeKey;
+import tech.metavm.entity.InstanceIndexQuery;
+import tech.metavm.entity.LockMode;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.*;
 import tech.metavm.util.profile.Profiler;
@@ -27,7 +32,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
-    private final IdentityHashMap<ClassInstance, List<ClassInstance>> source2views = new IdentityHashMap<>();
+    private final IdentityHashMap<DurableInstance, List<DurableInstance>> source2views = new IdentityHashMap<>();
     private DurableInstance head;
     private DurableInstance tail;
     private LockMode lockMode = LockMode.NONE;
@@ -37,8 +42,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Set<ContextListener> listeners = new LinkedHashSet<>();
     @Nullable
     private Consumer<Object> bindHook;
-    private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
-    private final Map<ClassInstance, Set<IndexKeyRT>> indexKeys = new HashMap<>();
+    //    private final Map<IndexKeyRT, Set<ClassInstance>> memIndex = new HashMap<>();
+//    private final Map<ClassInstance, Set<IndexKeyRT>> indexKeys = new HashMap<>();
+    private final InstanceMemoryIndex memIndex;
     //    private final Map<Long, Instance> tmpId2Instance = new HashMap<>();
     private boolean closed;
     private final boolean readonly;
@@ -62,6 +68,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.typeProvider = typeProvider;
         this.mappingProvider = mappingProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
+        memIndex = new InstanceMemoryIndex(parameterizedFlowProvider);
     }
 
 
@@ -80,8 +87,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (NncUtils.isEmpty(instances)) {
             return;
         }
-        var newInstances = NncUtils.filter(instances, inst -> inst.getId() == null);
-        var persistedInstances = NncUtils.filter(instances, inst -> inst.getId() != null);
+        var newInstances = NncUtils.filter(instances, inst -> inst.tryGetPhysicalId() == null);
+        var persistedInstances = NncUtils.filter(instances, inst -> inst.tryGetPhysicalId() != null);
         newInstances.forEach(this::add);
         replaceActually(persistedInstances);
     }
@@ -100,13 +107,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void replaceActually(List<DurableInstance> persistedInstances) {
-        var parentInstances = NncUtils.filter(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
-        var selfInstances = NncUtils.exclude(persistedInstances, inst -> isIdInParent(inst.getIdRequired()));
+        var parentInstances = NncUtils.filter(persistedInstances, inst -> isIdInParent(inst.getPhysicalId()));
+        var selfInstances = NncUtils.exclude(persistedInstances, inst -> isIdInParent(inst.getPhysicalId()));
         if (NncUtils.isNotEmpty(parentInstances))
             parent.replace(parentInstances);
         onReplace(selfInstances);
         for (var instance : selfInstances) {
-            var existing = instanceMap.get(Objects.requireNonNull(instance.getInstanceId()));
+            var existing = instanceMap.get(Objects.requireNonNull(instance.getId()));
             if (existing != null)
                 evict(existing);
             add(instance);
@@ -114,8 +121,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public List<DurableInstance> query(InstanceIndexQuery query) {
-        return NncUtils.map(indexSource.query(query, this), id -> get(new PhysicalId(id)));
+    public List<ClassInstance> query(InstanceIndexQuery query) {
+        var memResults = memIndex.query(query);
+        if (query.memoryOnly())
+            return memResults;
+        var storeResults = NncUtils.map(indexSource.query(query, this), id -> (ClassInstance) get(new PhysicalId(id)));
+        return Instances.merge(memResults, storeResults, query.desc(), NncUtils.orElse(query.limit(), -1L));
     }
 
     @Override
@@ -148,7 +159,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             head = instance.getNext();
         if (instance == tail)
             tail = instance.getPrev();
-        var id = instance.getInstanceId();
+        var id = instance.getId();
         if (id != null)
             instanceMap.remove(id);
         instance.setContext(null);
@@ -156,21 +167,23 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     public void updateMemoryIndex(ClassInstance instance) {
-        removeFromMemIndex(instance);
-        var keys = instance.getIndexKeys(parameterizedFlowProvider);
-        indexKeys.put(instance, keys);
-        for (IndexKeyRT key : keys) {
-            memIndex.computeIfAbsent(key, k -> new LinkedHashSet<>()).add(instance);
-        }
+        memIndex.save(instance);
+//        removeFromMemIndex(instance);
+//        var keys = instance.getIndexKeys(parameterizedFlowProvider);
+//        indexKeys.put(instance, keys);
+//        for (IndexKeyRT key : keys) {
+//            memIndex.computeIfAbsent(key, k -> new LinkedHashSet<>()).add(instance);
+//        }
     }
 
     private void removeFromMemIndex(ClassInstance instance) {
-        var keys = indexKeys.get(instance);
-        if (keys != null) {
-            for (IndexKeyRT key : keys) {
-                memIndex.get(key).remove(instance);
-            }
-        }
+        memIndex.remove(instance);
+//        var keys = indexKeys.get(instance);
+//        if (keys != null) {
+//            for (IndexKeyRT key : keys) {
+//                memIndex.get(key).remove(instance);
+//            }
+//        }
     }
 
     protected void onReplace(List<DurableInstance> replacements) {
@@ -272,24 +285,42 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return parameterizedFlowProvider;
     }
 
-    private ClassInstance allocateView(ViewId viewId) {
-        var viewType = (ClassType) mappingProvider.getMapping(viewId.getMappingId()).getTargetType();
-        var view = ClassInstanceBuilder.newBuilder(viewType)
-                .source((ClassInstance) internalGet(viewId.getSourceId()))
-                .load(i -> initializeView((ClassInstance) i))
-                .build();
-        source2views.computeIfAbsent(view.getSource(), k->new ArrayList<>()).add(view);
+    private DurableInstance allocateView(ViewId viewId) {
+        var viewType = mappingProvider.getMapping(viewId.getMappingId()).getTargetType();
+        DurableInstance view;
+        if(viewType instanceof ClassType classViewType) {
+            view = ClassInstanceBuilder.newBuilder(classViewType)
+                    .sourceRef(new SourceRef(internalGet(viewId.getSourceId()), mappingProvider.getMapping(viewId.getMappingId())))
+                    .load(this::initializeView)
+                    .id(viewId)
+                    .ephemeral(true)
+                    .build();
+        }
+        else if(viewType instanceof ArrayType arrayViewType) {
+            view = new ArrayInstance(viewId, arrayViewType, true, this::initializeView);
+            view.setSourceRef(new SourceRef(internalGet(viewId.getSourceId()), mappingProvider.getMapping(viewId.getMappingId())));
+        }
+        else
+            throw new InternalException("Invalid view type: " + viewType);
+        source2views.computeIfAbsent(view.tryGetSource(), k -> new ArrayList<>()).add(view);
         return view;
     }
 
-    private void initializeView(ClassInstance view) {
+    private void initializeView(DurableInstance view) {
+        if(view.getId() instanceof ChildViewId childId)
+            view = internalGet(childId.getRootId());
         var mapping = mappingProvider.getMapping(view.getMappingId());
-        var v = mapping.map(view.getSource(), this, parameterizedFlowProvider);
-        view.setLoaded(view.getSource().isLoadedFromCache());
-        v.accept(new InstanceCopier(v) {
+        var r = mapping.mapRoot(view.getSource(), this, parameterizedFlowProvider);
+        r.accept(new InstanceCopier(r) {
             @Override
             protected Instance getExisting(Instance instance) {
-                return instance == v ? view : null;
+                var id = instance.getId();
+                if (id != null) {
+                    var existing = internalGet(id);
+                    existing.setLoaded(requireNonNull(((DurableInstance) instance).tryGetSource()).isLoadedFromCache());
+                    return existing;
+                } else
+                    return null;
             }
         });
     }
@@ -297,7 +328,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private long getTypeId(Id id) {
         return switch (id) {
             case PhysicalId physicalId -> getTypeId(physicalId.getId());
-            case ViewId viewId -> viewId.getMappingId();
+            case ViewId viewId -> mappingProvider.getMapping(viewId.getMappingId()).getTargetType().tryGetId();
             default -> throw new IllegalStateException("Unexpected value: " + id);
         };
     }
@@ -322,11 +353,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected DurableInstance allocateInstance(Id id) {
         Type type = getType(getTypeId(id));
         if (type instanceof ArrayType arrayType) {
-            return new ArrayInstance(((PhysicalId) id).getId(), arrayType, this::initializeInstance);
+            return switch (id) {
+                case PhysicalId physicalId ->
+                        new ArrayInstance(physicalId, arrayType, false, this::initializeInstance);
+                case ViewId viewId -> allocateView(viewId);
+                default -> throw new IllegalStateException("Unexpected value: " + id);
+            };
         } else {
             return switch (id) {
                 case PhysicalId physicalId ->
-                        new ClassInstance(physicalId.getId(), (ClassType) type, this::initializeInstance);
+                        new ClassInstance(physicalId, (ClassType) type, false, this::initializeInstance);
                 case ViewId viewId -> allocateView(viewId);
                 default -> throw new IllegalStateException("Unexpected value: " + id);
             };
@@ -388,9 +424,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void close() {
-        if (closed) {
+        if (closed)
             throw new IllegalStateException("Context already closed");
-        }
         closed = true;
     }
 
@@ -414,12 +449,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public void initIdManually(DurableInstance instance, long id) {
         NncUtils.requireTrue(instance.getContext() == this);
-        instance.initId(id);
+        instance.initId(PhysicalId.of(id));
         onIdInitialized(instance);
     }
 
     protected void onIdInitialized(DurableInstance instance) {
-        instanceMap.put(instance.getInstanceId(), instance);
+        instanceMap.put(instance.getId(), instance);
         for (var listener : listeners) {
             listener.onInstanceIdInit(instance);
         }
@@ -435,7 +470,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected boolean onChange(Instance instance) {
         boolean anyChange = false;
         for (ContextListener listener : listeners) {
-            if(listener.onChange(instance))
+            if (listener.onChange(instance))
                 anyChange = true;
         }
         return anyChange;
@@ -515,14 +550,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 referencesByTarget.get(instance), ref -> !removalBatch.contains(ref.source())
         );
         ReferenceRT strongRef;
-        if ((strongRef = NncUtils.find(refsOutsideOfRemoval, ReferenceRT::isStrong)) != null) {
+        if ((strongRef = NncUtils.find(refsOutsideOfRemoval, ReferenceRT::isStrong)) != null)
             throw BusinessException.strongReferencesPreventRemoval(strongRef.source(), instance);
-        }
         new ArrayList<>(refsOutsideOfRemoval).forEach(ReferenceRT::remove);
         instance.setRemoved();
-        if (instance instanceof ClassInstance classInstance) {
+        if (instance instanceof ClassInstance classInstance)
             removeFromMemIndex(classInstance);
-        }
         for (ReferenceRT ref : new ArrayList<>(instance.getOutgoingReferences())) {
             if (!removalBatch.contains(ref.target()))
                 ref.clear();
@@ -539,14 +572,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
             @Override
             public Boolean visitClassInstance(ClassInstance instance) {
-                if(instance.isView())
-                    return instance.getSource().accept(this);
+                if (instance.isView())
+                    return Objects.requireNonNull(instance.tryGetSource()).accept(this);
                 else {
-                    if(super.visitClassInstance(instance)) {
+                    if (super.visitClassInstance(instance)) {
                         forEachView(instance, result::add);
                         return true;
-                    }
-                    else
+                    } else
                         return false;
                 }
             }
@@ -561,8 +593,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (result.add(instance)) {
                     instance.acceptChildren(this);
                     return true;
-                }
-                else
+                } else
                     return false;
             }
 
@@ -575,11 +606,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return result;
     }
 
-    private void forEachView(ClassInstance instance, Consumer<ClassInstance> action) {
-        if(instance.isView())
+    private void forEachView(DurableInstance instance, Consumer<DurableInstance> action) {
+        if (instance.isView())
             action.accept(instance);
         var views = source2views.get(instance);
-        if(views != null)
+        if (views != null)
             views.forEach(v -> forEachView(v, action));
     }
 
@@ -605,16 +636,15 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     public void bind(DurableInstance instance) {
-        NncUtils.requireFalse(instance.getType().isEphemeral(), "Can not bind an ephemeral instance");
+//        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
         NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
-        NncUtils.requireNull(instance.getId(), "Can not bind a persisted instance");
+        NncUtils.requireNull(instance.tryGetPhysicalId(), "Can not bind a persisted instance");
         NncUtils.requireFalse(instance.isRemoved(),
                 () -> new InternalException("Can not bind instance " + instance + " because it's already removed. " +
                         "See issue 0001"));
         for (var inst : crawNewInstances(List.of(instance))) {
-            if (inst.getId() == null) {
+            if (inst.tryGetPhysicalId() == null)
                 add(inst);
-            }
         }
     }
 
@@ -623,16 +653,15 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             var newInstances = crawNewInstances(this);
             entry.addMessage("numNewInstances", newInstances.size());
             for (var inst : newInstances) {
-                if (inst.getId() == null && !containsInstance(inst)) {
+                if (inst.tryGetPhysicalId() == null && !containsInstance(inst))
                     add(inst);
-                }
             }
         }
     }
 
     private void add(DurableInstance instance) {
         NncUtils.requireFalse(instance.isRemoved(),
-                () -> new InternalException(String.format("Can not add a removed instance: %d", instance.getId())));
+                () -> new InternalException(String.format("Can not add a removed instance: %d", instance.tryGetPhysicalId())));
         NncUtils.requireTrue(instance.getContext() == null
                 && instance.getNext() == null && instance.getPrev() == null);
         if (tail == null)
@@ -642,7 +671,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail = instance;
         }
         instance.setContext(this);
-        instanceMap.put(instance.getInstanceId(), instance);
+        instanceMap.put(instance.getId(), instance);
 //        if (instance.getTmpId() != null) {
 //            tmpId2Instance.put(instance.getTmpId(), instance);
 //        }
@@ -659,9 +688,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @SuppressWarnings("unused")
     public <T> void setAttribute(ContextAttributeKey<T> key, T value) {
-        if (key.isNotNull()) {
+        if (key.isNotNull())
             requireNonNull(value);
-        }
         attributes.put(key, value);
     }
 
@@ -672,9 +700,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             T defaultValue = key.getDefaultValueSupplier().get();
             attributes.put(key, defaultValue);
             return defaultValue;
-        } else {
+        } else
             return (T) attributes.get(key);
-        }
     }
 
     private List<DurableInstance> crawNewInstances(Iterable<DurableInstance> instances) {
@@ -689,13 +716,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                             throw new InternalException("Can not reference a removed instance: " + instance);
                         if (parent != null && parent.containsInstance(instance))
                             return null;
-                        if (!containsInstance(instance)) {
+                        if (!containsInstance(instance))
                             result.add(instance);
-                        }
                         super.visitDurableInstance(instance);
                     }
                     return null;
                 }
+
             };
             for (var instance : instances) {
                 if (instance.isInitialized() && !instance.isRemoved())
@@ -715,31 +742,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     //</editor-fold>
 
-
     @Override
-    public List<DurableInstance> selectByKey(IndexKeyRT indexKey) {
-        return query(
-                new InstanceIndexQuery(
-                        indexKey.getIndex(),
-                        NncUtils.map(
-                                indexKey.getIndex().getFields(),
-                                f -> new InstanceIndexQueryItem(
-                                        f,
-                                        IndexOperator.EQ,
-                                        indexKey.getFields().get(f))
-
-                        ),
-                        false,
-                        null
-                )
-        );
+    public List<ClassInstance> selectByKey(IndexKeyRT indexKey) {
+        return query(indexKey.toQuery());
     }
 
     @Override
     public DurableInstance selectByUniqueKey(IndexKeyRT key) {
         NncUtils.requireTrue(key.getIndex().isUnique());
-        var instances = memIndex.get(key);
-        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();
+//        var instances = memIndex.get(key);
+//        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();
         return NncUtils.first(selectByKey(key));
     }
 

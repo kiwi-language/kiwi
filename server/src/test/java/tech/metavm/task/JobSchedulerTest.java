@@ -44,7 +44,7 @@ public class JobSchedulerTest extends TestCase {
         }
 
         try(var context = newContext()) {
-            testJob = context.getEntity(TestJob.class, testJob.getIdRequired());
+            testJob = context.getEntity(TestJob.class, testJob.tryGetId());
             Assert.assertTrue(testJob.isFinished());
             Assert.assertEquals(10, testJob.getCount());
         }

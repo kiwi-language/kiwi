@@ -10,14 +10,15 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.instance.search.SearchQuery;
 import tech.metavm.object.type.*;
-import tech.metavm.object.view.DefaultObjectMapping;
-import tech.metavm.object.view.FieldMapping;
+import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.ContextUtil;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import java.util.*;
+
+import static java.util.Objects.requireNonNull;
 
 @Component
 public class InstanceQueryService {
@@ -35,7 +36,7 @@ public class InstanceQueryService {
         var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider);
         Type type = query.type();
         Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
-                Set.of(query.type().getIdRequired());
+                Set.of(query.type().tryGetId());
         return new SearchQuery(
                 ContextUtil.getAppId(),
                 typeIds,
@@ -43,7 +44,7 @@ public class InstanceQueryService {
                 query.includeBuiltin(),
                 query.page(),
                 query.pageSize(),
-                5 + query.excluded().size()
+                5 + query.excludedIds().size()
         );
     }
 
@@ -60,15 +61,15 @@ public class InstanceQueryService {
         var type = query.type();
         if (type instanceof ClassType classType && query.sourceMapping() != null) {
             var sourceMapping = query.sourceMapping();
-            if (sourceMapping.getTargetType() == type || !(sourceMapping instanceof DefaultObjectMapping objectMapping))
+            if (sourceMapping.getTargetType() != type || !(sourceMapping instanceof FieldsObjectMapping sourceObjectMapping))
                 throw new BusinessException(ErrorCode.INVALID_SOURCE_MAPPING);
-            var sourceQuery = convertToSourceQuery(query, classType, objectMapping,
+            var sourceQuery = convertToSourceQuery(query, classType, sourceObjectMapping,
                     instanceRepository, typeProvider, arrayTypeProvider);
             var sourcePage = query(sourceQuery, instanceRepository, parameterizedFlowProvider,
                     typeProvider, arrayTypeProvider);
             return new Page<>(
                     NncUtils.map(sourcePage.data(),
-                            i -> objectMapping.map(i, instanceRepository, parameterizedFlowProvider)),
+                            i -> sourceObjectMapping.mapRoot(i, instanceRepository, parameterizedFlowProvider)),
                     sourcePage.total()
             );
         } else
@@ -76,13 +77,13 @@ public class InstanceQueryService {
     }
 
     private InstanceQuery convertToSourceQuery(InstanceQuery query, ClassType viewType,
-                                               DefaultObjectMapping mapping,
+                                               FieldsObjectMapping mapping,
                                                InstanceProvider instanceProvider,
                                                IndexedTypeProvider typeProvider,
                                                ArrayTypeProvider arrayTypeProvider) {
         var sourceType = mapping.getSourceType();
         var fieldMap = new HashMap<Field, Field>();
-        for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
+        for (var fieldMapping : mapping.getFieldMappings()) {
             if (fieldMapping.getSourceField() != null)
                 fieldMap.put(fieldMapping.getTargetField(), fieldMapping.getSourceField());
         }
@@ -111,25 +112,22 @@ public class InstanceQueryService {
             convertedExpr = convertedCond.build(VarType.NAME);
         } else
             convertedExpr = null;
-        List<InstanceQueryField> queryFields = NncUtils.map(
+        var queryFields = NncUtils.map(
                 query.fields(),
                 queryField -> new InstanceQueryField(
-                        Objects.requireNonNull(fieldMap.get(queryField.field())),
+                        requireNonNull(fieldMap.get(queryField.field())),
                         queryField.value(),
                         queryField.min(),
                         queryField.max()
                 )
         );
-        List<Field> searchFields = NncUtils.map(
-                query.searchFields(),
-                f -> Objects.requireNonNull(fieldMap.get(f))
-        );
+        var searchFields = NncUtils.map(query.searchFields(), f -> requireNonNull(fieldMap.get(f)));
         return new InstanceQuery(
                 sourceType, query.searchText(), convertedExpr, searchFields,
                 query.includeBuiltin(), query.includeSubTypes(), query.page(),
                 query.pageSize(), queryFields,
-                NncUtils.map(query.newlyCreated(), id -> ((ViewId) id).getSourceId()),
-                NncUtils.map(query.excluded(), id -> ((ViewId) id).getSourceId()),
+                NncUtils.map(query.createdIds(), id -> ((ViewId) id).getSourceId()),
+                NncUtils.map(query.excludedIds(), id -> ((ViewId) id).getSourceId()),
                 null
         );
     }
@@ -140,8 +138,8 @@ public class InstanceQueryService {
                                                 InstanceProvider instanceProvider,
                                                 ArrayTypeProvider arrayTypeProvider) {
         var idPage = instanceSearchService.search(buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider));
-        var newlyCreatedIds = NncUtils.map(query.newlyCreated(), id -> ((PhysicalId) id).getId());
-        var excludedIds = NncUtils.mapUnique(query.excluded(), id -> ((PhysicalId) id).getId());
+        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
+        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
         List<Long> ids = NncUtils.merge(idPage.data(), newlyCreatedIds, true);
         ids = NncUtils.filter(ids, id -> !excludedIds.contains(id));
         ids = instanceRepository.filterAlive(ids);
@@ -163,7 +161,7 @@ public class InstanceQueryService {
                                       InstanceProvider instanceProvider,
                                       ArrayTypeProvider arrayTypeProvider) {
         Expression condition = buildConditionForSearchText(
-                query.type().getIdRequired(), query.searchText(), query.searchFields(), typeProvider
+                query.type().tryGetId(), query.searchText(), query.searchFields(), typeProvider
         );
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition = null;

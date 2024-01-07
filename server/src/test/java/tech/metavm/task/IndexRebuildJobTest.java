@@ -42,7 +42,7 @@ public class IndexRebuildJobTest extends TestCase {
         instanceSearchService.clear();
 
         try (var context1 = newContext()) {
-            job = context1.getEntity(IndexRebuildTask.class, job.getIdRequired());
+            job = context1.getEntity(IndexRebuildTask.class, job.tryGetId());
             for (int i = 0; i < 50; i++) {
                 if (job.run0(context1)) {
                     break;
@@ -54,7 +54,7 @@ public class IndexRebuildJobTest extends TestCase {
         try (var context = newContext()) {
             var instances = context.getByType(Foo.class, null, 100);
             for (var instance : instances) {
-                Assert.assertTrue(instanceSearchService.contains(instance.getIdRequired()));
+                Assert.assertTrue(instanceSearchService.contains(instance.tryGetId()));
             }
         }
 

@@ -6,6 +6,7 @@ import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NewObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -75,8 +76,11 @@ public class NewObjectNode extends CallNode implements NewNode {
         var subFlow = getSubFlow();
         var type = subFlow.getDeclaringType();
         var parentRef = NncUtils.get(this.parentRef, p -> p.evaluate(frame));
-        var instance = ClassInstance.allocate(type, parentRef);
-        if (!ephemeral)
+        var instance = ClassInstanceBuilder.newBuilder(type)
+                .ephemeral(ephemeral)
+                .parentRef(parentRef)
+                .build();
+        if (!instance.isEphemeral())
             frame.addInstance(instance);
         return instance;
     }

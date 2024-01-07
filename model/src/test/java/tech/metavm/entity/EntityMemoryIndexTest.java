@@ -6,7 +6,7 @@ import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassBuilder;
 import tech.metavm.object.view.ArrayMapping;
-import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.FieldsObjectMapping;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class EntityMemoryIndexTest extends TestCase {
         var fooViewType = ClassBuilder.newBuilder("FooView", "FooView").ephemeral(true).build();
         var fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
         var fooViewArrayType = new ArrayType(null, fooViewType, ArrayKind.CHILD);
-        var fooMapping = new DefaultObjectMapping(
+        var fooMapping = new FieldsObjectMapping(
                 null, "FooBuiltinMapping", "FooBuiltinMapping", fooType,
                 true, fooViewType, List.of()
         );

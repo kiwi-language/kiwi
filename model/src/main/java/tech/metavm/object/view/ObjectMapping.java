@@ -5,7 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.Instance;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.FunctionTypeProvider;
@@ -28,7 +28,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
     @EntityField("模板")
     @Nullable
     @CopyIgnore
-    protected DefaultObjectMapping template;
+    protected FieldsObjectMapping template;
 
     public ObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, ClassType targetType, boolean builtin) {
         super(tmpId, name, code, sourceType, targetType);
@@ -36,9 +36,8 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
     }
 
     @Override
-    public Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
-        var scope = Objects.requireNonNull(mapper).getRootScope();
-        scope.clearNodes();
+    protected Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
+        var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
         var input = Nodes.input(mapper);
         var view = new MethodCallNode(
                 null, "视图", "view",
@@ -46,14 +45,13 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
                 Values.inputValue(input, 0),
                 getReadMethod(), List.of()
         );
-        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
+//        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
         new ReturnNode(null, "结束", "Return", scope.getLastNode(), scope, Values.node(view));
         return mapper;
     }
 
-    public Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
-        var scope = Objects.requireNonNull(unmapper).getRootScope();
-        scope.clearNodes();
+    protected Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
+        var scope = Objects.requireNonNull(unmapper).newEphemeralRootScope();
         var input = Nodes.input(unmapper);
         var source = new FunctionCallNode(
                 null, "来源", "source", scope.getLastNode(), scope,
@@ -72,7 +70,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
     }
 
     @Override
-    public ClassInstance map(Instance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
+    public ClassInstance map(DurableInstance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
         if (instance instanceof ClassInstance)
             return (ClassInstance) super.map(instance, repository, parameterizedFlowProvider);
         else
@@ -98,7 +96,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
 
     public ObjectMappingDTO toDTO(SerializeContext serializeContext) {
         return new ObjectMappingDTO(
-                getId(),
+                tryGetId(),
                 serializeContext.getTmpId(this),
                 getName(),
                 getCode(),

@@ -75,9 +75,9 @@ public class InstanceInput implements Closeable {
     private Instance readRecord() {
         var instance = resolveInstance(readLong());
         if (instance.isInitialized())
-            skipper.visitRecordBody(instance.getIdRequired());
+            skipper.visitRecordBody(instance.getPhysicalId());
         else {
-            instance.resetParent(parent, parentField);
+            instance.setParentInternal(parent, parentField);
             instance.readFrom(this);
         }
         return instance;

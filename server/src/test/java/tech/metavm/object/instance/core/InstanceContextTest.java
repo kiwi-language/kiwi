@@ -76,13 +76,13 @@ public class InstanceContextTest extends TestCase {
         long id;
         try (var context = newContext()) {
             var instance = ClassInstanceBuilder.newBuilder(fooType)
-                    .tmpId(tmpId)
+                    .id(TmpId.of(tmpId))
                     .data(Map.of(fooNameField, Instances.stringInstance(name)))
                     .build();
             context.bind(instance);
             Assert.assertSame(instance, context.get(RefDTO.fromTmpId(tmpId)));
             context.finish();
-            id = instance.getIdRequired();
+            id = instance.getPhysicalId();
         }
         try (var context = newContext()) {
             var instance = (ClassInstance) context.get(id);

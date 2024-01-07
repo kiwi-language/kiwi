@@ -8,7 +8,6 @@ import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.type.rest.dto.ColumnDTO;
 import tech.metavm.object.type.rest.dto.TableDTO;
 import tech.metavm.object.type.rest.dto.TitleFieldDTO;
@@ -45,8 +44,8 @@ public class TableManagerTest extends TestCase {
     public void testSmoking() {
         Type fooType = ModelDefRegistry.getType(Foo.class);
 
-        TableDTO tableDTO = tableManager.get(fooType.getIdRequired());
-        Assert.assertEquals(fooType.getId(), tableDTO.id());
+        TableDTO tableDTO = tableManager.get(fooType.tryGetId());
+        Assert.assertEquals(fooType.tryGetId(), tableDTO.id());
 
         Field bazListField = ModelDefRegistry.getField(Foo.class, "bazList");
         Assert.assertTrue(bazListField.getType().isNullable());
@@ -58,7 +57,7 @@ public class TableManagerTest extends TestCase {
 
     public void testGet() {
         ClassType type = ModelDefRegistry.getClassType(Type.class);
-        TableDTO tableDTO = tableManager.get(type.getIdRequired());
+        TableDTO tableDTO = tableManager.get(type.tryGetId());
         Assert.assertNotNull(tableDTO.id());
         Assert.assertEquals(type.getName(), tableDTO.name());
         Assert.assertEquals(type.getAllFields().size(), tableDTO.fields().size());

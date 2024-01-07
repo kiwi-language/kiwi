@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tech.metavm.common.Page;
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.user.rest.dto.RoleDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.NncUtils;
@@ -46,7 +45,7 @@ public class RoleManager extends EntityContextFactoryBean{
         try (var context = newContext()) {
             Role role = save(roleDTO, context);
             context.finish();
-            return role.getIdRequired();
+            return role.tryGetId();
         }
     }
 

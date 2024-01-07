@@ -54,7 +54,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         if (type == instance.getType()) {
             if(model instanceof Entity entity) {
-                entity.initParent(
+                entity.setParent(
                         NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p)),
                         NncUtils.get(instance.getParentField(), defContext::getJavaField)
                 );
@@ -90,9 +90,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     public void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
         ClassType instanceType = instance.getType();
         if (type == instance.getType()) {
-            if(model instanceof Entity entity) {
+            if(model instanceof Entity entity)
                 reloadParent(entity, instance, instanceMap, defContext);
-            }
             instance.reset(getInstanceFields(model, instanceMap), 0L, 0L);
         } else {
             getSubTypeDef(instanceType).initInstanceHelper(instance, model, instanceMap);
@@ -137,9 +136,8 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     protected Map<Field, Instance> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
         Map<Field, Instance> fieldData = new HashMap<>();
-        if (superDef != null) {
+        if (superDef != null)
             fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
-        }
         for (IFieldDef fieldDef : fieldDefList) {
             fieldData.put(fieldDef.getField(), fieldDef.getInstanceFieldValue(object, instanceMap));
         }

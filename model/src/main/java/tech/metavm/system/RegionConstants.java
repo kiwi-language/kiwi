@@ -1,5 +1,6 @@
 package tech.metavm.system;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.util.InternalException;
 
@@ -29,6 +30,11 @@ public class RegionConstants {
         RegionInfo region = new RegionInfo(typeCategory, start, end);
         VALUE_MAP.put(typeCategory, region);
         return region;
+    }
+
+    public static boolean isArrayId(Id id) {
+        var physicalId = id.tryGetPhysicalId();
+        return physicalId == null || isArrayId(physicalId);
     }
 
     public static boolean isArrayId(long id) {

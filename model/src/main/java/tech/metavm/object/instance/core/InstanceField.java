@@ -19,7 +19,7 @@ public class InstanceField {
         this.field = field;
         this.owner = owner;
         if(field.isChild() && value.isNotNull())
-            ((DurableInstance) value).initParent(this.owner, this.field);
+            ((DurableInstance) value).setParent(this.owner, this.field);
         if (value instanceof DurableInstance d)
             new ReferenceRT(owner, d, field);
         this.value = check ? checkValue(value) : value;
@@ -30,7 +30,7 @@ public class InstanceField {
     }
 
     public long getId() {
-        return field.getIdRequired();
+        return field.tryGetId();
     }
 
     public String getName() {
@@ -46,7 +46,7 @@ public class InstanceField {
     void setValue(Instance value) {
         value = checkValue(value);
         if(field.isChild() && value.isNotNull())
-            ((DurableInstance) value).initParent(this.owner, this.field);
+            ((DurableInstance) value).setParent(this.owner, this.field);
         if (this.value.isNotPrimitive())
             owner.getOutgoingReference(this.value, field).clear();
         if (value instanceof DurableInstance d)
@@ -92,7 +92,7 @@ public class InstanceField {
 
     public InstanceFieldDTO toDTO() {
         return new InstanceFieldDTO(
-                field.getId(),
+                field.tryGetId(),
                 field.getName(),
                 field.getType().getConcreteType().getCategory().code(),
                 field.getType().isArray(),

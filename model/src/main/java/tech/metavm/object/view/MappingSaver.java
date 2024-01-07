@@ -52,17 +52,17 @@ public class MappingSaver {
     }
 
     public ObjectMapping save(ObjectMappingDTO mappingDTO) {
-        if (mappingDTO.param() instanceof DefaultObjectMappingParam)
-            return saveDefaultObjectMapping(mappingDTO);
+        if (mappingDTO.param() instanceof FieldsObjectMappingParam)
+            return saveFieldsObjectMapping(mappingDTO);
         else
             throw new InternalException("Unrecognized object mapping param: " + mappingDTO.param());
     }
 
-    private DefaultObjectMapping saveDefaultObjectMapping(ObjectMappingDTO mappingDTO) {
+    private FieldsObjectMapping saveFieldsObjectMapping(ObjectMappingDTO mappingDTO) {
         var sourceType = typeProvider.getClassType(mappingDTO.sourceTypeRef());
-        DefaultObjectMapping mapping = (DefaultObjectMapping) sourceType.findMapping(mappingDTO.getRef());
+        FieldsObjectMapping mapping = (FieldsObjectMapping) sourceType.findMapping(mappingDTO.getRef());
         if (mapping == null) {
-            mapping = new DefaultObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), mappingDTO.code(), sourceType, false,
+            mapping = new FieldsObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), mappingDTO.code(), sourceType, false,
                     NncUtils.map(mappingDTO.overriddenRefs(), sourceType::getMappingInAncestors));
             mapping.generateDeclarations(functionTypeProvider);
         } else {
@@ -72,7 +72,7 @@ public class MappingSaver {
         }
         if (mappingDTO.isDefault())
             mapping.setDefault();
-        var param = (DefaultObjectMappingParam) mappingDTO.param();
+        var param = (FieldsObjectMappingParam) mappingDTO.param();
         final var m = mapping;
         mapping.setFieldMappings(
                 NncUtils.map(param.fieldMappings(), f -> saveFieldMapping(f, m))
@@ -95,7 +95,7 @@ public class MappingSaver {
 //        }
 //    }
 
-    private FieldMapping saveFieldMapping(FieldMappingDTO fieldMappingDTO, DefaultObjectMapping containingMapping) {
+    private FieldMapping saveFieldMapping(FieldMappingDTO fieldMappingDTO, FieldsObjectMapping containingMapping) {
         var nestedMapping = NncUtils.get(fieldMappingDTO.nestedMappingRef(), mappingProvider::getMapping);
         var fieldMapping = containingMapping.findFieldMapping(fieldMappingDTO.getRef());
         var sourceType = containingMapping.getSourceType();
@@ -169,11 +169,11 @@ public class MappingSaver {
         );
     }
 
-    public DefaultObjectMapping saveBuiltinMapping(ClassType type, boolean generateCode) {
+    public FieldsObjectMapping saveBuiltinMapping(ClassType type, boolean generateCode) {
         NncUtils.requireTrue(type.isClass());
-        var mapping = (DefaultObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);
+        var mapping = (FieldsObjectMapping) NncUtils.find(type.getMappings(), ObjectMapping::isBuiltin);
         if (mapping == null) {
-            mapping = new DefaultObjectMapping(null, "预设视图", "builtin", type, true, List.of());
+            mapping = new FieldsObjectMapping(null, "预设视图", "builtin", type, true, List.of());
             mapping.generateDeclarations(functionTypeProvider);
         }
         if (generateCode) {
@@ -200,7 +200,7 @@ public class MappingSaver {
     }
 
     private DirectFieldMapping saveBuiltinDirectFieldMapping(Field field,
-                                                             DefaultObjectMapping declaringMapping,
+                                                             FieldsObjectMapping declaringMapping,
                                                              Map<Field, DirectFieldMapping> directFieldMappings,
                                                              boolean generateCode) {
         var nestedMapping = tryGetBuiltinMapping(field.getType(), null, generateCode);
@@ -242,7 +242,7 @@ public class MappingSaver {
         };
     }
 
-    private FlowFieldMapping saveBuiltinFlowFieldMapping(Accessor property, DefaultObjectMapping declaringMapping,
+    private FlowFieldMapping saveBuiltinFlowFieldMapping(Accessor property, FieldsObjectMapping declaringMapping,
                                                          Map<Flow, FlowFieldMapping> propertyFieldMappings, boolean generateCode) {
         var propertyMapping = propertyFieldMappings.get(property.getter);
         var underlyingField = property.underlyingField;

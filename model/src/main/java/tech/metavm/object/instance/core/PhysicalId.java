@@ -19,7 +19,7 @@ public final class PhysicalId extends Id {
     }
 
     @Override
-    public void writeBytes(InstanceOutput output) {
+    public void write(InstanceOutput output) {
         output.write(TAG);
         output.writeLong(id);
     }
@@ -31,6 +31,11 @@ public final class PhysicalId extends Id {
     @Override
     public Long tryGetPhysicalId() {
         return id;
+    }
+
+    @Override
+    public boolean isTemporary() {
+        return false;
     }
 
     @Override

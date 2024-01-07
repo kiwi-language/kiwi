@@ -5,7 +5,7 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
-import tech.metavm.object.view.DefaultObjectMapping;
+import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -287,9 +287,9 @@ public class SubstitutorV2 extends CopyVisitor {
                     }));
             }
             if (stage.isAfterOrAt(DEFINITION) && curStage.isBefore(DEFINITION)) {
-                copy.setMappings(NncUtils.map(type.getMappings(), m -> (DefaultObjectMapping) copy(m)));
+                copy.setMappings(NncUtils.map(type.getMappings(), m -> (FieldsObjectMapping) copy(m)));
                 if (type.getDefaultMapping() != null)
-                    copy.setDefaultMapping((DefaultObjectMapping) getValue(type.getDefaultMapping(), v -> {
+                    copy.setDefaultMapping((FieldsObjectMapping) getValue(type.getDefaultMapping(), v -> {
                     }));
             }
             exitElement();

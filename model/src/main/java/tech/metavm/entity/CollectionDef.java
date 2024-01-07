@@ -52,7 +52,7 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
                         e -> objectInstanceMap.getEntity(elementDef.getJavaClass(), e)
                 )
         );
-        model.initParent(
+        model.setParent(
                 NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p)),
                 NncUtils.get(instance.getParentField(), defContext::getJavaField));
     }

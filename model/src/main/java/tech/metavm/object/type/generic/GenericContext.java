@@ -137,7 +137,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         var existing = getNew(template, typeArguments);
         if (existing != null)
             return existing;
-        if (template.getId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.getId() != null)) {
+        if (template.tryGetId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.tryGetId() != null)) {
             var loaded = load(template, typeArguments);
             if (loaded != null) {
                 parameterizedTypes.get(template).put(typeArguments, loaded);
@@ -152,7 +152,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         if (existing != null)
             //noinspection unchecked
             return (T) existing;
-        if (template.getId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.getId() != null)) {
+        if (template.tryGetId() != null && NncUtils.allMatch(typeArguments, typeArg -> typeArg.tryGetId() != null)) {
             var loaded = loadFlow(template, typeArguments);
             if (loaded != null) {
                 parameterizedFlows.get(template).put(typeArguments, loaded);

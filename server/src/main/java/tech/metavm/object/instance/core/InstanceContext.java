@@ -11,7 +11,6 @@ import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.ReferencePO;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.IndexProvider;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
@@ -23,7 +22,6 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static tech.metavm.util.NncUtils.mergeSets;
 
@@ -80,10 +78,10 @@ public class InstanceContext extends BufferingInstanceContext {
     @Override
     protected void onReplace(List<DurableInstance> replacements) {
         for (Instance replacement : replacements) {
-            buffer(Objects.requireNonNull(replacement.getInstanceId()));
+            buffer(Objects.requireNonNull(replacement.getId()));
         }
         for (var replacement : replacements) {
-            var tree = loadingBuffer.tryGetTree(replacement.getIdRequired());
+            var tree = loadingBuffer.tryGetTree(replacement.getPhysicalId());
             if (tree != null) {
                 headContext.add(tree);
             }
@@ -155,9 +153,8 @@ public class InstanceContext extends BufferingInstanceContext {
         var difference = buildDifference(bufferedTrees.keySet());
         var entityChange = difference.getEntityChange();
         var refChange = difference.getReferenceChange();
-        if (prevPatch == null)
-            onContextInitializeId();
-        else {
+        onContextInitializeId();
+        if (prevPatch != null) {
             prevPatch.entityChange.getAttributes().forEach((key, value) -> {
                 //noinspection rawtypes,unchecked
                 entityChange.setAttribute((DifferenceAttributeKey) key, value);
@@ -187,7 +184,7 @@ public class InstanceContext extends BufferingInstanceContext {
         return NncUtils.map(
                 instanceStore.getByReferenceTargetId(
                         targetId,
-                        NncUtils.getOrElse(startExclusive, DurableInstance::getId, -1L),
+                        NncUtils.getOrElse(startExclusive, DurableInstance::tryGetPhysicalId, -1L),
                         limit,
                         this
                 ),
@@ -198,17 +195,16 @@ public class InstanceContext extends BufferingInstanceContext {
 
     public void initIds() {
         try (var ignored = getProfiler().enter("initIds")) {
-            Function<Map<Type, Integer>, Map<Type, List<Long>>> idGenerator = getIdGenerator();
             var instancesToInitId =
                     NncUtils.filter(this, i -> i.isIdNull() && !i.isEphemeral());
             if (instancesToInitId.isEmpty())
                 return;
-            Map<Type, Integer> countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
-            Map<Type, List<Long>> idMap = idGenerator.apply(countMap);
+            var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
+            var type2ids = idProvider.allocate(appId, countMap);
             var type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
-            Map<Long, Instance> allocatedMap = new HashMap<>();
+            var allocatedMap = new HashMap<Long, Instance>();
             type2instances.forEach((type, instances) -> {
-                List<Long> ids = idMap.get(type);
+                List<Long> ids = type2ids.get(type);
                 for (Long id : ids) {
                     boolean contains1 = allocatedMap.containsKey(id);
                     if (contains1)
@@ -218,18 +214,14 @@ public class InstanceContext extends BufferingInstanceContext {
                         throw new InternalException();
                 }
                 for (var instance : instances) {
-                    allocatedMap.put(instance.getId(), instance);
+                    allocatedMap.put(instance.tryGetPhysicalId(), instance);
                 }
-                NncUtils.biForEach(instances, ids, DurableInstance::initId);
+                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id)));
             });
             for (var instance : instancesToInitId) {
                 onIdInitialized(instance);
             }
         }
-    }
-
-    private Function<Map<Type, Integer>, Map<Type, List<Long>>> getIdGenerator() {
-        return (typeId2count) -> idProvider.allocate(appId, typeId2count);
     }
 
     @Override
@@ -242,7 +234,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var persistedResult = NncUtils.map(instancePOs, instancePO -> get(new PhysicalId(instancePO.getId())));
         if (persistedResult.size() >= limit || persistedOnly)
             return persistedResult;
-        Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, DurableInstance::getId);
+        Set<Long> persistedIds = NncUtils.mapUnique(persistedResult, DurableInstance::tryGetPhysicalId);
         var result = NncUtils.union(
                 persistedResult,
                 getByTypeFromBuffer(type, startExclusive, (int) (limit - persistedResult.size()), persistedIds)
@@ -253,7 +245,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private List<DurableInstance> getByTypeFromBuffer(Type type, @Nullable DurableInstance startExclusive, int limit, Set<Long> persistedIds) {
         var typeInstances = NncUtils.filter(
                 this,
-                i -> type == i.getType() && !persistedIds.contains(i.getId())
+                i -> type == i.getType() && !persistedIds.contains(i.tryGetPhysicalId())
         );
         if (startExclusive == null)
             return typeInstances.subList(0, Math.min(typeInstances.size(), limit));
@@ -271,8 +263,8 @@ public class InstanceContext extends BufferingInstanceContext {
         var result = instanceStore.queryByTypeIds(
                 List.of(
                         new ByTypeQuery(
-                                NncUtils.requireNonNull(request.type().getId(), "Type id is not initialized"),
-                                request.startExclusive() == null ? -1L : request.startExclusive().getIdRequired() + 1L,
+                                NncUtils.requireNonNull(request.type().tryGetId(), "Type id is not initialized"),
+                                request.startExclusive() == null ? -1L : request.startExclusive().getPhysicalId() + 1L,
                                 request.limit()
                         )
                 ),
@@ -287,14 +279,14 @@ public class InstanceContext extends BufferingInstanceContext {
         if (NncUtils.anyMatch(this, i -> type.isInstance(i) && (!persistedOnly || i.isPersisted()))) {
             return true;
         }
-        return type.getId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
+        return type.tryGetId() != null && NncUtils.isNotEmpty(getByType(type, null, 1, persistedOnly));
     }
 
     @Override
     public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
         return NncUtils.map(
                 instanceStore.scan(List.of(
-                        new ScanQuery(startExclusive.isNull() ? 0L : startExclusive.getIdRequired() + 1L, limit)
+                        new ScanQuery(startExclusive.isNull() ? 0L : startExclusive.getPhysicalId() + 1L, limit)
                 ), this),
                 instancePO -> get(new PhysicalId(instancePO.getId()))
         );
@@ -387,7 +379,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
         ContextDifference difference =
-                new ContextDifference(appId, id -> internalGet(new PhysicalId(id)).getType().getIdRequired());
+                new ContextDifference(appId, id -> internalGet(new PhysicalId(id)).getType().tryGetId());
         difference.diff(headContext.trees(), bufferedTrees);
         difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
         return difference;
@@ -400,7 +392,7 @@ public class InstanceContext extends BufferingInstanceContext {
         try (var ignored = getProfiler().enter("processChanges")) {
             patch.entityChange.forEachInsertOrUpdate(instancePO -> {
                 if (patchContext.changeNotified.add(instancePO.getId())) {
-                    if(onChange(internalGet(new PhysicalId(instancePO.getId()))))
+                    if (onChange(internalGet(new PhysicalId(instancePO.getId()))))
                         ref.changed = true;
                 }
             });
@@ -459,7 +451,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && (instance.isNew() || !instance.isLoadedFromCache()) && !processed.contains(instance)) {
                     var tree = new Tree(
-                            instance.getIdRequired(),
+                            instance.getPhysicalId(),
                             instance.getVersion(),
                             InstanceOutput.toMessage(instance)
                     );
