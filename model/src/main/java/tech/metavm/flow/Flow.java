@@ -387,6 +387,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         var type = functionTypeProvider.getFunctionType(paramTypes, returnType);
         checkTypes(parameters, returnType, type);
+        updateInternal(parameters, returnType, type);
+    }
+
+    protected void updateInternal(List<Parameter> parameters, Type returnType, FunctionType type) {
         setParameters(parameters, false);
         this.type = type;
         this.returnType = returnType;

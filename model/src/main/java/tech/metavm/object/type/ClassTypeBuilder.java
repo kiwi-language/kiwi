@@ -7,10 +7,10 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClassBuilder {
+public class ClassTypeBuilder {
 
-    public static ClassBuilder newBuilder(String name, @Nullable String code) {
-        return new ClassBuilder(name, code);
+    public static ClassTypeBuilder newBuilder(String name, @Nullable String code) {
+        return new ClassTypeBuilder(name, code);
     }
 
     private Long tmpId;
@@ -33,105 +33,105 @@ public class ClassBuilder {
     private List<ClassType> dependencies;
     private List<TypeVariable> typeParameters = List.of();
 
-    private ClassBuilder(String name, @Nullable String code) {
+    private ClassTypeBuilder(String name, @Nullable String code) {
         this.name = name;
         this.code = code;
     }
 
-    public ClassBuilder superClass(ClassType superType) {
+    public ClassTypeBuilder superClass(ClassType superType) {
         this.superType = superType;
         return this;
     }
 
-    public ClassBuilder tmpId(Long tmpId) {
+    public ClassTypeBuilder tmpId(Long tmpId) {
         this.tmpId = tmpId;
         return this;
     }
 
-    public ClassBuilder source(ClassSource source) {
+    public ClassTypeBuilder source(ClassSource source) {
         this.source = source;
         return this;
     }
 
-    public ClassBuilder isTemplate(boolean isTemplate) {
+    public ClassTypeBuilder isTemplate(boolean isTemplate) {
         this.isTemplate = isTemplate;
         return this;
     }
 
-    public ClassBuilder sourceClassName(String sourceClassName) {
+    public ClassTypeBuilder sourceClassName(String sourceClassName) {
         return this;
     }
 
-    public ClassBuilder anonymous(boolean anonymous) {
+    public ClassTypeBuilder anonymous(boolean anonymous) {
         this.anonymous = anonymous;
         return this;
     }
 
-    public ClassBuilder ephemeral(boolean ephemeral) {
+    public ClassTypeBuilder ephemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
         return this;
     }
 
-    public ClassBuilder temporary() {
+    public ClassTypeBuilder temporary() {
         ephemeral = true;
         anonymous = true;
         return randomSuffix();
     }
 
-    public ClassBuilder template(ClassType template) {
+    public ClassTypeBuilder template(ClassType template) {
         this.template = template;
         return this;
     }
 
-    public ClassBuilder dependencies(List<ClassType> dependencies) {
+    public ClassTypeBuilder dependencies(List<ClassType> dependencies) {
         this.dependencies = dependencies;
         return this;
     }
 
-    public ClassBuilder typeParameters(List<TypeVariable> typeParameters) {
+    public ClassTypeBuilder typeParameters(List<TypeVariable> typeParameters) {
         this.typeParameters = typeParameters;
         return this;
     }
 
-    public ClassBuilder category(TypeCategory category) {
+    public ClassTypeBuilder category(TypeCategory category) {
         this.category = category;
         return this;
     }
 
-    public ClassBuilder desc(String desc) {
+    public ClassTypeBuilder desc(String desc) {
         this.desc = desc;
         return this;
     }
 
-    public ClassBuilder interfaces(ClassType... interfaces) {
+    public ClassTypeBuilder interfaces(ClassType... interfaces) {
         return interfaces(List.of(interfaces));
     }
 
-    public ClassBuilder interfaces(List<ClassType> interfaces) {
+    public ClassTypeBuilder interfaces(List<ClassType> interfaces) {
         this.interfaces = interfaces;
         return this;
     }
 
-    public ClassBuilder randomSuffix() {
+    public ClassTypeBuilder randomSuffix() {
         return suffix(NncUtils.randomNonNegative());
     }
 
-    public ClassBuilder suffix(@Nullable Long suffix) {
+    public ClassTypeBuilder suffix(@Nullable Long suffix) {
         this.suffix = suffix;
         return this;
     }
 
-    public ClassBuilder typeParameters(TypeVariable... typeParameters) {
+    public ClassTypeBuilder typeParameters(TypeVariable... typeParameters) {
         return typeParameters(List.of(typeParameters));
     }
 
-    public ClassBuilder typeArguments(List<Type> typeArguments) {
+    public ClassTypeBuilder typeArguments(List<Type> typeArguments) {
         this.typeArguments = typeArguments;
         return this;
     }
 
 
-    public ClassBuilder existing(ClassType existing) {
+    public ClassTypeBuilder existing(ClassType existing) {
         this.existing = existing;
         return this;
     }

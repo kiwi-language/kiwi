@@ -107,14 +107,14 @@ public class StandardDefBuilder {
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,
-                StandardTypes.recordType = ClassBuilder.newBuilder("记录", Record.class.getSimpleName())
+                StandardTypes.recordType = ClassTypeBuilder.newBuilder("记录", Record.class.getSimpleName())
                         .source(ClassSource.BUILTIN)
                         .category(TypeCategory.VALUE).build(),
                 defContext
         );
         defContext.addDef(recordDef);
 
-        StandardTypes.entityType = ClassBuilder.newBuilder("实体", Entity.class.getSimpleName())
+        StandardTypes.entityType = ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .build();
         EntityDef<Entity> entityDef = createEntityDef(
@@ -129,7 +129,7 @@ public class StandardDefBuilder {
         var enumTypeParam = new TypeVariable(null, "枚举类型", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         primTypeFactory.addAuxType(Enum.class.getTypeParameters()[0], enumTypeParam);
-        StandardTypes.enumType = ClassBuilder.newBuilder("枚举", Enum.class.getSimpleName())
+        StandardTypes.enumType = ClassTypeBuilder.newBuilder("枚举", Enum.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .build();
@@ -184,7 +184,7 @@ public class StandardDefBuilder {
                 defContext.afterDefInitialized(defContext.getDef(javaType))
         );
 
-        StandardTypes.throwableType = ClassBuilder.newBuilder("中断", Throwable.class.getSimpleName())
+        StandardTypes.throwableType = ClassTypeBuilder.newBuilder("中断", Throwable.class.getSimpleName())
                 .source(ClassSource.BUILTIN).build();
         createThrowableFlows(StandardTypes.throwableType);
         var throwableDef = createValueDef(
@@ -220,7 +220,7 @@ public class StandardDefBuilder {
         defContext.afterDefInitialized(throwableDef);
 //        defContext.initCompositeTypes(Throwable.class);
 
-        StandardTypes.exceptionType = ClassBuilder.newBuilder("异常", Exception.class.getSimpleName())
+        StandardTypes.exceptionType = ClassTypeBuilder.newBuilder("异常", Exception.class.getSimpleName())
                 .superClass(StandardTypes.throwableType)
                 .source(ClassSource.BUILTIN).build();
 
@@ -228,7 +228,7 @@ public class StandardDefBuilder {
 //        defContext.addDef(createValueDef(Exception.class, Exception.class, exceptionType, defContext));
         defContext.addDef(new DirectDef<>(Exception.class, StandardTypes.exceptionType, ExceptionNative.class));
 
-        StandardTypes.runtimeExceptionType = ClassBuilder.newBuilder("运行时异常", RuntimeException.class.getSimpleName())
+        StandardTypes.runtimeExceptionType = ClassTypeBuilder.newBuilder("运行时异常", RuntimeException.class.getSimpleName())
                 .superClass(StandardTypes.exceptionType)
                 .source(ClassSource.BUILTIN).build();
         createRuntimeExceptionFlows(StandardTypes.runtimeExceptionType);
@@ -360,7 +360,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(MetaIterator.class.getTypeParameters()[0], elementType);
-        ClassType iteratorType = ClassBuilder.newBuilder(name, code)
+        ClassType iteratorType = ClassTypeBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .category(TypeCategory.INTERFACE).build();
@@ -395,7 +395,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
-        ClassType collectionType = ClassBuilder.newBuilder(name, code)
+        ClassType collectionType = ClassTypeBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .category(TypeCategory.INTERFACE)
@@ -459,7 +459,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(MetaSet.class.getTypeParameters()[0], elementType);
         var pCollectionType = defContext.getGenericContext().getParameterizedType(StandardTypes.collectionType, elementType);
         var pIteratorImplType = defContext.getGenericContext().getParameterizedType(StandardTypes.iteratorImplType, elementType);
-        ClassType setType = ClassBuilder.newBuilder(name, code)
+        ClassType setType = ClassTypeBuilder.newBuilder(name, code)
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
@@ -496,7 +496,7 @@ public class StandardDefBuilder {
         primTypeFactory.putType(MetaList.class.getTypeParameters()[0], elementType);
         var pCollectionType = defContext.getGenericContext().getParameterizedType(StandardTypes.collectionType, elementType);
         var pIteratorImplType = defContext.getGenericContext().getParameterizedType(StandardTypes.iteratorImplType, elementType);
-        ClassType listType = ClassBuilder.newBuilder(name, code)
+        ClassType listType = ClassTypeBuilder.newBuilder(name, code)
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
@@ -570,7 +570,7 @@ public class StandardDefBuilder {
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(IteratorImpl.class.getTypeParameters()[0], elementType);
         var pIteratorType = defContext.getGenericContext().getParameterizedType(StandardTypes.iteratorType, elementType);
-        ClassType iteratorImplType = ClassBuilder.newBuilder(name, code)
+        ClassType iteratorImplType = ClassTypeBuilder.newBuilder(name, code)
                 .interfaces(List.of(pIteratorType))
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
@@ -613,7 +613,7 @@ public class StandardDefBuilder {
         valueType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(MetaMap.class.getTypeParameters()[1], valueType);
         var pSetType = defContext.getGenericContext().getParameterizedType(StandardTypes.setType, keyType);
-        ClassType mapType = ClassBuilder.newBuilder(name, code)
+        ClassType mapType = ClassTypeBuilder.newBuilder(name, code)
                 .source(ClassSource.BUILTIN)
                 .dependencies(List.of(pSetType))
                 .typeParameters(keyType, valueType)

@@ -6,7 +6,7 @@ import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.type.ClassBuilder;
+import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.mocks.TypeProviders;
@@ -29,7 +29,7 @@ public class InstanceMemoryIndexTest extends TestCase {
     public void test() {
         var memIndex = new InstanceMemoryIndex(parameterizedFlowProvider);
 
-        var fooType = ClassBuilder.newBuilder("Foo", "Foo")
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
                         .build();
         var nameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                         .build();

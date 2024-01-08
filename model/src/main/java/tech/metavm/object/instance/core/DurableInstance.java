@@ -287,18 +287,13 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     }
 
     @NoProxy
-    public boolean isIdNull() {
-        return id == null;
-    }
-
-    @NoProxy
-    public boolean isIdNotNull() {
-        return id != null;
+    public boolean isIdInitialized() {
+        return id != null && !id.isTemporary();
     }
 
     @NoProxy
     public void initId(Id id) {
-        if (this.id != null && !this.id.isTemporary())
+        if (isIdInitialized())
             throw new InternalException("id already initialized");
         if (isArray()) {
             if (!RegionConstants.isArrayId(id))

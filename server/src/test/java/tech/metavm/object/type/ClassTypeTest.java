@@ -18,8 +18,8 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testAllocateColumn() {
-        ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
-        ClassType barType = ClassBuilder.newBuilder("Bar", null).build();
+        ClassType fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
+        ClassType barType = ClassTypeBuilder.newBuilder("Bar", null).build();
 
         Field nameField = FieldBuilder
                 .newBuilder("name", null, fooType, MockRegistry.getStringType())
@@ -39,8 +39,8 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testAllocateColumnForArray() {
-        ClassType bazType = ClassBuilder.newBuilder("Baz", null).build();
-        ClassType barType = ClassBuilder.newBuilder("Bar", null).build();
+        ClassType bazType = ClassTypeBuilder.newBuilder("Baz", null).build();
+        ClassType barType = ClassTypeBuilder.newBuilder("Bar", null).build();
         Field barsField = FieldBuilder
                 .newBuilder("bars", null, bazType, new ArrayType(null, barType, ArrayKind.READ_WRITE))
                 .build();
@@ -49,8 +49,8 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testIsAssignable() {
-        ClassType type1 = ClassBuilder.newBuilder("Foo", null).build();
-        ClassType type2 = ClassBuilder.newBuilder("Foo", null).superClass(type1).build();
+        ClassType type1 = ClassTypeBuilder.newBuilder("Foo", null).build();
+        ClassType type2 = ClassTypeBuilder.newBuilder("Foo", null).superClass(type1).build();
         Assert.assertTrue(type1.isAssignableFrom(type2));
     }
 
@@ -66,19 +66,19 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testGetClosure() {
-        ClassType i1 = ClassBuilder.newBuilder("i1", null).category(TypeCategory.INTERFACE).build();
-        ClassType i2 = ClassBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
-        ClassType c1 = ClassBuilder.newBuilder("c1", null)
+        ClassType i1 = ClassTypeBuilder.newBuilder("i1", null).category(TypeCategory.INTERFACE).build();
+        ClassType i2 = ClassTypeBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
+        ClassType c1 = ClassTypeBuilder.newBuilder("c1", null)
                 .interfaces(i1, i2)
                 .build();
 
-        ClassType i3 = ClassBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
-        ClassType c2 = ClassBuilder.newBuilder("c2", null)
+        ClassType i3 = ClassTypeBuilder.newBuilder("i2", null).category(TypeCategory.INTERFACE).build();
+        ClassType c2 = ClassTypeBuilder.newBuilder("c2", null)
                 .superClass(c1).interfaces(i3).build();
 
-        ClassType i4 = ClassBuilder.newBuilder("i4", null).category(TypeCategory.INTERFACE).build();
+        ClassType i4 = ClassTypeBuilder.newBuilder("i4", null).category(TypeCategory.INTERFACE).build();
 
-        ClassType c3  = ClassBuilder.newBuilder("c3", null).interfaces(i3)
+        ClassType c3  = ClassTypeBuilder.newBuilder("c3", null).interfaces(i3)
                 .superClass(c2).interfaces(i4)
                 .build();
 
@@ -86,7 +86,7 @@ public class ClassTypeTest extends TestCase {
 
         Assert.assertEquals(List.of(c3, c2, c1, i1, i2, i3, i4), c3.getClosure().getTypes());
 
-        ClassType i5 = ClassBuilder.newBuilder("i5", null).category(TypeCategory.INTERFACE).build();
+        ClassType i5 = ClassTypeBuilder.newBuilder("i5", null).category(TypeCategory.INTERFACE).build();
         i4.setInterfaces(List.of(i5));
 
         Assert.assertEquals(List.of(c3, c2, c1, i4, i1, i2, i3, i5), c3.getClosure().getTypes());

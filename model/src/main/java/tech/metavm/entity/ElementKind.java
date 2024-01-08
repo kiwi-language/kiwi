@@ -1,8 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.expression.Expression;
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.NodeRT;
+import tech.metavm.flow.*;
 import tech.metavm.flow.Value;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
@@ -17,6 +16,8 @@ public enum ElementKind {
     VALUE(4, Value.class),
     EXPRESSION(5, Expression.class),
     NODE(6, NodeRT.class),
+    METHOD(7, Method.class),
+    FUNCTION(8, Function.class)
 
     ;
 

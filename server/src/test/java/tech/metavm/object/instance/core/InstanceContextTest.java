@@ -10,11 +10,12 @@ import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.instance.cache.MockCache;
-import tech.metavm.object.type.ClassBuilder;
+import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.Instances;
 import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.MockUtils;
 import tech.metavm.util.TestConstants;
 
 import java.util.List;
@@ -64,7 +65,7 @@ public class InstanceContextTest extends TestCase {
     }
 
     public void test() {
-        var fooType = ClassBuilder.newBuilder("Foo", "Foo").build();
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
         fooType.initId(101L);
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
                 .build();
@@ -93,5 +94,40 @@ public class InstanceContextTest extends TestCase {
     public void testMapping() {
 
     }
+
+    public void testOnChange() {
+        long fooId;
+        var fooType = MockUtils.createFooType(true);
+        entityRepository.bind(fooType.fooType());
+        entityRepository.bind(fooType.barType());
+        entityRepository.bind(fooType.barChildArrayType());
+        try (var context = newContext()) {
+            var foo = MockUtils.createFoo(fooType);
+            context.bind(foo);
+            context.finish();
+            fooId = foo.getPhysicalId();
+        }
+        try (var context = newContext()) {
+            var foo = (ClassInstance) context.get(fooId);
+            var bars = (ArrayInstance) foo.getField(fooType.fooBarsField());
+            var bar001 = (DurableInstance) (bars.get(0));
+            context.remove(bar001);
+            final boolean[] onChangeCalled = new boolean[1];
+            context.addListener(new ContextListener() {
+                @Override
+                public boolean onChange(Instance instance) {
+                    if (instance == foo) {
+                        bars.removeElement(bar001);
+                        onChangeCalled[0] = true;
+                        return true;
+                    } else
+                        return false;
+                }
+            });
+            context.finish();
+            Assert.assertTrue(onChangeCalled[0]);
+        }
+    }
+
 
 }

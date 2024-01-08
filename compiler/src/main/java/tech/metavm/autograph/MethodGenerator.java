@@ -49,7 +49,7 @@ public class MethodGenerator {
                     nextName("Merge"),
                     null,
                     branchNode,
-                    ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
+                    ClassTypeBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                     scope()
             ));
             mergeNode.mergeExpressionTypes(MergeNode.getExpressionTypeMap(branchNode));
@@ -72,7 +72,7 @@ public class MethodGenerator {
     TryEndNode createTryEnd() {
         var node = new TryEndNode(
                 null, nextName("TryEnd"), null,
-                ClassBuilder.newBuilder("TryEndOutput", "TryEndOutput")
+                ClassTypeBuilder.newBuilder("TryEndOutput", "TryEndOutput")
                         .temporary().build(),
                 (TryNode) scope().getLastNode(),
                 scope()
@@ -315,7 +315,7 @@ public class MethodGenerator {
 
     public ClassType newTemporaryType(String namePrefix) {
         String name = namePrefix + "_" + NncUtils.randomNonNegative();
-        return ClassBuilder.newBuilder(name, name)
+        return ClassTypeBuilder.newBuilder(name, name)
                 .anonymous(true)
                 .ephemeral(true)
                 .build();
@@ -361,7 +361,7 @@ public class MethodGenerator {
     }
 
     public InputNode createInput() {
-        var type = ClassBuilder.newBuilder("输入类型", "InputType").temporary().build();
+        var type = ClassTypeBuilder.newBuilder("输入类型", "InputType").temporary().build();
         return setNodeExprTypes(new InputNode(null, nextName("Input"), null, type, scope().getLastNode(), scope()));
     }
 

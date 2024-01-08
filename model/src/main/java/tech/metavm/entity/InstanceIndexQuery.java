@@ -34,7 +34,7 @@ public record InstanceIndexQuery(
 
     public boolean memoryOnly() {
         return index.isIdNull()
-                || NncUtils.anyMatch(items, i -> i.value() instanceof DurableInstance d && d.isIdNull());
+                || NncUtils.anyMatch(items, i -> i.value() instanceof DurableInstance d && !d.isIdInitialized());
     }
 
     @Override

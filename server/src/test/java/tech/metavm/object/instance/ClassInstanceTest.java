@@ -71,7 +71,7 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void test_add_not_null_field() {
-        ClassType type = ClassBuilder.newBuilder("Lab", null).build();
+        ClassType type = ClassTypeBuilder.newBuilder("Lab", null).build();
         Field titleField = FieldBuilder
                 .newBuilder("title", null, type, Instances.getStringType())
                 .build();

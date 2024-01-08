@@ -258,7 +258,7 @@ public class SubstitutorV2 extends CopyVisitor {
             var name = Types.getParameterizedName(template.getName(), typeArguments);
             var code = Types.getParameterizedCode(template.getCode(), typeArguments);
             if (copy == null) {
-                copy = ClassBuilder.newBuilder(name, code)
+                copy = ClassTypeBuilder.newBuilder(name, code)
                         .typeArguments(typeArguments)
                         .anonymous(true)
                         .template(template)

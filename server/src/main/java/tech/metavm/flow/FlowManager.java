@@ -61,7 +61,7 @@ public class FlowManager extends EntityContextFactoryBean {
             var scope = context.getScope(nodeDTO.scopeId());
             TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
             TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + "结束", null,
-                    ClassBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
+                    ClassTypeBuilder.newBuilder("守护结束节点输出", "TryEndNodeOutput").temporary().build(),
                     tryNode, scope);
             FieldBuilder.newBuilder("异常", "exception",
                             tryEndNode.getType(), context.getNullableType(StandardTypes.getThrowableType()))
@@ -81,7 +81,7 @@ public class FlowManager extends EntityContextFactoryBean {
             var scope = context.getScope(nodeDTO.scopeId());
             BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
             MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "合并", null,
-                    branchNode, ClassBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
+                    branchNode, ClassTypeBuilder.newBuilder("合并节点输出", "MergeNodeOutput").temporary().build(),
                     scope);
             context.bind(mergeNode);
             Flows.retransformFlowIfRequired(branchNode.getFlow(), context);
@@ -302,7 +302,7 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {
-        var type = ClassBuilder.newBuilder("输入类型", "InputType").temporary().build();
+        var type = ClassTypeBuilder.newBuilder("输入类型", "InputType").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
                     .build();

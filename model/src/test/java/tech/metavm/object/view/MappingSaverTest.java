@@ -41,10 +41,10 @@ public class MappingSaverTest extends TestCase {
     }
 
     public void testSaveBuiltin() {
-        var fooType = ClassBuilder.newBuilder("Foo", "Foo")
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
                 .tmpId(1L)
                 .build();
-        var barType = ClassBuilder.newBuilder("Bar", "Bar")
+        var barType = ClassTypeBuilder.newBuilder("Bar", "Bar")
                 .tmpId(2L)
                 .build();
 

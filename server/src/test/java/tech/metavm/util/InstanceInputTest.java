@@ -101,9 +101,9 @@ public class InstanceInputTest extends TestCase {
 
     public void test() {
         String fooName = "foo", barCode = "bar001";
-        ClassType fooType = ClassBuilder.newBuilder("Foo", "Foo").build();
-        ClassType barType = ClassBuilder.newBuilder("Bar", "Bar").build();
-        ClassType quxType = ClassBuilder.newBuilder("Qux", "Qux").build();
+        ClassType fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        ClassType barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
+        ClassType quxType = ClassTypeBuilder.newBuilder("Qux", "Qux").build();
 
         fooType.initId(10001L);
         barType.initId(10002L);

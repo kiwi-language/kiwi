@@ -96,7 +96,7 @@ public class EnumEditContext {
     }
 
     private ClassType createType() {
-        type = ClassBuilder.newBuilder(name, null)
+        type = ClassTypeBuilder.newBuilder(name, null)
                 .superClass(ModelDefRegistry.getClassType(Enum.class))
                 .category(TypeCategory.ENUM)
                 .anonymous(anonymous)

@@ -151,7 +151,7 @@ public class Types {
 
     public static ClassType createFunctionalClass(ClassType functionalInterface, IEntityContext context) {
         var functionTypeContext = context.getFunctionTypeContext();
-        var klass = ClassBuilder.newBuilder(functionalInterface.getName() + "实现",
+        var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现",
                         NncUtils.get(functionalInterface.getCode(), k -> k + "Impl"))
                 .interfaces(functionalInterface)
                 .ephemeral(true)
@@ -165,7 +165,7 @@ public class Types {
                 .build();
 
         var selfNode = new SelfNode(null, "当前对象", null, SelfNode.getSelfType(flow, context), null, flow.getRootScope());
-        var inputType = ClassBuilder.newBuilder("流程输入", "InputType").temporary().build();
+        var inputType = ClassTypeBuilder.newBuilder("流程输入", "InputType").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
                     .build();

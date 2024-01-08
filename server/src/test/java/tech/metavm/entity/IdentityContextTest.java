@@ -22,7 +22,7 @@ public class IdentityContextTest extends TestCase {
 
     public void test() {
         IdentityContext identityContext = new IdentityContext();
-        var fooType = ClassBuilder.newBuilder("Foo", "tech.metavm.Foo")
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "tech.metavm.Foo")
                 .source(ClassSource.BUILTIN)
                 .build();
 

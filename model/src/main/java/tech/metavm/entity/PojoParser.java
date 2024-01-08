@@ -252,7 +252,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
         var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass, INIT) : null;
         PojoDef<? super T> superDef = getSuperDef();
         List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
-        return ClassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
+        return ClassTypeBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .category(getTypeCategory())
                 .source(ClassSource.BUILTIN)
                 .template(NncUtils.get(templateDef, PojoDef::getType))

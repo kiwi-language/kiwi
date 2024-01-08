@@ -20,8 +20,8 @@ import java.util.Set;
 public class EntityIdProviderTest extends TestCase {
 
     private void testAllocate(EntityIdProvider entityIdProvider) {
-        ClassType typeType = ClassBuilder.newBuilder("Type", null).build();
-        ClassType fooType = ClassBuilder.newBuilder("Foo", null).build();
+        ClassType typeType = ClassTypeBuilder.newBuilder("Type", null).build();
+        ClassType fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
         ArrayType fooArrayType = new ArrayType(null, fooType, ArrayKind.READ_WRITE);
         typeType.initId(1L);
         fooType.initId(entityIdProvider.allocateOne(TestConstants.APP_ID, typeType));

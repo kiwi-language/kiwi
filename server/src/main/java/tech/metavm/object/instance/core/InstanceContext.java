@@ -196,7 +196,7 @@ public class InstanceContext extends BufferingInstanceContext {
     public void initIds() {
         try (var ignored = getProfiler().enter("initIds")) {
             var instancesToInitId =
-                    NncUtils.filter(this, i -> i.isIdNull() && !i.isEphemeral());
+                    NncUtils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral());
             if (instancesToInitId.isEmpty())
                 return;
             var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);

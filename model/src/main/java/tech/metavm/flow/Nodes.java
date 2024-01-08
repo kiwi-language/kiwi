@@ -4,7 +4,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassBuilder;
+import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.util.NncUtils;
@@ -36,7 +36,7 @@ public class Nodes {
         var seq = NncUtils.randomNonNegative();
         var name = "Foreach_" + seq;
         var code = "Foreach_" + seq;
-        var whileOutputType = ClassBuilder.newBuilder("循环输出", "LoopOutput")
+        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", "LoopOutput")
                 .temporary()
                 .build();
         var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
@@ -69,7 +69,7 @@ public class Nodes {
     }
 
     public static InputNode input(Flow flow) {
-        var inputType = ClassBuilder.newBuilder("输入", "Input")
+        var inputType = ClassTypeBuilder.newBuilder("输入", "Input")
                 .temporary()
                 .build();
         for (var parameter : flow.getParameters()) {

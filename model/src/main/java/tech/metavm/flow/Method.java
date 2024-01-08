@@ -294,12 +294,12 @@ public class Method extends Flow implements Property, GenericElement {
 
     public void update(List<Parameter> parameters, Type returnType,
                        @Nullable List<Method> overridden, FunctionTypeProvider functionTypeProvider) {
-        super.update(parameters, returnType, functionTypeProvider);
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         var type = functionTypeProvider.getFunctionType(paramTypes, returnType);
         var staticType =
                 isInstanceMethod() ? functionTypeProvider.getFunctionType(NncUtils.prepend(declaringType, paramTypes), returnType) : null;
         checkTypes(NncUtils.orElse(overridden, this.overridden), parameters, returnType, type, staticType);
+        updateInternal(parameters, returnType, type);
         this.staticType = staticType;
         if (overridden != null)
             this.overridden.reset(overridden);

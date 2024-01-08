@@ -11,7 +11,6 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
-import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
@@ -71,9 +70,7 @@ public class DefContextTest extends TestCase {
     public void testConvertType() {
         EntityDef<ClassType> typeDef = defContext.getEntityDef(ClassType.class);
         ClassType type = typeDef.getType();
-        var instance = InstanceFactory.allocate(ClassInstance.class, type, null, false);
-//        ClassInstance instance = typeDef.createInstance(type, objectInstanceMap, null);
-        defContext.addBinding(type, instance);
+        var instance = (ClassInstance) objectInstanceMap.getInstance(type);
         typeDef.initInstance(instance, type, objectInstanceMap);
         ClassType recoveredType = typeDef.createModel(instance, objectInstanceMap);
         MatcherAssert.assertThat(recoveredType, PojoMatcher.of(type));
@@ -103,9 +100,7 @@ public class DefContextTest extends TestCase {
         ClassType quxType = defContext.getClassType(Qux.class);
         Field quxAmountField = defContext.getField(Qux.class, "amount");
         var qux = ClassInstance.create(
-                Map.of(
-                        quxAmountField, Instances.longInstance(100L)
-                ),
+                Map.of(quxAmountField, Instances.longInstance(100L)),
                 quxType
         );
         qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, quxType)));

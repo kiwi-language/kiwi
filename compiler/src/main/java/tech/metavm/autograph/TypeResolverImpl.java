@@ -310,7 +310,7 @@ public class TypeResolverImpl implements TypeResolver {
             if (classType.isTemplate() != isTemplate)
                 throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
         } else {
-            classType = ClassBuilder.newBuilder(name, psiClass.getQualifiedName())
+            classType = ClassTypeBuilder.newBuilder(name, psiClass.getQualifiedName())
                     .category(category)
                     .isTemplate(isTemplate)
                     .build();

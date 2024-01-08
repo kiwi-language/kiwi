@@ -87,7 +87,7 @@ public abstract class TypeFactory {
         var type = batch.getContext().getClassType(typeDTO.getRef());
         var context = batch.getContext();
         if (type == null) {
-            type = ClassBuilder.newBuilder(typeDTO.name(), typeDTO.code())
+            type = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
                     .tmpId(typeDTO.tmpId())
                     .category(TypeCategory.getByCode(typeDTO.category()))
                     .ephemeral(typeDTO.ephemeral())

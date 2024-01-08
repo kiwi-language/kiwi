@@ -48,7 +48,7 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     private static ClassType createTargetType(ClassType sourceType, String name, @Nullable String code) {
-        return ClassBuilder.newBuilder(getTargetTypeName(sourceType, name), getTargetTypeCode(sourceType, code))
+        return ClassTypeBuilder.newBuilder(getTargetTypeName(sourceType, name), getTargetTypeCode(sourceType, code))
                 .ephemeral(true)
                 .anonymous(true)
                 .build();
