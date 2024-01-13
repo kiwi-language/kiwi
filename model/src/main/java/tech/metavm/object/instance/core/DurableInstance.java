@@ -63,7 +63,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         this.version = version;
         this.syncVersion = syncVersion;
         this.load = load;
-        this.ephemeral = ephemeral || type.isEphemeral();
+        this.ephemeral = ephemeral;
         if (id != null)
             initId(id);
         else
@@ -75,7 +75,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     }
 
     public boolean isEphemeral() {
-        return ephemeral;
+        return ephemeral || getType().isEphemeral();
     }
 
     public @Nullable DurableInstance tryGetSource() {

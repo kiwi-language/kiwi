@@ -7,9 +7,11 @@ import tech.metavm.object.type.Field;
 public record FooType(
         ClassType fooType,
         ClassType barType,
+        ClassType bazType,
         ArrayType barChildArrayType,
         Field fooNameField,
         Field fooBarsField,
-        Field barCodeField
+        Field barCodeField,
+        Field bazBarField
 ) {
 }

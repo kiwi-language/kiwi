@@ -134,11 +134,11 @@ public class MetaFrame implements EvaluationContext, Frame {
         var pc = entry;
         for(int i = 0; i < MAX_STEPS; i++) {
             var result = pc.execute(this);
+            if(result.exception() != null)
+                return new FlowExecResult(null, result.exception());
             var output = result.output();
             if(result.next() == null)
                 return new FlowExecResult(output, null);
-            if(result.exception() != null)
-                return new FlowExecResult(null, result.exception());
             if(output != null)
                 outputs.put(pc, output);
             pc = result.next();

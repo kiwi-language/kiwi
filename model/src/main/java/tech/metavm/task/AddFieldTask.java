@@ -27,7 +27,8 @@ public class AddFieldTask extends ScanByClassTask {
             fieldValue = new ArrayInstance(arrayType);
         else
             fieldValue = field.getDefaultValue();
-        instance.initField(field, fieldValue);
+        if(!instance.isFieldInitialized(field))
+            instance.initField(field, fieldValue);
     }
 
 }

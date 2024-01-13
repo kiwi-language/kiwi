@@ -6,7 +6,7 @@ import java.util.List;
 
 public record FlowExecutionRequest(
         long flowId,
-        long instanceId,
+        String instanceId,
         List<FieldValue> arguments
 ) {
 }

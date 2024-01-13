@@ -4,7 +4,10 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ClassTypeBuilder;
+import tech.metavm.object.type.Field;
+import tech.metavm.object.type.FunctionTypeProvider;
 import tech.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
 import tech.metavm.util.BusinessException;
@@ -128,17 +131,20 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     @Override
     public void generateCode(Flow flow, FunctionTypeProvider functionTypeProvider) {
-        if(flow == readMethod)
+        if (flow == readMethod)
             generateReadMethodCode();
-        else if(flow == writeMethod)
+        else if (flow == writeMethod)
             generateWriteMethodCode();
         else
             super.generateCode(flow, functionTypeProvider);
     }
 
     private void generateReadMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
-        readMethod = MethodBuilder.newBuilder(getSourceType(), "获取" + getTargetType().getName(),
-                        NamingUtils.getGetterName(getTargetType().getCode()), functionTypeProvider)
+        long seq = NncUtils.randomNonNegative();
+        readMethod = MethodBuilder.newBuilder(getSourceType(),
+                        NncUtils.getOrElse(readMethod, Flow::getName, "获取视图_" + seq),
+                        NncUtils.getOrElse(readMethod, Flow::getCode, "getView_" + seq),
+                        functionTypeProvider)
                 .existing(readMethod)
                 .codeSource(this)
                 .returnType(getTargetType())
@@ -148,8 +154,11 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     private void generateWriteMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
-        writeMethod = MethodBuilder.newBuilder(getSourceType(), "保存" + getTargetType().getName(),
-                        NamingUtils.tryAddPrefix(getTargetType().getCode(), "save"), functionTypeProvider)
+        long seq = NncUtils.randomNonNegative();
+        writeMethod = MethodBuilder.newBuilder(getSourceType(),
+                        NncUtils.getOrElse(writeMethod, Flow::getName, "保存视图_" + seq),
+                        NncUtils.getOrElse(writeMethod, Flow::getCode, "saveView_" + seq),
+                        functionTypeProvider)
                 .existing(writeMethod)
                 .codeSource(this)
                 .returnType(StandardTypes.getVoidType())

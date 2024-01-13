@@ -159,7 +159,7 @@ public class StandardDefBuilder {
                         ColumnKind.INT.getColumn(0), StandardTypes.enumType),
                 enumDef
         );
-
+        StandardTypes.enumType.setTitleField(enumNameDef.getField());
         StandardTypes.enumType.setStage(ResolutionStage.DEFINITION);
         defContext.getGenericContext().generateCode(StandardTypes.enumType);
 

@@ -97,20 +97,31 @@ public class InstanceContextTest extends TestCase {
 
     public void testOnChange() {
         long fooId;
+        long bazId;
         var fooType = MockUtils.createFooType(true);
         entityRepository.bind(fooType.fooType());
         entityRepository.bind(fooType.barType());
+        entityRepository.bind(fooType.bazType());
         entityRepository.bind(fooType.barChildArrayType());
         try (var context = newContext()) {
             var foo = MockUtils.createFoo(fooType);
+            var bars = (ArrayInstance) foo.getField(fooType.fooBarsField());
+            var bar001 = (DurableInstance) (bars.get(0));
+            var baz = ClassInstanceBuilder.newBuilder(fooType.bazType())
+                    .data(Map.of(fooType.bazBarField(), bar001))
+                    .build();
             context.bind(foo);
+            context.bind(baz);
             context.finish();
             fooId = foo.getPhysicalId();
+            bazId = baz.getPhysicalId();
         }
         try (var context = newContext()) {
             var foo = (ClassInstance) context.get(fooId);
+            var baz = (ClassInstance) context.get(bazId);
             var bars = (ArrayInstance) foo.getField(fooType.fooBarsField());
             var bar001 = (DurableInstance) (bars.get(0));
+            baz.ensureLoaded();
             context.remove(bar001);
             final boolean[] onChangeCalled = new boolean[1];
             context.addListener(new ContextListener() {
@@ -118,6 +129,7 @@ public class InstanceContextTest extends TestCase {
                 public boolean onChange(Instance instance) {
                     if (instance == foo) {
                         bars.removeElement(bar001);
+                        baz.setField(fooType.bazBarField(), Instances.nullInstance());
                         onChangeCalled[0] = true;
                         return true;
                     } else

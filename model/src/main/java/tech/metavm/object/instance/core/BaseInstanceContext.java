@@ -546,13 +546,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 default -> throw new IllegalStateException("Unexpected value: " + instance.getParent());
             }
         }
-        Set<ReferenceRT> refsOutsideOfRemoval = NncUtils.filterUnique(
-                referencesByTarget.get(instance), ref -> !removalBatch.contains(ref.source())
-        );
-        ReferenceRT strongRef;
-        if ((strongRef = NncUtils.find(refsOutsideOfRemoval, ReferenceRT::isStrong)) != null)
-            throw BusinessException.strongReferencesPreventRemoval(strongRef.source(), instance);
-        new ArrayList<>(refsOutsideOfRemoval).forEach(ReferenceRT::remove);
+//        Set<ReferenceRT> refsOutsideOfRemoval = NncUtils.filterUnique(
+//                referencesByTarget.get(instance), ref -> !removalBatch.contains(ref.source())
+//        );
+//        ReferenceRT strongRef;
+//        if ((strongRef = NncUtils.find(refsOutsideOfRemoval, ReferenceRT::isStrong)) != null)
+//            throw BusinessException.strongReferencesPreventRemoval(strongRef.source(), instance);
+//        new ArrayList<>(refsOutsideOfRemoval).forEach(ReferenceRT::remove);
         instance.setRemoved();
         if (instance instanceof ClassInstance classInstance)
             removeFromMemIndex(classInstance);
@@ -713,7 +713,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 public Void visitDurableInstance(DurableInstance instance) {
                     if (instance.isInitialized()) {
                         if (instance.isRemoved())
-                            throw new InternalException("Can not reference a removed instance: " + instance);
+                            return null;
+//                            throw new InternalException("Can not reference a removed instance: " + instance);
                         if (parent != null && parent.containsInstance(instance))
                             return null;
                         if (!containsInstance(instance))

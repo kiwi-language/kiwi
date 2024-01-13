@@ -67,8 +67,8 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "appId": 1263605273,
-  "loginName": "admin",
+  "appId": 2,
+  "loginName": "demo",
   "password": "123456"
 }
 

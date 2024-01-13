@@ -160,8 +160,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 entityChange.setAttribute((DifferenceAttributeKey) key, value);
             });
         }
-        var patch = new Patch(bufferedTrees, entityChange, refChange);
-        return processChanges(patch, patchContext);
+        return processChanges(new Patch(bufferedTrees, entityChange, refChange), patchContext);
     }
 
     private void removeOrphans(Patch patch) {
@@ -188,7 +187,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         limit,
                         this
                 ),
-                id -> get(new PhysicalId(id))
+                id -> get(PhysicalId.of(id))
         );
     }
 
@@ -382,7 +381,30 @@ public class InstanceContext extends BufferingInstanceContext {
                 new ContextDifference(appId, id -> internalGet(new PhysicalId(id)).getType().tryGetId());
         difference.diff(headContext.trees(), bufferedTrees);
         difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
+        computeVirtualUpdates(difference.getEntityChange());
         return difference;
+    }
+
+    private void computeVirtualUpdates(EntityChange<InstancePO> change) {
+        var queue = new LinkedList<InstancePO>();
+        queue.addAll(change.inserts());
+        queue.addAll(change.updates());
+        queue.addAll(change.deletes());
+        var queuedIds = new HashSet<>(NncUtils.map(queue, InstancePO::getId));
+        while (!queue.isEmpty()) {
+            var instance = queue.poll();
+            if (instance.getParentId() != -1L && queuedIds.add(instance.getParentId())) {
+                var parent = internalGet(PhysicalId.of(instance.getParentId()));
+                var parentPO = new InstancePO(
+                        appId, parent.getPhysicalId(), null, parent.getType().getId(), null,
+                        NncUtils.getOrElse(parent.getParent(), DurableInstance::getPhysicalId, -1L),
+                        NncUtils.getOrElse(parent.getParentField(), Entity::getId, -1L),
+                        parent.getRoot().getPhysicalId(), parent.getVersion() + 1,0L
+                );
+                queue.offer(parentPO);
+                change.addVirtualUpdate(parentPO);
+            }
+        }
     }
 
     private Patch processChanges(Patch patch, PatchContext patchContext) {
@@ -395,7 +417,7 @@ public class InstanceContext extends BufferingInstanceContext {
                     if (onChange(internalGet(new PhysicalId(instancePO.getId()))))
                         ref.changed = true;
                 }
-            });
+            }, true);
         }
         return ref.changed ? buildPatch(patch, patchContext) : patch;
     }
@@ -406,6 +428,18 @@ public class InstanceContext extends BufferingInstanceContext {
             var entityChange = patch.entityChange;
             if (NncUtils.isEmpty(entityChange.deletes()))
                 return;
+            var visitor = new GraphVisitor() {
+                @Override
+                public Void visitDurableInstance(DurableInstance instance) {
+                    if (instance.isRemoved())
+                        throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, instance);
+                    return super.visitDurableInstance(instance);
+                }
+            };
+            for (var instance : this) {
+                if (!instance.isRemoved() && !instance.isEphemeral())
+                    visitor.visit(instance);
+            }
             Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
             Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
             ReferencePO ref = instanceStore.getFirstReference(

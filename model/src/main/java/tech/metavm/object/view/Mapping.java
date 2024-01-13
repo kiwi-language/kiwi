@@ -9,6 +9,7 @@ import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.MappingDTO;
 import tech.metavm.util.NamingUtils;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -129,9 +130,12 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     }
 
     public void generateDeclarations(FunctionTypeProvider functionTypeProvider) {
+        long seq = NncUtils.randomNonNegative();
         mapper = addChild(FunctionBuilder
-                        .newBuilder("映射" + escapeTypeName(targetType.getName()),
-                                tryAddPrefix(targetType.getCode(), "map"), functionTypeProvider)
+                        .newBuilder(
+                                NncUtils.getOrElse(mapper, Flow::getName, "映射_" + seq),
+                                NncUtils.getOrElse(mapper, Flow::getCode, "map_" + seq),
+                                functionTypeProvider)
                         .parameters(mapper != null ? mapper.getParameters().get(0) :
                                 new Parameter(null, "来源", "source", sourceType))
                         .existing(mapper)
@@ -140,9 +144,10 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                         .returnType(targetType)
                         .build(),
                 "mapper");
-        unmapper = addChild(FunctionBuilder
-                        .newBuilder("反映射" + escapeTypeName(targetType.getName()),
-                                tryAddPrefix(targetType.getCode(), "unmap"), functionTypeProvider)
+        unmapper = addChild(FunctionBuilder.newBuilder(
+                                NncUtils.getOrElse(unmapper, Flow::getName, "反映射_" + seq),
+                                NncUtils.getOrElse(unmapper, Flow::getCode, "unmap_" + seq),
+                                functionTypeProvider)
                         .existing(unmapper)
                         .isSynthetic(true)
                         .codeSource(this)

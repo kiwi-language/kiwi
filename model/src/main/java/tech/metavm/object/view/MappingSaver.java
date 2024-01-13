@@ -203,7 +203,8 @@ public class MappingSaver {
                                                              FieldsObjectMapping declaringMapping,
                                                              Map<Field, DirectFieldMapping> directFieldMappings,
                                                              boolean generateCode) {
-        var nestedMapping = tryGetBuiltinMapping(field.getType(), null, generateCode);
+        var nestedMapping = field.isChild() ?
+                tryGetBuiltinMapping(field.getType(), field.getType(), generateCode) : null;
         var fieldMapping = directFieldMappings.get(field);
         if (fieldMapping == null) {
             fieldMapping = new DirectFieldMapping(null, field.getName(), field.getCode(),
@@ -221,22 +222,16 @@ public class MappingSaver {
         return switch (type) {
             case ClassType classType -> classType.getBuiltinMapping();
             case ArrayType arrayType -> {
-                boolean isChildArray;
-                Type underlyingElementType;
-                if (underlyingType instanceof ArrayType underlyingArrayType) {
-                    isChildArray = underlyingArrayType.isChildArray();
-                    underlyingElementType = underlyingArrayType.getElementType();
-                } else {
-                    isChildArray = false;
-                    underlyingElementType = null;
+                if (underlyingType instanceof ArrayType underlyingArrayType && underlyingArrayType.isChildArray()) {
+                    var underlyingElementType = underlyingArrayType.getElementType();
+                    var elementBuiltinMapping = tryGetBuiltinMapping(arrayType.getElementType(), underlyingElementType, generateCode);
+                    if (elementBuiltinMapping != null) {
+                        var targetType =
+                                arrayTypeProvider.getArrayType(elementBuiltinMapping.getTargetType(), ArrayKind.CHILD);
+                        yield getArrayMapping(arrayType, targetType, elementBuiltinMapping, generateCode);
+                    }
                 }
-                var elementBuiltinMapping = tryGetBuiltinMapping(arrayType.getElementType(), underlyingElementType, generateCode);
-                if (elementBuiltinMapping != null) {
-                    var targetType =
-                            arrayTypeProvider.getArrayType(elementBuiltinMapping.getTargetType(), isChildArray ? ArrayKind.CHILD : arrayType.getKind());
-                    yield getArrayMapping(arrayType, targetType, elementBuiltinMapping, generateCode);
-                } else
-                    yield null;
+                yield null;
             }
             default -> null;
         };

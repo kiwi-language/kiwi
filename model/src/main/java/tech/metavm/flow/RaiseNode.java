@@ -47,24 +47,24 @@ public class RaiseNode extends NodeRT {
         super(tmpId, name, code, null, prev, scope);
         this.parameterKind = parameterKind;
         if(parameterKind == RaiseParameterKind.THROWABLE) {
-            this.exception = Objects.requireNonNull(exception);
+            this.exception = addChild(Objects.requireNonNull(exception), "exception");
             this.message = null;
         }
         else {
             this.exception = null;
-            this.message = Objects.requireNonNull(message);
+            this.message = addChild(Objects.requireNonNull(message), "message");
         }
     }
 
     public void update(RaiseParameterKind parameterKind, @Nullable Value exception, @Nullable Value message) {
         this.parameterKind = parameterKind;
         if(parameterKind == RaiseParameterKind.THROWABLE) {
-            this.exception = Objects.requireNonNull(exception);
+            this.exception = addChild(Objects.requireNonNull(exception), "exception");
             this.message = null;
         }
         else {
             this.exception = null;
-            this.message = Objects.requireNonNull(message);
+            this.message = addChild(Objects.requireNonNull(message), "message");
         }
     }
 

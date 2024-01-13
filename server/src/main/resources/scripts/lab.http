@@ -34,7 +34,7 @@ AppId: 2
 GET http://localhost:8080/platform-user/apps
 
 ###
-POST http://localhost:8080/platform-user/enter-app/1212504251
+POST http://localhost:8080/platform-user/enter-app/1267505351
 Accept: application/json
 AppId: 2
 
@@ -359,9 +359,10 @@ GET http://localhost:8080/instance?typeId=13021&searchText=$$1004700100 = this A
 POST http://localhost:8080/type/get
 Accept: application/json
 Content-Type: application/json
+AppId: 1267505351
 
 {
-  "id": 1079001644
+  "id": 1267805367
 }
 
 ###

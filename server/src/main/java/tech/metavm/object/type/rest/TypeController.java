@@ -89,8 +89,8 @@ public class TypeController {
         return Result.success(typeManager.saveEnumConstant(instanceDTO));
     }
 
-    @DeleteMapping("/enum-constant/{id:[0-9]+}")
-    public Result<Void> deleteEnumConstant(@PathVariable("id") long id) {
+    @DeleteMapping("/enum-constant/{id}")
+    public Result<Void> deleteEnumConstant(@PathVariable("id") String id) {
         typeManager.deleteEnumConstant(id);
         return Result.voidSuccess();
     }

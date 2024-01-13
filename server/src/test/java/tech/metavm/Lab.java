@@ -1,12 +1,11 @@
 package tech.metavm;
 
-import tech.metavm.util.EncodingUtils;
+import tech.metavm.object.instance.core.PhysicalId;
 
 public class Lab {
 
     public static void main(String[] args) {
-        var bytes = EncodingUtils.hexToBytes("018cc790cccfc2eb1b");
-        System.out.println(bytes.length);
+        System.out.println(PhysicalId.of(1271805449L));
     }
 
 }

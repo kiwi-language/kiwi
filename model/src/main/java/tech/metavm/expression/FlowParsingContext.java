@@ -83,21 +83,6 @@ public class FlowParsingContext extends BaseParsingContext {
     }
 
     @Override
-    public InstanceProvider getInstanceProvider() {
-        return null;
-    }
-
-    @Override
-    public IndexedTypeProvider getTypeProvider() {
-        return null;
-    }
-
-    @Override
-    public ArrayTypeProvider getArrayTypeProvider() {
-        return null;
-    }
-
-    @Override
     public Expression getDefaultExpr() {
         throw new InternalException("Flow context has no default context expression");
     }

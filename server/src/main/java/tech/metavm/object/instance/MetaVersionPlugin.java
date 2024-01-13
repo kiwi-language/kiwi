@@ -43,7 +43,7 @@ public class MetaVersionPlugin implements ContextPlugin {
                 changedMappingIds.add(id);
             else if (functionType.isInstance(instance))
                 changedFunctionIds.add(id);
-        });
+        }, true);
         var removedTypeIds = new HashSet<Long>();
         var removedMappingIds = new HashSet<Long>();
         var removedFunctionIds = new HashSet<Long>();

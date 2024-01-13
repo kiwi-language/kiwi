@@ -17,7 +17,7 @@ import java.util.Objects;
 @EntityType("字段")
 public class Field extends Element implements ChangeAware, GenericElement, Property {
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
     @EntityField("编号")
     @Nullable
@@ -113,8 +113,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         if (update.typeId() != null && !Objects.equals(getType().tryGetId(), update.typeId()))
             throw BusinessException.invalidField(this, "类型不支持修改");
         setName(update.name());
+        setCode(update.code());
         setAccess(Access.getByCode(update.access()));
-        setUnique(update.unique());
         setUnique(update.unique());
     }
 

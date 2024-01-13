@@ -10,9 +10,10 @@ import java.util.function.Consumer;
 public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
     private final Class<T> entityType;
-    private final List<T> toInserts = new ArrayList<>();
-    private final List<T> toUpdate = new ArrayList<>();
-    private final List<T> toDelete = new ArrayList<>();
+    private final List<T> inserts = new ArrayList<>();
+    private final List<T> updates = new ArrayList<>();
+    private final List<T> deletes = new ArrayList<>();
+    private final List<T> virtualUpdates = new ArrayList<>();
 
     private final Map<DifferenceAttributeKey<?>, Object> attributes = new HashMap<>();
 
@@ -20,57 +21,69 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
         this.entityType = entityType;
     }
 
-    public void addToInsert(T entity) {
-        toInserts.add(entity);
+    public void addInsert(T entity) {
+        inserts.add(entity);
     }
 
-    public void addToUpdate(T entity) {
-        toUpdate.add(entity);
+    public void addUpdate(T entity) {
+        updates.add(entity);
     }
 
-    public void addToDelete(T entity) {
-        toDelete.add(entity);
+    public void addDelete(T entity) {
+        deletes.add(entity);
+    }
+
+    public void addVirtualUpdate(T entity) {
+        this.virtualUpdates.add(entity);
     }
 
     public List<T> inserts() {
-        return toInserts;
+        return inserts;
     }
 
     public List<T> updates() {
-        return toUpdate;
+        return updates;
     }
-
+    
+    public List<T> virtualUpdates() {
+        return virtualUpdates;
+    }
+    
     public void forEachInsertOrUpdate(Consumer<T> action) {
-        for (T insert : inserts()) {
-            action.accept(insert);
-        }
-        for (T update : updates()) {
-            action.accept(update);
-        }
+        forEachInsertOrUpdate(action, false);
+    }
+    
+    public void forEachInsertOrUpdate(Consumer<T> action, boolean includeVirtualUpdates) {
+        inserts.forEach(action);
+        updates.forEach(action);
+        if(includeVirtualUpdates)
+            virtualUpdates.forEach(action);
     }
 
     public void forEachUpdateOrDelete(Consumer<T> action) {
-        for (T update : updates()) {
-            action.accept(update);
-        }
-        for (T delete : deletes()) {
-            action.accept(delete);
-        }
+        forEachUpdateOrDelete(action, false);
+    }
+    
+    public void forEachUpdateOrDelete(Consumer<T> action, boolean includeVirtualUpdates) {
+        updates.forEach(action);
+        deletes.forEach(action);
+        if(includeVirtualUpdates)
+            virtualUpdates.forEach(action);
     }
 
     public List<T> deletes() {
-        return toDelete;
+        return deletes;
     }
 
     public boolean isEmpty() {
-        return toDelete.isEmpty() && toUpdate.isEmpty() && toInserts.isEmpty();
+        return deletes.isEmpty() && updates.isEmpty() && inserts.isEmpty();
     }
 
     public ChangeList<T> toChangeList() {
         return new ChangeList<>(
-                toInserts,
-                toUpdate,
-                toDelete
+                inserts,
+                updates,
+                deletes
         );
     }
 

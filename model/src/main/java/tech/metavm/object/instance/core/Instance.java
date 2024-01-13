@@ -26,9 +26,6 @@ public abstract class Instance {
 
     public Instance(Type type) {
         this.type = type;
-        if (Objects.equals(type.getCode(), ScopeRT.class.getName())) {
-            STACKS.put(this, new Exception());
-        }
     }
 
     @NoProxy

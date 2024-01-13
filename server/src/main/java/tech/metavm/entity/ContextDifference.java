@@ -27,9 +27,9 @@ public class ContextDifference {
     public void diffReferences(Collection<ReferencePO> head, Collection<ReferencePO> buffer) {
         NncUtils.forEachPair(head, buffer, Function.identity(), (r1, r2) -> {
             if (r1 == null) {
-                referenceChange.addToInsert(r2);
+                referenceChange.addInsert(r2);
             } else if (r2 == null) {
-                referenceChange.addToDelete(r1);
+                referenceChange.addDelete(r1);
             }
         });
     }
@@ -43,10 +43,10 @@ public class ContextDifference {
             return;
         if (t1 == null) {
             getSubTrees(t2).forEach(subtree ->
-                    entityChange.addToInsert(toInstancePO(t2, subtree)));
+                    entityChange.addInsert(toInstancePO(t2, subtree)));
         } else if (t2 == null) {
             getSubTrees(t1).forEach(subtree ->
-                    entityChange.addToDelete(toInstancePO(t1, subtree)));
+                    entityChange.addDelete(toInstancePO(t1, subtree)));
         } else if (!Arrays.equals(t1.data(), t2.data())) {
             var firstSubtrees = getSubTrees(t1);
             var secondSubtrees = getSubTrees(t2);
@@ -59,12 +59,12 @@ public class ContextDifference {
                 if (s1 == null && s2 == null)
                     return;
                 if (s1 == null)
-                    entityChange.addToInsert(toInstancePO(t2, s2));
+                    entityChange.addInsert(toInstancePO(t2, s2));
                 else if (s2 == null)
-                    entityChange.addToDelete(toInstancePO(t1, s1));
+                    entityChange.addDelete(toInstancePO(t1, s1));
                 else if (!s1.equals(s2)) {
                     var updatePO = toInstancePO(t2, s2);
-                    entityChange.addToUpdate(updatePO);
+                    entityChange.addUpdate(updatePO);
                     if (s2.id() == rootId) {
                         updatePO.setVersion(newVersion);
                         ref.rootChanged = true;
@@ -72,7 +72,7 @@ public class ContextDifference {
                 }
             });
             if (!ref.rootChanged) {
-                entityChange.addToUpdate(new InstancePO(appId, rootId, "",
+                entityChange.addUpdate(new InstancePO(appId, rootId, "",
                         getTypeId.apply(rootId), null,
                         -1L, -1L, rootId, newVersion, 0L));
             }
@@ -94,11 +94,10 @@ public class ContextDifference {
         if (castPair.first() != null && castPair.second() != null)
             return;
         ValueChange<T> change = getValueChange(valueType);
-        if (castPair.first() != null) {
+        if (castPair.first() != null)
             change.addDelete(castPair.first());
-        } else if (castPair.second() != null) {
+        else if (castPair.second() != null)
             change.addInsert(castPair.second());
-        }
     }
 
     private InstancePO toInstancePO(Tree tree, Subtree subTree) {

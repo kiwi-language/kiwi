@@ -90,4 +90,12 @@ public class ClassInstanceTest extends TestCase {
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
+    public void testTitle() {
+        var type = MockUtils.createFooType(false);
+        var foo = MockUtils.createFoo(type);
+        Assert.assertEquals("foo", foo.getTitle());
+        var dto = foo.toDTO();
+        Assert.assertEquals("foo", dto.title());
+    }
+
 }

@@ -17,6 +17,7 @@ import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.*;
@@ -636,10 +637,10 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public void deleteEnumConstant(long id) {
+    public void deleteEnumConstant(String id) {
         try (var context = newContext()) {
             var instanceContext = NncUtils.requireNonNull(context.getInstanceContext());
-            var instance = instanceContext.get(PhysicalId.of(id));
+            var instance = instanceContext.get(Id.parse(id));
             var type = (ClassType) instance.getType();
             var field = type.getStaticFieldByName(instance.getTitle());
             context.remove(field);

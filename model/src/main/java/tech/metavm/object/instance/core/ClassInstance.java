@@ -58,7 +58,7 @@ public class ClassInstance extends DurableInstance {
     }
 
     public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
-        super(id, type, 0, 0, type.isEphemeral() || ephemeral, load);
+        super(id, type, 0, 0, ephemeral, load);
     }
 
     public ClassInstance(Id id, Map<Field, Instance> data, ClassType type) {

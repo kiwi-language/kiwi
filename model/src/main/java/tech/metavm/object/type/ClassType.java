@@ -1333,7 +1333,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @Nullable
     public Field getTitleField() {
-        return titleField;
+        if(titleField != null)
+            return titleField;
+        if(superClass != null)
+            return superClass.getTitleField();
+        return null;
     }
 
     public void setMappings(List<ObjectMapping> mappings) {

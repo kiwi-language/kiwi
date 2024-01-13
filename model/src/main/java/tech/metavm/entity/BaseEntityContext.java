@@ -161,7 +161,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (model != null && model2instance.containsKey(model)) {
             if (model instanceof Entity entity)
                 entity.setRemoved();
-            model2instance.remove(model);
+//            model2instance.remove(model);
 //            removedEntities.add(model);
 //            if (instance.getId() != null)
 //                removedEntityMap.put(instance.getIdRequired(), model);

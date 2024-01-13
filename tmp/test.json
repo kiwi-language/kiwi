@@ -1,19 +1,875 @@
 {
-  "id": 1139202785,
-  "name": " 买家视图",
-  "code": "BuyView",
-  "declaringTypeRef": {
-    "id": 1138902779
-  },
-  "isDefault": true,
-  "fields": [
-    {
-      "name": "标题",
-      "kind": 1,
-      "isChild": false,
-      "fieldRef": {
-        "id": 1139002781
+  "code": 0,
+  "metaPatch": {
+    "baseVersion": 41,
+    "version": 42,
+    "changedTypes": [
+      {
+        "id": 1263605273,
+        "name": "商品",
+        "category": 0,
+        "ephemeral": false,
+        "anonymous": false,
+        "param": {
+          "interfaceRefs": [],
+          "source": 3,
+          "fields": [
+            {
+              "id": 1263505271,
+              "name": "标题",
+              "access": 1,
+              "defaultValue": {
+                "displayValue": "空",
+                "primitiveKind": 7,
+                "type": 1
+              },
+              "unique": false,
+              "declaringTypeId": 1263605273,
+              "typeRef": {
+                "id": 20000
+              },
+              "isChild": false,
+              "isStatic": false,
+              "readonly": false,
+              "lazy": false,
+              "staticValue": {
+                "typeRef": {
+                  "id": 20003
+                },
+                "typeName": "空",
+                "title": "空",
+                "param": {
+                  "primitiveKind": 7,
+                  "type": 3
+                }
+              },
+              "state": 1
+            },
+            {
+              "id": 1263505282,
+              "name": "SKU列表",
+              "access": 1,
+              "defaultValue": {
+                "displayValue": "空",
+                "primitiveKind": 7,
+                "type": 1
+              },
+              "unique": false,
+              "declaringTypeId": 1263605273,
+              "typeRef": {
+                "id": 1265605313
+              },
+              "isChild": true,
+              "isStatic": false,
+              "readonly": false,
+              "lazy": false,
+              "staticValue": {
+                "typeRef": {
+                  "id": 20003
+                },
+                "typeName": "空",
+                "title": "空",
+                "param": {
+                  "primitiveKind": 7,
+                  "type": 3
+                }
+              },
+              "state": 1
+            },
+            {
+              "id": 1263505287,
+              "name": "编号",
+              "access": 3,
+              "defaultValue": {
+                "displayValue": "空",
+                "primitiveKind": 7,
+                "type": 1
+              },
+              "unique": false,
+              "declaringTypeId": 1263605273,
+              "typeRef": {
+                "id": 20000
+              },
+              "isChild": false,
+              "isStatic": false,
+              "readonly": false,
+              "lazy": false,
+              "staticValue": {
+                "typeRef": {
+                  "id": 20003
+                },
+                "typeName": "空",
+                "title": "空",
+                "param": {
+                  "primitiveKind": 7,
+                  "type": 3
+                }
+              },
+              "state": 1
+            }
+          ],
+          "staticFields": [],
+          "constraints": [],
+          "flows": [
+            {
+              "id": 1264105283,
+              "name": "获取商品预设视图",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 1263605274
+              },
+              "parameters": [],
+              "typeRef": {
+                "id": 1264205287
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 1,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605273
+                },
+                "staticTypeRef": {
+                  "id": 1264205285
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            },
+            {
+              "id": 1264105284,
+              "name": "保存商品预设视图",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 20004
+              },
+              "parameters": [
+                {
+                  "id": 1264005283,
+                  "name": "视图",
+                  "code": "View",
+                  "typeRef": {
+                    "id": 1263605274
+                  },
+                  "callableRef": {
+                    "id": 1264105284
+                  }
+                }
+              ],
+              "typeRef": {
+                "id": 1264205288
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 1,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605273
+                },
+                "staticTypeRef": {
+                  "id": 1264205289
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            },
+            {
+              "id": 1264105292,
+              "name": "获取编号",
+              "code": "getCode",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 20000
+              },
+              "parameters": [],
+              "typeRef": {
+                "id": 350935
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 2,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605273
+                },
+                "staticTypeRef": {
+                  "id": 1264205304
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            }
+          ],
+          "mappings": [
+            {
+              "id": 1263905279,
+              "name": "预设视图",
+              "code": "builtin",
+              "sourceTypeRef": {
+                "id": 1263605273
+              },
+              "targetTypeRef": {
+                "id": 1263605274
+              },
+              "isDefault": true,
+              "builtin": true,
+              "overriddenRefs": [],
+              "param": {
+                "fieldMappings": [
+                  {
+                    "id": 1263805277,
+                    "name": "标题",
+                    "typeRef": {
+                      "id": 20000
+                    },
+                    "isChild": false,
+                    "readonly": false,
+                    "sourceFieldRef": {
+                      "id": 1263505271
+                    },
+                    "targetFieldRef": {
+                      "id": 1263505272
+                    },
+                    "param": {
+                      "kind": 1
+                    }
+                  },
+                  {
+                    "id": 1263805280,
+                    "name": "SKU列表",
+                    "typeRef": {
+                      "id": 1265605314
+                    },
+                    "isChild": true,
+                    "readonly": false,
+                    "sourceFieldRef": {
+                      "id": 1263505282
+                    },
+                    "targetFieldRef": {
+                      "id": 1263505283
+                    },
+                    "nestedMappingRef": {
+                      "id": 1266005321
+                    },
+                    "param": {
+                      "kind": 1
+                    }
+                  },
+                  {
+                    "id": 1264905303,
+                    "name": "编号",
+                    "code": "code",
+                    "typeRef": {
+                      "id": 20000
+                    },
+                    "isChild": false,
+                    "readonly": true,
+                    "targetFieldRef": {
+                      "id": 1263505288
+                    },
+                    "param": {
+                      "getterRef": {
+                        "id": 1264105292
+                      },
+                      "kind": 2
+                    }
+                  }
+                ],
+                "kind": 1
+              },
+              "kind": 1
+            }
+          ],
+          "defaultMappingRef": {
+            "id": 1263905279
+          },
+          "enumConstants": [],
+          "isTemplate": false,
+          "typeParameterRefs": [],
+          "typeParameters": [],
+          "typeArgumentRefs": [],
+          "dependencyRefs": [],
+          "hasSubTypes": false,
+          "errors": [
+            {
+              "elementKind": 7,
+              "elementRef": {
+                "id": 1264105292
+              },
+              "message": "方法'获取编号'配置错误"
+            }
+          ],
+          "type": 1
+        }
+      },
+      {
+        "id": 1263605278,
+        "name": "SKU",
+        "category": 0,
+        "ephemeral": false,
+        "anonymous": false,
+        "param": {
+          "interfaceRefs": [],
+          "source": 3,
+          "fields": [
+            {
+              "id": 1263505277,
+              "name": "标题",
+              "access": 1,
+              "defaultValue": {
+                "displayValue": "空",
+                "primitiveKind": 7,
+                "type": 1
+              },
+              "unique": false,
+              "declaringTypeId": 1263605278,
+              "typeRef": {
+                "id": 20000
+              },
+              "isChild": false,
+              "isStatic": false,
+              "readonly": false,
+              "lazy": false,
+              "staticValue": {
+                "typeRef": {
+                  "id": 20003
+                },
+                "typeName": "空",
+                "title": "空",
+                "param": {
+                  "primitiveKind": 7,
+                  "type": 3
+                }
+              },
+              "state": 1
+            },
+            {
+              "id": 1263505279,
+              "name": "价格",
+              "access": 3,
+              "defaultValue": {
+                "displayValue": "空",
+                "primitiveKind": 7,
+                "type": 1
+              },
+              "unique": false,
+              "declaringTypeId": 1263605278,
+              "typeRef": {
+                "id": 20007
+              },
+              "isChild": false,
+              "isStatic": false,
+              "readonly": false,
+              "lazy": false,
+              "staticValue": {
+                "typeRef": {
+                  "id": 20003
+                },
+                "typeName": "空",
+                "title": "空",
+                "param": {
+                  "primitiveKind": 7,
+                  "type": 3
+                }
+              },
+              "state": 1
+            },
+            {
+              "id": 1263505281,
+              "name": "库存",
+              "access": 3,
+              "defaultValue": {
+                "displayValue": "空",
+                "primitiveKind": 7,
+                "type": 1
+              },
+              "unique": false,
+              "declaringTypeId": 1263605278,
+              "typeRef": {
+                "id": 20001
+              },
+              "isChild": false,
+              "isStatic": false,
+              "readonly": false,
+              "lazy": false,
+              "staticValue": {
+                "typeRef": {
+                  "id": 20003
+                },
+                "typeName": "空",
+                "title": "空",
+                "param": {
+                  "primitiveKind": 7,
+                  "type": 3
+                }
+              },
+              "state": 1
+            }
+          ],
+          "staticFields": [],
+          "constraints": [],
+          "flows": [
+            {
+              "id": 1264105288,
+              "name": "获取SKU预设视图",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 1263605279
+              },
+              "parameters": [],
+              "typeRef": {
+                "id": 1264205296
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 1,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605278
+                },
+                "staticTypeRef": {
+                  "id": 1264205294
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            },
+            {
+              "id": 1264105289,
+              "name": "保存SKU预设视图",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 20004
+              },
+              "parameters": [
+                {
+                  "id": 1264005287,
+                  "name": "视图",
+                  "code": "View",
+                  "typeRef": {
+                    "id": 1263605279
+                  },
+                  "callableRef": {
+                    "id": 1264105289
+                  }
+                }
+              ],
+              "typeRef": {
+                "id": 1264205297
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 1,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605278
+                },
+                "staticTypeRef": {
+                  "id": 1264205298
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            },
+            {
+              "id": 1264105290,
+              "name": "获取价格",
+              "code": "getPrice",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 20007
+              },
+              "parameters": [],
+              "typeRef": {
+                "id": 351053
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 1,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605278
+                },
+                "staticTypeRef": {
+                  "id": 1264205302
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            },
+            {
+              "id": 1264105291,
+              "name": "获取库存",
+              "code": "getAmount",
+              "isNative": false,
+              "returnTypeRef": {
+                "id": 20001
+              },
+              "parameters": [],
+              "typeRef": {
+                "id": 350755
+              },
+              "typeParameterRefs": [],
+              "typeArgumentRefs": [],
+              "isTemplate": false,
+              "state": 1,
+              "param": {
+                "isConstructor": false,
+                "isAbstract": false,
+                "isStatic": false,
+                "declaringTypeRef": {
+                  "id": 1263605278
+                },
+                "staticTypeRef": {
+                  "id": 1264205303
+                },
+                "overriddenRefs": [],
+                "access": 1,
+                "kind": 2
+              }
+            }
+          ],
+          "mappings": [
+            {
+              "id": 1263905280,
+              "name": "预设视图",
+              "code": "builtin",
+              "sourceTypeRef": {
+                "id": 1263605278
+              },
+              "targetTypeRef": {
+                "id": 1263605279
+              },
+              "isDefault": true,
+              "builtin": true,
+              "overriddenRefs": [],
+              "param": {
+                "fieldMappings": [
+                  {
+                    "id": 1263805278,
+                    "name": "标题",
+                    "typeRef": {
+                      "id": 20000
+                    },
+                    "isChild": false,
+                    "readonly": false,
+                    "sourceFieldRef": {
+                      "id": 1263505277
+                    },
+                    "targetFieldRef": {
+                      "id": 1263505278
+                    },
+                    "param": {
+                      "kind": 1
+                    }
+                  },
+                  {
+                    "id": 1264905301,
+                    "name": "价格",
+                    "code": "price",
+                    "typeRef": {
+                      "id": 20007
+                    },
+                    "isChild": false,
+                    "readonly": true,
+                    "targetFieldRef": {
+                      "id": 1263505284
+                    },
+                    "param": {
+                      "getterRef": {
+                        "id": 1264105290
+                      },
+                      "kind": 2
+                    }
+                  },
+                  {
+                    "id": 1264905302,
+                    "name": "库存",
+                    "code": "amount",
+                    "typeRef": {
+                      "id": 20001
+                    },
+                    "isChild": false,
+                    "readonly": true,
+                    "targetFieldRef": {
+                      "id": 1263505285
+                    },
+                    "param": {
+                      "getterRef": {
+                        "id": 1264105291
+                      },
+                      "kind": 2
+                    }
+                  }
+                ],
+                "kind": 1
+              },
+              "kind": 1
+            }
+          ],
+          "defaultMappingRef": {
+            "id": 1263905280
+          },
+          "enumConstants": [],
+          "isTemplate": false,
+          "typeParameterRefs": [],
+          "typeParameters": [],
+          "typeArgumentRefs": [],
+          "dependencyRefs": [],
+          "hasSubTypes": false,
+          "errors": [],
+          "type": 1
+        }
+      },
+      {
+        "id": 1263605282,
+        "name": "输入类型_6317121486738539350",
+        "code": "InputType_6317121486738539350",
+        "category": 0,
+        "ephemeral": true,
+        "anonymous": true,
+        "param": {
+          "interfaceRefs": [],
+          "source": 3,
+          "fields": [],
+          "staticFields": [],
+          "constraints": [],
+          "flows": [],
+          "mappings": [],
+          "enumConstants": [],
+          "isTemplate": false,
+          "typeParameterRefs": [],
+          "typeParameters": [],
+          "typeArgumentRefs": [],
+          "dependencyRefs": [],
+          "hasSubTypes": false,
+          "errors": [],
+          "type": 1
+        }
+      },
+      {
+        "id": 1264205304,
+        "name": "(商品)->字符串",
+        "category": 27,
+        "ephemeral": true,
+        "anonymous": false,
+        "param": {
+          "parameterTypeRefs": [
+            {
+              "id": 1263605273
+            }
+          ],
+          "returnTypeRef": {
+            "id": 20000
+          },
+          "type": 6
+        }
       }
-    }
-  ]
+    ],
+    "removedTypeIds": [],
+    "changedMappings": [
+      {
+        "id": 1266005321,
+        "sourceTypeRef": {
+          "id": 1265605313
+        },
+        "targetTypeRef": {
+          "id": 1265605314
+        },
+        "elementMappingRef": {
+          "id": 1263905280
+        },
+        "kind": 2
+      }
+    ],
+    "removedMappingIds": [],
+    "changedFunctions": [
+      {
+        "id": 1263705275,
+        "name": "映射商品预设视图",
+        "isNative": false,
+        "returnTypeRef": {
+          "id": 1263605274
+        },
+        "parameters": [
+          {
+            "id": 1264005281,
+            "name": "来源",
+            "code": "source",
+            "typeRef": {
+              "id": 1263605273
+            },
+            "callableRef": {
+              "id": 1263705275
+            }
+          }
+        ],
+        "typeRef": {
+          "id": 1264205285
+        },
+        "typeParameterRefs": [],
+        "typeArgumentRefs": [],
+        "isTemplate": false,
+        "state": 1,
+        "param": {
+          "kind": 1
+        }
+      },
+      {
+        "id": 1263705278,
+        "name": "反映射SKU预设视图",
+        "isNative": false,
+        "returnTypeRef": {
+          "id": 1263605278
+        },
+        "parameters": [
+          {
+            "id": 1264005286,
+            "name": "视图",
+            "code": "view",
+            "typeRef": {
+              "id": 1263605279
+            },
+            "callableRef": {
+              "id": 1263705278
+            }
+          }
+        ],
+        "typeRef": {
+          "id": 1264205295
+        },
+        "typeParameterRefs": [],
+        "typeArgumentRefs": [],
+        "isTemplate": false,
+        "state": 1,
+        "param": {
+          "kind": 1
+        }
+      },
+      {
+        "id": 1263705279,
+        "name": "映射SKU预设视图$C$",
+        "isNative": false,
+        "returnTypeRef": {
+          "id": 1265605314
+        },
+        "parameters": [
+          {
+            "id": 1264005288,
+            "name": "来源",
+            "code": "source",
+            "typeRef": {
+              "id": 1265605313
+            },
+            "callableRef": {
+              "id": 1263705279
+            }
+          }
+        ],
+        "typeRef": {
+          "id": 1264205299
+        },
+        "typeParameterRefs": [],
+        "typeArgumentRefs": [],
+        "isTemplate": false,
+        "state": 1,
+        "param": {
+          "kind": 1
+        }
+      },
+      {
+        "id": 1263705276,
+        "name": "反映射商品预设视图",
+        "isNative": false,
+        "returnTypeRef": {
+          "id": 1263605273
+        },
+        "parameters": [
+          {
+            "id": 1264005282,
+            "name": "视图",
+            "code": "view",
+            "typeRef": {
+              "id": 1263605274
+            },
+            "callableRef": {
+              "id": 1263705276
+            }
+          }
+        ],
+        "typeRef": {
+          "id": 1264205286
+        },
+        "typeParameterRefs": [],
+        "typeArgumentRefs": [],
+        "isTemplate": false,
+        "state": 1,
+        "param": {
+          "kind": 1
+        }
+      },
+      {
+        "id": 1263705277,
+        "name": "映射SKU预设视图",
+        "isNative": false,
+        "returnTypeRef": {
+          "id": 1263605279
+        },
+        "parameters": [
+          {
+            "id": 1264005285,
+            "name": "来源",
+            "code": "source",
+            "typeRef": {
+              "id": 1263605278
+            },
+            "callableRef": {
+              "id": 1263705277
+            }
+          }
+        ],
+        "typeRef": {
+          "id": 1264205294
+        },
+        "typeParameterRefs": [],
+        "typeArgumentRefs": [],
+        "isTemplate": false,
+        "state": 1,
+        "param": {
+          "kind": 1
+        }
+      }
+    ],
+    "removedFunctionIds": []
+  }
 }

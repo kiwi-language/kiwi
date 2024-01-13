@@ -32,7 +32,7 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
     public InstanceDTO execute(FlowExecutionRequest request) {
         try (var context = newContext()) {
             Flow flow = context.getEntity(Flow.class, request.flowId());
-            ClassInstance self = (ClassInstance) context.getInstanceContext().get(new PhysicalId(request.instanceId()));
+            ClassInstance self = (ClassInstance) context.getInstanceContext().get(Id.parse(request.instanceId()));
             List<Instance> arguments = new ArrayList<>();
             NncUtils.biForEach(
                     request.arguments(),

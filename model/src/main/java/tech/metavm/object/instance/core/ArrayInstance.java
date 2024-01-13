@@ -29,7 +29,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     }
 
     public ArrayInstance(Id id, ArrayType type, boolean ephemeral, @Nullable Consumer<DurableInstance> load) {
-        super(id, type, 0, 0, type.isEphemeral() || ephemeral, load);
+        super(id, type, 0, 0, ephemeral, load);
     }
 
     public ArrayInstance(ArrayType type, List<Instance> elements) {
