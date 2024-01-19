@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.*;
 import tech.metavm.mocks.Foo;
+import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.MockInstanceLogService;
@@ -27,14 +28,13 @@ public class TypeManagerTest extends TestCase {
     protected void setUp() throws Exception {
         instanceStore = new MemInstanceStore();
         EntityIdProvider idProvider = new MockIdProvider();
-        MockRegistry.setUp(idProvider, instanceStore);
-
         instanceSearchService = new MemInstanceSearchService();
-
         InstanceContextFactory instanceContextFactory =
                 TestUtils.getInstanceContextFactory(idProvider, instanceStore);
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
         entityContextFactory.setInstanceLogService(new MockInstanceLogService());
+
+        BootstrapUtils.bootstrap(entityContextFactory);
 
         TransactionOperations transactionOperations = new MockTransactionOperations();
 
@@ -43,6 +43,10 @@ public class TypeManagerTest extends TestCase {
                 entityContextFactory, entityQueryService,
                 new TaskManager(entityContextFactory, transactionOperations),
                 transactionOperations);
+        var instanceManager = new InstanceManager(
+                entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
+        );
+        typeManager.setInstanceManager(instanceManager);
     }
 
     public void test() {
@@ -96,12 +100,21 @@ public class TypeManagerTest extends TestCase {
         LoadByPathsResponse response = typeManager.loadByPaths(List.of(path1, path2));
 
         Assert.assertEquals(
-                Map.of(path1, stringType.tryGetId(), path2, stringType.tryGetId()),
+                Map.of(path1, stringType.getId(), path2, stringType.getId()),
                 response.path2typeId()
         );
         try (var context = MockRegistry.newContext(10L)) {
             Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
         }
+    }
+
+    public void testShopping() {
+        var typeIds = MockUtils.createShoppingTypes(typeManager);
+        var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
+        Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
+        var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
+        Assert.assertEquals(2, couponStateType.getClassParam().enumConstants().size());
+
     }
 
 }

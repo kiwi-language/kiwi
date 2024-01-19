@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -44,5 +45,15 @@ public class ArrayFieldValue extends FieldValue {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), elements);
+    }
+
+    @Override
+    public boolean valueEquals(FieldValue that) {
+        if (that instanceof ArrayFieldValue thatArrayFieldValue) {
+            return Objects.equals(id, thatArrayFieldValue.id)
+                    && elementAsChild == thatArrayFieldValue.elementAsChild
+                    && NncUtils.listEquals(elements, thatArrayFieldValue.elements, FieldValue::valueEquals);
+        } else
+            return false;
     }
 }

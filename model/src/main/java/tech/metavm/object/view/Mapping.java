@@ -15,8 +15,6 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static tech.metavm.util.NamingUtils.escapeTypeName;
-import static tech.metavm.util.NamingUtils.tryAddPrefix;
 
 // TODO support generic source type and generic target type
 public abstract class Mapping extends Element implements CodeSource, StagedEntity, LoadAware {
@@ -51,18 +49,34 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     public DurableInstance mapRoot(DurableInstance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
         var view = map(instance, repository, parameterizedFlowProvider);
         view.accept(new StructuralVisitor() {
+
             @Override
-            public Void visitDurableInstance(DurableInstance instance) {
+            public Void visitArrayInstance(ArrayInstance instance) {
+                process(instance);
+                return super.visitArrayInstance(instance);
+            }
+
+            @Override
+            public Void visitClassInstance(ClassInstance instance) {
+                process(instance);
+                return super.visitClassInstance(instance);
+            }
+
+            private void process(DurableInstance instance) {
                 var sourceRef = instance.getSourceRef();
                 var sourceId = sourceRef.source().getId();
                 var mappingId = sourceRef.mapping().tryGetId();
                 if (sourceId != null && mappingId != null) {
                     if (instance.isRoot())
-                        instance.initId(new ViewId(mappingId, sourceId));
+                        instance.initId(new DefaultViewId(mappingId, sourceId));
                     else
                         instance.initId(new ChildViewId(mappingId, sourceId, (ViewId) instance.getRoot().getId()));
+                } else if (mappingId != null && getParent() != null && getParent().getId() != null) {
+                    if (getParentField() != null)
+                        instance.initId(new FieldViewId((ViewId) getParent().getId(), mappingId, getParentField().getId()));
+                    else
+                        instance.initId(new ElementViewId((ViewId) getParent().getId(), mappingId, getIndex()));
                 }
-                return super.visitDurableInstance(instance);
             }
         });
         return view;
@@ -130,11 +144,10 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     }
 
     public void generateDeclarations(FunctionTypeProvider functionTypeProvider) {
-        long seq = NncUtils.randomNonNegative();
         mapper = addChild(FunctionBuilder
                         .newBuilder(
-                                NncUtils.getOrElse(mapper, Flow::getName, "映射_" + seq),
-                                NncUtils.getOrElse(mapper, Flow::getCode, "map_" + seq),
+                                "映射$" + getQualifiedName(),
+                                NncUtils.get(getQualifiedCode(), c -> "map$" + c),
                                 functionTypeProvider)
                         .parameters(mapper != null ? mapper.getParameters().get(0) :
                                 new Parameter(null, "来源", "source", sourceType))
@@ -145,8 +158,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                         .build(),
                 "mapper");
         unmapper = addChild(FunctionBuilder.newBuilder(
-                                NncUtils.getOrElse(unmapper, Flow::getName, "反映射_" + seq),
-                                NncUtils.getOrElse(unmapper, Flow::getCode, "unmap_" + seq),
+                                "反映射$" + getQualifiedName(),
+                                NncUtils.get(getQualifiedCode(), c -> "unmap$" + c),
                                 functionTypeProvider)
                         .existing(unmapper)
                         .isSynthetic(true)
@@ -176,5 +189,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     }
 
     public abstract MappingDTO toDTO(SerializeContext context);
+
+    public abstract String getQualifiedName();
+
+    public abstract @Nullable String getQualifiedCode();
 
 }

@@ -49,7 +49,6 @@ public class Version extends Entity {
         this.removedFunctionIds.addAll(removedFunctionIds);
     }
 
-    @Override
     public long getVersion() {
         return version;
     }

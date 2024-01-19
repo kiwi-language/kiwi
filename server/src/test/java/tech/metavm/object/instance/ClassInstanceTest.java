@@ -5,14 +5,20 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ClassInstanceTest extends TestCase {
 
@@ -20,64 +26,64 @@ public class ClassInstanceTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testToFieldValueDTO_for_reference() {
-        try (var context = MockRegistry.newContext(10L)) {
-            ClassInstance foo = MockRegistry.getFooInstance();
-            FieldValue fieldValueDTO = foo.toFieldValueDTO();
-            Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
-            Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
-            ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-            Assert.assertEquals((long) foo.tryGetPhysicalId(), refFieldValueDTO.getId());
-        }
-    }
-
-    public void testToFieldValueDTO_for_value() {
-        try (var context = MockRegistry.newContext(10L)) {
-            ClassInstance foo = MockRegistry.getFooInstance();
-            ClassInstance bar = foo.getClassInstance(MockRegistry.getField(Foo.class, "bar"));
-            FieldValue fieldValueDTO = bar.toFieldValueDTO();
-            Assert.assertEquals(bar.getTitle(), fieldValueDTO.getDisplayValue());
-            if (bar.isValue()) {
-                Assert.assertTrue(fieldValueDTO instanceof InstanceFieldValue);
-                InstanceFieldValue instFieldValueDTO = (InstanceFieldValue) fieldValueDTO;
-                MatcherAssert.assertThat(instFieldValueDTO.getInstance(), PojoMatcher.of(bar.toDTO()));
-            } else {
-                Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
-                ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-                Assert.assertEquals(bar.getPhysicalId(), refFieldValueDTO.getId());
-            }
-        }
+        var fooType = MockUtils.createFooType(true);
+        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooType.fooType())
+                .data(Map.of(
+                        fooType.fooNameField(),
+                        Instances.stringInstance("foo"),
+                        fooType.fooBarsField(),
+                        new ArrayInstance(
+                                fooType.barChildArrayType(),
+                                List.of()
+                        )
+                ))
+                .build();
+        foo.initId(PhysicalId.of(100000L));
+        FieldValue fieldValueDTO = foo.toFieldValueDTO();
+        Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
+        Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
+        ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
+        Assert.assertEquals(foo.getId(), Id.parse(refFieldValueDTO.getId()));
     }
 
     public void testToDTO() {
-        try (var context = MockRegistry.newContext(10L)) {
-            ClassInstance foo = MockRegistry.getFooInstance();
-            InstanceDTO instanceDTO = foo.toDTO();
-            Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
-            ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
-            Assert.assertEquals(foo.getType().getReadyFields().size(), paramDTO.fields().size());
-            TestUtils.logJSON(LOGGER, instanceDTO);
-        }
+        var fooType = MockUtils.createFooType(true);
+        var foo = MockUtils.createFoo(fooType);
+        InstanceDTO instanceDTO = foo.toDTO();
+        Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
+        ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
+        Assert.assertEquals(foo.getType().getReadyFields().size(), paramDTO.fields().size());
+        TestUtils.logJSON(LOGGER, instanceDTO);
     }
 
     public void testIsChild() {
-        Field fooBarField = MockRegistry.getField(Foo.class, "bar");
-        ClassInstance foo = MockRegistry.getFooInstance();
-        ClassInstance bar = foo.getClassInstance(fooBarField);
-        Assert.assertTrue(foo.isChild(bar));
+        var fooType = MockUtils.createFooType(true);
+        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooType.fooType())
+                .data(Map.of(
+                        fooType.fooNameField(),
+                        Instances.stringInstance("foo"),
+                        fooType.fooBarsField(),
+                        new ArrayInstance(fooType.barChildArrayType(), List.of())
+                ))
+                .build();
+        var barArray = (DurableInstance) foo.getField(fooType.fooBarsField());
+        Assert.assertTrue(foo.isChild(barArray));
     }
 
     public void test_add_not_null_field() {
         ClassType type = ClassTypeBuilder.newBuilder("Lab", null).build();
         Field titleField = FieldBuilder
-                .newBuilder("title", null, type, Instances.getStringType())
+                .newBuilder("title", null, type, StandardTypes.getStringType())
                 .build();
         type.setTitleField(titleField);
         Field statusField = FieldBuilder
-                .newBuilder("status", null, type, Instances.getIntType())
+                .newBuilder("status", null, type, StandardTypes.getLongType())
+                .defaultValue(Instances.longInstance(0L))
+                .state(MetadataState.READY)
                 .build();
         ClassInstance instance = ClassInstance.create(
                 Map.of(
@@ -96,6 +102,51 @@ public class ClassInstanceTest extends TestCase {
         Assert.assertEquals("foo", foo.getTitle());
         var dto = foo.toDTO();
         Assert.assertEquals("foo", dto.title());
+    }
+
+    public void testEphemeral() {
+        var flowType = ClassTypeBuilder.newBuilder("Flow", "Flow").build();
+        var scopeType = ClassTypeBuilder.newBuilder("Scope", "Scope").build();
+        var nullableScopeType = new UnionType(null, Set.of(StandardTypes.getNullType(), scopeType));
+        var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
+                .isChild(true)
+                .build();
+
+        TestUtils.initEntityIds(flowType);
+        var flow = ClassInstanceBuilder.newBuilder(flowType)
+                .data(Map.of(
+                        rootScopeField,
+                        ClassInstanceBuilder.newBuilder(scopeType)
+                                .ephemeral(true)
+                                .build()
+                ))
+                .build();
+
+        TestUtils.initInstanceIds(flow);
+        Map<Long, DurableInstance> id2instance = new HashMap<>();
+        flow.accept(new StructuralVisitor() {
+
+            @Override
+            public Void visitDurableInstance(DurableInstance instance) {
+                id2instance.put(instance.getPhysicalId(), instance);
+                return super.visitDurableInstance(instance);
+            }
+        });
+
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout);
+        output.writeValue(flow);
+
+        var bin = new ByteArrayInputStream(bout.toByteArray());
+        var input = new InstanceInput(bin, id -> {
+            var inst = id2instance.get(id);
+            if(inst instanceof ClassInstance classInst)
+                return new ClassInstance(PhysicalId.of(id), classInst.getType(), classInst.isEphemeral(), null);
+            else
+                throw new RuntimeException("Unexpected instance: " + inst);
+        });
+        var loadedFlow = (ClassInstance) input.readInstance();
+        Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
     }
 
 }

@@ -45,7 +45,7 @@ public class InstanceManager extends EntityContextFactoryBean {
         try (var context = newInstanceContext()) {
             var instanceId = Id.parse(id);
             var instance = context.get(instanceId);
-            var instanceDTO = InstanceDTOBuilder.buildDTO(instance, depth, context);
+            var instanceDTO = InstanceDTOBuilder.buildDTO(instance, depth);
             return new GetInstanceResponse(instanceDTO);
         }
     }
@@ -99,7 +99,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             var instances = context.batchGet(instanceIds);
             context.buffer(instanceIds);
             try (var ignored1 = SerializeContext.enter()) {
-                var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth, context));
+                var instanceDTOs = NncUtils.map(instances, i -> InstanceDTOBuilder.buildDTO(i, depth));
                 return new GetInstancesResponse(instanceDTOs);
             }
         }

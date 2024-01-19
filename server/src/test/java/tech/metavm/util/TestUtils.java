@@ -10,20 +10,25 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.slf4j.Logger;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.EntityIdProvider;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.MemInstanceStore;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
-import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.cache.MockCache;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import tech.metavm.object.instance.rest.FieldValue;
+import tech.metavm.object.instance.rest.InstanceFieldValue;
+import tech.metavm.object.instance.rest.ReferenceFieldValue;
+import tech.metavm.object.type.IdConstants;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.List;
 
 public class TestUtils {
 
@@ -54,6 +59,18 @@ public class TestUtils {
         } catch (JsonProcessingException e) {
             throw new InternalException(e);
         }
+    }
+
+    public static void startTransaction() {
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        TransactionSynchronizationManager.initSynchronization();
+    }
+
+    public static void commitTransaction() {
+        var synchronizations = TransactionSynchronizationManager.getSynchronizations();
+        ;
+        synchronizations.forEach(TransactionSynchronization::afterCommit);
+        TransactionSynchronizationManager.clear();
     }
 
     private final static byte[] byteBuf = new byte[1024 * 1024];
@@ -152,6 +169,20 @@ public class TestUtils {
         }
     }
 
+    public static String getId(FieldValue fieldValue) {
+        return switch (fieldValue) {
+            case ReferenceFieldValue refValue -> refValue.getId();
+            case InstanceFieldValue instanceValue -> instanceValue.getInstance().id();
+            default -> throw new InternalException("Can not get id from value: " + fieldValue);
+        };
+    }
+
+    public static void doInTransaction(Runnable action) {
+        startTransaction();
+        action.run();
+        commitTransaction();
+    }
+
     public static DataSource createDataSource() {
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUsername("root");
@@ -171,9 +202,9 @@ public class TestUtils {
     }
 
     public static EntityContextFactory getEntityContextFactory(EntityIdProvider idProvider,
-                                                                MemInstanceStore instanceStore,
-                                                                InstanceLogService instanceLogService,
-                                                                IndexEntryMapper indexEntryMapper) {
+                                                               MemInstanceStore instanceStore,
+                                                               InstanceLogService instanceLogService,
+                                                               IndexEntryMapper indexEntryMapper) {
         var factory = new EntityContextFactory(
                 getInstanceContextFactory(idProvider, instanceStore),
                 indexEntryMapper
@@ -186,9 +217,65 @@ public class TestUtils {
                                                                    MemInstanceStore instanceStore) {
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
                 .setIdService(idProvider);
+        instanceContextFactory.setCache(new MockCache());
         InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
         return instanceContextFactory;
     }
 
+    public static void initEntityIds(Object root) {
+        var ref = new Object() {
+            long nextId = 10000L;
+        };
 
+        EntityUtils.visitGraph(List.of(root), o -> {
+            if (o instanceof Entity entity && entity.isIdNull()) {
+                entity.initId(ref.nextId++);
+            }
+        });
+    }
+
+    public static void initInstanceIds(DurableInstance instance) {
+        initInstanceIds(List.of(instance));
+    }
+
+    public static void initInstanceIds(List<DurableInstance> instances) {
+        long offset = 1000000L;
+        var ref = new Object() {
+            long nextObjectId = IdConstants.CLASS_REGION_BASE + offset;
+            long nextEnumId = IdConstants.ENUM_REGION_BASE + offset;
+            long nextReadWriteArrayId = IdConstants.READ_WRITE_ARRAY_REGION_BASE + offset;
+            long nextChildArrayId = IdConstants.CHILD_ARRAY_REGION_BASE + offset;
+            long nextReadonlyArrayId = IdConstants.READ_ONLY_ARRAY_REGION_BASE + offset;
+        };
+        var visitor = new GraphVisitor() {
+            @Override
+            public Void visitDurableInstance(DurableInstance instance) {
+                if (!instance.isIdInitialized()) {
+                    long id;
+                    if (instance instanceof ArrayInstance arrayInstance) {
+                        id = switch (arrayInstance.getType().getKind()) {
+                            case READ_WRITE -> ref.nextReadWriteArrayId++;
+                            case CHILD -> ref.nextChildArrayId++;
+                            case READ_ONLY -> ref.nextReadonlyArrayId++;
+                        };
+                    } else if (instance instanceof ClassInstance classInstance) {
+                        var type = classInstance.getType();
+                        if (type.isEnum())
+                            id = ref.nextEnumId++;
+                        else
+                            id = ref.nextObjectId++;
+                    } else
+                        throw new InternalException("Invalid instance: " + instance);
+                    instance.initId(PhysicalId.of(id));
+                }
+                return super.visitDurableInstance(instance);
+            }
+        };
+        instances.forEach(visitor::visit);
+    }
+
+
+    public static long getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
+        return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> fieldCode.equals(f.code())).id();
+    }
 }

@@ -5,7 +5,10 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.*;
+import tech.metavm.util.InternalException;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectionUtils;
+import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -53,7 +56,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     @Override
     public void initModel(T model, ClassInstance instance, ObjectInstanceMap objectInstanceMap) {
         if (type == instance.getType()) {
-            if(model instanceof Entity entity) {
+            if (model instanceof Entity entity) {
                 entity.setParent(
                         NncUtils.get(instance.getParent(), p -> objectInstanceMap.getEntity(Entity.class, p)),
                         NncUtils.get(instance.getParentField(), defContext::getJavaField)
@@ -88,11 +91,20 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     @Override
     public void initInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
+        resetInstance(instance, model, instanceMap);
+    }
+
+    @Override
+    public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
+        resetInstance(instance, model, instanceMap);
+    }
+
+    private void resetInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
         ClassType instanceType = instance.getType();
         if (type == instance.getType()) {
-            if(model instanceof Entity entity)
+            if (model instanceof Entity entity)
                 reloadParent(entity, instance, instanceMap, defContext);
-            instance.reset(getInstanceFields(model, instanceMap), 0L, 0L);
+            instance.reset(getInstanceFields(model, instanceMap), instance.getVersion(), instance.getSyncVersion());
         } else {
             getSubTypeDef(instanceType).initInstanceHelper(instance, model, instanceMap);
         }
@@ -100,20 +112,6 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     protected Long getId(T model) {
         return null;
-    }
-
-    @Override
-    public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
-        initInstance(instance, model, instanceMap);
-//        ClassType instanceType = instance.getType();
-//        if (type == instance.getType()) {
-//            if(model instanceof Entity entity) {
-//                reloadParent(entity, instance, instanceMap, defContext);
-//            }
-//            instance.reset(getInstanceFields(model, instanceMap), 0L, 0L);
-//        } else {
-//            getSubTypeDef(instanceType).updateInstanceHelper(model, instance, instanceMap);
-//        }
     }
 
     private PojoDef<? extends T> getSubTypeDef(ClassType subType) {

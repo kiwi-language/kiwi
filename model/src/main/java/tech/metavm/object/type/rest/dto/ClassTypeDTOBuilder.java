@@ -95,6 +95,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder titleFieldRef(RefDTO titleFieldRef) {
+        this.titleFieldRef = titleFieldRef;
+        return this;
+    }
+
     public ClassTypeDTOBuilder anonymous(boolean anonymous) {
         this.anonymous = anonymous;
         return this;
@@ -102,6 +107,11 @@ public class ClassTypeDTOBuilder {
 
     public ClassTypeDTOBuilder addField(FieldDTO field) {
         this.fields.add(field);
+        return this;
+    }
+
+    public ClassTypeDTOBuilder addMethod(FlowDTO method) {
+        this.flows.add(method);
         return this;
     }
 

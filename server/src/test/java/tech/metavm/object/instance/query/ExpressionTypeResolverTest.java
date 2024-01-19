@@ -4,19 +4,21 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.EntityContextFactory;
-import tech.metavm.entity.MemIndexEntryMapper;
-import tech.metavm.object.instance.MockInstanceLogService;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.entity.InstanceContextFactory;
-import tech.metavm.entity.MemInstanceStore;
+import tech.metavm.entity.*;
 import tech.metavm.expression.*;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.type.ClassType;
+import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.core.InstanceProvider;
+import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.mocks.MockArrayTypeProvider;
+import tech.metavm.object.type.mocks.MockTypeRepository;
+import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
 import tech.metavm.util.TestUtils;
 import tech.metavm.view.ListView;
+
+import java.util.List;
 
 import static tech.metavm.util.TestConstants.APP_ID;
 
@@ -24,37 +26,47 @@ public class ExpressionTypeResolverTest extends TestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ExpressionTypeResolverTest.class);
 
-    private EntityContextFactory entityContextFactory;
+    private TypeRepository typeRepository;
+    private InstanceProvider instanceProvider;
+    private ArrayTypeProvider arrayTypeProvider;
 
     @Override
     protected void setUp() throws Exception {
-        MockIdProvider idProvider = new MockIdProvider();
-        MemInstanceStore instanceStore = new MemInstanceStore();
-        MockRegistry.setUp(idProvider, instanceStore);
-        entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), new MemIndexEntryMapper());
+        typeRepository = new MockTypeRepository();
+        instanceProvider = new MockInstanceRepository();
+        arrayTypeProvider = new MockArrayTypeProvider();
+        MockStandardTypesInitializer.init();
     }
 
-    public void testIn() {
-        ClassType fooType = MockRegistry.getClassType(Foo.class);
-        var context = entityContextFactory.newContext(APP_ID);
-        String exprString = "名称 in 'Big Foo'";
-        Expression expression = ExpressionParser.parse(
-                exprString,
-                TypeParsingContext.create(fooType, context)
-        );
+    public void testEq() {
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        typeRepository.save(List.of(fooType));
+        FieldBuilder.newBuilder("名称", "name", fooType, StandardTypes.getStringType()).build();
+        String exprString = "this.名称 = 'Big Foo'";
+        var expression = ExpressionParser.parse(exprString, createTypeParsingContext(fooType));
         Assert.assertNotNull(expression);
         Assert.assertEquals(exprString, expression.build(VarType.NAME));
     }
 
     public void testAllMatch() {
-        ClassType listViewType = MockRegistry.getClassType(ListView.class);
-        var context = entityContextFactory.newContext(APP_ID);
-        String str = "AllMatch(可见字段, 所属类型=this.类型)";
-        Expression expression = ExpressionParser.parse(
-                str, TypeParsingContext.create(listViewType, context)
-        );
+        var listViewType = ClassTypeBuilder.newBuilder("列表视图", "ListView").build();
+        var classTypeType = ClassTypeBuilder.newBuilder("Class类型", "ClassType").build();
+        var fieldType = ClassTypeBuilder.newBuilder("字段", "Field").build();
+        var fieldChildArrayType = new ArrayType(null, fieldType, ArrayKind.CHILD);
+        FieldBuilder.newBuilder("可见字段", "visibleFields", listViewType, fieldChildArrayType).build();
+        FieldBuilder.newBuilder("类型", "type", listViewType, classTypeType).build();
+        FieldBuilder.newBuilder("所属类型", "declaringType", fieldType, classTypeType).build();
+        TestUtils.initEntityIds(listViewType);
+        typeRepository.save(List.of(listViewType, classTypeType, fieldType));
+
+        String str = "allmatch(可见字段, 所属类型=this.类型)";
+        var expression = ExpressionParser.parse(str, createTypeParsingContext(listViewType));
         Assert.assertTrue(expression instanceof AllMatchExpression);
         LOGGER.info(expression.build(VarType.NAME));
+    }
+
+    private TypeParsingContext createTypeParsingContext(ClassType type) {
+        return new TypeParsingContext(instanceProvider, typeRepository, arrayTypeProvider, type);
     }
 
 }

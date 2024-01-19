@@ -77,6 +77,11 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder asTitle(boolean asTitle) {
+        this.asTitle = asTitle;
+        return this;
+    }
+
     public FieldBuilder column(Column column) {
         this.column = column;
         return this;

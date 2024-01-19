@@ -13,6 +13,7 @@ import tech.metavm.object.type.IndexRepository;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.mocks.MockIndexRepository;
 import tech.metavm.task.TaskManager;
+import tech.metavm.util.BootstrapUtils;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.MockRegistry;
 import tech.metavm.util.MockTransactionOperations;
@@ -34,13 +35,13 @@ public class FlowManagerTest extends TestCase {
         indexRepository = new MockIndexRepository();
         EntityIdProvider idProvider = new MockIdProvider();
         MemInstanceStore instanceStore = new MemInstanceStore();
-        MockRegistry.setUp(idProvider, instanceStore);
         var indexEntryMapper = new MemIndexEntryMapper();
 
         instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
                 .setIdService(idProvider);
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, indexEntryMapper);
         InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
+        BootstrapUtils.bootstrap(entityContextFactory);
 
         InstanceSearchService instanceSearchService = new MemInstanceSearchService();
 
@@ -54,6 +55,10 @@ public class FlowManagerTest extends TestCase {
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         flowExecutionService = new FlowExecutionService(entityContextFactory);
+    }
+
+    public void test() {
+
     }
 
 

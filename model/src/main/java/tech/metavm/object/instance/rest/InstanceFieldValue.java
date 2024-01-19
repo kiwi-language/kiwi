@@ -6,6 +6,10 @@ import java.util.Objects;
 
 public class InstanceFieldValue extends FieldValue {
 
+    public static InstanceFieldValue of(InstanceDTO instance) {
+        return new InstanceFieldValue(instance.title(), instance);
+    }
+
     private final InstanceDTO instance;
 
     public InstanceFieldValue(@JsonProperty("displayValue") String displayValue,
@@ -30,5 +34,13 @@ public class InstanceFieldValue extends FieldValue {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), instance);
+    }
+
+    @Override
+    public boolean valueEquals(FieldValue that) {
+        if (that instanceof InstanceFieldValue thatInstanceFieldValue)
+            return instance.valueEquals(thatInstanceFieldValue.instance);
+        else
+            return false;
     }
 }

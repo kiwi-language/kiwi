@@ -21,14 +21,15 @@ public abstract class Id {
         return readId(new InstanceInput(new ByteArrayInputStream(EncodingUtils.hexToBytes(str))));
     }
 
-
     public static Id readId(InstanceInput input) {
         var tag = input.read();
         return switch (tag) {
             case PhysicalId.TAG -> new PhysicalId(input.readLong());
             case TmpId.TAG -> new TmpId(input.readLong());
-            case ViewId.TAG -> new ViewId(input.readLong(), readId(input));
+            case DefaultViewId.TAG -> new DefaultViewId(input.readLong(), readId(input));
             case ChildViewId.TAG -> new ChildViewId(input.readLong(), readId(input), (ViewId) readId(input));
+            case FieldViewId.TAG ->  new FieldViewId((ViewId) readId(input), input.readLong(), input.readLong());
+            case ElementViewId.TAG ->  new ElementViewId((ViewId) readId(input), input.readLong(), input.readInt());
             default -> throw new IllegalArgumentException("Unknown instance id tag: " + tag);
         };
     }

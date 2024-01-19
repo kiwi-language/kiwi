@@ -126,8 +126,8 @@ public class InstanceQueryService {
                 sourceType, query.searchText(), convertedExpr, searchFields,
                 query.includeBuiltin(), query.includeSubTypes(), query.page(),
                 query.pageSize(), queryFields,
-                NncUtils.map(query.createdIds(), id -> ((ViewId) id).getSourceId()),
-                NncUtils.map(query.excludedIds(), id -> ((ViewId) id).getSourceId()),
+                NncUtils.map(query.createdIds(), id -> ((DefaultViewId) id).getSourceId()),
+                NncUtils.map(query.excludedIds(), id -> ((DefaultViewId) id).getSourceId()),
                 null
         );
     }
@@ -161,7 +161,7 @@ public class InstanceQueryService {
                                       InstanceProvider instanceProvider,
                                       ArrayTypeProvider arrayTypeProvider) {
         Expression condition = buildConditionForSearchText(
-                query.type().tryGetId(), query.searchText(), query.searchFields(), typeProvider
+                query.type().getId(), query.searchText(), query.searchFields(), typeProvider
         );
         for (InstanceQueryField queryField : query.fields()) {
             Expression fieldCondition = null;

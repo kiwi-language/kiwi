@@ -211,7 +211,7 @@ public class Instances {
     }
 
     public static LongInstance longInstance(long value, Function<Class<?>, Type> getTypeFunc) {
-        return new LongInstance(value, getLongType(getTypeFunc));
+        return new LongInstance(value, StandardTypes.getLongType());
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
@@ -219,7 +219,7 @@ public class Instances {
     }
 
     public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
-        return new BooleanInstance(value, getBooleanType(getTypeFunc));
+        return new BooleanInstance(value, StandardTypes.getBooleanType());
     }
 
     public static DoubleInstance doubleInstance(double value) {
@@ -227,11 +227,11 @@ public class Instances {
     }
 
     public static DoubleInstance doubleInstance(double value, Function<Class<?>, Type> getTypeFunc) {
-        return new DoubleInstance(value, getDoubleType(getTypeFunc));
+        return new DoubleInstance(value, StandardTypes.getDoubleType());
     }
 
     public static TimeInstance timeInstance(long value, Function<Class<?>, Type> getTypeFunc) {
-        return new TimeInstance(value, getTimeType(getTypeFunc));
+        return new TimeInstance(value, StandardTypes.getTimeType());
     }
 
     public static TimeInstance timeInstance(long value) {
@@ -267,7 +267,7 @@ public class Instances {
     }
 
     public static PasswordInstance passwordInstance(String password, Function<Class<?>, Type> getTypeFunc) {
-        return new PasswordInstance(password, getPasswordType(getTypeFunc));
+        return new PasswordInstance(password, StandardTypes.getPasswordType());
     }
 
     public static StringInstance stringInstance(String value) {
@@ -275,7 +275,7 @@ public class Instances {
     }
 
     public static StringInstance stringInstance(String value, Function<Class<?>, Type> getTypeFunc) {
-        return new StringInstance(value, getStringType(getTypeFunc));
+        return new StringInstance(value, StandardTypes.getStringType());
     }
 
     public static Set<DurableInstance> getAllNonValueInstances(DurableInstance root) {
@@ -324,95 +324,19 @@ public class Instances {
     }
 
     public static StringInstance createString(String value) {
-        return new StringInstance(value, getStringType());
+        return new StringInstance(value, StandardTypes.getStringType());
     }
 
     public static LongInstance createLong(long value) {
-        return new LongInstance(value, getLongType());
+        return new LongInstance(value, StandardTypes.getLongType());
     }
 
     public static DoubleInstance createDouble(double value) {
-        return new DoubleInstance(value, getDoubleType());
-    }
-
-    public static NullInstance createNull() {
-        return new NullInstance(getNullType());
+        return new DoubleInstance(value, StandardTypes.getDoubleType());
     }
 
     public static BooleanInstance createBoolean(boolean b) {
         return b ? trueInstance : falseInstance;
-    }
-
-    public static PrimitiveType getStringType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(String.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getStringType() {
-        return getPrimitiveType(String.class, ModelDefRegistry::getType);
-    }
-
-    public static PrimitiveType getIntType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Integer.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getIntType() {
-        return getPrimitiveType(Integer.class);
-    }
-
-    public static PrimitiveType getLongType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Long.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getLongType() {
-        return getPrimitiveType(Long.class);
-    }
-
-    public static PrimitiveType getBooleanType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Boolean.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getBooleanType() {
-        return getPrimitiveType(Boolean.class);
-    }
-
-    public static PrimitiveType getDoubleType() {
-        return getDoubleType(defaultGetTypeFunc());
-    }
-
-    public static PrimitiveType getDoubleType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Double.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getTimeType() {
-        return getPrimitiveType(Date.class);
-    }
-
-    public static PrimitiveType getTimeType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Date.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getPasswordType() {
-        return getPrimitiveType(Password.class);
-    }
-
-    public static PrimitiveType getPasswordType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Password.class, getTypeFunc);
-    }
-
-    public static PrimitiveType getNullType() {
-        return getPrimitiveType(Null.class);
-    }
-
-    public static PrimitiveType getNullType(Function<Class<?>, Type> getTypeFunc) {
-        return getPrimitiveType(Null.class, getTypeFunc);
-    }
-
-    public static AnyType getAnyType() {
-        return new AnyType();
-    }
-
-    public static AnyType getAnyType(Function<Class<?>, Type> getTypeFunc) {
-        return (AnyType) getTypeFunc.apply(Object.class);
     }
 
     private static ArrayType getObjectArrayType() {

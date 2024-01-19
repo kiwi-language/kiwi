@@ -8,27 +8,27 @@ import tech.metavm.util.NncUtils;
 
 public class InstanceDTOBuilder {
 
-    public static InstanceDTO buildDTO(Instance instance, int depth, IInstanceContext context) {
+    public static InstanceDTO buildDTO(Instance instance, int depth) {
         if (depth <= 0) {
             throw new IllegalArgumentException("depth must be positive");
         }
-        InstanceFieldValue fieldValue = (InstanceFieldValue) build(instance, depth, true, context);
+        InstanceFieldValue fieldValue = (InstanceFieldValue) build(instance, depth, true);
         return fieldValue.getInstance();
     }
 
-    private static FieldValue build(Instance instance, int depth, boolean isChild, IInstanceContext context) {
+    private static FieldValue build(Instance instance, int depth, boolean isChild) {
         try (var serContext = SerializeContext.enter()) {
             serContext.writeType(instance.getType());
         }
         return switch (instance) {
-            case ClassInstance classInstance -> buildForClassInstance(classInstance, depth, isChild, context);
-            case ArrayInstance arrayInstance -> buildForArray(arrayInstance, depth, isChild, context);
-            case PrimitiveInstance primitiveInstance -> buildForPrimitive(primitiveInstance, context);
+            case ClassInstance classInstance -> buildForClassInstance(classInstance, depth, isChild);
+            case ArrayInstance arrayInstance -> buildForArray(arrayInstance, depth, isChild);
+            case PrimitiveInstance primitiveInstance -> buildForPrimitive(primitiveInstance);
             case null, default -> throw new InternalException("Unrecognized instance: " + instance);
         };
     }
 
-    private static FieldValue buildForClassInstance(ClassInstance instance, int depth, boolean isChild, IInstanceContext context) {
+    private static FieldValue buildForClassInstance(ClassInstance instance, int depth, boolean isChild) {
         try (var serContext = SerializeContext.enter()) {
             if (depth <= 0 && !isChild) {
                 return instance.toFieldValueDTO();
@@ -46,7 +46,7 @@ public class InstanceDTOBuilder {
                                                 f.getName(),
                                                 f.getType().getConcreteType().getCategory().code(),
                                                 f.getType().isArray(),
-                                                build(instance.getField(f), depth - 1, isChild && f.isChild(), context )
+                                                build(instance.getField(f), depth - 1, isChild && f.isChild())
                                         )
                                 )
                         )
@@ -56,7 +56,7 @@ public class InstanceDTOBuilder {
         }
     }
 
-    private static FieldValue buildForArray(ArrayInstance array, int depth, boolean isChild, IInstanceContext context) {
+    private static FieldValue buildForArray(ArrayInstance array, int depth, boolean isChild) {
         if (depth <= 0 && !isChild) {
             return array.toFieldValueDTO();
         } else {
@@ -71,7 +71,7 @@ public class InstanceDTOBuilder {
                                 array.isChildArray(),
                                 NncUtils.map(
                                         array.getElements(),
-                                        e -> build(e, depth, isChild && array.isChildArray(), context)
+                                        e -> build(e, depth, isChild && array.isChildArray())
                                 )
                         )
                 );
@@ -80,7 +80,7 @@ public class InstanceDTOBuilder {
         }
     }
 
-    private static FieldValue buildForPrimitive(PrimitiveInstance instance, IInstanceContext context) {
+    private static FieldValue buildForPrimitive(PrimitiveInstance instance) {
         return instance.toFieldValueDTO();
     }
 

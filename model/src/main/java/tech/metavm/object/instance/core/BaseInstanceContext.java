@@ -290,7 +290,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         DurableInstance view;
         if(viewType instanceof ClassType classViewType) {
             view = ClassInstanceBuilder.newBuilder(classViewType)
-                    .sourceRef(new SourceRef(internalGet(viewId.getSourceId()), mappingProvider.getMapping(viewId.getMappingId())))
+                    .sourceRef(viewId.getSourceRef(this, mappingProvider))
                     .load(this::initializeView)
                     .id(viewId)
                     .ephemeral(true)
@@ -298,7 +298,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         else if(viewType instanceof ArrayType arrayViewType) {
             view = new ArrayInstance(viewId, arrayViewType, true, this::initializeView);
-            view.setSourceRef(new SourceRef(internalGet(viewId.getSourceId()), mappingProvider.getMapping(viewId.getMappingId())));
+            view.setSourceRef(viewId.getSourceRef(this, mappingProvider));
         }
         else
             throw new InternalException("Invalid view type: " + viewType);
@@ -307,8 +307,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void initializeView(DurableInstance view) {
-        if(view.getId() instanceof ChildViewId childId)
-            view = internalGet(childId.getRootId());
+        var id = (ViewId) requireNonNull(view.getId());
+        view = internalGet(id.getRootId());
         var mapping = mappingProvider.getMapping(view.getMappingId());
         var r = mapping.mapRoot(view.getSource(), this, parameterizedFlowProvider);
         r.accept(new InstanceCopier(r) {

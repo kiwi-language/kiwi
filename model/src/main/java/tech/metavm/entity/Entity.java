@@ -225,7 +225,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @JsonIgnore
-    public long getVersion() {
+    public long getEntityVersion() {
         return version;
     }
 

@@ -324,8 +324,8 @@ public class TypeManager extends EntityContextFactoryBean {
 
     private void saveFlows(ClassType type, List<FlowDTO> flows, IEntityContext context) {
         Set<Long> flowIds = NncUtils.mapNonNullUnique(flows, FlowDTO::id);
-        for (Flow flow : type.getMethods()) {
-            if (!flowIds.contains(flow.tryGetId())) {
+        for (Flow flow : new ArrayList<>(type.getMethods())) {
+            if (flow.tryGetId() != null && !flowIds.contains(flow.tryGetId())) {
                 flowManager.remove(flow, context);
             }
         }

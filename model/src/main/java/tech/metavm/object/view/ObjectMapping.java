@@ -126,4 +126,17 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
     public boolean isValidLocalKey() {
         return getCode() != null;
     }
+
+    @Override
+    public String getQualifiedName() {
+        return getSourceType().getName().replace('.', '_') + "_" + getName();
+    }
+
+    @Override
+    public @Nullable String getQualifiedCode() {
+        if (getCode() != null && getSourceType().getCode() != null)
+            return getSourceType().getCode().replace('.', '_') + "_" + getCode();
+        else
+            return null;
+    }
 }

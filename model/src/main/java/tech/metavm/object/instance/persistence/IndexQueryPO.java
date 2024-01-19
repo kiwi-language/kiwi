@@ -18,7 +18,7 @@ public record IndexQueryPO(long appId,
                 indexItems,
                 this::matches,
                 getItemComparator(),
-                limit
+                NncUtils.orElse(limit, Long.MAX_VALUE)
         );
     }
 
@@ -27,13 +27,15 @@ public record IndexQueryPO(long appId,
     }
 
     private Comparator<IndexEntryPO> getItemComparator() {
-        return (e1, e2) -> IndexKeyUtils.compare(e1.getKey(), e2.getKey());
+        if(desc)
+            return (e1, e2) -> IndexKeyUtils.compare(e2.getKey(), e1.getKey());
+        else
+            return (e1, e2) -> IndexKeyUtils.compare(e1.getKey(), e2.getKey());
     }
 
     private boolean matches(IndexEntryPO indexItem) {
-        if (appId != indexItem.getAppId() && constraintId != indexItem.getIndexId()) {
+        if (appId != indexItem.getAppId() || constraintId != indexItem.getIndexId())
             return false;
-        }
         for (int i = 0; i < items.size(); i++) {
             var item = items.get(i);
             if (!item.operator().evaluate(item.value(), indexItem.getColumn(i)))

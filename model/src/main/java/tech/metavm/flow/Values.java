@@ -22,6 +22,10 @@ public class Values {
         return new ConstantValue(ValueKind.CONSTANT, expression);
     }
 
+    public static Value constantTrue() {
+        return constant(Expressions.trueExpression());
+    }
+
     public static Value reference(Expression expression) {
         return new DynamicValue(ValueKind.REFERENCE, expression);
     }

@@ -140,10 +140,9 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     private void generateReadMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
-        long seq = NncUtils.randomNonNegative();
         readMethod = MethodBuilder.newBuilder(getSourceType(),
-                        NncUtils.getOrElse(readMethod, Flow::getName, "获取视图_" + seq),
-                        NncUtils.getOrElse(readMethod, Flow::getCode, "getView_" + seq),
+                        "获取视图$" + getName(),
+                        NncUtils.get(getCode(), c -> "getView$" + c),
                         functionTypeProvider)
                 .existing(readMethod)
                 .codeSource(this)
@@ -154,10 +153,9 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     private void generateWriteMethodDeclaration(FunctionTypeProvider functionTypeProvider) {
-        long seq = NncUtils.randomNonNegative();
         writeMethod = MethodBuilder.newBuilder(getSourceType(),
-                        NncUtils.getOrElse(writeMethod, Flow::getName, "保存视图_" + seq),
-                        NncUtils.getOrElse(writeMethod, Flow::getCode, "saveView_" + seq),
+                        "保存视图$" + getName(),
+                        NncUtils.get(getCode(), c -> "saveView$" + c),
                         functionTypeProvider)
                 .existing(writeMethod)
                 .codeSource(this)

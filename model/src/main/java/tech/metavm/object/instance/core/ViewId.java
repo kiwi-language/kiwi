@@ -1,55 +1,35 @@
 package tech.metavm.object.instance.core;
 
-import tech.metavm.util.InstanceOutput;
+import tech.metavm.object.view.MappingProvider;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class ViewId extends Id {
-
-    public static final int TAG = 3;
+public abstract class ViewId extends Id {
 
     private final long mappingId;
-    private final Id sourceId;
 
-    public ViewId(long mappingId, Id sourceId) {
+    public ViewId(long mappingId) {
         this.mappingId = mappingId;
-        this.sourceId = sourceId;
-    }
-
-    @Override
-    public void write(InstanceOutput output) {
-        output.write(TAG);
-        output.writeLong(mappingId);
-        sourceId.write(output);
-    }
-
-    public Id getSourceId() {
-        return sourceId;
     }
 
     public long getMappingId() {
         return mappingId;
     }
 
-    @Override
-    public Long tryGetPhysicalId() {
-        return sourceId.tryGetPhysicalId();
-    }
+    public abstract ViewId getRootId();
 
-    @Override
-    public boolean isTemporary() {
-        return sourceId.isTemporary();
-    }
+    public abstract @Nullable SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider);
 
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof ViewId viewId)) return false;
-        return mappingId == viewId.mappingId && Objects.equals(sourceId, viewId.sourceId);
+        return mappingId == viewId.mappingId;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mappingId, sourceId);
+        return Objects.hash(mappingId);
     }
 }

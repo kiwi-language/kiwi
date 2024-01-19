@@ -15,6 +15,10 @@ public record InputFieldDTO(
         @Nullable ValueDTO condition
 ) implements FieldReferringDTO<InputFieldDTO> {
 
+    public static InputFieldDTO create(String name, RefDTO typeRef) {
+        return new InputFieldDTO(null, name, typeRef, null, null);
+    }
+
     public InputFieldDTO copyWithFieldRef(RefDTO fieldRef) {
         return new InputFieldDTO(fieldRef, name, typeRef, defaultValue, condition);
     }

@@ -7,11 +7,14 @@ import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.FieldBuilder;
+import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TriConsumer;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Nodes {
@@ -65,6 +68,23 @@ public class Nodes {
                 getArray.get(), Values.nodeProperty(node, indexField)
         );
         action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
+        return node;
+    }
+
+    public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,
+                                    Value condition, Consumer<Branch> thenGenerator, Consumer<Branch> elseGenerator,
+                                    Consumer<MergeNode> processMerge) {
+        var node = new BranchNode(null, name, code, false, scope.getLastNode(), scope);
+        var thenBranch = node.addBranch(condition);
+        thenGenerator.accept(thenBranch);
+        var elseBranch = node.addDefaultBranch();
+        elseGenerator.accept(elseBranch);
+        var mergeOutput = ClassTypeBuilder.newBuilder("mergeOutput", "mergeOutput").temporary().build();
+        var mergeNode = new MergeNode(
+                null, name + "_merge", NncUtils.get(code, c -> c + "_merge"),
+                node, mergeOutput, scope
+        );
+        processMerge.accept(mergeNode);
         return node;
     }
 

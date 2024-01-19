@@ -23,8 +23,8 @@ public class JobSchedulerTest extends TestCase {
     protected void setUp() throws Exception {
         MockIdProvider idProvider = new MockIdProvider();
         instanceStore = new MemInstanceStore();
-        MockRegistry.setUp(idProvider, instanceStore);
         entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), instanceStore.getIndexEntryMapper());
+        BootstrapUtils.bootstrap(entityContextFactory);
         transactionOperations = new MockTransactionOperations();
         Scheduler.THREAD_POOL_SIZE = 1;
         jobScheduler = new Scheduler(entityContextFactory, transactionOperations);
@@ -44,7 +44,7 @@ public class JobSchedulerTest extends TestCase {
         }
 
         try(var context = newContext()) {
-            testJob = context.getEntity(TestJob.class, testJob.tryGetId());
+            testJob = context.getEntity(TestJob.class, testJob.getId());
             Assert.assertTrue(testJob.isFinished());
             Assert.assertEquals(10, testJob.getCount());
         }

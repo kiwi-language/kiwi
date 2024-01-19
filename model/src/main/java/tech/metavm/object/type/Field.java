@@ -101,6 +101,10 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return isChild;
     }
 
+    public boolean isTitle() {
+        return declaringType.getTitleField() == this;
+    }
+
     public TypeCategory getConcreteTypeCategory() {
         return getConcreteType().getCategory();
     }

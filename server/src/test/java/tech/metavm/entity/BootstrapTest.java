@@ -1,0 +1,59 @@
+package tech.metavm.entity;
+
+import junit.framework.TestCase;
+import org.junit.Assert;
+import tech.metavm.event.MockEventQueue;
+import tech.metavm.object.instance.InstanceStore;
+import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.cache.MockCache;
+import tech.metavm.object.type.*;
+import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.TestUtils;
+
+public class BootstrapTest extends TestCase {
+
+    private ColumnStore columnStore;
+    private AllocatorStore allocatorStore;
+    private InstanceStore instanceStore;
+
+    @Override
+    protected void setUp() throws Exception {
+        allocatorStore = new MemAllocatorStore();
+        columnStore = new MemColumnStore();
+        instanceStore = new MemInstanceStore();
+    }
+
+    private Bootstrap newBootstrap() {
+        ModelDefRegistry.setDefContext(null);
+        var stdAllocators = new StdAllocators(allocatorStore);
+        var eventQueue = new MockEventQueue();
+        var indexEntryMapper = new MemIndexEntryMapper();
+        var instanceContextFactory = new InstanceContextFactory(instanceStore, eventQueue);
+        var entityContextFactory = new EntityContextFactory(instanceContextFactory, indexEntryMapper);
+        var idService = new MockIdProvider();
+        instanceContextFactory.setIdService(idService);
+        instanceContextFactory.setCache(new MockCache());
+        entityContextFactory.setInstanceLogService(new MockInstanceLogService());
+        return new Bootstrap(entityContextFactory, instanceContextFactory, stdAllocators, columnStore);
+    }
+
+    public void test() {
+        {
+            var bootstrap = newBootstrap();
+            var result = bootstrap.boot();
+            Assert.assertTrue(result.numInstancesWithNullIds() > 0);
+            TestUtils.startTransaction();
+            bootstrap.save(true);
+            TestUtils.commitTransaction();
+        }
+        {
+            var bootstrap = newBootstrap();
+            var result = bootstrap.boot();
+            Assert.assertEquals(0, result.numInstancesWithNullIds());
+            TestUtils.startTransaction();
+            bootstrap.save(true);
+            TestUtils.commitTransaction();
+        }
+    }
+
+}

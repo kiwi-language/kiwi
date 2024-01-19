@@ -255,6 +255,14 @@ public class StandardDefBuilder {
                 .build();
 //        NativeFunctions.setSetSourceFunc(setSourceFunc);
         defContext.writeEntity(setSourceFunc);
+
+        var isSourcePresentFunc = FunctionBuilder.newBuilder("来源是否存在", "isSourcePResent", defContext.getFunctionTypeContext())
+                .isNative()
+                .parameters(new Parameter(null, "视图", "view", getObjectType()))
+                .returnType(StandardTypes.getBooleanType())
+                .build();
+        NativeFunctions.setIsSourcePresent(isSourcePresentFunc);
+        defContext.writeEntity(isSourcePresentFunc);
     }
 
     @SuppressWarnings("SameParameterValue")

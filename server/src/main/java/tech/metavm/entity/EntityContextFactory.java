@@ -23,6 +23,7 @@ public class EntityContextFactory {
     private final InstanceContextFactory instanceContextFactory;
     private final IndexEntryMapper indexEntryMapper;
     private InstanceLogService instanceLogService;
+    private boolean defaultAsyncLogProcess = true;
 
     public EntityContextFactory(InstanceContextFactory instanceContextFactory,
                                 IndexEntryMapper indexEntryMapper) {
@@ -33,6 +34,12 @@ public class EntityContextFactory {
     public IEntityContext newContext() {
         return newContext(ContextUtil.getAppId());
     }
+
+
+    public IEntityContext newContext(boolean asyncLogProcess) {
+        return newContext(ContextUtil.getAppId(), ModelDefRegistry.getDefContext(), null, asyncLogProcess);
+    }
+
 
     public IEntityContext newContext(long appId, EntityIdProvider idProvider) {
         return newContext(appId, ModelDefRegistry.getDefContext(), idProvider);
@@ -47,9 +54,15 @@ public class EntityContextFactory {
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable EntityIdProvider idProvider) {
+        return newContext(appId, parent, idProvider, defaultAsyncLogProcess);
+    }
+
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable EntityIdProvider idProvider,
+                                     boolean asyncLogProcessing) {
         var bridge = new EntityInstanceContextBridge();
         var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
                 .readonly(isReadonlyTransaction())
+                .asyncPostProcess(asyncLogProcessing)
                 .parent(NncUtils.get(parent, IEntityContext::getInstanceContext))
                 .getTypeIdInterceptor(id -> IdConstants.isBuiltinAppId(id) ? bridge.getType(Application.class).tryGetId() : null)
                 .plugins(
@@ -74,5 +87,13 @@ public class EntityContextFactory {
     @Autowired
     public void setInstanceLogService(InstanceLogService instanceLogService) {
         this.instanceLogService = instanceLogService;
+    }
+
+    public InstanceContextFactory getInstanceContextFactory() {
+        return instanceContextFactory;
+    }
+
+    public void setDefaultAsyncLogProcess(boolean defaultAsyncLogProcess) {
+        this.defaultAsyncLogProcess = defaultAsyncLogProcess;
     }
 }

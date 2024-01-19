@@ -31,11 +31,13 @@ public abstract class FieldMapping extends Element {
     @Nullable
     protected Mapping nestedMapping;
 
-    public FieldMapping(Long tmpId, String name, String code, Type targetFieldType, boolean isChild, boolean readonly,
+    public FieldMapping(Long tmpId, String name, String code, Type targetFieldType,
+                        boolean asTitle,
+                        boolean isChild, boolean readonly,
                         FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
         this(
                 tmpId,
-                createTargetField(name, code, isChild, readonly, containingMapping.getTargetType(),
+                createTargetField(name, code, asTitle, isChild, readonly, containingMapping.getTargetType(),
                         nestedMapping != null ? nestedMapping.getTargetType() : targetFieldType),
                 containingMapping, nestedMapping
         );
@@ -50,12 +52,13 @@ public abstract class FieldMapping extends Element {
     }
 
     private static Field createTargetField(String name, @Nullable String code,
-                                           boolean isChild, boolean readonly,
+                                           boolean asTitle, boolean isChild, boolean readonly,
                                            ClassType declaringType, Type type) {
         return FieldBuilder
                 .newBuilder(NamingUtils.ensureValidName(name),
                         NamingUtils.ensureValidCode(code), declaringType, type)
                 .isChild(isChild)
+                .asTitle(asTitle)
                 .readonly(readonly)
                 .build();
     }

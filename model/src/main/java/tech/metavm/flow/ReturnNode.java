@@ -15,7 +15,7 @@ import java.util.Objects;
 public class ReturnNode extends NodeRT {
 
     public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
-        ReturnNode node = (ReturnNode) entityContext.getNode(nodeDTO.id());
+        ReturnNode node = (ReturnNode) entityContext.getNode(nodeDTO.getRef());
         var param = (ReturnNodeParam) nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, entityContext);
         var value = param.value() != null ? ValueFactory.create(param.value(), parsingContext) : null;

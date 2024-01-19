@@ -2,9 +2,7 @@ package tech.metavm.object.view;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.entity.MockStandardTypesInitializer;
-import tech.metavm.entity.StandardTypes;
-import tech.metavm.entity.mocks.MockEntityRepository;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Nodes;
@@ -13,12 +11,13 @@ import tech.metavm.flow.Values;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.object.type.mocks.MockArrayTypeProvider;
 import tech.metavm.object.type.mocks.MockFunctionTypeProvider;
 import tech.metavm.object.type.mocks.MockTypeRepository;
+import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.object.view.mocks.MockMappingRepository;
 import tech.metavm.util.Instances;
+import tech.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -42,26 +41,21 @@ public class MappingSaverTest extends TestCase {
 
     public void testSaveBuiltin() {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
-                .tmpId(1L)
                 .build();
         var barType = ClassTypeBuilder.newBuilder("Bar", "Bar")
-                .tmpId(2L)
                 .build();
 
         var barChildArrayType = typeProviders.arrayTypeProvider.getArrayType(barType, ArrayKind.CHILD);
         var barReadWriteArrayType = typeProviders.arrayTypeProvider.getArrayType(barType, ArrayKind.READ_WRITE);
 
         var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
-                .tmpId(11L)
                 .access(Access.PRIVATE)
                 .isChild(true)
                 .build();
         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, getStringType())
-                .tmpId(12L)
                 .asTitle()
                 .build();
         var barCodeField = FieldBuilder.newBuilder("code", "code", barType, getStringType())
-                .tmpId(13L)
                 .asTitle()
                 .build();
 
@@ -99,7 +93,6 @@ public class MappingSaverTest extends TestCase {
         typeRepository.save(barType);
         var arrayMappingRepo = new MockArrayMappingRepository();
         var mappingProvider = new MockMappingRepository();
-        var entityRepository = new MockEntityRepository();
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
@@ -114,20 +107,18 @@ public class MappingSaverTest extends TestCase {
         var fooViewType = fooMapping.getTargetType();
         var barsFieldMapping = fooMapping.getFieldMappingByTargetField(fooViewType.getFieldByCode("bars"));
         var barArrayMapping = Objects.requireNonNull(barsFieldMapping.getNestedMapping());
-        fooMapping.initId(3001L);
-        barArrayMapping.initId(3002L);
-        barMapping.initId(3003L);
+//        fooMapping.initId(3001L);
+//        barArrayMapping.initId(3002L);
+//        barMapping.initId(3003L);
 
         var barInst = ClassInstanceBuilder.newBuilder(barType)
                 .data(Map.of(
                         barCodeField,
                         new StringInstance("bar001", StandardTypes.getStringType())
                 ))
-                .id(TmpId.of(1003L))
                 .build();
 
         var barChildArray = new ArrayInstance(barChildArrayType, List.of(barInst));
-        barChildArray.initId(TmpId.of(1002L));
 
         var foo = ClassInstanceBuilder.newBuilder(fooType)
                 .data(
@@ -138,12 +129,14 @@ public class MappingSaverTest extends TestCase {
                                 barChildArray
                         )
                 )
-                .id(TmpId.of(1001L))
                 .build();
 
+        TestUtils.initInstanceIds(foo);
 
         System.out.println(barArrayMapping.getMapper().getText());
         System.out.println(barArrayMapping.getUnmapper().getText());
+
+        TestUtils.initEntityIds(fooType);
 
         // Mapping
         var fooView = (ClassInstance) fooMapping.mapRoot(foo, instanceRepository, typeProviders.parameterizedFlowProvider);
@@ -190,7 +183,87 @@ public class MappingSaverTest extends TestCase {
         Assert.assertEquals(1, bars.size());
         var bar = (ClassInstance) bars.get(0);
         Assert.assertEquals(Instances.stringInstance("bar002"), bar.getField("code"));
+    }
 
+    public void testPathId() {
+        var productType = ClassTypeBuilder.newBuilder("Product", "Product").build();
+        var skuType = ClassTypeBuilder.newBuilder("Sku", "Sku").build();
+        var skuChildArrayType = new ArrayType(null, skuType, ArrayKind.CHILD);
+        var skuListField = FieldBuilder.newBuilder("skuList", "skuList", productType, skuChildArrayType)
+                .isChild(true)
+                .access(Access.PRIVATE)
+                .build();
+        var skuRwArrayType = new ArrayType(null, skuType, ArrayKind.READ_WRITE);
+        var getSkuListMethod = MethodBuilder.newBuilder(productType, "getSkuList", "getSkuList", typeProviders.functionTypeProvider)
+                .returnType(skuRwArrayType)
+                .build();
+        {
+            var scope = getSkuListMethod.getRootScope();
+            var self = Nodes.self("self", "self", productType, scope);
+            Nodes.input(getSkuListMethod);
+            var skuList = Nodes.newArray(
+                    "skuList", "skuList", skuRwArrayType,
+                    Values.nodeProperty(self, skuListField),
+                    null, scope
+            );
+            Nodes.ret("Return", "Return", scope, Values.node(skuList));
+        }
+
+        var setSkuListMethod = MethodBuilder.newBuilder(productType, "setSkuList", "setSkuList", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "skuList", "skuList", skuRwArrayType))
+                .build();
+        {
+            var scope = setSkuListMethod.getRootScope();
+            var self = Nodes.self("self", "self", productType, scope);
+            var input = Nodes.input(setSkuListMethod);
+            Nodes.clearArray("clearArray", null, Values.nodeProperty(self, skuListField), scope);
+            Nodes.forEach(
+                    () -> Values.inputValue(input, 0),
+                    (bodyScope, getElement, getIndex) -> {
+                        Nodes.addElement("addElement", null,
+                                Values.nodeProperty(self, skuListField), getElement.get(), bodyScope);
+                    },
+                    scope
+            );
+        }
+        var typeRepository = new MockTypeRepository();
+        typeRepository.save(productType);
+        typeRepository.save(skuType);
+        var arrayMappingRepo = new MockArrayMappingRepository();
+        var mappingProvider = new MockMappingRepository();
+        MappingSaver saver = new MappingSaver(
+                instanceRepository,
+                typeRepository,
+                new MockFunctionTypeProvider(),
+                new MockArrayTypeProvider(),
+                mappingProvider,
+                arrayMappingRepo
+        );
+        saver.saveBuiltinMapping(skuType, true);
+        var productMapping = saver.saveBuiltinMapping(productType, true);
+        TestUtils.initEntityIds(productType);
+        var sku = ClassInstanceBuilder.newBuilder(skuType)
+                .data(Map.of())
+                .build();
+        var product = ClassInstanceBuilder.newBuilder(productType)
+                .data(Map.of(
+                        skuListField,
+                        new ArrayInstance(skuChildArrayType, List.of(sku))
+                ))
+                .build();
+        TestUtils.initInstanceIds(product);
+        var viewSkuListField = productMapping.getTargetType().getFieldByCode("skuList");
+        var productView = (ClassInstance) productMapping.mapRoot(product, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var skuListView = (ArrayInstance) productView.getField(viewSkuListField);
+        Assert.assertTrue(productView.getId() instanceof ViewId);
+        Assert.assertTrue(skuListView.getId() instanceof FieldViewId);
+        Assert.assertTrue(skuListView.get(0).getId() instanceof ChildViewId);
+
+        skuListView.removeElement(0);
+
+        productMapping.unmap(productView, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var skuList = (ArrayInstance) product.getField(skuListField);
+        Assert.assertTrue(skuList.isEmpty());
 
     }
 

@@ -43,8 +43,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private @NotNull Type returnType;
     @ChildEntity("根流程范围")
     private @Nullable ScopeRT rootScope;
-    @EntityField("版本")
-    private @NotNull Long version = 1L;
+    private transient long version;
     // Don't remove, for search
     @SuppressWarnings("unused")
     @EntityField("是否模版")

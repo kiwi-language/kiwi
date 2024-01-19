@@ -33,7 +33,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
         this.columnStore = columnStore;
     }
 
-    public void boot() {
+    public BootstrapResult boot() {
         ContextUtil.setAppId(ROOT_APP_ID);
         var dep = new EntityInstanceContextBridge();
         InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newBuilder(
@@ -60,6 +60,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
         if (!idNullInstances.isEmpty())
             LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
         ContextUtil.clearContextInfo();
+        return new BootstrapResult(idNullInstances.size());
     }
 
     @Transactional

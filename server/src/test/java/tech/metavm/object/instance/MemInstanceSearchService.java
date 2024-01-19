@@ -65,7 +65,7 @@ public class MemInstanceSearchService implements InstanceSearchService {
         if(!query.typeIds().contains(instance.getType().tryGetId())) {
             return false;
         }
-        return Instances.isTrue(
+        return query.condition() == null || Instances.isTrue(
                 query.condition().evaluate(new InstanceEvaluationContext(instance, null))
         );
     }

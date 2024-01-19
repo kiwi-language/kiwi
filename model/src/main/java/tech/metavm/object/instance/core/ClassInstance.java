@@ -178,16 +178,7 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     public boolean isChild(DurableInstance instance) {
-        ensureLoaded();
-        for (InstanceField field : fields) {
-            if (field.getField().isChild()) {
-                Instance fieldValue = field.getValue();
-                if (fieldValue == instance || (fieldValue instanceof DurableInstance d && d.isChild(instance))) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return instance.getParent() == this;
     }
 
     public Set<DurableInstance> getChildren() {

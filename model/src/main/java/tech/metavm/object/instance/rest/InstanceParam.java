@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 )
 public interface InstanceParam {
 
+    boolean valueEquals(InstanceParam param1);
+
     int getType();
 
 }

@@ -88,7 +88,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     private Object addDummy(Object value, Consumer<Object> setter) {
         valueListeners.computeIfAbsent(value, k -> new ArrayList<>()).add(setter);
-        return EntityProxyFactory.makeDummy(value.getClass());
+        return EntityProxyFactory.makeDummy(EntityUtils.getRealType(value.getClass()));
     }
 
     protected Object substituteReference(Object reference) {

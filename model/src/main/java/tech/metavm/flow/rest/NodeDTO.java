@@ -44,7 +44,8 @@ public record NodeDTO(
 
     public NodeDTO copyWithParam(Object newParam) {
         return new NodeDTO(
-                id, null,
+                id,
+                tmpId,
                 flowId,
                 name,
                 code,
@@ -54,13 +55,14 @@ public record NodeDTO(
                 newParam,
                 outputType,
                 scopeId,
-                null
+                error
         );
     }
 
     public NodeDTO copyWithType(TypeDTO type) {
         return new NodeDTO(
-                id, null,
+                id,
+                tmpId,
                 flowId,
                 name,
                 code,
@@ -70,13 +72,14 @@ public record NodeDTO(
                 param,
                 type,
                 scopeId,
-                null
+                error
         );
     }
 
     public NodeDTO copyWithParamAndType(Object param, TypeDTO type) {
         return new NodeDTO(
-                id, null,
+                id,
+                tmpId,
                 flowId,
                 name,
                 code,
@@ -86,7 +89,24 @@ public record NodeDTO(
                 param,
                 type,
                 scopeId,
-                null
+                error
+        );
+    }
+
+    public NodeDTO copyWithPrevRef(RefDTO prevRef) {
+        return new NodeDTO(
+                id,
+                tmpId,
+                flowId,
+                name,
+                code,
+                kind,
+                prevRef,
+                outputTypeRef,
+                param,
+                outputType,
+                scopeId,
+                error
         );
     }
 

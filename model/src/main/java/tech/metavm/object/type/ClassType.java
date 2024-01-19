@@ -1063,7 +1063,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return template;
     }
 
-    @Override
+//    @Override
     public void setTemplate(Object template) {
         NncUtils.requireNull(this.template);
         isParameterized = template != null;

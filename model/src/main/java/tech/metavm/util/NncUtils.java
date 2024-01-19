@@ -78,6 +78,20 @@ public class NncUtils {
         }
     }
 
+    public static <T> boolean listEquals(List<T> list1, List<T> list2, BiPredicate<T, T> elementEquals) {
+        if (list1.size() != list2.size())
+            return false;
+        var it1 = list1.iterator();
+        var it2 = list2.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            var e1 = it1.next();
+            var e2 = it2.next();
+            if (!elementEquals.test(e1, e2))
+                return false;
+        }
+        return true;
+    }
+
     public static <T> boolean iterableEquals(Iterable<? extends T> iterable1, Iterable<? extends T> iterable2) {
         var it1 = iterable1.iterator();
         var it2 = iterable2.iterator();

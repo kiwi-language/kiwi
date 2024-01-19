@@ -8,7 +8,8 @@ import org.springframework.transaction.support.TransactionOperations;
 public class MockTransactionOperations implements TransactionOperations {
     @Override
     public <T> T execute(TransactionCallback<T> action) throws TransactionException {
-        return action.doInTransaction(new TransactionStatus() {
+        TestUtils.startTransaction();
+        var result = action.doInTransaction(new TransactionStatus() {
             @Override
             public boolean isNewTransaction() {
                 return false;
@@ -54,5 +55,7 @@ public class MockTransactionOperations implements TransactionOperations {
 
             }
         });
+        TestUtils.commitTransaction();;
+        return result;
     }
 }

@@ -57,15 +57,15 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
         for (IndexEntryPO item : items) {
             getItems(item.getKey()).add(item);
             getItemsByInstanceId(item.getInstanceId()).add(item);
+            this.items.add(item);
         }
     }
 
     @Override
     public void batchDelete(Collection<IndexEntryPO> items) {
         for (IndexEntryPO item : items) {
-            if(!this.items.remove(item)) {
+            if(!this.items.remove(item))
                 throw new InternalException(item + " does not exist");
-            }
             getItems(item.getKey()).remove(item);
             getItemsByInstanceId(item.getInstanceId()).remove(item);
         }

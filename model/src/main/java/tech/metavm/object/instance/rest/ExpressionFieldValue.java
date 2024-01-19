@@ -2,6 +2,8 @@ package tech.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 public class ExpressionFieldValue extends FieldValue {
 
     private final String expression;
@@ -15,4 +17,11 @@ public class ExpressionFieldValue extends FieldValue {
         return expression;
     }
 
+    @Override
+    public boolean valueEquals(FieldValue that) {
+        if(that instanceof ExpressionFieldValue thatExprFieldValue)
+            return Objects.equals(expression, thatExprFieldValue.expression);
+        else
+            return false;
+    }
 }

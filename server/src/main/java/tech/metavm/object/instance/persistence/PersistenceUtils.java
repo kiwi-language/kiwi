@@ -90,7 +90,7 @@ public class PersistenceUtils {
     public static IndexKeyPO toIndexKeyPO(IndexKeyRT indexKeyRT) {
         IndexKeyPO key = new IndexKeyPO();
         var index = indexKeyRT.getIndex();
-        key.setIndexId(index.tryGetId());
+        key.setIndexId(index.getId());
         for (IndexField field : index.getFields()) {
             var fieldValue = indexKeyRT.getFields().get(field);
             if(fieldValue != null)
@@ -102,7 +102,7 @@ public class PersistenceUtils {
     public static IndexQueryPO toIndexQueryPO(InstanceIndexQuery query, long appId, int lockMode) {
         return new IndexQueryPO(
                 appId,
-                query.index().tryGetId(),
+                query.index().getId(),
                 NncUtils.map(query.items(), item -> new IndexQueryItemPO(
                         "column" + item.field().getFieldIndex(),
                         item.operator(), BytesUtils.toIndexBytes(item.value()))),

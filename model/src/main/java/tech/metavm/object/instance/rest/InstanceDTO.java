@@ -1,13 +1,16 @@
 package tech.metavm.object.instance.rest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import tech.metavm.common.RefDTO;
 import tech.metavm.object.instance.InstanceParamTypeIdResolver;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 public record InstanceDTO(
@@ -18,8 +21,32 @@ public record InstanceDTO(
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
         InstanceParam param
-) implements Serializable  {
+) implements Serializable {
 
+    public static InstanceDTO createClassInstance(RefDTO typeRef, List<InstanceFieldDTO> fields) {
+        return createClassInstance(null, typeRef, fields);
+    }
+
+    public static InstanceDTO createClassInstance(@Nullable String id, RefDTO typeRef, List<InstanceFieldDTO> fields) {
+        return new InstanceDTO(
+                id,
+                typeRef,
+                null,
+                null,
+                new ClassInstanceParam(fields)
+        );
+    }
+
+    public static InstanceDTO createArrayInstance(RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
+        return createArrayInstance(null, typeRef, elementAsChild, elements);
+    }
+
+    public static InstanceDTO createArrayInstance(@Nullable String id, RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
+        return new InstanceDTO(
+                id, typeRef, null, null,
+                new ArrayInstanceParam(elementAsChild, elements)
+        );
+    }
 
     public InstanceDTO copyWithParam(InstanceParam param) {
         return new InstanceDTO(id, typeRef, typeName, title, param);
@@ -41,6 +68,30 @@ public record InstanceDTO(
 
     public Id parseId() {
         return Id.parse(Objects.requireNonNull(id));
+    }
+
+    @JsonIgnore
+    public FieldValue getFieldValue(long fieldId) {
+        var param = (ClassInstanceParam) param();
+        return NncUtils.findRequired(param.fields(), f -> f.fieldId() == fieldId).value();
+    }
+
+    @JsonIgnore
+    public FieldValue getElement(int index) {
+        var param = (ArrayInstanceParam) param();
+        return param.elements().get(index);
+    }
+
+    @JsonIgnore
+    public int arraySize() {
+        var param = (ArrayInstanceParam) param();
+        return param.elements().size();
+    }
+
+    public boolean valueEquals(InstanceDTO that) {
+        return Objects.equals(id, that.id)
+                && Objects.equals(typeRef, that.typeRef)
+                && param.valueEquals(that.param);
     }
 
 }

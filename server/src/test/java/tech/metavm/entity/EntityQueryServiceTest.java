@@ -8,9 +8,7 @@ import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
-import tech.metavm.util.TestConstants;
+import tech.metavm.util.*;
 
 import java.util.List;
 
@@ -25,11 +23,15 @@ public class EntityQueryServiceTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         EntityIdProvider idProvider = new MockIdProvider();
-        MockRegistry.setUp(idProvider);
         instanceSearchService = new MemInstanceSearchService();
+        var instanceStore = new MemInstanceStore();
+        InstanceContextFactory instanceContextFactory =
+                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
+        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
+        BootstrapUtils.bootstrap(entityContextFactory);
         InstanceQueryService instanceQueryService = new InstanceQueryService(instanceSearchService);
         entityQueryService = new EntityQueryService(instanceQueryService);
-        entityContext = MockRegistry.newEntityContext(TestConstants.APP_ID);
+        entityContext = entityContextFactory.newContext(TestConstants.APP_ID);
     }
 
     public <T extends Entity> T addEntity(T entity) {

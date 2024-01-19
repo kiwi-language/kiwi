@@ -4,7 +4,7 @@ import tech.metavm.util.InstanceOutput;
 
 import java.util.Objects;
 
-public class ChildViewId extends ViewId {
+public class ChildViewId extends DefaultViewId {
 
     public static final int TAG = 4;
 
@@ -23,6 +23,7 @@ public class ChildViewId extends ViewId {
         rootId.write(output);
     }
 
+    @Override
     public ViewId getRootId() {
         return rootId;
     }
@@ -34,6 +35,8 @@ public class ChildViewId extends ViewId {
         if (!super.equals(object)) return false;
         return Objects.equals(rootId, that.rootId);
     }
+
+
 
     @Override
     public int hashCode() {

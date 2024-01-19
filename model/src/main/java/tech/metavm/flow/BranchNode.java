@@ -189,7 +189,7 @@ public class BranchNode extends NodeRT {
                     return next();
             }
         }
-        throw new InternalException("Not matching branch");
+        throw new InternalException("No matching branch");
     }
 
     @Override

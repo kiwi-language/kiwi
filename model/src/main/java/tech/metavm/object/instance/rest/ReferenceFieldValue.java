@@ -24,11 +24,19 @@ public class ReferenceFieldValue extends FieldValue {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         ReferenceFieldValue that = (ReferenceFieldValue) o;
-        return id == that.id;
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), id);
+    }
+
+    @Override
+    public boolean valueEquals(FieldValue that) {
+        if (that instanceof ReferenceFieldValue thatReferenceFieldValue) {
+            return Objects.equals(id, thatReferenceFieldValue.id);
+        } else
+            return false;
     }
 }

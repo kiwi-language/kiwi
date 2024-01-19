@@ -33,7 +33,7 @@ public enum NodeKind {
     ADD_ELEMENT(NodeKindCodes.ADD_ELEMENT, AddElementNode.class, AddElementNodeParam.class),
     DELETE_ELEMENT(NodeKindCodes.DELETE_ELEMENT, RemoveElementNode.class, RemoveElementNodeParam.class),
     GET_ELEMENT(NodeKindCodes.GET_ELEMENT, GetElementNode.class, GetElementNodeParam.class),
-    FUNCTION_CALL_NODE(NodeKindCodes.FUNCTION_CALL, FunctionCallNode.class, FunctionCallNodeParam.class),
+    FUNCTION_CALL(NodeKindCodes.FUNCTION_CALL, FunctionCallNode.class, FunctionCallNodeParam.class),
     CAST_NODE(NodeKindCodes.CAST, CastNode.class, CastNodeParam.class),
     CLEAR_ARRAY(NodeKindCodes.CLEAR_ARRAY, ClearArrayNode.class, ClearArrayNodeParam.class),
     COPY(NodeKindCodes.COPY, CopyNode.class, CopyNodeParam.class),

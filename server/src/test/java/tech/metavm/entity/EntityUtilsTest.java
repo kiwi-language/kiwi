@@ -7,10 +7,6 @@ import tech.metavm.util.MockRegistry;
 public class EntityUtilsTest extends TestCase {
 
     private EntityIdProvider idProvider;
-    @Override
-    protected void setUp() throws Exception {
-        MockRegistry.setUp(idProvider = new MockIdProvider());
-    }
 
     public void testClearIdRecursively() {
     }

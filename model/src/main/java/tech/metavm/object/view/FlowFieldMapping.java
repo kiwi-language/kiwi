@@ -38,7 +38,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                             Method getter,
                             @Nullable Method setter,
                             @Nullable FlowFieldMapping template) {
-        super(tmpId, name, code, getter.getReturnType(), isChild, setter == null, containingMapping, nestedMapping);
+        super(tmpId, name, code, getter.getReturnType(), false, isChild, setter == null, containingMapping, nestedMapping);
         check(getter, setter);
         this.getter = getter;
         this.setter = setter;

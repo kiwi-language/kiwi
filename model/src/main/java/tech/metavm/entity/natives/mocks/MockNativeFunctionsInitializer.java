@@ -16,6 +16,12 @@ public class MockNativeFunctionsInitializer {
                         .isNative()
                         .build()
         );
+        NativeFunctions.setIsSourcePresent(FunctionBuilder.newBuilder("来源是否存在", "isSourcePResent", functionTypeProvider)
+                .isNative()
+                .parameters(new Parameter(null, "视图", "view", StandardTypes.getAnyType()))
+                .returnType(StandardTypes.getBooleanType())
+                .build());
+
 //        NativeFunctions.setSetSourceFunc(
 //                FunctionBuilder.newBuilder("设置来源", "setSource", functionTypeProvider)
 //                        .parameters(

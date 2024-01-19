@@ -30,7 +30,7 @@ public class FlowParsingContext extends BaseParsingContext {
     private final ScopeRT scope;
     private final NodeRT prev;
     private final NodeRT lastNode;
-    private long lastBuiltVersion = 0L;
+    private long lastBuiltVersion = -1L;
     private final Map<Long, NodeRT> id2node = new HashMap<>();
     private final Map<String, NodeRT> name2node = new HashMap<>();
     private final Map<NodeRT, NodeExpression> node2expression = new HashMap<>();

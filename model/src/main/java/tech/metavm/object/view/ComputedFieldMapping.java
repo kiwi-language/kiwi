@@ -30,7 +30,7 @@ public class ComputedFieldMapping extends FieldMapping {
                                 @Nullable Mapping nestedMapping,
                                 boolean isChild,
                                 Value value) {
-        super(tmpId, name, code, value.getType(), isChild, true, containingMapping, nestedMapping);
+        super(tmpId, name, code, value.getType(), false, isChild, true, containingMapping, nestedMapping);
         this.value = value;
         this.template = null;
     }

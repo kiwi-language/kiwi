@@ -31,6 +31,22 @@ public class PrimitiveFieldValue extends FieldValue {
         this.value = value;
     }
 
+    public static PrimitiveFieldValue createString(String value) {
+        return new PrimitiveFieldValue(null, PrimitiveKind.STRING.code(), value);
+    }
+
+    public static PrimitiveFieldValue createLong(long value) {
+        return new PrimitiveFieldValue(null, PrimitiveKind.LONG.code(), value);
+    }
+
+    public static PrimitiveFieldValue createDouble(double value) {
+        return new PrimitiveFieldValue(null, PrimitiveKind.DOUBLE.code(), value);
+    }
+
+    public static PrimitiveFieldValue createTime(long value) {
+        return new PrimitiveFieldValue(null, PrimitiveKind.TIME.code(), value);
+    }
+
     public Object getValue() {
         return value;
     }
@@ -54,9 +70,20 @@ public class PrimitiveFieldValue extends FieldValue {
     }
 
     @Override
+    public boolean valueEquals(FieldValue that) {
+        if (that instanceof PrimitiveFieldValue thatPrimitiveFieldValue) {
+            return primitiveKind == thatPrimitiveFieldValue.primitiveKind
+                    && Objects.equals(value, thatPrimitiveFieldValue.value);
+        } else
+            return false;
+    }
+
+    @Override
     public String toString() {
         return "PrimitiveFieldValueDTO{" +
                 "value=" + value +
                 '}';
     }
+
+
 }

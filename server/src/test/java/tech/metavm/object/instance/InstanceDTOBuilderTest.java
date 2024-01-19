@@ -3,10 +3,9 @@ package tech.metavm.object.instance;
 import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
+import tech.metavm.util.MockUtils;
 import tech.metavm.util.TestUtils;
 
 public class InstanceDTOBuilderTest extends TestCase {
@@ -15,14 +14,12 @@ public class InstanceDTOBuilderTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();;
     }
 
     public void test() {
-        try (var context = MockRegistry.newContext(1L)) {
-            ClassInstance foo = MockRegistry.getFooInstance();
-            InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo, 2, context);
-            TestUtils.logJSON(LOGGER, instanceDTO);
-        }
+        var foo = MockUtils.createFoo(MockUtils.createFooType(true));
+        InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo, 2);
+        TestUtils.logJSON(LOGGER, instanceDTO);
     }
 }

@@ -7,12 +7,10 @@ import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
 import tech.metavm.mocks.Foo;
 import tech.metavm.mocks.Qux;
+import tech.metavm.object.instance.log.InstanceLogServiceImpl;
 import tech.metavm.object.instance.rest.LoadInstancesByPathsRequest;
 import tech.metavm.object.instance.rest.SelectRequest;
-import tech.metavm.util.Constants;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
-import tech.metavm.util.TestUtils;
+import tech.metavm.util.*;
 
 import java.util.List;
 
@@ -24,48 +22,53 @@ public class InstanceManagerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         MockIdProvider idProvider = new MockIdProvider();
-        MockRegistry.setUp(idProvider);
         var instanceStore = new MemInstanceStore();
         var instanceSearchService = new MemInstanceSearchService();
         var instanceQueryService = new InstanceQueryService(instanceSearchService);
-        var instanceLogService = new MockInstanceLogService();
         var indexEntryMapper = new MemIndexEntryMapper();
-        entityContextFactory = TestUtils.getEntityContextFactory(
-                idProvider, instanceStore, instanceLogService, indexEntryMapper
-        );
+        var instanceContextFactory = TestUtils.getInstanceContextFactory(idProvider, instanceStore);
+        entityContextFactory = new EntityContextFactory(instanceContextFactory, indexEntryMapper);
+        var instanceLogService = new InstanceLogServiceImpl(
+                entityContextFactory, instanceSearchService, instanceStore, List.of());
+        entityContextFactory.setInstanceLogService(instanceLogService);
+        BootstrapUtils.bootstrap(entityContextFactory);
         instanceManager = new InstanceManager(entityContextFactory, instanceStore, instanceQueryService);
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext();
+        return entityContextFactory.newContext(false);
     }
 
-    private Foo saveFoo(IEntityContext context) {
-        var foo = new Foo("Big Foo", new Bar("Bar001"));
-        foo.setBazList(List.of(
-                new Baz(
-                        List.of(
-                                new Bar("Bar002"),
-                                new Bar("Bar003")
-                        )
-                ),
-                new Baz(
-                        List.of(
-                                new Bar("Bar004"),
-                                new Bar("Bar005")
-                        )
-                )
-        ));
-        foo.setQux(new Qux(100));
-
-        context.bind(foo);
-        context.finish();
-        return foo;
+    private Foo saveFoo() {
+        TestUtils.startTransaction();
+        try (var context = newContext()) {
+            var foo = new Foo("Big Foo", new Bar("Bar001"));
+            foo.setBazList(List.of(
+                    new Baz(
+                            List.of(
+                                    new Bar("Bar002"),
+                                    new Bar("Bar003")
+                            )
+                    ),
+                    new Baz(
+                            List.of(
+                                    new Bar("Bar004"),
+                                    new Bar("Bar005")
+                            )
+                    )
+            ));
+            foo.setQux(new Qux(100));
+            context.bind(foo);
+            context.finish();
+            TestUtils.commitTransaction();
+            return foo;
+        }
     }
 
     public void testLoadByPaths() {
         var context = newContext();
-        var foo = saveFoo(context);
+        var foo = saveFoo();
         var result = instanceManager.loadByPaths(
                 new LoadInstancesByPathsRequest(
                         null,
@@ -91,11 +94,10 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testSelect() {
-        var context = newContext();
-        var foo = saveFoo(context);
-        var fooType = MockRegistry.getClassType(Foo.class);
+        var foo = saveFoo();
+        var fooType = ModelDefRegistry.getClassType(Foo.class);
         var page = instanceManager.select(new SelectRequest(
-                fooType.tryGetId(),
+                fooType.getId(),
                 List.of(
                         "巴.编号",
                         "量子X"
@@ -105,16 +107,24 @@ public class InstanceManagerTest extends TestCase {
                 20
         ));
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(
-                List.of(
-                        MockRegistry.createString("Bar001").toDTO(),
-                        context.getInstance(foo.getQux()).toDTO()
-                ),
-                List.of(
-                    page.data().get(0)[0],
-                    page.data().get(0)[1]
-                )
-        );
+        try (var context = newContext()) {
+            Assert.assertEquals(
+                    List.of(
+                            Instances.createString("Bar001").toDTO(),
+                            context.getInstance(foo.getQux()).toDTO()
+                    ),
+                    List.of(
+                            page.data().get(0)[0],
+                            page.data().get(0)[1]
+                    )
+            );
+        }
+    }
+
+    public void testShopping() {
+        var shoppingTypes = MockUtils.createShoppingTypes();
+        var shoppingInstances = MockUtils.createShoppingInstances(shoppingTypes);
+        Assert.assertNotNull(shoppingInstances.shoesProduct());
     }
 
 }

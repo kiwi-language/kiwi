@@ -63,8 +63,15 @@ public class MemInstanceMapper implements InstanceMapper {
     @Override
     public void batchUpdate(Collection<InstancePO> records) {
         for (InstancePO record : records) {
-            remove(record.getId());
-            add(record);
+            var instance = Objects.requireNonNull(id2instance.get(record.getId()));
+            instance.setVersion(record.getVersion());
+            instance.setSyncVersion(record.getSyncVersion());
+            instance.setParentFieldId(record.getParentFieldId());
+            instance.setParentId(record.getParentId());
+            instance.setTitle(record.getTitle());
+            instance.setRootId(record.getRootId());
+            if(record.getData() != null)
+                instance.setData(record.getData());
         }
     }
 

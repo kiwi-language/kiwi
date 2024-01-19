@@ -46,4 +46,7 @@ public abstract class FieldValue {
     public int hashCode() {
         return Objects.hash(displayValue);
     }
+
+    public abstract boolean valueEquals(FieldValue that);
+
 }
