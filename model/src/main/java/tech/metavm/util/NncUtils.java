@@ -723,8 +723,10 @@ public class NncUtils {
         return sum;
     }
 
-    public static <T> List<T> sort(Iterable<T> list, Comparator<T> comparator) {
-        return sortAndMap(list, comparator, Function.identity());
+    public static <T> List<T> sort(Iterable<T> iterable, Comparator<T> comparator) {
+        if (iterable == null)
+            return List.of();
+        return streamOf(iterable).sorted(comparator).collect(Collectors.toList());
     }
 
     public static <T> List<T> sortByInt(Iterable<T> list, ToIntFunction<T> intMapper) {

@@ -32,6 +32,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
+    private final Set<Id> creatingIds = new HashSet<>();
     private final IdentityHashMap<DurableInstance, List<DurableInstance>> source2views = new IdentityHashMap<>();
     private DurableInstance head;
     private DurableInstance tail;
@@ -410,9 +411,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected void saveViews() {
         for (Instance value : instanceMap.values()) {
             if (value instanceof ClassInstance classInstance) {
-                if (classInstance.isView()) {
+                if (classInstance.isView() && !classInstance.isRemoved())
                     saveView(classInstance);
-                }
             }
         }
     }
@@ -509,7 +509,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                     refs.add(ref);
             }
         }
-        for (var toRemove : removalBatch) {
+        // remove views first otherwise uninitialized views in the removal batch may fail to initialize
+        var sortedRemovalBatch = NncUtils.sort(removalBatch, Comparator.comparingInt(i -> i.isView() ? 0 : 1));
+        for (var toRemove : sortedRemovalBatch) {
             remove0(toRemove, removalBatch, referencesByTarget);
         }
     }
@@ -671,7 +673,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail = instance;
         }
         instance.setContext(this);
-        instanceMap.put(instance.getId(), instance);
+        if(instance.getId() != null) {
+            if (instanceMap.put(instance.getId(), instance) != null)
+                LOGGER.warn("Duplicate instance add to context: " + instance.getId());
+        }
 //        if (instance.getTmpId() != null) {
 //            tmpId2Instance.put(instance.getTmpId(), instance);
 //        }

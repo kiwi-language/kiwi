@@ -222,12 +222,12 @@ public class ClassInstance extends DurableInstance {
         int j = 0;
         for (int i = 0; i < numFields; i++) {
             var fieldId = input.readLong();
-            while (j < fields.size() && fields.get(j).tryGetId() < fieldId) {
+            while (j < fields.size() && fields.get(j).getId() < fieldId) {
                 instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
                 j++;
             }
             Field field;
-            if (j < fields.size() && (field = fields.get(j)).tryGetId() == fieldId) {
+            if (j < fields.size() && (field = fields.get(j)).getId() == fieldId) {
                 input.setParent(this, field);
                 var value = input.readInstance();
                 instFields.add(new InstanceField(this, field, value, false));
@@ -417,6 +417,10 @@ public class ClassInstance extends DurableInstance {
     public List<InstanceField> fields() {
         ensureLoaded();
         return fields.toList();
+    }
+
+    public int debugFieldsSize() {
+        return this.fields.size();
     }
 
     public ArrayInstance getInstanceArray(Field field) {

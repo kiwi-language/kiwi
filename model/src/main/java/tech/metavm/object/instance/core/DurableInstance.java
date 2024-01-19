@@ -1,6 +1,8 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import tech.metavm.entity.EntityUtils;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.Field;
@@ -20,6 +22,8 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 public abstract class DurableInstance extends Instance/* implements IdInitializing*/ {
+
+    public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DurableInstance.class);
 
     private transient boolean _new;
     private transient boolean loaded;

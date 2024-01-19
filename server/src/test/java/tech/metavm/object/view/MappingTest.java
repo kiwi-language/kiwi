@@ -270,6 +270,9 @@ public class MappingTest extends TestCase {
         loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
         Assert.assertEquals(1, skuListView.arraySize());
+
+        // test removing product view
+        TestUtils.doInTransaction(() -> instanceManager.delete(viewId.toString()));
     }
 
     private String saveInstance(InstanceDTO instanceDTO) {
