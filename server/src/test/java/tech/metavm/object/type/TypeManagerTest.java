@@ -23,6 +23,7 @@ public class TypeManagerTest extends TestCase {
     public static final Logger LOGGER = LoggerFactory.getLogger(TypeManagerTest.class);
 
     private TypeManager typeManager;
+    private FlowManager flowManager;
     private MemInstanceSearchServiceV2 instanceSearchService;
     @SuppressWarnings("FieldCanBeLocal")
     private MemInstanceStore instanceStore;
@@ -43,7 +44,7 @@ public class TypeManagerTest extends TestCase {
                 entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
         );
         typeManager.setInstanceManager(instanceManager);
-        var flowManager = new FlowManager(entityContextFactory);
+        flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
     }
@@ -109,7 +110,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testShopping() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager);
+        var typeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
         var productTypeDTO = typeManager.getType(new GetTypeRequest(typeIds.productTypeId(), false)).type();
         Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();

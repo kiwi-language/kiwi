@@ -34,7 +34,7 @@ public class UpdateField extends Entity implements LocalKey {
         if(op == UpdateOp.SET) {
             updateValue = evaluatedValue;
         }
-        else if(op == UpdateOp.INCREASE) {
+        else if(op == UpdateOp.INC) {
             if(Types.isDouble(field.getType())) {
                 updateValue = field.getDouble(instance).add((DoubleInstance) evaluatedValue);
             }
@@ -45,7 +45,7 @@ public class UpdateField extends Entity implements LocalKey {
                 throw new InternalException("Update operation: " + op + " is not supported for field type: " + field.getType());
             }
         }
-        else if(op == UpdateOp.DECREASE) {
+        else if(op == UpdateOp.DEC) {
             if(Types.isDouble(field.getType())) {
                 updateValue = field.getDouble(instance).minus((DoubleInstance) evaluatedValue);
             }

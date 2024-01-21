@@ -4,9 +4,27 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.*;
 import tech.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class NodeDTOFactory {
+
+    public static NodeDTO createWhileNode(Long tmpId, String name, ValueDTO condition, List<NodeDTO> nodes, List<LoopFieldDTO> fields) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.WHILE.code(),
+                null,
+                RefDTO.fromTmpId(NncUtils.randomNonNegative()),
+                new WhileNodeParam(condition, new ScopeDTO(null, null, setPrevRef(nodes)), fields),
+                null,
+                null,
+                null
+        );
+    }
 
     public static NodeDTO createInputNode(Long tmpId, String name, List<InputFieldDTO> fields) {
         return new NodeDTO(
@@ -43,7 +61,7 @@ public class NodeDTOFactory {
     }
 
     public static NodeDTO createUpdateObjectNode(Long tmpId, String name,
-                                          ValueDTO objectId, List<UpdateFieldDTO> fields) {
+                                                 ValueDTO objectId, List<UpdateFieldDTO> fields) {
         return new NodeDTO(
                 null,
                 tmpId,
@@ -122,7 +140,7 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createMethodCallNode(Long tmpId, String name, RefDTO prevRef, RefDTO methodRef, ValueDTO self, List<ArgumentDTO> arguments) {
+    public static NodeDTO createMethodCallNode(Long tmpId, String name, RefDTO methodRef, ValueDTO self, List<ArgumentDTO> arguments) {
         return new NodeDTO(
                 null,
                 tmpId,
@@ -130,7 +148,7 @@ public class NodeDTOFactory {
                 name,
                 null,
                 NodeKind.METHOD_CALL.code(),
-                prevRef,
+                null,
                 null,
                 new MethodCallNodeParam(self, methodRef, null, arguments),
                 null,
@@ -150,6 +168,65 @@ public class NodeDTOFactory {
                 prevRef,
                 null,
                 new FunctionCallNodeParam(functionRef, null, arguments),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createBranchNode(Long tmpId, String name, List<BranchDTO> branches) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.BRANCH.code(),
+                null,
+                null,
+                new BranchNodeParam(false, branches),
+                null,
+                null,
+                null
+        );
+    }
+
+    // set the prevRef of nodes
+    private static List<NodeDTO> setPrevRef(List<NodeDTO> nodeDTOs) {
+        NodeDTO prev = null;
+        List<NodeDTO> processedNodes = new ArrayList<>();
+        for (NodeDTO node : nodeDTOs) {
+            node = node.copyWithPrevRef(NncUtils.get(prev, NodeDTO::getRef));
+            processedNodes.add(node);
+            prev = node;
+        }
+        return processedNodes;
+    }
+
+    public static BranchDTO createBranch(Long tmpId, long index, ValueDTO condition, boolean preselected, List<NodeDTO> nodes) {
+        return new BranchDTO(
+                null,
+                tmpId,
+                index,
+                null,
+                condition,
+                new ScopeDTO(null, null, setPrevRef(nodes)),
+                preselected,
+                false
+        );
+    }
+
+    public static NodeDTO createRaiseNode(Long tmpId, String name, ValueDTO message) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.EXCEPTION.code(),
+                null,
+                null,
+                new RaiseNodeParam(RaiseParameterKind.MESSAGE.getCode(), message, null),
                 null,
                 null,
                 null

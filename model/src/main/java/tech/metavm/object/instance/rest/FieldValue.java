@@ -49,4 +49,12 @@ public abstract class FieldValue {
 
     public abstract boolean valueEquals(FieldValue that);
 
+    public InstanceDTO underlyingInstance() {
+        throw new UnsupportedOperationException();
+    }
+
+    public String referenceId() {
+        throw new UnsupportedOperationException();
+    }
+
 }

@@ -26,6 +26,7 @@ import java.util.Objects;
 public class MappingTest extends TestCase {
 
     private TypeManager typeManager;
+    private FlowManager flowManager;
     private InstanceManager instanceManager;
 
     @Override
@@ -42,7 +43,7 @@ public class MappingTest extends TestCase {
                 bootResult.entityContextFactory(), bootResult.instanceStore(), instanceQueryService
         );
         typeManager.setInstanceManager(instanceManager);
-        var flowManager = new FlowManager(bootResult.entityContextFactory());
+        flowManager = new FlowManager(bootResult.entityContextFactory());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         FlowSavingContext.initConfig();
@@ -63,7 +64,7 @@ public class MappingTest extends TestCase {
     }
 
     public void test() {
-        var typeIds = MockUtils.createShoppingTypes(typeManager);
+        var typeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
         var productTypeDTO = getType(typeIds.productTypeId());
         var skuTypeDTO = getType(typeIds.skuTypeId());
         var productDefaultMapping = NncUtils.findRequired(productTypeDTO.getClassParam().mappings(),

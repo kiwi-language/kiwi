@@ -1438,7 +1438,7 @@ public class NncUtils {
         if (value != null)
             return value;
         else
-            throw new InternalException(message);
+            throw new NullPointerException(message);
     }
 
     public static <T> boolean equalsIgnoreOrder(Collection<T> coll1, Collection<T> coll2) {

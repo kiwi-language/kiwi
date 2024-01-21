@@ -418,10 +418,10 @@ public class FlowManager extends EntityContextFactoryBean {
                 AssertUtils.assertTrue(NodeKind.CREATING_KINDS.contains(kind),
                         ErrorCode.INVALID_ADD_OBJECT_CHILD, childNodeDTO.name());
             }
-            var childrenScope = node.getScope();
-            childrenScope.clearNodes();
+            var bodyScope = node.getBodyScope();
+            bodyScope.clearNodes();
             NncUtils.map(param.getBodyScope().nodes(),
-                    childNodeDTO -> saveNode(childNodeDTO, childrenScope, context));
+                    childNodeDTO -> saveNode(childNodeDTO, bodyScope, context));
         }
     }
 

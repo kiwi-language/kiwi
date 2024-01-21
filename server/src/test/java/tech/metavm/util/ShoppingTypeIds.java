@@ -7,21 +7,24 @@ public record ShoppingTypeIds(
         long couponTypeId,
         long orderTypeId,
         long skuChildArrayTypeId,
+        long couponArrayTypeId,
         long productTitleFieldId,
         long productSkuListFieldId,
         long skuTitleFieldId,
         long skuPriceFieldId,
         long skuAmountFieldId,
+        long skuDecAmountMethodId,
+        long skuBuyMethodId,
         long couponTitleFieldId,
         long couponDiscountFieldId,
         long couponStateFieldId,
         long orderCodeFieldId,
-        long orderProductFieldId,
+        long orderSkuFieldId,
         long orderAmountFieldId,
         long orderPriceFieldId,
         long orderTimeFieldId,
         long orderCouponsFieldId,
-        long couponNormalStateId,
-        long couponUsedStateId
+        String couponNormalStateId,
+        String couponUsedStateId
 ) {
 }

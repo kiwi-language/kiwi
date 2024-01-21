@@ -9,9 +9,9 @@ public enum UpdateOp {
     @EnumConstant("设为")
     SET(1, "="),
     @EnumConstant("增加")
-    INCREASE(2, "+="),
+    INC(2, "+="),
     @EnumConstant("减少")
-    DECREASE(3, "-="),
+    DEC(3, "-="),
 
     ;
 

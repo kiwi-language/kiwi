@@ -301,4 +301,12 @@ public class TestUtils {
     public static long getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> fieldCode.equals(f.code())).id();
     }
+
+    public static long getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
+        return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
+    }
+
+    public static String getEnumConstantIdByName(TypeDTO typeDTO, String name) {
+        return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title())).id();
+    }
 }

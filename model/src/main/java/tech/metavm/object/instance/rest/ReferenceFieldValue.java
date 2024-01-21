@@ -6,6 +6,10 @@ import java.util.Objects;
 
 public class ReferenceFieldValue extends FieldValue {
 
+    public static ReferenceFieldValue create(String id) {
+        return new ReferenceFieldValue(null, id);
+    }
+
     private final String id;
 
     public ReferenceFieldValue(@JsonProperty("displayValue") String displayValue,
@@ -25,6 +29,11 @@ public class ReferenceFieldValue extends FieldValue {
         if (!super.equals(o)) return false;
         ReferenceFieldValue that = (ReferenceFieldValue) o;
         return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public String referenceId() {
+        return id;
     }
 
     @Override
