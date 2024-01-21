@@ -103,4 +103,12 @@ public class MemReferenceMapper implements ReferenceMapper {
         targetMap.get(ref.getTargetId()).remove(ref);
     }
 
+    public MemReferenceMapper copy() {
+        var copy = new MemReferenceMapper();
+        copy.references.addAll(references);
+        copy.targetWithKindMap.putAll(targetWithKindMap);
+        copy.targetWithFieldMap.putAll(targetWithFieldMap);
+        copy.targetMap.putAll(targetMap);
+        return copy;
+    }
 }

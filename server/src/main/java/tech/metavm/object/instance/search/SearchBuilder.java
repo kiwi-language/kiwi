@@ -102,7 +102,7 @@ public class SearchBuilder {
         if (operator == BinaryOperator.IN) {
             Expression fieldExpr = expression.getVariableChild();
             Iterable<Expression> expressions;
-            if (expression.getSecond() instanceof ArrayExpression) {
+            if (expression.getRight() instanceof ArrayExpression) {
                 expressions = expression.getArrayChild().getExpressions();
             } else {
                 expressions = List.of(expression.getConstChild());
@@ -122,8 +122,8 @@ public class SearchBuilder {
                     )
             );
         }
-        String first = parse(expression.getFirst()),
-                second = parse(expression.getSecond());
+        String first = parse(expression.getLeft()),
+                second = parse(expression.getRight());
         if (operator == BinaryOperator.AND) {
             return parenthesize(first + " AND " + second);
         }

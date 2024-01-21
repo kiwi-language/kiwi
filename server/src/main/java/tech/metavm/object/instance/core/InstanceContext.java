@@ -285,7 +285,7 @@ public class InstanceContext extends BufferingInstanceContext {
     public List<DurableInstance> scan(DurableInstance startExclusive, long limit) {
         return NncUtils.map(
                 instanceStore.scan(List.of(
-                        new ScanQuery(startExclusive.isNull() ? 0L : startExclusive.getPhysicalId() + 1L, limit)
+                        new ScanQuery(startExclusive == null ? 0L : startExclusive.getPhysicalId() + 1L, limit)
                 ), this),
                 instancePO -> get(new PhysicalId(instancePO.getId()))
         );
@@ -549,6 +549,13 @@ public class InstanceContext extends BufferingInstanceContext {
         return instanceStore;
     }
 
+    public <T extends ContextPlugin> T getPlugin(Class<T> pluginClass) {
+        for (ContextPlugin plugin : plugins) {
+            if (pluginClass.isInstance(plugin))
+                return pluginClass.cast(plugin);
+        }
+        throw new InternalException("Can not find plugin: " + pluginClass.getName());
+    }
 
     @Override
     public void registerCommitCallback(Runnable action) {

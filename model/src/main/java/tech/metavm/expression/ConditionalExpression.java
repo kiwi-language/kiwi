@@ -64,7 +64,7 @@ public class ConditionalExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         return ((BooleanInstance) condition.evaluate(context)).getValue() ?
                 trueValue.evaluate(context) : falseValue.evaluate(context);
     }

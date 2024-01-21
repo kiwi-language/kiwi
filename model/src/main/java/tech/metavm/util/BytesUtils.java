@@ -1,7 +1,8 @@
 package tech.metavm.util;
 
-import tech.metavm.system.RegionConstants;
+import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
+import tech.metavm.system.RegionConstants;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,10 +28,16 @@ public class BytesUtils {
     }
 
     public static byte[] toIndexBytes(Instance instance) {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        var bout = new ByteArrayOutputStream();
         var output = new IndexKeyWriter(bout);
         output.writeInstance(instance);
         return bout.toByteArray();
+    }
+
+    public static Instance readIndexBytes(byte[] bytes) {
+        var bin = new ByteArrayInputStream(bytes);
+        var input = new IndexKeyReader(bin, id -> null);
+        return input.readInstance();
     }
 
     public static byte[] hexToBytes(String hexString) {
@@ -48,6 +55,14 @@ public class BytesUtils {
             data[i / 2] = (byte) byteValue;
         }
         return data;
+    }
+
+    public static byte[] toBytes(DurableInstance instance) {
+        var bout = new ByteArrayOutputStream();
+        var output = new InstanceOutput(bout, true);
+        output.writeLong(instance.getVersion());
+        output.writeValue(instance);
+        return bout.toByteArray();
     }
 
     public static Object convertToJSON(byte[] data, boolean withVersion) {

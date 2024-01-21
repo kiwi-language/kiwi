@@ -66,7 +66,7 @@ public class UnmapNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var viewInst = (DurableInstance) view.evaluate(frame);
-        return next(mapping.unmap(viewInst, frame.getInstanceRepository(), frame.getParameterizedFlowProvider()));
+        return next(mapping.unmap(viewInst, frame.getInstanceRepository(), frame.parameterizedFlowProvider()));
     }
 
     @Override

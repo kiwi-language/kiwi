@@ -59,7 +59,7 @@ public class FunctionExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         return function.evaluate(NncUtils.map(arguments, arg -> arg.evaluate(context)));
     }
 

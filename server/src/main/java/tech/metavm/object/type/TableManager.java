@@ -45,6 +45,8 @@ public class TableManager extends EntityContextFactoryBean {
     public TableDTO save(TableDTO table) {
         IEntityContext context = newContext();
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder(table.name())
+                .id(table.id())
+                .tmpId(table.tmpId())
                 .code(table.code())
                 .ephemeral(table.ephemeral())
                 .anonymous(table.anonymous())
@@ -71,6 +73,7 @@ public class TableManager extends EntityContextFactoryBean {
                 );
                 titleField = FieldBuilder.newBuilder(titleFieldDTO.name(), null, type, titleFieldType)
                         .unique(titleFieldDTO.unique())
+                        .tmpId(titleFieldDTO.tmpId())
                         .build();
                 type.setTitleField(titleField);
             } else {
@@ -87,7 +90,7 @@ public class TableManager extends EntityContextFactoryBean {
         ClassType declaringType = context.getClassType(column.ownerId());
         Field field = saveField(column, declaringType, context);
         context.finish();
-        return field.tryGetId();
+        return field.getId();
     }
 
     public ColumnDTO getColumn(long id) {
@@ -132,6 +135,7 @@ public class TableManager extends EntityContextFactoryBean {
         return typeManager.saveField(
                 FieldDTOBuilder.newBuilder(column.name(), RefDTO.fromId(type.tryGetId()))
                         .id(column.id())
+                        .tmpId(column.tmpId())
                         .access(column.access())
                         .defaultValue(defaultValue)
                         .unique(column.unique())
@@ -145,6 +149,7 @@ public class TableManager extends EntityContextFactoryBean {
         TypeInfo typeInfo = getTypeInfo(type, field.defaultValue());
         return new ColumnDTO(
                 field.id(),
+                field.tmpId(),
                 field.name(),
                 typeInfo.columnType.code,
                 field.access(),
@@ -297,6 +302,7 @@ public class TableManager extends EntityContextFactoryBean {
                 NncUtils.find(param.fields(), f -> f.getRef().equals(param.titleFieldRef())) : null;
         return new TableDTO(
                 typeDTO.id(),
+                typeDTO.tmpId(),
                 typeDTO.name(),
                 typeDTO.code(),
                 param.desc(),
@@ -327,6 +333,7 @@ public class TableManager extends EntityContextFactoryBean {
     private TitleFieldDTO convertToTitleField(FieldDTO fieldDTO, IEntityContext context) {
         Type fieldType = context.getType(fieldDTO.typeId());
         return new TitleFieldDTO(
+                fieldDTO.tmpId(),
                 fieldDTO.name(),
                 getColumnType(fieldType.getConcreteType()).code,
                 fieldDTO.unique(),

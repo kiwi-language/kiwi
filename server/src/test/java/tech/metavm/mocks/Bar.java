@@ -6,7 +6,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ValueType;
 
 @EntityType("巴")
-public final class Bar extends Entity {
+public class Bar extends Entity {
     @EntityField(value = "编号", asTitle = true)
     private final String code;
 

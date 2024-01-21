@@ -36,7 +36,7 @@ public class InstanceQueryService {
         var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider);
         Type type = query.type();
         Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
-                Set.of(query.type().tryGetId());
+                Set.of(query.type().getId());
         return new SearchQuery(
                 ContextUtil.getAppId(),
                 typeIds,

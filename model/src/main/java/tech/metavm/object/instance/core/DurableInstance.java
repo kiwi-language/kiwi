@@ -113,18 +113,6 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
     @NoProxy
     public @Nullable Id getId() {
         return id;
-//        if (sourceRef != null) {
-//            if (parent == null)
-//                return new ViewId(sourceRef.mapping().getIdRequired(), sourceRef.source().getId());
-//            else
-//                return new ChildViewId(sourceRef.mapping().getIdRequired(), sourceRef.source().getId(),
-//                        (ViewId) root.getId());
-//        } else if (tryGetPhysicalId() != null)
-//            return new PhysicalId(getPhysicalId());
-//        else if (getTmpId() != null)
-//            return new TmpId(getTmpId());
-//        else
-//            return null;
     }
 
     public Object getMappedEntity() {
@@ -411,8 +399,8 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     public abstract Set<DurableInstance> getRefInstances();
 
-    @NoProxy
     public void incVersion() {
+        ensureLoaded();
         version++;
     }
 

@@ -176,7 +176,7 @@ public class MetaFrame implements EvaluationContext, Frame {
     }
 
     @Override
-    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+    public ParameterizedFlowProvider parameterizedFlowProvider() {
         return parameterizedFlowProvider;
     }
 

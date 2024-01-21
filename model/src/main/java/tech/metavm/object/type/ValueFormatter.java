@@ -202,7 +202,7 @@ public class ValueFormatter {
 //        throw new InternalException("Can not parse indexItem value '" + rawValue + "'");
     }
 
-    public static Object format(Instance value, IInstanceContext context) {
+    public static Object format(Instance value) {
         if (value == null) {
             return null;
         }

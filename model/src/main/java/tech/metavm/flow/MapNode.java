@@ -66,7 +66,7 @@ public class MapNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var sourceInst = (DurableInstance) source.evaluate(frame);
-        return next(mapping.map(sourceInst, frame.getInstanceRepository(), frame.getParameterizedFlowProvider()));
+        return next(mapping.map(sourceInst, frame.getInstanceRepository(), frame.parameterizedFlowProvider()));
     }
 
     @Override

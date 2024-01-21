@@ -7,6 +7,7 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.junit.Assert;
 import tech.metavm.entity.IndexOperator;
 import tech.metavm.entity.LockMode;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.object.instance.persistence.IndexEntryPO;
 import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.IndexQueryItemPO;
@@ -26,12 +27,13 @@ import static tech.metavm.util.TestConstants.APP_ID;
 
 public class IndexEntryMapperTest extends TestCase {
 
-    private static final long CONSTRAINT_ID = 1001L;
+    private static final long INDEX_ID = 1001L;
 
     private SqlSessionFactory sqlSessionFactory;
 
     @Override
     protected void setUp() throws Exception {
+        MockStandardTypesInitializer.init();
         DataSource dataSource = H2DataSourceBuilder.getH2DataSource();
         try (Connection connection = dataSource.getConnection()) {
             Statement statement = connection.createStatement();
@@ -50,7 +52,7 @@ public class IndexEntryMapperTest extends TestCase {
             List<IndexEntryPO> indexItems = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
                 IndexKeyPO k = new IndexKeyPO();
-                k.setIndexId(CONSTRAINT_ID);
+                k.setIndexId(INDEX_ID);
                 k.setColumn0(BytesUtils.toIndexBytes(Instances.longInstance(1L)));
                 k.setColumn1(BytesUtils.toIndexBytes(Instances.longInstance(i)));
                 indexItems.add(new IndexEntryPO(APP_ID, k, instanceIdBase + i));
@@ -58,7 +60,7 @@ public class IndexEntryMapperTest extends TestCase {
             indexEntryMapper.batchInsert(indexItems);
 
             IndexQueryPO query = new IndexQueryPO(
-                    APP_ID, CONSTRAINT_ID,
+                    APP_ID, INDEX_ID,
                     List.of(
                             new IndexQueryItemPO(
                                     "column0", IndexOperator.EQ, BytesUtils.toIndexBytes(Instances.longInstance(1L))
@@ -70,9 +72,8 @@ public class IndexEntryMapperTest extends TestCase {
                     true, 2L, LockMode.NONE.code()
             );
             List<IndexEntryPO> result = indexEntryMapper.query(query);
-            Assert.assertEquals(2, result.size());
-            Assert.assertEquals(instanceIdBase + 9, result.get(0).getInstanceId());
-            Assert.assertEquals(instanceIdBase + 8, result.get(1).getInstanceId());
+            Assert.assertEquals(1, result.size());
+            Assert.assertEquals(instanceIdBase + 5, result.get(0).getInstanceId());
         }
     }
 

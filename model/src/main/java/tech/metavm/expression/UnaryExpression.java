@@ -77,7 +77,7 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         return operator.evaluate(operand.evaluate(context));
     }
 

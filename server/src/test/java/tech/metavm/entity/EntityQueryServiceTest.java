@@ -4,82 +4,96 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.common.Page;
 import tech.metavm.mocks.Foo;
+import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.util.*;
 
 import java.util.List;
-
-import static tech.metavm.util.TestContext.getAppId;
+import java.util.Objects;
 
 public class EntityQueryServiceTest extends TestCase {
 
-    private MemInstanceSearchService instanceSearchService;
     private EntityQueryService entityQueryService;
-    private IEntityContext entityContext;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
-        EntityIdProvider idProvider = new MockIdProvider();
-        instanceSearchService = new MemInstanceSearchService();
-        var instanceStore = new MemInstanceStore();
-        InstanceContextFactory instanceContextFactory =
-                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
-        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
-        BootstrapUtils.bootstrap(entityContextFactory);
-        InstanceQueryService instanceQueryService = new InstanceQueryService(instanceSearchService);
+        var bootResult = BootstrapUtils.bootstrap();
+        var instanceSearchService = bootResult.instanceSearchService();
+        entityContextFactory = bootResult.entityContextFactory();
+        var instanceQueryService = new InstanceQueryService(instanceSearchService);
         entityQueryService = new EntityQueryService(instanceQueryService);
-        entityContext = entityContextFactory.newContext(TestConstants.APP_ID);
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     public <T extends Entity> T addEntity(T entity) {
-        if (!entityContext.containsModel(entity)) {
-            entityContext.bind(entity);
-            entityContext.initIds();
+//        if (!entityContext.containsModel(entity)) {
+//            entityContext.bind(entity);
+//            entityContext.initIds();
+//        }
+//        instanceSearchService.add(getAppId(), (ClassInstance) entityContext.getInstance(entity));
+        TestUtils.beginTransaction();
+        try (var context = newContext()) {
+            context.bind(entity);
+            context.finish();
         }
-        instanceSearchService.add(getAppId(), (ClassInstance) entityContext.getInstance(entity));
+        TestUtils.commitTransaction();
         return entity;
     }
 
+    private IEntityContext newContext() {
+        return entityContextFactory.newContext(TestConstants.APP_ID);
+    }
+
     public void test() {
-        Foo foo = addEntity(MockRegistry.getFoo());
-        Page<Foo> page = entityQueryService.query(
-                EntityQueryBuilder.newBuilder(Foo.class)
-                        .addField("name", foo.getName())
-                        .addField("qux", foo.getQux())
-                        .build(),
-                entityContext
-        );
-        Assert.assertEquals(1, page.total());
-        Assert.assertSame(foo, page.data().get(0));
+        Foo foo = addEntity(MockUtils.getFoo());
+        try (var context = newContext()) {
+            foo = context.getEntity(Foo.class, foo.getId());
+            var qux = context.getEntity(Qux.class, Objects.requireNonNull(foo.getQux()).getId());
+            Page<Foo> page = entityQueryService.query(
+                    EntityQueryBuilder.newBuilder(Foo.class)
+                            .addField("name", foo.getName())
+                            .addField("qux", qux)
+                            .build(),
+                    context
+            );
+            Assert.assertEquals(1, page.total());
+            Assert.assertSame(foo, page.data().get(0));
+        }
     }
 
     public void testSearchText() {
-        Foo foo = addEntity(MockRegistry.getFoo());
-        Page<Foo> page = entityQueryService.query(
-                EntityQueryBuilder.newBuilder(Foo.class)
-                        .searchText("Foo001")
-                        .searchFields(List.of("code"))
-                        .build(),
-                entityContext
-        );
-        Assert.assertEquals(1, page.total());
-        Assert.assertSame(foo, page.data().get(0));
+        Foo foo = addEntity(MockUtils.getFoo());
+        try (var context = newContext()) {
+            foo = context.getEntity(Foo.class, foo.getId());
+            Page<Foo> page = entityQueryService.query(
+                    EntityQueryBuilder.newBuilder(Foo.class)
+                            .searchText("Foo001")
+                            .searchFields(List.of("code"))
+                            .build(),
+                    context
+            );
+            Assert.assertEquals(1, page.total());
+            Assert.assertSame(foo, page.data().get(0));
+        }
     }
 
     public void testSearchTypes() {
-        ClassType fooType = addEntity(MockRegistry.getClassType(Foo.class));
-        Page<ClassType> page = entityQueryService.query(
-                EntityQueryBuilder.newBuilder(ClassType.class)
-                        .addField("category", fooType.getCategory())
-                        .addField("name", fooType.getName())
-                        .build(),
-                entityContext
-        );
-        Assert.assertEquals(1, page.total());
-        Assert.assertSame(fooType, page.data().get(0));
+        ClassType fooType = ModelDefRegistry.getClassType(Foo.class);
+        try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
+            Page<ClassType> page = entityQueryService.query(
+                    EntityQueryBuilder.newBuilder(ClassType.class)
+                            .addField("category", fooType.getCategory())
+                            .addField("name", fooType.getName())
+                            .includeBuiltin(true)
+                            .build(),
+                    context
+            );
+            Assert.assertEquals(1, page.total());
+            Assert.assertSame(fooType, page.data().get(0));
+        }
     }
+
 
 }

@@ -17,12 +17,10 @@ public class InstanceEvaluationContext implements EvaluationContext {
 
     @Override
     public Instance evaluate(Expression expression) {
-        if(isContextExpression(expression)) {
+        if(isContextExpression(expression))
             return instance;
-        }
-        else {
+        else
             throw new InternalException(expression + " is not a context expression of " + this);
-        }
     }
 
     @Override
@@ -31,7 +29,7 @@ public class InstanceEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+    public ParameterizedFlowProvider parameterizedFlowProvider() {
         return parameterizedFlowProvider;
     }
 

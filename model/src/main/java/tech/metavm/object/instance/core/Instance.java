@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.SerializeContext;
@@ -24,7 +25,7 @@ public abstract class Instance {
 
     public static final Map<Instance, Exception> STACKS = new IdentityHashMap<>();
 
-    public Instance(Type type) {
+    public Instance(@NotNull Type type) {
         this.type = type;
     }
 

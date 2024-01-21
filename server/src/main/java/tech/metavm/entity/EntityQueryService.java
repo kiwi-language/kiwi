@@ -72,7 +72,7 @@ public class EntityQueryService {
             return context.getInstance(value);
         } else if (value instanceof Collection<?> coll) {
             return new ArrayInstance(
-                    StandardTypes.getObjectArrayType(),
+                    StandardTypes.getAnyArrayType(),
                     NncUtils.map(
                             coll,
                             item -> convertSingleValue(item, context)

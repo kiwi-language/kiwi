@@ -118,6 +118,14 @@ public class Instances {
         return false;
     }
 
+    public static ArrayInstance arrayInstance(ArrayType type, List<Instance> elements) {
+        return new ArrayInstance(type, elements);
+    }
+
+    public static ClassInstance classInstance(ClassType type, Map<Field, Instance> fields) {
+        return new ClassInstance(null, fields, type);
+    }
+
     public static PrimitiveInstance serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         return NncUtils.requireNonNull(trySerializePrimitive(value, getTypeFunc),
                 () -> new InternalException(String.format("Can not resolve primitive value '%s", value)));
@@ -369,6 +377,22 @@ public class Instances {
 
     public static Type getBasicType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
         javaClass = ReflectionUtils.getBoxedClass(javaClass);
+        if (javaClass == Long.class || javaClass == Integer.class)
+            return StandardTypes.getLongType();
+        if (javaClass == Double.class || javaClass == Float.class)
+            return StandardTypes.getDoubleType();
+        if (javaClass == Boolean.class)
+            return StandardTypes.getBooleanType();
+        if (javaClass == String.class)
+            return StandardTypes.getStringType();
+        if (javaClass == Date.class)
+            return StandardTypes.getTimeType();
+        if (javaClass == Password.class)
+            return StandardTypes.getPasswordType();
+        if (javaClass == Null.class)
+            return StandardTypes.getNullType();
+        if (javaClass == Object.class)
+            return StandardTypes.getAnyType();
         return NncUtils.requireNonNull(
                 getTypeFunc.apply(javaClass),
                 "Can not find a basic type for java class '" + javaClass.getName() + "'"

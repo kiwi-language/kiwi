@@ -71,7 +71,7 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         return new ArrayInstance(type, NncUtils.map(expressions, e -> e.evaluate(context)));
     }
 

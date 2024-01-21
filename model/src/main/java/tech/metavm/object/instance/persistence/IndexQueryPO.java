@@ -38,7 +38,7 @@ public record IndexQueryPO(long appId,
             return false;
         for (int i = 0; i < items.size(); i++) {
             var item = items.get(i);
-            if (!item.operator().evaluate(item.value(), indexItem.getColumn(i)))
+            if (!item.operator().evaluate(indexItem.getColumn(i), item.value()))
                 return false;
         }
         return true;

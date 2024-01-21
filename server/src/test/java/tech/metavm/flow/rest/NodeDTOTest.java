@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.flow.NodeKind;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.PojoMatcher;
-import tech.metavm.util.TestUtils;
 import tech.metavm.common.RefDTO;
+import tech.metavm.util.TestUtils;
 
 import java.util.List;
 
@@ -18,7 +18,8 @@ public class NodeDTOTest extends TestCase {
 
     public void testToJSONString() {
         NodeDTO nodeDTO = new NodeDTO(
-                1L, null,
+                1L,
+                NncUtils.randomNonNegative(),
                 1L,
                 "Test",
                 null,

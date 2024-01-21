@@ -2,9 +2,8 @@ package tech.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.mocks.*;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
+import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.util.MockUtils;
 
 import java.util.Set;
 
@@ -12,15 +11,17 @@ public class TypeUnionTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testIsAssignable() {
-        Type fooType = MockRegistry.getType(Foo.class);
-        Type barType = MockRegistry.getType(Bar.class);
-        Type bazType = MockRegistry.getType(Baz.class);
-        Type livingBeingType = MockRegistry.getType(LivingBeing.class);
-        Type humanType = MockRegistry.getType(Human.class);
+        var fooTypes = MockUtils.createFooTypes();
+        var fooType = fooTypes.fooType();
+        var barType = fooTypes.barType();
+        var bazType = fooTypes.bazType();
+        var livingBeingTypes = MockUtils.createLivingBeingTypes(false);
+        var livingBeingType = livingBeingTypes.livingBeingType();
+        var humanType = livingBeingTypes.humanType();
 
         UnionType unionType = new UnionType(null, Set.of(fooType, barType, livingBeingType));
         Assert.assertTrue(unionType.isAssignableFrom(fooType));

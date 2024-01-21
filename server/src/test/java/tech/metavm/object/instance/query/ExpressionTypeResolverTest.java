@@ -6,21 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
 import tech.metavm.expression.*;
-import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.mocks.MockArrayTypeProvider;
 import tech.metavm.object.type.mocks.MockTypeRepository;
-import tech.metavm.util.BootstrapUtils;
-import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.TestUtils;
-import tech.metavm.view.ListView;
 
 import java.util.List;
-
-import static tech.metavm.util.TestConstants.APP_ID;
 
 public class ExpressionTypeResolverTest extends TestCase {
 

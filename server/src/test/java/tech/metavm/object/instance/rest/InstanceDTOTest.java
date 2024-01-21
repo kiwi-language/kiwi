@@ -4,11 +4,9 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.PojoMatcher;
+import tech.metavm.util.*;
 
 public class InstanceDTOTest extends TestCase {
 
@@ -16,17 +14,17 @@ public class InstanceDTOTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testToJSONString() {
-        try (var context = MockRegistry.newContext(10L)) {
-            Instance instance = MockRegistry.getFooInstance();
-            InstanceDTO instanceDTO = instance.toDTO();
-            String jsonString = NncUtils.toJSONString(instanceDTO);
-            InstanceDTO recoveredInstanceDTO = NncUtils.readJSONString(jsonString, InstanceDTO.class);
-            MatcherAssert.assertThat(recoveredInstanceDTO, PojoMatcher.of(instanceDTO));
-        }
+        var fooTypes = MockUtils.createFooTypes(true);
+        var instance = MockUtils.createFoo(fooTypes);
+        TestUtils.initInstanceIds(instance);
+        InstanceDTO instanceDTO = instance.toDTO();
+        String jsonString = NncUtils.toJSONString(instanceDTO);
+        InstanceDTO recoveredInstanceDTO = NncUtils.readJSONString(jsonString, InstanceDTO.class);
+        MatcherAssert.assertThat(recoveredInstanceDTO, PojoMatcher.of(instanceDTO));
     }
 
 

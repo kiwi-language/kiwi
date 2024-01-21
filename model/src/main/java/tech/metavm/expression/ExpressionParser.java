@@ -130,7 +130,7 @@ public class ExpressionParser {
         return new ArrayExpression(
                 list.expressionList() != null ?
                         parseExpressionList(list.expressionList()) : List.of(),
-                StandardTypes.getObjectArrayType()
+                StandardTypes.getAnyArrayType()
         );
     }
 

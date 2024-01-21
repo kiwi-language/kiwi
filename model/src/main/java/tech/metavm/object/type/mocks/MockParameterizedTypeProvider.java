@@ -17,8 +17,13 @@ public class MockParameterizedTypeProvider implements ParameterizedTypeProvider 
 
     @Override
     public ClassType getParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage, DTOProvider dtoProvider) {
-        return map.computeIfAbsent(new Key(template, typeArguments),
-                k -> createParameterizedType(template, typeArguments, stage));
+        var key = new Key(template, typeArguments);
+        var pType = map.get(key);
+        if(pType == null) {
+            pType = createParameterizedType(template, typeArguments, stage);
+            map.put(key, pType);
+        }
+        return pType;
     }
 
     private ClassType createParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage) {

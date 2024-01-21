@@ -2,19 +2,19 @@ package tech.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
+import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.util.MockUtils;
 
 public class ClassTypeFactoryTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testCreateClass() {
-        ClassType type = ClassTypeBuilder.newBuilder("Foo", "Foo")
-                .superClass(MockRegistry.getEntityType()).build();
+        var fooTypes = MockUtils.createFooTypes(true);
+        var type = fooTypes.fooType();
         Assert.assertNotNull(type.getDeclaredFields());
         Assert.assertNotNull(type.getDeclaredConstraints());
         Assert.assertNotNull(type.getDeclaredMethods());

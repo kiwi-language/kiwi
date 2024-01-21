@@ -4,9 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
-import tech.metavm.mocks.Foo;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
 
 public class ArrayTypeTest extends TestCase {
 

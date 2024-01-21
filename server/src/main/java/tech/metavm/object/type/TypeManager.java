@@ -903,7 +903,7 @@ public class TypeManager extends EntityContextFactoryBean {
                     Var var = Var.parse(path.getItem(i));
                     Path subPath = path.subPath(0, i + 1);
                     Path parentPath = path.subPath(0, i);
-                    Type parent = NncUtils.requireNonNull(path2type.get(parentPath.toString()));
+                    Type parent = Objects.requireNonNull(path2type.get(parentPath.toString()));
                     if (parent.isBinaryNullable()) {
                         parent = parent.getUnderlyingType();
                     }

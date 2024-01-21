@@ -57,7 +57,7 @@ public class ArrayAccessExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         int i = ((LongInstance) (index.evaluate(context))).getValue().intValue();
         return ((ArrayInstance) array.evaluate(context)).get(i);
     }

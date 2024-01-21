@@ -76,18 +76,18 @@ public class ExpressionService extends EntityContextFactoryBean {
             throw BusinessException.invalidExpression(expression.buildSelf(VarType.NAME));
         }
         if (binaryExpression.getOperator() == BinaryOperator.AND) {
-            parseExpression0(binaryExpression.getFirst(), result);
-            parseExpression0(binaryExpression.getSecond(), result);
+            parseExpression0(binaryExpression.getLeft(), result);
+            parseExpression0(binaryExpression.getRight(), result);
         } else if (binaryExpression.getOperator() == BinaryOperator.OR) {
-            parseExpression0(binaryExpression.getFirst(), result);
+            parseExpression0(binaryExpression.getLeft(), result);
         } else {
             result.add(parseFieldExpr(binaryExpression));
         }
     }
 
     private InstanceSearchItemDTO parseFieldExpr(BinaryExpression binaryExpression) {
-        Expression first = binaryExpression.getFirst();
-        Expression second = binaryExpression.getSecond();
+        Expression first = binaryExpression.getLeft();
+        Expression second = binaryExpression.getRight();
         BinaryOperator operator = binaryExpression.getOperator();
         if (!SEARCH_EXPR_OPERATORS.contains(operator)
                 || !(first instanceof PropertyExpression fieldExpr)
@@ -136,8 +136,8 @@ public class ExpressionService extends EntityContextFactoryBean {
     private List<ConditionGroupDTO> parseConditionGroups(Expression expression) throws ExpressionParsingException {
         if (expression instanceof BinaryExpression binaryExpression) {
             if (binaryExpression.getOperator() == BinaryOperator.OR) {
-                List<ConditionGroupDTO> firstGroups = parseConditionGroups(binaryExpression.getFirst());
-                List<ConditionGroupDTO> secondGroups = parseConditionGroups(binaryExpression.getSecond());
+                List<ConditionGroupDTO> firstGroups = parseConditionGroups(binaryExpression.getLeft());
+                List<ConditionGroupDTO> secondGroups = parseConditionGroups(binaryExpression.getRight());
                 return NncUtils.union(firstGroups, secondGroups);
             }
         }
@@ -150,8 +150,8 @@ public class ExpressionService extends EntityContextFactoryBean {
     private List<ConditionDTO> parseConditions(Expression expression) throws ExpressionParsingException {
         if (expression instanceof BinaryExpression binaryExpression) {
             if (binaryExpression.getOperator() == BinaryOperator.AND) {
-                List<ConditionDTO> firstGroups = parseConditions(binaryExpression.getFirst());
-                List<ConditionDTO> secondGroups = parseConditions(binaryExpression.getSecond());
+                List<ConditionDTO> firstGroups = parseConditions(binaryExpression.getLeft());
+                List<ConditionDTO> secondGroups = parseConditions(binaryExpression.getRight());
                 return NncUtils.union(firstGroups, secondGroups);
             }
         }
@@ -173,9 +173,9 @@ public class ExpressionService extends EntityContextFactoryBean {
 
     private ConditionDTO parseBinary(BinaryExpression expression) throws ExpressionParsingException {
         return new ConditionDTO(
-                parseRefValue(expression.getFirst()),
+                parseRefValue(expression.getLeft()),
                 parseOpCode(expression.getOperator()),
-                parseExprValue(expression.getSecond())
+                parseExprValue(expression.getRight())
         );
     }
 

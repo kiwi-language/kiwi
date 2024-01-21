@@ -2,7 +2,8 @@ package tech.metavm.object.view;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.entity.*;
+import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Nodes;
@@ -88,6 +89,8 @@ public class MappingSaverTest extends TestCase {
                     scope);
             Nodes.ret("Return", null, scope, null);
         }
+        TestUtils.initEntityIds(fooType);
+
         var typeRepository = new MockTypeRepository();
         typeRepository.save(fooType);
         typeRepository.save(barType);

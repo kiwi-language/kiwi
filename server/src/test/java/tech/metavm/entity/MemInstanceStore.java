@@ -26,16 +26,16 @@ public class MemInstanceStore extends InstanceStore {
         );
     }
 
-    public MemInstanceStore(InstanceMapper instanceMapperGateway,
+    public MemInstanceStore(InstanceMapper instanceMapper,
                             IndexEntryMapper indexEntryMapper,
                             ReferenceMapper referenceMapper) {
-        super(instanceMapperGateway,
+        super(instanceMapper,
                 indexEntryMapper, referenceMapper);
         this.indexEntryMapper = indexEntryMapper;
     }
 
-    public IndexEntryMapper getIndexEntryMapper() {
-        return indexEntryMapper;
+    public MemIndexEntryMapper getIndexEntryMapper() {
+        return (MemIndexEntryMapper) indexEntryMapper;
     }
 
     public InstancePO get(long id) {
@@ -46,6 +46,14 @@ public class MemInstanceStore extends InstanceStore {
         indexEntryMapper.batchInsert(
                 List.of(new IndexEntryPO(appId, indexKey, id))
         );
+    }
+
+    public MemInstanceMapper getInstanceMapper() {
+        return (MemInstanceMapper) instanceMapper;
+    }
+
+    public MemReferenceMapper getReferenceMapper() {
+        return (MemReferenceMapper) referenceMapper;
     }
 
 }

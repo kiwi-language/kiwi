@@ -3,15 +3,9 @@ package tech.metavm.object.instance.search;
 import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.expression.Expression;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.expression.Expressions;
-import tech.metavm.object.type.Field;
-import tech.metavm.util.Constants;
-import tech.metavm.util.Instances;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
+import tech.metavm.util.*;
 
 import java.util.Set;
 
@@ -21,23 +15,22 @@ public class SearchBuilderTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void test() {
-        Field fooQuxField = MockRegistry.getField(Foo.class, "qux");
-        ClassInstance foo = MockRegistry.getFooInstance();
-        ClassInstance qux = foo.getClassInstance(fooQuxField);
+        var fooTypes = MockUtils.createFooTypes(true);
+        var foo = MockUtils.createFoo(fooTypes, true);
+        var baz = foo.getClassInstance(fooTypes.fooQuxField());
 
-        Expression condition = Expressions.and(
+        var condition = Expressions.and(
                 Expressions.fieldStartsWith(
-                        MockRegistry.getField(Foo.class, "name"),
-                        Instances.stringInstance("Big")
+                        fooTypes.fooNameField(),
+                        foo.getStringField(fooTypes.fooNameField())
                 ),
-                Expressions.fieldEq(fooQuxField, qux)
+                Expressions.fieldEq(fooTypes.fooQuxField(), baz)
         );
-
-        SearchQuery query = new SearchQuery(
+        var query = new SearchQuery(
                 Constants.ROOT_APP_ID,
                 Set.of(100L),
                 condition,
@@ -47,7 +40,7 @@ public class SearchBuilderTest extends TestCase {
                 0
         );
 
-        String queryString = SearchBuilder.buildQueryString(query);
+        var queryString = SearchBuilder.buildQueryString(query);
         LOGGER.info(queryString);
     }
 

@@ -113,13 +113,13 @@ public class TypeResolverImpl implements TypeResolver {
             } else {
                 return context.getUncertainType(
                         resolve(wildcardType.getSuperBound(), stage),
-                        StandardTypes.getObjectArrayType()
+                        StandardTypes.getAnyArrayType()
                 );
             }
         } else {
             return context.getUncertainType(
                     StandardTypes.getNothingType(),
-                    StandardTypes.getNullableObjectType()
+                    StandardTypes.getNullableAnyType()
             );
         }
     }

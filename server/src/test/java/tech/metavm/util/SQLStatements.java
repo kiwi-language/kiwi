@@ -32,14 +32,12 @@ public class SQLStatements {
     public static final String CREATE_INDEX_ENTRY = """
             CREATE TABLE `index_entry` (
                   `app_id` bigint NOT NULL,
-                  `constraint_id` bigint NOT NULL,
-                  `column0` varchar(64) DEFAULT NULL,
-                  `column1` varchar(64) DEFAULT NULL,
-                  `column2` varchar(64) DEFAULT NULL,
-                  `column3` varchar(64) DEFAULT NULL,
-                  `column4` varchar(64) DEFAULT NULL,
-                  `column_x_present` bool default false,
-                  `column_x` bigint not null default 0,
+                  `index_id` bigint NOT NULL,
+                  `column0` binary DEFAULT NULL,
+                  `column1` binary DEFAULT NULL,
+                  `column2` binary DEFAULT NULL,
+                  `column3` binary DEFAULT NULL,
+                  `column4` binary DEFAULT NULL,
                   `instance_id` bigint NOT NULL
             );""";
 

@@ -76,7 +76,7 @@ public class AllMatchExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         Instance instance = array.evaluate(context);
         if (instance.isNull()) {
             return Instances.trueInstance();

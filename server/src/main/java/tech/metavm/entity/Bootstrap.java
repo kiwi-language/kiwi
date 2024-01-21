@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.instance.core.InstanceContext;
 import tech.metavm.object.type.BootIdProvider;
@@ -23,28 +24,24 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
 
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
-    private final InstanceContextFactory instanceContextFactory;
 
     public Bootstrap(EntityContextFactory entityContextFactory, InstanceContextFactory instanceContextFactory,
                      StdAllocators stdAllocators, ColumnStore columnStore) {
         super(entityContextFactory);
-        this.instanceContextFactory = instanceContextFactory;
         this.stdAllocators = stdAllocators;
         this.columnStore = columnStore;
     }
 
     public BootstrapResult boot() {
         ContextUtil.setAppId(ROOT_APP_ID);
-        var dep = new EntityInstanceContextBridge();
-        InstanceContext standardInstanceContext = (InstanceContext) instanceContextFactory.newBuilder(
-                        ROOT_APP_ID, dep, dep, dep)
-                .readonly(false)
-                .idProvider(new BootIdProvider(stdAllocators))
-                .build();
-        DefContext defContext = new DefContext(
+        var bridge = new EntityInstanceContextBridge();
+        var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
+                ROOT_APP_ID, false, null, null,
+                new BootIdProvider(stdAllocators), bridge);
+        var defContext = new DefContext(
                 stdAllocators::getId,
                 standardInstanceContext, columnStore);
-        dep.setEntityContext(defContext);
+        bridge.setEntityContext(defContext);
         InstanceContextFactory.setDefContext(defContext);
 //        standardInstanceContext.setDefContext(defContext);
 //        standardInstanceContext.setEntityContext(defContext);
@@ -72,10 +69,14 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
     @Transactional
     public void save(boolean saveIds) {
         DefContext defContext = ModelDefRegistry.getDefContext();
-        if (defContext.isFinished()) {
+        if (defContext.isFinished())
             return;
-        }
-        try (IEntityContext tempContext = newContext(ROOT_APP_ID)) {
+        try (var tempContext = newContext(ROOT_APP_ID)) {
+            var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
+            var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
+            var bridge = new EntityInstanceContextBridge();
+            bridge.setEntityContext(tempContext);
+            metaVersionPlugin.setVersionRepository(bridge);
             NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
             defContext.finish();
             defContext.getIdentityMap().forEach((object, javaConstruct) -> {

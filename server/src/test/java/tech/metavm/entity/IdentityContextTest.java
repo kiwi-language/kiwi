@@ -6,8 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Parameter;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 
+import java.util.IdentityHashMap;
 import java.util.List;
 
 public class IdentityContextTest extends TestCase {
@@ -26,8 +28,8 @@ public class IdentityContextTest extends TestCase {
                 .source(ClassSource.BUILTIN)
                 .build();
 
-         var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
-                 .build();
+        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, StandardTypes.getStringType())
+                .build();
 
         var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
         var method = MethodBuilder.newBuilder(fooType, "bar", "bar", null)
@@ -38,8 +40,13 @@ public class IdentityContextTest extends TestCase {
                 .staticType(new FunctionType(null, List.of(fooType, typeVar), StandardTypes.getVoidType()))
                 .build();
 
-        var identities = identityContext.getIdentityMap(method);
-
+        var identities = new IdentityHashMap<Object, ModelIdentity>();
+        EntityUtils.visitGraph(List.of(fooType),
+                entity -> {
+                    if (!(entity instanceof Instance))
+                        identities.put(entity, identityContext.getModelId(entity));
+                }
+        );
         Assert.assertTrue(identities.containsKey(fooType));
         Assert.assertTrue(identities.containsKey(fooNameField));
         Assert.assertTrue(identities.containsKey(fooNameField.getType()));

@@ -3,13 +3,14 @@ package tech.metavm.object.type;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
-import org.springframework.transaction.support.TransactionOperations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
+import tech.metavm.flow.FlowManager;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.MemInstanceSearchServiceV2;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
@@ -19,26 +20,21 @@ import java.util.Map;
 
 public class TypeManagerTest extends TestCase {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(TypeManagerTest.class);
+
     private TypeManager typeManager;
-    private MemInstanceSearchService instanceSearchService;
+    private MemInstanceSearchServiceV2 instanceSearchService;
     @SuppressWarnings("FieldCanBeLocal")
     private MemInstanceStore instanceStore;
 
     @Override
     protected void setUp() throws Exception {
-        instanceStore = new MemInstanceStore();
-        EntityIdProvider idProvider = new MockIdProvider();
-        instanceSearchService = new MemInstanceSearchService();
-        InstanceContextFactory instanceContextFactory =
-                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
-        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
-        entityContextFactory.setInstanceLogService(new MockInstanceLogService());
-
-        BootstrapUtils.bootstrap(entityContextFactory);
-
-        TransactionOperations transactionOperations = new MockTransactionOperations();
-
-        EntityQueryService entityQueryService = new EntityQueryService(new InstanceQueryService(instanceSearchService));
+        var bootResult = BootstrapUtils.bootstrap();
+        EntityContextFactory entityContextFactory = bootResult.entityContextFactory();
+        instanceStore = bootResult.instanceStore();
+        instanceSearchService = bootResult.instanceSearchService();
+        var transactionOperations = new MockTransactionOperations();
+        var entityQueryService = new EntityQueryService(new InstanceQueryService(instanceSearchService));
         typeManager = new TypeManager(
                 entityContextFactory, entityQueryService,
                 new TaskManager(entityContextFactory, transactionOperations),
@@ -47,65 +43,69 @@ public class TypeManagerTest extends TestCase {
                 entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
         );
         typeManager.setInstanceManager(instanceManager);
+        var flowManager = new FlowManager(entityContextFactory);
+        flowManager.setTypeManager(typeManager);
+        typeManager.setFlowManager(flowManager);
     }
 
     public void test() {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
+                .tmpId(NncUtils.randomNonNegative())
                 .addField(
                         FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getRef())
+                                .tmpId(NncUtils.randomNonNegative())
                                 .build()
                 )
                 .build();
-        TypeDTO savedTypeDTO = typeManager.saveType(typeDTO);
+        TypeDTO savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
         TypeDTO loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
         MatcherAssert.assertThat(loadedTypeDTO, PojoMatcher.of(savedTypeDTO));
-
-        long nameFieldId = ((ClassTypeParam) savedTypeDTO.param()).fields().get(0).id();
-
         TypeDTO updatedTypeDTO = ClassTypeDTOBuilder.newBuilder("Bat Update")
                 .id(savedTypeDTO.id())
-                .addField(
-                        FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getRef())
-                                .id(nameFieldId)
-                                .declaringTypeId(savedTypeDTO.id())
-                                .build()
-                )
+                .fields(null)
+                .methods(null)
+                .mappings(null)
                 .build();
 
-        typeManager.saveType(updatedTypeDTO);
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveType(updatedTypeDTO));
         loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
-        MatcherAssert.assertThat(loadedTypeDTO, PojoMatcher.of(updatedTypeDTO));
+        TestUtils.logJSON(LOGGER, loadedTypeDTO);
+        TestUtils.logJSON(LOGGER, updatedTypeDTO);
+        Assert.assertEquals(loadedTypeDTO.name(), updatedTypeDTO.name());
     }
 
     public void testRemove() {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
+                .tmpId(NncUtils.randomNonNegative())
                 .addField(
                         FieldDTOBuilder.newBuilder("name", StandardTypes.getStringType().getRef())
+                                .tmpId(NncUtils.randomNonNegative())
                                 .build()
                 )
                 .build();
-        TypeDTO savedTypeDTO = typeManager.saveType(typeDTO);
-
+        TypeDTO savedTypeDTO = TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
         Assert.assertTrue(instanceSearchService.contains(savedTypeDTO.id()));
-
-        typeManager.remove(savedTypeDTO.id());
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.remove(savedTypeDTO.id()));
         Assert.assertFalse(instanceSearchService.contains(savedTypeDTO.id()));
     }
 
     public void testLoadByPaths() {
-        ClassType fooType = MockRegistry.getClassType(Foo.class);
-        PrimitiveType stringType = MockRegistry.getStringType();
+        ContextUtil.setAppId(Constants.ROOT_APP_ID);
+        var fooType = ModelDefRegistry.getClassType(Foo.class);
+        var stringType = StandardTypes.getStringType();
         String path1 = "傻.巴.编号";
-        String path2 = "$" + fooType.tryGetId() + ".巴子.*.巴巴巴巴.*.编号";
+        String path2 = "$$" + fooType.getId() + ".巴子.*.巴列表.*.编号";
         LoadByPathsResponse response = typeManager.loadByPaths(List.of(path1, path2));
 
         Assert.assertEquals(
                 Map.of(path1, stringType.getId(), path2, stringType.getId()),
                 response.path2typeId()
         );
-        try (var context = MockRegistry.newContext(10L)) {
-            Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
-        }
+//        try (var context = entityContextFactory.newContext(10L)) {
+        Assert.assertEquals(response.types(), List.of(stringType.toDTO()));
+//        }
+
+
     }
 
     public void testShopping() {

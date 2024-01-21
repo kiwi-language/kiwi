@@ -4,11 +4,14 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 public class MockTransactionOperations implements TransactionOperations {
     @Override
     public <T> T execute(TransactionCallback<T> action) throws TransactionException {
-        TestUtils.startTransaction();
+        boolean transactionActive = TransactionSynchronizationManager.isActualTransactionActive();
+        if(!transactionActive)
+            TestUtils.beginTransaction();
         var result = action.doInTransaction(new TransactionStatus() {
             @Override
             public boolean isNewTransaction() {
@@ -55,7 +58,8 @@ public class MockTransactionOperations implements TransactionOperations {
 
             }
         });
-        TestUtils.commitTransaction();;
+        if(!transactionActive)
+            TestUtils.commitTransaction();;
         return result;
     }
 }

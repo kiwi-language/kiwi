@@ -15,12 +15,14 @@ public class BootstrapTest extends TestCase {
     private ColumnStore columnStore;
     private AllocatorStore allocatorStore;
     private InstanceStore instanceStore;
+    private EntityIdProvider idProvider;
 
     @Override
     protected void setUp() throws Exception {
         allocatorStore = new MemAllocatorStore();
         columnStore = new MemColumnStore();
         instanceStore = new MemInstanceStore();
+        idProvider = new MockIdProvider();
     }
 
     private Bootstrap newBootstrap() {
@@ -30,8 +32,7 @@ public class BootstrapTest extends TestCase {
         var indexEntryMapper = new MemIndexEntryMapper();
         var instanceContextFactory = new InstanceContextFactory(instanceStore, eventQueue);
         var entityContextFactory = new EntityContextFactory(instanceContextFactory, indexEntryMapper);
-        var idService = new MockIdProvider();
-        instanceContextFactory.setIdService(idService);
+        instanceContextFactory.setIdService(idProvider);
         instanceContextFactory.setCache(new MockCache());
         entityContextFactory.setInstanceLogService(new MockInstanceLogService());
         return new Bootstrap(entityContextFactory, instanceContextFactory, stdAllocators, columnStore);
@@ -42,7 +43,7 @@ public class BootstrapTest extends TestCase {
             var bootstrap = newBootstrap();
             var result = bootstrap.boot();
             Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-            TestUtils.startTransaction();
+            TestUtils.beginTransaction();
             bootstrap.save(true);
             TestUtils.commitTransaction();
         }
@@ -50,7 +51,7 @@ public class BootstrapTest extends TestCase {
             var bootstrap = newBootstrap();
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
-            TestUtils.startTransaction();
+            TestUtils.beginTransaction();
             bootstrap.save(true);
             TestUtils.commitTransaction();
         }

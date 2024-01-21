@@ -58,13 +58,13 @@ public class FunctionDesc {
         if(arguments.size() != paramTypes.length) {
             throw BusinessException.invalidFuncArguments(function);
         }
-//        int i = 0;
-//        for (Instance argument : arguments) {
-//            if(argument != null && !InstanceUtils.getTypeByInstanceClass(paramTypes[i]).isInstance(argument)) {
-//                throw BusinessException.invalidFuncArguments(function);
-//            }
-//            i++;
-//        }
+        int i = 0;
+        for (Instance argument : arguments) {
+            if(argument != null && !Instances.getTypeByInstanceClass(paramTypes[i]).isInstance(argument)) {
+                throw BusinessException.invalidFuncArguments(function);
+            }
+            i++;
+        }
     }
 
     public Instance evaluate(List<Instance> arguments) {

@@ -15,18 +15,12 @@ public class MockIdProvider implements EntityIdProvider {
 
     public static final long INITIAL_NEXT_ID = 1000000L;
     private final Map<TypeCategory, Long> nextIdMap = new HashMap<>();
-    private final Map<Long, Type> id2type = new HashMap<>();
+    private final Map<Long, Long> id2typeId = new HashMap<>();
 
     @Override
     public long getTypeId(long id) {
-        return NncUtils.requireNonNull(
-                id2type.get(id),
-                () -> new InternalException("Can not find a type for id: " + id)
-        ).tryGetId();
-    }
-
-    public Type getType(long id) {
-        return id2type.get(id);
+        return NncUtils.requireNonNull(id2typeId.get(id),
+                () -> new InternalException("Can not find a type for id: " + id));
     }
 
     @Override
@@ -50,13 +44,20 @@ public class MockIdProvider implements EntityIdProvider {
                 requireNonNull(category.getIdRegion(), "region not found for category " + category).start() + INITIAL_NEXT_ID :
                 id + 1
         );
-        id2type.put(resultId, type);
+        id2typeId.put(resultId, type.getId());
         return resultId;
     }
 
     public void clear() {
         nextIdMap.clear();
-        id2type.clear();
+        id2typeId.clear();
+    }
+
+    public MockIdProvider copy() {
+        var copy = new MockIdProvider();
+        copy.nextIdMap.putAll(nextIdMap);
+        copy.id2typeId.putAll(id2typeId);
+        return copy;
     }
 
 }

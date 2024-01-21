@@ -41,8 +41,8 @@ public class PropertyExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
-        return ((ClassInstance) instance.evaluate(context)).getProperty(property, context.getParameterizedFlowProvider());
+    protected Instance evaluateSelf(EvaluationContext context) {
+        return ((ClassInstance) instance.evaluate(context)).getProperty(property, context.parameterizedFlowProvider());
     }
 
     @Override

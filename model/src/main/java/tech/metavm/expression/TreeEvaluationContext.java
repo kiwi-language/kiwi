@@ -1,10 +1,9 @@
 package tech.metavm.expression;
 
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.query.ObjectNode;
-import tech.metavm.object.instance.query.Path;
+import tech.metavm.object.instance.query.PathResolver;
 
 public class TreeEvaluationContext implements EvaluationContext {
 
@@ -21,7 +20,7 @@ public class TreeEvaluationContext implements EvaluationContext {
     @Override
     public Instance evaluate(Expression expression) {
         if(expression instanceof PropertyExpression fieldExpression)
-            return objectNode.getByPath(instance, Path.create(fieldExpression.getProperty().getName()));
+            return objectNode.getByPath(instance, PathResolver.getFieldPath(fieldExpression));
         else
             throw new RuntimeException("Unsupported expression");
     }
@@ -32,7 +31,7 @@ public class TreeEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+    public ParameterizedFlowProvider parameterizedFlowProvider() {
         return parameterizedFlowProvider;
     }
 

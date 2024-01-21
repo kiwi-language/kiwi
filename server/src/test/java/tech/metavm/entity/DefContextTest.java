@@ -36,6 +36,7 @@ public class DefContextTest extends TestCase {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
                         new MemInstanceStore(), idProvider, bridge, bridge, bridge)
+                .readonly(false)
                 .build();
         defContext = new DefContext(o -> null, instanceContext, new MemColumnStore());
         bridge.setEntityContext(defContext);
@@ -98,6 +99,7 @@ public class DefContextTest extends TestCase {
     public void test_field_with_instance_type() {
         PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
         ClassType quxType = defContext.getClassType(Qux.class);
+        quxType.initId(1000000L);
         Field quxAmountField = defContext.getField(Qux.class, "amount");
         var qux = ClassInstance.create(
                 Map.of(quxAmountField, Instances.longInstance(100L)),

@@ -4,18 +4,12 @@ import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.*;
-import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.MockInstanceLogService;
-import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.type.IndexRepository;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.mocks.MockIndexRepository;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.BootstrapUtils;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
 import tech.metavm.util.MockTransactionOperations;
 
 public class FlowManagerTest extends TestCase {
@@ -33,24 +27,14 @@ public class FlowManagerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         indexRepository = new MockIndexRepository();
-        EntityIdProvider idProvider = new MockIdProvider();
-        MemInstanceStore instanceStore = new MemInstanceStore();
-        var indexEntryMapper = new MemIndexEntryMapper();
-
-        instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
-                .setIdService(idProvider);
-        var entityContextFactory = new EntityContextFactory(instanceContextFactory, indexEntryMapper);
-        InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
-        BootstrapUtils.bootstrap(entityContextFactory);
-
-        InstanceSearchService instanceSearchService = new MemInstanceSearchService();
-
-        EntityQueryService entityQueryService =
+        var bootResult = BootstrapUtils.bootstrap();
+        var entityContextFactory = bootResult.entityContextFactory();
+        instanceContextFactory = bootResult.entityContextFactory().getInstanceContextFactory();
+        var instanceSearchService =bootResult.instanceSearchService();
+        var entityQueryService =
                 new EntityQueryService(new InstanceQueryService(instanceSearchService));
-
-        TaskManager jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
-
-        TypeManager typeManager =
+        var jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
+        var typeManager =
                 new TypeManager(entityContextFactory, entityQueryService, jobManager,  null);
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);

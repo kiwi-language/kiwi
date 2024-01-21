@@ -1,5 +1,6 @@
 package tech.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
@@ -116,14 +117,14 @@ public class Types {
 //        }
 //    }
 
-    public static Type getLeastUpperBound(Collection<Type> types) {
+    public static @NotNull Type getLeastUpperBound(Collection<Type> types) {
         Type lub = StandardTypes.getNothingType();
         for (Type type : types)
             lub = getLeastUpperBound(lub, type);
         return lub;
     }
 
-    private static Type getLeastUpperBound(Type type1, Type type2) {
+    private static @NotNull Type getLeastUpperBound(Type type1, Type type2) {
         if (type1.isAssignableFrom(type2))
             return type1;
         if (type2.isAssignableFrom(type1))

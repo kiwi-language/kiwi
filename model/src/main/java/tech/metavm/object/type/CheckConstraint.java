@@ -45,7 +45,7 @@ public class CheckConstraint extends Constraint {
 
     public boolean isFieldConstraint(Field field) {
         if(condition.getExpression() instanceof BinaryExpression binExpr
-                && binExpr.getFirst() instanceof PropertyExpression propExpr) {
+                && binExpr.getLeft() instanceof PropertyExpression propExpr) {
             return propExpr.getProperty() == field;
         }
         else if(condition.getExpression() instanceof UnaryExpression unaryExpr

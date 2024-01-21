@@ -10,7 +10,7 @@ import java.util.List;
 @EntityType("巴子")
 public class Baz extends Entity {
 
-    @ChildEntity("巴巴巴巴")
+    @ChildEntity("巴列表")
     private ReadWriteArray<Bar> bars = addChild(new ReadWriteArray<>(Bar.class), "bars");
 
     public Baz() {

@@ -9,6 +9,7 @@ import tech.metavm.object.instance.CheckConstraintPlugin;
 import tech.metavm.object.instance.IndexConstraintPlugin;
 import tech.metavm.object.instance.MetaVersionPlugin;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
+import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.type.IdConstants;
@@ -60,10 +61,23 @@ public class EntityContextFactory {
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable EntityIdProvider idProvider,
                                      boolean asyncLogProcessing) {
         var bridge = new EntityInstanceContextBridge();
+        var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
+                NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge);
+        var context = new EntityContext(instanceContext, parent);
+        bridge.setEntityContext(context);
+        return context;
+    }
+
+    public IInstanceContext newBridgedInstanceContext(long appId,
+                                                      boolean readonly,
+                                                      @Nullable Boolean asyncLogProcessing,
+                                                      @Nullable IInstanceContext parent,
+                                                      @Nullable EntityIdProvider idProvider,
+                                                      EntityInstanceContextBridge bridge) {
         var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
-                .readonly(isReadonlyTransaction())
-                .asyncPostProcess(asyncLogProcessing)
-                .parent(NncUtils.get(parent, IEntityContext::getInstanceContext))
+                .readonly(readonly)
+                .asyncPostProcess(NncUtils.orElse(asyncLogProcessing, defaultAsyncLogProcess))
+                .parent(parent)
                 .getTypeIdInterceptor(id -> IdConstants.isBuiltinAppId(id) ? bridge.getType(Application.class).tryGetId() : null)
                 .plugins(
                         new MetaVersionPlugin(bridge, bridge),
@@ -73,10 +87,7 @@ public class EntityContextFactory {
                 );
         if (idProvider != null)
             builder.idProvider(idProvider);
-        var instanceContext = builder.build();
-        var context = new EntityContext(instanceContext, parent);
-        bridge.setEntityContext(context);
-        return context;
+        return builder.build();
     }
 
     private boolean isReadonlyTransaction() {

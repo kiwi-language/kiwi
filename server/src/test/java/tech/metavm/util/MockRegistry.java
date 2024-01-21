@@ -200,21 +200,6 @@ public class MockRegistry {
         return newEntityContext(appId).getInstanceContext();
     }
 
-    public static Foo getFoo() {
-        Foo foo = new Foo(
-                "Big Foo",
-                new Bar("Bar001")
-        );
-        foo.setCode("Foo001");
-
-        foo.setQux(new Qux(100));
-        Baz baz1 = new Baz();
-        baz1.setBars(List.of(new Bar("Bar002")));
-        Baz baz2 = new Baz();
-        foo.setBazList(List.of(baz1, baz2));
-        return foo;
-    }
-
     private static void initIdRecursively(DurableInstance instance, EntityIdProvider idProvider) {
         initIdRecursively(instance, idProvider, new IdentitySet<>());
     }

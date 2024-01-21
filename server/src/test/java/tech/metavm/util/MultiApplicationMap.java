@@ -36,4 +36,7 @@ public class MultiApplicationMap<K, V> {
         map.clear();
     }
 
+    public void putAll(MultiApplicationMap<K, V> instanceMap) {
+        map.putAll(instanceMap.map);
+    }
 }

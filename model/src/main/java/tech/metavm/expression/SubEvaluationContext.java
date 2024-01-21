@@ -40,8 +40,8 @@ public class SubEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public ParameterizedFlowProvider getParameterizedFlowProvider() {
-        return parent.getParameterizedFlowProvider();
+    public ParameterizedFlowProvider parameterizedFlowProvider() {
+        return parent.parameterizedFlowProvider();
     }
 
 }

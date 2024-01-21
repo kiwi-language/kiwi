@@ -51,7 +51,7 @@ public class ConstantExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         return value;
     }
 

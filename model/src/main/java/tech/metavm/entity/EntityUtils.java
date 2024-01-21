@@ -109,6 +109,11 @@ public class EntityUtils {
         }
     }
 
+
+    public static void visitGraph(Object object, Consumer<Object> action) {
+        visitGraph(List.of(object), action);
+    }
+
     public static void visitGraph(Collection<?> objects, Consumer<Object> action) {
         var visited = new IdentitySet<>();
         NncUtils.enhancedForEach(objects, object -> visitGraph(object, visited, action));

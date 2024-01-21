@@ -19,7 +19,6 @@ public class MemInstanceMapper implements InstanceMapper {
     private final NavigableMap<Long, InstancePO> id2instance = new TreeMap<>();
     private final Map<Long, List<InstancePO>> type2instances = new HashMap<>();
     private final Map<Long, InstancePO> removed = new HashMap<>();
-    private final Map<Long, ReadWriteLock> lockMap = new HashMap<>();
     private final Map<Long, Set<InstancePO>> forest = new HashMap<>();
 
     @Override
@@ -177,4 +176,14 @@ public class MemInstanceMapper implements InstanceMapper {
         }
         return result;
     }
+
+    public MemInstanceMapper copy() {
+        MemInstanceMapper copy = new MemInstanceMapper();
+        copy.id2instance.putAll(id2instance);
+        copy.type2instances.putAll(type2instances);
+        copy.removed.putAll(removed);
+        copy.forest.putAll(forest);
+        return copy;
+    }
+
 }

@@ -2,9 +2,8 @@ package tech.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
 
 import java.util.List;
 import java.util.Set;
@@ -13,7 +12,7 @@ public class TypesTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testGetCommonSuperTypes() {
@@ -69,7 +68,7 @@ public class TypesTest extends TestCase {
                 .superClass(c1).build();
         var nullable_c3 = new UnionType(null, Set.of(StandardTypes.getNullType(), c3));
         var cst = Types.getLeastUpperBound(List.of(c2, nullable_c3));
-        Assert.assertEquals(StandardTypes.getNullableObjectType(), cst);
+        Assert.assertEquals(StandardTypes.getNullableAnyType(), cst);
     }
 
 }

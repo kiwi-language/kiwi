@@ -34,20 +34,20 @@ public class Expressions {
             if (op == BinaryOperator.AND) {
                 return new BinaryExpression(
                         BinaryOperator.OR,
-                        not(binaryExpression.getFirst()),
-                        not(binaryExpression.getSecond())
+                        not(binaryExpression.getLeft()),
+                        not(binaryExpression.getRight())
                 );
             } else if (op == BinaryOperator.OR) {
                 return new BinaryExpression(
                         BinaryOperator.AND,
-                        not(binaryExpression.getFirst()),
-                        not(binaryExpression.getSecond())
+                        not(binaryExpression.getLeft()),
+                        not(binaryExpression.getRight())
                 );
             } else {
                 return new BinaryExpression(
                         op.complement(),
-                        binaryExpression.getFirst(),
-                        binaryExpression.getSecond()
+                        binaryExpression.getLeft(),
+                        binaryExpression.getRight()
                 );
             }
         } else {
@@ -180,7 +180,7 @@ public class Expressions {
                 propertyExpr(field),
                 new ArrayExpression(
                         NncUtils.map(values, ConstantExpression::new),
-                        StandardTypes.getObjectArrayType()
+                        StandardTypes.getAnyArrayType()
                 )
         );
     }

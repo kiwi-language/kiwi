@@ -6,6 +6,7 @@ import tech.metavm.util.InstanceOutput;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Objects;
 
 public abstract class Id {
 
@@ -35,6 +36,10 @@ public abstract class Id {
     }
 
     public abstract Long tryGetPhysicalId();
+
+    public long getPhysicalId() {
+        return Objects.requireNonNull(tryGetPhysicalId());
+    }
 
     public abstract boolean isTemporary();
 

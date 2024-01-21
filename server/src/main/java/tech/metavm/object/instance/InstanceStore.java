@@ -21,7 +21,7 @@ public class InstanceStore extends BaseInstanceStore {
 
     protected final InstanceMapper instanceMapper;
     private final IndexEntryMapper indexEntryMapper;
-    private final ReferenceMapper referenceMapper;
+    protected final ReferenceMapper referenceMapper;
 
     public InstanceStore(InstanceMapper instanceMapper,
                          IndexEntryMapper indexEntryMapper,

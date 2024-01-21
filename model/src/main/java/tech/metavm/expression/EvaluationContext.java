@@ -13,7 +13,7 @@ public interface EvaluationContext {
 
     boolean isContextExpression(Expression expression);
 
-    ParameterizedFlowProvider getParameterizedFlowProvider();
+    ParameterizedFlowProvider parameterizedFlowProvider();
 
     default @Nullable MetaSubstitutor getSubstitutor() {
         return null;

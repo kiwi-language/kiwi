@@ -40,4 +40,12 @@ public class MemAllocatorStore implements AllocatorStore {
     public void clear() {
         propertiesMap.clear();
     }
+
+    public MemAllocatorStore copy() {
+        var result = new MemAllocatorStore();
+        for (var entry : propertiesMap.entrySet()) {
+            result.propertiesMap.put(entry.getKey(), copyProperties(entry.getValue()));
+        }
+        return result;
+    }
 }

@@ -1,13 +1,11 @@
 package tech.metavm.object.instance;
 
 import junit.framework.TestCase;
-import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
-import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
@@ -30,8 +28,8 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testToFieldValueDTO_for_reference() {
-        var fooType = MockUtils.createFooType(true);
-        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooType.fooType())
+        var fooType = MockUtils.createFooTypes(true);
+        var foo = ClassInstanceBuilder.newBuilder(fooType.fooType())
                 .data(Map.of(
                         fooType.fooNameField(),
                         Instances.stringInstance("foo"),
@@ -39,7 +37,9 @@ public class ClassInstanceTest extends TestCase {
                         new ArrayInstance(
                                 fooType.barChildArrayType(),
                                 List.of()
-                        )
+                        ),
+                        fooType.fooBazListField(),
+                        new ArrayInstance(fooType.bazArrayType())
                 ))
                 .build();
         foo.initId(PhysicalId.of(100000L));
@@ -51,8 +51,8 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testToDTO() {
-        var fooType = MockUtils.createFooType(true);
-        var foo = MockUtils.createFoo(fooType);
+        var fooType = MockUtils.createFooTypes(true);
+        var foo = MockUtils.createFoo(fooType,true);
         InstanceDTO instanceDTO = foo.toDTO();
         Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
         ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
@@ -61,16 +61,18 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testIsChild() {
-        var fooType = MockUtils.createFooType(true);
-        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooType.fooType())
+        var fooTypes = MockUtils.createFooTypes(true);
+        ClassInstance foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType())
                 .data(Map.of(
-                        fooType.fooNameField(),
+                        fooTypes.fooNameField(),
                         Instances.stringInstance("foo"),
-                        fooType.fooBarsField(),
-                        new ArrayInstance(fooType.barChildArrayType(), List.of())
+                        fooTypes.fooBarsField(),
+                        new ArrayInstance(fooTypes.barChildArrayType(), List.of()),
+                        fooTypes.fooBazListField(),
+                        new ArrayInstance(fooTypes.bazArrayType())
                 ))
                 .build();
-        var barArray = (DurableInstance) foo.getField(fooType.fooBarsField());
+        var barArray = (DurableInstance) foo.getField(fooTypes.fooBarsField());
         Assert.assertTrue(foo.isChild(barArray));
     }
 
@@ -97,8 +99,8 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testTitle() {
-        var type = MockUtils.createFooType(false);
-        var foo = MockUtils.createFoo(type);
+        var type = MockUtils.createFooTypes(true);
+        var foo = MockUtils.createFoo(type, true);
         Assert.assertEquals("foo", foo.getTitle());
         var dto = foo.toDTO();
         Assert.assertEquals("foo", dto.title());

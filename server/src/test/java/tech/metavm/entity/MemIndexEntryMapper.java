@@ -11,11 +11,11 @@ import java.util.*;
 
 public class MemIndexEntryMapper implements IndexEntryMapper {
 
-    private final Map<IndexKeyPO, List<IndexEntryPO>> key2items = new HashMap<>();
+    private final Map<GlobalKey, List<IndexEntryPO>> key2items = new HashMap<>();
     private final Set<IndexEntryPO> items = new HashSet<>();
     private final Map<Long, List<IndexEntryPO>> instanceId2items = new HashMap<>();
 
-    private List<IndexEntryPO> getItems(IndexKeyPO key) {
+    private List<IndexEntryPO> getItems(GlobalKey key) {
         return key2items.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
@@ -36,9 +36,10 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     public List<IndexEntryPO> selectByInstanceIdsOrKeys(long appId,
                                                         Collection<Long> instanceIds,
                                                         Collection<IndexKeyPO> keys) {
+        var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
         return NncUtils.union(
                 NncUtils.flatMap(instanceIds, this::getItemsByInstanceId),
-                NncUtils.flatMap(keys, this::getItems)
+                NncUtils.flatMap(globalKeys, this::getItems)
         );
     }
 
@@ -49,13 +50,14 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public List<IndexEntryPO> selectByKeys(long appId, Collection<IndexKeyPO> keys) {
-        return NncUtils.flatMap(keys, this::getItems);
+        var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
+        return NncUtils.flatMap(globalKeys, this::getItems);
     }
 
     @Override
     public void batchInsert(Collection<IndexEntryPO> items) {
         for (IndexEntryPO item : items) {
-            getItems(item.getKey()).add(item);
+            getItems(new GlobalKey(item.getAppId(), item.getKey())).add(item);
             getItemsByInstanceId(item.getInstanceId()).add(item);
             this.items.add(item);
         }
@@ -66,15 +68,31 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
         for (IndexEntryPO item : items) {
             if(!this.items.remove(item))
                 throw new InternalException(item + " does not exist");
-            getItems(item.getKey()).remove(item);
+            getItems(new GlobalKey(item.getAppId(), item.getKey())).remove(item);
             getItemsByInstanceId(item.getInstanceId()).remove(item);
         }
     }
 
+    @SuppressWarnings("unused")
     public void clear() {
         items.clear();
         key2items.clear();
         instanceId2items.clear();
+    }
+
+    private record GlobalKey(
+            long appId,
+            IndexKeyPO key
+    ) {
+
+    }
+
+    public MemIndexEntryMapper copy() {
+        var copy = new MemIndexEntryMapper();
+        copy.items.addAll(items);
+        copy.key2items.putAll(key2items);
+        copy.instanceId2items.putAll(instanceId2items);
+        return copy;
     }
 
 }

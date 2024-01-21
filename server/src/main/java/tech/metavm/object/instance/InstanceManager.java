@@ -18,10 +18,7 @@ import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.IdentitySet;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.util.*;
 
@@ -240,7 +237,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             Set<Instance> visited = new IdentitySet<>();
             List<InstanceDTO> result = new ArrayList<>();
             for (Path path : paths) {
-                var instanceId = Id.parse(path.firstItem());
+                var instanceId = Id.parse(path.firstItem().substring(Constants.CONSTANT_ID_PREFIX.length()));
                 Instance instance = context.get(instanceId);
                 InstanceNode<?> node = instance2node.get(instance);
                 List<Instance> values = node.getFetchResults(instance, path.subPath());
@@ -258,7 +255,7 @@ public class InstanceManager extends EntityContextFactoryBean {
     private Map<Instance, InstanceNode<?>> buildObjectTree(List<Path> paths, IInstanceContext context) {
         Map<Instance, PathTree> pathTreeMap = new HashMap<>();
         for (Path path : paths) {
-            Instance instance = context.get(Id.parse(path.firstItem()));
+            Instance instance = context.get(Id.parse(path.firstItem().substring(Constants.CONSTANT_ID_PREFIX.length())));
             PathTree pathTree = pathTreeMap.computeIfAbsent(instance, k -> new PathTree(k + ""));
             if (path.hasSubPath()) {
                 pathTree.addPath(path.subPath());

@@ -2,11 +2,9 @@ package tech.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import tech.metavm.mocks.Foo;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.object.instance.ColumnKind;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockRegistry;
+import tech.metavm.util.MockUtils;
 
 import java.util.List;
 
@@ -14,38 +12,25 @@ public class ClassTypeTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testAllocateColumn() {
-        ClassType fooType = ClassTypeBuilder.newBuilder("Foo", null).build();
-        ClassType barType = ClassTypeBuilder.newBuilder("Bar", null).build();
-
-        Field nameField = FieldBuilder
-                .newBuilder("name", null, fooType, MockRegistry.getStringType())
-                .build();
-        fooType.setTitleField(nameField);
-
-
-        Field barField = FieldBuilder
-                .newBuilder("bar", null, fooType, barType)
-                .build();
+        var fooTypes = MockUtils.createFooTypes(true);
+        Field nameField = fooTypes.fooNameField();
+        Field bazField = fooTypes.fooQuxField();
 
         Assert.assertNotNull(nameField.getColumn());
         Assert.assertTrue(nameField.getColumnName().startsWith(ColumnKind.STRING.prefix()));
 
-        Assert.assertNotNull(barField.getColumn());
-        Assert.assertTrue(barField.getColumnName().startsWith(ColumnKind.UNSPECIFIED.prefix()));
+        Assert.assertNotNull(bazField.getColumn());
+        Assert.assertTrue(bazField.getColumnName().startsWith(ColumnKind.REFERENCE.prefix()));
     }
 
     public void testAllocateColumnForArray() {
-        ClassType bazType = ClassTypeBuilder.newBuilder("Baz", null).build();
-        ClassType barType = ClassTypeBuilder.newBuilder("Bar", null).build();
-        Field barsField = FieldBuilder
-                .newBuilder("bars", null, bazType, new ArrayType(null, barType, ArrayKind.READ_WRITE))
-                .build();
-        Assert.assertNotNull(barsField.getColumn());
-        Assert.assertTrue(barsField.getColumnName().startsWith(ColumnKind.REFERENCE.prefix()));
+        var fooTypes = MockUtils.createFooTypes(true);
+        Assert.assertNotNull(fooTypes.fooBarsField().getColumn());
+        Assert.assertTrue(fooTypes.fooBarsField().getColumnName().startsWith(ColumnKind.REFERENCE.prefix()));
     }
 
     public void testIsAssignable() {
@@ -55,13 +40,13 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testIsInstance() {
-        ClassInstance fooInst = MockRegistry.getFooInstance();
-        ClassType fooType = MockRegistry.getClassType(Foo.class);
-        Assert.assertTrue(fooType.isInstance(fooInst));
+        var fooTypes = MockUtils.createFooTypes(true);
+        var fooInst = MockUtils.createFoo(fooTypes, true);
+        Assert.assertTrue(fooTypes.fooType().isInstance(fooInst));
     }
 
     public void testIsNullable() {
-        ClassType fooType = MockRegistry.getClassType(Foo.class);
+        var fooType = MockUtils.createFooTypes().fooType();
         Assert.assertFalse(fooType.isNullable());
     }
 
@@ -78,7 +63,7 @@ public class ClassTypeTest extends TestCase {
 
         ClassType i4 = ClassTypeBuilder.newBuilder("i4", null).category(TypeCategory.INTERFACE).build();
 
-        ClassType c3  = ClassTypeBuilder.newBuilder("c3", null).interfaces(i3)
+        ClassType c3 = ClassTypeBuilder.newBuilder("c3", null).interfaces(i3)
                 .superClass(c2).interfaces(i4)
                 .build();
 

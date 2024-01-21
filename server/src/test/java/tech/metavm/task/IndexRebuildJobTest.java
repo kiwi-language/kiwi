@@ -4,50 +4,55 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.entity.EntityContextFactory;
 import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.MemIndexEntryMapper;
-import tech.metavm.entity.MemInstanceStore;
+import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
-import tech.metavm.object.instance.MemInstanceSearchService;
-import tech.metavm.object.instance.MockInstanceLogService;
+import tech.metavm.object.instance.MemInstanceSearchServiceV2;
 import tech.metavm.util.*;
 
 public class IndexRebuildJobTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
 
-    private MemInstanceSearchService instanceSearchService;
+    private MemInstanceSearchServiceV2 instanceSearchService;
 
     @Override
     protected void setUp() throws Exception {
-        MemInstanceStore instanceStore = new MemInstanceStore();
-        MockIdProvider idProvider = new MockIdProvider();
-        instanceSearchService = new MemInstanceSearchService();
-        entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), new MemIndexEntryMapper());
-        BootstrapUtils.bootstrap(entityContextFactory);
+        var bootResult = BootstrapUtils.bootstrap();
+        instanceSearchService = bootResult.instanceSearchService();
+        entityContextFactory = bootResult.entityContextFactory();
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                context.bind(new JobSchedulerStatus());
+                context.bind(new TaskSignal(TestConstants.APP_ID));
+                context.finish();
+            }
+        });
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     public void test() {
         IndexRebuildTask job = new IndexRebuildTask();
+        TestUtils.beginTransaction();
         try(var context = newContext()){
             for (int i = 0; i < 100; i++) {
-                context.bind(MockRegistry.getNewFooInstance());
+                context.bind(new Foo("foo" + i, new Bar("bar" + i)));
             }
             context.bind(job);
             context.finish();
         }
-
+        TestUtils.commitTransaction();
         instanceSearchService.clear();
 
-        try (var context1 = newContext()) {
-            job = context1.getEntity(IndexRebuildTask.class, job.getId());
+        TestUtils.beginTransaction();
+        try (var context = newContext()) {
+            job = context.getEntity(IndexRebuildTask.class, job.getId());
             for (int i = 0; i < 50; i++) {
-                if (job.run0(context1)) {
+                if (job.run0(context))
                     break;
-                }
             }
-            context1.finish();
+            context.finish();
         }
-
+        TestUtils.commitTransaction();
         try (var context = newContext()) {
             var instances = context.getByType(Foo.class, null, 100);
             for (var instance : instances) {

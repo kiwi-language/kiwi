@@ -77,7 +77,7 @@ public class FunctionNode extends NodeRT {
         var funcInst = (FunctionInstance) func.evaluate(frame);
         var result = funcInst.execute(NncUtils.map(arguments, arg -> arg.evaluate(frame)),
                 frame.getInstanceRepository(),
-                frame.getParameterizedFlowProvider());
+                frame.parameterizedFlowProvider());
         if(result.exception() != null)
             return frame.catchException(this, result.exception());
         else

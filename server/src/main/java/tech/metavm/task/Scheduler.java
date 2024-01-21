@@ -195,9 +195,8 @@ public class Scheduler extends EntityContextFactoryBean {
     }
 
     private void tryRemoveTask(Task task, IEntityContext context) {
-        if (task instanceof ReferenceCleanupTask) {
+        if (task instanceof ReferenceCleanupTask)
             return;
-        }
         NncUtils.requireTrue(task.isFinished());
         var group = task.getGroup();
         if (group == null)

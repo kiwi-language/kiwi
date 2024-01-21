@@ -1,5 +1,6 @@
 package tech.metavm.object.type.rest.dto;
 
+import tech.metavm.common.BaseDTO;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.type.Access;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 public record ColumnDTO(
         Long id,
+        Long tmpId,
         String name,
         int type,
         int access,
@@ -19,14 +21,15 @@ public record ColumnDTO(
         boolean unique,
         FieldValue defaultValue,
         List<ChoiceOptionDTO> choiceOptions
-) {
+) implements BaseDTO  {
 
-    public static ColumnDTO createPrimitive(String name,
+    public static ColumnDTO createPrimitive(
+            Long tmpId, String name,
                                             int type,
                                             boolean required,
                                             boolean unique) {
         return new ColumnDTO(
-                null, name, type, Access.PUBLIC.code(), null, null,
+                null, tmpId, name, type, Access.PUBLIC.code(), null, null,
                 null, required, false, unique,
                 null, null
         );

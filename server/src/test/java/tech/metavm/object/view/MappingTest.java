@@ -5,18 +5,13 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.common.RefDTO;
-import tech.metavm.entity.*;
-import tech.metavm.event.MockEventQueue;
+import tech.metavm.entity.EntityQueryService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.MemInstanceSearchService;
 import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.log.InstanceLogServiceImpl;
-import tech.metavm.object.instance.log.TaskHandler;
-import tech.metavm.object.instance.log.VersionHandler;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeManager;
@@ -35,37 +30,23 @@ public class MappingTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MemInstanceStore instanceStore = new MemInstanceStore();
-        EntityIdProvider idProvider = new MockIdProvider();
-        MemInstanceSearchService instanceSearchService = new MemInstanceSearchService();
-        InstanceContextFactory instanceContextFactory =
-                TestUtils.getInstanceContextFactory(idProvider, instanceStore);
-        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
-        entityContextFactory.setInstanceLogService(
-                new InstanceLogServiceImpl(entityContextFactory, instanceSearchService, instanceStore, List.of(
-                        new TaskHandler(entityContextFactory, new MockTransactionOperations()),
-                        new VersionHandler(new MockEventQueue())
-                ))
-        );
-        entityContextFactory.setDefaultAsyncLogProcess(false);
-
-        BootstrapUtils.bootstrap(entityContextFactory);
-
+        var bootResult = BootstrapUtils.bootstrap();
         TransactionOperations transactionOperations = new MockTransactionOperations();
-
-        EntityQueryService entityQueryService = new EntityQueryService(new InstanceQueryService(instanceSearchService));
+        var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
+        EntityQueryService entityQueryService = new EntityQueryService(instanceQueryService);
         typeManager = new TypeManager(
-                entityContextFactory, entityQueryService,
-                new TaskManager(entityContextFactory, transactionOperations),
+                bootResult.entityContextFactory(), entityQueryService,
+                new TaskManager(bootResult.entityContextFactory(), transactionOperations),
                 transactionOperations);
         instanceManager = new InstanceManager(
-                entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
+                bootResult.entityContextFactory(), bootResult.instanceStore(), instanceQueryService
         );
         typeManager.setInstanceManager(instanceManager);
-        var flowManager = new FlowManager(entityContextFactory);
+        var flowManager = new FlowManager(bootResult.entityContextFactory());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         FlowSavingContext.initConfig();
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override
@@ -265,18 +246,18 @@ public class MappingTest extends TestCase {
         // test removing an SKU
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
         var sku = skuListView.getElement(1);
-        TestUtils.doInTransaction(() -> instanceManager.delete(TestUtils.getId(sku)));
+        TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(TestUtils.getId(sku)));
         // assert that the sku is actually removed
         loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
         Assert.assertEquals(1, skuListView.arraySize());
 
         // test removing product view
-        TestUtils.doInTransaction(() -> instanceManager.delete(viewId.toString()));
+        TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
     }
 
     private String saveInstance(InstanceDTO instanceDTO) {
-        TestUtils.startTransaction();
+        TestUtils.beginTransaction();
         String id;
         if (instanceDTO.id() == null)
             id = instanceManager.create(instanceDTO);

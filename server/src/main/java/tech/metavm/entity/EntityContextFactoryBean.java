@@ -4,7 +4,7 @@ import tech.metavm.util.Constants;
 
 public class EntityContextFactoryBean {
 
-    private final EntityContextFactory entityContextFactory;
+    protected final EntityContextFactory entityContextFactory;
 
     public EntityContextFactoryBean(EntityContextFactory entityContextFactory) {
         this.entityContextFactory = entityContextFactory;

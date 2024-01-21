@@ -13,10 +13,7 @@ import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.type.ClassTypeBuilder;
 import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.mocks.TypeProviders;
-import tech.metavm.util.Instances;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.MockUtils;
-import tech.metavm.util.TestConstants;
+import tech.metavm.util.*;
 
 import java.util.List;
 import java.util.Map;
@@ -98,17 +95,17 @@ public class InstanceContextTest extends TestCase {
     public void testOnChange() {
         long fooId;
         long bazId;
-        var fooType = MockUtils.createFooType(true);
-        entityRepository.bind(fooType.fooType());
-        entityRepository.bind(fooType.barType());
-        entityRepository.bind(fooType.bazType());
-        entityRepository.bind(fooType.barChildArrayType());
+        var fooTypes = MockUtils.createFooTypes(true);
+        EntityUtils.visitGraph(fooTypes.fooType(), object -> {
+            if (object instanceof Entity entity && entity.isIdNotNull())
+                entityRepository.bind(entity);
+        });
         try (var context = newContext()) {
-            var foo = MockUtils.createFoo(fooType);
-            var bars = (ArrayInstance) foo.getField(fooType.fooBarsField());
+            var foo = MockUtils.createFoo(fooTypes);
+            var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
             var bar001 = (DurableInstance) (bars.get(0));
-            var baz = ClassInstanceBuilder.newBuilder(fooType.bazType())
-                    .data(Map.of(fooType.bazBarField(), bar001))
+            var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+                    .data(Map.of(fooTypes.bazBarsField(), new ArrayInstance(fooTypes.barArrayType(), List.of(bar001))))
                     .build();
             context.bind(foo);
             context.bind(baz);
@@ -116,10 +113,11 @@ public class InstanceContextTest extends TestCase {
             fooId = foo.getPhysicalId();
             bazId = baz.getPhysicalId();
         }
+        TestUtils.beginTransaction();
         try (var context = newContext()) {
             var foo = (ClassInstance) context.get(fooId);
             var baz = (ClassInstance) context.get(bazId);
-            var bars = (ArrayInstance) foo.getField(fooType.fooBarsField());
+            var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
             var bar001 = (DurableInstance) (bars.get(0));
             baz.ensureLoaded();
             context.remove(bar001);
@@ -129,7 +127,7 @@ public class InstanceContextTest extends TestCase {
                 public boolean onChange(Instance instance) {
                     if (instance == foo) {
                         bars.removeElement(bar001);
-                        baz.setField(fooType.bazBarField(), Instances.nullInstance());
+                        ((ArrayInstance) baz.getField(fooTypes.bazBarsField())).removeElement(bar001);
                         onChangeCalled[0] = true;
                         return true;
                     } else
@@ -139,6 +137,7 @@ public class InstanceContextTest extends TestCase {
             context.finish();
             Assert.assertTrue(onChangeCalled[0]);
         }
+        TestUtils.commitTransaction();
     }
 
 

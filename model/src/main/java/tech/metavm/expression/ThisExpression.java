@@ -40,7 +40,7 @@ public class ThisExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
+    protected Instance evaluateSelf(EvaluationContext context) {
         return context.evaluate(this);
     }
 

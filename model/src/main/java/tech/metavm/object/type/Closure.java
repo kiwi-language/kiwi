@@ -14,7 +14,7 @@ public class Closure<T extends Type> {
     private final Set<T> set;
 
     public Closure(T type, Class<T> elementJavaClass) {
-        types = new ArrayList<T>(List.of(type));
+        this.types = new ArrayList<>();
         this.elementJavaClass = elementJavaClass;
         set = new HashSet<>();
         type.accept(new VoidSuperTypeVisitor() {

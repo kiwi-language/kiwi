@@ -15,7 +15,7 @@ import java.util.HashSet;
 public class MetaVersionPlugin implements ContextPlugin {
 
     private final TypeRegistry typeRegistry;
-    private final VersionRepository versionRepository;
+    private VersionRepository versionRepository;
 
     public MetaVersionPlugin(TypeRegistry typeRegistry, VersionRepository versionRepository) {
         this.typeRegistry = typeRegistry;
@@ -73,6 +73,9 @@ public class MetaVersionPlugin implements ContextPlugin {
 
     @Override
     public void afterSaving(EntityChange<InstancePO> change, IInstanceContext context) {
+    }
 
+    public void setVersionRepository(VersionRepository versionRepository) {
+        this.versionRepository = versionRepository;
     }
 }

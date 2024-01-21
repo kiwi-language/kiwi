@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.EntityUtils;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.type.Constraint;
 
@@ -21,7 +22,7 @@ public class ReflectionUtilsTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockRegistry.setUp(new MockIdProvider());
+        MockStandardTypesInitializer.init();
     }
 
     public void testEraseType() {
@@ -34,7 +35,7 @@ public class ReflectionUtilsTest extends TestCase {
     }
 
     public void testExtractReferences() {
-        Foo foo = MockRegistry.getFoo();
+        Foo foo = MockUtils.getFoo();
         List<Reference> references = EntityUtils.extractReferences(List.of(foo), t -> true);
         LOGGER.info(references.toString());
     }

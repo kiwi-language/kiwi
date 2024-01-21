@@ -59,8 +59,8 @@ public class MethodExpression extends Expression {
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
-        return ((ClassInstance) self.evaluate(context)).getFunction(method, context.getParameterizedFlowProvider());
+    protected Instance evaluateSelf(EvaluationContext context) {
+        return ((ClassInstance) self.evaluate(context)).getFunction(method, context.parameterizedFlowProvider());
     }
 
     @Override

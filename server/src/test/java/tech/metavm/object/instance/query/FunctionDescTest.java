@@ -16,6 +16,11 @@ import static tech.metavm.util.Instances.*;
 
 public class FunctionDescTest extends TestCase {
 
+    @Override
+    protected void setUp() throws Exception {
+        MockStandardTypesInitializer.init();
+    }
+
     public void test_get_return_type_max_double() {
         MockStandardTypesInitializer.init();
         FunctionDesc desc = new FunctionDesc(Func.MAX$_DOUBLE);

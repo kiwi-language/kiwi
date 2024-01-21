@@ -4,6 +4,7 @@ import tech.metavm.common.BaseDTO;
 import tech.metavm.common.ErrorDTO;
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.instance.rest.InstanceDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import tech.metavm.util.NncUtils;
@@ -115,6 +116,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder methods(List<FlowDTO> methods) {
+        this.flows = methods != null ? new ArrayList<>(methods) : null;
+        return this;
+    }
+
     public ClassTypeDTOBuilder hasSubTypes(boolean hasSubTypes) {
         this.hasSubTypes = hasSubTypes;
         return this;
@@ -131,7 +137,7 @@ public class ClassTypeDTOBuilder {
     }
 
     public ClassTypeDTOBuilder fields(List<FieldDTO> fields) {
-        this.fields = new ArrayList<>(fields);
+        this.fields = fields != null ? new ArrayList<>(fields) : null;
         return this;
     }
 
@@ -141,7 +147,7 @@ public class ClassTypeDTOBuilder {
     }
 
     public ClassTypeDTOBuilder mappings(List<ObjectMappingDTO> mappings) {
-        this.mappings = mappings;
+        this.mappings = mappings != null ? new ArrayList<>(mappings) : null;
         return this;
     }
 

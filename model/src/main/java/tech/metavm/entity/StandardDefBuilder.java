@@ -89,6 +89,8 @@ public class StandardDefBuilder {
 
         defContext.addDef(objectDef);
         defContext.createCompositeTypes(StandardTypes.anyType);
+        StandardTypes.nullableAnyType = defContext.getNullableType(StandardTypes.anyType);
+        StandardTypes.anyArrayType = defContext.getArrayType(StandardTypes.anyType, ArrayKind.READ_WRITE);
 
         for (var entry : primitiveTypeMap.entrySet()) {
             var primClass = entry.getKey();
@@ -103,7 +105,7 @@ public class StandardDefBuilder {
                 });
             }
         }
-
+        StandardTypes.nullableStringType = defContext.getNullableType(StandardTypes.stringType);
         ValueDef<Record> recordDef = createValueDef(
                 Record.class,
                 Record.class,

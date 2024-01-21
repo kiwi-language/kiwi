@@ -19,6 +19,9 @@ public class StandardTypes {
     public static PrimitiveType voidType;
     public static NeverType neverType;
     public static AnyType anyType;
+    public static UnionType nullableAnyType;
+    public static ArrayType anyArrayType;
+    public static UnionType nullableStringType;
     static ClassType enumType;
     static ClassType throwableType;
     static ClassType exceptionType;
@@ -46,12 +49,12 @@ public class StandardTypes {
         return anyType;
     }
 
-    public static UnionType getNullableObjectType() {
-        return (UnionType) ModelDefRegistry.getType(BiUnion.createNullableType(Object.class));
+    public static UnionType getNullableAnyType() {
+        return Objects.requireNonNull(nullableAnyType, "Nullable any type not initialized");
     }
 
     public static Type getAnyType(boolean nullable) {
-        return nullable ? getNullableObjectType() : getAnyType();
+        return nullable ? getNullableAnyType() : getAnyType();
     }
 
     public static ClassType getEnumType() {
@@ -105,8 +108,8 @@ public class StandardTypes {
         return doubleType;
     }
 
-    public static ArrayType getObjectArrayType() {
-        return ModelDefRegistry.getDefContext().getArrayType(getAnyType(), ArrayKind.READ_WRITE);
+    public static ArrayType getAnyArrayType() {
+        return anyArrayType;
     }
 
     public static ArrayType getReadOnlyObjectArrayType() {
@@ -163,6 +166,10 @@ public class StandardTypes {
 
     public static UnionType getNullableThrowableType() {
         return (UnionType) ModelDefRegistry.getType(BiUnion.createNullableType(Throwable.class));
+    }
+
+    public static UnionType getNullableStringType() {
+        return nullableStringType;
     }
 
     public static NeverType getNothingType() {

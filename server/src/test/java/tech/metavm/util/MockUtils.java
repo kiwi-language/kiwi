@@ -2,12 +2,13 @@ package tech.metavm.util;
 
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.mocks.MockEntityRepository;
-import tech.metavm.flow.MethodDTOBuilder;
-import tech.metavm.flow.NodeDTOFactory;
-import tech.metavm.flow.UpdateOp;
-import tech.metavm.flow.ValueDTOFactory;
+import tech.metavm.flow.*;
 import tech.metavm.flow.rest.InputFieldDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
+import tech.metavm.mocks.Bar;
+import tech.metavm.mocks.Baz;
+import tech.metavm.mocks.Foo;
+import tech.metavm.mocks.Qux;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
@@ -192,9 +193,10 @@ public class MockUtils {
     }
 
     private static TypeDTO saveType(TypeManager typeManager, TypeDTO typeDTO) {
-        TestUtils.startTransaction();
+        TestUtils.beginTransaction();
         var result = typeManager.saveType(typeDTO);
-        TestUtils.commitTransaction();;
+        TestUtils.commitTransaction();
+        ;
         return result;
     }
 
@@ -202,6 +204,7 @@ public class MockUtils {
         long titleFieldTmpId = NncUtils.randomNonNegative();
         var skuTypeTmpId = NncUtils.randomNonNegative();
         var skuAmountFieldTmpId = NncUtils.randomNonNegative();
+        FlowSavingContext.initConfig();
         var skuTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("SKU")
                 .code("SKU")
                 .tmpId(skuTypeTmpId)
@@ -418,7 +421,7 @@ public class MockUtils {
                         .type();
         var enumNameFieldId = TestUtils.getFieldIdByCode(enumSuperType, "name");
         var enumOrdinalField = TestUtils.getFieldIdByCode(enumSuperType, "ordinal");
-        TestUtils.startTransaction();
+        TestUtils.beginTransaction();
         var id = typeManager.saveEnumConstant(
                 new InstanceDTO(
                         null,
@@ -443,26 +446,105 @@ public class MockUtils {
         return id;
     }
 
-    public static FooTypes createFooType(boolean initIds) {
-        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, getStringType())
+    public static FooTypes createFooTypes() {
+        return createFooTypes(false);
+    }
+
+    public static FooTypes createFooTypes(boolean initIds) {
+        var fooType = ClassTypeBuilder.newBuilder("傻", "Foo").build();
+        var fooNameField = FieldBuilder.newBuilder("名称", "name", fooType, getStringType())
                 .asTitle().build();
-        var barType = ClassTypeBuilder.newBuilder("Bar", "Bar").build();
-        var barCodeField = FieldBuilder.newBuilder("code", "code", barType, getStringType())
+        var fooCodeField = FieldBuilder.newBuilder("编号", "code", fooType, getNullableStringType())
+                .build();
+        var barType = ClassTypeBuilder.newBuilder("巴", "Bar").build();
+        var barCodeField = FieldBuilder.newBuilder("编号", "code", barType, getStringType())
                 .asTitle().build();
-        var barArrayType = new ArrayType(null, barType, ArrayKind.CHILD);
-        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
-        var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barArrayType)
+        var barChildArrayType = new ArrayType(null, barType, ArrayKind.CHILD);
+        var barArrayType = new ArrayType(null, barType, ArrayKind.READ_WRITE);
+//        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
+        var fooBarsField = FieldBuilder.newBuilder("巴列表", "bars", fooType, barChildArrayType)
                 .isChild(true).build();
-        var bazType = ClassTypeBuilder.newBuilder("Baz", "Baz").build();
-        var bazBarField = FieldBuilder.newBuilder("bar", "bar", bazType, nullableBarType).build();
+        var bazType = ClassTypeBuilder.newBuilder("巴子", "Baz").build();
+        var bazArrayType = new ArrayType(null, bazType, ArrayKind.READ_WRITE);
+        var bazBarsField = FieldBuilder.newBuilder("巴列表", "bars", bazType, barArrayType).build();
+        var fooBazListField = FieldBuilder.newBuilder("巴子列表", "bazList", fooType, bazArrayType).build();
+        var quxType = ClassTypeBuilder.newBuilder("量子", "Qux").build();
+        var quxAmountField = FieldBuilder.newBuilder("数量", "amount", quxType, getLongType()).build();
+        var nullableQuxType = new UnionType(null, Set.of(quxType, getNullType()));
+        var fooQuxField = FieldBuilder.newBuilder("量子", "qux", fooType, nullableQuxType).build();
         if (initIds)
             TestUtils.initEntityIds(fooType);
-        return new FooTypes(fooType, barType, bazType, barArrayType, fooNameField, fooBarsField, barCodeField, bazBarField);
+        return new FooTypes(fooType, barType, quxType, bazType, barArrayType, barChildArrayType, bazArrayType, fooNameField,
+                fooCodeField, fooBarsField, fooQuxField, fooBazListField, barCodeField, bazBarsField, quxAmountField);
+    }
+
+    public static LivingBeingTypes createLivingBeingTypes(boolean initIds) {
+        var livingBeingType = ClassTypeBuilder.newBuilder("生物", "LivingBeing").build();
+        var livingBeingAgeField = FieldBuilder.newBuilder("年龄", "age", livingBeingType, getLongType())
+                .build();
+        var livingBeingExtraInfoField = FieldBuilder.newBuilder("额外信息", "extraInfo", livingBeingType, getAnyType())
+                .build();
+        var livingBeingArrayType = new ArrayType(null, livingBeingType, ArrayKind.READ_WRITE);
+        var livingBeingOffspringsField = FieldBuilder.newBuilder("后代", "offsprings", livingBeingType, livingBeingArrayType)
+                .isChild(true)
+                .build();
+        var livingBeingAncestorsField = FieldBuilder.newBuilder("祖先", "ancestors", livingBeingType, livingBeingArrayType)
+                .isChild(true)
+                .build();
+        var animalType = ClassTypeBuilder.newBuilder("动物", "Animal")
+                .superClass(livingBeingType)
+                .build();
+        var animalIntelligenceField = FieldBuilder.newBuilder("智力", "intelligence", animalType, getLongType())
+                .build();
+        var humanType = ClassTypeBuilder.newBuilder("人类", "Human")
+                .superClass(animalType)
+                .build();
+        var humanOccupationField = FieldBuilder.newBuilder("职业", "occupation", humanType, getStringType())
+                .build();
+        if (initIds)
+            TestUtils.initEntityIds(livingBeingType);
+        return new LivingBeingTypes(
+                livingBeingType,
+                animalType,
+                humanType,
+                livingBeingArrayType,
+                livingBeingAgeField,
+                livingBeingExtraInfoField,
+                livingBeingOffspringsField,
+                livingBeingAncestorsField,
+                animalIntelligenceField,
+                humanOccupationField
+        );
+    }
+
+    public static ClassInstance createHuman(LivingBeingTypes livingBeingTypes, boolean initIds) {
+        var human = ClassInstanceBuilder.newBuilder(livingBeingTypes.humanType())
+                .data(Map.of(
+                        livingBeingTypes.livingBeingAgeField(),
+                        Instances.longInstance(30L),
+                        livingBeingTypes.livingBeingAncestorsField(),
+                        new ArrayInstance(livingBeingTypes.livingBeingArrayType()),
+                        livingBeingTypes.livingBeingOffspringsField(),
+                        new ArrayInstance(livingBeingTypes.livingBeingArrayType()),
+                        livingBeingTypes.livingBeingExtraInfoFIeld(),
+                        Instances.stringInstance("非常聪明"),
+                        livingBeingTypes.animalIntelligenceField(),
+                        Instances.longInstance(160L),
+                        livingBeingTypes.humanOccupationField(),
+                        Instances.stringInstance("程序员")
+                ))
+                .build();
+        if (initIds)
+            TestUtils.initInstanceIds(human);
+        return human;
     }
 
     public static ClassInstance createFoo(FooTypes fooTypes) {
-        return ClassInstanceBuilder.newBuilder(fooTypes.fooType())
+        return createFoo(fooTypes, false);
+    }
+
+    public static ClassInstance createFoo(FooTypes fooTypes, boolean initIds) {
+        var foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType())
                 .data(Map.of(
                         fooTypes.fooNameField(),
                         Instances.stringInstance("foo"),
@@ -483,10 +565,86 @@ public class MockUtils {
                                                 ))
                                                 .build()
                                 )
+                        ),
+                        fooTypes.fooQuxField(),
+                        ClassInstanceBuilder.newBuilder(fooTypes.quxType())
+                                .data(
+                                        Map.of(
+                                                fooTypes.quxAmountField(),
+                                                Instances.longInstance(100L)
+                                        )
+                                )
+                                .build(),
+                        fooTypes.fooBazListField(),
+                        new ArrayInstance(
+                                fooTypes.bazArrayType(),
+                                List.of(
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+                                                .data(Map.of(
+                                                        fooTypes.bazBarsField(),
+                                                        new ArrayInstance(
+                                                                fooTypes.barArrayType(),
+                                                                List.of(
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                                .data(Map.of(
+                                                                                        fooTypes.barCodeField(),
+                                                                                        Instances.stringInstance("bar003")
+                                                                                ))
+                                                                                .build(),
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                                .data(Map.of(
+                                                                                        fooTypes.barCodeField(),
+                                                                                        Instances.stringInstance("bar004")
+                                                                                ))
+                                                                                .build()
+                                                                )
+                                                        )
+                                                ))
+                                                .build(),
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType())
+                                                .data(Map.of(
+                                                        fooTypes.bazBarsField(),
+                                                        new ArrayInstance(
+                                                                fooTypes.barArrayType(),
+                                                                List.of(
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                                .data(Map.of(
+                                                                                        fooTypes.barCodeField(),
+                                                                                        Instances.stringInstance("bar005")
+                                                                                ))
+                                                                                .build(),
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType())
+                                                                                .data(Map.of(
+                                                                                        fooTypes.barCodeField(),
+                                                                                        Instances.stringInstance("bar006")
+                                                                                ))
+                                                                                .build()
+                                                                )
+                                                        )
+                                                ))
+                                                .build()
+                                )
                         )
                 ))
                 .build();
+        if (initIds)
+            TestUtils.initInstanceIds(foo);
+        return foo;
     }
 
 
+    public static Foo getFoo() {
+        Foo foo = new Foo(
+                "Big Foo",
+                new Bar("Bar001")
+        );
+        foo.setCode("Foo001");
+
+        foo.setQux(new Qux(100));
+        Baz baz1 = new Baz();
+        baz1.setBars(List.of(new Bar("Bar002")));
+        Baz baz2 = new Baz();
+        foo.setBazList(List.of(baz1, baz2));
+        return foo;
+    }
 }

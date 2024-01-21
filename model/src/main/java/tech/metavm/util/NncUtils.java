@@ -1382,7 +1382,7 @@ public class NncUtils {
         if (value != null)
             return value;
         else
-            throw new InternalException("参数不能为空");
+            throw new NullPointerException();
     }
 
     @Nullable

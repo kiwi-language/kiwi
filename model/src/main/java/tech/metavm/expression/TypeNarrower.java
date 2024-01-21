@@ -44,8 +44,8 @@ public class TypeNarrower {
 
     private Map<Expression, Type> processBinary(BinaryExpression binaryExpression, boolean negated) {
         var op = binaryExpression.getOperator();
-        var first = binaryExpression.getFirst();
-        var second = binaryExpression.getSecond();
+        var first = binaryExpression.getLeft();
+        var second = binaryExpression.getRight();
         final Map<Expression, Type> result = new HashMap<>();
         if (op == BinaryOperator.AND || op == BinaryOperator.OR) {
             if (negated) {

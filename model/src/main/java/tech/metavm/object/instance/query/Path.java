@@ -4,6 +4,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ValueUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,7 +37,7 @@ public class Path {
     private final int length;
 
     public Path(List<String> values, int offset, int length) {
-        this.values = values;
+        this.values = new ArrayList<>(values);
         this.offset = offset;
         this.length = length;
     }

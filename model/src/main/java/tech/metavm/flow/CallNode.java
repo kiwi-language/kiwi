@@ -85,10 +85,10 @@ public abstract class CallNode extends NodeRT {
         }
         var self = getSelf(frame);
         if (flow instanceof Method method && method.isInstanceMethod())
-            flow = requireNonNull(self).getType().resolveMethod(method, frame.getParameterizedFlowProvider());
+            flow = requireNonNull(self).getType().resolveMethod(method, frame.parameterizedFlowProvider());
         FlowExecResult result = flow.execute(self, argInstances,
                 frame.getInstanceRepository(),
-                frame.getParameterizedFlowProvider());
+                frame.parameterizedFlowProvider());
         if (result.exception() != null)
             return frame.catchException(this, result.exception());
         else

@@ -21,7 +21,6 @@ import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
-import tech.metavm.object.type.IdConstants;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 
 import javax.sql.DataSource;
@@ -29,6 +28,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class TestUtils {
 
@@ -61,14 +61,13 @@ public class TestUtils {
         }
     }
 
-    public static void startTransaction() {
+    public static void beginTransaction() {
         TransactionSynchronizationManager.setActualTransactionActive(true);
         TransactionSynchronizationManager.initSynchronization();
     }
 
     public static void commitTransaction() {
         var synchronizations = TransactionSynchronizationManager.getSynchronizations();
-        ;
         synchronizations.forEach(TransactionSynchronization::afterCommit);
         TransactionSynchronizationManager.clear();
     }
@@ -177,10 +176,22 @@ public class TestUtils {
         };
     }
 
-    public static void doInTransaction(Runnable action) {
-        startTransaction();
+    public static void doInTransactionWithoutResult(Runnable action) {
+        beginTransaction();
         action.run();
         commitTransaction();
+    }
+
+    public static <T> T doInTransaction(Supplier<T> action) {
+        try {
+            beginTransaction();
+            var result = action.get();
+            commitTransaction();
+            return result;
+        }
+        finally {
+            TransactionSynchronizationManager.clear();
+        }
     }
 
     public static DataSource createDataSource() {
@@ -234,38 +245,50 @@ public class TestUtils {
         });
     }
 
+    public static void initEntityIds(Object root, EntityIdProvider idProvider) {
+        EntityUtils.visitGraph(List.of(root), o -> {
+            if (o instanceof Entity entity && entity.isIdNull()) {
+                var type = ModelDefRegistry.getDefContext().getType(EntityUtils.getRealType(entity.getClass()));
+                entity.initId(idProvider.allocateOne(TestConstants.APP_ID, type));
+            }
+        });
+    }
+
     public static void initInstanceIds(DurableInstance instance) {
         initInstanceIds(List.of(instance));
     }
 
     public static void initInstanceIds(List<DurableInstance> instances) {
-        long offset = 1000000L;
-        var ref = new Object() {
-            long nextObjectId = IdConstants.CLASS_REGION_BASE + offset;
-            long nextEnumId = IdConstants.ENUM_REGION_BASE + offset;
-            long nextReadWriteArrayId = IdConstants.READ_WRITE_ARRAY_REGION_BASE + offset;
-            long nextChildArrayId = IdConstants.CHILD_ARRAY_REGION_BASE + offset;
-            long nextReadonlyArrayId = IdConstants.READ_ONLY_ARRAY_REGION_BASE + offset;
-        };
+        initInstanceIds(instances, new MockIdProvider());
+    }
+
+    public static void initInstanceIds(List<DurableInstance> instances, EntityIdProvider idProvider) {
+//        var ref = new Object() {
+//            long nextObjectId = IdConstants.CLASS_REGION_BASE + offset;
+//            long nextEnumId = IdConstants.ENUM_REGION_BASE + offset;
+//            long nextReadWriteArrayId = IdConstants.READ_WRITE_ARRAY_REGION_BASE + offset;
+//            long nextChildArrayId = IdConstants.CHILD_ARRAY_REGION_BASE + offset;
+//            long nextReadonlyArrayId = IdConstants.READ_ONLY_ARRAY_REGION_BASE + offset;
+//        };
         var visitor = new GraphVisitor() {
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
                 if (!instance.isIdInitialized()) {
-                    long id;
-                    if (instance instanceof ArrayInstance arrayInstance) {
-                        id = switch (arrayInstance.getType().getKind()) {
-                            case READ_WRITE -> ref.nextReadWriteArrayId++;
-                            case CHILD -> ref.nextChildArrayId++;
-                            case READ_ONLY -> ref.nextReadonlyArrayId++;
-                        };
-                    } else if (instance instanceof ClassInstance classInstance) {
-                        var type = classInstance.getType();
-                        if (type.isEnum())
-                            id = ref.nextEnumId++;
-                        else
-                            id = ref.nextObjectId++;
-                    } else
-                        throw new InternalException("Invalid instance: " + instance);
+                    long id = idProvider.allocateOne(TestConstants.APP_ID, instance.getType());
+//                    if (instance instanceof ArrayInstance arrayInstance) {
+//                        id = switch (arrayInstance.getType().getKind()) {
+//                            case READ_WRITE -> ref.nextReadWriteArrayId++;
+//                            case CHILD -> ref.nextChildArrayId++;
+//                            case READ_ONLY -> ref.nextReadonlyArrayId++;
+//                        };
+//                    } else if (instance instanceof ClassInstance classInstance) {
+//                        var type = classInstance.getType();
+//                        if (type.isEnum())
+//                            id = ref.nextEnumId++;
+//                        else
+//                            id = ref.nextObjectId++;
+//                    } else
+//                        throw new InternalException("Invalid instance: " + instance);
                     instance.initId(PhysicalId.of(id));
                 }
                 return super.visitDurableInstance(instance);

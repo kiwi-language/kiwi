@@ -46,7 +46,7 @@ public class InstanceOfExpression extends Expression {
     }
 
     @Override
-    public BooleanInstance evaluate(EvaluationContext context) {
+    protected BooleanInstance evaluateSelf(EvaluationContext context) {
         return Instances.booleanInstance(targetType.isInstance(operand.evaluate(context)));
     }
 

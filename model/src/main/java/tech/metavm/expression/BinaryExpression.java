@@ -13,33 +13,33 @@ import java.util.Objects;
 public class BinaryExpression extends Expression {
     @EntityField("运算符")
     private final BinaryOperator operator;
-    @ChildEntity("运算数一")
-    private final Expression first;
-    @ChildEntity("运算数二")
-    private final Expression second;
+    @ChildEntity("左表达式")
+    private final Expression left;
+    @ChildEntity("右表达式")
+    private final Expression right;
 
-    public BinaryExpression(BinaryOperator operator, Expression first, Expression second) {
+    public BinaryExpression(BinaryOperator operator, Expression left, Expression right) {
         this.operator = operator;
-        this.first = addChild(first.copy(), "first");
-        this.second = addChild(second.copy(), "second");
+        this.left = addChild(left.copy(), "left");
+        this.right = addChild(right.copy(), "right");
     }
 
     public BinaryOperator getOperator() {
         return operator;
     }
 
-    public Expression getFirst() {
-        return first;
+    public Expression getLeft() {
+        return left;
     }
 
-    public Expression getSecond() {
-        return second;
+    public Expression getRight() {
+        return right;
     }
 
     @Override
     public String buildSelf(VarType symbolType) {
-        String firstExpr = first.build(symbolType, first.precedence() > precedence());
-        String secondExpr = second.build(symbolType, second.precedence() >= precedence());
+        String firstExpr = left.build(symbolType, left.precedence() > precedence());
+        String secondExpr = right.build(symbolType, right.precedence() >= precedence());
         return firstExpr + " " + operator + " " + secondExpr;
     }
 
@@ -53,34 +53,34 @@ public class BinaryExpression extends Expression {
         if(operator.resultType() != null) {
             return operator.resultType();
         }
-        return ValueUtil.getCompatibleType(first.getType(), second.getType());
+        return ValueUtil.getCompatibleType(left.getType(), right.getType());
     }
 
     @Override
     public List<Expression> getChildren() {
-        return List.of(first, second);
+        return List.of(left, right);
     }
 
     @Override
-    public Instance evaluate(EvaluationContext context) {
-        return operator.evaluate(first.evaluate(context), second.evaluate(context));
+    protected Instance evaluateSelf(EvaluationContext context) {
+        return operator.evaluate(left.evaluate(context), right.evaluate(context));
     }
 
     @Override
     public <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
-        return NncUtils.union(first.extractExpressions(klass), second.extractExpressions(klass));
+        return NncUtils.union(left.extractExpressions(klass), right.extractExpressions(klass));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof BinaryExpression that)) return false;
-        return operator == that.operator && Objects.equals(first, that.first) && Objects.equals(second, that.second);
+        return operator == that.operator && Objects.equals(left, that.left) && Objects.equals(right, that.right);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operator, first, second);
+        return Objects.hash(operator, left, right);
     }
 
     @Override

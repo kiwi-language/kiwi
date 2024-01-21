@@ -40,4 +40,10 @@ public class MemColumnStore implements ColumnStore {
     @Override
     public void save() {
     }
+
+    public MemColumnStore copy() {
+        var result = new MemColumnStore();
+        result.columnNameMap.putAll(columnNameMap);
+        return result;
+    }
 }

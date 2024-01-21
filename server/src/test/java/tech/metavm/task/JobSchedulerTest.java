@@ -13,41 +13,42 @@ import static tech.metavm.util.TestConstants.APP_ID;
 public class JobSchedulerTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
-    @SuppressWarnings("FieldCanBeLocal")
-    private TransactionOperations transactionOperations;
-    @SuppressWarnings("FieldCanBeLocal")
-    private MemInstanceStore instanceStore;
     private Scheduler jobScheduler;
+    private MemInstanceStore instanceStore;
 
     @Override
     protected void setUp() throws Exception {
-        MockIdProvider idProvider = new MockIdProvider();
-        instanceStore = new MemInstanceStore();
-        entityContextFactory = TestUtils.getEntityContextFactory(idProvider, instanceStore, new MockInstanceLogService(), instanceStore.getIndexEntryMapper());
-        BootstrapUtils.bootstrap(entityContextFactory);
-        transactionOperations = new MockTransactionOperations();
+        var bootResult = BootstrapUtils.bootstrap();
+        instanceStore = bootResult.instanceStore();
+        entityContextFactory = bootResult.entityContextFactory();
+        TransactionOperations transactionOperations = new MockTransactionOperations();
         Scheduler.THREAD_POOL_SIZE = 1;
         jobScheduler = new Scheduler(entityContextFactory, transactionOperations);
-        jobScheduler.createSchedulerStatus();
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                context.bind(new JobSchedulerStatus());
+                context.bind(new TaskSignal(TestConstants.APP_ID));
+                context.finish();
+            }
+        });
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     public void test() {
         TestJob testJob;
-        try(IEntityContext context = newContext()) {
+        TestUtils.beginTransaction();
+        try(var context = newContext()) {
             testJob = new TestJob();
             context.bind(testJob);
             context.finish();
-
-            jobScheduler.sendHeartbeat();
-            jobScheduler.pollSignals();
-            jobScheduler.waitForJobDone(testJob, 10);
         }
-
-        try(var context = newContext()) {
-            testJob = context.getEntity(TestJob.class, testJob.getId());
-            Assert.assertTrue(testJob.isFinished());
-            Assert.assertEquals(10, testJob.getCount());
-        }
+        TestUtils.commitTransaction();
+        Assert.assertNotNull(instanceStore.get(testJob.getId()));
+        TestUtils.doInTransactionWithoutResult(() -> jobScheduler.sendHeartbeat());
+        jobScheduler.pollSignals();
+        jobScheduler.schedule();
+        jobScheduler.waitForJobDone(testJob, 10);
+        Assert.assertNull(instanceStore.get(testJob.getId()));
     }
 
     private IEntityContext newContext() {
