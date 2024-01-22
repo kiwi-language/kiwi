@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.metavm.object.type.PrimitiveKind;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class PrimitiveFieldValue extends FieldValue {
 
@@ -70,7 +71,7 @@ public class PrimitiveFieldValue extends FieldValue {
     }
 
     @Override
-    public boolean valueEquals(FieldValue that) {
+    public boolean valueEquals(FieldValue that, Set<String> newIds) {
         if (that instanceof PrimitiveFieldValue thatPrimitiveFieldValue) {
             return primitiveKind == thatPrimitiveFieldValue.primitiveKind
                     && Objects.equals(value, thatPrimitiveFieldValue.value);

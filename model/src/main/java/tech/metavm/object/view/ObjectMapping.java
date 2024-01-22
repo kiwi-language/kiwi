@@ -3,6 +3,7 @@ package tech.metavm.object.view;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeFunctions;
+import tech.metavm.expression.Expressions;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
@@ -51,22 +52,58 @@ public abstract class ObjectMapping extends Mapping implements LocalKey, Generic
     }
 
     protected Flow generateUnmappingCode(FunctionTypeProvider functionTypeProvider) {
+        var fromViewMethod = findFromViewMethod();
         var scope = Objects.requireNonNull(unmapper).newEphemeralRootScope();
         var input = Nodes.input(unmapper);
-        var source = new FunctionCallNode(
-                null, "来源", "source", scope.getLastNode(), scope,
-                NativeFunctions.getSource(), List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
+        var isSourcePresent = Nodes.functionCall(
+                "来源是否存在", scope,
+                NativeFunctions.isSourcePresent(),
+                List.of(Nodes.argument(NativeFunctions.isSourcePresent(), 0, Values.inputValue(input, 0)))
         );
-        var castedSource = new CastNode(
-                null, "Casted来源", "CastedSource", getSourceType(), scope.getLastNode(),
-                scope, Values.node(source)
+        Nodes.branch(
+                "分支", null, scope,
+                Values.node(isSourcePresent),
+                trueBranch -> {
+                    var bodyScope = trueBranch.getScope();
+                    var source = Nodes.functionCall(
+                            "来源", bodyScope,
+                            NativeFunctions.getSource(),
+                            List.of(Nodes.argument(NativeFunctions.getSource(), 0, Values.inputValue(input, 0)))
+                    );
+                    var castedSource = Nodes.cast("Casted来源", getSourceType(), Values.node(source), bodyScope);
+                    Nodes.methodCall(
+                            "保存视图", bodyScope, Values.node(castedSource),
+                            getWriteMethod(), List.of(Nodes.argument(getWriteMethod(), 0, Values.inputValue(input, 0)))
+                    );
+                    Nodes.ret("返回", bodyScope, Values.node(castedSource));
+                },
+                falseBranch -> {
+                    var bodyScope = falseBranch.getScope();
+                    if (fromViewMethod != null) {
+                        var fromView = Nodes.methodCall(
+                                "从视图创建", bodyScope,
+                                null, fromViewMethod,
+                                List.of(
+                                        Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
+                                )
+                        );
+                        Nodes.ret("返回", bodyScope, Values.node(fromView));
+                    } else
+                        Nodes.raise("不支持从视图创建", bodyScope, Values.constant(Expressions.constantString("该对象不支持从视图创建")));
+                },
+                mergeNode -> {}
         );
-        new MethodCallNode(
-                null, "保存视图", "saveView", scope.getLastNode(), scope, Values.node(castedSource),
-                getWriteMethod(), List.of(Nodes.argument(getWriteMethod(), 0, Values.inputValue(input, 0)))
-        );
-        new ReturnNode(null, "返回", "Return", scope.getLastNode(), scope, Values.node(castedSource));
         return unmapper;
+    }
+
+    private Method findFromViewMethod() {
+        return NncUtils.find(getSourceType().getAllMethods(), this::isFromViewMethod);
+    }
+
+    private boolean isFromViewMethod(Method method) {
+        return Objects.equals(method.getCode(), "fromView") &&
+                method.getReturnType().equals(getSourceType()) &&
+                method.getParameters().size() == 1 && method.getParameters().get(0).getType().equals(getTargetType());
     }
 
     @Override

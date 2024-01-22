@@ -3,6 +3,7 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -38,6 +39,7 @@ public class InstanceDTOBuilder {
                         serContext.getRef(instance.getType()),
                         instance.getType().getName(),
                         instance.getTitle(),
+                        Instances.getSourceMappingId(instance),
                         new ClassInstanceParam(
                                 NncUtils.map(
                                         instance.getType().getAllFields(),
@@ -67,6 +69,7 @@ public class InstanceDTOBuilder {
                         serContext.getRef(array.getType()),
                         array.getType().getName(),
                         array.getTitle(),
+                        Instances.getSourceMappingId(array),
                         new ArrayInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(

@@ -3,6 +3,7 @@ package tech.metavm.object.instance.rest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class ReferenceFieldValue extends FieldValue {
 
@@ -42,7 +43,7 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     @Override
-    public boolean valueEquals(FieldValue that) {
+    public boolean valueEquals(FieldValue that, Set<String> newIds) {
         if (that instanceof ReferenceFieldValue thatReferenceFieldValue) {
             return Objects.equals(id, thatReferenceFieldValue.id);
         } else

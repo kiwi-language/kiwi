@@ -5,6 +5,7 @@ import tech.metavm.util.NncUtils;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 public record ArrayInstanceParam(
         boolean elementAsChild,
@@ -16,10 +17,10 @@ public record ArrayInstanceParam(
     }
 
     @Override
-    public boolean valueEquals(InstanceParam that) {
+    public boolean valueEquals(InstanceParam that, Set<String> newIds) {
         if (that instanceof ArrayInstanceParam thatArrayInstanceParam) {
             return elementAsChild == thatArrayInstanceParam.elementAsChild
-                    && NncUtils.listEquals(elements, thatArrayInstanceParam.elements, FieldValue::valueEquals);
+                    && NncUtils.listEquals(elements, thatArrayInstanceParam.elements, (fieldValue, that1) -> fieldValue.valueEquals(that1, newIds));
         } else
             return false;
     }

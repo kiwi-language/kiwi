@@ -29,8 +29,8 @@ public class InstanceFactory {
 
     public static <T extends Instance> T allocate(Class<T> instanceType, Type type, Id id, boolean ephemeral) {
         T instance;
-        if(type instanceof ArrayType arrayType)
-            instance =  instanceType.cast(new ArrayInstance(id, arrayType, ephemeral, null));
+        if (type instanceof ArrayType arrayType)
+            instance = instanceType.cast(new ArrayInstance(id, arrayType, ephemeral, null));
         else
             instance = instanceType.cast(new ClassInstance(id, (ClassType) type, ephemeral, null));
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
@@ -74,49 +74,54 @@ public class InstanceFactory {
         NncUtils.requireTrue(instanceDTO.id() == null,
                 "Id of new instance must be null or zero");
         Type type = getType.apply(instanceDTO.typeRef().id());
+        DurableInstance instance;
         if (type instanceof ClassType classType) {
             ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
             Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(param.fields(), InstanceFieldDTO::fieldId);
-            ClassInstance instance = ClassInstance.allocate(classType, parentRef);
+            ClassInstance object = ClassInstance.allocate(classType, parentRef);
+            instance = object;
             for (Field field : classType.getAllFields()) {
                 if (fieldMap.containsKey(field.tryGetId())) {
                     var fieldValue = resolveValue(
                             fieldMap.get(field.tryGetId()).value(),
                             field.getType(),
                             getType,
-                            InstanceParentRef.ofObject(instance, field),
+                            InstanceParentRef.ofObject(object, field),
                             context
                     );
-//                    if (!field.isChild())
-                        instance.initField(field, fieldValue);
+                    object.initField(field, fieldValue);
                 } else {
-//                    if (!field.isChild())
-                        instance.initField(field, Instances.nullInstance());
+                    object.initField(field, Instances.nullInstance());
                 }
             }
-            instance.ensureAllFieldsInitialized();
-            if (!instance.isEphemeral())
-                context.bind(instance);
-            return instance;
+            object.ensureAllFieldsInitialized();
         } else if (type instanceof ArrayType arrayType) {
             ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
             ArrayInstance array = new ArrayInstance(arrayType, parentRef);
+            instance = array;
             var elements = NncUtils.map(
                     param.elements(),
                     v -> resolveValue(v, arrayType.getElementType(), getType,
                             InstanceParentRef.ofArray(array), context)
             );
-//            if (!array.isChildArray())
-                array.addAll(elements);
-            context.bind(array);
-            return array;
+            array.addAll(elements);
         } else {
             throw new InternalException("Can not create instance for type '" + type + "'");
         }
+        if(instanceDTO.sourceMappingId() != null) {
+            var sourceMapping = context.getMappingProvider().getMapping(instanceDTO.sourceMappingId());
+            var source = sourceMapping.unmap(instance, context, context.getParameterizedFlowProvider());
+            instance.setSourceRef(new SourceRef(source, sourceMapping));
+            context.bind(instance);
+            context.bind(source);
+        }
+        else
+            context.bind(instance);
+        return instance;
     }
 
     public static Instance resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
-        return resolveValue(rawValue, type, context::getType,  null,
+        return resolveValue(rawValue, type, context::getType, null,
                 Objects.requireNonNull(context.getInstanceContext()));
     }
 

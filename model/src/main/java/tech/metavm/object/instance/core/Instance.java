@@ -128,6 +128,7 @@ public abstract class Instance {
                     serContext.getRef(getType()),
                     getType().getName(),
                     getTitle(),
+                    Instances.getSourceMappingId(this),
                     param
             );
         }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.Objects;
+import java.util.Set;
 
 @JsonSubTypes(
         {
@@ -47,7 +48,7 @@ public abstract class FieldValue {
         return Objects.hash(displayValue);
     }
 
-    public abstract boolean valueEquals(FieldValue that);
+    public abstract boolean valueEquals(FieldValue that, Set<String> newIds);
 
     public InstanceDTO underlyingInstance() {
         throw new UnsupportedOperationException();

@@ -4,10 +4,7 @@ import tech.metavm.object.instance.InstanceKind;
 import tech.metavm.util.NncUtils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public record ClassInstanceParam(
         List<InstanceFieldDTO> fields
@@ -24,11 +21,11 @@ public record ClassInstanceParam(
     }
 
     @Override
-    public boolean valueEquals(InstanceParam param1) {
+    public boolean valueEquals(InstanceParam param1, Set<String> newIds) {
         if (param1 instanceof ClassInstanceParam param2 && fields.size() == param2.fields.size()) {
             var fields1 = fields.stream().sorted(Comparator.comparingLong(InstanceFieldDTO::fieldId)).toList();
             var fields2 = param2.fields.stream().sorted(Comparator.comparingLong(InstanceFieldDTO::fieldId)).toList();
-            return NncUtils.listEquals(fields1, fields2, InstanceFieldDTO::valueEquals);
+            return NncUtils.listEquals(fields1, fields2, (fieldDTO, that) -> fieldDTO.valueEquals(that, newIds));
         } else
             return false;
     }

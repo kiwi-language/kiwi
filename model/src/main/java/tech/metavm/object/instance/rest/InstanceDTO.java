@@ -12,12 +12,14 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public record InstanceDTO(
         @Nullable String id,
         RefDTO typeRef,
         String typeName,
         String title,
+        @Nullable Long sourceMappingId,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
         InstanceParam param
@@ -33,6 +35,7 @@ public record InstanceDTO(
                 typeRef,
                 null,
                 null,
+                null,
                 new ClassInstanceParam(fields)
         );
     }
@@ -43,13 +46,13 @@ public record InstanceDTO(
 
     public static InstanceDTO createArrayInstance(@Nullable String id, RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, typeRef, null, null,
+                id, typeRef, null, null, null,
                 new ArrayInstanceParam(elementAsChild, elements)
         );
     }
 
     public InstanceDTO copyWithParam(InstanceParam param) {
-        return new InstanceDTO(id, typeRef, typeName, title, param);
+        return new InstanceDTO(id, typeRef, typeName, title, sourceMappingId, param);
     }
 
     @Override
@@ -83,15 +86,21 @@ public record InstanceDTO(
     }
 
     @JsonIgnore
+    public int getArraySize() {
+        var param = (ArrayInstanceParam) param();
+        return param.elements().size();
+    }
+
+    @JsonIgnore
     public int arraySize() {
         var param = (ArrayInstanceParam) param();
         return param.elements().size();
     }
 
-    public boolean valueEquals(InstanceDTO that) {
-        return Objects.equals(id, that.id)
+    public boolean valueEquals(InstanceDTO that, Set<String> newIds) {
+        return (Objects.equals(id, that.id) || newIds.contains(id) && that.id == null || newIds.contains(that.id) && id == null)
                 && Objects.equals(typeRef, that.typeRef)
-                && param.valueEquals(that.param);
+                && param.valueEquals(that.param, newIds);
     }
 
 }

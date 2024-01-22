@@ -13,6 +13,7 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -89,7 +90,10 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     }
 
     public DurableInstance unmap(DurableInstance view, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        return (DurableInstance) getUnmapper().execute(null, List.of(view), repository, parameterizedFlowProvider).ret();
+        var source = (DurableInstance) Objects.requireNonNull(getUnmapper().execute(null, List.of(view), repository, parameterizedFlowProvider).ret());
+        if(source.getContext() == null)
+            repository.bind(source);
+        return source;
     }
 
     @Override

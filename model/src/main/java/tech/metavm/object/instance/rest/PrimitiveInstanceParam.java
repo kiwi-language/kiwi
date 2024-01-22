@@ -4,6 +4,7 @@ import tech.metavm.object.instance.InstanceKind;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Set;
 
 public record PrimitiveInstanceParam(
         int primitiveKind,
@@ -11,7 +12,7 @@ public record PrimitiveInstanceParam(
 ) implements InstanceParam, Serializable {
 
     @Override
-    public boolean valueEquals(InstanceParam param1) {
+    public boolean valueEquals(InstanceParam param1, Set<String> newIds) {
         if (param1 instanceof PrimitiveInstanceParam param2) {
             return primitiveKind == param2.primitiveKind && Objects.equals(value, param2.value);
         } else

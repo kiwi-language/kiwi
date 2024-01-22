@@ -3,21 +3,22 @@ package tech.metavm.flow;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.ClassTypeBuilder;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.util.Instances;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TriConsumer;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Nodes {
+
+    // create raise node
+    public static RaiseNode raise(String name, ScopeRT scope, Value message) {
+        return new RaiseNode(null, name, null, scope.getLastNode(), scope,
+                RaiseParameterKind.MESSAGE, null, message);
+    }
 
     public static SelfNode self(String name, @Nullable String code, ClassType type, ScopeRT scope) {
         return new SelfNode(null, name, code, type, scope.getLastNode(), scope);
@@ -28,8 +29,8 @@ public class Nodes {
         return new NewArrayNode(null, name, code, type, value, parentRef, scope.getLastNode(), scope);
     }
 
-    public static ReturnNode ret(String name, @Nullable String code, ScopeRT scope, @Nullable Value value) {
-        return new ReturnNode(null, name, code, scope.getLastNode(), scope, value);
+    public static ReturnNode ret(String name, ScopeRT scope, @Nullable Value value) {
+        return new ReturnNode(null, name, null, scope.getLastNode(), scope, value);
     }
 
     public static NodeRT forEach(
@@ -86,6 +87,20 @@ public class Nodes {
         );
         processMerge.accept(mergeNode);
         return node;
+    }
+
+    public static FunctionCallNode functionCall(String name, ScopeRT scope,
+                                                Function function, List<Argument> arguments) {
+        return new FunctionCallNode(null, name, null, scope.getLastNode(), scope, function, arguments);
+    }
+
+    public static MethodCallNode methodCall(String name, ScopeRT scope,
+                                            Value self, Method method, List<Argument> arguments) {
+        return new MethodCallNode(null, name, null, scope.getLastNode(), scope, self, method, arguments);
+    }
+
+    public static CastNode cast(String name, Type outputType, Value object, ScopeRT scope) {
+        return new CastNode(null, name, null, outputType, scope.getLastNode(), scope, object);
     }
 
     public static InputNode input(Flow flow) {

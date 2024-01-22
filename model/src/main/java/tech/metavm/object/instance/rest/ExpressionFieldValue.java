@@ -3,6 +3,7 @@ package tech.metavm.object.instance.rest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class ExpressionFieldValue extends FieldValue {
 
@@ -18,7 +19,7 @@ public class ExpressionFieldValue extends FieldValue {
     }
 
     @Override
-    public boolean valueEquals(FieldValue that) {
+    public boolean valueEquals(FieldValue that, Set<String> newIds) {
         if(that instanceof ExpressionFieldValue thatExprFieldValue)
             return Objects.equals(expression, thatExprFieldValue.expression);
         else

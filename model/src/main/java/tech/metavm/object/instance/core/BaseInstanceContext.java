@@ -303,7 +303,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         else
             throw new InternalException("Invalid view type: " + viewType);
-        source2views.computeIfAbsent(view.tryGetSource(), k -> new ArrayList<>()).add(view);
+//        source2views.computeIfAbsent(view.tryGetSource(), k -> new ArrayList<>()).add(view);
         return view;
     }
 
@@ -455,10 +455,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected void onIdInitialized(DurableInstance instance) {
         instanceMap.put(instance.getId(), instance);
-        for (var listener : listeners) {
-            listener.onInstanceIdInit(instance);
-        }
-//        listeners.forEach(l -> l.onIdInitialized(instance));
+        listeners.forEach(l -> l.onInstanceIdInit(instance));
+        forEachView(instance, v ->
+                v.initId(new DefaultViewId(v.getSourceRef().mapping().getId(), v.getSource().getId())));
     }
 
     protected void onContextInitializeId() {
@@ -673,6 +672,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail = instance;
         }
         instance.setContext(this);
+        if(instance.isView())
+            source2views.computeIfAbsent(instance.getSource(), k -> new ArrayList<>()).add(instance);
         if(instance.getId() != null) {
             if (instanceMap.put(instance.getId(), instance) != null)
                 LOGGER.warn("Duplicate instance add to context: " + instance.getId());

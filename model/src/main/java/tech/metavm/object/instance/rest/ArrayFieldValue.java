@@ -5,6 +5,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class ArrayFieldValue extends FieldValue {
 
@@ -48,11 +49,12 @@ public class ArrayFieldValue extends FieldValue {
     }
 
     @Override
-    public boolean valueEquals(FieldValue that) {
+    public boolean valueEquals(FieldValue that, Set<String> newIds) {
         if (that instanceof ArrayFieldValue thatArrayFieldValue) {
             return Objects.equals(id, thatArrayFieldValue.id)
                     && elementAsChild == thatArrayFieldValue.elementAsChild
-                    && NncUtils.listEquals(elements, thatArrayFieldValue.elements, FieldValue::valueEquals);
+                    && NncUtils.listEquals(elements, thatArrayFieldValue.elements,
+                    (fieldValue, that1) -> fieldValue.valueEquals(that1, newIds));
         } else
             return false;
     }

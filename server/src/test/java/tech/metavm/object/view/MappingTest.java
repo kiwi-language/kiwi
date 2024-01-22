@@ -22,6 +22,7 @@ import tech.metavm.util.*;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class MappingTest extends TestCase {
 
@@ -233,6 +234,26 @@ public class MappingTest extends TestCase {
                                                                                 )
                                                                         )
                                                                 )
+                                                        ),
+                                                        InstanceFieldValue.of(
+                                                                InstanceDTO.createClassInstance(
+                                                                        null,
+                                                                        RefDTO.fromId(skuViewTypeDTO.id()),
+                                                                        List.of(
+                                                                                InstanceFieldDTO.create(
+                                                                                        skuViewTitleFieldId,
+                                                                                        PrimitiveFieldValue.createString("42")
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        skuViewPriceFieldId,
+                                                                                        PrimitiveFieldValue.createDouble(100.0)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        skuViewAmountFieldId,
+                                                                                        PrimitiveFieldValue.createLong(100)
+                                                                                )
+                                                                        )
+                                                                )
                                                         )
                                                 )
                                         )
@@ -242,31 +263,65 @@ public class MappingTest extends TestCase {
         );
         saveInstance(productView);
         var loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
-        MatcherAssert.assertThat(loadedProductView, InstanceDTOMatcher.of(productView));
-
-        // test removing an SKU
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
+        Assert.assertEquals(3, skuListView.getArraySize());
+        var newSkuId = Objects.requireNonNull(skuListView.getElement(2).underlyingInstance().id());
+        MatcherAssert.assertThat(loadedProductView, new InstanceDTOMatcher(productView, Set.of(newSkuId)));
+
         var sku = skuListView.getElement(1);
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(TestUtils.getId(sku)));
         // assert that the sku is actually removed
         loadedProductView = instanceManager.get(viewId.toString(), 1).instance();
         skuListView = ((InstanceFieldValue) (loadedProductView.getFieldValue(productViewSkuListFieldId))).getInstance();
-        Assert.assertEquals(1, skuListView.arraySize());
+        Assert.assertEquals(2, skuListView.arraySize());
 
         // test removing product view
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
     }
 
+    public void testNewRootView() {
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var skuTypeDTO = getType(shoppingTypeIds.skuTypeId());
+        var skuDefaultMapping = NncUtils.findRequired(
+                skuTypeDTO.getClassParam().mappings(),
+                m -> Objects.equals(skuTypeDTO.getClassParam().defaultMappingRef(), m.getRef()));
+        var skuViewTypeDTO = getType(skuDefaultMapping.targetTypeRef().id());
+        var skuViewId = saveInstance(
+                new InstanceDTO(
+                        null,
+                        RefDTO.fromId(skuViewTypeDTO.id()),
+                        null,
+                        null,
+                        skuDefaultMapping.id(),
+                        new ClassInstanceParam(
+                                List.of(
+                                        InstanceFieldDTO.create(
+                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "title"),
+                                                PrimitiveFieldValue.createString("40")
+                                        ),
+                                        InstanceFieldDTO.create(
+                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "price"),
+                                                PrimitiveFieldValue.createDouble(100.0)
+                                        ),
+                                        InstanceFieldDTO.create(
+                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "amount"),
+                                                PrimitiveFieldValue.createLong(100)
+                                        )
+                                )
+                        )
+                )
+        );
+        Assert.assertNotNull(skuViewId);
+    }
+
     private String saveInstance(InstanceDTO instanceDTO) {
-        TestUtils.beginTransaction();
         String id;
         if (instanceDTO.id() == null)
-            id = instanceManager.create(instanceDTO);
+            id = TestUtils.doInTransaction(() -> instanceManager.create(instanceDTO));
         else {
             id = instanceDTO.id();
-            instanceManager.update(instanceDTO);
+            TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(instanceDTO));
         }
-        TestUtils.commitTransaction();
         return id;
     }
 

@@ -3,6 +3,8 @@ package tech.metavm.object.instance.rest;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.util.Set;
+
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes(
         {
@@ -13,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 )
 public interface InstanceParam {
 
-    boolean valueEquals(InstanceParam param1);
+    boolean valueEquals(InstanceParam param1, Set<String> newIds);
 
     int getType();
 

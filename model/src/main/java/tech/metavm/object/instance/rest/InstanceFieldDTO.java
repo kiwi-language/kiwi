@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.rest;
 
 import java.io.Serializable;
+import java.util.Set;
 
 public record InstanceFieldDTO(
         Long fieldId,
@@ -20,8 +21,8 @@ public record InstanceFieldDTO(
         );
     }
 
-    public boolean valueEquals(InstanceFieldDTO that) {
-        return fieldId.equals(that.fieldId) && value.valueEquals(that.value);
+    public boolean valueEquals(InstanceFieldDTO that, Set<String> newIds) {
+        return fieldId.equals(that.fieldId) && value.valueEquals(that.value, newIds);
     }
 
 }

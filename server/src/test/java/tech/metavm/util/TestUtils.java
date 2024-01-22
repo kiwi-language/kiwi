@@ -177,9 +177,14 @@ public class TestUtils {
     }
 
     public static void doInTransactionWithoutResult(Runnable action) {
-        beginTransaction();
-        action.run();
-        commitTransaction();
+        try {
+            beginTransaction();
+            action.run();
+            commitTransaction();
+        }
+        finally {
+            TransactionSynchronizationManager.clear();
+        }
     }
 
     public static <T> T doInTransaction(Supplier<T> action) {

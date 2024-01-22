@@ -14,7 +14,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType("子流程节点")
+@EntityType("方法调用节点")
 public class MethodCallNode extends CallNode {
 
     public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
@@ -39,11 +39,12 @@ public class MethodCallNode extends CallNode {
     }
 
     @ChildEntity("自身")
+    @Nullable
     private Value self;
 
     public MethodCallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value self, Method method, List<Argument> arguments) {
         super(tmpId, name,  code, prev, scope, method, arguments);
-        this.self = addChild(self, "self");
+        this.self = self != null ? addChild(self, "self") : null;
     }
 
     @Override
@@ -51,7 +52,7 @@ public class MethodCallNode extends CallNode {
         try(var serContext = SerializeContext.enter()) {
             var method = getMethod();
             return new MethodCallNodeParam(
-                    self.toDTO(),
+                    NncUtils.get(self, Value::toDTO),
                     serContext.getRef(method),
                     serContext.getRef(method.getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO)
@@ -63,7 +64,7 @@ public class MethodCallNode extends CallNode {
         return (Method) super.getSubFlow();
     }
 
-    public Value getSelf() {
+    public @Nullable Value getSelf() {
         return self;
     }
 
@@ -72,7 +73,7 @@ public class MethodCallNode extends CallNode {
     }
 
     protected ClassInstance getSelf(MetaFrame frame) {
-        return (ClassInstance) self.evaluate(frame);
+        return self != null ? (ClassInstance) self.evaluate(frame) : null;
     }
 
     @Override

@@ -2,6 +2,7 @@ package tech.metavm.object.view;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.slf4j.Logger;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
@@ -28,6 +29,8 @@ import static tech.metavm.entity.StandardTypes.getStringType;
 
 public class MappingSaverTest extends TestCase {
 
+    public static final Logger logger = org.slf4j.LoggerFactory.getLogger(MappingSaverTest.class);
+    
     private InstanceRepository instanceRepository;
     private TypeProviders typeProviders;
 
@@ -38,6 +41,34 @@ public class MappingSaverTest extends TestCase {
         typeProviders = new TypeProviders();
         MockStandardTypesInitializer.init();
         MockNativeFunctionsInitializer.init(typeProviders.functionTypeProvider);
+    }
+
+    public void testFromView() {
+        var typeRepository = new MockTypeRepository();
+        var arrayMappingRepo = new MockArrayMappingRepository();
+        var mappingProvider = new MockMappingRepository();
+        MappingSaver saver = new MappingSaver(
+                instanceRepository,
+                typeRepository,
+                new MockFunctionTypeProvider(),
+                new MockArrayTypeProvider(),
+                mappingProvider,
+                arrayMappingRepo
+        );
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
+                .build();
+        FieldBuilder.newBuilder("name", "name", fooType, getStringType())
+                .asTitle()
+                .build();
+        TestUtils.initEntityIds(fooType);
+        var mapping = saver.saveBuiltinMapping(fooType, true);
+        var fromViewMethod = MethodBuilder.newBuilder(fooType, "从视图创建", "fromView", typeProviders.functionTypeProvider)
+                .parameters(new Parameter(null, "view", "view", mapping.getTargetType()))
+                .returnType(fooType)
+                .build();
+        TestUtils.initEntityIds(fromViewMethod);
+        saver.saveBuiltinMapping(fooType, true);
+        logger.info(mapping.getUnmapper().getText());
     }
 
     public void testSaveBuiltin() {
@@ -69,7 +100,7 @@ public class MappingSaverTest extends TestCase {
             var selfNode = Nodes.self("Self", null, fooType, scope);
             var barsNode = Nodes.newArray("NewArray", null, barReadWriteArrayType,
                     Values.nodeProperty(selfNode, fooBarsField), null, scope);
-            Nodes.ret("Return", null, scope, Values.node(barsNode));
+            Nodes.ret("Return", scope, Values.node(barsNode));
         }
 
         // generate setBars method
@@ -87,7 +118,7 @@ public class MappingSaverTest extends TestCase {
                                 element.get(), bodyScope);
                     },
                     scope);
-            Nodes.ret("Return", null, scope, null);
+            Nodes.ret("Return", scope, null);
         }
         TestUtils.initEntityIds(fooType);
 
@@ -136,8 +167,8 @@ public class MappingSaverTest extends TestCase {
 
         TestUtils.initInstanceIds(foo);
 
-        System.out.println(barArrayMapping.getMapper().getText());
-        System.out.println(barArrayMapping.getUnmapper().getText());
+        logger.info(barArrayMapping.getMapper().getText());
+        logger.info(barArrayMapping.getUnmapper().getText());
 
         TestUtils.initEntityIds(fooType);
 
@@ -159,12 +190,12 @@ public class MappingSaverTest extends TestCase {
         Assert.assertTrue(barView.getId() instanceof ChildViewId);
 
         // mapping
-        System.out.println(fooMapping.getMapper().getText());
-        System.out.println(fooMapping.getReadMethod().getText());
+        logger.info(fooMapping.getMapper().getText());
+        logger.info(fooMapping.getReadMethod().getText());
 
         // Unmapping
-        System.out.println(fooMapping.getUnmapper().getText());
-        System.out.println(fooMapping.getWriteMethod().getText());
+        logger.info(fooMapping.getUnmapper().getText());
+        logger.info(fooMapping.getWriteMethod().getText());
 
         fooView.setField("name", Instances.stringInstance("foo2"));
         barView.setField("code", Instances.stringInstance("bar002"));
@@ -209,7 +240,7 @@ public class MappingSaverTest extends TestCase {
                     Values.nodeProperty(self, skuListField),
                     null, scope
             );
-            Nodes.ret("Return", "Return", scope, Values.node(skuList));
+            Nodes.ret("Return", scope, Values.node(skuList));
         }
 
         var setSkuListMethod = MethodBuilder.newBuilder(productType, "setSkuList", "setSkuList", typeProviders.functionTypeProvider)
