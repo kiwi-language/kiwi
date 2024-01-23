@@ -48,6 +48,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final Map<Type, DefParser<?, ?, ?>> parsers = new HashMap<>();
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
     private final Map<Long, Object> entityMap = new HashMap<>();
+    private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Long.class),
@@ -119,6 +120,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (existing != null && existing.getParser() == null)
             return existing;
         return parseType(javaType, stage);
+    }
+
+    public boolean isFieldBlacklisted(java.lang.reflect.Field field) {
+        return fieldBlacklist.contains(field);
+    }
+
+    public void setFieldBlacklist(Set<java.lang.reflect.Field> fieldBlacklist) {
+        this.fieldBlacklist.addAll(fieldBlacklist);
     }
 
     @Override
@@ -291,10 +300,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         } else
             def = parser.get();
         var curStage = parser.setStage(stage);
-        if (curStage.isBefore(SIGNATURE) && stage.isAfterOrAt(SIGNATURE))
+        if (curStage.isBefore(SIGNATURE) && stage.isAfterOrAt(SIGNATURE)) {
             parser.generateSignature();
-        if (curStage.isBefore(DECLARATION) && stage.isAfterOrAt(DECLARATION))
+            tryInitDefEntityIds(def);
+        }
+        if (curStage.isBefore(DECLARATION) && stage.isAfterOrAt(DECLARATION)) {
             parser.generateDeclaration();
+            tryInitDefEntityIds(def);
+        }
         if (curStage.isBefore(DEFINITION) && stage.isAfterOrAt(DEFINITION)) {
             parser.generateDefinition();
             afterDefInitialized(def);
@@ -323,6 +336,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
                 throw new InternalException("Def for type " + def.getType() + " already exists. Def: " + existing);
             type2Def.put(def.getType(), def);
         }
+        tryInitDefEntityIds(def);
     }
 
     @Override
@@ -332,10 +346,15 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
+    public void onInstanceInitialized(DurableInstance instance) {
+    }
+
+    @Override
     public void afterDefInitialized(ModelDef<?, ?> def) {
         if (processedDefSet.contains(def))
             return;
 //        identityContext.unmarkPending(def.getType());
+        tryInitDefEntityIds(def);
         processedDefSet.add(def);
         def.getEntities().forEach(this::writeEntityIfNotPresent);
 //        if (def.getType() instanceof ClassType classType)
@@ -359,17 +378,25 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             writeEntity(entity);
     }
 
-    void writeEntity(Object entity) {
-        if (entities.add(entity)) {
-            if (EntityUtils.isDurable(entity)) {
-                if ((entity instanceof IdInitializing idInitializing) && idInitializing.tryGetId() == null) {
-                    Long id = getEntityId(entity);
-                    if (id != null) {
-                        idInitializing.initId(id);
-                        entityMap.put(id, idInitializing);
-                    }
+    private void tryInitDefEntityIds(ModelDef<?,?> def) {
+        def.getEntities().forEach(entity -> EntityUtils.forEachDescendant(entity, this::tryInitEntityId));
+    }
+
+    private void tryInitEntityId(Object entity) {
+        if (EntityUtils.isDurable(entity)) {
+            if ((entity instanceof IdInitializing idInitializing) && idInitializing.tryGetId() == null) {
+                Long id = getEntityId(entity);
+                if (id != null) {
+                    idInitializing.initId(id);
+                    entityMap.put(id, idInitializing);
                 }
             }
+        }
+    }
+
+    void writeEntity(Object entity) {
+        if (entities.add(entity)) {
+            tryInitEntityId(entity);
 //            if (!containsModel(entity)) {
             pendingModels.add(entity);
             memoryIndex.save(entity);
@@ -441,11 +468,9 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public DurableInstance getInstance(Object model, ModelDef<?, ?> def) {
         if (model instanceof DurableInstance d)
             return d;
-        boolean generated = false;
-        if (pendingModels.contains(model)) {
-            generated = true;
+        if (pendingModels.contains(model))
             generateInstance(model, def);
-        }
+//        assert isInstanceGenerated(model);
         return super.getInstance(model);
     }
 
@@ -478,15 +503,20 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         if (def == null)
             def = getDefByModel(model);
         Long id = getEntityId(model);
-        DurableInstance instance;
-        if (def.isProxySupported()) {
-            instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), NncUtils.get(id, PhysicalId::new),
-                    EntityUtils.isEphemeral(model));
-            addToContext(model, instance);
-            def.initInstanceHelper(instance, model, getObjectInstanceMap());
+        if (id == null) {
+            if (def.isProxySupported()) {
+                var instance = InstanceFactory.allocate(def.getInstanceType(), def.getType(), NncUtils.get(id, PhysicalId::new),
+                        EntityUtils.isEphemeral(model));
+                addToContext(model, instance);
+                def.initInstanceHelper(instance, model, getObjectInstanceMap());
+            } else {
+                var instance = def.createInstanceHelper(model, getObjectInstanceMap(), id);
+                addToContext(model, instance);
+            }
         } else {
-            instance = def.createInstanceHelper(model, getObjectInstanceMap(), id);
+            var instance = getInstanceContext().get(id);
             addToContext(model, instance);
+            def.updateInstanceHelper(model, instance, getObjectInstanceMap());
         }
     }
 
@@ -574,7 +604,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     protected void writeInstances(IInstanceContext instanceContext) {
-        instanceContext.replace(NncUtils.exclude(instances(), Instance::isValue));
+        instances().forEach(i -> {
+            if (!instanceContext.containsInstance(i))
+                instanceContext.bind(i);
+        });
     }
 
     @SuppressWarnings("unused")
@@ -645,4 +678,5 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     public IEntityContext createSame(long appId) {
         throw new UnsupportedOperationException();
     }
+
 }

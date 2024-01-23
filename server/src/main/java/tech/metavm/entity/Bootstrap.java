@@ -15,6 +15,10 @@ import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
+
 import static tech.metavm.util.Constants.ROOT_APP_ID;
 
 @Component
@@ -24,6 +28,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
 
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
+    private final Set<Field> fieldBlacklist = new HashSet<>();
 
     public Bootstrap(EntityContextFactory entityContextFactory, InstanceContextFactory instanceContextFactory,
                      StdAllocators stdAllocators, ColumnStore columnStore) {
@@ -41,6 +46,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
         var defContext = new DefContext(
                 stdAllocators::getId,
                 standardInstanceContext, columnStore);
+        defContext.setFieldBlacklist(fieldBlacklist);
         bridge.setEntityContext(defContext);
         InstanceContextFactory.setDefContext(defContext);
 //        standardInstanceContext.setDefContext(defContext);
@@ -102,6 +108,10 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
             if (instance.isDurable() && instance.tryGetPhysicalId() == null)
                 throw new InternalException("Detected a durable instance with uninitialized id. instance: " + instance);
         }
+    }
+
+    public void setFieldBlacklist(Set<Field> fieldBlacklist) {
+        this.fieldBlacklist.addAll(fieldBlacklist);
     }
 
     @Override

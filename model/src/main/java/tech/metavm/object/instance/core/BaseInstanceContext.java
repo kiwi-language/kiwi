@@ -82,18 +82,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.bindHook = bindHook;
     }
 
-    @Override
-    public void replace(Collection<DurableInstance> instances) {
-        instances = crawNewInstances(instances);
-        if (NncUtils.isEmpty(instances)) {
-            return;
-        }
-        var newInstances = NncUtils.filter(instances, inst -> inst.tryGetPhysicalId() == null);
-        var persistedInstances = NncUtils.filter(instances, inst -> inst.tryGetPhysicalId() != null);
-        newInstances.forEach(this::add);
-        replaceActually(persistedInstances);
-    }
-
     public Profiler getProfiler() {
         return profiler;
     }
@@ -105,20 +93,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     public LockMode getLockMode() {
         return lockMode;
-    }
-
-    private void replaceActually(List<DurableInstance> persistedInstances) {
-        var parentInstances = NncUtils.filter(persistedInstances, inst -> isIdInParent(inst.getPhysicalId()));
-        var selfInstances = NncUtils.exclude(persistedInstances, inst -> isIdInParent(inst.getPhysicalId()));
-        if (NncUtils.isNotEmpty(parentInstances))
-            parent.replace(parentInstances);
-        onReplace(selfInstances);
-        for (var instance : selfInstances) {
-            var existing = instanceMap.get(Objects.requireNonNull(instance.getId()));
-            if (existing != null)
-                evict(existing);
-            add(instance);
-        }
     }
 
     @Override

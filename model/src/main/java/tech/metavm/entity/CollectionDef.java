@@ -65,17 +65,22 @@ public class CollectionDef<E, C extends ReadonlyArray<E>> extends ModelDef<C, Ar
 
     @Override
     public void initInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
+        resetInstance(instance, model, instanceMap);
+    }
+
+    @Override
+    public void updateInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
+        instance.ensureLoaded();
+        resetInstance(instance, model, instanceMap);
+    }
+
+    private void resetInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
         reloadParent(model, instance, instanceMap, defContext);
         if (elementDef instanceof InstanceDef<?>) {
             instance.reset(NncUtils.map(model, e -> elementDef.getInstanceType().cast(e)));
         } else {
             instance.reset(NncUtils.map(NncUtils.listOf(model), instanceMap::getInstance));
         }
-    }
-
-    @Override
-    public void updateInstance(ArrayInstance instance, C model, ObjectInstanceMap instanceMap) {
-        initInstance(instance, model, instanceMap);
     }
 
     @Override

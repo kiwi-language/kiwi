@@ -44,6 +44,9 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     private boolean templateFlag = false;
     //</editor-fold>
 
+    @SuppressWarnings("FieldMayBeFinal") // for unit test
+    private boolean dummyFlag = false;
+
     @Nullable
     private transient Closure<? extends Type> closure;
     @Nullable

@@ -96,6 +96,7 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
 
     @Override
     public void updateInstance(ClassInstance instance, T model, ObjectInstanceMap instanceMap) {
+        instance.ensureLoaded();
         resetInstance(instance, model, instanceMap);
     }
 

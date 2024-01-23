@@ -109,7 +109,6 @@ public class EntityUtils {
         }
     }
 
-
     public static void visitGraph(Object object, Consumer<Object> action) {
         visitGraph(List.of(object), action);
     }

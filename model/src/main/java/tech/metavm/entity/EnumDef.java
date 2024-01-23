@@ -91,11 +91,17 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
     }
 
     EnumConstantRT createEnumConstant(Enum<?> value, java.lang.reflect.Field javaField, Function<Object, Long> getId) {
-        ClassInstance instance = new ClassInstance(
-                NncUtils.get(getId.apply(value), PhysicalId::new),
-                parentDef.getInstanceFields(value, defContext.getObjectInstanceMap()),
-                type
-        );
+        var id = getId.apply(value);
+        ClassInstance instance;
+        if(id == null) {
+            instance = new ClassInstance(
+                    NncUtils.get(getId.apply(value), PhysicalId::new),
+                    parentDef.getInstanceFields(value, defContext.getObjectInstanceMap()),
+                    type
+            );
+        }
+        else
+            instance = (ClassInstance) defContext.getInstanceContext().get(id);
         instance.setField(
                 type.getFieldByCode("name"),
                 new StringInstance(
@@ -103,7 +109,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T, ClassInstance> {
                         stringType
                 )
         );
-        EnumConstantRT enumConstant = new EnumConstantRT(instance);
+        var enumConstant = new EnumConstantRT(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), type, type)
                 .defaultValue(new NullInstance(nullType))
                 .isChild(true)

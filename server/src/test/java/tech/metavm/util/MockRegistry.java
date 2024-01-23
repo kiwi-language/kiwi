@@ -153,29 +153,6 @@ public class MockRegistry {
         return instance;
     }
 
-    public static Coupon getCoupon() {
-        Product product = new Product("shoes", 100, 100);
-        return new Coupon(0.8, DiscountType.PERCENTAGE, CouponState.UNUSED, product);
-    }
-
-    public static ClassInstance getNewCouponInstance() {
-        return getCouponInstance(false);
-    }
-
-    public static ClassInstance getCouponInstance() {
-        return getCouponInstance(true);
-    }
-
-    private static ClassInstance getCouponInstance(boolean initId) {
-        Coupon coupon = getCoupon();
-        ClassInstance instance = getEntityDef(Coupon.class).createInstance(coupon, MODEL_INSTANCE_MAP, null);
-        if (initId) {
-            initInstanceIds(instance);
-        }
-        INSTANCE_CONTEXT.replace(instance);
-        return instance;
-    }
-
     private static void initInstanceIds(DurableInstance instance) {
         for (var inst : Instances.getAllNonValueInstances(List.of(instance))) {
             if (inst.tryGetPhysicalId() == null) {

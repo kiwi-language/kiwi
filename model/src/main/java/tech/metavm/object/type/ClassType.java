@@ -353,8 +353,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             synchronized (this) {
                 if (sortedFields == null) {
                     var sf = new ArrayList<Field>();
-                    forEachField(sf::add);
-                    sf.sort(Comparator.comparingLong(Field::tryGetId));
+                    forEachField(f -> {
+                        if(f.isIdNotNull())
+                            sf.add(f);
+                    });
+                    sf.sort(Comparator.comparingLong(Field::getId));
                     sortedFields = sf;
                 }
             }

@@ -115,7 +115,10 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
             defContext.ensureStage(type.getSuperClass(), DECLARATION);
         type.getInterfaces().forEach(it -> defContext.ensureStage(it, DECLARATION));
         defContext.createCompositeTypes(def.getType());
-        getPropertyFields().forEach(f -> parseField(f, def));
+        getPropertyFields().forEach(f -> {
+            if(!defContext.isFieldBlacklisted(f))
+                parseField(f, def);
+        });
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         saveBuiltinMapping(false);
         type.setStage(DECLARATION);

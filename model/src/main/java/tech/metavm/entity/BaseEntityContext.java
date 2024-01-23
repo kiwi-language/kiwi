@@ -761,9 +761,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
      */
     protected final void addBinding(Object model, DurableInstance instance) {
         addMapping(model, instance);
-        if (model instanceof BindAware bindAware) {
+        if (model instanceof BindAware bindAware)
             bindAware.onBind(this);
-        }
     }
 
     private DurableInstance newInstance(Object object) {

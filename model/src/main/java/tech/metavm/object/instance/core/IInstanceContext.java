@@ -25,12 +25,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     LockMode getLockMode();
 
-    default void replace(DurableInstance instance) {
-        replace(List.of(instance));
-    }
-
-    void replace(Collection<DurableInstance> instances);
-
     /*
      * Used to filter out dead ids from search result arsing from index rebuild delay
      */

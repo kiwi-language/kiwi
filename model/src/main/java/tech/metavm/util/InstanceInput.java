@@ -52,7 +52,8 @@ public class InstanceInput implements Closeable {
     }
 
     public Instance readInstance() {
-        return switch (read()) {
+        var wireType = read();
+        return switch (wireType) {
             case WireTypes.NULL -> new NullInstance(StandardTypes.getNullType());
             case WireTypes.DOUBLE -> new DoubleInstance(readDouble(), StandardTypes.getDoubleType());
             case WireTypes.STRING -> new StringInstance(readString(), StandardTypes.getStringType());
@@ -62,7 +63,7 @@ public class InstanceInput implements Closeable {
             case WireTypes.PASSWORD -> new PasswordInstance(readString(), StandardTypes.getPasswordType());
             case WireTypes.REFERENCE -> resolveInstance(readLong());
             case WireTypes.RECORD -> readRecord();
-            default -> throw new IllegalStateException("Invalid wire type");
+            default -> throw new IllegalStateException("Invalid wire type: " + wireType);
         };
     }
 
@@ -81,6 +82,10 @@ public class InstanceInput implements Closeable {
             instance.readFrom(this);
         }
         return instance;
+    }
+
+    public void skipInstance() {
+        skipper.visit();
     }
 
     public String readString() {

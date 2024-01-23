@@ -8,7 +8,10 @@ import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.type.*;
 import tech.metavm.util.MockIdProvider;
+import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TestUtils;
+
+import java.util.Set;
 
 public class BootstrapTest extends TestCase {
 
@@ -49,6 +52,16 @@ public class BootstrapTest extends TestCase {
         }
         {
             var bootstrap = newBootstrap();
+            var result = bootstrap.boot();
+            Assert.assertEquals(0, result.numInstancesWithNullIds());
+            TestUtils.beginTransaction();
+            bootstrap.save(true);
+            TestUtils.commitTransaction();
+        }
+        // test remove field
+        {
+            var bootstrap = newBootstrap();
+            bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getDeclaredField(Type.class, "dummyFlag")));
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
             TestUtils.beginTransaction();

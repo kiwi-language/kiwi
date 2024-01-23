@@ -233,6 +233,8 @@ public class ClassInstance extends DurableInstance {
                 instFields.add(new InstanceField(this, field, value, false));
                 j++;
             }
+            else // the field corresponding to the fieldId has been removed
+                input.skipInstance();
         }
         input.setParent(getParent(), getParentField());
         for (; j < fields.size(); j++)
