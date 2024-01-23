@@ -610,17 +610,22 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        }
     }
 
-    public void bind(DurableInstance instance) {
-//        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
+    @Override
+    public void batchBind(Collection<DurableInstance> instances) {
+        instances.forEach(this::checkForBind);
+        for (var inst : crawNewInstances(instances)) {
+            if (inst.tryGetPhysicalId() == null)
+                add(inst);
+        }
+    }
+
+    private void checkForBind(DurableInstance instance) {
+        //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
         NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
         NncUtils.requireNull(instance.tryGetPhysicalId(), "Can not bind a persisted instance");
         NncUtils.requireFalse(instance.isRemoved(),
                 () -> new InternalException("Can not bind instance " + instance + " because it's already removed. " +
                         "See issue 0001"));
-        for (var inst : crawNewInstances(List.of(instance))) {
-            if (inst.tryGetPhysicalId() == null)
-                add(inst);
-        }
     }
 
     protected void craw() {

@@ -2,11 +2,13 @@ package tech.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.slf4j.Logger;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.type.*;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.MockIdProvider;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TestUtils;
@@ -14,6 +16,8 @@ import tech.metavm.util.TestUtils;
 import java.util.Set;
 
 public class BootstrapTest extends TestCase {
+
+    public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(BootstrapTest.class);
 
     private ColumnStore columnStore;
     private AllocatorStore allocatorStore;
@@ -28,6 +32,11 @@ public class BootstrapTest extends TestCase {
         idProvider = new MockIdProvider();
     }
 
+    @Override
+    protected void tearDown() {
+        ContextUtil.clearContextInfo();
+    }
+
     private Bootstrap newBootstrap() {
         ModelDefRegistry.setDefContext(null);
         var stdAllocators = new StdAllocators(allocatorStore);
@@ -38,7 +47,7 @@ public class BootstrapTest extends TestCase {
         instanceContextFactory.setIdService(idProvider);
         instanceContextFactory.setCache(new MockCache());
         entityContextFactory.setInstanceLogService(new MockInstanceLogService());
-        return new Bootstrap(entityContextFactory, instanceContextFactory, stdAllocators, columnStore);
+        return new Bootstrap(entityContextFactory, stdAllocators, columnStore);
     }
 
     public void test() {
@@ -68,6 +77,15 @@ public class BootstrapTest extends TestCase {
             bootstrap.save(true);
             TestUtils.commitTransaction();
         }
+    }
+
+    public void testPerf() {
+        var profiler = ContextUtil.getProfiler();
+        var bootstrap = newBootstrap();
+        var result = bootstrap.boot();
+        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
+        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+        LOGGER.info(profiler.finish().toString());
     }
 
 }

@@ -30,40 +30,39 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
     private final ColumnStore columnStore;
     private final Set<Field> fieldBlacklist = new HashSet<>();
 
-    public Bootstrap(EntityContextFactory entityContextFactory, InstanceContextFactory instanceContextFactory,
-                     StdAllocators stdAllocators, ColumnStore columnStore) {
+    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore) {
         super(entityContextFactory);
         this.stdAllocators = stdAllocators;
         this.columnStore = columnStore;
     }
 
     public BootstrapResult boot() {
-        ContextUtil.setAppId(ROOT_APP_ID);
-        var bridge = new EntityInstanceContextBridge();
-        var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
-                ROOT_APP_ID, false, null, null,
-                new BootIdProvider(stdAllocators), bridge);
-        var defContext = new DefContext(
-                stdAllocators::getId,
-                standardInstanceContext, columnStore);
-        defContext.setFieldBlacklist(fieldBlacklist);
-        bridge.setEntityContext(defContext);
-        InstanceContextFactory.setDefContext(defContext);
-//        standardInstanceContext.setDefContext(defContext);
-//        standardInstanceContext.setEntityContext(defContext);
-        ModelDefRegistry.setDefContext(defContext);
-        for (Class<?> entityClass : EntityUtils.getModelClasses()) {
-            if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
-                defContext.getDef(entityClass);
-        }
-        defContext.flushAndWriteInstances();
-        ModelDefRegistry.setDefContext(defContext);
+        try (var ignoredEntry = ContextUtil.getProfiler().enter("Bootstrap.boot")) {
+            ContextUtil.setAppId(ROOT_APP_ID);
+            var bridge = new EntityInstanceContextBridge();
+            var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
+                    ROOT_APP_ID, false, null, null,
+                    new BootIdProvider(stdAllocators), bridge);
+            var defContext = new DefContext(
+                    stdAllocators::getId,
+                    standardInstanceContext, columnStore);
+            defContext.setFieldBlacklist(fieldBlacklist);
+            bridge.setEntityContext(defContext);
+            InstanceContextFactory.setDefContext(defContext);
+            ModelDefRegistry.setDefContext(defContext);
+            for (Class<?> entityClass : EntityUtils.getModelClasses()) {
+                if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
+                    defContext.getDef(entityClass);
+            }
+            defContext.flushAndWriteInstances();
+            ModelDefRegistry.setDefContext(defContext);
 
-        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetPhysicalId() == null);
-        if (!idNullInstances.isEmpty())
-            LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
-        ContextUtil.clearContextInfo();
-        return new BootstrapResult(idNullInstances.size());
+            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && inst.tryGetPhysicalId() == null);
+            if (!idNullInstances.isEmpty())
+                LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
+            ContextUtil.clearContextInfo();
+            return new BootstrapResult(idNullInstances.size());
+        }
     }
 
     @Transactional
@@ -75,30 +74,28 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
     @Transactional
     public void save(boolean saveIds) {
         DefContext defContext = ModelDefRegistry.getDefContext();
-        if (defContext.isFinished())
-            return;
-        try (var tempContext = newContext(ROOT_APP_ID)) {
-            var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
-            var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
-            var bridge = new EntityInstanceContextBridge();
-            bridge.setEntityContext(tempContext);
-            metaVersionPlugin.setVersionRepository(bridge);
-            NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
-            defContext.finish();
-            defContext.getIdentityMap().forEach((object, javaConstruct) -> {
-                if (EntityUtils.isDurable(object))
-                    stdAllocators.putId(javaConstruct, defContext.getInstance(object).getPhysicalId());
-            });
-//            defContext.getInstanceMapping().forEach((javaConstruct, instance) -> {
-//                if (instance.isDurable())
-//                    stdAllocators.putId(javaConstruct, instance.getIdRequired());
-//            });
-            if (saveIds) {
-                stdAllocators.save();
-                columnStore.save();
+        try (var ignoredEntry = defContext.getProfiler().enter("Bootstrap.save")) {
+            if (defContext.isFinished())
+                return;
+            try (var tempContext = newContext(ROOT_APP_ID)) {
+                var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
+                var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
+                var bridge = new EntityInstanceContextBridge();
+                bridge.setEntityContext(tempContext);
+                metaVersionPlugin.setVersionRepository(bridge);
+                NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
+                defContext.finish();
+                defContext.getIdentityMap().forEach((object, javaConstruct) -> {
+                    if (EntityUtils.isDurable(object))
+                        stdAllocators.putId(javaConstruct, defContext.getInstance(object).getPhysicalId());
+                });
+                if (saveIds) {
+                    stdAllocators.save();
+                    columnStore.save();
+                }
+                ensureIdInitialized();
+                tempContext.finish();
             }
-            ensureIdInitialized();
-            tempContext.finish();
         }
     }
 

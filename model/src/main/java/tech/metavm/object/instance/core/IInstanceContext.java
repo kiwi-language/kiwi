@@ -111,7 +111,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return NncUtils.first(selectByKey(key));
     }
 
-    void bind(DurableInstance instance);
+    default void bind(DurableInstance instance) {
+        batchBind(List.of(instance));
+    }
+
+    void batchBind(Collection<DurableInstance> instances);
 
     void registerCommitCallback(Runnable action);
 

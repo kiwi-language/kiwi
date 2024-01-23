@@ -604,10 +604,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     protected void writeInstances(IInstanceContext instanceContext) {
-        instances().forEach(i -> {
-            if (!instanceContext.containsInstance(i))
-                instanceContext.bind(i);
-        });
+        instanceContext.batchBind(NncUtils.exclude(instances(), instanceContext::containsInstance));
     }
 
     @SuppressWarnings("unused")

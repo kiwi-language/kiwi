@@ -48,7 +48,7 @@ public class BootstrapUtils {
             var instanceSearchService = state.instanceSearchService();
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             var bootstrap = new Bootstrap(
-                    entityContextFactory, entityContextFactory.getInstanceContextFactory(),
+                    entityContextFactory,
                     new StdAllocators(state.allocatorStore()),
                     state.columnStore()
             );
@@ -68,7 +68,7 @@ public class BootstrapUtils {
             var allocatorStore = new MemAllocatorStore();
             var columnStore = new MemColumnStore();
             var bootstrap = new Bootstrap(
-                    entityContextFactory, entityContextFactory.getInstanceContextFactory(),
+                    entityContextFactory,
                     new StdAllocators(allocatorStore),
                     columnStore
             );

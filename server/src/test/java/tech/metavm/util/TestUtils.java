@@ -22,6 +22,7 @@ import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.object.instance.rest.InstanceFieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
 import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.util.profile.Profiler;
 
 import javax.sql.DataSource;
 import java.io.*;
