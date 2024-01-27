@@ -79,7 +79,7 @@ public class LoginService extends EntityContextFactoryBean  {
     public void logout(List<Token> tokens) {
         for (Token token : tokens) {
             try (var context = newContext(token.appId())) {
-                var session = context.selectByUniqueKey(Session.IDX_TOKEN, token.token());
+                var session = context.selectFirstByKey(Session.IDX_TOKEN, token.token());
                 if (session != null) {
                     if (session.isActive())
                         session.close();
@@ -93,7 +93,7 @@ public class LoginService extends EntityContextFactoryBean  {
     public LoginInfo verify(@NotNull Token token) {
         try (var context = newContext(token.appId());
              var ignored = ContextUtil.getProfiler().enter("verifyAndSetContext")) {
-            var session = context.selectByUniqueKey(Session.IDX_TOKEN, token.token());
+            var session = context.selectFirstByKey(Session.IDX_TOKEN, token.token());
             if (session != null && session.isActive()) {
                 ContextUtil.setAppId(token.appId());
                 ContextUtil.setUserId(session.getUser().tryGetId());

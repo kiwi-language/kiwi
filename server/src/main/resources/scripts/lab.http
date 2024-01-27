@@ -977,5 +977,26 @@ GET http://localhost:8080/type/12001
 GET http://localhost:8080/type?page=1&pageSize=20&categoryCodes=18,11,13,16,19,12
 
 ###
+POST http://localhost:8081/api/type/get-parameterized-type
+Accept: application/json
+Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
+AppId: 1323806477
+ClientId: 42f2959a-48cd-4157-9499-2f805106eed0
+Connection: keep-alive
+Cookie: __token_1297705955__=d02ed146-29d8-41de-b3fa-c8a4ba028f58; __token_1301106023__=f50aa506-2faa-4011-ae5c-58278bb785e7; __token_1304406089__=1309d9ec-66d0-47ce-96a8-8052305196eb; __token_1308206165__=7b6eb1cc-8974-466c-968e-3040d41038b2; __token_1314806297__=fdcb1f46-9e95-4ba8-8dfb-1071b923e1eb; __token_1316606333__=54c82629-565b-4b1b-b0ea-65471d597184; __token_1319006381__=f0887a2c-62f5-4c0a-bde1-669c76239854; __token_1320906419__=5f999cbf-4115-4927-9d70-3e1bd6a59d6c; __token_2__=a20c9a2e-5df0-42be-9396-aac9e56758d0; __token_1323806477__=0fe16b2b-34a2-46e5-99fd-9d4736b4836e
+MetaVersion: 8
+Origin: http://localhost:8081
+Referer: http://localhost:8081/1323806477/editor/type/1324106486
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+sec-ch-ua: "Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "macOS"
+Content-Type: application/json
 
+{"templateRef":{"id":1324106483},"typeArgumentRefs":[{"id":20000}],"contextTypes":[]}
+
+###
 

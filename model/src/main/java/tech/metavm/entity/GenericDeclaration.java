@@ -7,7 +7,6 @@ import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Function;
 
 public interface GenericDeclaration {
 
@@ -30,5 +29,5 @@ public interface GenericDeclaration {
 
     RefDTO getRef();
 
-    GenericDeclaration getTemplate();
+//    GenericDeclaration getTemplate();
 }

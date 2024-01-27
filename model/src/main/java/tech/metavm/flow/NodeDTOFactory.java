@@ -2,12 +2,67 @@ package tech.metavm.flow;
 
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.*;
+import tech.metavm.object.instance.rest.ArrayFieldValue;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class NodeDTOFactory {
+
+    public static NodeDTO createNewArrayNode(Long tmpId, String name, RefDTO typeRef) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.NEW_ARRAY.code(),
+                null,
+                typeRef,
+                new NewArrayNodeParam(
+                        ValueDTO.constValue(new ArrayFieldValue(null, false, List.of())),
+                        null
+                ),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createAddElementNode(Long tmpId, String name, ValueDTO array, ValueDTO element) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.ADD_ELEMENT.code(),
+                null,
+                null,
+                new AddElementNodeParam(array, element),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createGetElementNode(Long tmpId, String name, ValueDTO array, ValueDTO index) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.GET_ELEMENT.code(),
+                null,
+                null,
+                new GetElementNodeParam(array, index),
+                null,
+                null,
+                null
+        );
+    }
 
     public static NodeDTO createWhileNode(Long tmpId, String name, ValueDTO condition, List<NodeDTO> nodes, List<LoopFieldDTO> fields) {
         return new NodeDTO(

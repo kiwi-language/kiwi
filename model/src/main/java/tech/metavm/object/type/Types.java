@@ -250,8 +250,8 @@ public class Types {
     }
 
     public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
-        return encodeBase64(template.tryGetId()) + "-"
-                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.tryGetId()), "-");
+        return encodeBase64(template.getId()) + "-"
+                + NncUtils.join(typeArguments, typeArg -> encodeBase64(typeArg.getId()), "-");
     }
 
     public static boolean isNullable(Type type) {
@@ -385,7 +385,7 @@ public class Types {
             return null;
         if (typeArguments.isEmpty())
             return templateCode;
-        boolean allTypeArgCodeNotNull = NncUtils.allMatch(typeArguments, arg -> arg.getCode() != null);
+        boolean allTypeArgCodeNotNull = NncUtils.allMatch(typeArguments, arg -> getTypeArgumentCode(arg) != null);
         return allTypeArgCodeNotNull ?
                 parameterizedName(templateCode, NncUtils.map(typeArguments, Types::getTypeArgumentCode)) : null;
     }

@@ -72,7 +72,7 @@ public class Method extends Flow implements Property, GenericElement {
                   Access access,
                   @Nullable CodeSource codeSource,
                   MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource , state);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource , state, isAbstract);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -219,7 +219,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public void setTemplate(Object template) {
+    public void setCopySource(Object template) {
         NncUtils.requireNull(this.verticalTemplate);
         this.verticalTemplate = (Method) template;
     }
@@ -347,4 +347,10 @@ public class Method extends Flow implements Property, GenericElement {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitMethod(this);
     }
+
+    @Override
+    public Object getCopySource() {
+        return verticalTemplate;
+    }
+
 }

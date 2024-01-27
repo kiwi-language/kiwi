@@ -34,19 +34,18 @@ public class Nodes {
     }
 
     public static NodeRT forEach(
+            String name,
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
         var seq = NncUtils.randomNonNegative();
-        var name = "Foreach_" + seq;
-        var code = "Foreach_" + seq;
         var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", "LoopOutput")
                 .temporary()
                 .build();
         var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
                 .build();
         var node = new WhileNode(
-                null, name, code, whileOutputType, scope.getLastNode(), scope,
+                null, name, null, whileOutputType, scope.getLastNode(), scope,
                 Values.constant(Expressions.trueExpression())
         );
         node.setField(indexField, Values.constantLong(0L),

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import tech.metavm.common.BaseDTO;
 import tech.metavm.common.RefDTO;
 import tech.metavm.flow.rest.GenericDeclarationDTO;
-import tech.metavm.object.instance.rest.FieldValue;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;

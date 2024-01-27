@@ -116,7 +116,7 @@ public enum ErrorCode {
 
     // Constraint
     DUPLICATE_KEY(701, "唯一属性'{}'重复"),
-    CONSTRAINT_CHECK_FAILED(702, "记录'{}'操作失败: {}"),
+    CONSTRAINT_CHECK_FAILED(702, "记录'{}'保存失败: {}"),
     CONSTRAINT_NOT_FOUND(703, "约束规则不存在(id:{})"),
 
     // Job

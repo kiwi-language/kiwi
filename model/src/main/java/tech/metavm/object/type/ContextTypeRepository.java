@@ -13,7 +13,7 @@ public class ContextTypeRepository implements TypeRepository {
 
     @Override
     public ClassType findClassTypeByName(String name) {
-        return context.selectByUniqueKey(ClassType.UNIQUE_NAME, name);
+        return context.selectFirstByKey(ClassType.IDX_NAME, name);
     }
 
     @Override

@@ -43,7 +43,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     @EntityField("模板")
     @Nullable
     @CopyIgnore
-    private Field template;
+    private Field copySource;
     @EntityField("只读")
     private boolean readonly;
     @EntityField("状态")
@@ -123,7 +123,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public Field getEffectiveTemplate() {
-        return getTemplate() != null ? getTemplate() : this;
+        return getCopySource() != null ? getCopySource() : this;
     }
 
     public void setDefaultValue(Instance defaultValue) {
@@ -340,13 +340,13 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     @Nullable
-    public Field getTemplate() {
-        return this.template;
+    public Field getCopySource() {
+        return this.copySource;
     }
 
     @Override
-    public void setTemplate(@Nullable Object template) {
-        this.template = (Field) template;
+    public void setCopySource(@Nullable Object template) {
+        this.copySource = (Field) template;
     }
 
     @Override
@@ -386,7 +386,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(
                 serializeContext.getRef(this),
-                serializeContext.getRef(Objects.requireNonNull(getTemplate()))
+                serializeContext.getRef(Objects.requireNonNull(getCopySource()))
         );
     }
 

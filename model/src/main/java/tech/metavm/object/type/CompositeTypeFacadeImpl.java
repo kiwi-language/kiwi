@@ -1,11 +1,23 @@
 package tech.metavm.object.type;
 
+import tech.metavm.entity.IEntityContext;
+
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class CompositeTypeFacadeImpl implements CompositeTypeFacade {
+
+    public static CompositeTypeFacade createFromContext(IEntityContext context) {
+        return new CompositeTypeFacadeImpl(
+                new ContextArrayTypeProvider(context),
+                context.getFunctionTypeContext(),
+                context.getUnionTypeContext(),
+                context.getIntersectionTypeContext(),
+                context.getUncertainTypeContext(),
+                context.getGenericContext()
+        );
+    }
 
     private final ArrayTypeProvider arrayTypeProvider;
     private final FunctionTypeProvider functionTypeProvider;

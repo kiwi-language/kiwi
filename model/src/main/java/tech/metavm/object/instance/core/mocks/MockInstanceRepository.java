@@ -25,7 +25,7 @@ public class MockInstanceRepository implements InstanceRepository {
 
     @Nullable
     @Override
-    public DurableInstance selectByUniqueKey(IndexKeyRT key) {
+    public DurableInstance selectFirstByKey(IndexKeyRT key) {
         throw new UnsupportedOperationException();
     }
 

@@ -24,7 +24,7 @@ public class TypeVariable extends Type implements LocalKey, GenericElement {
     @EntityField("模板")
     @CopyIgnore
     @Nullable
-    private TypeVariable template;
+    private TypeVariable copySource;
 
     private transient IntersectionType intersection;
     private transient ResolutionStage stage = ResolutionStage.INIT;
@@ -64,11 +64,12 @@ public class TypeVariable extends Type implements LocalKey, GenericElement {
         onSuperTypesChanged();
     }
 
-    public void setTemplate(Object template) {
-        NncUtils.requireNull(this.template);
+    @Override
+    public void setCopySource(Object template) {
+        NncUtils.requireNull(this.copySource);
         var typeVarTemplate = (TypeVariable) template;
-        NncUtils.requireTrue(typeVarTemplate.getGenericDeclaration() == genericDeclaration.getTemplate());
-        this.template = typeVarTemplate;
+//        NncUtils.requireTrue(typeVarTemplate.getGenericDeclaration() == genericDeclaration.getTemplate());
+        this.copySource = typeVarTemplate;
     }
 
     @Override
@@ -105,8 +106,9 @@ public class TypeVariable extends Type implements LocalKey, GenericElement {
         return intersection = new IntersectionType(null, new HashSet<>(bounds));
     }
 
-    public @Nullable TypeVariable getTemplate() {
-        return template;
+    @Override
+    public @Nullable TypeVariable getCopySource() {
+        return copySource;
     }
 
     @Override

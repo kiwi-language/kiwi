@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.common.RefDTO;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.*;
@@ -13,10 +14,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
-import tech.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
-import tech.metavm.object.type.rest.dto.FieldDTOBuilder;
-import tech.metavm.object.type.rest.dto.GetTypeRequest;
-import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.type.rest.dto.*;
 
 import java.util.List;
 import java.util.Map;
@@ -265,7 +263,7 @@ public class MockUtils {
                                                                                 RefDTO.fromId(shoppingTypeIds.skuTypeId()),
                                                                                 "SKU",
                                                                                 "42",
-                                                                        null,
+                                                                                null,
                                                                                 new ClassInstanceParam(
                                                                                         List.of(
                                                                                                 InstanceFieldDTO.create(
@@ -369,6 +367,263 @@ public class MockUtils {
         );
     }
 
+    public static ListTypeIds createListType(TypeManager typeManager, FlowManager flowManager) {
+        var nodeTypeIds = createNodeTypes(typeManager, flowManager);
+        var listTypeTmpId = NncUtils.randomNonNegative();
+        var listValueTypeTmpId = NncUtils.randomNonNegative();
+        var ids = batchSaveTypes(typeManager, List.of(
+                ClassTypeDTOBuilder.newBuilder("列表")
+                        .code("List")
+                        .tmpId(listTypeTmpId)
+                        .isTemplate(true)
+                        .typeParameterRefs(List.of(RefDTO.fromTmpId(listValueTypeTmpId)))
+                        .tmpId(listTypeTmpId)
+                        .build(),
+                new TypeDTO(
+                        null,
+                        listValueTypeTmpId,
+                        "值",
+                        "T",
+                        TypeCategory.VARIABLE.code(),
+                        true,
+                        true,
+                        new TypeVariableParam(
+                                RefDTO.fromTmpId(listTypeTmpId),
+                                0,
+                                List.of(StandardTypes.getAnyType().getRef())
+                        )
+                )
+        ));
+        var listTypeId = ids.get(0);
+        var listValueTypeId = ids.get(1);
+        var listLabelFieldId = saveField(typeManager, FieldDTOBuilder.newBuilder("标签", getStringType().getRef())
+                .tmpId(NncUtils.randomNonNegative())
+                .code("label")
+                .declaringTypeId(listTypeId)
+                .build()
+        );
+        var nodeTypeDTO = typeManager.getParameterizedType(
+                new GetParameterizedTypeRequest(
+                        RefDTO.fromId(nodeTypeIds.nodeTypeId()),
+                        List.of(RefDTO.fromId(listValueTypeId)),
+                        List.of()
+                )
+        ).type();
+        var nodeChildArrayType = typeManager.getArrayType(nodeTypeDTO.id(), ArrayKind.CHILD.code()).type();
+        var listNodesFieldId = saveField(typeManager, FieldDTOBuilder.newBuilder("节点列表", nodeChildArrayType.getRef())
+                .tmpId(NncUtils.randomNonNegative())
+                .isChild(true)
+                .code("nodes")
+                .declaringTypeId(listTypeId)
+                .build()
+        );
+        var listTypeDTO = typeManager.getType(new GetTypeRequest(listTypeId, false)).type();
+        var listViewTypeId = TestUtils.getDefaultViewTypeId(listTypeDTO);
+        var nodeViewTypeId = TestUtils.getDefaultViewTypeId(nodeTypeDTO);
+        var nodeFromViewMethod = NncUtils.findRequired(
+                nodeTypeDTO.getClassParam().flows(),
+                m -> "fromView".equals(m.code())
+        );
+        createFlow(flowManager, MethodDTOBuilder.newBuilder(RefDTO.fromId(listTypeId), "从视图创建")
+                .tmpId(NncUtils.randomNonNegative())
+                .code("fromView")
+                .isStatic(true)
+                .returnTypeRef(RefDTO.fromId(listTypeId))
+                .parameters(List.of(
+                        ParameterDTO.create(NncUtils.randomNonNegative(), "视图", RefDTO.fromId(listViewTypeId))
+                ))
+                .addNode(
+                        NodeDTOFactory.createInputNode(
+                                NncUtils.randomNonNegative(),
+                                "流程输入",
+                                List.of(
+                                        InputFieldDTO.create("视图", RefDTO.fromId(listViewTypeId))
+                                )
+                        )
+                )
+                .addNode(NodeDTOFactory.createNewArrayNode(
+                                NncUtils.randomNonNegative(),
+                                "节点列表",
+                                RefDTO.fromId(nodeChildArrayType.id())
+                        )
+                )
+                .addNode(NodeDTOFactory.createWhileNode(
+                                NncUtils.randomNonNegative(),
+                                "循环",
+                                ValueDTOFactory.createExpression("循环.索引 < LEN(流程输入.视图.节点列表)"),
+                                List.of(
+                                        NodeDTOFactory.createGetElementNode(
+                                                NncUtils.randomNonNegative(),
+                                                "节点视图",
+                                                ValueDTOFactory.createReference("流程输入.视图.节点列表"),
+                                                ValueDTOFactory.createReference("循环.索引")
+                                        ),
+                                        NodeDTOFactory.createMethodCallNode(
+                                                NncUtils.randomNonNegative(),
+                                                "节点",
+                                                nodeFromViewMethod.getRef(),
+                                                null,
+                                                List.of(
+                                                        new ArgumentDTO(
+                                                                NncUtils.randomNonNegative(),
+                                                                nodeFromViewMethod.parameters().get(0).getRef(),
+                                                                ValueDTOFactory.createReference("节点视图")
+                                                        )
+                                                )
+                                        ),
+                                        NodeDTOFactory.createAddElementNode(
+                                                NncUtils.randomNonNegative(),
+                                                "添加节点",
+                                                ValueDTOFactory.createReference("节点列表"),
+                                                ValueDTOFactory.createReference("节点")
+                                        )
+                                ),
+                                List.of(
+                                        new LoopFieldDTO(
+                                                RefDTO.fromTmpId(NncUtils.randomNonNegative()),
+                                                "索引",
+                                                getLongType().getRef(),
+                                                ValueDTOFactory.createConstant(0L),
+                                                ValueDTOFactory.createExpression("循环.索引 + 1")
+
+                                        )
+                                )
+                        )
+                )
+                .addNode(
+                        NodeDTOFactory.createAddObjectNode(
+                                NncUtils.randomNonNegative(),
+                                "列表",
+                                RefDTO.fromId(listTypeId),
+                                List.of(
+                                        FieldParamDTO.create(
+                                                RefDTO.fromId(listLabelFieldId),
+                                                ValueDTOFactory.createReference("流程输入.视图.标签")
+                                        ),
+                                        FieldParamDTO.create(
+                                                RefDTO.fromId(listNodesFieldId),
+                                                ValueDTOFactory.createReference("节点列表")
+                                        )
+                                )
+                        )
+                )
+                .addNode(
+                        NodeDTOFactory.createReturnNode(
+                                NncUtils.randomNonNegative(),
+                                "返回",
+                                ValueDTOFactory.createReference("列表")
+                        )
+                )
+                .build()
+        );
+        return new ListTypeIds(
+                listTypeId,
+                listValueTypeId,
+                listLabelFieldId,
+                listNodesFieldId,
+                nodeTypeIds
+        );
+    }
+
+    public static NodeTypeIds createNodeTypes(TypeManager typeManager, FlowManager flowManager) {
+        var nodeTypeTmpId = NncUtils.randomNonNegative();
+        var valueTypeTmpId = NncUtils.randomNonNegative();
+        var ids = batchSaveTypes(typeManager,
+                List.of(
+                        ClassTypeDTOBuilder.newBuilder("节点")
+                                .code("Node")
+                                .tmpId(nodeTypeTmpId)
+                                .isTemplate(true)
+                                .typeParameterRefs(List.of(RefDTO.fromTmpId(valueTypeTmpId)))
+                                .build(),
+                        new TypeDTO(
+                                null,
+                                valueTypeTmpId,
+                                "值",
+                                "T",
+                                TypeCategory.VARIABLE.code(),
+                                true,
+                                true,
+                                new TypeVariableParam(
+                                        RefDTO.fromTmpId(nodeTypeTmpId),
+                                        0,
+                                        List.of(StandardTypes.getAnyType().getRef())
+                                )
+                        )
+                )
+        );
+        var nodeTypeId = ids.get(0);
+        var valueTypeId = ids.get(1);
+        var nodeLabelFieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
+                FieldDTOBuilder.newBuilder("标签", getStringType().getRef())
+                        .tmpId(NncUtils.randomNonNegative())
+                        .code("label")
+                        .declaringTypeId(nodeTypeId)
+                        .build()
+        ));
+        var nodeValueFieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
+                FieldDTOBuilder.newBuilder("值", RefDTO.fromId(valueTypeId))
+                        .tmpId(NncUtils.randomNonNegative())
+                        .code("value")
+                        .declaringTypeId(nodeTypeId)
+                        .build()
+        ));
+        var nodeTypeDTO = typeManager.getType(new GetTypeRequest(nodeTypeId, false)).type();
+        var defaultMapping = NncUtils.findRequired(
+                nodeTypeDTO.getClassParam().mappings(),
+                m -> m.getRef().equals(nodeTypeDTO.getClassParam().defaultMappingRef())
+        );
+        var viewTypeRef = defaultMapping.targetTypeRef();
+        createFlow(flowManager, MethodDTOBuilder.newBuilder(RefDTO.fromId(nodeTypeId), "从视图创建")
+                .tmpId(NncUtils.randomNonNegative())
+                .code("fromView")
+                .isStatic(true)
+                .returnTypeRef(RefDTO.fromId(nodeTypeId))
+                .parameters(List.of(
+                        ParameterDTO.create(NncUtils.randomNonNegative(), "视图", viewTypeRef)
+                ))
+                .addNode(
+                        NodeDTOFactory.createInputNode(
+                                NncUtils.randomNonNegative(),
+                                "流程输入",
+                                List.of(
+                                        InputFieldDTO.create("视图", viewTypeRef)
+                                )
+                        )
+                )
+                .addNode(
+                        NodeDTOFactory.createAddObjectNode(
+                                NncUtils.randomNonNegative(),
+                                "节点",
+                                RefDTO.fromId(nodeTypeId),
+                                List.of(
+                                        FieldParamDTO.create(
+                                                RefDTO.fromId(nodeLabelFieldId),
+                                                ValueDTOFactory.createReference("流程输入.视图.标签")
+                                        ),
+                                        FieldParamDTO.create(
+                                                RefDTO.fromId(nodeValueFieldId),
+                                                ValueDTOFactory.createReference("流程输入.视图.值")
+                                        )
+                                )
+                        )
+                )
+                .addNode(
+                        NodeDTOFactory.createReturnNode(
+                                NncUtils.randomNonNegative(),
+                                "返回",
+                                ValueDTOFactory.createReference("节点")
+                        )
+                )
+                .build());
+        return new NodeTypeIds(
+                nodeTypeId,
+                valueTypeId,
+                nodeLabelFieldId,
+                nodeValueFieldId
+        );
+    }
+
     private static Field createEnumConstantField(ClassInstance enumConstant) {
         var enumType = enumConstant.getType();
         var nameField = enumType.getFieldByCode("name");
@@ -379,11 +634,20 @@ public class MockUtils {
                 .build();
     }
 
+    private static long saveField(TypeManager typeManager, FieldDTO fieldDTO) {
+        return TestUtils.doInTransaction(() -> typeManager.saveField(fieldDTO));
+    }
+
     private static TypeDTO saveType(TypeManager typeManager, TypeDTO typeDTO) {
-        TestUtils.beginTransaction();
-        var result = typeManager.saveType(typeDTO);
-        TestUtils.commitTransaction();
-        return result;
+        FlowSavingContext.initConfig();
+        return TestUtils.doInTransaction(() -> typeManager.saveType(typeDTO));
+    }
+
+    private static List<Long> batchSaveTypes(TypeManager typeManager, List<TypeDTO> typeDTOs) {
+        FlowSavingContext.initConfig();
+        return TestUtils.doInTransaction(() -> typeManager.batchSave(
+                new BatchSaveRequest(typeDTOs, List.of(), List.of())
+        ));
     }
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, FlowManager flowManager) {
@@ -391,7 +655,6 @@ public class MockUtils {
         var skuTypeTmpId = NncUtils.randomNonNegative();
         var skuAmountFieldTmpId = NncUtils.randomNonNegative();
         var skuDecAmountMethodTmpId = NncUtils.randomNonNegative();
-        FlowSavingContext.initConfig();
 
         var couponStateTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("优惠券状态")
                 .code("CouponState")
@@ -403,26 +666,26 @@ public class MockUtils {
         var couponUsedStateId = saveEnumConstant(typeManager, couponStateTypeDTO, "已使用", 1);
         couponStateTypeDTO = typeManager.getType(new GetTypeRequest(couponStateTypeDTO.id(), false)).type();
         var couponTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("优惠券")
-                .code("Coupon")
-                .tmpId(NncUtils.randomNonNegative())
-                .titleFieldRef(RefDTO.fromTmpId(titleFieldTmpId))
-                .addField(FieldDTOBuilder.newBuilder("标题", getStringType().getRef())
-                        .code("title")
-                        .tmpId(titleFieldTmpId)
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("折扣", getDoubleType().getRef())
-                        .code("discount")
+                        .code("Coupon")
                         .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("状态", couponStateTypeDTO.getRef())
-                        .code("state")
-                        .tmpId(NncUtils.randomNonNegative())
+                        .titleFieldRef(RefDTO.fromTmpId(titleFieldTmpId))
+                        .addField(FieldDTOBuilder.newBuilder("标题", getStringType().getRef())
+                                .code("title")
+                                .tmpId(titleFieldTmpId)
+                                .build()
+                        )
+                        .addField(FieldDTOBuilder.newBuilder("折扣", getDoubleType().getRef())
+                                .code("discount")
+                                .tmpId(NncUtils.randomNonNegative())
+                                .build()
+                        )
+                        .addField(FieldDTOBuilder.newBuilder("状态", couponStateTypeDTO.getRef())
+                                        .code("state")
+                                        .tmpId(NncUtils.randomNonNegative())
 //                        .defaultValue(new ReferenceFieldValue(null, PhysicalId.of(couponNormalStateId).toString()))
+                                        .build()
+                        )
                         .build()
-                )
-                .build()
         );
         var couponTitleFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "title");
         var couponDiscountFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "discount");
@@ -688,6 +951,7 @@ public class MockUtils {
     }
 
     private static long createFlow(FlowManager flowManager, FlowDTO flow) {
+        FlowSavingContext.initConfig();
         return TestUtils.doInTransaction((() -> flowManager.save(flow))).getId();
     }
 

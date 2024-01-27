@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import tech.metavm.util.NncUtils;
 
+import java.io.IOException;
 import java.util.*;
 
 public class MemAllocatorStore implements AllocatorStore {
@@ -47,5 +48,13 @@ public class MemAllocatorStore implements AllocatorStore {
             result.propertiesMap.put(entry.getKey(), copyProperties(entry.getValue()));
         }
         return result;
+    }
+
+    public void print(String fileName) {
+        var props = propertiesMap.get(fileName);
+        try {
+            props.store(System.out, "test");
+        } catch (IOException ignored) {
+        }
     }
 }

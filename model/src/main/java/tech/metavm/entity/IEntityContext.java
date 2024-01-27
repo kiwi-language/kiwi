@@ -155,7 +155,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
             return getClassType(id);
         }
         else {
-            return selectByUniqueKey(ClassType.UNIQUE_CODE, code);
+            return selectFirstByKey(ClassType.UNIQUE_CODE, code);
         }
     }
 
@@ -248,7 +248,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     void batchRemove(List<?> entities);
 
     @Nullable
-    default <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object...values) {
+    default <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object...values) {
         return NncUtils.first(selectByKey(indexDef, values));
     }
 

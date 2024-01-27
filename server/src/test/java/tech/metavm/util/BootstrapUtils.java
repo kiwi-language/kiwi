@@ -13,6 +13,8 @@ import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.type.MemAllocatorStore;
 import tech.metavm.object.type.MemColumnStore;
 import tech.metavm.object.type.StdAllocators;
+import tech.metavm.task.JobSchedulerStatus;
+import tech.metavm.task.TaskSignal;
 
 import java.util.List;
 
@@ -53,6 +55,13 @@ public class BootstrapUtils {
                     state.columnStore()
             );
             bootstrap.boot();
+            TestUtils.doInTransactionWithoutResult(() -> {
+                try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                    context.bind(new JobSchedulerStatus());
+                    context.bind(new TaskSignal(TestConstants.APP_ID));
+                    context.finish();
+                }
+            });
             return new BootstrapResult(
                     entityContextFactory,
                     idProvider,
@@ -73,9 +82,7 @@ public class BootstrapUtils {
                     columnStore
             );
             bootstrap.boot();
-            TestUtils.beginTransaction();
-            bootstrap.save(true);
-            TestUtils.commitTransaction();
+            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
             state = new BootState(
                     instanceStore.getInstanceMapper().copy(),
                     instanceStore.getReferenceMapper().copy(),
@@ -85,6 +92,13 @@ public class BootstrapUtils {
                     allocatorStore.copy(),
                     instanceSearchService.copy()
             );
+            TestUtils.doInTransactionWithoutResult(() -> {
+                try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                    context.bind(new JobSchedulerStatus());
+                    context.bind(new TaskSignal(TestConstants.APP_ID));
+                    context.finish();
+                }
+            });
             return new BootstrapResult(
                     entityContextFactory,
                     idProvider,

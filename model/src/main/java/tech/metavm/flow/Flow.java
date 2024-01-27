@@ -62,6 +62,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     private @NotNull FunctionType type;
     @EntityField("参数化键")
     @Nullable
+    @CopyIgnore
     private String parameterizedKey;
     @Nullable
     @EntityField("代码来源")
@@ -83,7 +84,8 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 @NotNull FunctionType type,
                 @Nullable Flow horizontalTemplate,
                 @Nullable CodeSource codeSource,
-                @NotNull MetadataState state
+                @NotNull MetadataState state,
+                boolean noCode
     ) {
         super(tmpId);
         if (horizontalTemplate == null && typeParameters.isEmpty() && !typeArguments.isEmpty())
@@ -94,7 +96,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.isSynthetic = isSynthetic;
         this.returnType = returnType;
         this.type = type;
-        rootScope = codeSource == null ? addChild(new ScopeRT(this), "rootScope") : null;
+        rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this), "rootScope") : null;
         setTypeParameters(typeParameters);
         setTypeArguments(typeArguments);
         setParameters(parameters, false);
@@ -102,7 +104,6 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         this.codeSource = codeSource;
         this.state = state;
     }
-
 
     public abstract FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider);
 
@@ -139,7 +140,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     public void onLoad(IEntityContext context) {
         stage = ResolutionStage.INIT;
         if(codeSource != null)
-            codeSource.generateCode(this, context.getFunctionTypeContext());
+            codeSource.generateCode(this, CompositeTypeFacadeImpl.createFromContext(context));
     }
 
     @SuppressWarnings("unused")
@@ -266,7 +267,6 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         version++;
     }
 
-    @Override
     public @Nullable Flow getTemplate() {
         return horizontalTemplate;
     }

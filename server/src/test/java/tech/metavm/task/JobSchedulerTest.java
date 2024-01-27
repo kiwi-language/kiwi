@@ -24,13 +24,6 @@ public class JobSchedulerTest extends TestCase {
         TransactionOperations transactionOperations = new MockTransactionOperations();
         Scheduler.THREAD_POOL_SIZE = 1;
         jobScheduler = new Scheduler(entityContextFactory, transactionOperations);
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                context.bind(new JobSchedulerStatus());
-                context.bind(new TaskSignal(TestConstants.APP_ID));
-                context.finish();
-            }
-        });
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 

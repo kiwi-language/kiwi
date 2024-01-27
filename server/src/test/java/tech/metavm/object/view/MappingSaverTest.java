@@ -3,18 +3,14 @@ package tech.metavm.object.view;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
+import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
-import tech.metavm.flow.MethodBuilder;
-import tech.metavm.flow.Nodes;
-import tech.metavm.flow.Parameter;
-import tech.metavm.flow.Values;
+import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.mocks.MockArrayTypeProvider;
-import tech.metavm.object.type.mocks.MockFunctionTypeProvider;
 import tech.metavm.object.type.mocks.MockTypeRepository;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.object.view.mocks.MockMappingRepository;
@@ -45,15 +41,14 @@ public class MappingSaverTest extends TestCase {
 
     public void testFromView() {
         var typeRepository = new MockTypeRepository();
-        var arrayMappingRepo = new MockArrayMappingRepository();
         var mappingProvider = new MockMappingRepository();
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
-                new MockFunctionTypeProvider(),
-                new MockArrayTypeProvider(),
-                mappingProvider,
-                arrayMappingRepo
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
         );
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
                 .build();
@@ -112,7 +107,7 @@ public class MappingSaverTest extends TestCase {
             var selfNode = Nodes.self("Self", null, fooType, scope);
             var inputNode = Nodes.input(setBarsMethod);
             Nodes.clearArray("ClearBars", null, Values.nodeProperty(selfNode, fooBarsField), scope);
-            Nodes.forEach(() -> Values.inputValue(inputNode, 0),
+            Nodes.forEach("循环", () -> Values.inputValue(inputNode, 0),
                     (bodyScope, element, index) -> {
                         Nodes.addElement("AddBar", null, Values.nodeProperty(selfNode, fooBarsField),
                                 element.get(), bodyScope);
@@ -130,10 +125,10 @@ public class MappingSaverTest extends TestCase {
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
-                new MockFunctionTypeProvider(),
-                new MockArrayTypeProvider(),
-                mappingProvider,
-                arrayMappingRepo
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
         );
 
         var barMapping = saver.saveBuiltinMapping(barType, true);
@@ -252,6 +247,7 @@ public class MappingSaverTest extends TestCase {
             var input = Nodes.input(setSkuListMethod);
             Nodes.clearArray("clearArray", null, Values.nodeProperty(self, skuListField), scope);
             Nodes.forEach(
+                    "循环",
                     () -> Values.inputValue(input, 0),
                     (bodyScope, getElement, getIndex) -> {
                         Nodes.addElement("addElement", null,
@@ -263,15 +259,14 @@ public class MappingSaverTest extends TestCase {
         var typeRepository = new MockTypeRepository();
         typeRepository.save(productType);
         typeRepository.save(skuType);
-        var arrayMappingRepo = new MockArrayMappingRepository();
         var mappingProvider = new MockMappingRepository();
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
                 typeRepository,
-                new MockFunctionTypeProvider(),
-                new MockArrayTypeProvider(),
-                mappingProvider,
-                arrayMappingRepo
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
         );
         saver.saveBuiltinMapping(skuType, true);
         var productMapping = saver.saveBuiltinMapping(productType, true);
@@ -298,7 +293,51 @@ public class MappingSaverTest extends TestCase {
         productMapping.unmap(productView, instanceRepository, typeProviders.parameterizedFlowProvider);
         var skuList = (ArrayInstance) product.getField(skuListField);
         Assert.assertTrue(skuList.isEmpty());
+    }
 
+    public void testGeneric() {
+        var typeRepository = new MockTypeRepository();
+        var mappingProvider = new MockMappingRepository();
+        MappingSaver saver = new MappingSaver(
+                instanceRepository,
+                typeRepository,
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
+        );
+
+        var nodeType = ClassTypeBuilder.newBuilder("节点", "Node")
+                .typeParameters(new TypeVariable(null, "值", "V", DummyGenericDeclaration.INSTANCE))
+                .build();
+        FieldBuilder.newBuilder("标签", "label", nodeType, getStringType())
+                .asTitle()
+                .build();
+        FieldBuilder.newBuilder("值", "value", nodeType, nodeType.getTypeParameters().get(0))
+                .build();
+
+        var nodeMapping = saver.saveBuiltinMapping(nodeType, true);
+//        logger.info(nodeMapping.getMapper().getText());
+//        logger.info(nodeMapping.getUnmapper().getText());
+
+        var listTypeVar = new TypeVariable(null, "值", "T", DummyGenericDeclaration.INSTANCE);
+        var listType = ClassTypeBuilder.newBuilder("列表", "List")
+                .typeParameters(listTypeVar)
+                .build();
+
+        var pNodeType = typeProviders.parameterizedTypeProvider.getParameterizedType(nodeType, List.of(listTypeVar), ResolutionStage.DEFINITION, new MockDTOProvider());
+        FieldBuilder.newBuilder("节点列表", "nodes", listType, typeProviders.arrayTypeProvider.getArrayType(pNodeType, ArrayKind.CHILD))
+                .isChild(true)
+                .build();
+
+        typeRepository.save(listType);
+
+        var listMapping = saver.saveBuiltinMapping(listType, true);
+//        logger.info(listMapping.getUnmapper().getText());
+//        logger.info(listType.getMethods().get(1).getText());
+
+        var nestedMapping = listMapping.getFieldMappings().get(0).getNestedMapping();
+        logger.info(nestedMapping.getUnmapper().getText());
     }
 
 }

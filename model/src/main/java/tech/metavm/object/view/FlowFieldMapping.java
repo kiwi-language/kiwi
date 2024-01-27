@@ -27,22 +27,20 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     @EntityField("模板")
     @CopyIgnore
     @Nullable
-    private FlowFieldMapping template;
+    private FlowFieldMapping copySource;
 
     public FlowFieldMapping(Long tmpId,
-                            String name,
-                            @Nullable String code,
                             FieldsObjectMapping containingMapping,
                             @Nullable Mapping nestedMapping,
-                            boolean isChild,
+                            Field targetField,
                             Method getter,
                             @Nullable Method setter,
-                            @Nullable FlowFieldMapping template) {
-        super(tmpId, name, code, getter.getReturnType(), false, isChild, setter == null, containingMapping, nestedMapping);
+                            @Nullable FlowFieldMapping copySource) {
+        super(tmpId, targetField, containingMapping, nestedMapping);
         check(getter, setter);
         this.getter = getter;
         this.setter = setter;
-        this.template = template;
+        this.copySource = copySource;
     }
 
     @Override
@@ -51,8 +49,8 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public @Nullable FlowFieldMapping getTemplate() {
-        return template;
+    public @Nullable FlowFieldMapping getCopySource() {
+        return copySource;
     }
 
     @org.jetbrains.annotations.Nullable
@@ -62,9 +60,9 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public void setTemplate(Object template) {
-        NncUtils.requireNull(this.template);
-        this.template = (FlowFieldMapping) template;
+    public void setCopySource(Object copySource) {
+        NncUtils.requireNull(this.copySource);
+        this.copySource = (FlowFieldMapping) copySource;
     }
 
     @Override

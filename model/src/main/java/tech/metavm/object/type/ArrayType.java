@@ -110,6 +110,14 @@ public class ArrayType extends CompositeType {
         return kind == ArrayKind.CHILD;
     }
 
+    public Type getInnermostElementType() {
+        Type type = elementType;
+        while (type instanceof ArrayType arrayType) {
+            type = arrayType.elementType;
+        }
+        return type;
+    }
+
     @Override
     public List<Type> getComponentTypes() {
         return List.of(elementType);

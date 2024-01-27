@@ -580,7 +580,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
         var arrayMappings = getByType(ArrayMapping.class, null, 100000);
         for (var arrayMapping : arrayMappings) {
-            arrayMapping.generateCode(getFunctionTypeContext());
+            arrayMapping.generateCode(CompositeTypeFacadeImpl.createFromContext(this));
         }
         int numPending = pendingModels.size();
         for (ClassType newType : getGenericContext().getNewTypes()) {
@@ -645,7 +645,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Nullable
     @Override
-    public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object... values) {
+    public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
         return memoryIndex.selectByUniqueKey(indexDef, List.of(values));
     }
 

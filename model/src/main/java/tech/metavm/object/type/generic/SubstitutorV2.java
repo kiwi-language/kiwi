@@ -5,7 +5,9 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
+import tech.metavm.object.view.ArrayMapping;
 import tech.metavm.object.view.FieldsObjectMapping;
+import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -16,7 +18,6 @@ import java.util.Map;
 import static tech.metavm.object.type.ResolutionStage.*;
 
 public class SubstitutorV2 extends CopyVisitor {
-
 
     public static SubstitutorV2 create(Object root,
                                        List<TypeVariable> typeParameters,
@@ -87,18 +88,20 @@ public class SubstitutorV2 extends CopyVisitor {
             existingCopies.put(root, existingRoot);
             EntityUtils.forEachDescendant(existingRoot, d -> {
                 if (d instanceof GenericElement genericElement) {
-                    var temp = genericElement.getTemplate();
-                    var parentTemp = ((Entity) temp).getParentEntity();
-                    if (parentTemp == null || existingCopies.containsKey(parentTemp)) {
-                        existingCopies.put(temp, genericElement);
-                        var childMap = ((Entity) d).getChildMap();
-                        var tempChildMap = ((Entity) temp).getChildMap();
-                        childMap.forEach((field, child) -> {
-                            var tempChild = tempChildMap.get(field);
-                            if (tempChild != null
-                                    && EntityUtils.getRealType(tempChild) == EntityUtils.getRealType(child.getClass()))
-                                existingCopies.put(tempChild, child);
-                        });
+                    var temp = genericElement.getCopySource();
+                    if(temp != null) {
+                        var parentTemp = ((Entity) temp).getParentEntity();
+                        if (existingRoot == d || parentTemp == null || existingCopies.containsKey(parentTemp)) {
+                            existingCopies.put(temp, genericElement);
+                            var childMap = ((Entity) d).getChildMap();
+                            var tempChildMap = ((Entity) temp).getChildMap();
+                            childMap.forEach((field, child) -> {
+                                var tempChild = tempChildMap.get(field);
+                                if (tempChild != null
+                                        && EntityUtils.getRealType(tempChild) == EntityUtils.getRealType(child.getClass()))
+                                    existingCopies.put(tempChild, child);
+                            });
+                        }
                     }
                 }
             });
@@ -119,7 +122,7 @@ public class SubstitutorV2 extends CopyVisitor {
         if (type == field.getDeclaringType())
             return field;
         else
-            return NncUtils.requireNonNull(type.findField(f -> f.getTemplate() == field.getEffectiveTemplate()));
+            return NncUtils.requireNonNull(type.findField(f -> f.getCopySource() == field.getEffectiveTemplate()));
     }
 
     private Method substituteMethod(Method method) {
@@ -143,6 +146,40 @@ public class SubstitutorV2 extends CopyVisitor {
         return parameterizedFlowProvider.getParameterizedFlow(function.getEffectiveHorizontalTemplate(), typeArgs);
     }
 
+    private Parameter substituteParameter(Parameter parameter) {
+        var callable = (Callable) substituteReference(parameter.getCallable());
+        if (callable == parameter.getCallable())
+            return parameter;
+        else
+            return NncUtils.findRequired(callable.getParameters(),
+                    p -> p.getSelfOrCopySource() == parameter.getSelfOrCopySource());
+    }
+
+    private ObjectMapping substituteObjectMapping(ObjectMapping objectMapping) {
+        var sourceType = (ClassType) substituteType(objectMapping.getSourceType());
+        if(sourceType == objectMapping.getSourceType())
+            return objectMapping;
+        else {
+            return NncUtils.findRequired(
+                    sourceType.getMappings(),
+                    m -> m.getSelfOrCopySource() == objectMapping.getSelfOrCopySource()
+            );
+        }
+    }
+
+    private ArrayMapping substituteArrayMapping(ArrayMapping arrayMapping) {
+        var sourceClass = arrayMapping.getSourceType().getInnermostElementType();
+        var sourceClassSubst = (ClassType) substituteType(sourceClass);
+        if(sourceClassSubst == sourceClass)
+            return arrayMapping;
+        else {
+            return NncUtils.findRequired(
+                    sourceClassSubst.getArrayMappings(),
+                    m -> m.getSelfOrCopySource() == arrayMapping.getSelfOrCopySource()
+            );
+        }
+    }
+
     @Override
     protected Object substituteReference(Object reference) {
         return switch (reference) {
@@ -150,6 +187,9 @@ public class SubstitutorV2 extends CopyVisitor {
             case Field field -> substituteField(field);
             case Method method -> substituteMethod(method);
             case Function function -> substituteFunction(function);
+            case Parameter parameter -> substituteParameter(parameter);
+            case ObjectMapping objectMapping -> substituteObjectMapping(objectMapping);
+            case ArrayMapping arrayMapping -> substituteArrayMapping(arrayMapping);
             case null, default -> super.substituteReference(reference);
         };
     }
@@ -169,7 +209,7 @@ public class SubstitutorV2 extends CopyVisitor {
     protected Object allocateCopy(Object entity) {
         if (entity instanceof GenericElement genericElement) {
             var genericElementCopy = ((GenericElement) super.allocateCopy(entity));
-            genericElementCopy.setTemplate(genericElement);
+            genericElementCopy.setCopySource(genericElement);
             return genericElementCopy;
         } else
             return super.allocateCopy(entity);
@@ -218,35 +258,40 @@ public class SubstitutorV2 extends CopyVisitor {
 
     @Override
     public Element visitFunction(Function function) {
-        var typeArgs = NncUtils.map(function.getTypeParameters(), this::substituteType);
-        var copy = (Function) getExistingCopy(function);
-        if (copy == null) {
-            copy = FunctionBuilder
-                    .newBuilder(function.getName(), function.getCode(), compositeTypeFacade)
-                    .tmpId(getCopyTmpId(function))
-                    .horizontalTemplate(function)
-                    .typeArguments(typeArgs)
-                    .isSynthetic(function.isSynthetic())
-                    .build();
-            entityRepository.tryBind(copy);
+        if (function == getRoot()) {
+            var typeArgs = NncUtils.map(function.getTypeParameters(), this::substituteType);
+            var copy = (Function) getExistingCopy(function);
+            if (copy == null) {
+                copy = FunctionBuilder
+                        .newBuilder(function.getName(), function.getCode(), compositeTypeFacade)
+                        .tmpId(getCopyTmpId(function))
+                        .horizontalTemplate(function)
+                        .typeArguments(typeArgs)
+                        .isSynthetic(function.isSynthetic())
+                        .build();
+                entityRepository.tryBind(copy);
+            }
+            copy.setStage(stage);
+            copy.setNative(function.isNative());
+            addCopy(function, copy);
+            if(function.isRootScopePresent())
+                addCopy(function.getRootScope(), copy.getRootScope());
+            enterElement(copy);
+            copy.update(
+                    NncUtils.map(function.getParameters(), p -> (Parameter) copy(p)),
+                    substituteType(function.getReturnType()),
+                    compositeTypeFacade
+            );
+            if (stage.isAfterOrAt(DEFINITION) && function.isRootScopePresent()) {
+                copy.getRootScope().clearNodes();
+                for (NodeRT node : function.getRootScope().getNodes())
+                    copy.getRootScope().addNode((NodeRT) copy(node));
+            }
+            exitElement();
+            return copy;
         }
-        copy.setStage(stage);
-        copy.setNative(function.isNative());
-        addCopy(function, copy);
-        addCopy(function.getRootScope(), copy.getRootScope());
-        enterElement(copy);
-        copy.update(
-                NncUtils.map(function.getParameters(), p -> (Parameter) copy(p)),
-                substituteType(function.getReturnType()),
-                compositeTypeFacade
-        );
-        if (stage.isAfterOrAt(DEFINITION)) {
-            copy.getRootScope().clearNodes();
-            for (NodeRT node : function.getRootScope().getNodes())
-                copy.getRootScope().addNode((NodeRT) copy(node));
-        }
-        exitElement();
-        return copy;
+        else
+            return super.visitFunction(function);
     }
 
     @Override
@@ -261,6 +306,7 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy = ClassTypeBuilder.newBuilder(name, code)
                         .typeArguments(typeArguments)
                         .anonymous(true)
+                        .ephemeral(type.isEphemeral())
                         .template(template)
                         .tmpId(getCopyTmpId(template))
                         .build();
@@ -279,21 +325,27 @@ public class SubstitutorV2 extends CopyVisitor {
             }
             enterElement(copy);
             if (stage.isAfterOrAt(DECLARATION) && curStage.isBefore(DEFINITION)) {
-                copy.setFields(NncUtils.map(type.getReadyFields(), field -> (Field) copy(field)));
+                copy.setFields(NncUtils.map(type.getFields(), field -> (Field) copy(field)));
                 copy.setStaticFields(NncUtils.map(type.getStaticFields(), field -> (Field) copy(field)));
                 copy.setMethods(NncUtils.map(type.getMethods(), method -> (Method) copy(method)));
                 if (type.getTitleField() != null)
                     copy.setTitleField((Field) getValue(type.getTitleField(), v -> {
                     }));
-            }
-            if (stage.isAfterOrAt(DEFINITION) && curStage.isBefore(DEFINITION)) {
-                copy.setMappings(NncUtils.map(type.getMappings(), m -> (FieldsObjectMapping) copy(m)));
+                copy.setMappings(NncUtils.map(type.getMappings(), m -> (ObjectMapping) copy(m)));
+                copy.setArrayMappings(NncUtils.map(type.getArrayMappings(), m -> (ArrayMapping) copy(m)));
                 if (type.getDefaultMapping() != null)
                     copy.setDefaultMapping((FieldsObjectMapping) getValue(type.getDefaultMapping(), v -> {
                     }));
             }
+            if (stage.isAfterOrAt(DEFINITION) && curStage.isBefore(DEFINITION)) {
+//                copy.setMappings(NncUtils.map(type.getMappings(), m -> (ObjectMapping) copy(m)));
+//                copy.setArrayMappings(NncUtils.map(type.getArrayMappings(), m -> (ArrayMapping) copy(m)));
+//                if (type.getDefaultMapping() != null)
+//                    copy.setDefaultMapping((FieldsObjectMapping) getValue(type.getDefaultMapping(), v -> {
+//                    }));
+            }
             exitElement();
-            if (type == root)
+            if (type == root && stage.isAfterOrAt(DEFINITION))
                 check();
             return copy;
         } else

@@ -48,7 +48,7 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
             if ((existing = persistedTypes.get(key)) != null) {
                 return existing;
             }
-            existing = context.selectByUniqueKey(indexDef, key);
+            existing = context.selectFirstByKey(indexDef, key);
             if (existing != null) {
                 persistedTypes.put(key, existing);
                 return existing;

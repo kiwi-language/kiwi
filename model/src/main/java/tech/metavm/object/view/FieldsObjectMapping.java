@@ -1,13 +1,11 @@
 package tech.metavm.object.view;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.ClassTypeBuilder;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FunctionTypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import tech.metavm.object.view.rest.dto.ObjectMappingParam;
 import tech.metavm.util.BusinessException;
@@ -27,6 +25,7 @@ public class FieldsObjectMapping extends ObjectMapping {
     private final ChildArray<FieldMapping> fieldMappings = addChild(new ChildArray<>(FieldMapping.class), "fieldMappings");
     @ChildEntity("内置目标类型")
     @Nullable
+    @CopyIgnore
     private ClassType builtinTargetType;
     @EntityField("读取流程")
     @Nullable
@@ -35,26 +34,13 @@ public class FieldsObjectMapping extends ObjectMapping {
     @Nullable
     private Method writeMethod;
 
-    // TODO add NotNull annotation to required constructor parameters
-    public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin, List<ObjectMapping> overridden) {
-        this(tmpId, name, code, sourceType, builtin, null, overridden);
-    }
-
     public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, ClassType sourceType, boolean builtin,
-                               @Nullable ClassType targetType, List<ObjectMapping> overridden) {
-        super(tmpId, name, code, sourceType, targetType == null ? createTargetType(sourceType, name, code) : targetType, builtin);
+                               @NotNull ClassType targetType, List<ObjectMapping> overridden) {
+        super(tmpId, name, code, sourceType, targetType, builtin);
         overridden.forEach(this::checkOverridden);
         this.overridden.addAll(overridden);
         sourceType.addMapping(this);
-        if (targetType == null)
-            this.builtinTargetType = addChild(getTargetType(), "builtinTargetType");
-    }
-
-    private static ClassType createTargetType(ClassType sourceType, String name, @Nullable String code) {
-        return ClassTypeBuilder.newBuilder(getTargetTypeName(sourceType, name), getTargetTypeCode(sourceType, code))
-                .ephemeral(true)
-                .anonymous(true)
-                .build();
+        this.builtinTargetType = addChild(targetType.getEffectiveTemplate(), "builtinTargetType");
     }
 
     private void checkOverridden(ObjectMapping overridden) {
@@ -81,17 +67,6 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public List<ObjectMapping> getOverridden() {
         return overridden.toList();
-    }
-
-    @Nullable
-    public FieldsObjectMapping getTemplate() {
-        return template;
-    }
-
-    @Override
-    public void setTemplate(@Nullable Object template) {
-        NncUtils.requireNull(this.template);
-        this.template = (FieldsObjectMapping) template;
     }
 
     public void setCode(@Nullable String code) {
@@ -123,20 +98,20 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     @Override
-    public void generateDeclarations(FunctionTypeProvider functionTypeProvider) {
-        super.generateDeclarations(functionTypeProvider);
-        generateReadMethodDeclaration(functionTypeProvider);
-        generateWriteMethodDeclaration(functionTypeProvider);
+    public void generateDeclarations(CompositeTypeFacade compositeTypeFacade) {
+        generateReadMethodDeclaration(compositeTypeFacade);
+        generateWriteMethodDeclaration(compositeTypeFacade);
+        super.generateDeclarations(compositeTypeFacade);
     }
 
     @Override
-    public void generateCode(Flow flow, FunctionTypeProvider functionTypeProvider) {
+    public void generateCode(Flow flow, CompositeTypeFacade compositeTypeFacade) {
         if (flow == readMethod)
             generateReadMethodCode();
         else if (flow == writeMethod)
             generateWriteMethodCode();
         else
-            super.generateCode(flow, functionTypeProvider);
+            super.generateCode(flow, compositeTypeFacade);
     }
 
     private void generateReadMethodDeclaration(FunctionTypeProvider functionTypeProvider) {

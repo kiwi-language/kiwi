@@ -12,6 +12,8 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.object.view.ArrayMapping;
+import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingSaver;
 import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.*;
@@ -27,7 +29,7 @@ import static tech.metavm.util.NncUtils.*;
 @EntityType("Class类型")
 public class ClassType extends Type implements GenericDeclaration, ChangeAware, GenericElement, StagedEntity {
 
-    public static final IndexDef<ClassType> UNIQUE_NAME = IndexDef.createUnique(ClassType.class, "name");
+    public static final IndexDef<ClassType> IDX_NAME = IndexDef.create(ClassType.class, "name");
 
     public static final IndexDef<ClassType> IDX_PARAMETERIZED_TYPE_KEY =
             IndexDef.createUnique(ClassType.class, "parameterizedTypeKey");
@@ -66,7 +68,6 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     private final ChildArray<Constraint> constraints = addChild(new ChildArray<>(Constraint.class), "constraints");
     @Nullable
     @EntityField("模板")
-    @CopyIgnore
     private ClassType template;
     // Don't remove, for search
     @SuppressWarnings("unused")
@@ -91,9 +92,16 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     @ChildEntity("视图映射列表")
     private final ChildArray<ObjectMapping> mappings = addChild(new ChildArray<>(ObjectMapping.class), "mappings");
 
+    @ChildEntity("数组视图映射列表")
+    private final ChildArray<ArrayMapping> arrayMappings = addChild(new ChildArray<>(ArrayMapping.class), "arrayMappings");
+
     @EntityField("默认视图")
     @Nullable
     private ObjectMapping defaultMapping;
+
+    @EntityField("复制来源")
+    @CopyIgnore
+    private @Nullable ClassType copySource;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
@@ -125,7 +133,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         setTmpId(tmpId);
         setSuperClass(superClass);
         setInterfaces(interfaces);
-        this.template = template;
+        this.template = copySource = template;
         this.source = source;
         this.desc = desc;
         setTypeParameters(typeParameters);
@@ -295,6 +303,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public List<ObjectMapping> getMappings() {
         return mappings.toList();
+    }
+
+    public List<ArrayMapping> getArrayMappings() {
+        return arrayMappings.toList();
     }
 
     public @Nullable ObjectMapping getBuiltinMapping() {
@@ -514,6 +526,16 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         );
     }
 
+    @Override
+    @Nullable
+    public ClassType getCopySource() {
+        return copySource;
+    }
+
+    public void setCopySource(@Nullable Object copySource) {
+        this.copySource = (ClassType) copySource;
+    }
+
     public void addConstraint(Constraint constraint) {
         constraints.addChild(constraint);
     }
@@ -555,6 +577,17 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         this.mappings.addChild(mapping);
         if (defaultMapping == null)
             defaultMapping = mapping;
+    }
+
+    public void addArrayMapping(ArrayMapping arrayMapping) {
+        assert this == arrayMapping.getSourceType().getInnermostElementType();
+        this.arrayMappings.addChild(arrayMapping);
+    }
+
+    public @Nullable ArrayMapping findArrayMapping(ArrayType sourceType, ArrayType targetType,
+                                                   @Nullable Mapping elementMapping) {
+        return NncUtils.find(arrayMappings, m -> m.getSourceType() == sourceType &&
+                m.getTargetType() == targetType && m.getElementMapping() == elementMapping);
     }
 
     public Field findFieldById(long fieldId) {
@@ -1070,7 +1103,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public void setTemplate(Object template) {
         NncUtils.requireNull(this.template);
         isParameterized = template != null;
-        this.template = (ClassType) template;
+        this.template = copySource = (ClassType) template;
     }
 
     public ClassType getEffectiveTemplate() {
@@ -1347,16 +1380,16 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         this.mappings.resetChildren(mappings);
     }
 
+    public void setArrayMappings(List<ArrayMapping> arrayMappings) {
+        this.arrayMappings.resetChildren(arrayMappings);
+    }
+
     public @Nullable ObjectMapping getDefaultMapping() {
         return defaultMapping;
     }
 
     public List<Field> getStaticFields() {
         return staticFields.toList();
-    }
-
-    public ObjectMapping findMappingByTemplate(ObjectMapping mapping) {
-        return mappings.get(ObjectMapping::getTemplate, mapping);
     }
 
     public void removeMapping(ObjectMapping mapping) {

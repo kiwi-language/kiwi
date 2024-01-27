@@ -137,7 +137,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             if (user.hasJoinedApplication(app)) {
                 ContextUtil.enterApp(app.tryGetId(), -1L);
                 try (var ctx = newContext(app.tryGetId())) {
-                    var appUser = ctx.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, user.tryGetId());
+                    var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, user.tryGetId());
                     var token = loginService.directLogin(id, appUser, ctx);
                     ctx.finish();
                     return new LoginResult(token, user.tryGetId());
@@ -164,7 +164,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
                 platformContext.initIds();
             ContextUtil.enterApp(app.tryGetId(), -1L);
             try (var context = newContext(app.tryGetId())) {
-                var user = context.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
+                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),
                             NncUtils.randomPassword(), platformUser.getName(), List.of());
@@ -195,7 +195,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
         int num = 1;
         boolean exists;
         do {
-            exists = context.selectByUniqueKey(User.IDX_LOGIN_NAME, loginName) != null;
+            exists = context.selectFirstByKey(User.IDX_LOGIN_NAME, loginName) != null;
             loginName = prefix + num++;
         } while (exists);
         return loginName;
@@ -217,7 +217,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     public void changePassword(ChangePasswordRequest request) {
         try (var context = newPlatformContext()) {
             verificationCodeService.checkVerificationCode(request.loginName(), request.verificationCode(), context);
-            var user = context.selectByUniqueKey(User.IDX_LOGIN_NAME, request.loginName());
+            var user = context.selectFirstByKey(User.IDX_LOGIN_NAME, request.loginName());
             if (user == null)
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             user.setPassword(request.password());
@@ -250,7 +250,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
 
     public boolean checkLoginName(String loginName) {
         try (var platformCtx = newPlatformContext()) {
-            var existing = platformCtx.selectByUniqueKey(User.IDX_LOGIN_NAME, loginName);
+            var existing = platformCtx.selectFirstByKey(User.IDX_LOGIN_NAME, loginName);
             return existing != null;
         }
     }

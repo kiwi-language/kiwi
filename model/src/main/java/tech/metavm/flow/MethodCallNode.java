@@ -1,13 +1,9 @@
 package tech.metavm.flow;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IEntityContext;
-import tech.metavm.entity.SerializeContext;
-import tech.metavm.entity.ElementVisitor;
+import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.MethodCallNodeParam;
+import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.util.NncUtils;
 
@@ -21,7 +17,7 @@ public class MethodCallNode extends CallNode {
         MethodCallNodeParam param = nodeDTO.getParam();
         var method = context.getMethod(param.getFlowRef());
         FlowParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
-        Value self = ValueFactory.create(param.getSelf(), parsingContext);
+        var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
         List<Argument> arguments = NncUtils.biMap(
                 method.getParameters(),
                 param.getArguments(),
@@ -43,13 +39,13 @@ public class MethodCallNode extends CallNode {
     private Value self;
 
     public MethodCallNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value self, Method method, List<Argument> arguments) {
-        super(tmpId, name,  code, prev, scope, method, arguments);
-        this.self = self != null ? addChild(self, "self") : null;
+        super(tmpId, name, code, prev, scope, method, arguments);
+        this.self = NncUtils.get(self, s -> addChild(s, "self"));
     }
 
     @Override
     protected MethodCallNodeParam getParam(SerializeContext serializeContext) {
-        try(var serContext = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter()) {
             var method = getMethod();
             return new MethodCallNodeParam(
                     NncUtils.get(self, Value::toDTO),
@@ -69,7 +65,7 @@ public class MethodCallNode extends CallNode {
     }
 
     public void setSelf(Value self) {
-        this.self = addChild(self, "self");
+        this.self = NncUtils.get(self, s -> addChild(s, "self"));
     }
 
     protected ClassInstance getSelf(MetaFrame frame) {

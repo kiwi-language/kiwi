@@ -161,6 +161,8 @@ public class MethodBuilder {
         }
         if (NncUtils.isNotEmpty(typeParameters))
             typeArguments = new ArrayList<>(typeParameters);
+        if(declaringType.isInterface())
+            isAbstract = true;
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         if (type == null)
             type = functionTypeProvider.getFunctionType(NncUtils.map(parameters, Parameter::getType), returnType);

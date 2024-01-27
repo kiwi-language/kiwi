@@ -107,7 +107,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     long count(InstanceIndexQuery query);
 
-    default DurableInstance selectByUniqueKey(IndexKeyRT key) {
+    default DurableInstance selectFirstByKey(IndexKeyRT key) {
         return NncUtils.first(selectByKey(key));
     }
 

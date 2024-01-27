@@ -1,6 +1,7 @@
 package tech.metavm.object.type.mocks;
 
 import tech.metavm.object.type.*;
+import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,11 @@ public class MockParameterizedTypeProvider implements ParameterizedTypeProvider 
             map.put(key, pType);
         }
         return pType;
+    }
+
+    @Override
+    public List<ClassType> getTemplateInstances(ClassType template) {
+        return NncUtils.filter(map.values(), t -> t.getTemplate() == template);
     }
 
     private ClassType createParameterizedType(ClassType template, List<? extends Type> typeArguments, ResolutionStage stage) {

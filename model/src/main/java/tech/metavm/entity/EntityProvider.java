@@ -37,7 +37,7 @@ public interface EntityProvider extends MappingProvider, TypeProvider {
 
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values);
 
-    default @Nullable <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object... values) {
+    default @Nullable <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
         return NncUtils.first(selectByKey(indexDef, values));
     }
 }

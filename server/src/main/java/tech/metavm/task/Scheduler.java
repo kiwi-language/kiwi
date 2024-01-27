@@ -150,7 +150,7 @@ public class Scheduler extends EntityContextFactoryBean {
         TaskSignal signal = activeSignalMap.get(appId);
         if (signal != null) {
             try (var platformContext = newPlatformContext()) {
-                signal = NncUtils.requireNonNull(platformContext.selectByUniqueKey(TaskSignal.IDX_APP_ID, appId));
+                signal = NncUtils.requireNonNull(platformContext.selectFirstByKey(TaskSignal.IDX_APP_ID, appId));
                 if (signal.decreaseUnfinishedJobCount())
                     removeSignal(signal);
                 else

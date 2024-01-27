@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.EntityQueryService;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
@@ -15,6 +16,7 @@ import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeManager;
+import tech.metavm.object.type.rest.dto.GetParameterizedTypeRequest;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.task.TaskManager;
@@ -33,6 +35,7 @@ public class MappingTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
+        var entityContextFactory = bootResult.entityContextFactory();
         TransactionOperations transactionOperations = new MockTransactionOperations();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         EntityQueryService entityQueryService = new EntityQueryService(instanceQueryService);
@@ -312,6 +315,87 @@ public class MappingTest extends TestCase {
                 )
         );
         Assert.assertNotNull(skuViewId);
+    }
+
+    public void testGeneric() {
+        var listTypeIds = MockUtils.createListType(typeManager, flowManager);
+        var nodeTypeIds = listTypeIds.nodeTypeIds();
+        var listOfStringType = typeManager.getParameterizedType(new GetParameterizedTypeRequest(
+                RefDTO.fromId(listTypeIds.listTypeId()),
+                List.of(StandardTypes.getStringType().getRef()),
+                List.of()
+        )).type();
+        var nodeOfStringType = typeManager.getParameterizedType(new GetParameterizedTypeRequest(
+                RefDTO.fromId(nodeTypeIds.nodeTypeId()),
+                List.of(StandardTypes.getStringType().getRef()),
+                List.of()
+        )).type();
+        var listDefaultMapping = TestUtils.getDefaultMapping(listOfStringType);
+        var listViewTypeId = listDefaultMapping.targetTypeRef().id();
+        var listViewType = typeManager.getType(new GetTypeRequest(listViewTypeId, false)).type();
+        var nodeDefaultMapping = TestUtils.getDefaultMapping(nodeOfStringType);
+        var nodeViewTypeId = nodeDefaultMapping.targetTypeRef().id();
+        var nodeViewType = typeManager.getType(new GetTypeRequest(nodeViewTypeId, false)).type();
+        var nodeViewChildArrayTypeId = typeManager.getArrayType(nodeViewTypeId, ArrayKind.CHILD.code()).type().id();
+        var listView = new InstanceDTO(
+                null,
+                RefDTO.fromId(listViewTypeId),
+                null,
+                null,
+                listDefaultMapping.id(),
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(listViewType, "label"),
+                                        PrimitiveFieldValue.createString("list001")
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(listViewType, "nodes"),
+                                        InstanceFieldValue.of(
+                                                InstanceDTO.createArrayInstance(
+                                                        RefDTO.fromId(nodeViewChildArrayTypeId),
+                                                        true,
+                                                        List.of(
+                                                                InstanceFieldValue.of(
+                                                                        InstanceDTO.createClassInstance(
+                                                                                RefDTO.fromId(nodeViewTypeId),
+                                                                                List.of(
+                                                                                        InstanceFieldDTO.create(
+                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "label"),
+                                                                                                PrimitiveFieldValue.createString("node001")
+                                                                                        ),
+                                                                                        InstanceFieldDTO.create(
+                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "value"),
+                                                                                                PrimitiveFieldValue.createString("hello")
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                ),
+                                                                InstanceFieldValue.of(
+                                                                        InstanceDTO.createClassInstance(
+                                                                                RefDTO.fromId(nodeViewTypeId),
+                                                                                List.of(
+                                                                                        InstanceFieldDTO.create(
+                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "label"),
+                                                                                                PrimitiveFieldValue.createString("node002")
+                                                                                        ),
+                                                                                        InstanceFieldDTO.create(
+                                                                                                TestUtils.getFieldIdByCode(nodeViewType, "value"),
+                                                                                                PrimitiveFieldValue.createString("world")
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        );
+        var id = TestUtils.doInTransaction(() -> instanceManager.create(listView));
+        var loadedView = instanceManager.get(id, 1).instance();
+        MatcherAssert.assertThat(listView, new InstanceDTOMatcher(loadedView, TestUtils.extractDescendantIds(loadedView)));
     }
 
     private String saveInstance(InstanceDTO instanceDTO) {

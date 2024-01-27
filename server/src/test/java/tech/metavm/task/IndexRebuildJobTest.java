@@ -20,13 +20,6 @@ public class IndexRebuildJobTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         instanceSearchService = bootResult.instanceSearchService();
         entityContextFactory = bootResult.entityContextFactory();
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
-                context.bind(new JobSchedulerStatus());
-                context.bind(new TaskSignal(TestConstants.APP_ID));
-                context.finish();
-            }
-        });
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 

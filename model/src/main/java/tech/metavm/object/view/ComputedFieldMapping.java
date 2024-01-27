@@ -24,13 +24,11 @@ public class ComputedFieldMapping extends FieldMapping {
     private final ComputedFieldMapping template;
 
     public ComputedFieldMapping(Long tmpId,
-                                String name,
-                                @Nullable String code,
+                                Field targetField,
                                 FieldsObjectMapping containingMapping,
                                 @Nullable Mapping nestedMapping,
-                                boolean isChild,
                                 Value value) {
-        super(tmpId, name, code, value.getType(), false, isChild, true, containingMapping, nestedMapping);
+        super(tmpId, targetField, containingMapping, nestedMapping);
         this.value = value;
         this.template = null;
     }
@@ -55,7 +53,7 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Nullable
-    public ComputedFieldMapping getTemplate() {
+    public ComputedFieldMapping getCopySource() {
         return template;
     }
 

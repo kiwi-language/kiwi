@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static tech.metavm.object.type.ResolutionStage.DEFINITION;
+import static tech.metavm.object.type.ResolutionStage.INIT;
 
 public class GenericContext implements ParameterizedFlowProvider, ParameterizedTypeProvider {
 
@@ -56,8 +57,13 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return (ClassType) template.accept(transformer);
     }
 
+    @Override
+    public List<ClassType> getTemplateInstances(ClassType template) {
+        return entityContext.getTemplateInstances(template);
+    }
+
     public Field retransformField(Field field, ClassType existing) {
-        var transformer = SubstitutorV2.create(field,
+        var transformer = SubstitutorV2.create(field.getDeclaringType(),
                 field.getDeclaringType().getTypeParameters(), existing.getTypeArguments(),
                 DEFINITION,
                 entityContext,
@@ -73,7 +79,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     public ObjectMapping retransformObjectMapping(ObjectMapping objectMapping, ClassType parameterizedType) {
-        var transformer = SubstitutorV2.create(objectMapping, 
+        var transformer = SubstitutorV2.create(objectMapping,
                 objectMapping.getSourceType().getTypeParameters(), parameterizedType.getTypeArguments(),
                 DEFINITION,
                 entityContext,
@@ -85,7 +91,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     public Method retransformMethod(Method methodTemplate, ClassType parameterizedType) {
-        var transformer = SubstitutorV2.create(methodTemplate,
+        var transformer = SubstitutorV2.create(methodTemplate.getDeclaringType(),
                 methodTemplate.getDeclaringType().getTypeParameters(), parameterizedType.getTypeArguments(),
                 DEFINITION,
                 entityContext,
@@ -108,8 +114,9 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     public ClassType retransformClass(ClassType template, ClassType parameterized) {
+        parameterized.setStage(INIT);
         var transformer = SubstitutorV2.create(
-                template,  template.getTypeParameters(), parameterized.getTypeArguments(),
+                template, template.getTypeParameters(), parameterized.getTypeArguments(),
                 DEFINITION, entityContext, emptyBatch
         );
         return (ClassType) template.accept(transformer);
@@ -125,9 +132,9 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     private Flow getNewFlow(Flow template, List<? extends Type> typeArguments) {
-        if(parent != null) {
+        if (parent != null) {
             var t = parent.getNewFlow(template, typeArguments);
-            if(t != null)
+            if (t != null)
                 return t;
         }
         return parameterizedFlows.computeIfAbsent(template, k -> new HashMap<>()).get(typeArguments);
@@ -166,7 +173,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         if (entityContext == null) {
             return null;
         }
-        return entityContext.selectByUniqueKey(
+        return entityContext.selectFirstByKey(
                 ClassType.IDX_PARAMETERIZED_TYPE_KEY,
                 Types.getParameterizedKey(template, typeArguments)
         );
@@ -176,7 +183,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         if (entityContext == null) {
             return null;
         }
-        return entityContext.selectByUniqueKey(
+        return entityContext.selectFirstByKey(
                 Flow.IDX_PARAMETERIZED_KEY,
                 Types.getParameterizedKey(template, typeArguments)
         );
@@ -263,6 +270,8 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
     }
 
     public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments, ResolutionStage stage, SaveTypeBatch batch) {
+        if(template.getTypeArguments().equals(typeArguments))
+            return template;
         NncUtils.requireTrue(template.isTemplate(), "Not a flow template");
         if (template.getTypeParameters().isEmpty())
             return template;
@@ -275,7 +284,7 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         );
         if (template instanceof Method method)
             substitutor.enterElement(method.getDeclaringType());
-        var transformed = (Method) template.accept(substitutor);
+        var transformed = (Flow) template.accept(substitutor);
         if (template instanceof Method)
             substitutor.exitElement();
         newFlows.add(transformed);
@@ -283,8 +292,23 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return (T) transformed;
     }
 
+    public void ensureAllDefined() {
+        boolean allDefined = false;
+        while (!allDefined) {
+            allDefined = true;
+            for (var values : new ArrayList<>(parameterizedTypes.values())) {
+                for (ClassType pType : new ArrayList<>(values.values())) {
+                    if (pType.getTemplate() != null && pType.getStage() != ResolutionStage.DEFINITION) {
+                        getParameterizedType(pType.getTemplate(), pType.getTypeArguments(), ResolutionStage.DEFINITION, emptyBatch);
+                        allDefined = false;
+                    }
+                }
+            }
+        }
+    }
 
     public Set<Flow> getNewFlows() {
         return newFlows;
     }
+
 }

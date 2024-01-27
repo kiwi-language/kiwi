@@ -118,6 +118,8 @@ public class FunctionBuilder {
     public Function build() {
         if (type == null)
             type = functionTypeProvider.getFunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
+        if (!typeParameters.isEmpty())
+            typeArguments = new ArrayList<>(typeParameters);
         if (existing == null) {
             return new Function(
                     tmpId,

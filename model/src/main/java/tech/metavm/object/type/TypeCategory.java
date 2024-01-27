@@ -54,7 +54,7 @@ public enum TypeCategory {
     @EnumConstant("Void")
     VOID(TypeCategoryCodes.VOID, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
     @EnumConstant("类型变量")
-    VARIABLE(TypeCategoryCodes.VARIABLE, ColumnKind.UNSPECIFIED, TypeVariableParam.class, 1),
+    VARIABLE(TypeCategoryCodes.VARIABLE, ColumnKind.UNSPECIFIED, TypeVariable.class, 1),
     @EnumConstant("类型交集")
     INTERSECTION(TypeCategoryCodes.INTERSECTION, ColumnKind.UNSPECIFIED, 4),
     @EnumConstant("函数")

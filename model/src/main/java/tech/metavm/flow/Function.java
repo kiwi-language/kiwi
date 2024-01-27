@@ -16,8 +16,8 @@ import java.util.List;
 @EntityType("函数")
 public class Function extends Flow implements GlobalKey {
 
-    public static final IndexDef<Function> UNIQUE_IDX_NAME =
-            IndexDef.createUnique(Function.class, "name");
+    public static final IndexDef<Function> IDX_NAME =
+            IndexDef.create(Function.class, "name");
 
     public static final IndexDef<Function> UNIQUE_IDX_CODE =
             IndexDef.createUnique(Function.class, "code");
@@ -35,7 +35,7 @@ public class Function extends Flow implements GlobalKey {
                     @Nullable Function horizontalTemplate,
                     @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource, state);
+        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, type, horizontalTemplate, codeSource, state, false);
         checkTypes(parameters, returnType, type);
     }
 

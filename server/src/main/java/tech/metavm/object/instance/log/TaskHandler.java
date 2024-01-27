@@ -31,7 +31,7 @@ public class TaskHandler extends EntityContextFactoryBean implements LogHandler<
     public void process(List<Task> created, @Nullable String clientId, IEntityContext context) {
         transactionOperations.executeWithoutResult(s -> {
             try (var platformContext = newPlatformContext()) {
-                TaskSignal signal = NncUtils.requireNonNull(platformContext.selectByUniqueKey(TaskSignal.IDX_APP_ID, context.getAppId()));
+                TaskSignal signal = NncUtils.requireNonNull(platformContext.selectFirstByKey(TaskSignal.IDX_APP_ID, context.getAppId()));
                 signal.setUnfinishedCount(signal.getUnfinishedCount() + created.size());
                 signal.setLastTaskCreatedAt(System.currentTimeMillis());
                 platformContext.finish();

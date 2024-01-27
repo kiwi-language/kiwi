@@ -22,7 +22,6 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     }
 
     @Nullable
-    @Override
     public GenericDeclaration getTemplate() {
         return null;
     }

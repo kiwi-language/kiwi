@@ -4,9 +4,7 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.instance.core.*;
-import tech.metavm.object.type.FunctionTypeProvider;
-import tech.metavm.object.type.ResolutionStage;
-import tech.metavm.object.type.Type;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.MappingDTO;
 import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
@@ -17,24 +15,28 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-// TODO support generic source type and generic target type
-public abstract class Mapping extends Element implements CodeSource, StagedEntity, LoadAware {
+public abstract class Mapping extends Element implements CodeSource, StagedEntity, LoadAware, GenericElement {
 
     public static final IndexDef<Mapping> IDX_SOURCE_TYPE_TARGET_TYPE
             = IndexDef.createUnique(Mapping.class, "sourceType", "targetType");
+    @EntityField("模板")
+    @Nullable
+    @CopyIgnore
+    protected Mapping copySource;
 
     @EntityField("名称")
     private String name;
     @EntityField("编号")
     @Nullable
     private String code;
+    @EntityField("源头类型")
     protected final Type sourceType;
+    @EntityField("目标类型")
     protected final Type targetType;
-
-    @ChildEntity("映射函数")
-    protected @Nullable Function mapper;
-    @ChildEntity("反映射函数")
-    protected @Nullable Function unmapper;
+    @EntityField("映射函数")
+    protected @Nullable Method mapper;
+    @EntityField("反映射函数")
+    protected @Nullable Method unmapper;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
@@ -91,7 +93,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
     public DurableInstance unmap(DurableInstance view, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
         var source = (DurableInstance) Objects.requireNonNull(getUnmapper().execute(null, List.of(view), repository, parameterizedFlowProvider).ret());
-        if(source.getContext() == null)
+        if (source.getContext() == null)
             repository.bind(source);
         return source;
     }
@@ -123,58 +125,71 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         this.code = code;
     }
 
-    public Function getMapper() {
+    public Method getMapper() {
         return requireNonNull(mapper);
     }
 
-    public Function getUnmapper() {
+    public Method getUnmapper() {
         return requireNonNull(unmapper);
     }
 
-    public void generateCode(FunctionTypeProvider functionTypeProvider) {
-        generateMappingCode(functionTypeProvider);
-        generateUnmappingCode(functionTypeProvider);
+    public void generateCode(CompositeTypeFacade compositeTypeFacade) {
+        generateMappingCode(compositeTypeFacade);
+        generateUnmappingCode(compositeTypeFacade);
         stage = ResolutionStage.DEFINITION;
     }
 
     @Override
-    public void generateCode(Flow flow, FunctionTypeProvider functionTypeProvider) {
+    public void generateCode(Flow flow, CompositeTypeFacade compositeTypeFacade) {
         if (flow != mapper && flow != unmapper)
             throw new IllegalArgumentException();
         if (flow == mapper)
-            generateMappingCode(functionTypeProvider);
+            generateMappingCode(compositeTypeFacade);
         else
-            generateUnmappingCode(functionTypeProvider);
+            generateUnmappingCode(compositeTypeFacade);
     }
 
-    public void generateDeclarations(FunctionTypeProvider functionTypeProvider) {
-        mapper = addChild(FunctionBuilder
-                        .newBuilder(
-                                "映射$" + getQualifiedName(),
-                                NncUtils.get(getQualifiedCode(), c -> "map$" + c),
-                                functionTypeProvider)
-                        .parameters(mapper != null ? mapper.getParameters().get(0) :
-                                new Parameter(null, "来源", "source", sourceType))
-                        .existing(mapper)
-                        .codeSource(this)
-                        .isSynthetic(true)
-                        .returnType(targetType)
-                        .build(),
-                "mapper");
-        unmapper = addChild(FunctionBuilder.newBuilder(
-                                "反映射$" + getQualifiedName(),
-                                NncUtils.get(getQualifiedCode(), c -> "unmap$" + c),
-                                functionTypeProvider)
-                        .existing(unmapper)
-                        .isSynthetic(true)
-                        .codeSource(this)
-                        .parameters(unmapper != null ? unmapper.getParameters().get(0) :
-                                new Parameter(null, "视图", "view", targetType))
-                        .returnType(sourceType)
-                        .build(),
-                "unmapper");
+    public void generateDeclarations(CompositeTypeFacade compositeTypeFacade) {
+        var declaringType = getClassTypeForDeclaration();
+        mapper = MethodBuilder
+                .newBuilder(declaringType, "映射$" + getQualifiedName(),
+                        "map$" + getQualifiedCode(), compositeTypeFacade)
+                .parameters(mapper != null ? mapper.getParameters().get(0) :
+                        new Parameter(null, "来源", "source", sourceType))
+                .existing(mapper)
+                .codeSource(this)
+                .isSynthetic(true)
+                .isStatic(true)
+                .returnType(targetType)
+                .build();
+        unmapper = MethodBuilder.newBuilder(
+                        declaringType, "反映射$" + getQualifiedName(),
+                        "unmap$" + getQualifiedCode(),
+                        compositeTypeFacade)
+                .existing(unmapper)
+                .isSynthetic(true)
+                .codeSource(this)
+                .isStatic(true)
+                .parameters(unmapper != null ? unmapper.getParameters().get(0) :
+                        new Parameter(null, "视图", "view", targetType))
+                .returnType(sourceType)
+                .build();
         stage = ResolutionStage.DECLARATION;
     }
+
+    @Override
+    @Nullable
+    public Mapping getCopySource() {
+        return copySource;
+    }
+
+    @Override
+    public void setCopySource(@Nullable Object copySource) {
+        NncUtils.requireNull(this.copySource);
+        this.copySource = (Mapping) copySource;
+    }
+
+    protected abstract ClassType getClassTypeForDeclaration();
 
     protected abstract Flow generateMappingCode(FunctionTypeProvider functionTypeProvider);
 

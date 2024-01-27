@@ -734,8 +734,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public DurableInstance selectByUniqueKey(IndexKeyRT key) {
-        NncUtils.requireTrue(key.getIndex().isUnique());
+    public DurableInstance selectFirstByKey(IndexKeyRT key) {
+//        NncUtils.requireTrue(key.getIndex().isUnique());
 //        var instances = memIndex.get(key);
 //        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();
         return NncUtils.first(selectByKey(key));

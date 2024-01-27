@@ -1,16 +1,21 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
+import tech.metavm.util.NncUtils;
 
 public interface GenericElement {
 
-    Object getTemplate();
+    default Object getSelfOrCopySource() {
+        return NncUtils.getOrElse(getCopySource(), s -> s, this);
+    }
 
-    void setTemplate(Object template);
+    Object getCopySource();
+
+    void setCopySource(Object template);
 
     default GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(
-                serializeContext.getRef(getTemplate()),
+                serializeContext.getRef(getCopySource()),
                 serializeContext.getRef(this)
         );
     }

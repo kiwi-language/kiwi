@@ -10,7 +10,7 @@ public interface InstanceRepository extends InstanceProvider {
 
     DurableInstance get(Id id);
 
-    @Nullable DurableInstance selectByUniqueKey(IndexKeyRT key);
+    @Nullable DurableInstance selectFirstByKey(IndexKeyRT key);
 
     boolean contains(Id id);
 

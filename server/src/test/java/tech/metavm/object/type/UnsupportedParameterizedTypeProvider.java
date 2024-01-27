@@ -10,6 +10,11 @@ public class UnsupportedParameterizedTypeProvider implements ParameterizedTypePr
     }
 
     @Override
+    public List<ClassType> getTemplateInstances(ClassType template) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ClassType getExisting(ClassType template, List<? extends Type> typeArguments) {
         return null;
     }

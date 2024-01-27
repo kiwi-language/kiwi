@@ -5,12 +5,17 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
+import tech.metavm.object.instance.rest.ClassInstanceParam;
+import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.object.instance.rest.InstanceFieldDTO;
+import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
@@ -27,6 +32,7 @@ public class TypeManagerTest extends TestCase {
     private MemInstanceSearchServiceV2 instanceSearchService;
     @SuppressWarnings("FieldCanBeLocal")
     private MemInstanceStore instanceStore;
+    private InstanceManager instanceManager;
 
     @Override
     protected void setUp() throws Exception {
@@ -40,13 +46,14 @@ public class TypeManagerTest extends TestCase {
                 entityContextFactory, entityQueryService,
                 new TaskManager(entityContextFactory, transactionOperations),
                 transactionOperations);
-        var instanceManager = new InstanceManager(
+        instanceManager = new InstanceManager(
                 entityContextFactory, instanceStore, new InstanceQueryService(instanceSearchService)
         );
         typeManager.setInstanceManager(instanceManager);
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     public void test() {
@@ -116,6 +123,36 @@ public class TypeManagerTest extends TestCase {
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
         Assert.assertEquals(2, couponStateType.getClassParam().enumConstants().size());
 
+    }
+
+    public void testAddFieldWithDefaultValueToTemplate() {
+        var nodeTypeIds = MockUtils.createNodeTypes(typeManager, flowManager);
+        var nodeType = typeManager.getParameterizedType(
+                new GetParameterizedTypeRequest(
+                        RefDTO.fromId(nodeTypeIds.nodeTypeId()),
+                        List.of(StandardTypes.getStringType().getRef()),
+                        List.of()
+                )
+        ).type();
+        var labelFieldId = TestUtils.getFieldIdByCode(nodeType, "label");
+        var valueFieldId = TestUtils.getFieldIdByCode(nodeType, "value");
+        TestUtils.doInTransactionWithoutResult(() -> instanceManager.create(new InstanceDTO(
+                null,
+                nodeType.getRef(),
+                null,
+                null,
+                null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(labelFieldId, PrimitiveFieldValue.createString("node001")),
+                                InstanceFieldDTO.create(valueFieldId, PrimitiveFieldValue.createString("hello"))
+                        )
+                )
+        )));
+        TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("编号", StandardTypes.getStringType().getRef())
+                .declaringTypeId(nodeTypeIds.nodeTypeId())
+                .defaultValue(PrimitiveFieldValue.createString("000"))
+                .build()));
     }
 
 }

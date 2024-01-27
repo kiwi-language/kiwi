@@ -15,20 +15,22 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.object.instance.cache.MockCache;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.core.DurableInstance;
+import tech.metavm.object.instance.core.GraphVisitor;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
-import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.instance.rest.InstanceFieldValue;
-import tech.metavm.object.instance.rest.ReferenceFieldValue;
+import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.rest.dto.TypeDTO;
-import tech.metavm.util.profile.Profiler;
+import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class TestUtils {
@@ -182,8 +184,7 @@ public class TestUtils {
             beginTransaction();
             action.run();
             commitTransaction();
-        }
-        finally {
+        } finally {
             TransactionSynchronizationManager.clear();
         }
     }
@@ -194,8 +195,7 @@ public class TestUtils {
             var result = action.get();
             commitTransaction();
             return result;
-        }
-        finally {
+        } finally {
             TransactionSynchronizationManager.clear();
         }
     }
@@ -303,9 +303,42 @@ public class TestUtils {
         instances.forEach(visitor::visit);
     }
 
+    public static Set<String> extractDescendantIds(InstanceDTO instanceDTO) {
+        Set<String> ids = new HashSet<>();
+        extractDescendantIds(instanceDTO, ids);
+        return ids;
+    }
+
+    private static void extractDescendantIds(InstanceDTO instanceDTO, Set<String> ids) {
+        if (instanceDTO.id() != null)
+            ids.add(instanceDTO.id());
+        if(instanceDTO.param() instanceof ClassInstanceParam classInstanceParam) {
+            for (InstanceFieldDTO field : classInstanceParam.fields()) {
+                if(field.value() instanceof InstanceFieldValue instanceFieldValue)
+                    extractDescendantIds(instanceFieldValue.getInstance(), ids);
+            }
+        }
+        else if(instanceDTO.param() instanceof ArrayInstanceParam arrayInstanceParam) {
+            for (FieldValue element : arrayInstanceParam.elements()) {
+                if(element instanceof InstanceFieldValue instanceFieldValue)
+                    extractDescendantIds(instanceFieldValue.getInstance(), ids);
+            }
+        }
+    }
 
     public static long getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().fields(), f -> fieldCode.equals(f.code())).id();
+    }
+
+    public static ObjectMappingDTO getDefaultMapping(TypeDTO typeDTO) {
+        return NncUtils.findRequired(
+                typeDTO.getClassParam().mappings(),
+                m -> m.getRef().equals(typeDTO.getClassParam().defaultMappingRef())
+        );
+    }
+
+    public static long getDefaultViewTypeId(TypeDTO typeDTO) {
+        return getDefaultMapping(typeDTO).targetTypeRef().id();
     }
 
     public static long getMethodIdByCode(TypeDTO typeDTO, String methodCode) {

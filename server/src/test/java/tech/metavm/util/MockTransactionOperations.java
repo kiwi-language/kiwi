@@ -12,54 +12,60 @@ public class MockTransactionOperations implements TransactionOperations {
         boolean transactionActive = TransactionSynchronizationManager.isActualTransactionActive();
         if(!transactionActive)
             TestUtils.beginTransaction();
-        var result = action.doInTransaction(new TransactionStatus() {
-            @Override
-            public boolean isNewTransaction() {
-                return false;
-            }
+        try {
+            var result = action.doInTransaction(new TransactionStatus() {
+                @Override
+                public boolean isNewTransaction() {
+                    return false;
+                }
 
-            @Override
-            public void setRollbackOnly() {
+                @Override
+                public void setRollbackOnly() {
 
-            }
+                }
 
-            @Override
-            public boolean isRollbackOnly() {
-                return false;
-            }
+                @Override
+                public boolean isRollbackOnly() {
+                    return false;
+                }
 
-            @Override
-            public boolean isCompleted() {
-                return false;
-            }
+                @Override
+                public boolean isCompleted() {
+                    return false;
+                }
 
-            @Override
-            public Object createSavepoint() throws TransactionException {
-                return null;
-            }
+                @Override
+                public Object createSavepoint() throws TransactionException {
+                    return null;
+                }
 
-            @Override
-            public void rollbackToSavepoint(Object savepoint) throws TransactionException {
+                @Override
+                public void rollbackToSavepoint(Object savepoint) throws TransactionException {
 
-            }
+                }
 
-            @Override
-            public void releaseSavepoint(Object savepoint) throws TransactionException {
+                @Override
+                public void releaseSavepoint(Object savepoint) throws TransactionException {
 
-            }
+                }
 
-            @Override
-            public boolean hasSavepoint() {
-                return false;
-            }
+                @Override
+                public boolean hasSavepoint() {
+                    return false;
+                }
 
-            @Override
-            public void flush() {
+                @Override
+                public void flush() {
 
-            }
-        });
-        if(!transactionActive)
-            TestUtils.commitTransaction();;
-        return result;
+                }
+            });
+            if (!transactionActive)
+                TestUtils.commitTransaction();
+            return result;
+        }
+        finally {
+            if (!transactionActive)
+                TransactionSynchronizationManager.clear();
+        }
     }
 }

@@ -25,7 +25,7 @@ public class PlatformUsers {
         }
         try (var context = platformContext.createSame(app.tryGetId())) {
             for (PlatformUser platformUser : platformUsers) {
-                var user = context.selectByUniqueKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
+                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user != null) {
                     user.setState(UserState.DETACHED);
                     var sessions = context.selectByKey(Session.IDX_USER_STATE, user, SessionState.ACTIVE);

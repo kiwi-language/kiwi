@@ -4,13 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FieldBuilder;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.FieldMappingDTO;
 import tech.metavm.object.view.rest.dto.FieldMappingParam;
-import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -31,36 +28,12 @@ public abstract class FieldMapping extends Element {
     @Nullable
     protected Mapping nestedMapping;
 
-    public FieldMapping(Long tmpId, String name, String code, Type targetFieldType,
-                        boolean asTitle,
-                        boolean isChild, boolean readonly,
-                        FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
-        this(
-                tmpId,
-                createTargetField(name, code, asTitle, isChild, readonly, containingMapping.getTargetType(),
-                        nestedMapping != null ? nestedMapping.getTargetType() : targetFieldType),
-                containingMapping, nestedMapping
-        );
-    }
-
     public FieldMapping(Long tmpId, Field targetField, FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping) {
         super(tmpId);
         this.containingMapping = containingMapping;
         this.targetField = targetField;
         this.nestedMapping = nestedMapping;
         containingMapping.addField(this);
-    }
-
-    private static Field createTargetField(String name, @Nullable String code,
-                                           boolean asTitle, boolean isChild, boolean readonly,
-                                           ClassType declaringType, Type type) {
-        return FieldBuilder
-                .newBuilder(NamingUtils.ensureValidName(name),
-                        NamingUtils.ensureValidCode(code), declaringType, type)
-                .isChild(isChild)
-                .asTitle(asTitle)
-                .readonly(readonly)
-                .build();
     }
 
     public Field getTargetField() {
@@ -87,7 +60,7 @@ public abstract class FieldMapping extends Element {
         targetField.setCode(code);
     }
 
-    public abstract FieldMapping getTemplate();
+    public abstract FieldMapping getCopySource();
 
     public boolean isChild() {
         return targetField.isChild();

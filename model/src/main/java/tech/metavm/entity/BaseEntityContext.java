@@ -434,6 +434,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public void beforeFinish() {
+        genericContext.ensureAllDefined();
         try (var ignored1 = getProfiler().enter("flush")) {
             flush();
         }
@@ -520,12 +521,12 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Nullable
     @Override
-    public <T extends Entity> T selectByUniqueKey(IndexDef<T> indexDef, Object... values) {
-        NncUtils.requireTrue(indexDef.isUnique());
+    public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
+//        NncUtils.requireTrue(indexDef.isUnique());
         try (var ignored = enter("selectByUniqueKey")) {
             NncUtils.requireNonNull(instanceContext, "instanceContext required");
             IndexKeyRT indexKey = createIndexKey(indexDef, values);
-            var instance = instanceContext.selectByUniqueKey(indexKey);
+            var instance = instanceContext.selectFirstByKey(indexKey);
             return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).get(0);
         }
     }
@@ -715,8 +716,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public <T extends Entity> T getByUniqueKey(Class<T> entityType, IndexDef<?> uniqueConstraintDef, Object... fieldValues) {
         NncUtils.requireNonNull(instanceContext);
         IndexKeyRT indexKey = createIndexKey(uniqueConstraintDef, fieldValues);
-        var instance = instanceContext.selectByUniqueKey(indexKey);
-        return getEntity(entityType, instance.getPhysicalId());
+        var instance = instanceContext.selectFirstByKey(indexKey);
+        return NncUtils.get(instance, i -> getEntity(entityType, i.getPhysicalId()));
     }
 
     private IndexKeyRT createIndexKey(IndexDef<?> uniqueConstraintDef, Object... values) {

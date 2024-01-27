@@ -216,6 +216,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder typeParameterRefs(List<RefDTO> typeParameterRefs) {
+        this.typeParameterRefs = new ArrayList<>(typeParameterRefs);
+        return this;
+    }
+
     private ClassTypeParam buildClassTypeParam() {
         return new ClassTypeParam(
                 superClassRef,

@@ -25,7 +25,8 @@ public class Parameter extends Element implements GenericElement, LocalKey {
     private Callable callable;
     @EntityField("模板")
     @Nullable
-    private Parameter template;
+    @CopyIgnore
+    private Parameter copySource;
 
     public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
         this(tmpId, name, code, type, null, null, DummyCallable.INSTANCE);
@@ -33,14 +34,14 @@ public class Parameter extends Element implements GenericElement, LocalKey {
 
     public Parameter(Long tmpId, String name, @Nullable String code, Type type,
                      @Nullable Value condition,
-                     @Nullable Parameter template,
+                     @Nullable Parameter copySource,
                      Callable callable) {
         setTmpId(tmpId);
         this.callable = callable;
         this.name = name;
         this.code = code;
         this.type = type;
-        this.template = template;
+        this.copySource = copySource;
         setCondition(condition);
     }
 
@@ -94,21 +95,21 @@ public class Parameter extends Element implements GenericElement, LocalKey {
                     code,
                     serContext.getRef(type),
                     NncUtils.get(condition, Value::toDTO),
-                    NncUtils.get(template, serContext::getRef),
+                    NncUtils.get(copySource, serContext::getRef),
                     serContext.getRef(callable)
             );
         }
     }
 
     @Nullable
-    public Parameter getTemplate() {
-        return template;
+    public Parameter getCopySource() {
+        return copySource;
     }
 
     @Override
-    public void setTemplate(Object template) {
-        NncUtils.requireNull(this.template);
-        this.template = (Parameter) template;
+    public void setCopySource(Object template) {
+        NncUtils.requireNull(this.copySource);
+        this.copySource = (Parameter) template;
     }
 
     public @Nullable Value getCondition() {

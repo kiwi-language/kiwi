@@ -25,18 +25,9 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     @Nullable
     private DirectFieldMapping template;
 
-    public DirectFieldMapping(Long tmpId, String name, @Nullable String code, boolean isChild,
-                              boolean readonly, FieldsObjectMapping containingMapping, @Nullable Mapping nestedMapping,
-                              Field sourceField, @Nullable DirectFieldMapping template) {
-        super(tmpId, name, code, sourceField.getType(), sourceField.isTitle(),
-                isChild, checkReadonly(sourceField, readonly), containingMapping, nestedMapping);
-        this.sourceField = sourceField;
-        this.template = template;
-    }
-
-    public DirectFieldMapping(Long tmpId, Field targetField, FieldsObjectMapping declaringMapping,
+    public DirectFieldMapping(Long tmpId, Field targetField, FieldsObjectMapping containingMapping,
                               @Nullable Mapping mapping, Field sourceField) {
-        super(tmpId, targetField, declaringMapping, mapping);
+        super(tmpId, targetField, containingMapping, mapping);
         this.sourceField = sourceField;
     }
 
@@ -47,12 +38,12 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     @Override
     @Nullable
-    public DirectFieldMapping getTemplate() {
+    public DirectFieldMapping getCopySource() {
         return template;
     }
 
     @Override
-    public void setTemplate(Object template) {
+    public void setCopySource(Object template) {
         this.template = (DirectFieldMapping) template;
     }
 
@@ -61,7 +52,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
         return sourceField;
     }
 
-    private static boolean checkReadonly(Field sourceField, boolean readonly) {
+    public static boolean checkReadonly(Field sourceField, boolean readonly) {
         if (sourceField.isReadonly() && !readonly)
             throw new BusinessException(ErrorCode.MUTABLE_TARGET_FIELD_FROM_READONLY_SOURCE);
         return readonly;

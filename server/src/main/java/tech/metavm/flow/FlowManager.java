@@ -302,7 +302,7 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {
-        var type = ClassTypeBuilder.newBuilder("输入类型", "InputType").temporary().build();
+        var type = ClassTypeBuilder.newBuilder("输入类型", null).temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
                     .build();
@@ -596,15 +596,14 @@ public class FlowManager extends EntityContextFactoryBean {
     private TypeDTO createNodeTypeDTO(String namePrefix, @Nullable Type currentType, List<FieldDTO> fields) {
         Long id = NncUtils.get(currentType, Type::tryGetId);
         String name = NncUtils.get(currentType, Type::getName);
-        String code = NncUtils.get(currentType, Type::getCode);
+//        String code = NncUtils.get(currentType, Type::getCode);
         Long tmpId = NncUtils.get(currentType, Type::getTmpId);
-        if (name == null || code == null)
-            name = code = namePrefix + "_" + NncUtils.randomNonNegative();
+        if (name == null)
+            name = namePrefix + "_" + NncUtils.randomNonNegative();
         if (tmpId == null)
             tmpId = NncUtils.randomNonNegative();
         return ClassTypeDTOBuilder.newBuilder(name)
                 .id(id).tmpId(tmpId)
-                .code(code)
                 .category(TypeCategory.CLASS.code())
                 .ephemeral(true)
                 .anonymous(true)

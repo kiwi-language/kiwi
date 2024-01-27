@@ -4,12 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeFunctions;
+import tech.metavm.expression.Expressions;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.Field;
-import tech.metavm.object.type.FieldBuilder;
-import tech.metavm.object.type.FunctionTypeProvider;
+import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.ArrayMappingDTO;
 import tech.metavm.util.AssertUtils;
 import tech.metavm.util.NncUtils;
@@ -62,6 +60,16 @@ public class ArrayMapping extends Mapping implements GlobalKey {
     }
 
     @Override
+    protected ClassType getClassTypeForDeclaration() {
+        Type type = getSourceType();
+        while (type instanceof ArrayType arrayType)
+            type = arrayType.getElementType();
+        if(type instanceof ClassType classType)
+            return classType;
+        throw new IllegalStateException("Can not get class type for declaration");
+    }
+
+    @Override
     protected Flow generateMappingCode(FunctionTypeProvider functionTypeProvider) {
         var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
         var input = Nodes.input(mapper);
@@ -69,6 +77,7 @@ public class ArrayMapping extends Mapping implements GlobalKey {
                 null, null, scope.getLastNode(), scope);
 //        Nodes.setSource(Values.node(view), Values.inputValue(input, 0), scope);
         Nodes.forEach(
+                "循环",
                 () -> Values.inputValue(input, 0),
                 (loopBody, elementSupplier, indexSupplier) -> {
                     Value viewElementValue;
@@ -115,7 +124,10 @@ public class ArrayMapping extends Mapping implements GlobalKey {
         };
         Nodes.branch(
                 "分支", "branch", scope,
-                Values.node(isSourcePresent),
+                Values.expression(Expressions.eq(
+                        Expressions.node(isSourcePresent),
+                        Expressions.trueExpression()
+                )),
                 trueBranch -> {
                     var getSourceFunc = NativeFunctions.getSource();
                     var bodyScope = trueBranch.getScope();
@@ -150,6 +162,7 @@ public class ArrayMapping extends Mapping implements GlobalKey {
                 }
         );
         Nodes.forEach(
+                "循环",
                 () -> Values.nodeProperty(input, inputViewField),
                 (bodyScope, elementSupplier, indexSupplier) -> {
                     Value sourceElementValue;

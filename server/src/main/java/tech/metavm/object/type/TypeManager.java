@@ -18,7 +18,6 @@ import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.rest.dto.*;
@@ -681,9 +680,9 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     private void ensureClassNameAvailable(TypeDTO typeDTO, IEntityContext context) {
-        var classWithSameName = context.selectByUniqueKey(ClassType.UNIQUE_NAME, typeDTO.name());
+        var classWithSameName = context.selectFirstByKey(ClassType.IDX_NAME, typeDTO.name());
         if (classWithSameName != null && !classWithSameName.isAnonymous()) {
-            throw BusinessException.invalidType(typeDTO, "对象名称已存在");
+            throw BusinessException.invalidType(typeDTO, "类型名称已存在");
         }
     }
 
@@ -743,7 +742,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 fieldDTO,
                 context
         );
-        retransformFieldIfRequired(field, context);
+        retransformClassTypeIfRequired(field.getDeclaringType(), context);
         if (fieldDTO.defaultValue() != null || fieldDTO.isChild() && type.isArray()) {
             context.bind(new AddFieldJobGroup(field));
         }
@@ -889,7 +888,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 if (firstItem.startsWith(Constants.CONSTANT_ID_PREFIX)) {
                     type = context.getType(Expressions.parseIdFromConstantVar(firstItem));
                 } else {
-                    type = context.selectByUniqueKey(ClassType.UNIQUE_NAME, firstItem);
+                    type = context.selectFirstByKey(ClassType.IDX_NAME, firstItem);
                 }
                 path2type.put(firstItem, type);
                 maxLevels = Math.max(maxLevels, path.length());

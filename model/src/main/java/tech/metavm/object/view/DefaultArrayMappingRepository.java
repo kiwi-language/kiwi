@@ -15,7 +15,7 @@ public class DefaultArrayMappingRepository implements ArrayMappingRepository {
     @Nullable
     @Override
     public ArrayMapping get(ArrayType sourceType, ArrayType targetType, @Nullable Mapping elementMapping) {
-        return entityContext.selectByUniqueKey(ArrayMapping.IDX, sourceType, targetType, elementMapping);
+        return entityContext.selectFirstByKey(ArrayMapping.IDX, sourceType, targetType, elementMapping);
     }
 
     @Override
