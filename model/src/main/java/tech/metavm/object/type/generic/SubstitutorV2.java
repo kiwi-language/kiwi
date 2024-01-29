@@ -5,7 +5,6 @@ import tech.metavm.entity.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GenericElementDTO;
-import tech.metavm.object.view.ArrayMapping;
 import tech.metavm.object.view.FieldsObjectMapping;
 import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
@@ -167,19 +166,6 @@ public class SubstitutorV2 extends CopyVisitor {
         }
     }
 
-    private ArrayMapping substituteArrayMapping(ArrayMapping arrayMapping) {
-        var sourceClass = arrayMapping.getSourceType().getInnermostElementType();
-        var sourceClassSubst = (ClassType) substituteType(sourceClass);
-        if(sourceClassSubst == sourceClass)
-            return arrayMapping;
-        else {
-            return NncUtils.findRequired(
-                    sourceClassSubst.getArrayMappings(),
-                    m -> m.getSelfOrCopySource() == arrayMapping.getSelfOrCopySource()
-            );
-        }
-    }
-
     @Override
     protected Object substituteReference(Object reference) {
         return switch (reference) {
@@ -189,7 +175,6 @@ public class SubstitutorV2 extends CopyVisitor {
             case Function function -> substituteFunction(function);
             case Parameter parameter -> substituteParameter(parameter);
             case ObjectMapping objectMapping -> substituteObjectMapping(objectMapping);
-            case ArrayMapping arrayMapping -> substituteArrayMapping(arrayMapping);
             case null, default -> super.substituteReference(reference);
         };
     }
@@ -332,7 +317,6 @@ public class SubstitutorV2 extends CopyVisitor {
                     copy.setTitleField((Field) getValue(type.getTitleField(), v -> {
                     }));
                 copy.setMappings(NncUtils.map(type.getMappings(), m -> (ObjectMapping) copy(m)));
-                copy.setArrayMappings(NncUtils.map(type.getArrayMappings(), m -> (ArrayMapping) copy(m)));
                 if (type.getDefaultMapping() != null)
                     copy.setDefaultMapping((FieldsObjectMapping) getValue(type.getDefaultMapping(), v -> {
                     }));

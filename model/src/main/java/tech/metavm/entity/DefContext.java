@@ -12,7 +12,6 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
-import tech.metavm.object.view.ArrayMapping;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -28,9 +27,7 @@ import static tech.metavm.object.type.ResolutionStage.*;
 public class DefContext extends BaseEntityContext implements DefMap, IEntityContext, TypeRegistry {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(DefContext.class);
-    public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of(
-            ArrayMapping.class
-    );
+    public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of();
 
     private final Map<Type, ModelDef<?, ?>> javaType2Def = new HashMap<>();
     private final Map<tech.metavm.object.type.Type, ModelDef<?, ?>> type2Def = new IdentityHashMap<>();
@@ -578,10 +575,6 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @Override
     protected void flush() {
         parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
-        var arrayMappings = getByType(ArrayMapping.class, null, 100000);
-        for (var arrayMapping : arrayMappings) {
-            arrayMapping.generateCode(CompositeTypeFacadeImpl.createFromContext(this));
-        }
         int numPending = pendingModels.size();
         for (ClassType newType : getGenericContext().getNewTypes()) {
             writeEntityIfNotPresent(newType);

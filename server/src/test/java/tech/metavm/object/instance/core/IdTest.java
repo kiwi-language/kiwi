@@ -27,14 +27,14 @@ public class IdTest extends TestCase {
 
     public void testFieldViewId() {
         var parentId = new DefaultViewId(100L, PhysicalId.of(1L));
-        Id id = new FieldViewId(parentId, 1L, 2L);
+        Id id = new FieldViewId(parentId, 1L, 2L, null);
         Assert.assertEquals(id, Id.parse(id.toString()));
     }
 
     public void testElementViewId() {
         var parentId = new DefaultViewId(100L ,PhysicalId.of(1L));
 
-        Id id = new ElementViewId(parentId, 1L, 2);
+        Id id = new ElementViewId(parentId, 1L, 2, null);
         var recovered = Id.parse(id.toString());
         Assert.assertEquals(id, recovered);
     }

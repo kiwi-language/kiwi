@@ -329,10 +329,6 @@ public abstract class ElementVisitor<R> {
         return visitNode(copyNode);
     }
 
-    public R visitArrayMapping(ArrayMapping arrayMapping) {
-        return visitMapping(arrayMapping);
-    }
-
     public R visitFunction(Function function) {
         return visitFlow(function);
     }

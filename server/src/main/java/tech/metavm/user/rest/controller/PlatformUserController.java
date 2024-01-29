@@ -20,6 +20,7 @@ import tech.metavm.util.Constants;
 import tech.metavm.util.ContextUtil;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/platform-user")
@@ -95,7 +96,7 @@ public class PlatformUserController {
         ensurePlatformUser(request);
         var loginResult = platformUserManager.enterApp(id);
         Tokens.setToken(response, id, loginResult.token());
-        return Result.success(new LoginInfo(loginResult.token().appId(), loginResult.userId()));
+        return Result.success(new LoginInfo(Objects.requireNonNull(loginResult.token()).appId(), loginResult.userId()));
     }
 
     @PostMapping("/join-app/{id:[0-9]+}")

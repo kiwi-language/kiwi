@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.type.Type;
 import tech.metavm.object.view.MappingProvider;
 
 import javax.annotation.Nullable;
@@ -20,6 +21,10 @@ public abstract class ViewId extends Id {
     public abstract ViewId getRootId();
 
     public abstract @Nullable SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider);
+
+    public Type getViewType(MappingProvider mappingProvider) {
+        return mappingProvider.getMapping(mappingId).getTargetType();
+    }
 
     @Override
     public boolean equals(Object object) {

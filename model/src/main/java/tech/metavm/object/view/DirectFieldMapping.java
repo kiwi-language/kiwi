@@ -5,6 +5,7 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.DirectFieldMappingParam;
@@ -26,8 +27,8 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     private DirectFieldMapping template;
 
     public DirectFieldMapping(Long tmpId, Field targetField, FieldsObjectMapping containingMapping,
-                              @Nullable Mapping mapping, Field sourceField) {
-        super(tmpId, targetField, containingMapping, mapping);
+                              @Nullable ObjectMapping nestedMapping, Field sourceField) {
+        super(tmpId, targetField, containingMapping, nestedMapping);
         this.sourceField = sourceField;
     }
 
@@ -59,8 +60,8 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     }
 
     @Override
-    public Value generateReadCode0(SelfNode selfNode) {
-        return Values.nodeProperty(selfNode, sourceField);
+    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+        return () -> Values.nodeProperty(selfNode, sourceField);
     }
 
     @Override
@@ -81,11 +82,11 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
         return visitor.visitDirectFieldMapping(this);
     }
 
-    public void update(Field sourceField, boolean readonly) {
+    public void update(Field sourceField, boolean readonly, CompositeTypeFacade compositeTypeFacade) {
         checkReadonly(sourceField, readonly);
         this.sourceField = sourceField;
         setReadonly(readonly);
-        resetTargetFieldType();
+        resetTargetFieldType(compositeTypeFacade);
     }
 
 }

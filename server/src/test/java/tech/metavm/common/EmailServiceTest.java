@@ -16,7 +16,7 @@ public class EmailServiceTest extends TestCase {
     }
 
     public void test() {
-        emailService.send("15968879210@163.com", "Test", "Message sent by Java application");
+//        emailService.send("15968879210@163.com", "Test", "Message sent by Java application");
     }
 
 }

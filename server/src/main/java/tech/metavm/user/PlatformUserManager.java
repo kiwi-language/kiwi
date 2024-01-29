@@ -43,7 +43,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             var user = save(new UserDTO(null, request.loginName(), request.name(), request.password(), List.of()),
                     platformCtx);
             platformCtx.finish();
-            return user.tryGetId();
+            return user.getId();
         }
     }
 
@@ -83,7 +83,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
         try (var platformContext = newPlatformContext()) {
             User user = save(userDTO, platformContext);
             platformContext.finish();
-            return user.tryGetId();
+            return user.getId();
         }
     }
 
@@ -135,12 +135,12 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             var app = platformCtx.getEntity(Application.class, id);
             var user = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
             if (user.hasJoinedApplication(app)) {
-                ContextUtil.enterApp(app.tryGetId(), -1L);
-                try (var ctx = newContext(app.tryGetId())) {
+                ContextUtil.enterApp(app.getId(), -1L);
+                try (var ctx = newContext(app.getId())) {
                     var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, user.tryGetId());
                     var token = loginService.directLogin(id, appUser, ctx);
                     ctx.finish();
-                    return new LoginResult(token, user.tryGetId());
+                    return new LoginResult(token, user.getId());
                 } finally {
                     ContextUtil.exitApp();
                 }
@@ -162,8 +162,8 @@ public class PlatformUserManager extends EntityContextFactoryBean {
         if (!app.idEquals(platformContext.getAppId())) {
             if (app.isIdNull())
                 platformContext.initIds();
-            ContextUtil.enterApp(app.tryGetId(), -1L);
-            try (var context = newContext(app.tryGetId())) {
+            ContextUtil.enterApp(app.getId(), -1L);
+            try (var context = newContext(app.getId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),
@@ -179,12 +179,12 @@ public class PlatformUserManager extends EntityContextFactoryBean {
             }
         }
         if (TransactionSynchronizationManager.isSynchronizationActive()
-                && app.tryGetId() != Constants.PLATFORM_APP_ID
-                && app.tryGetId() != Constants.ROOT_APP_ID) {
+                && app.getId() != Constants.PLATFORM_APP_ID
+                && app.getId() != Constants.ROOT_APP_ID) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.tryGetId(), app.tryGetId()));
+                    eventQueue.publishUserEvent(new JoinAppEvent(platformUser.getId(), app.getId()));
                 }
             });
         }

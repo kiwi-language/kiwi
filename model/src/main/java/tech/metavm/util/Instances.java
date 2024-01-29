@@ -449,9 +449,9 @@ public class Instances {
         return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
     }
 
-    public static Long getSourceMappingId(Instance instance) {
+    public static @Nullable Long getSourceMappingId(Instance instance) {
         if(instance instanceof DurableInstance durableInstance)
-            return durableInstance.isView() ? durableInstance.getSourceRef().mapping().getId() : null;
+            return durableInstance.isView() ? durableInstance.getSourceRef().getMappingId() : null;
         else
             return null;
     }

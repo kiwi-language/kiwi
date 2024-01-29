@@ -68,17 +68,19 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
             private void process(DurableInstance instance) {
                 var sourceRef = instance.getSourceRef();
                 var sourceId = sourceRef.source().getId();
-                var mappingId = sourceRef.mapping().tryGetId();
+                var mappingId = sourceRef.getMappingId();
                 if (sourceId != null && mappingId != null) {
                     if (instance.isRoot())
                         instance.initId(new DefaultViewId(mappingId, sourceId));
                     else
                         instance.initId(new ChildViewId(mappingId, sourceId, (ViewId) instance.getRoot().getId()));
-                } else if (mappingId != null && getParent() != null && getParent().getId() != null) {
+                } else if (/*mappingId != null && */getParent() != null && getParent().getId() != null) {
+                    if(mappingId == null)
+                        mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId((ViewId) getParent().getId(), mappingId, getParentField().getId()));
+                        instance.initId(new FieldViewId((ViewId) getParent().getId(), mappingId, getParentField().getId(), sourceId));
                     else
-                        instance.initId(new ElementViewId((ViewId) getParent().getId(), mappingId, getIndex()));
+                        instance.initId(new ElementViewId((ViewId) getParent().getId(), mappingId, getIndex(), sourceId));
                 }
             }
         });

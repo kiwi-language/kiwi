@@ -5,6 +5,7 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
+import tech.metavm.object.type.CompositeTypeFacade;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.view.rest.dto.FlowFieldMappingParam;
@@ -31,7 +32,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
 
     public FlowFieldMapping(Long tmpId,
                             FieldsObjectMapping containingMapping,
-                            @Nullable Mapping nestedMapping,
+                            @Nullable ObjectMapping nestedMapping,
                             Field targetField,
                             Method getter,
                             @Nullable Method setter,
@@ -74,7 +75,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public Value generateReadCode0(SelfNode selfNode) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
         var node = new MethodCallNode(
                 null,
                 getter.getName(),
@@ -85,7 +86,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                 getter,
                 List.of()
         );
-        return Values.node(node);
+        return () -> Values.node(node);
     }
 
     @Override
@@ -107,12 +108,13 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
         return getter.getReturnType();
     }
 
-    public void setFlows(Method getter, @Nullable Method setter) {
+    public void setFlows(Method getter, @Nullable Method setter, Type fieldType, CompositeTypeFacade compositeTypeFacade) {
         check(getter, setter);
         this.getter = getter;
         this.setter = setter;
         setReadonly(setter == null);
-        resetTargetFieldType();
+        getTargetField().setType(fieldType);
+//        resetTargetFieldType(compositeTypeFacade);
     }
 
     private void check(Flow getter, @Nullable Flow setter) {

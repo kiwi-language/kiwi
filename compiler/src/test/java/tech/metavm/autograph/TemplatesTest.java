@@ -5,6 +5,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class TemplatesTest extends TestCase {
 
@@ -39,7 +40,7 @@ public class TemplatesTest extends TestCase {
         var method = templates.replaceAsMethod(template, Map.of());
         Assert.assertNotNull(method);
         System.out.println(method);
-        var stmts = method.getBody().getStatements();
+        var stmts = Objects.requireNonNull(method.getBody()).getStatements();
         for (PsiStatement stmt : stmts) {
             System.out.println(stmt);
         }

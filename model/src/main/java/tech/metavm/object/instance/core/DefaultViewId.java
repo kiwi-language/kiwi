@@ -1,6 +1,7 @@
 package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
+import tech.metavm.object.type.Type;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceOutput;
 
@@ -62,4 +63,5 @@ public class DefaultViewId extends ViewId {
     public SourceRef getSourceRef(InstanceProvider instanceProvider, MappingProvider mappingProvider) {
         return new SourceRef(instanceProvider.get(sourceId), mappingProvider.getMapping(getMappingId()));
     }
+
 }

@@ -217,7 +217,7 @@ public class ValueFormatter {
             if (value.getType().isValue()) {
                 return value.toDTO();
             } else if (d.tryGetPhysicalId() != null) {
-                return new ReferenceDTO(d.tryGetPhysicalId());
+                return new ReferenceDTO(d.getPhysicalId());
             } else {
                 return null;
             }

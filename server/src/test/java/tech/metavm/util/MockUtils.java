@@ -849,6 +849,7 @@ public class MockUtils {
         var skuAmountFieldId = TestUtils.getFieldIdByCode(skuTypeDTO, "amount");
         var skuDecAmountMethodId = TestUtils.getMethodIdByCode(skuTypeDTO, "decAmount");
         var skuChildArrayTypeId = typeManager.getArrayType(skuTypeDTO.id(), ArrayKind.CHILD.code()).type().id();
+        var skuArrayTypeId = typeManager.getArrayType(skuTypeDTO.id(), ArrayKind.READ_WRITE.code()).type().id();
 
         var productTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("商品")
                 .code("Product")
@@ -861,10 +862,77 @@ public class MockUtils {
                 .addField(FieldDTOBuilder.newBuilder("sku列表", RefDTO.fromId(skuChildArrayTypeId))
                         .isChild(true)
                         .code("skuList")
+                        .access(Access.PRIVATE.code())
                         .tmpId(NncUtils.randomNonNegative())
                         .build())
                 .build()
         );
+
+        createFlow(flowManager,
+                MethodDTOBuilder.newBuilder(productTypeDTO.getRef(), "获取sku列表")
+                        .code("getSkuList")
+                        .returnTypeRef(RefDTO.fromId(skuArrayTypeId))
+                        .addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(),
+                                "当前记录", productTypeDTO.getRef()))
+                        .addNode(NodeDTOFactory.createNewArrayNode(
+                                NncUtils.randomNonNegative(),
+                                "sku列表",
+                                RefDTO.fromId(skuArrayTypeId),
+                                ValueDTOFactory.createExpression("当前记录.sku列表")
+                        ))
+                        .addNode(NodeDTOFactory.createReturnNode(
+                                NncUtils.randomNonNegative(),
+                                "返回",
+                                ValueDTOFactory.createReference("sku列表")
+                        ))
+                        .build()
+        );
+
+        createFlow(flowManager,
+                MethodDTOBuilder.newBuilder(productTypeDTO.getRef(), "设置sku列表")
+                        .code("setSkuList")
+                        .parameters(List.of(
+                                ParameterDTO.create(NncUtils.randomNonNegative(), "sku列表", RefDTO.fromId(skuArrayTypeId))
+                        ))
+                        .returnTypeRef(StandardTypes.getVoidType().getRef())
+                        .addNode(NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "当前记录", productTypeDTO.getRef()))
+                        .addNode(NodeDTOFactory.createInputNode(NncUtils.randomNonNegative(), "流程输入",
+                                List.of(
+                                        InputFieldDTO.create("sku列表", RefDTO.fromId(skuArrayTypeId))
+                                )))
+                        .addNode(NodeDTOFactory.createClearArrayNode(NncUtils.randomNonNegative(), "清空sku列表",
+                                ValueDTOFactory.createReference("当前记录.sku列表")))
+                        .addNode(NodeDTOFactory.createWhileNode(
+                                NncUtils.randomNonNegative(),
+                                "循环",
+                                ValueDTOFactory.createExpression("循环.索引 < LEN(流程输入.sku列表)"),
+                                List.of(
+                                        NodeDTOFactory.createGetElementNode(
+                                                NncUtils.randomNonNegative(),
+                                                "sku",
+                                                ValueDTOFactory.createReference("流程输入.sku列表"),
+                                                ValueDTOFactory.createReference("循环.索引")
+                                        ),
+                                        NodeDTOFactory.createAddElementNode(
+                                                NncUtils.randomNonNegative(),
+                                                "添加sku",
+                                                ValueDTOFactory.createReference("当前记录.sku列表"),
+                                                ValueDTOFactory.createReference("sku")
+                                        )
+                                ),
+                                List.of(
+                                        new LoopFieldDTO(
+                                                null,
+                                                "索引",
+                                                StandardTypes.getLongType().getRef(),
+                                                ValueDTOFactory.createConstant(0L),
+                                                ValueDTOFactory.createExpression("循环.索引 + 1")
+                                        )
+                                )
+                        ))
+                        .build()
+        );
+
         var productTitleFieldId = TestUtils.getFieldIdByCode(productTypeDTO, "title");
         var productSkuListFieldId = TestUtils.getFieldIdByCode(productTypeDTO, "skuList");
         var orderTypeDTO = saveType(typeManager, ClassTypeDTOBuilder.newBuilder("订单")

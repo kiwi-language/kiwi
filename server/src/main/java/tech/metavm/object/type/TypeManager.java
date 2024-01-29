@@ -23,8 +23,6 @@ import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.rest.dto.*;
 import tech.metavm.object.version.VersionManager;
 import tech.metavm.object.version.Versions;
-import tech.metavm.object.view.ArrayMapping;
-import tech.metavm.object.view.Mapping;
 import tech.metavm.task.AddFieldJobGroup;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.BusinessException;
@@ -129,8 +127,6 @@ public class TypeManager extends EntityContextFactoryBean {
             IntersectionType.class, ArrayType.class, UncertainType.class
     );
 
-    public static final List<Class<? extends Mapping>> MAPPING_CLASSES = List.of(ArrayMapping.class);
-
     private List<Type> getAllTypes(IEntityContext context) {
         var defContext = context.getDefContext();
         List<Type> types = new ArrayList<>(
@@ -140,13 +136,6 @@ public class TypeManager extends EntityContextFactoryBean {
             context.getAllByType(customTypeClass, types);
         }
         return types;
-    }
-
-    private List<Mapping> getAllArrayMappings(IEntityContext context) {
-        var defContext = context.getDefContext();
-        List<Mapping> mappings = new ArrayList<>(defContext.getAllBufferedEntities(ArrayMapping.class));
-        context.getAllByType(ArrayMapping.class, mappings);
-        return mappings;
     }
 
     private List<Function> getAllFunctions(IEntityContext context) {
@@ -160,12 +149,11 @@ public class TypeManager extends EntityContextFactoryBean {
         try (var context = newContext();
              var serContext = SerializeContext.enter()) {
             var types = getAllTypes(context);
-            var mappings = getAllArrayMappings(context);
             var functions = getAllFunctions(context);
             return new LoadAllMetadataResponse(
                     Versions.getLatestVersion(context),
                     SerializeContext.forceWriteTypes(types),
-                    NncUtils.map(mappings, m -> m.toDTO(serContext)),
+                    List.of(),
                     NncUtils.map(functions, f -> f.toDTO(false, serContext))
             );
         }
@@ -506,7 +494,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public GetTypesResponse getDescendants(long id) {
         return getByRange(new GetByRangeRequest(
-                StandardTypes.getNothingType().tryGetId(),
+                StandardTypes.getNothingType().getId(),
                 id,
                 false,
                 false,
@@ -581,7 +569,7 @@ public class TypeManager extends EntityContextFactoryBean {
             try (var serContext = SerializeContext.enter()) {
                 types.forEach(serContext::forceWriteType);
                 return new GetTypesResponse(
-                        NncUtils.map(types, t -> serContext.getType(t.tryGetId())),
+                        NncUtils.map(types, t -> serContext.getType(t.getId())),
                         serContext.getTypes(t -> !typeRefs.contains(t.getRef()))
                 );
             }
@@ -859,7 +847,7 @@ public class TypeManager extends EntityContextFactoryBean {
         Constraint constraint;
         constraint = ConstraintFactory.save(constraintDTO, context);
         context.finish();
-        return constraint.tryGetId();
+        return constraint.getId();
     }
 
     @Transactional

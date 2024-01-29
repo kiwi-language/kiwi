@@ -13,6 +13,7 @@ import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class MapNative extends NativeBase {
@@ -29,8 +30,8 @@ public class MapNative extends NativeBase {
     public MapNative(ClassInstance instance) {
         this.instance = instance;
         ClassType type = instance.getType();
-        keyArrayField = type.findFieldByCode("keyArray");
-        valueArrayField = type.findFieldByCode("valueArray");
+        keyArrayField = Objects.requireNonNull(type.findFieldByCode("keyArray"));
+        valueArrayField = Objects.requireNonNull(type.findFieldByCode("valueArray"));
         keyType = ((ArrayType) keyArrayField.getType()).getElementType();
         valueType = ((ArrayType) valueArrayField.getType()).getElementType();
         if (instance.isFieldInitialized(keyArrayField)) {

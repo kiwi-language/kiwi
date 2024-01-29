@@ -23,7 +23,7 @@ public class PlatformUsers {
                     )
             );
         }
-        try (var context = platformContext.createSame(app.tryGetId())) {
+        try (var context = platformContext.createSame(app.getId())) {
             for (PlatformUser platformUser : platformUsers) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user != null) {
@@ -38,7 +38,7 @@ public class PlatformUsers {
         if (eventQueue != null) {
             platformContext.getInstanceContext().registerCommitCallback(() -> {
                 for (PlatformUser platformUser : platformUsers) {
-                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.tryGetId(), app.tryGetId()));
+                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getId(), app.getId()));
                 }
             });
         }

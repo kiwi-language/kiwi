@@ -13,10 +13,7 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public abstract class TypeFactory {
 
@@ -142,7 +139,7 @@ public abstract class TypeFactory {
                                            boolean withBounds, IEntityContext context) {
         var param = (TypeVariableParam) typeDTO.param();
         var typeVariable = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(),
-                context.getEntity(GenericDeclaration.class, param.genericDeclarationRef()));
+                Objects.requireNonNull(context.getEntity(GenericDeclaration.class, param.genericDeclarationRef())));
         if (withBounds)
             typeVariable.setBounds(NncUtils.map(param.boundRefs(), context::getType));
         context.bind(typeVariable);

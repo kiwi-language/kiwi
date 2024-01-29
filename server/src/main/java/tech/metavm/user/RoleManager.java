@@ -45,7 +45,7 @@ public class RoleManager extends EntityContextFactoryBean{
         try (var context = newContext()) {
             Role role = save(roleDTO, context);
             context.finish();
-            return role.tryGetId();
+            return role.getId();
         }
     }
 

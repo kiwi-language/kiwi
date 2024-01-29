@@ -12,8 +12,6 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.*;
-import tech.metavm.object.view.ArrayMapping;
-import tech.metavm.object.view.Mapping;
 import tech.metavm.object.view.MappingSaver;
 import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.*;
@@ -91,9 +89,6 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @ChildEntity("视图映射列表")
     private final ChildArray<ObjectMapping> mappings = addChild(new ChildArray<>(ObjectMapping.class), "mappings");
-
-    @ChildEntity("数组视图映射列表")
-    private final ChildArray<ArrayMapping> arrayMappings = addChild(new ChildArray<>(ArrayMapping.class), "arrayMappings");
 
     @EntityField("默认视图")
     @Nullable
@@ -303,10 +298,6 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public List<ObjectMapping> getMappings() {
         return mappings.toList();
-    }
-
-    public List<ArrayMapping> getArrayMappings() {
-        return arrayMappings.toList();
     }
 
     public @Nullable ObjectMapping getBuiltinMapping() {
@@ -577,17 +568,6 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         this.mappings.addChild(mapping);
         if (defaultMapping == null)
             defaultMapping = mapping;
-    }
-
-    public void addArrayMapping(ArrayMapping arrayMapping) {
-        assert this == arrayMapping.getSourceType().getInnermostElementType();
-        this.arrayMappings.addChild(arrayMapping);
-    }
-
-    public @Nullable ArrayMapping findArrayMapping(ArrayType sourceType, ArrayType targetType,
-                                                   @Nullable Mapping elementMapping) {
-        return NncUtils.find(arrayMappings, m -> m.getSourceType() == sourceType &&
-                m.getTargetType() == targetType && m.getElementMapping() == elementMapping);
     }
 
     public Field findFieldById(long fieldId) {
@@ -995,7 +975,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public <T extends Constraint> T getConstraint(Class<T> constraintType, long id) {
-        return find(getConstraints(constraintType), c -> c.tryGetId() == id);
+        return find(getConstraints(constraintType), c -> c.getId() == id);
     }
 
     public List<CheckConstraint> getFieldCheckConstraints(Field field) {
@@ -1005,7 +985,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @SuppressWarnings("unused")
     public Constraint getConstraint(long id) {
-        return NncUtils.find(requireNonNull(constraints), c -> c.tryGetId() == id);
+        return NncUtils.find(requireNonNull(constraints), c -> c.getId() == id);
     }
 
     public Index getUniqueConstraint(long id) {
@@ -1378,10 +1358,6 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public void setMappings(List<ObjectMapping> mappings) {
         this.mappings.resetChildren(mappings);
-    }
-
-    public void setArrayMappings(List<ArrayMapping> arrayMappings) {
-        this.arrayMappings.resetChildren(arrayMappings);
     }
 
     public @Nullable ObjectMapping getDefaultMapping() {

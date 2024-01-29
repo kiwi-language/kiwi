@@ -202,7 +202,7 @@ public class DiffUtils {
             return (T) Arrays.copyOf(bytes, bytes.length);
         }
         if (object instanceof Entity entity) {
-            return (T) EntityUtils.makeDummyRef(EntityUtils.getRealEntityType(entity), entity.tryGetId());
+            return (T) EntityUtils.makeDummyRef(EntityUtils.getRealEntityType(entity), entity.getId());
         }
         return (T) copyPojo(object, copyMap, false);
     }

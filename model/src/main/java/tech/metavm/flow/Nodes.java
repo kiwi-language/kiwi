@@ -4,6 +4,7 @@ import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.Expressions;
 import tech.metavm.object.type.*;
+import tech.metavm.object.view.ObjectMapping;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TriConsumer;
 
@@ -69,6 +70,14 @@ public class Nodes {
         );
         action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
         return node;
+    }
+
+    public static MapNode map(String name, ScopeRT scope, Value source, ObjectMapping mapping) {
+        return new MapNode(null, name, null, scope.getLastNode(), scope, source, mapping);
+    }
+
+    public static UnmapNode unmap(String name, ScopeRT scope, Value view, ObjectMapping mapping) {
+        return new UnmapNode(null, name, null, scope.getLastNode(), scope, view, mapping);
     }
 
     public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,

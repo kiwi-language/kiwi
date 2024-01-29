@@ -30,7 +30,7 @@ public class InstanceField {
     }
 
     public long getId() {
-        return field.tryGetId();
+        return field.getId();
     }
 
     public String getName() {

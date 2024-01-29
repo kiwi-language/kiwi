@@ -444,7 +444,7 @@ public class Generator extends VisitorBase {
     }
 
     private void processParameter(PsiParameter parameter, InputNode inputNode) {
-        var field = inputNode.getType().findFieldByCode(parameter.getName());
+        var field = Objects.requireNonNull(inputNode.getType().findFieldByCode(parameter.getName()));
         builder().setVariable(
                 parameter.getName(),
                 new PropertyExpression(new NodeExpression(inputNode), field)
@@ -638,7 +638,7 @@ public class Generator extends VisitorBase {
             var collType = (ClassType) iteratedExpr.getType();
             typeResolver.ensureDeclared(collType);
             var itNode = builder().createMethodCall(
-                    iteratedExpr, collType.findMethodByCode("iterator"),
+                    iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
                     List.of()
             );
             var itType = (ClassType) NncUtils.requireNonNull(itNode.getType());
@@ -648,7 +648,7 @@ public class Generator extends VisitorBase {
                 );
                 var elementNode = builder().createMethodCall(
                         new NodeExpression(itNode),
-                        itType.findMethodByCode("next"),
+                        Objects.requireNonNull(itType.findMethodByCode("next")),
                         List.of()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));

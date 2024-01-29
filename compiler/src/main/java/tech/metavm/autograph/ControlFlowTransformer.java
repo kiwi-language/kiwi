@@ -43,33 +43,33 @@ public class ControlFlowTransformer extends JavaRecursiveElementVisitor {
         return blockVars;
     }
 
-    private PsiMethod createBlockMethod(BlockVars blockVars, PsiElement body) {
-        var varDeclMap = createVariableDeclarations(blockVars);
-        List<PsiElement> decls = new ArrayList<>();
-        for (Map.Entry<String, PsiElement> entry : varDeclMap.entrySet()) {
-            String declTemplate = """
-                    var varName = state.get(varNameLiteral)
-                    """;
-
-            decls.addAll(Templates.getInstance().replaceAsStatements(declTemplate, Map.of(
-                    "varName", List.of(
-                            Templates.getInstance().createReference(entry.getKey())
-                    ),
-                    "varNameLiteral", List.of(
-                            Templates.getInstance().createLiteral("\"" + entry.getKey() + "\"")
-                    )
-            )));
-        }
-        String template = """
-                private void bodyName() {
-                    variableDeclarations
-                    body
-                }
-                """;
-        return Templates.getInstance().replaceAsMethod(template,
-                Map.of("variableDeclarations", decls, "body", getStatements(body))
-        );
-    }
+//    private PsiMethod createBlockMethod(BlockVars blockVars, PsiElement body) {
+//        var varDeclMap = createVariableDeclarations(blockVars);
+//        List<PsiElement> decls = new ArrayList<>();
+//        for (Map.Entry<String, PsiElement> entry : varDeclMap.entrySet()) {
+//            String declTemplate = """
+//                    var varName = state.get(varNameLiteral)
+//                    """;
+//
+//            decls.addAll(Templates.getInstance().replaceAsStatements(declTemplate, Map.of(
+//                    "varName", List.of(
+//                            Templates.getInstance().createReference(entry.getKey())
+//                    ),
+//                    "varNameLiteral", List.of(
+//                            Templates.getInstance().createLiteral("\"" + entry.getKey() + "\"")
+//                    )
+//            )));
+//        }
+//        String template = """
+//                private void bodyName() {
+//                    variableDeclarations
+//                    body
+//                }
+//                """;
+//        return Templates.getInstance().replaceAsMethod(template,
+//                Map.of("variableDeclarations", decls, "body", getStatements(body))
+//        );
+//    }
 
     private List<PsiElement> getStatements(PsiElement element) {
         if(element instanceof PsiBlockStatement block) {

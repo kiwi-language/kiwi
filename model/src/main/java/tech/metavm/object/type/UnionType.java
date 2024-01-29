@@ -140,7 +140,7 @@ public class UnionType extends CompositeType {
     }
 
     public static String getKey(List<Type> componentTypes) {
-        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparingLong(Entity::tryGetId)));
+        return CompositeType.getKey(NncUtils.sort(componentTypes, Comparator.comparingLong(Entity::getId)));
     }
 
     @Override

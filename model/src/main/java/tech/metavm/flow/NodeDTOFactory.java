@@ -11,6 +11,10 @@ import java.util.List;
 public class NodeDTOFactory {
 
     public static NodeDTO createNewArrayNode(Long tmpId, String name, RefDTO typeRef) {
+        return createNewArrayNode(tmpId, name, typeRef, ValueDTO.constValue(new ArrayFieldValue(null, false, List.of())));
+    }
+
+    public static NodeDTO createNewArrayNode(Long tmpId, String name, RefDTO typeRef, ValueDTO value) {
         return new NodeDTO(
                 null,
                 tmpId,
@@ -20,10 +24,24 @@ public class NodeDTOFactory {
                 NodeKind.NEW_ARRAY.code(),
                 null,
                 typeRef,
-                new NewArrayNodeParam(
-                        ValueDTO.constValue(new ArrayFieldValue(null, false, List.of())),
-                        null
-                ),
+                new NewArrayNodeParam(value, null),
+                null,
+                null,
+                null
+        );
+    }
+
+    public static NodeDTO createClearArrayNode(Long tmpId, String name, ValueDTO array) {
+        return new NodeDTO(
+                null,
+                tmpId,
+                null,
+                name,
+                null,
+                NodeKind.CLEAR_ARRAY.code(),
+                null,
+                null,
+                new ClearArrayNodeParam(array),
                 null,
                 null,
                 null

@@ -120,7 +120,6 @@ public class MappingSaverTest extends TestCase {
         var typeRepository = new MockTypeRepository();
         typeRepository.save(fooType);
         typeRepository.save(barType);
-        var arrayMappingRepo = new MockArrayMappingRepository();
         var mappingProvider = new MockMappingRepository();
         MappingSaver saver = new MappingSaver(
                 instanceRepository,
@@ -336,7 +335,7 @@ public class MappingSaverTest extends TestCase {
 //        logger.info(listMapping.getUnmapper().getText());
 //        logger.info(listType.getMethods().get(1).getText());
 
-        var nestedMapping = listMapping.getFieldMappings().get(0).getNestedMapping();
+        var nestedMapping = Objects.requireNonNull(listMapping.getFieldMappings().get(0).getNestedMapping());
         logger.info(nestedMapping.getUnmapper().getText());
     }
 

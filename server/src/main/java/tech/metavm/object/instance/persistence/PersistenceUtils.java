@@ -50,7 +50,7 @@ public class PersistenceUtils {
                 appId,
                 classInstance.getPhysicalId(),
                 classInstance.getTitle(),
-                classInstance.getType().tryGetId(),
+                classInstance.getType().getId(),
                 InstanceOutput.toByteArray(classInstance),
                 NncUtils.getOrElse(classInstance.getParent(), DurableInstance::tryGetPhysicalId, -1L),
                 NncUtils.getOrElse(classInstance.getParentField(), Field::tryGetId, -1L),
@@ -65,7 +65,7 @@ public class PersistenceUtils {
                 appId,
                 arrayInstance.getPhysicalId(),
                 arrayInstance.getTitle(),
-                arrayInstance.getType().tryGetId(),
+                arrayInstance.getType().getId(),
                 InstanceOutput.toByteArray(arrayInstance),
                 NncUtils.getOrElse(arrayInstance.getParent(), DurableInstance::tryGetPhysicalId, -1L),
                 NncUtils.getOrElse(arrayInstance.getParentField(), Field::tryGetId, -1L),
@@ -132,7 +132,7 @@ public class PersistenceUtils {
                             instancePO.getAppId(),
                             instancePO.getId(),
                             readLong(),
-                            field.tryGetId(),
+                            field.getId(),
                             ReferenceKind.getFromType(field.getType()).code()
                     ));
                 } else

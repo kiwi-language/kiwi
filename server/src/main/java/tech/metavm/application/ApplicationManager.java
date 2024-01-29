@@ -120,7 +120,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
                 app.setName(appDTO.name());
             }
             platformCtx.finish();
-            return app.tryGetId();
+            return app.getId();
         }
     }
 
@@ -155,7 +155,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
                 owner = platformContext.getEntity(PlatformUser.class, request.creatorId());
             createApp(appId, request.name(), owner, platformContext);
             platformContext.finish();
-            return new CreateAppResult(appId, owner.tryGetId());
+            return new CreateAppResult(appId, owner.getId());
         }
     }
 
@@ -255,7 +255,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
             ), context);
             return new Page<>(
                     NncUtils.map(dataPage.data(),
-                            user -> new AppMemberDTO(user.tryGetId(), user.getName(),
+                            user -> new AppMemberDTO(user.getId(), user.getName(),
                                     app.isAdmin(user),
                                     app.isOwner(user))),
                     dataPage.total()
@@ -273,7 +273,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
             var invitees = new ArrayList<InviteeDTO>();
             for (PlatformUser user : dataPage.data()) {
                 invitees.add(new InviteeDTO(
-                        user.tryGetId(),
+                        user.getId(),
                         user.getLoginName(),
                         NncUtils.anyMatch(user.getApplications(), app -> app.idEquals(query.appId()))
                 ));

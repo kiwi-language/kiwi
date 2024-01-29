@@ -1,11 +1,9 @@
 package tech.metavm.entity;
 
 import junit.framework.TestCase;
-import org.junit.Assert;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.ClassTypeBuilder;
-import tech.metavm.object.view.ArrayMapping;
 import tech.metavm.object.view.FieldsObjectMapping;
 
 import java.util.List;
@@ -21,11 +19,6 @@ public class EntityMemoryIndexTest extends TestCase {
                 null, "FooBuiltinMapping", "FooBuiltinMapping", fooType,
                 true, fooViewType, List.of()
         );
-        var arrayMapping = new ArrayMapping(null, fooArrayType, fooViewArrayType, fooMapping);
-        var index = new EntityMemoryIndex();
-        index.save(arrayMapping);
-        var result = index.selectByUniqueKey(ArrayMapping.IDX, List.of(fooArrayType, fooViewArrayType, fooMapping));
-        Assert.assertSame(arrayMapping, result);
     }
 
 }

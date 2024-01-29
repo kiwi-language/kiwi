@@ -255,7 +255,7 @@ public class StandardDefBuilder {
                 )
                 .returnType(StandardTypes.getVoidType())
                 .build();
-//        NativeFunctions.setSetSourceFunc(setSourceFunc);
+        NativeFunctions.setSetSourceFunc(setSourceFunc);
         defContext.writeEntity(setSourceFunc);
 
         var isSourcePresentFunc = FunctionBuilder.newBuilder("来源是否存在", "isSourcePResent", defContext.getFunctionTypeContext())

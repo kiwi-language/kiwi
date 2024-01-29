@@ -206,7 +206,7 @@ public class ExpressionResolver {
                 Field field;
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
                     ClassType klass = (ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass));
-                    field = klass.findStaticFieldByCode(psiField.getName());
+                    field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
                     return new StaticFieldExpression(field);
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
@@ -415,7 +415,7 @@ public class ExpressionResolver {
     private MethodCallNode createInvokeFlowNode(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
         List<Expression> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
         var exprType = (ClassType) methodGenerator.getExpressionType(self);
-        return methodGenerator.createMethodCall(self, exprType.findMethodByCode(flowCode), arguments);
+        return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments);
     }
 
     private Expression invokeFlow(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
@@ -476,7 +476,7 @@ public class ExpressionResolver {
                 param -> typeResolver.resolveDeclaration(param.getType())
         );
         var templateMethod = template.getMethodByCodeAndParamTypes(method.getName(), rawParamTypes);
-        Method piFlow = template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod;
+        Method piFlow = Objects.requireNonNull(template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod);
         Method flow;
         if (piFlow.getTypeParameters().isEmpty()) {
             flow = piFlow;
@@ -534,7 +534,7 @@ public class ExpressionResolver {
         var psiMapType = TranspileUtil.createType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = (ClassType) typeResolver.resolve(type);
-            var subFlow = mapType.findMethodByCode("Map");
+            var subFlow = Objects.requireNonNull(mapType.findMethodByCode("Map"));
             var newNode = methodGenerator.createNew(subFlow,
                     resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
                     true);

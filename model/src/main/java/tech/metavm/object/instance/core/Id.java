@@ -29,8 +29,10 @@ public abstract class Id {
             case TmpId.TAG -> new TmpId(input.readLong());
             case DefaultViewId.TAG -> new DefaultViewId(input.readLong(), readId(input));
             case ChildViewId.TAG -> new ChildViewId(input.readLong(), readId(input), (ViewId) readId(input));
-            case FieldViewId.TAG ->  new FieldViewId((ViewId) readId(input), input.readLong(), input.readLong());
-            case ElementViewId.TAG ->  new ElementViewId((ViewId) readId(input), input.readLong(), input.readInt());
+            case FieldViewId.TAG ->
+                    new FieldViewId((ViewId) readId(input), input.readLong(), input.readLong(), PathViewId.readSourceId(input));
+            case ElementViewId.TAG ->
+                    new ElementViewId((ViewId) readId(input), input.readLong(), input.readInt(), PathViewId.readSourceId(input));
             default -> throw new IllegalArgumentException("Unknown instance id tag: " + tag);
         };
     }

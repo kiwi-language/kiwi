@@ -255,7 +255,7 @@ public class TypeResolverImpl implements TypeResolver {
         if (typeVariable != null) {
             return typeVariable;
         }
-        typeVariable = new TypeVariable(null, typeParameter.getName(), typeParameter.getName(),
+        typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()), typeParameter.getName(),
                 DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
         generatedTypes.add(typeVariable);

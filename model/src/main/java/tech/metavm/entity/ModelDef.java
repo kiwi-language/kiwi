@@ -111,7 +111,7 @@ public abstract class ModelDef<T, I extends DurableInstance> {
         if(model instanceof IdInitializing idInitializing) {
             var d = (DurableInstance) instance;
             if(d.tryGetPhysicalId() != null)
-                idInitializing.initId(d.tryGetPhysicalId());
+                idInitializing.initId(d.getPhysicalId());
         }
         initModel(model, instance, objectInstanceMap);
         return model;

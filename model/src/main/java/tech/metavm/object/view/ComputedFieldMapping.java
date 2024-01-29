@@ -26,7 +26,7 @@ public class ComputedFieldMapping extends FieldMapping {
     public ComputedFieldMapping(Long tmpId,
                                 Field targetField,
                                 FieldsObjectMapping containingMapping,
-                                @Nullable Mapping nestedMapping,
+                                @Nullable ObjectMapping nestedMapping,
                                 Value value) {
         super(tmpId, targetField, containingMapping, nestedMapping);
         this.value = value;
@@ -68,8 +68,8 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Override
-    public Value generateReadCode0(SelfNode selfNode) {
-        return (Value) new CopyVisitor(value) {
+    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+        return () -> (Value) new CopyVisitor(value) {
             @Override
             public Element visitThisExpression(ThisExpression expression) {
                 return new NodeExpression(selfNode);

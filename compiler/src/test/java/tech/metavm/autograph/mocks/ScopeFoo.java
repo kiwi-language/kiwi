@@ -6,7 +6,7 @@ public class ScopeFoo {
         int p = 0;
         int q = 1;
         while (t-- > 0) {
-            p *= q++;
+            p += q++;
         }
         return p ^ this.hashCode();
     }

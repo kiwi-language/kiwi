@@ -67,7 +67,7 @@ public class LocalIndexSource implements IndexSource {
                 value = Instances.nullInstance();
             bytes[i] = BytesUtils.toIndexBytes(value);
         }
-        return new LocalIndex.Key(indexKeyRT.getIndex().tryGetId(), bytes);
+        return new LocalIndex.Key(indexKeyRT.getIndex().getId(), bytes);
     }
 
     private IndexKeyRT convertFromKey(LocalIndex.Key key, IEntityContext context) {
@@ -96,7 +96,7 @@ public class LocalIndexSource implements IndexSource {
             var queryItem = itemMap.get(field);
             items.add(convertQueryItem(queryItem));
         }
-        return new LocalIndex.Query(query.index().tryGetId(), items, query.desc(), query.limit());
+        return new LocalIndex.Query(query.index().getId(), items, query.desc(), query.limit());
     }
 
     public LocalIndex.QueryItem convertQueryItem(InstanceIndexQueryItem queryItem) {

@@ -63,7 +63,6 @@ public abstract class LightVirtualFileBase extends VirtualFile {
         }
 
         @Override
-        @Nullable
         public VirtualFile findFileByPath(@NotNull String path) {
             return path2file.computeIfAbsent(path, this::createFile);
         }

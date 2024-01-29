@@ -107,7 +107,7 @@ public class FieldData extends Entity {
         return new CreatingFieldDTO(
                 name,
                 code,
-                type.tryGetId(),
+                type.getId(),
                 type.getName(),
                 unique
         );

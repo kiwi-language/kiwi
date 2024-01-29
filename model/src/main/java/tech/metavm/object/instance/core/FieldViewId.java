@@ -1,7 +1,10 @@
 package tech.metavm.object.instance.core;
 
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.InstanceOutput;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class FieldViewId extends PathViewId {
@@ -9,8 +12,8 @@ public class FieldViewId extends PathViewId {
     public static final int TAG = 6;
     public final long fieldId;
 
-    public FieldViewId(ViewId parent, long mappingId, long fieldId) {
-        super(parent, mappingId);
+    public FieldViewId(ViewId parent, long mappingId, long fieldId, @Nullable Id sourceId) {
+        super(parent, mappingId, sourceId);
         this.fieldId = fieldId;
     }
 
@@ -20,6 +23,7 @@ public class FieldViewId extends PathViewId {
         getParent().write(output);
         output.writeLong(getMappingId());
         output.writeLong(fieldId);
+        writeSourceId(output);
     }
 
     @Override
@@ -30,6 +34,11 @@ public class FieldViewId extends PathViewId {
     @Override
     public boolean isTemporary() {
         return getParent().isTemporary();
+    }
+
+    @Override
+    protected Type getViewTypeByPath(Type parentType) {
+        return ((ClassType) parentType).getField(fieldId).getType();
     }
 
     @Override

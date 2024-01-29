@@ -216,7 +216,7 @@ public class Scheduler extends EntityContextFactoryBean {
             }
         }
         if (signal != null) {
-            signal = rootEntityCtx.getEntity(TaskSignal.class, signal.tryGetId());
+            signal = rootEntityCtx.getEntity(TaskSignal.class, signal.getId());
             addSignal(signal);
         }
         return lastScheduledSignal = signal;

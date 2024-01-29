@@ -113,7 +113,7 @@ public class MappingSaver {
     }
 
     private FieldMapping saveFieldMapping(FieldMappingDTO fieldMappingDTO, FieldsObjectMapping containingMapping) {
-        var nestedMapping = NncUtils.get(fieldMappingDTO.nestedMappingRef(), mappingProvider::getMapping);
+        var nestedMapping = NncUtils.get(fieldMappingDTO.nestedMappingRef(), mappingProvider::getObjectMapping);
         var fieldMapping = containingMapping.findFieldMapping(fieldMappingDTO.getRef());
         var sourceType = containingMapping.getSourceType();
         if (fieldMapping == null) {
@@ -126,7 +126,7 @@ public class MappingSaver {
                                     containingMapping.getTargetType(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
-                                    nestedMapping != null ? nestedMapping.getTargetType() : sourceField.getType(),
+                                    getTargetFieldType(sourceField.getType(), nestedMapping),
                                     fieldMappingDTO.isChild(),
                                     sourceField.isTitle(),
                                     DirectFieldMapping.checkReadonly(sourceField, fieldMappingDTO.readonly())
@@ -146,7 +146,7 @@ public class MappingSaver {
                                     containingMapping.getTargetType(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
-                                    nestedMapping != null ? nestedMapping.getTargetType() : getter.getReturnType(),
+                                    getTargetFieldType(getter.getReturnType(), nestedMapping),
                                     fieldMappingDTO.isChild(),
                                     false,
                                     setter == null
@@ -164,7 +164,7 @@ public class MappingSaver {
                                     containingMapping.getTargetType(),
                                     fieldMappingDTO.name(),
                                     fieldMappingDTO.code(),
-                                    nestedMapping != null ? nestedMapping.getTargetType() : value.getType(),
+                                    getTargetFieldType(value.getType(), nestedMapping),
                                     fieldMappingDTO.isChild(),
                                     false,
                                     true
@@ -178,18 +178,20 @@ public class MappingSaver {
         } else {
             fieldMapping.setName(fieldMappingDTO.name());
             fieldMapping.setCode(fieldMappingDTO.code());
-            fieldMapping.setNestedMapping(nestedMapping);
+            fieldMapping.setNestedMapping(nestedMapping, compositeTypeFacade);
             var param = fieldMappingDTO.param();
             switch (fieldMapping) {
                 case DirectFieldMapping directFieldMapping -> directFieldMapping.update(
                         sourceType.getField(Objects.requireNonNull(fieldMappingDTO.sourceFieldRef())),
-                        fieldMappingDTO.readonly());
+                        fieldMappingDTO.readonly(), compositeTypeFacade);
                 case FlowFieldMapping flowFieldMapping -> {
                     var flowParam = (FlowFieldMappingParam) param;
+                    var getter = sourceType.getMethod(flowParam.getterRef());
                     flowFieldMapping.setFlows(
-                            sourceType.getMethod(flowParam.getterRef()),
-                            NncUtils.get(flowParam.setterRef(), sourceType::getMethod)
-                    );
+                            getter,
+                            NncUtils.get(flowParam.setterRef(), sourceType::getMethod),
+                            getTargetFieldType(getter.getReturnType(), nestedMapping),
+                            compositeTypeFacade);
                 }
                 case ComputedFieldMapping computedFieldMapping -> {
                     var computedParam = (ComputedFieldMappingParam) param;
@@ -249,23 +251,29 @@ public class MappingSaver {
                                                              FieldsObjectMapping containingMapping,
                                                              Map<Field, DirectFieldMapping> directFieldMappings,
                                                              boolean generateCode) {
-        var nestedMapping = field.isChild() ?
-                tryGetBuiltinMapping(field.getType(), field.getType(), generateCode) : null;
+        var fieldTypeAndNestedMapping = field.isChild() ?
+                tryGetBuiltinMapping(field.getType(), field.getType(), generateCode) :
+                new TypeAndMapping(field.getType(), null);
         var fieldMapping = directFieldMappings.get(field);
         if (fieldMapping == null) {
             fieldMapping = new DirectFieldMapping(
                     null, createTargetField(containingMapping.getTargetType(), field.getName(), field.getCode(),
-                    nestedMapping != null ? nestedMapping.getTargetType() : field.getType(),
+                    fieldTypeAndNestedMapping.type,
                     field.isChild(), field.isTitle(), field.isReadonly()),
-                    containingMapping, nestedMapping, field
+                    containingMapping, fieldTypeAndNestedMapping.mapping, field
             );
         } else {
             fieldMapping.setName(field.getName());
             fieldMapping.setCode(field.getCode());
-            fieldMapping.update(field, field.isReadonly());
-            fieldMapping.setNestedMapping(nestedMapping);
+            fieldMapping.update(field, field.isReadonly(), compositeTypeFacade);
+            fieldMapping.setTargetFieldType(fieldTypeAndNestedMapping.type);
+            fieldMapping.setNestedMapping(fieldTypeAndNestedMapping.mapping, compositeTypeFacade);
         }
         return fieldMapping;
+    }
+
+    private Type getTargetFieldType(Type targetFieldType, @Nullable ObjectMapping nestedMapping) {
+        return FieldMapping.getTargetFieldType(targetFieldType, nestedMapping, compositeTypeFacade);
     }
 
     private ClassType createTargetType(ClassType sourceType, String name) {
@@ -341,22 +349,36 @@ public class MappingSaver {
         }
     }
 
-    private @Nullable Mapping tryGetBuiltinMapping(Type type, @Nullable Type underlyingType, boolean generateCode) {
-        return switch (type) {
-            case ClassType classType -> classType.getBuiltinMapping();
+    private record TypeAndMapping(
+            Type type,
+            @Nullable ObjectMapping mapping
+    ) {
+
+    }
+
+    private TypeAndMapping tryGetBuiltinMapping(Type type, @Nullable Type underlyingType, boolean generateCode) {
+        return  switch (type) {
+            case ClassType classType -> {
+                var nestedMapping = classType.getBuiltinMapping();
+                yield nestedMapping != null ? new TypeAndMapping(nestedMapping.getTargetType(), nestedMapping)
+                        : new TypeAndMapping(classType, null);
+            }
             case ArrayType arrayType -> {
                 if (underlyingType instanceof ArrayType underlyingArrayType && underlyingArrayType.isChildArray()) {
                     var underlyingElementType = underlyingArrayType.getElementType();
-                    var elementBuiltinMapping = tryGetBuiltinMapping(arrayType.getElementType(), underlyingElementType, generateCode);
-                    if (elementBuiltinMapping != null) {
-                        var targetType =
-                                compositeTypeFacade.getArrayType(elementBuiltinMapping.getTargetType(), ArrayKind.CHILD);
-                        yield getArrayMapping(arrayType, targetType, elementBuiltinMapping, generateCode);
-                    }
+                    var elementTypeAndMapping =
+                            tryGetBuiltinMapping(arrayType.getElementType(), underlyingElementType, generateCode);
+                    var typeSubst = underlyingArrayType.accept(new TypeSubstitutor(
+                            List.of(underlyingArrayType.getElementType()),
+                            List.of(elementTypeAndMapping.type),
+                            compositeTypeFacade,
+                            new MockDTOProvider()
+                    ));
+                    yield new TypeAndMapping(typeSubst, elementTypeAndMapping.mapping);
                 }
-                yield null;
+                yield new TypeAndMapping(arrayType, null);
             }
-            default -> null;
+            default -> new TypeAndMapping(type, null);
         };
     }
 
@@ -364,8 +386,9 @@ public class MappingSaver {
                                                          Map<Flow, FlowFieldMapping> propertyFieldMappings, boolean generateCode) {
         var propertyMapping = propertyFieldMappings.get(property.getter);
         var underlyingField = property.underlyingField;
-        var nestedMapping = tryGetBuiltinMapping(property.getter.getReturnType(),
+        var fieldTypeAndNestedMapping = tryGetBuiltinMapping(property.getter.getReturnType(),
                 NncUtils.get(underlyingField, Property::getType), generateCode);
+        var nestedMapping = fieldTypeAndNestedMapping.mapping;
         if (propertyMapping == null) {
             propertyMapping = new FlowFieldMapping(null,
                     declaringMapping,
@@ -374,7 +397,7 @@ public class MappingSaver {
                             declaringMapping.getTargetType(),
                             property.name,
                             property.code,
-                            nestedMapping != null ? nestedMapping.getTargetType() : property.getter.getReturnType(),
+                            fieldTypeAndNestedMapping.type,
                             property.isChild(),
                             false,
                             property.setter == null
@@ -384,8 +407,8 @@ public class MappingSaver {
         } else {
             propertyMapping.setName(property.name);
             propertyMapping.setCode(property.code);
-            propertyMapping.setFlows(property.getter, property.setter);
-            propertyMapping.setNestedMapping(nestedMapping);
+            propertyMapping.setNestedMapping(nestedMapping, compositeTypeFacade);
+            propertyMapping.setFlows(property.getter, property.setter, fieldTypeAndNestedMapping.type, compositeTypeFacade);
         }
         return propertyMapping;
     }
@@ -435,44 +458,6 @@ public class MappingSaver {
             }
         }
         return null;
-    }
-
-    public ArrayMapping getArrayMapping(ArrayType sourceType,
-                                        ArrayType targetType,
-                                        Mapping elementMapping,
-                                        boolean generateCode) {
-        var sourceClass = (ClassType) sourceType.getInnermostElementType();
-        var targetClass = (ClassType) targetType.getInnermostElementType();
-        var mapping = sourceClass.findArrayMapping(sourceType, targetType, elementMapping);
-        if (mapping == null) {
-            if (sourceClass.getTemplate() == null) {
-                mapping = new ArrayMapping(null, sourceType, targetType, elementMapping);
-                mapping.generateDeclarations(compositeTypeFacade);
-                sourceClass.addArrayMapping(mapping);
-            } else {
-                var sourceClassTemplate = sourceClass.getTemplate();
-                var elementMappingTemplate = Objects.requireNonNull(elementMapping.getCopySource());
-                Mapping m = elementMappingTemplate;
-                while (m instanceof ArrayMapping am)
-                    m = am.getElementMapping();
-                var om = (ObjectMapping) m;
-                var targetClassTemplate = (ClassType) Objects.requireNonNull(om).getTargetType();
-                var sourceTemplate = (ArrayType) sourceType.accept(new TypeSubstitutor(
-                        List.of(sourceClass), List.of(sourceClassTemplate),
-                        compositeTypeFacade, new MockDTOProvider()
-                ));
-                var targetTemplate = (ArrayType) targetType.accept(new TypeSubstitutor(
-                        List.of(targetClass), List.of(targetClassTemplate),
-                        compositeTypeFacade, new MockDTOProvider()
-                ));
-                getArrayMapping(sourceTemplate, targetTemplate, elementMappingTemplate, generateCode);
-                retransformClassType(sourceClassTemplate);
-                mapping = Objects.requireNonNull(sourceClass.findArrayMapping(sourceType, targetType, elementMapping));
-            }
-        }
-        if (!mapping.isCodeGenerated() && generateCode)
-            mapping.generateCode(compositeTypeFacade);
-        return mapping;
     }
 
     private record Accessor(

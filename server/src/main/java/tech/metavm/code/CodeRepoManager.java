@@ -18,7 +18,7 @@ public class CodeRepoManager extends EntityContextFactoryBean {
         try(var context = newContext()) {
             var repo = CodeRepo.create(codeRepoDTO, context);
             context.finish();
-            return repo.tryGetId();
+            return repo.getId();
         }
     }
 

@@ -5,6 +5,8 @@ import com.intellij.psi.PsiForeachStatement;
 import junit.framework.TestCase;
 import tech.metavm.autograph.mocks.LivenessFoo;
 
+import java.util.Objects;
+
 public class LivenessAnalyzerTest extends TestCase {
 
     public void test() {
@@ -24,7 +26,7 @@ public class LivenessAnalyzerTest extends TestCase {
 
         @Override
         public void visitForeachStatement(PsiForeachStatement statement) {
-            var scope = statement.getUserData(Keys.BODY_SCOPE);
+            var scope = Objects.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
             System.out.println("read: " + scope.getRead());
             System.out.println("modified: " + scope.getModified());
         }

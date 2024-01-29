@@ -12,6 +12,7 @@ import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,8 +37,8 @@ public class TranspileUtilTest extends TestCase {
     }
 
     public void testGetSignature() {
-        var listClass = TranspileUtil.createType(List.class).resolve();
-        var getMethod = NncUtils.find(listClass.getMethods(), method -> method.getName().equals("get"));
+        var listClass = Objects.requireNonNull(TranspileUtil.createType(List.class).resolve());
+        var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("get"));
         var signature = TranspileUtil.getSignature(getMethod, null);
         Assert.assertEquals(
                 new MethodSignature(
