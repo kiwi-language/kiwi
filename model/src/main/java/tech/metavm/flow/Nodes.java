@@ -83,11 +83,20 @@ public class Nodes {
     public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,
                                     Value condition, Consumer<Branch> thenGenerator, Consumer<Branch> elseGenerator,
                                     Consumer<MergeNode> processMerge) {
+        return branch(name, code, scope, List.of(condition), List.of(thenGenerator), elseGenerator, processMerge);
+    }
+
+    public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,
+                                    List<Value> conditions, List<Consumer<Branch>> branchGenerators,
+                                    Consumer<Branch> defaultBranchGenerator,
+                                    Consumer<MergeNode> processMerge) {
         var node = new BranchNode(null, name, code, false, scope.getLastNode(), scope);
-        var thenBranch = node.addBranch(condition);
-        thenGenerator.accept(thenBranch);
+        NncUtils.biForEach(conditions, branchGenerators, (cond, generator) -> {
+            var thenBranch = node.addBranch(cond);
+            generator.accept(thenBranch);
+        });
         var elseBranch = node.addDefaultBranch();
-        elseGenerator.accept(elseBranch);
+        defaultBranchGenerator.accept(elseBranch);
         var mergeOutput = ClassTypeBuilder.newBuilder("mergeOutput", "mergeOutput").temporary().build();
         var mergeNode = new MergeNode(
                 null, name + "_merge", NncUtils.get(code, c -> c + "_merge"),
@@ -95,6 +104,14 @@ public class Nodes {
         );
         processMerge.accept(mergeNode);
         return node;
+    }
+
+    public static CastNode castNode(String name, Type type, ScopeRT scope, Value value) {
+        return new CastNode(null, name, null, type, scope.getLastNode(), scope, value);
+    }
+
+    public static ValueNode value(String name, Value value, ScopeRT scope) {
+        return new ValueNode(null, name, null, value.getType(), scope.getLastNode(), scope, value);
     }
 
     public static FunctionCallNode functionCall(String name, ScopeRT scope,

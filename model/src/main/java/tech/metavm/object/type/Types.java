@@ -40,6 +40,10 @@ public class Types {
         };
     }
 
+    public static Type getViewType(Type sourceType, UnionType viewUnionType) {
+        return NncUtils.findRequired(viewUnionType.getMembers(), sourceType::isViewType);
+    }
+
     public static String getCanonicalMethodName(Method method, Function<Type, java.lang.reflect.Type> getJavaType) {
         return getCanonicalName(method.getDeclaringType(), getJavaType) + "-" + method.getName()
                 + "("

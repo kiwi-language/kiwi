@@ -66,6 +66,10 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     public void onLoad(IEntityContext context) {
     }
 
+    public boolean isViewType(Type type) {
+        return this == type;
+    }
+
     protected void setTemplateFlag(boolean templateFlag) {
         this.templateFlag = templateFlag;
     }

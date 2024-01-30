@@ -18,6 +18,10 @@ public class MockUnionTypeProvider implements UnionTypeProvider {
         return map.computeIfAbsent(new Key(types), k -> new UnionType(tmpId, types));
     }
 
+    public void add(UnionType unionType) {
+        map.put(new Key(unionType.getMembers()), unionType);
+    }
+
     private record Key(Set<Type> types) {}
 
 }

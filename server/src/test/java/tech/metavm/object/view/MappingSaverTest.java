@@ -7,7 +7,10 @@ import tech.metavm.entity.DummyGenericDeclaration;
 import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
-import tech.metavm.flow.*;
+import tech.metavm.flow.MethodBuilder;
+import tech.metavm.flow.Nodes;
+import tech.metavm.flow.Parameter;
+import tech.metavm.flow.Values;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
@@ -15,18 +18,20 @@ import tech.metavm.object.type.mocks.MockTypeRepository;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.object.view.mocks.MockMappingRepository;
 import tech.metavm.util.Instances;
+import tech.metavm.util.MockUtils;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import static tech.metavm.entity.StandardTypes.getStringType;
 
 public class MappingSaverTest extends TestCase {
 
     public static final Logger logger = org.slf4j.LoggerFactory.getLogger(MappingSaverTest.class);
-    
+
     private InstanceRepository instanceRepository;
     private TypeProviders typeProviders;
 
@@ -134,7 +139,7 @@ public class MappingSaverTest extends TestCase {
         var fooMapping = saver.saveBuiltinMapping(fooType, true);
         var fooViewType = fooMapping.getTargetType();
         var barsFieldMapping = fooMapping.getFieldMappingByTargetField(fooViewType.getFieldByCode("bars"));
-        var barArrayMapping = Objects.requireNonNull(barsFieldMapping.getNestedMapping());
+//        var barArrayMapping = Objects.requireNonNull(barsFieldMapping.getNestedMapping());
 //        fooMapping.initId(3001L);
 //        barArrayMapping.initId(3002L);
 //        barMapping.initId(3003L);
@@ -161,8 +166,8 @@ public class MappingSaverTest extends TestCase {
 
         TestUtils.initInstanceIds(foo);
 
-        logger.info(barArrayMapping.getMapper().getText());
-        logger.info(barArrayMapping.getUnmapper().getText());
+//        logger.info(barArrayMapping.getMapper().getText());
+//        logger.info(barArrayMapping.getUnmapper().getText());
 
         TestUtils.initEntityIds(fooType);
 
@@ -211,6 +216,82 @@ public class MappingSaverTest extends TestCase {
         Assert.assertEquals(1, bars.size());
         var bar = (ClassInstance) bars.get(0);
         Assert.assertEquals(Instances.stringInstance("bar002"), bar.getField("code"));
+    }
+
+    public void testOrder() {
+        var shoppingTypes = MockUtils.createShoppingTypes();
+        TestUtils.initEntityIds(shoppingTypes.orderType());
+        typeProviders.addType(shoppingTypes.orderType());
+        typeProviders.addType(shoppingTypes.productType());
+        typeProviders.addType(shoppingTypes.skuType());
+        typeProviders.addType(shoppingTypes.couponType());
+        typeProviders.addType(shoppingTypes.couponStateType());
+        typeProviders.addType(shoppingTypes.couponArrayType());
+        var mappingProvider = new MockMappingRepository();
+        MappingSaver saver = new MappingSaver(
+                instanceRepository,
+                typeProviders.typeRepository,
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
+        );
+        var orderMapping = (FieldsObjectMapping) saver.saveBuiltinMapping(shoppingTypes.orderType(), true);
+        TestUtils.initEntityIds(shoppingTypes.orderType());
+
+        var order = ClassInstanceBuilder.newBuilder(shoppingTypes.orderType())
+                .data(Map.of(
+                        shoppingTypes.orderAmountField(),
+                        Instances.longInstance(1L),
+                        shoppingTypes.orderCodeField(),
+                        Instances.stringInstance("001"),
+                        shoppingTypes.orderCouponsField(),
+                        new ArrayInstance(
+                                shoppingTypes.couponArrayType(),
+                                List.of(
+                                        ClassInstanceBuilder.newBuilder(shoppingTypes.couponType())
+                                                .data(Map.of(
+                                                        shoppingTypes.couponTitleField(),
+                                                        Instances.stringInstance("鞋子减5元"),
+                                                        shoppingTypes.couponDiscountField(),
+                                                        Instances.longInstance(5L),
+                                                        shoppingTypes.couponStateField(),
+                                                        shoppingTypes.couponNormalState()
+                                                ))
+                                                .build(),
+                                        ClassInstanceBuilder.newBuilder(shoppingTypes.couponType())
+                                                .data(Map.of(
+                                                        shoppingTypes.couponTitleField(),
+                                                        Instances.stringInstance("鞋子减10元"),
+                                                        shoppingTypes.couponDiscountField(),
+                                                        Instances.longInstance(10L),
+                                                        shoppingTypes.couponStateField(),
+                                                        shoppingTypes.couponNormalState()
+                                                ))
+                                                .build()
+                                )
+                        ),
+                        shoppingTypes.orderPriceField(),
+                        Instances.doubleInstance(85.0),
+                        shoppingTypes.orderProductField(),
+                        ClassInstanceBuilder.newBuilder(shoppingTypes.productType())
+                                .data(Map.of(
+                                        shoppingTypes.productTitleField(),
+                                        Instances.stringInstance("鞋子"),
+                                        shoppingTypes.productSkuListField(),
+                                        new ArrayInstance(
+                                                shoppingTypes.skuChildArrayType(),
+                                                List.of()
+                                        )
+                                ))
+                                .build(),
+                        shoppingTypes.orderTimeField(),
+                        Instances.timeInstance(System.currentTimeMillis())
+                ))
+                .build();
+        logger.info(orderMapping.getReadMethod().getText());
+        logger.info(orderMapping.getMapper().getText());
+        var oderView = orderMapping.mapRoot(order, instanceRepository, typeProviders.parameterizedFlowProvider);
     }
 
     public void testPathId() {
@@ -294,6 +375,68 @@ public class MappingSaverTest extends TestCase {
         Assert.assertTrue(skuList.isEmpty());
     }
 
+    public void testUnionType() {
+        var flowType = ClassTypeBuilder.newBuilder("流程", "Flow").build();
+        var scopeType = ClassTypeBuilder.newBuilder("范围", "Scope").build();
+        var scopeArrayType = new ArrayType(null, scopeType, ArrayKind.CHILD);
+        var nullableScopeArrayType = new UnionType(null, Set.of(scopeArrayType, StandardTypes.getNullType()));
+        var flowScopesField = FieldBuilder.newBuilder("范围列表", "scopes", flowType, nullableScopeArrayType).isChild(true).build();
+        TestUtils.initEntityIds(flowType);
+        var typeRepository = new MockTypeRepository();
+        typeRepository.save(flowType);
+        typeRepository.save(scopeType);
+        typeRepository.save(scopeArrayType);
+        typeRepository.save(nullableScopeArrayType);
+        var mappingProvider = new MockMappingRepository();
+        MappingSaver saver = new MappingSaver(
+                instanceRepository,
+                typeRepository,
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
+        );
+        var scopeMapping = saver.saveBuiltinMapping(scopeType, true);
+        var flowMapping = saver.saveBuiltinMapping(flowType, true);
+        var flowViewType = flowMapping.getTargetType();
+        var flowViewScopesField = flowViewType.getFieldByCode("scopes");
+
+        TestUtils.initEntityIds(flowType);
+
+//        logger.info(flowMapping.getReadMethod().getText());
+//        logger.info(flowMapping.getMapper().getText());
+//        logger.info(flowMapping.getWriteMethod().getText());
+//        logger.info(flowMapping.getUnmapper().getText());
+
+        var flow = ClassInstanceBuilder.newBuilder(flowType)
+                .data(Map.of(
+                        flowScopesField,
+                        new ArrayInstance(
+                                scopeArrayType,
+                                List.of(
+                                        ClassInstanceBuilder.newBuilder(scopeType).build(),
+                                        ClassInstanceBuilder.newBuilder(scopeType).build(),
+                                        ClassInstanceBuilder.newBuilder(scopeType).build()
+                                )
+                        )
+                ))
+                .build();
+        TestUtils.initInstanceIds(flow);
+
+        var flowView = (ClassInstance) flowMapping.mapRoot(flow, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var flowViewScopes = (ArrayInstance) flowView.getField(flowViewScopesField);
+        Assert.assertEquals(3, flowViewScopes.size());
+
+        flowViewScopes.removeElement(2);
+        flowMapping.unmap(flowView, instanceRepository, typeProviders.parameterizedFlowProvider);
+        var flowScopes = (ArrayInstance) flow.getField(flowScopesField);
+        Assert.assertEquals(2, flowScopes.size());
+
+        flowView.setField(flowViewScopesField, Instances.nullInstance());
+        flowMapping.unmap(flowView, instanceRepository, typeProviders.parameterizedFlowProvider);
+        Assert.assertTrue(flow.getField(flowScopesField).isNull());
+    }
+
     public void testGeneric() {
         var typeRepository = new MockTypeRepository();
         var mappingProvider = new MockMappingRepository();
@@ -316,27 +459,52 @@ public class MappingSaverTest extends TestCase {
                 .build();
 
         var nodeMapping = saver.saveBuiltinMapping(nodeType, true);
-//        logger.info(nodeMapping.getMapper().getText());
-//        logger.info(nodeMapping.getUnmapper().getText());
-
         var listTypeVar = new TypeVariable(null, "值", "T", DummyGenericDeclaration.INSTANCE);
         var listType = ClassTypeBuilder.newBuilder("列表", "List")
                 .typeParameters(listTypeVar)
                 .build();
+        var pNodeType = typeProviders.parameterizedTypeProvider.getParameterizedType(nodeType, List.of(listTypeVar),
+                ResolutionStage.DEFINITION, new MockDTOProvider());
+        var pNodeChildArrayType = new ArrayType(null, pNodeType, ArrayKind.CHILD);
+        var listNodeField = FieldBuilder.newBuilder("nodes", "nodes", listType, pNodeChildArrayType).isChild(true).build();
 
-        var pNodeType = typeProviders.parameterizedTypeProvider.getParameterizedType(nodeType, List.of(listTypeVar), ResolutionStage.DEFINITION, new MockDTOProvider());
-        FieldBuilder.newBuilder("节点列表", "nodes", listType, typeProviders.arrayTypeProvider.getArrayType(pNodeType, ArrayKind.CHILD))
-                .isChild(true)
-                .build();
+        TestUtils.initEntityIds(listType);
 
         typeRepository.save(listType);
 
         var listMapping = saver.saveBuiltinMapping(listType, true);
-//        logger.info(listMapping.getUnmapper().getText());
-//        logger.info(listType.getMethods().get(1).getText());
 
-        var nestedMapping = Objects.requireNonNull(listMapping.getFieldMappings().get(0).getNestedMapping());
-        logger.info(nestedMapping.getUnmapper().getText());
+        var listOfStrType = (ClassType) typeProviders.createFacade().getParameterizedType(listType,
+                List.of(StandardTypes.getStringType()), ResolutionStage.DEFINITION, new MockDTOProvider());
+        TestUtils.initEntityIds(listOfStrType);
+
+        var listOfStrMapping = Objects.requireNonNull(listOfStrType.getDefaultMapping());
+        var listOfStrNodesField = listOfStrType.getFieldByCode("nodes");
+        var nodeOfStrChildArrayType = (ArrayType) listOfStrNodesField.getType();
+        var nodeOfStrType = (ClassType) nodeOfStrChildArrayType.getElementType();
+        var listOfStr = ClassInstanceBuilder.newBuilder(listOfStrType)
+                .data(Map.of(
+                        listOfStrNodesField,
+                        new ArrayInstance(
+                                nodeOfStrChildArrayType,
+                                List.of(
+                                        ClassInstanceBuilder.newBuilder(nodeOfStrType)
+                                                .data(
+                                                        Map.of(
+                                                                nodeOfStrType.getFieldByCode("label"),
+                                                                Instances.stringInstance("node001"),
+                                                                nodeOfStrType.getFieldByCode("value"),
+                                                                Instances.stringInstance("Hello")
+                                                        )
+                                                )
+                                                .build()
+                                )
+                        )
+                ))
+                .build();
+        TestUtils.initInstanceIds(listOfStr);
+        var listOfStrView = listOfStrMapping.mapRoot(listOfStr, instanceRepository, typeProviders.parameterizedFlowProvider);
+        logger.info(listOfStrView.getTitle());
     }
 
 }

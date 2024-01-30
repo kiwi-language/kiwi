@@ -17,6 +17,10 @@ public class MockIntersectionTypeProvider implements IntersectionTypeProvider {
         return map.computeIfAbsent(new Key(typeSet), k -> new IntersectionType(null, typeSet));
     }
 
+    public void add(IntersectionType type) {
+        map.put(new Key(type.getTypes()), type);
+    }
+
     private record Key(Set<Type> types) {
     }
 }

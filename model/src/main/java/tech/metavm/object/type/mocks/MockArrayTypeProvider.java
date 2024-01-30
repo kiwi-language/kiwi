@@ -18,6 +18,10 @@ public class MockArrayTypeProvider implements ArrayTypeProvider {
                 k -> new ArrayType(tmpId , elementType, kind));
     }
 
+    public void add(ArrayType arrayType) {
+        map.put(new Key(arrayType.getElementType(), arrayType.getKind()), arrayType);
+    }
+
     private record Key(Type elementType, ArrayKind kind) {}
 
 }

@@ -28,6 +28,7 @@ public class MockUtils {
         var productType = ClassTypeBuilder.newBuilder("商品", "Product").build();
         var skuType = ClassTypeBuilder.newBuilder("SKU", "SKU").build();
         var couponType = ClassTypeBuilder.newBuilder("优惠券", "Coupon").build();
+        var couponArrayType = new ArrayType(null, couponType, ArrayKind.READ_WRITE);
         var orderType = ClassTypeBuilder.newBuilder("订单", "Order").build();
         var couponStateType = ClassTypeBuilder.newBuilder("优惠券状态", "CouponState")
                 .category(TypeCategory.ENUM)
@@ -85,6 +86,8 @@ public class MockUtils {
                 .asTitle()
                 .build();
         var orderProductField = FieldBuilder.newBuilder("商品", "product", orderType, productType).build();
+        var orderCouponsField = FieldBuilder.newBuilder("优惠券列表", "coupons", orderType, couponArrayType)
+                .isChild(true).build();
         var orderAmountField = FieldBuilder.newBuilder("数量", "amount", orderType, getLongType()).build();
         var orderPriceField = FieldBuilder.newBuilder("价格", "price", orderType, getDoubleType()).build();
         var orderTimeField = FieldBuilder.newBuilder("时间", "time", orderType, getTimeType()).build();
@@ -98,10 +101,10 @@ public class MockUtils {
                 .build();
 
         return new ShoppingTypes(
-                productType, skuType, couponType, orderType, couponStateType, skuChildArrayType,
+                productType, skuType, couponType, orderType, couponStateType, skuChildArrayType, couponArrayType,
                 productTitleField, productSkuListField, skuTitleField, skuPriceField, skuAmountField,
                 couponTitleField, couponDiscountField, couponStateField, orderCodeField, orderProductField,
-                orderAmountField, orderPriceField, orderTimeField
+                orderCouponsField, orderAmountField, orderPriceField, orderTimeField, couponNormalState, couponUsedState
         );
     }
 
@@ -961,6 +964,7 @@ public class MockUtils {
                 )
                 .addField(FieldDTOBuilder.newBuilder("优惠券列表", RefDTO.fromId(couponArrayTypeId))
                         .code("coupons")
+                        .isChild(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
                 )

@@ -282,6 +282,82 @@ public class MappingTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
     }
 
+    public void testOrderQuery() {
+        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
+        var skuId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
+                null, RefDTO.fromId(shoppingTypeIds.skuTypeId()), null, null, null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(shoppingTypeIds.skuTitleFieldId(), PrimitiveFieldValue.createString("鞋子40")),
+                                InstanceFieldDTO.create(shoppingTypeIds.skuAmountFieldId(), PrimitiveFieldValue.createLong(100L)),
+                                InstanceFieldDTO.create(shoppingTypeIds.skuPriceFieldId(), PrimitiveFieldValue.createDouble(100.0))
+                        )
+                )
+        )));
+        var coupon1Id = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
+                null, RefDTO.fromId(shoppingTypeIds.couponTypeId()), null, null, null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("鞋子减5元")),
+                                InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(5.0)),
+                                InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(), ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId()))
+                        )
+                )
+        )));
+        var coupon2Id = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
+                null, RefDTO.fromId(shoppingTypeIds.couponTypeId()), null, null, null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("鞋子减10元")),
+                                InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(10.0)),
+                                InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(), ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId()))
+                        )
+                )
+        )));
+        TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
+                null, RefDTO.fromId(shoppingTypeIds.orderTypeId()),
+                null,
+                null,
+                null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(
+                                        shoppingTypeIds.orderCodeFieldId(), PrimitiveFieldValue.createString("鞋子001")
+                                ),
+                                InstanceFieldDTO.create(
+                                        shoppingTypeIds.orderPriceFieldId(), PrimitiveFieldValue.createDouble(85.0)
+                                ),
+                                InstanceFieldDTO.create(
+                                        shoppingTypeIds.orderAmountFieldId(), PrimitiveFieldValue.createLong(1L)
+                                ),
+                                InstanceFieldDTO.create(
+                                        shoppingTypeIds.orderSkuFieldId(), ReferenceFieldValue.create(skuId)
+                                ),
+                                InstanceFieldDTO.create(
+                                        shoppingTypeIds.orderCouponsFieldId(), new ArrayFieldValue(
+                                                null, false,
+                                                List.of(
+                                                        ReferenceFieldValue.create(coupon1Id), ReferenceFieldValue.create(coupon2Id)
+                                                )
+                                        )
+                                ),
+                                InstanceFieldDTO.create(
+                                        shoppingTypeIds.orderTimeFieldId(), PrimitiveFieldValue.createTime(System.currentTimeMillis())
+                                )
+                        )
+                )
+        )));
+
+        var productTypeDTO = typeManager.getType(new GetTypeRequest(shoppingTypeIds.orderTypeId(), false)).type();
+        var mapping = TestUtils.getDefaultMapping(productTypeDTO);
+        var productViewTypeId = TestUtils.getDefaultViewTypeId(productTypeDTO);
+        var total = instanceManager.query(new InstanceQueryDTO(
+                productViewTypeId,  mapping.id(), null, null, List.of(), 1, 20,
+                true, false, List.of()
+        )).page().total();
+        Assert.assertEquals(1, total);
+    }
+
     public void testNewRootView() {
         var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
         var skuTypeDTO = getType(shoppingTypeIds.skuTypeId());

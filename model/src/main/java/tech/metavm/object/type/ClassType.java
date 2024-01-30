@@ -1372,5 +1372,11 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         mappings.remove(mapping);
     }
 
+    @Override
+    public boolean isViewType(Type type) {
+        if(super.isViewType(type))
+            return true;
+        return NncUtils.anyMatch(mappings, m -> m.getTargetType() == type);
+    }
 }
 

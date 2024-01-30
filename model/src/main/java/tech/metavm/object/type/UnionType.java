@@ -32,7 +32,7 @@ public class UnionType extends CompositeType {
     }
 
     private static @Nullable String getCode(Set<Type> members) {
-        if(NncUtils.allMatch(members, m -> m.getCode() != null))
+        if (NncUtils.allMatch(members, m -> m.getCode() != null))
             return NncUtils.join(members, Type::getCode, "|");
         else
             return null;
@@ -109,22 +109,21 @@ public class UnionType extends CompositeType {
 
     @Override
     public Type getUnderlyingType() {
-        if(members.size() != 2)
+        if (members.size() != 2)
             return this;
         Type t1 = members.get(0), t2 = members.get(1);
-        if(t1.isNull())
+        if (t1.isNull())
             return t2;
-        else if(t2.isNull())
+        else if (t2.isNull())
             return t1;
         return this;
     }
 
     @Override
     public ColumnKind getSQLType() {
-        if(isBinaryNullable()) {
+        if (isBinaryNullable()) {
             return getUnderlyingType().getSQLType();
-        }
-        else {
+        } else {
             return super.getSQLType();
         }
     }
@@ -151,5 +150,24 @@ public class UnionType extends CompositeType {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitUnionType(this);
+    }
+
+    @Override
+    public boolean isViewType(Type type) {
+        if (super.isViewType(type))
+            return true;
+        var types = type instanceof UnionType unionType ? unionType.getMembers() : List.of(type);
+        for (Type member : members) {
+            boolean hasView = false;
+            for (Type t : types) {
+                if (member.isViewType(t)) {
+                    hasView = true;
+                    break;
+                }
+            }
+            if (!hasView)
+                return false;
+        }
+        return true;
     }
 }

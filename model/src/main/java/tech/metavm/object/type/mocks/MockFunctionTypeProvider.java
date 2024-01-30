@@ -18,6 +18,10 @@ public class MockFunctionTypeProvider implements FunctionTypeProvider {
                 k -> new FunctionType(tmpId, parameterTypes, returnType));
     }
 
+    public void add(FunctionType type) {
+        map.put(new Key(type.getParameterTypes(), type.getReturnType()), type);
+    }
+
     private record Key(List<Type> parameterTypes, Type returnType) {}
 
 }

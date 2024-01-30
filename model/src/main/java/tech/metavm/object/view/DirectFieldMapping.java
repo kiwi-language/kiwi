@@ -27,7 +27,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     private DirectFieldMapping template;
 
     public DirectFieldMapping(Long tmpId, Field targetField, FieldsObjectMapping containingMapping,
-                              @Nullable ObjectMapping nestedMapping, Field sourceField) {
+                              @Nullable NestedMapping nestedMapping, Field sourceField) {
         super(tmpId, targetField, containingMapping, nestedMapping);
         this.sourceField = sourceField;
     }

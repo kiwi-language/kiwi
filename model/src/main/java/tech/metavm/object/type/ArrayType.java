@@ -39,7 +39,7 @@ public class ArrayType extends CompositeType {
     }
 
     private static @Nullable String getArrayTypeCode(Type elementType, ArrayKind kind) {
-        if(elementType.getCode() == null)
+        if (elementType.getCode() == null)
             return null;
         if (elementType instanceof UnionType)
             return "(" + elementType.getCode() + ")" + kind.getSuffix();
@@ -73,10 +73,9 @@ public class ArrayType extends CompositeType {
 
     @Override
     public ColumnKind getSQLType() {
-        if(isChildArray()) {
+        if (isChildArray()) {
             return elementType.getSQLType();
-        }
-        else {
+        } else {
             return super.getSQLType();
         }
     }
@@ -135,5 +134,14 @@ public class ArrayType extends CompositeType {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitArrayType(this);
+    }
+
+    @Override
+    public boolean isViewType(Type type) {
+        if (super.isViewType(type))
+            return true;
+        if(type instanceof ArrayType arrayType)
+            return elementType.isViewType(arrayType.getElementType());
+        return false;
     }
 }

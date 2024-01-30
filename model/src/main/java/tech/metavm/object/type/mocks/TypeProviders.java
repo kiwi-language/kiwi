@@ -2,7 +2,6 @@ package tech.metavm.object.type.mocks;
 
 import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.mocks.MockEntityRepository;
-import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.flow.mocks.MockParameterizedFlowProvider;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.generic.SubstitutorV2;
@@ -11,14 +10,15 @@ import java.util.List;
 
 public class TypeProviders {
 
-    public final FunctionTypeProvider functionTypeProvider = new MockFunctionTypeProvider();
-    public final UncertainTypeProvider uncertainTypeProvider = new MockUncertainTypeProvider();
-    public final UnionTypeProvider unionTypeProvider = new MockUnionTypeProvider();
-    public final IntersectionTypeProvider intersectionTypeProvider = new MockIntersectionTypeProvider();
-    public final ArrayTypeProvider arrayTypeProvider = new MockArrayTypeProvider();
-    public final ParameterizedTypeProvider parameterizedTypeProvider = new MockParameterizedTypeProvider(this);
-    public final ParameterizedFlowProvider parameterizedFlowProvider = new MockParameterizedFlowProvider(this);
-    private final EntityRepository entityRepository = new MockEntityRepository();
+    public final MockFunctionTypeProvider functionTypeProvider = new MockFunctionTypeProvider();
+    public final MockUncertainTypeProvider uncertainTypeProvider = new MockUncertainTypeProvider();
+    public final MockUnionTypeProvider unionTypeProvider = new MockUnionTypeProvider();
+    public final MockIntersectionTypeProvider intersectionTypeProvider = new MockIntersectionTypeProvider();
+    public final MockArrayTypeProvider arrayTypeProvider = new MockArrayTypeProvider();
+    public final MockParameterizedTypeProvider parameterizedTypeProvider = new MockParameterizedTypeProvider(this);
+    public final MockParameterizedFlowProvider parameterizedFlowProvider = new MockParameterizedFlowProvider(this);
+    public final EntityRepository entityRepository = new MockEntityRepository();
+    public final MockTypeRepository typeRepository = new MockTypeRepository();
 
     public CompositeTypeFacade createFacade() {
         return new CompositeTypeFacadeImpl(
@@ -44,4 +44,20 @@ public class TypeProviders {
                 new MockDTOProvider()
         );
     }
+
+    public void addType(Type type) {
+        entityRepository.bind(type);
+        typeRepository.save(type);
+        switch (type) {
+            case ArrayType arrayType -> arrayTypeProvider.add(arrayType);
+            case ClassType classType when !classType.getTypeArguments().isEmpty() ->
+                parameterizedTypeProvider.add(classType);
+            case UnionType unionType -> unionTypeProvider.add(unionType);
+            case IntersectionType intersectionType -> intersectionTypeProvider.add(intersectionType);
+            case FunctionType functionType -> functionTypeProvider.add(functionType);
+            case UncertainType uncertainType -> uncertainTypeProvider.add(uncertainType);
+            default -> {}
+        }
+    }
+
 }

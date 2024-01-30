@@ -18,6 +18,10 @@ public class MockUncertainTypeProvider implements UncertainTypeProvider {
                 k -> new UncertainType(tmpId, lowerBound, upperBound));
     }
 
+    public void add(UncertainType uncertainType) {
+        map.put(new Key(uncertainType.getLowerBound(), uncertainType.getUpperBound()), uncertainType);
+    }
+
     private record Key(Type lowerBound, Type upperBound) {
     }
 
