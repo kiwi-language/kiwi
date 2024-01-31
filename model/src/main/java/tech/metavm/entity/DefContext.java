@@ -484,8 +484,10 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public void generateInstances() {
-        while (!pendingModels.isEmpty()) {
-            new IdentitySet<>(pendingModels).forEach(this::generateInstance);
+        try(var ignored = getProfiler().enter("generateInstances")) {
+            while (!pendingModels.isEmpty()) {
+                new IdentitySet<>(pendingModels).forEach(this::generateInstance);
+            }
         }
     }
 
@@ -574,30 +576,41 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
 
     @Override
     protected void flush() {
-        parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
-        int numPending = pendingModels.size();
-        for (ClassType newType : getGenericContext().getNewTypes()) {
-            writeEntityIfNotPresent(newType);
+        try(var ignored = getProfiler().enter("flush")) {
+            parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
+            int numPending = pendingModels.size();
+            for (ClassType newType : getGenericContext().getNewTypes()) {
+                writeEntityIfNotPresent(newType);
+            }
+            for (CompositeType newCompositeType : getNewCompositeTypes()) {
+                writeEntityIfNotPresent(newCompositeType);
+            }
+            crawNewEntities();
+            long delta = pendingModels.size() - numPending;
+            LOGGER.info("{} new entities generated during flush", delta);
+            generateInstances();
         }
-        for (CompositeType newCompositeType : getNewCompositeTypes()) {
-            writeEntityIfNotPresent(newCompositeType);
-        }
-        crawNewEntities();
-        long delta = pendingModels.size() - numPending;
-        LOGGER.info("{} new entities generated during flush", delta);
-        generateInstances();
     }
 
     private void crawNewEntities() {
-        EntityUtils.visitGraph(entities, e -> {
-            if (!(e instanceof Instance) /* TODO handle instance */)
-                writeEntityIfNotPresent(e);
-        });
+        try(var entry = getProfiler().enter("crawNewEntities")) {
+            entry.addMessage("numSeedEntities", entities.size());
+            List<Object> newEntities = new ArrayList<>();
+            EntityUtils.visitGraph(entities, e -> {
+                if (!(e instanceof Instance) && !entities.contains(e)/* TODO handle instance */)
+                    newEntities.add(e);
+            });
+            try(var ignored = getProfiler().enter("crawNewEntities")) {
+                newEntities.forEach(this::writeEntity);
+            }
+        }
     }
 
     @Override
     protected void writeInstances(IInstanceContext instanceContext) {
-        instanceContext.batchBind(NncUtils.exclude(instances(), instanceContext::containsInstance));
+        try(var ignored = getProfiler().enter("writeInstances ")) {
+            instanceContext.batchBind(NncUtils.exclude(instances(), instanceContext::containsInstance));
+        }
     }
 
     @SuppressWarnings("unused")
