@@ -16,11 +16,11 @@ public class InstanceInputTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        StandardTypes.booleanType = new PrimitiveType(PrimitiveKind.BOOLEAN);
-        StandardTypes.longType = new PrimitiveType(PrimitiveKind.LONG);
-        StandardTypes.stringType = new PrimitiveType(PrimitiveKind.STRING);
-        StandardTypes.doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
-        StandardTypes.nullType = new PrimitiveType(PrimitiveKind.NULL);
+        StandardTypes.setBooleanType(new PrimitiveType(PrimitiveKind.BOOLEAN));
+        StandardTypes.setLongType(new PrimitiveType(PrimitiveKind.LONG));
+        StandardTypes.setStringType(new PrimitiveType(PrimitiveKind.STRING));
+        StandardTypes.setDoubleType(new PrimitiveType(PrimitiveKind.DOUBLE));
+        StandardTypes.setNullType(new PrimitiveType(PrimitiveKind.NULL));
     }
 
     public void testWriteString() {
@@ -110,7 +110,7 @@ public class InstanceInputTest extends TestCase {
         quxType.initId(10003L);
 
         Field nameField = FieldBuilder
-                .newBuilder("name", "name", fooType, StandardTypes.stringType).build();
+                .newBuilder("name", "name", fooType, StandardTypes.getStringType()).build();
         nameField.initId(20001L);
         Field barField = FieldBuilder
                 .newBuilder("bar", "bar", fooType, barType).isChild(true).build();
@@ -119,7 +119,7 @@ public class InstanceInputTest extends TestCase {
         quxField.initId(20003L);
 
         Field barCodeField = FieldBuilder
-                .newBuilder("code", "code", barType, StandardTypes.stringType).build();
+                .newBuilder("code", "code", barType, StandardTypes.getStringType()).build();
         barCodeField.initId(20004L);
 
         Field quxNameField = FieldBuilder
@@ -147,7 +147,7 @@ public class InstanceInputTest extends TestCase {
         var fooInst = new ClassInstance(
                 PhysicalId.of(30001L),
                 Map.of(
-                        nameField, new StringInstance(fooName, StandardTypes.stringType),
+                        nameField, new StringInstance(fooName, StandardTypes.getStringType()),
                         barField, barInst,
                         quxField, quxInst
                 ),

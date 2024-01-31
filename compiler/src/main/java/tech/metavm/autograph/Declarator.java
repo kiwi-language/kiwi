@@ -142,6 +142,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
         if (field == null) {
             field = FieldBuilder
                     .newBuilder(getBizFieldName(psiField), psiField.getName(), currentClass(), type)
+                    .access(getAccess(psiField))
                     .unique(TranspileUtil.isUnique(psiField))
                     .isChild(TranspileUtil.isChild(psiField))
                     .isStatic(requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
@@ -149,6 +150,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
         } else {
             field.setName(getBizFieldName(psiField));
             field.setType(type);
+            field.setAccess(getAccess(psiField));
             field.setUnique(TranspileUtil.isUnique(psiField));
         }
         if(TranspileUtil.isTitleField(psiField))

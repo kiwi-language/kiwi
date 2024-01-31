@@ -11,19 +11,19 @@ import java.util.Set;
 public class MockStandardTypesInitializer {
 
     public static void init() {
-        StandardTypes.anyType = new AnyType();
-        StandardTypes.neverType = new NeverType();
-        StandardTypes.nullType = new PrimitiveType(PrimitiveKind.NULL);
-        StandardTypes.timeType = new PrimitiveType(PrimitiveKind.TIME);
-        StandardTypes.booleanType = new PrimitiveType(PrimitiveKind.BOOLEAN);
-        StandardTypes.longType = new PrimitiveType(PrimitiveKind.LONG);
-        StandardTypes.stringType = new PrimitiveType(PrimitiveKind.STRING);
-        StandardTypes.voidType = new PrimitiveType(PrimitiveKind.VOID);
-        StandardTypes.passwordType = new PrimitiveType(PrimitiveKind.PASSWORD);
-        StandardTypes.doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
-        StandardTypes.nullableAnyType = new UnionType(null, Set.of(StandardTypes.nullType, StandardTypes.anyType));
-        StandardTypes.anyArrayType = new ArrayType(null, StandardTypes.anyType, ArrayKind.READ_WRITE);
-        StandardTypes.nullableStringType = new UnionType(null, Set.of(StandardTypes.nullType, StandardTypes.stringType));
+        StandardTypes.setAnyType(new AnyType());
+        StandardTypes.setNeverType(new NeverType());
+        StandardTypes.setNullType(new PrimitiveType(PrimitiveKind.NULL));
+        StandardTypes.setTimeType(new PrimitiveType(PrimitiveKind.TIME));
+        StandardTypes.setBooleanType(new PrimitiveType(PrimitiveKind.BOOLEAN));
+        StandardTypes.setLongType(new PrimitiveType(PrimitiveKind.LONG));
+        StandardTypes.setStringType(new PrimitiveType(PrimitiveKind.STRING));
+        StandardTypes.setVoidType(new PrimitiveType(PrimitiveKind.VOID));
+        StandardTypes.setPasswordType(new PrimitiveType(PrimitiveKind.PASSWORD));
+        StandardTypes.setDoubleType(new PrimitiveType(PrimitiveKind.DOUBLE));
+        StandardTypes.setNullableAnyType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getAnyType())));
+        StandardTypes.setAnyArrayType(new ArrayType(null, StandardTypes.getAnyType(), ArrayKind.READ_WRITE));
+        StandardTypes.setNullableStringType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getStringType())));
 
         var enumTypeParam = new TypeVariable(null, "枚举类型", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
@@ -34,14 +34,14 @@ public class MockStandardTypesInitializer {
         enumTypeParam.setBounds(List.of(enumType));
         FieldBuilder.newBuilder("名称", "name", enumType, StandardTypes.getStringType()).build();
         FieldBuilder.newBuilder("序号", "ordinal", enumType, StandardTypes.getLongType()).build();
-        StandardTypes.enumType = enumType;
+        StandardTypes.setEnumType(enumType);
         Instances.nullInstance = new NullInstance(StandardTypes.getNullType());
         Instances.trueInstance = new BooleanInstance(true, StandardTypes.getBooleanType());
         Instances.falseInstance = new BooleanInstance(false, StandardTypes.getBooleanType());
 
-        StandardTypes.entityType = ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
+        StandardTypes.setEntityType(ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)
-                .build();
+                .build());
     }
 
 }

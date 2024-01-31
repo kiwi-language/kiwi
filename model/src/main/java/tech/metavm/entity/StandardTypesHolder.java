@@ -1,0 +1,107 @@
+package tech.metavm.entity;
+
+import tech.metavm.object.type.*;
+
+public interface StandardTypesHolder {
+    
+    PrimitiveType getLongType();
+
+    PrimitiveType getDoubleType();
+
+    PrimitiveType getBooleanType();
+
+    PrimitiveType getStringType();
+
+    PrimitiveType getTimeType();
+
+    PrimitiveType getVoidType();
+
+    PrimitiveType getNullType();
+
+    NeverType getNeverType();
+    
+    AnyType getAnyType();
+
+    ArrayType getAnyArrayType();
+
+    UnionType getNullableAnyType();
+
+    UnionType getNullableStringType();
+    
+    ClassType getEnumType();
+
+    ClassType getThrowableType();
+
+    ClassType getExceptionType();
+
+    ClassType getRuntimeExceptionType();
+
+    ClassType getEntityType();
+
+    ClassType getRecordType();
+
+    ClassType getCollectionType();
+
+    ClassType getSetType();
+
+    ClassType getListType();
+
+    ClassType getMapType();
+
+    ClassType getIteratorType();
+
+    ClassType getIteratorImplType();
+    
+    PrimitiveType getPasswordType();
+
+    void setLongType(PrimitiveType type);
+
+    void setDoubleType(PrimitiveType type);
+
+    void setBooleanType(PrimitiveType type);
+
+    void setStringType(PrimitiveType type);
+
+    void setTimeType(PrimitiveType type);
+
+    void setVoidType(PrimitiveType type);
+
+    void setNullType(PrimitiveType type);
+
+    void setPasswordType(PrimitiveType type);
+
+    void setNeverType(NeverType type);
+
+    void setAnyType(AnyType type);
+
+    void setAnyArrayType(ArrayType type);
+
+    void setNullableAnyType(UnionType type);
+
+    void setNullableStringType(UnionType type);
+
+    void setEnumType(ClassType type);
+
+    void setThrowableType(ClassType type);
+
+    void setExceptionType(ClassType type);
+
+    void setRuntimeExceptionType(ClassType type);
+
+    void setEntityType(ClassType type);
+
+    void setRecordType(ClassType type);
+
+    void setCollectionType(ClassType type);
+
+    void setSetType(ClassType type);
+
+    void setListType(ClassType type);
+
+    void setMapType(ClassType type);
+
+    void setIteratorType(ClassType type);
+
+    void setIteratorImplType(ClassType type);
+
+}

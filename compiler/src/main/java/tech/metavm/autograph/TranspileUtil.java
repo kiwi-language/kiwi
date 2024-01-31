@@ -7,6 +7,7 @@ import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.object.type.Access;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Types;
 import tech.metavm.util.InternalException;
@@ -554,6 +555,17 @@ public class TranspileUtil {
     public static boolean isUnique(PsiField psiField) {
         Boolean asTitle = (Boolean) getAnnotationAttr(psiField, EntityField.class, "unique");
         return asTitle == Boolean.TRUE;
+    }
+
+    public static Access getAccess(PsiField psiField) {
+        var modifiers = Objects.requireNonNull(psiField.getModifierList());
+        if(modifiers.hasModifierProperty(PsiModifier.PUBLIC))
+            return Access.PUBLIC;
+        if(modifiers.hasModifierProperty(PsiModifier.PROTECTED))
+            return Access.PROTECTED;
+        if(modifiers.hasModifierProperty(PsiModifier.PRIVATE))
+            return Access.PRIVATE;
+        return Access.PACKAGE;
     }
 
     public static boolean isChild(PsiField psiField) {

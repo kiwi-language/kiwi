@@ -9,31 +9,11 @@ import java.util.function.Function;
 
 public class StandardTypes {
 
-    public static PrimitiveType longType;
-    public static PrimitiveType doubleType;
-    public static PrimitiveType booleanType;
-    public static PrimitiveType stringType;
-    public static PrimitiveType passwordType;
-    public static PrimitiveType timeType;
-    public static PrimitiveType nullType;
-    public static PrimitiveType voidType;
-    public static NeverType neverType;
-    public static AnyType anyType;
-    public static UnionType nullableAnyType;
-    public static ArrayType anyArrayType;
-    public static UnionType nullableStringType;
-    static ClassType enumType;
-    static ClassType throwableType;
-    static ClassType exceptionType;
-    static ClassType runtimeExceptionType;
-    static ClassType entityType;
-    static ClassType recordType;
-    static ClassType collectionType;
-    static ClassType setType;
-    static ClassType listType;
-    static ClassType mapType;
-    static ClassType iteratorType;
-    static ClassType iteratorImplType;
+    private static StandardTypesHolder holder = new GlobalStandardTypesHolder();
+
+    public static void setHolder(StandardTypesHolder holder) {
+        StandardTypes.holder = holder;
+    }
 
     private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
 
@@ -46,11 +26,11 @@ public class StandardTypes {
     }
 
     public static AnyType getAnyType() {
-        return anyType;
+        return holder.getAnyType();
     }
 
     public static UnionType getNullableAnyType() {
-        return Objects.requireNonNull(nullableAnyType, "Nullable any type not initialized");
+        return holder.getNullableStringType();
     }
 
     public static Type getAnyType(boolean nullable) {
@@ -58,7 +38,7 @@ public class StandardTypes {
     }
 
     public static ClassType getEnumType() {
-        return enumType;
+        return holder.getEnumType();
     }
 
     public static ClassType getParameterizedEnumType() {
@@ -69,47 +49,47 @@ public class StandardTypes {
     }
 
     public static ClassType getEntityType() {
-        return entityType;
+        return holder.getEntityType();
     }
 
     public static ClassType getRecordType() {
-        return recordType;
+        return holder.getRecordType();
     }
 
     public static PrimitiveType getBooleanType() {
-        return booleanType;
+        return holder.getBooleanType();
     }
 
     public static PrimitiveType getLongType() {
-        return longType;
+        return holder.getLongType();
     }
 
     public static PrimitiveType getStringType() {
-        return stringType;
+        return holder.getStringType();
     }
 
     public static PrimitiveType getTimeType() {
-        return timeType;
+        return holder.getTimeType();
     }
 
     public static PrimitiveType getNullType() {
-        return nullType;
+        return holder.getNullType();
     }
 
     public static PrimitiveType getVoidType() {
-        return voidType;
+        return holder.getVoidType();
     }
 
     public static PrimitiveType getPasswordType() {
-        return passwordType;
+        return holder.getPasswordType();
     }
 
     public static PrimitiveType getDoubleType() {
-        return doubleType;
+        return holder.getDoubleType();
     }
 
     public static ArrayType getAnyArrayType() {
-        return anyArrayType;
+        return holder.getAnyArrayType();
     }
 
     public static ArrayType getReadOnlyObjectArrayType() {
@@ -129,39 +109,39 @@ public class StandardTypes {
     }
 
     public static ClassType getListType() {
-        return listType;
+        return holder.getListType();
     }
 
     public static ClassType getSetType() {
-        return setType;
+        return holder.getSetType();
     }
 
     public static ClassType getMapType() {
-        return mapType;
+        return holder.getMapType();
     }
 
     public static ClassType getCollectionType() {
-        return collectionType;
+        return holder.getCollectionType();
     }
 
     public static ClassType getIteratorType() {
-        return iteratorType;
+        return holder.getIteratorType();
     }
 
     public static ClassType getIteratorImplType() {
-        return iteratorImplType;
+        return holder.getIteratorImplType();
     }
 
     public static ClassType getThrowableType() {
-        return throwableType;
+        return holder.getThrowableType();
     }
 
     public static ClassType getExceptionType() {
-        return exceptionType;
+        return holder.getExceptionType();
     }
 
     public static ClassType getRuntimeExceptionType() {
-        return runtimeExceptionType;
+        return holder.getRuntimeExceptionType();
     }
 
     public static UnionType getNullableThrowableType() {
@@ -169,11 +149,11 @@ public class StandardTypes {
     }
 
     public static UnionType getNullableStringType() {
-        return nullableStringType;
+        return holder.getNullableStringType();
     }
 
     public static NeverType getNothingType() {
-        return neverType;
+        return getNeverType();
     }
 
     private static volatile Map<PrimitiveKind, PrimitiveType> primitiveTypes;
@@ -183,14 +163,14 @@ public class StandardTypes {
             synchronized (StandardTypes.class) {
                 if(primitiveTypes == null) {
                     primitiveTypes = Map.of(
-                            PrimitiveKind.BOOLEAN, Objects.requireNonNull(booleanType),
-                            PrimitiveKind.LONG, Objects.requireNonNull(longType),
-                            PrimitiveKind.DOUBLE, Objects.requireNonNull(doubleType),
-                            PrimitiveKind.STRING, Objects.requireNonNull(stringType),
-                            PrimitiveKind.PASSWORD, Objects.requireNonNull(passwordType),
-                            PrimitiveKind.TIME, Objects.requireNonNull(timeType),
-                            PrimitiveKind.NULL, Objects.requireNonNull(nullType),
-                            PrimitiveKind.VOID, Objects.requireNonNull(voidType)
+                            PrimitiveKind.BOOLEAN, Objects.requireNonNull(getBooleanType()),
+                            PrimitiveKind.LONG, Objects.requireNonNull(getLongType()),
+                            PrimitiveKind.DOUBLE, Objects.requireNonNull(getDoubleType()),
+                            PrimitiveKind.STRING, Objects.requireNonNull(getStringType()),
+                            PrimitiveKind.PASSWORD, Objects.requireNonNull(getPasswordType()),
+                            PrimitiveKind.TIME, Objects.requireNonNull(getTimeType()),
+                            PrimitiveKind.NULL, Objects.requireNonNull(getNullType()),
+                            PrimitiveKind.VOID, Objects.requireNonNull(getVoidType())
                     );
                 }
             }
@@ -198,4 +178,114 @@ public class StandardTypes {
         return Objects.requireNonNull(primitiveTypes.get(kind), () -> "Unknown primitive kind: " + kind);
     }
 
+    public static void setLongType(PrimitiveType longType) {
+        holder.setLongType(longType);
+    }
+
+    public static void setDoubleType(PrimitiveType doubleType) {
+        holder.setDoubleType(doubleType);
+    }
+
+    public static void setBooleanType(PrimitiveType booleanType) {
+        holder.setBooleanType(booleanType);
+    }
+
+    public static void setStringType(PrimitiveType stringType) {
+        holder.setStringType(stringType);
+    }
+
+    public static void setPasswordType(PrimitiveType passwordType) {
+        holder.setPasswordType(passwordType);
+    }
+
+    public static void setTimeType(PrimitiveType timeType) {
+        holder.setTimeType(timeType);
+    }
+
+    public static void setNullType(PrimitiveType nullType) {
+        holder.setNullType(nullType);
+    }
+
+    public static void setVoidType(PrimitiveType voidType) {
+        holder.setVoidType(voidType);
+    }
+
+    public static NeverType getNeverType() {
+        return holder.getNeverType();
+    }
+
+    public static void setNeverType(NeverType neverType) {
+        holder.setNeverType(neverType);
+    }
+
+    public static void setAnyType(AnyType anyType) {
+        holder.setAnyType(anyType);
+    }
+
+    public static void setNullableAnyType(UnionType nullableAnyType) {
+        holder.setNullableAnyType(nullableAnyType);
+    }
+
+    public static void setAnyArrayType(ArrayType anyArrayType) {
+        holder.setAnyArrayType(anyArrayType);
+    }
+
+    public static void setNullableStringType(UnionType nullableStringType) {
+        holder.setNullableStringType(nullableStringType);
+    }
+
+    public static void setEnumType(ClassType enumType) {
+        holder.setEnumType(enumType);
+    }
+
+    public static void setThrowableType(ClassType throwableType) {
+        holder.setThrowableType(throwableType);
+    }
+
+    public static void setExceptionType(ClassType exceptionType) {
+        holder.setExceptionType(exceptionType);
+    }
+
+    public static void setRuntimeExceptionType(ClassType runtimeExceptionType) {
+        holder.setRuntimeExceptionType(runtimeExceptionType);
+    }
+
+    public static void setEntityType(ClassType entityType) {
+        holder.setEntityType(entityType);
+    }
+
+    public static ClassType setRecordType(ClassType recordType) {
+        holder.setRecordType(recordType);
+        return recordType;
+    }
+
+    public static ClassType setCollectionType(ClassType collectionType) {
+        holder.setCollectionType(collectionType);
+        return collectionType;
+    }
+
+    public static ClassType setSetType(ClassType setType) {
+        holder.setSetType(setType);
+        return setType;
+    }
+
+    public static ClassType setListType(ClassType listType) {
+        holder.setListType(listType);
+        return listType;
+    }
+
+    public static ClassType setMapType(ClassType mapType) {
+        holder.setMapType(mapType);
+        return mapType;
+    }
+
+    public static ClassType setIteratorType(ClassType iteratorType) {
+        holder.setIteratorType(iteratorType);
+        return iteratorType;
+    }
+
+    public static ClassType setIteratorImplType(ClassType iteratorImplType) {
+        holder.setIteratorImplType(iteratorImplType);
+        return iteratorImplType;
+    }
 }
