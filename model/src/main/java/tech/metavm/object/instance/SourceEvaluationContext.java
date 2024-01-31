@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public record SourceEvaluationContext(Source source,
-                               ParameterizedFlowProvider parameterizedFlowProvider) implements EvaluationContext {
+                                      ParameterizedFlowProvider parameterizedFlowProvider) implements EvaluationContext {
 
     @Override
     public Instance evaluate(Expression expression) {
@@ -28,23 +28,33 @@ public record SourceEvaluationContext(Source source,
         if (equalityExpr != null) {
             var left = equalityExpr.getLeft().evaluate(this);
             var right = equalityExpr.getRight().evaluate(this);
-            if (left instanceof DurableInstance leftDurable
-                    && right instanceof DurableInstance rightDurable) {
-                if (right instanceof ArrayInstance) {
-                    var tmp = leftDurable;
-                    leftDurable = rightDurable;
-                    rightDurable = tmp;
-                }
-                if (Objects.equals(leftDurable.tryGetPhysicalId(), rightDurable.tryGetPhysicalId()))
-                    return Instances.trueInstance();
-                else if (leftDurable instanceof ArrayInstance array && arrayContains(array, rightDurable))
-                    return Instances.trueInstance();
-                else
-                    return Instances.falseInstance();
-            } else
-                return Instances.booleanInstance(left.equals(right));
+            return checkEquals(left, right);
+        }
+        var inExpr = getInExpression(expression);
+        if (inExpr != null) {
+            var left = inExpr.getLeft().evaluate(this);
+            var right = (ArrayInstance) inExpr.getRight().evaluate(this);
+            return Instances.booleanInstance(arrayContains(right, left));
         }
         throw new InternalException(expression + " is not a context expression of " + this);
+    }
+
+    private BooleanInstance checkEquals(Instance left, Instance right) {
+        if (left instanceof DurableInstance leftDurable
+                && right instanceof DurableInstance rightDurable) {
+            if (right instanceof ArrayInstance) {
+                var tmp = leftDurable;
+                leftDurable = rightDurable;
+                rightDurable = tmp;
+            }
+            if (Objects.equals(leftDurable.getId(), rightDurable.getId()))
+                return Instances.trueInstance();
+            else if (leftDurable instanceof ArrayInstance array && arrayContains(array, rightDurable))
+                return Instances.trueInstance();
+            else
+                return Instances.falseInstance();
+        } else
+            return Instances.booleanInstance(left.equals(right));
     }
 
     private boolean arrayContains(ArrayInstance array, Instance instance) {
@@ -52,7 +62,7 @@ public record SourceEvaluationContext(Source source,
             if (element.equals(instance))
                 return true;
             if (element instanceof DurableInstance durableElement && instance instanceof DurableInstance durableInstance) {
-                if (Objects.equals(durableElement.tryGetPhysicalId(), durableInstance.tryGetPhysicalId()))
+                if (Objects.equals(durableElement.getId(), durableInstance.getId()))
                     return true;
             }
         }
@@ -116,7 +126,8 @@ public record SourceEvaluationContext(Source source,
 
     @Override
     public boolean isContextExpression(Expression expression) {
-        return getThisPropertyExpression(expression) != null || getEqualityExpression(expression) != null;
+        return getThisPropertyExpression(expression) != null || getEqualityExpression(expression) != null
+                || getInExpression(expression) != null;
     }
 
     private @Nullable PropertyExpression getThisPropertyExpression(Expression expression) {
@@ -134,4 +145,12 @@ public record SourceEvaluationContext(Source source,
         else
             return null;
     }
+
+    private @Nullable BinaryExpression getInExpression(Expression expression) {
+        if (expression instanceof BinaryExpression binaryExpression
+                && binaryExpression.getOperator() == BinaryOperator.IN)
+            return binaryExpression;
+        return null;
+    }
+
 }

@@ -170,7 +170,7 @@ public enum BinaryOperator {
     IN(15, "in", 6, OperatorTypes.BINARY, Boolean.class) {
         @Override
         public BooleanInstance evaluate(Instance first, Instance second) {
-            return Instances.booleanInstance(((ArrayInstance) second).contains(second));
+            return Instances.booleanInstance(((ArrayInstance) second).contains(first));
         }
     },
     @EnumConstant("且")
