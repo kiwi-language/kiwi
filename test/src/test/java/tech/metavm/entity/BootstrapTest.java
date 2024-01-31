@@ -79,13 +79,13 @@ public class BootstrapTest extends TestCase {
         }
     }
 
-//    public void testPerf() {
-//        var profiler = ContextUtil.getProfiler();
-//        var bootstrap = newBootstrap();
-//        var result = bootstrap.boot();
-//        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-//        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
-//        LOGGER.info(profiler.finish().toString());
-//    }
+    public void testPerf() {
+        {
+            var profiler = ContextUtil.getProfiler();
+            var bootstrap = newBootstrap();
+            bootstrap.boot();
+            LOGGER.info(profiler.finish().toString());
+        }
+    }
 
 }

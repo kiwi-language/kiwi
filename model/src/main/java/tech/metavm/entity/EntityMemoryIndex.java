@@ -12,6 +12,7 @@ import java.util.*;
 
 public class EntityMemoryIndex {
 
+    private final IdentitySet<Object> entities = new IdentitySet<>();
     private final Map<Class<?>, List<Object>> typeIndex = new IdentityHashMap<>();
     private final Map<IndexDef<?>, SubIndex<?>> indices = new IdentityHashMap<>();
 
@@ -32,9 +33,9 @@ public class EntityMemoryIndex {
 
     public void save(Object object) {
         var klass = EntityUtils.getRealType(object.getClass());
-        var objects = typeIndex.computeIfAbsent(klass, k -> new ArrayList<>());
-        if (!objects.contains(object))
-            objects.add(object);
+        if (entities.add(object)) {
+            typeIndex.computeIfAbsent(klass, k -> new ArrayList<>()).add(object);
+        }
         var defList = getIndexDefList(klass);
         defList.forEach(def -> save(def, object));
     }
@@ -160,7 +161,7 @@ public class EntityMemoryIndex {
             if (keys != null) {
                 for (Key key : keys) {
                     var objects = index.get(key);
-                    if(objects != null)
+                    if (objects != null)
                         objects.remove(object);
                 }
             }
