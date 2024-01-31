@@ -10,7 +10,7 @@ public enum ArrayKind {
     READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, ReadWriteArray.class, "[]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
-            return that == READ_WRITE && assignedElementType.contains(assignmentElementType);
+             return (that == READ_WRITE || that == CHILD) && assignedElementType.contains(assignmentElementType);
         }
     },
     READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, ReadonlyArray.class, "[R]") {

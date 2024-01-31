@@ -14,13 +14,11 @@ import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
-import tech.metavm.object.instance.rest.InstanceDTO;
-import tech.metavm.object.instance.rest.InstanceFieldDTO;
-import tech.metavm.object.instance.rest.InstanceFieldValue;
-import tech.metavm.object.instance.rest.PrimitiveFieldValue;
+import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.object.type.TypeManager;
+import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeQuery;
 import tech.metavm.system.BlockManager;
 import tech.metavm.task.TaskManager;
@@ -181,6 +179,23 @@ public class MainTest extends TestCase {
             var productId = TestUtils.doInTransaction(() -> instanceManager.create(product));
             var loadedProduct = instanceManager.get(productId, 1).instance();
             MatcherAssert.assertThat(loadedProduct, new InstanceDTOMatcher(product, TestUtils.extractDescendantIds(loadedProduct)));
+            var productMapping = TestUtils.getDefaultMapping(productType);
+            var productViewType = typeManager.getType(new GetTypeRequest(productMapping.targetTypeRef().id(), false)).type();
+            var productViews = instanceManager.query(
+                    new InstanceQueryDTO(
+                            productViewType.id(),
+                            productMapping.id(),
+                            null,
+                            null,
+                            List.of(),
+                            1,
+                            20,
+                            false,
+                            false,
+                            List.of()
+                    )
+            ).page().data();
+            Assert.assertEquals(1, productViews.size());
         }).get();
     }
 

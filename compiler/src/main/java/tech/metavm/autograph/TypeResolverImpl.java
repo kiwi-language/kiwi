@@ -134,13 +134,13 @@ public class TypeResolverImpl implements TypeResolver {
                     return entry.getValue().get();
                 }
             }
-            if(TranspileUtil.createType(List.class).isAssignableFrom(classType)) {
-                var listType = TranspileUtil.getSuperType(classType, List.class);
-                return context.getArrayType(resolve(listType.getParameters()[0], stage), ArrayKind.READ_WRITE);
-            }
             if(TranspileUtil.createType(ChildList.class).isAssignableFrom(classType)) {
                 var childListType = TranspileUtil.getSuperType(classType, ChildList.class);
                 return context.getArrayType(resolve(childListType.getParameters()[0], stage), ArrayKind.CHILD);
+            }
+            if(TranspileUtil.createType(List.class).isAssignableFrom(classType)) {
+                var listType = TranspileUtil.getSuperType(classType, List.class);
+                return context.getArrayType(resolve(listType.getParameters()[0], stage), ArrayKind.READ_WRITE);
             }
             for (var entry : COLLECTION_CLASSES) {
                 var collClass = entry.key();
