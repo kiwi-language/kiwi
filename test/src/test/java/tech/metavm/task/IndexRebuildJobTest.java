@@ -12,7 +12,6 @@ import tech.metavm.util.*;
 public class IndexRebuildJobTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
-
     private MemInstanceSearchServiceV2 instanceSearchService;
 
     @Override
@@ -21,6 +20,12 @@ public class IndexRebuildJobTest extends TestCase {
         instanceSearchService = bootResult.instanceSearchService();
         entityContextFactory = bootResult.entityContextFactory();
         ContextUtil.setAppId(TestConstants.APP_ID);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        entityContextFactory = null;
+        instanceSearchService = null;
     }
 
     public void test() {

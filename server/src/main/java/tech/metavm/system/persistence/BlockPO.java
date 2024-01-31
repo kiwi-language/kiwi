@@ -13,12 +13,12 @@ public class BlockPO {
     public BlockPO() {
     }
 
-    public BlockPO(Long id, Long appId, Long typeId, Long startId, Long end, Long nextId, Boolean active) {
+    public BlockPO(Long id, Long appId, Long typeId, Long startId, Long endId, Long nextId, Boolean active) {
         this.id = id;
         this.appId = appId;
         this.typeId = typeId;
         this.startId = startId;
-        this.endId = end;
+        this.endId = endId;
         this.nextId = nextId;
         this.active = active;
     }
@@ -77,6 +77,10 @@ public class BlockPO {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public BlockPO copy() {
+        return new BlockPO(id, appId, typeId, startId, endId, nextId, active);
     }
 
     @Override

@@ -20,6 +20,11 @@ public class EntityContextTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
     }
 
+    @Override
+    protected void tearDown() {
+        entityContextFactory = null;
+    }
+
     public void test() {
         TestUtils.beginTransaction();
         var foo = new EntityFoo("foo");

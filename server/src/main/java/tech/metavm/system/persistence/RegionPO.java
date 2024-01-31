@@ -47,4 +47,9 @@ public class RegionPO {
     public void setEndId(long endId) {
         this.endId = endId;
     }
+
+    public RegionPO copy() {
+        return new RegionPO(typeCategory, startId, endId, nextId);
+    }
+
 }

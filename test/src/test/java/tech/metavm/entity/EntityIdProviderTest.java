@@ -3,13 +3,13 @@ package tech.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.system.IdService;
-import tech.metavm.system.MemBlockMapper;
-import tech.metavm.system.MemRegionMapper;
 import tech.metavm.system.RegionManager;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.type.*;
+import tech.metavm.system.persistence.MemBlockMapper;
+import tech.metavm.system.persistence.MemRegionMapper;
 import tech.metavm.util.*;
 
 import java.util.HashSet;

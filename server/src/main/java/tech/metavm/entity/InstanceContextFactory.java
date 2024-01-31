@@ -18,8 +18,6 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class InstanceContextFactory {
 
-    private static volatile DefContext DEF_CONTEXT;
-
     private EntityIdProvider idService;
 
     private final IInstanceStore instanceStore;
@@ -63,14 +61,6 @@ public class InstanceContextFactory {
     @Autowired
     public void setCache(Cache cache) {
         this.cache = cache;
-    }
-
-    public static void setDefContext(DefContext defContext) {
-        DEF_CONTEXT = defContext;
-    }
-
-    public static DefContext getDefContext() {
-        return DEF_CONTEXT;
     }
 
 }

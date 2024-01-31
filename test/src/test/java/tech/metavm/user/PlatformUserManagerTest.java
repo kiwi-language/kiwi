@@ -32,6 +32,12 @@ public class PlatformUserManagerTest extends TestCase {
         roleManager = new RoleManager(entityContextFactory, entityQueryService);
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        platformUserManager = null;
+        roleManager = null;
+    }
+
     public void testSave() {
         long roleId = doInTransaction(() -> roleManager.save(new RoleDTO(null, null, "admin")));
         UserDTO user = new UserDTO(

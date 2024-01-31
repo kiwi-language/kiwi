@@ -35,6 +35,10 @@ public class BootstrapTest extends TestCase {
     @Override
     protected void tearDown() {
         ContextUtil.clearContextInfo();
+        columnStore = null;
+        allocatorStore = null;
+        instanceStore = null;
+        idProvider = null;
     }
 
     private Bootstrap newBootstrap() {

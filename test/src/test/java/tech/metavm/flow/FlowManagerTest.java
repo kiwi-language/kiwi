@@ -18,18 +18,10 @@ public class FlowManagerTest extends TestCase {
 
     private FlowManager flowManager;
 
-    private FlowExecutionService flowExecutionService;
-
-    private InstanceContextFactory instanceContextFactory;
-
-    private IndexRepository indexRepository;
-
     @Override
     protected void setUp() throws Exception {
-        indexRepository = new MockIndexRepository();
         var bootResult = BootstrapUtils.bootstrap();
         var entityContextFactory = bootResult.entityContextFactory();
-        instanceContextFactory = bootResult.entityContextFactory().getInstanceContextFactory();
         var instanceSearchService =bootResult.instanceSearchService();
         var entityQueryService =
                 new EntityQueryService(new InstanceQueryService(instanceSearchService));
@@ -38,7 +30,11 @@ public class FlowManagerTest extends TestCase {
                 new TypeManager(entityContextFactory, entityQueryService, jobManager,  null);
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
-        flowExecutionService = new FlowExecutionService(entityContextFactory);
+    }
+
+    @Override
+    protected void tearDown() {
+        flowManager = null;
     }
 
     public void test() {

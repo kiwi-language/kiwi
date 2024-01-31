@@ -27,10 +27,7 @@ import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class TestUtils {
@@ -235,8 +232,16 @@ public class TestUtils {
         InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
                 .setIdService(idProvider);
         instanceContextFactory.setCache(new MockCache());
-        InstanceContextFactory.setDefContext(MockRegistry.getDefContext());
         return instanceContextFactory;
+    }
+
+    public static void clearDirectory(File file) {
+        if(file.isDirectory()) {
+            for (File subFile : Objects.requireNonNull(file.listFiles())) {
+                clearDirectory(subFile);
+                subFile.delete();
+            }
+        }
     }
 
     public static void initEntityIds(Object root) {

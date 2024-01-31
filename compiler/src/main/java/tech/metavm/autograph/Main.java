@@ -1,5 +1,7 @@
 package tech.metavm.autograph;
 
+import tech.metavm.object.type.AllocatorStore;
+import tech.metavm.object.type.DirectoryAllocatorStore;
 import tech.metavm.util.LoginUtils;
 
 import java.io.File;
@@ -19,13 +21,13 @@ public class Main {
     private final String sourceRoot;
     private final CompilerContext compilerContext;
 
-    public Main(String home, String sourceRoot, String authFile) {
+    public Main(String home, String sourceRoot, String authFile, TypeClient typeClient, AllocatorStore allocatorStore) {
         this.sourceRoot = sourceRoot;
-        compilerContext = new CompilerContext(home);
-        LoginUtils.loginWithAuthFile(authFile);
+        compilerContext = new CompilerContext(home, typeClient, allocatorStore);
+        LoginUtils.loginWithAuthFile(authFile, typeClient);
         compilerContext.getBootstrap().boot();
         compilerContext.getTreeLoader().load();
-        compiler = new Compiler(sourceRoot, compilerContext.getContextFactory());
+        compiler = new Compiler(sourceRoot, compilerContext.getContextFactory(), typeClient);
     }
 
     public void run() {
@@ -45,7 +47,8 @@ public class Main {
             System.exit(1);
         }
         String sourceRoot = args[0];
-        var main = new Main(DEFAULT_HOME, sourceRoot, DEFAULT_AUTH_FILE);
+        var main = new Main(DEFAULT_HOME, sourceRoot, DEFAULT_AUTH_FILE, new HttpTypeClient(),
+                new DirectoryAllocatorStore("/not_exist"));
         main.run();
     }
 

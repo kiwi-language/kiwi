@@ -29,4 +29,12 @@ public class RangeInc {
     public void setInc(long inc) {
         this.inc = inc;
     }
+
+    public boolean isDeactivating() {
+        return deactivating;
+    }
+
+    public void setDeactivating(boolean deactivating) {
+        this.deactivating = deactivating;
+    }
 }

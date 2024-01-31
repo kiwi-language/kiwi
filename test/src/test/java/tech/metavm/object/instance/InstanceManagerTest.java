@@ -32,6 +32,12 @@ public class InstanceManagerTest extends TestCase {
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        instanceManager = null;
+        entityContextFactory = null;
+    }
+
     private IEntityContext newContext() {
         return entityContextFactory.newContext(false);
     }

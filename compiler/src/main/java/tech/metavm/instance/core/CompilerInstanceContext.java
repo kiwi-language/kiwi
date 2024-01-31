@@ -1,6 +1,5 @@
 package tech.metavm.instance.core;
 
-import tech.metavm.entity.DefContext;
 import tech.metavm.entity.EntityIdProvider;
 import tech.metavm.entity.VersionSource;
 import tech.metavm.event.EventQueue;
@@ -24,7 +23,6 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                                    VersionSource versionSource,
                                    EntityIdProvider idService,
                                    IndexSource indexSource,
-                                   DefContext defContext,
                                    IInstanceContext parent,
                                    TypeProvider typeProvider,
                                    MappingProvider mappingProvider,

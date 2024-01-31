@@ -86,7 +86,7 @@ public class LocalIndexSource implements IndexSource {
     }
 
     public IEntityContext newContext() {
-        return contextFactory.newEntityContext(HttpUtils.getAppId());
+        return contextFactory.newEntityContext(CompilerHttpUtils.getAppId());
     }
 
     public LocalIndex.Query convertQuery(InstanceIndexQuery query) {

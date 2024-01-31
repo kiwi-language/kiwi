@@ -90,6 +90,8 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     private void add(InstancePO instancePO) {
+        if(instancePO.getId() == 4503599627570500L)
+            System.out.println("Caught");
         instancePO = DiffUtils.copyPojo(instancePO);
         NncUtils.requireNull(id2instance.get(instancePO.getId()),
                 "Instance with id " + instancePO.getId() + " already exists");

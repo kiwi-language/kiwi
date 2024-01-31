@@ -48,8 +48,8 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
                     standardInstanceContext, columnStore);
             defContext.setFieldBlacklist(fieldBlacklist);
             bridge.setEntityContext(defContext);
-            InstanceContextFactory.setDefContext(defContext);
             ModelDefRegistry.setDefContext(defContext);
+            entityContextFactory.setDefContext(defContext);
             for (Class<?> entityClass : EntityUtils.getModelClasses()) {
                 if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
                     defContext.getDef(entityClass);

@@ -25,6 +25,7 @@ public class EntityContextFactory {
     private final IndexEntryMapper indexEntryMapper;
     private InstanceLogService instanceLogService;
     private boolean defaultAsyncLogProcess = true;
+    private DefContext defContext;
 
     public EntityContextFactory(InstanceContextFactory instanceContextFactory,
                                 IndexEntryMapper indexEntryMapper) {
@@ -38,16 +39,16 @@ public class EntityContextFactory {
 
 
     public IEntityContext newContext(boolean asyncLogProcess) {
-        return newContext(ContextUtil.getAppId(), ModelDefRegistry.getDefContext(), null, asyncLogProcess);
+        return newContext(ContextUtil.getAppId(), defContext, null, asyncLogProcess);
     }
 
 
     public IEntityContext newContext(long appId, EntityIdProvider idProvider) {
-        return newContext(appId, ModelDefRegistry.getDefContext(), idProvider);
+        return newContext(appId, defContext, idProvider);
     }
 
     public IEntityContext newContext(long appId) {
-        return newContext(appId, ModelDefRegistry.getDefContext());
+        return newContext(appId, defContext);
     }
 
     public IEntityContext newContext(long appId, @Nullable IEntityContext parent) {
@@ -63,7 +64,7 @@ public class EntityContextFactory {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
                 NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge);
-        var context = new EntityContext(instanceContext, parent);
+        var context = new EntityContext(instanceContext, parent, defContext);
         bridge.setEntityContext(context);
         return context;
     }
@@ -106,5 +107,9 @@ public class EntityContextFactory {
 
     public void setDefaultAsyncLogProcess(boolean defaultAsyncLogProcess) {
         this.defaultAsyncLogProcess = defaultAsyncLogProcess;
+    }
+
+    public void setDefContext(DefContext defContext) {
+        this.defContext = defContext;
     }
 }

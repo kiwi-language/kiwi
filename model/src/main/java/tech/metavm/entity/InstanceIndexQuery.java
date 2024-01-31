@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.InstanceEvaluationContext;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.core.ClassInstance;
@@ -28,7 +29,10 @@ public record InstanceIndexQuery(
     }
 
     public boolean matches(ClassInstance instance, ParameterizedFlowProvider parameterizedFlowProvider) {
-        var evaluationContext = new InstanceEvaluationContext(instance, parameterizedFlowProvider);
+        return matches(new InstanceEvaluationContext(instance, parameterizedFlowProvider));
+    }
+
+    public boolean matches(EvaluationContext evaluationContext) {
         return NncUtils.allMatch(items, item -> item.matches(evaluationContext));
     }
 

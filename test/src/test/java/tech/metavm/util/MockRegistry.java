@@ -74,7 +74,6 @@ public class MockRegistry {
                 .filter(k -> !ReadonlyArray.class.isAssignableFrom(k))
                 .forEach(DEF_CONTEXT::getDef);
         DEF_CONTEXT.finish();
-        InstanceContextFactory.setDefContext(DEF_CONTEXT);
         ContextUtil.setAppId(APP_ID);
         ContextUtil.setUserId(USER_ID);
         initJobScheduler();

@@ -15,18 +15,21 @@ public class CompilerInstanceContextFactory {
 
 //    public static final CompilerInstanceContextFactory INSTANCE = new CompilerInstanceContextFactory();
 
-    private final ServerVersionSource versionSource = new ServerVersionSource();
-    private final ServerTreeSource serverTreeSource = new ServerTreeSource();
+    private final ServerVersionSource versionSource;
+    private final ServerTreeSource serverTreeSource;
     private final DiskTreeStore diskTreeSource;
-    private final EntityIdProvider idService = new CompilerIdService();
+    private final EntityIdProvider idService;
     private final LocalIndexSource localIndexSource;
 
     private IInstanceContext stdContext;
     private DefContext defContext;
 
-    public CompilerInstanceContextFactory(DiskTreeStore diskTreeSource, LocalIndexSource localIndexSource) {
+    public CompilerInstanceContextFactory(DiskTreeStore diskTreeSource, LocalIndexSource localIndexSource, TypeClient typeClient) {
         this.diskTreeSource = diskTreeSource;
         this.localIndexSource = localIndexSource;
+        idService = new CompilerIdService(typeClient);
+        versionSource = new ServerVersionSource(typeClient);
+        serverTreeSource = new ServerTreeSource(typeClient);
     }
 
     public IInstanceContext newContext(long appId) {
@@ -35,23 +38,26 @@ public class CompilerInstanceContextFactory {
     }
 
     public IEntityContext newEntityContext(long appId) {
-        var dependency = new EntityInstanceContextBridge();
-        var context = new CompilerInstanceContext(
+        var bridge = new EntityInstanceContextBridge();
+        var context = newBridgedInstanceContext(appId, bridge, idService);
+        var entityContext = new CompilerEntityContext(context, defContext, defContext);
+        bridge.setEntityContext(entityContext);
+        return entityContext;
+    }
+
+    public IInstanceContext newBridgedInstanceContext(long appId, EntityInstanceContextBridge bridge, EntityIdProvider idProvider) {
+        return new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),
                 versionSource,
-                idService,
+                idProvider,
                 localIndexSource,
-                defContext,
                 stdContext,
-                dependency,
-                dependency,
-                dependency,
+                bridge,
+                bridge,
+                bridge,
                 false
         );
-        var entityContext = new CompilerEntityContext(context, defContext, defContext);
-        dependency.setEntityContext(entityContext);
-        return entityContext;
     }
 
     public void setStdContext(IInstanceContext stdContext) {

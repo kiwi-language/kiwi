@@ -26,6 +26,13 @@ public class JobSchedulerTest extends TestCase {
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        entityContextFactory = null;
+        jobScheduler = null;
+        instanceStore = null;
+    }
+
     public void test() {
         TestJob testJob;
         TestUtils.beginTransaction();

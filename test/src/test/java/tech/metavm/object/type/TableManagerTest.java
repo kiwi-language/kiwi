@@ -30,6 +30,11 @@ public class TableManagerTest extends TestCase {
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
+    @Override
+    protected void tearDown() {
+        tableManager = null;
+    }
+
     public void testSmoking() {
         Type fooType = ModelDefRegistry.getType(Foo.class);
 

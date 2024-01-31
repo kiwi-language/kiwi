@@ -27,6 +27,12 @@ public class EntityQueryServiceTest extends TestCase {
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
+    @Override
+    protected void tearDown() {
+        entityContextFactory = null;
+        entityQueryService = null;
+    }
+
     public <T extends Entity> T addEntity(T entity) {
 //        if (!entityContext.containsModel(entity)) {
 //            entityContext.bind(entity);

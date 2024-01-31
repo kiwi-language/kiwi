@@ -46,8 +46,7 @@ public class IdBlockCache {
         if (block == null || !block.contains(id)) {
             block = this.getById.apply(id);
             NncUtils.requireTrue(block != null && block.contains(id),
-                    () -> new InternalException("Can not find a block containing id: " + id
-                    )
+                    () -> new InternalException("Can not find a block containing id: " + id)
             );
             addToCache(block);
         }

@@ -35,7 +35,6 @@ public class MappingTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        var entityContextFactory = bootResult.entityContextFactory();
         TransactionOperations transactionOperations = new MockTransactionOperations();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         EntityQueryService entityQueryService = new EntityQueryService(instanceQueryService);
@@ -57,6 +56,9 @@ public class MappingTest extends TestCase {
     @Override
     protected void tearDown() {
         FlowSavingContext.clearConfig();
+        typeManager = null;
+        flowManager = null;
+        instanceManager = null;
     }
 
     private TypeDTO getType(long id) {

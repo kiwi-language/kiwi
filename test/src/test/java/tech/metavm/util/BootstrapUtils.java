@@ -13,6 +13,10 @@ import tech.metavm.object.instance.search.InstanceSearchService;
 import tech.metavm.object.type.MemAllocatorStore;
 import tech.metavm.object.type.MemColumnStore;
 import tech.metavm.object.type.StdAllocators;
+import tech.metavm.system.IdService;
+import tech.metavm.system.RegionManager;
+import tech.metavm.system.persistence.MemBlockMapper;
+import tech.metavm.system.persistence.MemRegionMapper;
 import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 
@@ -46,7 +50,7 @@ public class BootstrapUtils {
                     state.indexEntryMapper(),
                     state.referenceMapper()
             );
-            var idProvider = state.idProvider();
+            var idProvider = new IdService(state.blockMapper(), new RegionManager(state.regionMapper()));
             var instanceSearchService = state.instanceSearchService();
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             var bootstrap = new Bootstrap(
@@ -65,13 +69,19 @@ public class BootstrapUtils {
             return new BootstrapResult(
                     entityContextFactory,
                     idProvider,
+                    state.blockMapper(),
                     instanceStore,
-                    instanceSearchService
+                    instanceSearchService,
+                    state.allocatorStore()
             );
         }
         else {
+            var regionMapper = new MemRegionMapper();
+            var regionManager = new RegionManager(regionMapper);
+            regionManager.initialize();
+            var blockMapper = new MemBlockMapper();
+            var idProvider = new IdService(blockMapper, regionManager);
             var instanceStore = new MemInstanceStore();
-            var idProvider = new MockIdProvider();
             var instanceSearchService = new MemInstanceSearchServiceV2();
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             var allocatorStore = new MemAllocatorStore();
@@ -87,7 +97,8 @@ public class BootstrapUtils {
                     instanceStore.getInstanceMapper().copy(),
                     instanceStore.getReferenceMapper().copy(),
                     instanceStore.getIndexEntryMapper().copy(),
-                    idProvider.copy(),
+                    regionMapper.copy(),
+                    blockMapper.copy(),
                     columnStore.copy(),
                     allocatorStore.copy(),
                     instanceSearchService.copy()
@@ -102,8 +113,10 @@ public class BootstrapUtils {
             return new BootstrapResult(
                     entityContextFactory,
                     idProvider,
+                    blockMapper,
                     instanceStore,
-                    instanceSearchService
+                    instanceSearchService,
+                    allocatorStore
             );
         }
     }

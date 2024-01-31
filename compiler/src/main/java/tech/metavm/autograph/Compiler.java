@@ -18,10 +18,8 @@ import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.system.RegionConstants;
-import tech.metavm.util.HttpUtils;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.TypeReference;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -46,13 +44,15 @@ public class Compiler {
     private final IrCoreProjectEnvironment projectEnv;
     private final Project project;
     private final CompilerInstanceContextFactory contextFactory;
+    private final TypeClient typeClient;
 
     static {
         NncUtils.ensureDirectoryExists(REQUEST_DIR);
     }
 
-    public Compiler(String sourceRoot, CompilerInstanceContextFactory contextFactory) {
+    public Compiler(String sourceRoot, CompilerInstanceContextFactory contextFactory, TypeClient typeClient) {
         this.contextFactory = contextFactory;
+        this.typeClient = typeClient;
         var javaHome = System.getProperty("java.home");
         this.baseMod = javaHome + "/jmods/java.base.jmod";
         this.sourceRoot = sourceRoot;
@@ -132,8 +132,7 @@ public class Compiler {
             LOGGER.info("Compile successful");
             var request = new BatchSaveRequest(typeDTOs, List.of(), pFlowDTOs);
             saveRequest(request);
-            HttpUtils.post("/type/batch", request, new TypeReference<List<Long>>() {
-            });
+            typeClient.batchSave(request);
         }
     }
 
@@ -149,7 +148,7 @@ public class Compiler {
     }
 
     private IEntityContext newContext() {
-        return contextFactory.newEntityContext(HttpUtils.getAppId());
+        return contextFactory.newEntityContext(typeClient.getAppId());
     }
 
 }

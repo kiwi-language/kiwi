@@ -45,6 +45,14 @@ public class ShoppingTest extends TestCase {
         flowExecutionService = new FlowExecutionService(entityContextFactory);
     }
 
+    @Override
+    protected void tearDown() {
+        typeManager = null;
+        flowManager = null;
+        instanceManager = null;
+        flowExecutionService = null;
+    }
+
     public void testDecAmount() {
         var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, flowManager);
         var productDTO = MockUtils.createProductDTO(shoppingTypeIds);

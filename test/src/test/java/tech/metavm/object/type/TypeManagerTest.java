@@ -56,6 +56,15 @@ public class TypeManagerTest extends TestCase {
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
+    @Override
+    protected void tearDown() {
+        typeManager = null;
+        flowManager = null;
+        instanceSearchService = null;
+        instanceStore = null;
+        instanceManager = null;
+    }
+
     public void test() {
         TypeDTO typeDTO = ClassTypeDTOBuilder.newBuilder("Bat")
                 .tmpId(NncUtils.randomNonNegative())

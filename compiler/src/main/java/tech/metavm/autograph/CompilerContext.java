@@ -1,5 +1,6 @@
 package tech.metavm.autograph;
 
+import tech.metavm.object.type.AllocatorStore;
 import tech.metavm.util.MetaVersionStore;
 import tech.metavm.util.NncUtils;
 
@@ -14,15 +15,15 @@ public class CompilerContext {
     private final TreeLoader treeLoader;
     private final CompilerBootstrap bootstrap;
 
-    public CompilerContext(String home) {
+    public CompilerContext(String home, TypeClient typeClient, AllocatorStore allocatorStore) {
         NncUtils.ensureDirectoryExists(home);
         diskTreeStore = new DiskTreeStore(home + File.separator + "trees");
         localIndexSource = new LocalIndexSource(diskTreeStore, home);
-        contextFactory = new CompilerInstanceContextFactory(diskTreeStore, localIndexSource);
+        contextFactory = new CompilerInstanceContextFactory(diskTreeStore, localIndexSource, typeClient);
         localIndexSource.setContextFactory(contextFactory);
         metaVersionStore = new MetaVersionStore(home + File.separator + "metaVersion");
-        treeLoader = new TreeLoader(metaVersionStore, diskTreeStore, localIndexSource);
-        bootstrap = new CompilerBootstrap(contextFactory);
+        treeLoader = new TreeLoader(metaVersionStore, diskTreeStore, localIndexSource, typeClient);
+        bootstrap = new CompilerBootstrap(contextFactory, allocatorStore);
     }
 
     public CompilerBootstrap getBootstrap() {

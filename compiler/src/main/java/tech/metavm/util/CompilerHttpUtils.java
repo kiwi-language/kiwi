@@ -10,7 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class HttpUtils {
+public class CompilerHttpUtils {
 
     private final static HttpClient client;
     private static long appId;
@@ -88,7 +88,7 @@ public class HttpUtils {
     }
 
     public static void setAppId(long appId) {
-        HttpUtils.appId = appId;
+        CompilerHttpUtils.appId = appId;
     }
 
     public static long getAppId() {
