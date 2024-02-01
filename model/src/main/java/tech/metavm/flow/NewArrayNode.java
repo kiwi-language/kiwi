@@ -19,7 +19,7 @@ public class NewArrayNode extends NodeRT implements NewNode {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         NewArrayNodeParam param = nodeDTO.getParam();
         var type = (ArrayType) context.getType(nodeDTO.outputTypeRef());
-        var value = ValueFactory.create(param.value(), parsingContext);
+        var value = NncUtils.get(param.value(), v -> ValueFactory.create(v, parsingContext));
         var parentRef = param.parentRef() != null ?
                 ParentRef.create(param.parentRef(), parsingContext, context, type) : null;
         NewArrayNode node = (NewArrayNode) context.getNode(nodeDTO.getRef());

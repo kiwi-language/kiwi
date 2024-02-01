@@ -7,12 +7,15 @@ import tech.metavm.flow.Method;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Parameter;
 import tech.metavm.object.type.*;
+import tech.metavm.util.CompilerConfig;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
@@ -25,6 +28,10 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     private final LinkedList<ClassType> classStack = new LinkedList<>();
 
+    private final IdentitySet<Field> visitedFields = new IdentitySet<>();
+
+    private final IdentitySet<Method> visitedMethods = new IdentitySet<>();
+
     public Declarator(TypeResolver typeResolver, IEntityContext context) {
         this.typeResolver = typeResolver;
         this.context = context;
@@ -36,33 +43,48 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
+        visitedFields.clear();
+        visitedMethods.clear();
         var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         metaClass.setStage(ResolutionStage.DECLARATION);
         if (!metaClass.isInterface()) {
-            MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
-                    .access(Access.PRIVATE)
-                    .build();
-            MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
-                    .isStatic(true)
-                    .access(Access.PRIVATE)
-                    .build();
+            if (metaClass.findMethodByCode("<init>") == null) {
+                MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
+                        .access(Access.PRIVATE)
+                        .build();
+            }
+            if (metaClass.findMethodByCode("<cinit>") == null) {
+                MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
+                        .isStatic(true)
+                        .access(Access.PRIVATE)
+                        .build();
+            }
+            visitedMethods.add(Objects.requireNonNull(metaClass.findMethodByCode("<init>")));
+            visitedMethods.add(Objects.requireNonNull(metaClass.findMethodByCode("<cinit>")));
         }
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!metaClass.isInterface() && !hashConstructor) {
             String constructorName = metaClass.getEffectiveTemplate().getName();
             String constructorCode = metaClass.getEffectiveTemplate().getCode();
-            MethodBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
+            visitedMethods.add(MethodBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
                     .isConstructor(true)
-                    .build();
+                    .build());
         }
         classStack.push(metaClass);
         super.visitClass(psiClass);
         classStack.pop();
+        var removedFields = NncUtils.exclude(metaClass.getFields(), visitedFields::contains);
+        removedFields.forEach(metaClass::removeField);
+        var removedMethods = NncUtils.filter(metaClass.getMethods(),
+                m -> !visitedMethods.contains(m) && !m.isSynthetic());
+        removedMethods.forEach(metaClass::removeMethod);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }
 
     @Override
     public void visitMethod(PsiMethod method) {
+        if (CompilerConfig.isMethodBlacklisted(method))
+            return;
         List<PsiMethod> overriddenMethods = TranspileUtil.getOverriddenMethods(method);
         List<Method> overridden = new ArrayList<>();
         for (PsiMethod overriddenMethod : overriddenMethods) {
@@ -102,6 +124,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
                     context.getFunctionTypeContext()
             );
         }
+        visitedMethods.add(flow);
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
             typeResolver.resolveTypeVariable(typeParameter).setGenericDeclaration(flow);
         }
@@ -109,9 +132,9 @@ public class Declarator extends JavaRecursiveElementVisitor {
     }
 
     private Access resolveAccess(PsiModifierList modifierList) {
-        if(modifierList.hasModifierProperty(PsiModifier.PUBLIC))
+        if (modifierList.hasModifierProperty(PsiModifier.PUBLIC))
             return Access.PUBLIC;
-        if(modifierList.hasModifierProperty(PsiModifier.PRIVATE))
+        if (modifierList.hasModifierProperty(PsiModifier.PRIVATE))
             return Access.PRIVATE;
         return Access.PACKAGE;
     }
@@ -153,7 +176,8 @@ public class Declarator extends JavaRecursiveElementVisitor {
             field.setAccess(getAccess(psiField));
             field.setUnique(TranspileUtil.isUnique(psiField));
         }
-        if(TranspileUtil.isTitleField(psiField))
+        visitedFields.add(field);
+        if (TranspileUtil.isTitleField(psiField))
             currentClass().setTitleField(field);
         psiField.putUserData(Keys.FIELD, field);
     }

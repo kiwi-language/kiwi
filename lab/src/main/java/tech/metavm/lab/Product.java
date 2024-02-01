@@ -33,4 +33,8 @@ public class Product {
         return skus;
     }
 
+    public void setSkus(List<SKU> skus) {
+
+    }
+
 }

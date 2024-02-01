@@ -351,7 +351,9 @@ public class TypeManager extends EntityContextFactoryBean {
             ClassTypeParam param = typeDTO.getClassParam();
             if (param.flows() != null) {
                 for (FlowDTO flowDTO : param.flows()) {
-                    flowManager.saveContent(flowDTO, context.getMethod(flowDTO.getRef()), context);
+                    var flow = context.getMethod(flowDTO.getRef());
+                    if(!flow.isSynthetic())
+                        flowManager.saveContent(flowDTO, context.getMethod(flowDTO.getRef()), context);
                 }
             }
         }

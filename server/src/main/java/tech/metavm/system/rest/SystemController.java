@@ -25,11 +25,13 @@ import java.nio.file.Paths;
 @RequestMapping("/system")
 public class SystemController {
 
+    public static final String DEFAULT_HOME = System.getProperty("user.home") + File.separator + ".metavm";
+
+    public static final String AUTH_FILE = DEFAULT_HOME + File.separator + "auth";
+
     public static final String RESULT_JSON_FILE = "/Users/leen/workspace/object/result.json";
 
     public static final String APP_ID_FILE = "/Users/leen/workspace/object/src/test/resources/appId";
-
-    public static final String AUTH_FILE = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
 
     public static final String METAVM_HOME = "/Users/leen/.metavm";
 
@@ -72,10 +74,10 @@ public class SystemController {
         loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
         NncUtils.writeFile(RESULT_JSON_FILE, "[]");
         NncUtils.writeFile(APP_ID_FILE, Long.toString(createAppResult.appId()));
-        NncUtils.writeFile(AUTH_FILE, createAppResult.appId() + "\ndemo\n123456");
         clearDirectory(METAVM_HOME);
         clearDirectory(METAVM_HOME_1);
         clearDirectory(METAVM_HOME_2);
+        NncUtils.writeFile(AUTH_FILE, createAppResult.appId() + "\ndemo\n123456");
         ContextUtil.setUserId(createAppResult.ownerId());
         var appToken = platformUserManager.enterApp(createAppResult.appId());
         Tokens.setToken(response, createAppResult.appId(), appToken.token());

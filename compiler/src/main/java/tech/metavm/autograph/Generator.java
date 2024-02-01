@@ -7,6 +7,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
+import tech.metavm.util.CompilerConfig;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -263,6 +264,8 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitMethod(PsiMethod psiMethod) {
+        if(CompilerConfig.isMethodBlacklisted(psiMethod))
+            return;
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
         MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);

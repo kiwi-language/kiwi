@@ -131,7 +131,13 @@ public class TypeManagerTest extends TestCase {
         Assert.assertEquals(2, productTypeDTO.getClassParam().fields().size());
         var couponStateType = typeManager.getType(new GetTypeRequest(typeIds.couponStateTypeId(), false)).type();
         Assert.assertEquals(2, couponStateType.getClassParam().enumConstants().size());
-
+        TestUtils.doInTransaction(() -> typeManager.batchSave(
+                new BatchSaveRequest(
+                        List.of(productTypeDTO),
+                        List.of(),
+                        List.of()
+                )
+        ));
     }
 
     public void testAddFieldWithDefaultValueToTemplate() {

@@ -323,8 +323,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     public <T> T bind(T model) {
-        if(model instanceof Entity entity && entity.isEphemeralEntity())
-            throw new IllegalArgumentException("Can not bind an ephemeral entity");
+//        if(model instanceof Entity entity && entity.isEphemeralEntity())
+//            throw new IllegalArgumentException("Can not bind an ephemeral entity");
         NncUtils.requireTrue(EntityUtils.tryGetId(model) == null, "Can not bind a persisted entity");
         if (containsModel(model))
             return model;

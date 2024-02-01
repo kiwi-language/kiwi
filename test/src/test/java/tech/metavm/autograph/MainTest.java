@@ -15,17 +15,20 @@ import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.*;
+import tech.metavm.object.type.AllocatorStore;
 import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeQuery;
+import tech.metavm.object.version.VersionManager;
 import tech.metavm.system.BlockManager;
 import tech.metavm.task.TaskManager;
 import tech.metavm.util.*;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +53,7 @@ public class MainTest extends TestCase {
     private ExecutorService executor;
     private TypeManager typeManager;
     private InstanceManager instanceManager;
+    private AllocatorStore allocatorStore;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -61,6 +65,7 @@ public class MainTest extends TestCase {
             FlowSavingContext.initConfig();
             return BootstrapUtils.bootstrap();
         }).get();
+        allocatorStore = bootResult.allocatorStore();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(
                 bootResult.entityContextFactory(),
@@ -79,6 +84,7 @@ public class MainTest extends TestCase {
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
         main = new Main(HOME, SOURCE_ROOT, AUTH_FILE, typeClient, bootResult.allocatorStore());
         FlowSavingContext.initConfig();
+        typeManager.setVersionManager(new VersionManager(bootResult.entityContextFactory()));
     }
 
     @Override
@@ -90,6 +96,9 @@ public class MainTest extends TestCase {
 
     public void test() throws ExecutionException, InterruptedException {
         main.run();
+        var ref = new Object() {
+            long productTypeId;
+        };
         executor.submit(() -> {
             var types = typeManager.query(new TypeQuery(
                     "商品",
@@ -104,6 +113,9 @@ public class MainTest extends TestCase {
             )).data();
             Assert.assertEquals(1, types.size());
             var productType = types.get(0);
+            ref.productTypeId = productType.id();
+            Assert.assertNotNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
+
             types = typeManager.query(new TypeQuery(
                     "SKU",
                     List.of(TypeCategory.CLASS.code()),
@@ -196,6 +208,13 @@ public class MainTest extends TestCase {
                     )
             ).page().data();
             Assert.assertEquals(1, productViews.size());
+        }).get();
+        CompilerConfig.setMethodBlacklist(Set.of("tech.metavm.lab.Product.setSkus"));
+        main = new Main(HOME, SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
+        main.run();
+        executor.submit(() -> {
+           var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
+            Assert.assertNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
         }).get();
     }
 
