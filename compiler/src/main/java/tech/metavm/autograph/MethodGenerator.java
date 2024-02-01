@@ -310,7 +310,7 @@ public class MethodGenerator {
     }
 
     public Field newTemproryField(ClassType klass, String name, Type type) {
-        return FieldBuilder.newBuilder(name, name, klass, type).build();
+        return FieldBuilder.newBuilder(name, null, klass, type).build();
     }
 
     public ClassType newTemporaryType(String namePrefix) {

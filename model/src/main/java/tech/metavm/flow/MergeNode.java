@@ -27,27 +27,30 @@ public class MergeNode extends ChildTypeNode {
         var node = (MergeNode) context.getNode(nodeDTO.getRef());
         if (node == null)
             node = new MergeNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), branchNode, outputType, scope);
-        MergeNodeParam param = nodeDTO.getParam();
+        var param = (MergeNodeParam) nodeDTO.param();
         if (param.fields().size() != node.getType().getReadyFields().size())
             throw new BusinessException(ErrorCode.MISSING_MERGE_NODE_FIELD_VALUE);
-        List<MergeNodeField> fields = new ArrayList<>();
-        for (var fieldDTO : param.fields()) {
-            MergeNodeField field = new MergeNodeField(context.getField(fieldDTO.fieldRef()), node);
-            Map<Branch, ParsingContext> branchParsingContexts = new HashMap<>();
-            for (var value : fieldDTO.values()) {
-                Branch branch = Objects.requireNonNull(context.getEntity(Branch.class, value.branchRef()));
+        var mergeFields = new ArrayList<MergeNodeField>();
+        for (var mergeFieldDTO : param.fields()) {
+            var field = context.getField(mergeFieldDTO.fieldRef());
+            var mergeField = node.findMergeField(field);
+            if (mergeField == null)
+                mergeField = new MergeNodeField(field, node);
+            var branchParsingContexts = new HashMap<Branch, ParsingContext>();
+            for (var value : mergeFieldDTO.values()) {
+                var branch = Objects.requireNonNull(context.getEntity(Branch.class, value.branchRef()));
                 if (branch.getOwner() != branchNode)
                     throw new InternalException("Branch " + branch + " doesn't belong to the branch node of this merge node");
-                field.setValue(branch,
+                mergeField.setValue(branch,
                         ValueFactory.create(value.value(),
                                 branchParsingContexts.computeIfAbsent(branch,
                                         k -> FlowParsingContext.create(branch.getScope(), branch.getScope().getLastNode(), context)
                                 )
                         ));
             }
-            fields.add(field);
+            mergeFields.add(mergeField);
         }
-        node.setFields(fields);
+        node.setFields(mergeFields);
         node.mergeExpressionTypes(getExpressionTypeMap(branchNode));
         return node;
     }
@@ -143,8 +146,12 @@ public class MergeNode extends ChildTypeNode {
         return !predecessors.isEmpty() ? predecessors : List.of(branchNode);
     }
 
-    public ReadonlyArray<MergeNodeField> getFields() {
-        return fields;
+    public List<MergeNodeField> getFields() {
+        return fields.toList();
+    }
+
+    public @Nullable MergeNodeField findMergeField(Field field) {
+        return fields.get(MergeNodeField::getField, field);
     }
 
     @Override

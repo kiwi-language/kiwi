@@ -108,8 +108,8 @@ public class MainTest extends TestCase {
                     false,
                     null,
                     List.of(),
-                    1
-                    , 20
+                    1,
+                    20
             )).data();
             Assert.assertEquals(1, types.size());
             var productType = types.get(0);
@@ -158,7 +158,7 @@ public class MainTest extends TestCase {
                                                                                     ),
                                                                                     InstanceFieldDTO.create(
                                                                                             TestUtils.getFieldIdByCode(skuType, "price"),
-                                                                                            PrimitiveFieldValue.createDouble(100.0)
+                                                                                            PrimitiveFieldValue.createDouble(90.0)
                                                                                     )
                                                                             )
                                                                     )
@@ -208,12 +208,16 @@ public class MainTest extends TestCase {
                     )
             ).page().data();
             Assert.assertEquals(1, productViews.size());
+            var productView = productViews.get(0);
+            var priceFieldValue = (PrimitiveFieldValue) productView.getFieldValue(
+                    TestUtils.getFieldIdByCode(productViewType, "price"));
+            Assert.assertEquals(95.0, (double) priceFieldValue.getValue(), 0.0);
         }).get();
         CompilerConfig.setMethodBlacklist(Set.of("tech.metavm.lab.Product.setSkus"));
         main = new Main(HOME, SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
         main.run();
         executor.submit(() -> {
-           var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
+            var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
             Assert.assertNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
         }).get();
     }

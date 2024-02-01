@@ -1,9 +1,6 @@
 package tech.metavm.lab;
 
-import tech.metavm.entity.ChildEntity;
-import tech.metavm.entity.ChildList;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
+import tech.metavm.entity.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +32,17 @@ public class Product {
 
     public void setSkus(List<SKU> skus) {
 
+    }
+
+    @EntityFlow("获取价格")
+    public double getPrice() {
+        if(skus.isEmpty())
+            return 0.0;
+        double totalPrice = 0.0;
+        for (SKU sku : skus) {
+            totalPrice += sku.getPrice();
+        }
+        return totalPrice / skus.size();
     }
 
 }

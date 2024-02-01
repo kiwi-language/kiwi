@@ -62,7 +62,8 @@ public class ExpressionResolver {
     private final Generator visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListAddCallResolver(), new ListRemoveCallResolver(), new ListGetCallResolver()
+            new ListAddCallResolver(), new ListRemoveCallResolver(), new ListGetCallResolver(),
+            new ListIsEmptyResolver(), new ListSizeResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(

@@ -20,6 +20,7 @@ public class CodeGenerator {
         executeCommand(() -> {
             psiClass.accept(new SwitchExpressionTransformer());
             psiClass.accept(new SwitchLabelStatementTransformer());
+            psiClass.accept(new ForeachTransformer());
             psiClass.accept(new ForTransformer());
             psiClass.accept(new BreakTransformer());
             psiClass.accept(new ContinueTransformer());

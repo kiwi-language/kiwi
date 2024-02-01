@@ -464,6 +464,9 @@ public class MappingSaver {
                     return new Accessor(getter, setter, field, field.getName(), propertyCode);
                 else if (getter.getName().startsWith("获取") && getter.getName().length() > 2)
                     return new Accessor(getter, setter, null, getter.getName().substring(2), propertyCode);
+                else if (getter.getName().startsWith("get") && getter.getName().length() > 3)
+                    return new Accessor(getter, setter, null,
+                            NamingUtils.firstCharToLowerCase(getter.getName().substring(3)), propertyCode);
                 else
                     return new Accessor(getter, setter, null, getter.getName(), propertyCode);
             }

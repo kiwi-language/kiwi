@@ -10,7 +10,7 @@ public class ListGetCallResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES =
             List.of(MethodSignature.create(TranspileUtil.createType(List.class), "get",
-                    TranspileUtil.createType(int.class)));
+                    TranspileUtil.createPrimitiveType(int.class)));
 
     @Override
     public List<MethodSignature> getSignatures() {
