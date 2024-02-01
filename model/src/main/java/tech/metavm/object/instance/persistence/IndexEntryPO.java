@@ -111,4 +111,9 @@ public class IndexEntryPO {
                 ", instanceId=" + instanceId +
                 '}';
     }
+
+    public IndexEntryPO copy() {
+        return new IndexEntryPO(appId, key.copy(), instanceId);
+    }
+
 }

@@ -169,6 +169,13 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         return null;
     }
 
+    @Override
+    public void add(Flow flow) {
+        entityContext.tryBind(flow);
+        parameterizedFlows.computeIfAbsent(flow.getEffectiveHorizontalTemplate(),
+                k -> new HashMap<>()).put(flow.getTypeArguments(), flow);
+    }
+
     public ClassType load(ClassType template, List<? extends Type> typeArguments) {
         if (entityContext == null) {
             return null;
@@ -287,7 +294,8 @@ public class GenericContext implements ParameterizedFlowProvider, ParameterizedT
         var transformed = (Flow) template.accept(substitutor);
         if (template instanceof Method)
             substitutor.exitElement();
-        newFlows.add(transformed);
+        if(existing == null)
+            newFlows.add(transformed);
         //noinspection unchecked
         return (T) transformed;
     }

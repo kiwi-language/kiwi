@@ -10,6 +10,7 @@ import tech.metavm.util.NncUtils;
 
 import java.io.Closeable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class SerializeContext implements Closeable {
@@ -227,6 +228,10 @@ public class SerializeContext implements Closeable {
 
     public List<TypeDTO> getTypes(Predicate<Type> filter) {
         return NncUtils.filterAndMap(types.entrySet(), e -> filter.test(e.getKey()), Map.Entry::getValue);
+    }
+
+    public void forEachType(Predicate<Type> filter, Consumer<Type> action) {
+        types.keySet().stream().filter(filter).forEach(action);
     }
 
     public List<TypeDTO> getParameterizedTypes() {

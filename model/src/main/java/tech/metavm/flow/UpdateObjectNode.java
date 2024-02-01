@@ -7,6 +7,7 @@ import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.UpdateFieldDTO;
 import tech.metavm.flow.rest.UpdateObjectNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.util.NncUtils;
 
@@ -28,23 +29,17 @@ public class UpdateObjectNode extends NodeRT {
             );
         } else
             node.setObject(objectId);
-        for (UpdateFieldDTO field : param.fields()) {
-            NncUtils.requireTrue(
-                    entityContext.getField(field.fieldRef()).getDeclaringType().isAssignableFrom(
-                            node.getExpressionTypes().getType(objectId.getExpression())
-                    )
-            );
-        }
+        var type = (ClassType) node.getExpressionTypes().getType(objectId.getExpression());
         final var _node = node;
         node.setFields(NncUtils.map(
                 param.fields(),
-                updateFieldDTO -> saveField(_node, updateFieldDTO, parsingContext, entityContext)
+                updateFieldDTO -> saveField(_node, updateFieldDTO, parsingContext, type)
         ));
         return node;
     }
 
-    private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, IEntityContext entityContext) {
-        var field = entityContext.getField(updateFieldDTO.fieldRef());
+    private static UpdateField saveField(UpdateObjectNode node, UpdateFieldDTO updateFieldDTO, ParsingContext parsingContext, ClassType type) {
+        var field = type.getField(updateFieldDTO.fieldRef());
         var op = UpdateOp.getByCode(updateFieldDTO.opCode());
         var value = ValueFactory.create(updateFieldDTO.value(), parsingContext);
         var existing = node.getField(field);

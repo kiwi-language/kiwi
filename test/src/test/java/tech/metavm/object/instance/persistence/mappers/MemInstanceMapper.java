@@ -90,8 +90,6 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     private void add(InstancePO instancePO) {
-        if(instancePO.getId() == 4503599627570500L)
-            System.out.println("Caught");
         instancePO = DiffUtils.copyPojo(instancePO);
         NncUtils.requireNull(id2instance.get(instancePO.getId()),
                 "Instance with id " + instancePO.getId() + " already exists");
@@ -179,11 +177,9 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     public MemInstanceMapper copy() {
-        MemInstanceMapper copy = new MemInstanceMapper();
-        copy.id2instance.putAll(id2instance);
-        copy.type2instances.putAll(type2instances);
-        copy.removed.putAll(removed);
-        copy.forest.putAll(forest);
+        var copy = new MemInstanceMapper();
+        id2instance.values().forEach(i -> copy.add(i.copy()));
+        removed.values().forEach(i -> copy.removed.put(i.getId(), i.copy()));
         return copy;
     }
 

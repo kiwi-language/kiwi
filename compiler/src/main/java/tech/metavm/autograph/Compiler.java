@@ -17,6 +17,7 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -24,6 +25,7 @@ import tech.metavm.util.NncUtils;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -126,8 +128,16 @@ public class Compiler {
                     typeResolver.ensureCodeGenerated(classType);
                 serContext.writeType(metaType);
             }
-            var typeDTOs =
-                    serContext.getTypes((t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId()))));
+            var typeDTOs = new ArrayList<TypeDTO>();
+            serContext.forEachType(
+                    (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId()))),
+                    t -> {
+                        if (t instanceof ClassType classType && classType.isParameterized())
+                            typeDTOs.add(classType.toPTypeDTO(serContext));
+                        else
+                            typeDTOs.add(t.toDTO());
+                    }
+            );
             var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
             LOGGER.info("Compile successful");
             var request = new BatchSaveRequest(typeDTOs, List.of(), pFlowDTOs);

@@ -89,9 +89,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     public MemIndexEntryMapper copy() {
         var copy = new MemIndexEntryMapper();
-        copy.items.addAll(items);
-        copy.key2items.putAll(key2items);
-        copy.instanceId2items.putAll(instanceId2items);
+        copy.batchInsert(NncUtils.map(items, IndexEntryPO::copy));
         return copy;
     }
 

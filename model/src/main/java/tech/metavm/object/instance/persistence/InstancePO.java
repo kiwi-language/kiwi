@@ -148,4 +148,9 @@ public class InstancePO {
                 ", syncVersion=" + syncVersion +
                 '}';
     }
+
+    public InstancePO copy() {
+        return new InstancePO(appId, id, title, typeId, data, parentId, parentFieldId, rootId, version, syncVersion);
+    }
+
 }

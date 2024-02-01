@@ -37,8 +37,8 @@ public final class PTypeDTO extends GenericElementDTO implements TypeParam {
     @Override
     public void forEachDescendant(Consumer<GenericElementDTO> action) {
         super.forEachDescendant(action);
-        fields.forEach(f -> forEachDescendant(action));
-        flows.forEach(f -> forEachDescendant(action));
+        fields.forEach(f -> f.forEachDescendant(action));
+        flows.forEach(f -> f.forEachDescendant(action));
         mappings.forEach(m -> m.forEachDescendant(action));
     }
 

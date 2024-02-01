@@ -215,7 +215,7 @@ public class SubstitutorV2 extends CopyVisitor {
                         .isStatic(method.isStatic())
                         .typeArguments(typeArgs)
                         .build();
-                entityRepository.bind(copy);
+                parameterizedFlowProvider.add(copy);
             }
             copy.setStage(stage);
             copy.setAbstract(method.isAbstract());
@@ -254,7 +254,7 @@ public class SubstitutorV2 extends CopyVisitor {
                         .typeArguments(typeArgs)
                         .isSynthetic(function.isSynthetic())
                         .build();
-                entityRepository.tryBind(copy);
+                parameterizedFlowProvider.add(copy);
             }
             copy.setStage(stage);
             copy.setNative(function.isNative());

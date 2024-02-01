@@ -22,9 +22,8 @@ public class MockParameterizedFlowProvider implements ParameterizedFlowProvider 
 
     @Override
     public <T extends Flow> T getParameterizedFlow(T template, List<? extends Type> typeArguments) {
-        //noinspection unchecked
-        return (T) map.computeIfAbsent(new Key(template, typeArguments),
-                k -> createParameterizedFlow(template, typeArguments));
+//        noinspection unchecked
+        return (T) createParameterizedFlow(template, typeArguments);
     }
 
     private Flow createParameterizedFlow(Flow template, List<? extends Type> typeArguments) {
@@ -39,6 +38,12 @@ public class MockParameterizedFlowProvider implements ParameterizedFlowProvider 
     public <T extends Flow> T getExistingFlow(T template, List<? extends Type> typeArguments) {
         //noinspection unchecked
         return (T) map.get(new Key(template, typeArguments));
+    }
+
+    @Override
+    public void add(Flow flow) {
+        map.put(new Key(flow.getHorizontalTemplate(), flow.getTypeArguments()), flow);
+        typeProviders.entityRepository.tryBind(flow);
     }
 
     private record Key(Flow template, List<? extends Type> typeArguments) {

@@ -385,8 +385,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
         return new GenericElementDTO(
-                serializeContext.getRef(this),
-                serializeContext.getRef(Objects.requireNonNull(getCopySource()))
+                serializeContext.getRef(Objects.requireNonNull(getCopySource())),
+                serializeContext.getRef(this)
         );
     }
 

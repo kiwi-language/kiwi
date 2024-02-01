@@ -17,8 +17,8 @@ public class ListAddCallResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(createType(List.class), "add", createType(Object.class)),
-                    MethodSignature.create(CHILD_LIST_TYPE, "add", createType(Object.class))
+                    MethodSignature.create(createType(List.class), "add",
+                            TranspileUtil.createTypeVariableType(List.class, 0))
             );
 
     @Override

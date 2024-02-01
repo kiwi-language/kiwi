@@ -97,4 +97,13 @@ public class IndexKeyPO {
                 ", columns=" + Arrays.toString(columns) +
                 '}';
     }
+
+    public IndexKeyPO copy() {
+        var copy = new IndexKeyPO();
+        copy.indexId = indexId;
+        for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
+            copy.columns[i] = Arrays.copyOf(columns[i], columns[i].length);
+        }
+        return copy;
+    }
 }

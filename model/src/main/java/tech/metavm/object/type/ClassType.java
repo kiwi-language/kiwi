@@ -348,7 +348,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     //<editor-fold desc="method">
 
     public Method getDefaultConstructor() {
-        return getMethodByCodeAndParamTypes(getEffectiveTemplate().getCode(), List.of());
+        return getMethodByCodeAndParamTypes(Types.getConstructorCode(this), List.of());
     }
 
     public List<Field> getSortedFields() {
@@ -357,7 +357,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
                 if (sortedFields == null) {
                     var sf = new ArrayList<Field>();
                     forEachField(f -> {
-                        if(f.isIdNotNull())
+                        if (f.isIdNotNull())
                             sf.add(f);
                     });
                     sf.sort(Comparator.comparingLong(Field::getId));
@@ -586,7 +586,12 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public Field getField(RefDTO ref) {
-        return Objects.requireNonNull(fields.get(Entity::getRef, ref));
+        var field = fields.get(Entity::getRef, ref);
+        if (field != null)
+            return field;
+        if (superClass != null)
+            return superClass.getField(ref);
+        throw new NullPointerException("Can not find field for " + ref + " in type " + name);
     }
 
     public Method getMethod(RefDTO ref) {
@@ -1079,7 +1084,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return template;
     }
 
-//    @Override
+    //    @Override
     public void setTemplate(Object template) {
         NncUtils.requireNull(this.template);
         isParameterized = template != null;
@@ -1207,14 +1212,14 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     public ObjectMapping getMappingInAncestors(RefDTO ref) {
         var mapping = findMapping(ref);
-        if(mapping != null)
+        if (mapping != null)
             return mapping;
-        if(superClass != null) {
-            if((mapping = superClass.getMappingInAncestors(ref)) != null)
+        if (superClass != null) {
+            if ((mapping = superClass.getMappingInAncestors(ref)) != null)
                 return mapping;
         }
         for (ClassType it : interfaces) {
-            if((mapping = it.getMappingInAncestors(ref)) != null)
+            if ((mapping = it.getMappingInAncestors(ref)) != null)
                 return mapping;
         }
         throw new InternalException("Can not find mapping in the ancestors of type: " + getName());
@@ -1270,7 +1275,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public boolean isParameterized() {
-        return isParameterized;
+        return !getTypeArguments().isEmpty();
     }
 
     @Override
@@ -1349,9 +1354,9 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @Nullable
     public Field getTitleField() {
-        if(titleField != null)
+        if (titleField != null)
             return titleField;
-        if(superClass != null)
+        if (superClass != null)
             return superClass.getTitleField();
         return null;
     }
@@ -1374,7 +1379,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 
     @Override
     public boolean isViewType(Type type) {
-        if(super.isViewType(type))
+        if (super.isViewType(type))
             return true;
         return NncUtils.anyMatch(mappings, m -> m.getTargetType() == type);
     }

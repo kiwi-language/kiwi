@@ -82,7 +82,10 @@ public class Method extends Flow implements Property, GenericElement {
         this.staticType = staticType;
         this.access = access;
         this.overridden.addAll(overridden);
-        declaringType.addMethod(this);
+        if(horizontalTemplate == null)
+            declaringType.addMethod(this);
+        else
+            horizontalTemplate.addTemplateInstance(this);
         checkTypes(overridden, parameters, returnType, type, staticType);
     }
 

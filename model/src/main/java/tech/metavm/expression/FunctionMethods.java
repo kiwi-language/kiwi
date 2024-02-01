@@ -66,12 +66,21 @@ public class FunctionMethods {
         return str.isBlank();
     }
 
-    public static BooleanInstance STARTS_WITH(StringInstance str, StringInstance prefix) {
-        return str.startsWith(prefix);
+    public static BooleanInstance STARTS_WITH(Instance first, StringInstance prefix) {
+        if(first instanceof NullInstance)
+            return Instances.falseInstance();
+        else if(first instanceof StringInstance str)
+            return str.startsWith(prefix);
+        throw new IllegalArgumentException("Invalid argument for starts_with function: " + first);
     }
 
-    public static BooleanInstance CONTAINS(StringInstance str, StringInstance prefix) {
-        return str.contains(prefix);
+    public static BooleanInstance CONTAINS(Instance first, StringInstance prefix) {
+        if(first instanceof NullInstance)
+            return Instances.falseInstance();
+        if(first instanceof StringInstance str)
+            return str.contains(prefix);
+        else
+            throw new IllegalArgumentException("Invalid argument for contains function: " + first);
     }
 
     public static StringInstance CONCAT(Instance str1, Instance str2) {

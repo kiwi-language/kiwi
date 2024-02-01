@@ -4,9 +4,7 @@ import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import tech.metavm.common.RefDTO;
-import tech.metavm.entity.EntityQueryService;
-import tech.metavm.entity.StandardTypes;
-import tech.metavm.entity.ThreadLocalStandardTypesHolder;
+import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.entity.natives.ThreadLocalNativeFunctionsHolder;
 import tech.metavm.flow.FlowExecutionService;
@@ -37,6 +35,8 @@ public class MainTest extends TestCase {
 
     public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/java";
 
+    public static final String SHOPPING_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/shopping";
+
     public static final String AUTH_FILE = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
 
     public static final String REQUEST_FILE =
@@ -59,6 +59,7 @@ public class MainTest extends TestCase {
     protected void setUp() throws ExecutionException, InterruptedException {
         StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
         NativeFunctions.setHolder(new ThreadLocalNativeFunctionsHolder());
+        ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = executor.submit(() -> {
@@ -220,6 +221,11 @@ public class MainTest extends TestCase {
             var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
             Assert.assertNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
         }).get();
+    }
+
+    public void testShopping() {
+        main = new Main(HOME, SHOPPING_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
+        main.run();
     }
 
 //    public void testResend() {

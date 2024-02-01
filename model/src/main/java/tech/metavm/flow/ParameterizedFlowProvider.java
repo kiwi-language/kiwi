@@ -10,4 +10,6 @@ public interface ParameterizedFlowProvider {
 
     <T extends Flow> T getExistingFlow(T template, List<? extends Type> typeArguments);
 
+    void add(Flow flow);
+
 }

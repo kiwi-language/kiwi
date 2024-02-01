@@ -65,7 +65,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!metaClass.isInterface() && !hashConstructor) {
             String constructorName = metaClass.getEffectiveTemplate().getName();
-            String constructorCode = metaClass.getEffectiveTemplate().getCode();
+            String constructorCode = Types.getConstructorCode(metaClass);
             visitedMethods.add(MethodBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
                     .isConstructor(true)
                     .build());

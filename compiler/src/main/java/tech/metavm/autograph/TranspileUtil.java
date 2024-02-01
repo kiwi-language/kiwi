@@ -270,6 +270,11 @@ public class TranspileUtil {
         );
     }
 
+    public static PsiClassType createTypeVariableType(Class<?> rawClass, int typeParameterIndex) {
+        var psiClass = Objects.requireNonNull(createType(rawClass).resolve());
+        return createType(Objects.requireNonNull(psiClass.getTypeParameters())[typeParameterIndex]);
+    }
+
     public static PsiClassType getSuperType(PsiType type, Class<?> superClass) {
         Queue<PsiType> queue = new LinkedList<>(List.of(type));
         while (!queue.isEmpty()) {

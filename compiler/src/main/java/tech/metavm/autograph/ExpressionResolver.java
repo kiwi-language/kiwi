@@ -5,7 +5,6 @@ import com.intellij.psi.tree.IElementType;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
-import tech.metavm.expression.Func;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.DoubleInstance;
@@ -400,7 +399,7 @@ public class ExpressionResolver {
     private NewResolver getNewResolver(PsiNewExpression newExpression) {
         var method = (PsiMethod) newExpression.resolveConstructor();
         tech.metavm.autograph.MethodSignature signature;
-        if(method != null)
+        if (method != null)
             signature = TranspileUtil.getSignature(method, null);
         else {
             // For default constructor
@@ -513,7 +512,7 @@ public class ExpressionResolver {
 
     private Expression resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
         var resolver = getNewResolver(expression);
-        if(resolver != null)
+        if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
         var type = NncUtils.requireNonNull(expression.getType());
 //        var psiClass = requireNonNull(((PsiClassType) type).resolve());
@@ -595,7 +594,7 @@ public class ExpressionResolver {
                     param -> typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()))
             );
             paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
-            var flow = declaringType.getMethodByCodeAndParamTypes(declaringType.getEffectiveTemplate().getCode(), paramTypes);
+            var flow = declaringType.getMethodByCodeAndParamTypes(Types.getConstructorCode(declaringType), paramTypes);
             var newNode = methodGenerator.createNew(flow, arguments, false);
             return new NodeExpression(newNode);
         }

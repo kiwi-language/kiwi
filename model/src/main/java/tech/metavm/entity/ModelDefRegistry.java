@@ -11,28 +11,32 @@ import tech.metavm.util.ReflectionUtils;
 
 public class ModelDefRegistry {
 
-    private static DefContext DEF_CONTEXT;
+    private static DefContextHolder holder = new GlobalDefContextHolder();
+
+    public static void setHolder(DefContextHolder holder) {
+        ModelDefRegistry.holder = holder;
+    }
 
     public static void setDefContext(DefContext defContext) {
-//        NncUtils.requireNull(DEF_CONTEXT, () -> new IllegalStateException("DefContext already set"));
-        DEF_CONTEXT = defContext;
+//        NncUtils.requireNull(holder.get(), () -> new IllegalStateException("DefContext already set"));
+        holder.set(defContext);
     }
 
     public static DefContext getDefContext() {
-        return DEF_CONTEXT;
+        return holder.get();
     }
 
     public static boolean containsDef(Type type) {
-        return DEF_CONTEXT.containsDef(type);
+        return getDefContext().containsDef(type);
     }
 
     public static void setModelFields(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
-        EntityDef<?> entityDef = (EntityDef<?>) DEF_CONTEXT.getDef(instance.getType());
+        EntityDef<?> entityDef = (EntityDef<?>) getDefContext().getDef(instance.getType());
         entityDef.initModelHelper(model, instance, objectInstanceMap);
     }
 
     public static void updateInstance(Object model, Instance instance, ObjectInstanceMap instanceMap) {
-        ModelDef<?, ?> entityDef = DEF_CONTEXT.getDef(instance.getType());
+        ModelDef<?, ?> entityDef = getDefContext().getDef(instance.getType());
         updateInstanceHelper(entityDef, model, instance, instanceMap);
     }
 
@@ -52,11 +56,11 @@ public class ModelDefRegistry {
     }
 
     public static Type getType(Class<?> entityClass) {
-        return DEF_CONTEXT.getDef(entityClass).getType();
+        return holder.get().getDef(entityClass).getType();
     }
 
     public static Type getType(java.lang.reflect.Type javaType) {
-        return DEF_CONTEXT.getDef(javaType).getType();
+        return holder.get().getDef(javaType).getType();
     }
 
     public static ClassType getClassType(Class<?> javaType) {
@@ -68,7 +72,7 @@ public class ModelDefRegistry {
     }
 
     public static Field getField(java.lang.reflect.Field javaField) {
-        return DEF_CONTEXT.getPojoDef(javaField.getDeclaringClass()).getFieldDef(javaField).getField();
+        return holder.get().getPojoDef(javaField.getDeclaringClass()).getFieldDef(javaField).getField();
     }
 
     public static Field getField(Class<?> klass, String fieldName) {
@@ -76,39 +80,39 @@ public class ModelDefRegistry {
     }
 
     public static Index getIndexConstraint(IndexDef<?> indexDef) {
-        return DEF_CONTEXT.getIndexConstraint(indexDef);
+        return holder.get().getIndexConstraint(indexDef);
     }
 
     public static Class<? extends Entity> getEntityType(ClassType type) {
-        return DEF_CONTEXT.getEntityDef(type).getJavaClass();
+        return holder.get().getEntityDef(type).getJavaClass();
     }
 
     public static java.lang.reflect.Type getJavaType(Type type) {
-        return DEF_CONTEXT.getJavaType(type);
+        return holder.get().getJavaType(type);
     }
 
     public static Class<?> getJavaClass(Type type) {
-        return DEF_CONTEXT.getJavaClass(type);
+        return holder.get().getJavaClass(type);
     }
 
     public static <T extends Enum<?>> T getEnumConstant(Class<T> enumType, long id) {
-        return enumType.cast(DEF_CONTEXT.getEnumDef(enumType).getEnumConstantDef(id).getValue());
+        return enumType.cast(holder.get().getEnumDef(enumType).getEnumConstantDef(id).getValue());
     }
 
     public static EntityDef<?> getEntityDef(Type type) {
-        return DEF_CONTEXT.getEntityDef(type);
+        return holder.get().getEntityDef(type);
     }
 
     public static <T> ModelDef<T,?> getDef(Class<T> aClass) {
-        return DEF_CONTEXT.getDef(aClass);
+        return holder.get().getDef(aClass);
     }
 
     public static ModelDef<?,?> getDef(ClassType type) {
-        return DEF_CONTEXT.getDef(type);
+        return holder.get().getDef(type);
     }
 
     public static boolean isInitialized() {
-        return DEF_CONTEXT != null;
+        return holder.get() != null;
     }
 
 }

@@ -67,6 +67,9 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Nullable
     @EntityField("代码来源")
     private final CodeSource codeSource;
+    @ChildEntity("模板实例列表")
+    @CopyIgnore
+    private @Nullable ChildArray<Flow> templateInstances;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient ReadWriteArray<ScopeRT> scopes = new ReadWriteArray<>(ScopeRT.class);
@@ -165,7 +168,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
                 getName(),
                 getCode(),
                 isNative,
-                includeCode ? getRootScope().toDTO(true, serContext) : null,
+                includeCode && isRootScopePresent() ? getRootScope().toDTO(true, serContext) : null,
                 serContext.getRef(getReturnType()),
                 NncUtils.map(parameters, Parameter::toDTO),
                 serContext.getRef(getType()),
@@ -232,6 +235,13 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void setCode(@Nullable String code) {
         this.code = code;
+    }
+
+    public void addTemplateInstance(Flow flow) {
+        assert !typeParameters.isEmpty();
+        if(templateInstances == null)
+            templateInstances = addChild(new ChildArray<>(Flow.class), "templateInstances");
+        templateInstances.addChild(flow);
     }
 
     public boolean check() {

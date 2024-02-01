@@ -15,4 +15,9 @@ public class UnsupportedParameterizedFlowProvider implements ParameterizedFlowPr
     public <T extends Flow> T getExistingFlow(T template, List<? extends Type> typeArguments) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void add(Flow flow) {
+        throw new UnsupportedOperationException();
+    }
 }

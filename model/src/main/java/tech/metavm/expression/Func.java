@@ -35,9 +35,9 @@ public enum Func {
 
     LEN(Boolean.class, Object.class),
 
-    STARTS_WITH(Boolean.class, String.class, String.class),
+    STARTS_WITH(Boolean.class, Object.class, String.class),
 
-    CONTAINS(Boolean.class, String.class, String.class),
+    CONTAINS(Boolean.class, Object.class, String.class),
 
     CONCAT(String.class, Object.class, Object.class),
 

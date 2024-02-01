@@ -34,6 +34,11 @@ public class EntityInstanceContextBridge implements MappingProvider, Parameteriz
     }
 
     @Override
+    public void add(Flow flow) {
+        entityContext.getGenericContext().add(flow);
+    }
+
+    @Override
     public Mapping getMapping(RefDTO ref) {
         return entityContext.getMapping(ref);
     }

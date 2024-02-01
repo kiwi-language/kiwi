@@ -1,8 +1,11 @@
 package tech.metavm.object.type.generic;
 
 import junit.framework.TestCase;
+import org.junit.Assert;
 import tech.metavm.entity.DummyGenericDeclaration;
+import tech.metavm.entity.MockStandardTypesInitializer;
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
@@ -18,6 +21,14 @@ import java.util.List;
 public class SubstitutorV2Test extends TestCase {
 
     public static final String JSON_FILE_PATH = "/Users/leen/workspace/object/test.json";
+
+    private TypeProviders typeProviders;
+
+    @Override
+    protected void setUp() throws Exception {
+        MockStandardTypesInitializer.init();
+        typeProviders = new TypeProviders();
+    }
 
     public void test() {
         var nullType = new PrimitiveType(PrimitiveKind.NULL);
@@ -110,5 +121,24 @@ public class SubstitutorV2Test extends TestCase {
             TestUtils.writeJson(JSON_FILE_PATH, serContext.getTypes());
         }
     }
+
+    public void testFlow() {
+        var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
+        var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar", typeProviders.functionTypeProvider)
+                .typeParameters(List.of(
+                        new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)
+                ))
+                .build();
+        var bar1 = typeProviders.parameterizedFlowProvider.getParameterizedFlow(
+                barMethod, List.of(StandardTypes.getStringType())
+        );
+
+        var bar2 = typeProviders.parameterizedFlowProvider.getParameterizedFlow(
+                barMethod, List.of(StandardTypes.getStringType())
+        );
+        Assert.assertSame(bar1, bar2);
+    }
+
+
 
 }

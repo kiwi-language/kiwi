@@ -493,6 +493,12 @@ public class Types {
         return visitor.getSubstitutor();
     }
 
+    public static String getConstructorCode(ClassType classType) {
+        var typeCode = Objects.requireNonNull(classType.getEffectiveTemplate().getCode());
+        var dotIdx = typeCode.lastIndexOf('.');
+        return dotIdx >= 0 ? typeCode.substring(dotIdx + 1) : typeCode;
+    }
+
     private static class GenericResolutionVisitor extends MetaTypeVisitor {
 
         private TypeArgumentMap substitutor = TypeArgumentMap.EMPTY;
