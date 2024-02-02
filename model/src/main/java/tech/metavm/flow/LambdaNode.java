@@ -6,10 +6,7 @@ import tech.metavm.flow.rest.LambdaNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.LambdaInstance;
-import tech.metavm.object.type.ClassType;
-import tech.metavm.object.type.FunctionType;
-import tech.metavm.object.type.Type;
-import tech.metavm.object.type.Types;
+import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -37,7 +34,7 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
                     nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType,
                     funcType, funcInterface
             );
-            node.createSAMImpl(context);
+            node.createSAMImpl(context.getFunctionTypeContext(), context.getGenericContext());
         }
         else
             node.update(parameters, returnType, funcType, funcInterface);
@@ -172,11 +169,12 @@ public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
     @Override
     public void onLoad(IEntityContext context) {
-        createSAMImpl(context);
+        createSAMImpl(context.getFunctionTypeContext(), context.getGenericContext());
     }
 
-    public void createSAMImpl(IEntityContext context) {
-        functionInterfaceImpl = functionalInterface != null ? Types.createFunctionalClass(functionalInterface, context) : null;
+    public void createSAMImpl(FunctionTypeProvider functionTypeProvider, ParameterizedTypeProvider parameterizedTypeProvider) {
+        functionInterfaceImpl = functionalInterface != null ?
+                Types.createFunctionalClass(functionalInterface, functionTypeProvider, parameterizedTypeProvider) : null;
     }
 
 }

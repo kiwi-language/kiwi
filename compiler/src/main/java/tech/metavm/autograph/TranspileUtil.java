@@ -71,7 +71,8 @@ public class TranspileUtil {
         var declaringClass = qualifierType != null ? qualifierType :
                 createType(requireNonNull(method.getContainingClass()));
         var paramClasses = NncUtils.map(method.getParameterList().getParameters(), PsiParameter::getType);
-        return new MethodSignature(declaringClass, method.getName(), paramClasses);
+        var isStatic = method.getModifierList().hasModifierProperty(PsiModifier.STATIC);
+        return new MethodSignature(declaringClass, isStatic, method.getName(), paramClasses);
     }
 
     private static Class<?> getJavaClass(PsiType psiType) {
@@ -246,6 +247,15 @@ public class TranspileUtil {
             }
         }
         return true;
+    }
+
+    private static final List<Class<?>> primitiveClasses = List.of(
+        int.class, short.class, byte.class, long.class, float.class, double.class,
+            boolean.class, char.class
+    );
+
+    public static List<PsiPrimitiveType> getPrimitiveTypes() {
+        return NncUtils.map(primitiveClasses, TranspileUtil::createPrimitiveType);
     }
 
     public static PsiPrimitiveType createPrimitiveType(Class<?> klass) {

@@ -2,7 +2,6 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
-import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
@@ -11,7 +10,6 @@ import tech.metavm.object.instance.core.DoubleInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.LongInstance;
 import tech.metavm.object.type.*;
-import tech.metavm.object.type.generic.GenericContext;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -56,25 +54,29 @@ public class ExpressionResolver {
     private final MethodGenerator methodGenerator;
     private final TypeResolver typeResolver;
     private final VariableTable variableTable;
-    private final GenericContext genericContext;
-    private final IEntityContext entityContext;
+    private final ParameterizedFlowProvider parameterizedFlowProvider;
+    private final ArrayTypeProvider arrayTypeProvider;
     private final Generator visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListAddCallResolver(), new ListRemoveCallResolver(), new ListGetCallResolver(),
-            new ListIsEmptyResolver(), new ListSizeResolver()
+            new ListAddResolver(), new ListRemoveCallResolver(), new ListGetCallResolver(),
+            new ListIsEmptyResolver(), new ListSizeResolver(), new StringConcatResolver(),
+            new ToStringResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
             new NewListCallResolver()
     );
 
-    public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver, IEntityContext entityContext, Generator visitor) {
+    public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,
+                              ArrayTypeProvider arrayTypeProvider,
+                              ParameterizedFlowProvider parameterizedFlowProvider,
+                              Generator visitor) {
         this.methodGenerator = methodGenerator;
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
-        this.entityContext = entityContext;
-        genericContext = entityContext.getGenericContext();
+        this.arrayTypeProvider = arrayTypeProvider;
+        this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.visitor = visitor;
     }
 
@@ -91,8 +93,12 @@ public class ExpressionResolver {
         }
     }
 
-    public IEntityContext getEntityContext() {
-        return entityContext;
+//    public IEntityContext getEntityContext() {
+//        return entityContext;
+//    }
+
+    public ArrayTypeProvider getArrayTypeProvider() {
+        return arrayTypeProvider;
     }
 
     private Expression resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
@@ -159,7 +165,7 @@ public class ExpressionResolver {
                                 resolve(requireNonNull(psiExpression.getThenExpression()), context),
                                 resolve(requireNonNull(psiExpression.getElseExpression()), context)
                         ),
-                        entityContext
+                        arrayTypeProvider
                 )
         );
     }
@@ -441,9 +447,15 @@ public class ExpressionResolver {
 
     private Expression resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var ref = expression.getMethodExpression();
+        var rawMethod = (PsiMethod) Objects.requireNonNull(ref.resolve());
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
         if (psiSelf != null) {
-            ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
+            if (rawMethod.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
+                var psiClass = (PsiClass) ((PsiReferenceExpression) psiSelf).resolve();
+                ensureTypeDeclared(TranspileUtil.createType(psiClass));
+            } else {
+                ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
+            }
         }
         Expression qualifier = getQualifier(psiSelf, context);
         var selfType = Types.getClassType(methodGenerator.getExpressionType(qualifier));
@@ -483,7 +495,7 @@ public class ExpressionResolver {
         } else {
             var flowTypeArgs = NncUtils.map(method.getTypeParameters(),
                     typeParam -> typeResolver.resolveDeclaration(substitutor.substitute(typeParam)));
-            flow = genericContext.getParameterizedFlow(piFlow, flowTypeArgs);
+            flow = parameterizedFlowProvider.getParameterizedFlow(piFlow, flowTypeArgs);
         }
         return flow;
     }
@@ -520,7 +532,7 @@ public class ExpressionResolver {
         if (psiListType.isAssignableFrom(type)) {
             var listType = TranspileUtil.getSuperType(type, List.class);
             var mvElementType = typeResolver.resolve(listType.getParameters()[0]);
-            var arrayType = entityContext.getArrayType(mvElementType, ArrayKind.READ_WRITE);
+            var arrayType = arrayTypeProvider.getArrayType(mvElementType, ArrayKind.READ_WRITE);
             var node = methodGenerator.createNewArray(arrayType, List.of());
 //            var listType = (ClassType) typeResolver.resolve(type);
 //            var listType.getTypeArguments()[0];

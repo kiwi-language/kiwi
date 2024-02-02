@@ -40,10 +40,10 @@ public class AstProduct extends Entity {
         return discount;
     }
 
-    public long calcDirectDiscount(DirectAstCoupon[] directCoupons) {
+    public long calcDirectDiscount(AstDirectCoupon[] directCoupons) {
         List<AstCoupon> list = new ArrayList<>();
         //noinspection ManualArrayToCollectionCopy
-        for (DirectAstCoupon directCoupon : directCoupons) {
+        for (AstDirectCoupon directCoupon : directCoupons) {
             //noinspection UseBulkOperation
             list.add(directCoupon);
         }

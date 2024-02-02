@@ -24,6 +24,7 @@ public class CodeGenerator {
             psiClass.accept(new ForTransformer());
             psiClass.accept(new BreakTransformer());
             psiClass.accept(new ContinueTransformer());
+            psiClass.accept(new StringConcatTransformer());
         });
     }
 

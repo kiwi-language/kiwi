@@ -5,7 +5,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
 @EntityType(value = "AST立减优惠券", compiled = true)
-public class DirectAstCoupon extends Entity implements AstCoupon {
+public class AstDirectCoupon extends Entity implements AstCoupon {
 
     @EntityField("额度")
     public long discount;

@@ -123,6 +123,10 @@ public class FunctionMethods {
         return Instances.timeInstance(timeMillis.getValue());
     }
 
+    public static StringInstance TO_STRING(Instance instance) {
+        return Instances.stringInstance(instance.getTitle());
+    }
+
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {
         NncUtils.requireTrue(argumentCLasses.size() == 2,
                 "Incorrect number of arguments for function IF");

@@ -10,6 +10,7 @@ import tech.metavm.entity.natives.ThreadLocalNativeFunctionsHolder;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
+import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.*;
@@ -18,6 +19,7 @@ import tech.metavm.object.type.ArrayKind;
 import tech.metavm.object.type.TypeCategory;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeQuery;
 import tech.metavm.object.version.VersionManager;
 import tech.metavm.system.BlockManager;
@@ -54,6 +56,8 @@ public class MainTest extends TestCase {
     private TypeManager typeManager;
     private InstanceManager instanceManager;
     private AllocatorStore allocatorStore;
+    private FlowManager flowManager;
+    private FlowExecutionService flowExecutionService;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -77,10 +81,11 @@ public class MainTest extends TestCase {
         instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
-        var flowManager = new FlowManager(bootResult.entityContextFactory());
+        flowManager = new FlowManager(bootResult.entityContextFactory());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
-        typeManager.setFlowExecutionService(new FlowExecutionService(bootResult.entityContextFactory()));
+        flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
+        typeManager.setFlowExecutionService(flowExecutionService);
         var blockManager = new BlockManager(bootResult.blockMapper());
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
         main = new Main(HOME, SOURCE_ROOT, AUTH_FILE, typeClient, bootResult.allocatorStore());
@@ -101,35 +106,10 @@ public class MainTest extends TestCase {
             long productTypeId;
         };
         executor.submit(() -> {
-            var types = typeManager.query(new TypeQuery(
-                    "商品",
-                    List.of(TypeCategory.CLASS.code()),
-                    false,
-                    false,
-                    false,
-                    null,
-                    List.of(),
-                    1,
-                    20
-            )).data();
-            Assert.assertEquals(1, types.size());
-            var productType = types.get(0);
+            var productType = queryClassType("商品");
             ref.productTypeId = productType.id();
             Assert.assertNotNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
-
-            types = typeManager.query(new TypeQuery(
-                    "SKU",
-                    List.of(TypeCategory.CLASS.code()),
-                    false,
-                    false,
-                    false,
-                    null,
-                    List.of(),
-                    1
-                    , 20
-            )).data();
-            Assert.assertEquals(1, types.size());
-            var skuType = types.get(0);
+            var skuType = queryClassType("SKU");
             var skuChildArrayTypeId = typeManager.getArrayType(skuType.id(), ArrayKind.CHILD.code()).type().id();
             var product = InstanceDTO.createClassInstance(
                     productType.getRef(),
@@ -223,9 +203,93 @@ public class MainTest extends TestCase {
         }).get();
     }
 
-    public void testShopping() {
+    public void testShopping() throws ExecutionException, InterruptedException {
         main = new Main(HOME, SHOPPING_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
         main.run();
+        executor.submit(() -> {
+            var productStateType = queryClassType("商品状态");
+            var productNormalStateId = TestUtils.getEnumConstantIdByName(productStateType, "正常");
+            var productType = queryClassType("AST产品");
+            var product = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
+                    productType.getRef(),
+                    List.of(
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(productType, "title"),
+                                    PrimitiveFieldValue.createString("鞋子")
+                            ),
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(productType, "orderCount"),
+                                    PrimitiveFieldValue.createLong(0L)
+                            ),
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(productType, "price"),
+                                    PrimitiveFieldValue.createLong(100L)
+                            ),
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(productType, "inventory"),
+                                    PrimitiveFieldValue.createLong(100L)
+                            ),
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(productType, "state"),
+                                    ReferenceFieldValue.create(productNormalStateId)
+                            )
+                    )
+            ));
+            var directCouponType = queryClassType("AST立减优惠券");
+            var couponStateType = queryClassType("优惠券状态");
+            var couponNormalStateId = TestUtils.getEnumConstantIdByName(couponStateType, "未使用");
+            var coupon = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
+                    directCouponType.getRef(),
+                    List.of(
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(directCouponType, "discount"),
+                                    PrimitiveFieldValue.createLong(5L)
+                            ),
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(directCouponType, "state"),
+                                    ReferenceFieldValue.create(couponNormalStateId)
+                            ),
+                            InstanceFieldDTO.create(
+                                    TestUtils.getFieldIdByCode(directCouponType, "product"),
+                                    ReferenceFieldValue.create(product.id())
+                            )
+                    )
+            ));
+            var buyMethodId = TestUtils.getMethodIdByCode(productType, "buy");
+            var couponType = queryClassType("AST优惠券");
+            var couponArrayType = typeManager.getArrayType(couponType.id(), ArrayKind.READ_WRITE.code()).type();
+            var order = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                    buyMethodId,
+                    product.id(),
+                    List.of(
+                            PrimitiveFieldValue.createLong(1L),
+                            InstanceFieldValue.of(InstanceDTO.createArrayInstance(
+                                    couponArrayType.getRef(),
+                                    false,
+                                    List.of(ReferenceFieldValue.create(coupon.id()))
+                            ))
+                    )
+            )));
+            var orderType = queryClassType("AST订单");
+            var price = (long) ((PrimitiveFieldValue) order.getFieldValue(TestUtils.getFieldIdByCode(orderType, "price"))).getValue();
+            Assert.assertEquals(95, price);
+        }).get();
+    }
+
+    private TypeDTO queryClassType(String name) {
+        var types = typeManager.query(new TypeQuery(
+                name,
+                List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(),TypeCategory.INTERFACE.code()),
+                false,
+                false,
+                false,
+                null,
+                List.of(),
+                1
+                , 20
+        )).data();
+        Assert.assertEquals(1, types.size());
+        return types.get(0);
     }
 
 //    public void testResend() {

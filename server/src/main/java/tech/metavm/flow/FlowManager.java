@@ -298,7 +298,7 @@ public class FlowManager extends EntityContextFactoryBean {
                 null
         );
         return new SelfNode(selfNodeDTO.tmpId(), selfNodeDTO.name(), null,
-                SelfNode.getSelfType(flow, context), null, flow.getRootScope());
+                SelfNode.getSelfType(flow, context.getGenericContext()), null, flow.getRootScope());
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {

@@ -43,6 +43,8 @@ public enum Func {
 
     HAS_NEXT(Boolean.class, Object.class),
 
+    TO_STRING(String.class, Object.class),
+
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 
     ;

@@ -309,7 +309,7 @@ public class Method extends Flow implements Property, GenericElement {
         checkTypes(NncUtils.orElse(overridden, this.overridden), parameters, returnType, type, staticType);
         updateInternal(parameters, returnType, type);
         this.staticType = staticType;
-        if (overridden != null)
+        if (overridden != null && overridden != this.overridden)
             this.overridden.reset(overridden);
     }
 

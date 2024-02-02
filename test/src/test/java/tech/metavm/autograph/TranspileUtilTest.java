@@ -42,7 +42,7 @@ public class TranspileUtilTest extends TestCase {
         var signature = TranspileUtil.getSignature(getMethod, null);
         Assert.assertEquals(
                 new MethodSignature(
-                        TranspileUtil.createType(List.class), "get", List.of(
+                        TranspileUtil.createType(List.class), false, "get", List.of(
                         TranspileUtil.createPrimitiveType(int.class))),
                 signature
         );

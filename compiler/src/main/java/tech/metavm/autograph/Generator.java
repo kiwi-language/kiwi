@@ -388,7 +388,7 @@ public class Generator extends VisitorBase {
                     cond = new BinaryExpression(
                             BinaryOperator.IN,
                             resolveExpression(statement.getExpression()),
-                            ArrayExpression.create(expressions, entityContext)
+                            ArrayExpression.create(expressions, new ContextArrayTypeProvider(entityContext))
                     );
                 }
                 branch = branchNode.addBranch(Values.expression(cond));

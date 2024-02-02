@@ -39,8 +39,7 @@ public class NewListCallResolver implements NewResolver {
         var elementType = methodGenerics.getSubstitutor().substitute(type.getParameters()[0]);
         var typeResolver = expressionResolver.getTypeResolver();
         var mvElementType = typeResolver.resolve(elementType);
-        var entityContext = expressionResolver.getEntityContext();
-        var mvArrayType = entityContext.getArrayType(mvElementType,
+        var mvArrayType = expressionResolver.getArrayTypeProvider().getArrayType(mvElementType,
                 CHILD_LIST_TYPE.isAssignableFrom(type) ? ArrayKind.CHILD : ArrayKind.READ_WRITE);
         return new NodeExpression(methodGenerator.createNewArray(mvArrayType, List.of()));
     }

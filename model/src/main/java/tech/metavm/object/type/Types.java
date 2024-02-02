@@ -154,22 +154,23 @@ public class Types {
         return NncUtils.findRequired(types, t -> !hasDescendant.contains(t));
     }
 
-    public static ClassType createFunctionalClass(ClassType functionalInterface, IEntityContext context) {
-        var functionTypeContext = context.getFunctionTypeContext();
+    public static ClassType createFunctionalClass(ClassType functionalInterface,
+                                                  FunctionTypeProvider functionTypeProvider,
+                                                  ParameterizedTypeProvider parameterizedTypeProvider) {
         var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现",
                         NncUtils.get(functionalInterface.getCode(), k -> k + "Impl"))
                 .interfaces(functionalInterface)
                 .ephemeral(true)
                 .build();
         var sam = getSAM(functionalInterface);
-        var funcType = functionTypeContext.getFunctionType(sam.getParameterTypes(), sam.getReturnType());
+        var funcType = functionTypeProvider.getFunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
 
-        var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeContext)
+        var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeProvider)
                 .overridden(List.of(sam))
                 .build();
 
-        var selfNode = new SelfNode(null, "当前对象", null, SelfNode.getSelfType(flow, context), null, flow.getRootScope());
+        var selfNode = new SelfNode(null, "当前对象", null, SelfNode.getSelfType(flow, parameterizedTypeProvider), null, flow.getRootScope());
         var inputType = ClassTypeBuilder.newBuilder("流程输入", "InputType").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())

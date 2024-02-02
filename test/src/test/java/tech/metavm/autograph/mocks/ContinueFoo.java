@@ -4,12 +4,12 @@ import java.util.List;
 
 public class ContinueFoo {
 
-    public long calcDiscount(List<AstProduct> products, List<DirectAstCoupon> coupons, int maxDiscountPerCoupon) {
+    public long calcDiscount(List<AstProduct> products, List<AstDirectCoupon> coupons, int maxDiscountPerCoupon) {
         long discount = 0;
         int numAllMatchProducts = 0;
         out:
         for (AstProduct product : products) {
-            for (DirectAstCoupon coupon : coupons) {
+            for (AstDirectCoupon coupon : coupons) {
                 String result;
                 if (coupon.discount > maxDiscountPerCoupon) {
                     continue out;

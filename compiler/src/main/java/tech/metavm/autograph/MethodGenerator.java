@@ -24,13 +24,30 @@ public class MethodGenerator {
     private Expression yieldValue;
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
-    private final IEntityContext entityContext;
+    private final FunctionTypeProvider functionTypeProvider;
+    private final ParameterizedTypeProvider parameterizedTypeProvider;
 
-    public MethodGenerator(Method method, TypeResolver typeResolver, IEntityContext entityContext, Generator visitor) {
+    public MethodGenerator(Method method, TypeResolver typeResolver,
+                           IEntityContext context,
+                           Generator visitor) {
+        this(method, typeResolver, new ContextArrayTypeProvider(context), context.getFunctionTypeContext(),
+                context.getGenericContext(), context.getGenericContext(), visitor);
+    }
+
+    public MethodGenerator(Method method, TypeResolver typeResolver,
+                           ArrayTypeProvider arrayTypeProvider,
+                           FunctionTypeProvider functionTypeProvider,
+                           ParameterizedTypeProvider parameterizedTypeProvider,
+                           ParameterizedFlowProvider parameterizedFlowProvider,
+                           Generator visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        this.entityContext = entityContext;
-        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver, entityContext, visitor);
+        this.functionTypeProvider = functionTypeProvider;
+        this.parameterizedTypeProvider = parameterizedTypeProvider;
+        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
+                arrayTypeProvider,
+                parameterizedFlowProvider,
+                visitor);
     }
 
     Method getMethod() {
@@ -92,7 +109,7 @@ public class MethodGenerator {
                         getExpressionType(expression),
                         scope().getLastNode(),
                         scope(),
-                Values.expression(expression)
+                        Values.expression(expression)
                 )
         );
     }
@@ -332,14 +349,14 @@ public class MethodGenerator {
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, ClassType functionalInterface) {
-        var funcType = entityContext.getFunctionTypeContext().getFunctionType(
+        var funcType = functionTypeProvider.getFunctionType(
                 NncUtils.map(parameters, Parameter::getType), returnType
         );
         var node = new LambdaNode(
                 null, nextName("Lambda"), null, scope().getLastNode(), scope(),
                 parameters, returnType, funcType, functionalInterface
         );
-        node.createSAMImpl(entityContext);
+        node.createSAMImpl(functionTypeProvider, parameterizedTypeProvider);
         return node;
     }
 
@@ -367,7 +384,7 @@ public class MethodGenerator {
 
     public SelfNode createSelf() {
         return setNodeExprTypes(new SelfNode(null, nextName("Self"), null,
-                SelfNode.getSelfType((Method) scope().getFlow(), entityContext),
+                SelfNode.getSelfType((Method) scope().getFlow(), parameterizedTypeProvider),
                 scope().getLastNode(), scope()));
     }
 

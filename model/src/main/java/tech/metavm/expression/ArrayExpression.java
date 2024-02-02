@@ -3,9 +3,7 @@ package tech.metavm.expression;
 import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.type.ArrayKind;
-import tech.metavm.object.type.ArrayType;
-import tech.metavm.object.type.Types;
+import tech.metavm.object.type.*;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -16,8 +14,8 @@ import java.util.Objects;
 @EntityType("数组表达式")
 public class ArrayExpression extends Expression {
 
-    public static ArrayExpression create(List<Expression> expressions, IEntityContext entityContext) {
-        var type = entityContext.getArrayType(Types.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
+    public static ArrayExpression create(List<Expression> expressions, ArrayTypeProvider arrayTypeProvider) {
+        var type = arrayTypeProvider.getArrayType(Types.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
         return new ArrayExpression(expressions, type);
     }
 
@@ -37,9 +35,9 @@ public class ArrayExpression extends Expression {
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
             rest.forEach(expressions::add);
             expressions.add(second);
-            return create(expressions, entityContext);
+            return create(expressions, new ContextArrayTypeProvider(entityContext));
         } else {
-            return create(List.of(first, second), entityContext);
+            return create(List.of(first, second), new ContextArrayTypeProvider(entityContext));
         }
     }
 

@@ -11,7 +11,7 @@ import java.util.Objects;
 
 import static tech.metavm.autograph.TranspileUtil.createType;
 
-public class ListAddCallResolver implements MethodCallResolver {
+public class ListAddResolver implements MethodCallResolver {
 
     private static final PsiClassType CHILD_LIST_TYPE = createType(ChildList.class);
 

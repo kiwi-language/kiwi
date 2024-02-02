@@ -9,11 +9,13 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
+import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.instance.core.DurableInstance;
 import tech.metavm.object.instance.core.GraphVisitor;
@@ -312,6 +314,13 @@ public class TestUtils {
         Set<String> ids = new HashSet<>();
         extractDescendantIds(instanceDTO, ids);
         return ids;
+    }
+
+    public static InstanceDTO createInstanceWithCheck(InstanceManager instanceManager, InstanceDTO instanceDTO) {
+        var id = doInTransaction(() -> instanceManager.create(instanceDTO));
+        var loaded = instanceManager.get(id, 1).instance();
+        MatcherAssert.assertThat(loaded, new InstanceDTOMatcher(instanceDTO, extractDescendantIds(loaded)));
+        return loaded;
     }
 
     private static void extractDescendantIds(InstanceDTO instanceDTO, Set<String> ids) {
