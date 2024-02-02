@@ -14,7 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-public class NewListCallResolver implements NewResolver {
+public class NewListResolver implements NewResolver {
 
     public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createType(ChildList.class);
 
@@ -41,6 +41,6 @@ public class NewListCallResolver implements NewResolver {
         var mvElementType = typeResolver.resolve(elementType);
         var mvArrayType = expressionResolver.getArrayTypeProvider().getArrayType(mvElementType,
                 CHILD_LIST_TYPE.isAssignableFrom(type) ? ArrayKind.CHILD : ArrayKind.READ_WRITE);
-        return new NodeExpression(methodGenerator.createNewArray(mvArrayType, List.of()));
+        return new NodeExpression(methodGenerator.createNewArray(mvArrayType, null));
     }
 }

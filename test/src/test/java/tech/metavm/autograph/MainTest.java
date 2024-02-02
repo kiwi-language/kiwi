@@ -39,6 +39,8 @@ public class MainTest extends TestCase {
 
     public static final String SHOPPING_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/shopping";
 
+    public static final String LAB_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab";
+
     public static final String AUTH_FILE = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
 
     public static final String REQUEST_FILE =
@@ -56,7 +58,6 @@ public class MainTest extends TestCase {
     private TypeManager typeManager;
     private InstanceManager instanceManager;
     private AllocatorStore allocatorStore;
-    private FlowManager flowManager;
     private FlowExecutionService flowExecutionService;
 
     @Override
@@ -81,7 +82,7 @@ public class MainTest extends TestCase {
         instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(bootResult.entityContextFactory());
+        FlowManager flowManager = new FlowManager(bootResult.entityContextFactory());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
@@ -272,8 +273,15 @@ public class MainTest extends TestCase {
             )));
             var orderType = queryClassType("AST订单");
             var price = (long) ((PrimitiveFieldValue) order.getFieldValue(TestUtils.getFieldIdByCode(orderType, "price"))).getValue();
+            var orderCoupons = ((InstanceFieldValue) order.getFieldValue(TestUtils.getFieldIdByCode(orderType, "coupons"))).getInstance();
+            Assert.assertEquals(1, orderCoupons.getArraySize());
             Assert.assertEquals(95, price);
         }).get();
+    }
+
+    public void _testLab() {
+        main = new Main(HOME, LAB_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
+        main.run();
     }
 
     private TypeDTO queryClassType(String name) {

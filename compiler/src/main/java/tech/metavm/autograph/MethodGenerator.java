@@ -10,6 +10,7 @@ import tech.metavm.object.type.*;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class MethodGenerator {
@@ -114,11 +115,11 @@ public class MethodGenerator {
         );
     }
 
-    NewArrayNode createNewArray(ArrayType type, List<Expression> elements) {
+    NewArrayNode createNewArray(ArrayType type, @Nullable Expression initialValue) {
         return setNodeExprTypes(new NewArrayNode(
                 null, nextName("NewArray"), null,
                 type,
-                Values.expression(new ArrayExpression(elements, type)),
+                NncUtils.get(initialValue, Values::expression),
                 null,
                 scope().getLastNode(), scope()
         ));

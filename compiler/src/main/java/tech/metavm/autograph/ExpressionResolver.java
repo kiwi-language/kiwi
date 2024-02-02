@@ -59,13 +59,13 @@ public class ExpressionResolver {
     private final Generator visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListAddResolver(), new ListRemoveCallResolver(), new ListGetCallResolver(),
+            new ListAddResolver(), new ListRemoveResolver(), new ListGetResolver(),
             new ListIsEmptyResolver(), new ListSizeResolver(), new StringConcatResolver(),
             new ToStringResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
-            new NewListCallResolver()
+            new NewListResolver(), new NewListWithInitialResolver()
     );
 
     public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,
@@ -512,11 +512,15 @@ public class ExpressionResolver {
         if (expression.getArrayInitializer() == null) {
             throw new InternalException("Dimension new array expression not supported yet");
         }
+        var type = (ArrayType) typeResolver.resolveDeclaration(expression.getType());
         var node = methodGenerator.createNewArray(
-                (ArrayType) typeResolver.resolveDeclaration(expression.getType()),
-                NncUtils.map(
-                        expression.getArrayInitializer().getInitializers(),
-                        this::resolve
+                type,
+                new ArrayExpression(
+                        NncUtils.map(
+                                expression.getArrayInitializer().getInitializers(),
+                                this::resolve
+                        ),
+                        type
                 )
         );
         return new NodeExpression(node);
@@ -533,7 +537,7 @@ public class ExpressionResolver {
             var listType = TranspileUtil.getSuperType(type, List.class);
             var mvElementType = typeResolver.resolve(listType.getParameters()[0]);
             var arrayType = arrayTypeProvider.getArrayType(mvElementType, ArrayKind.READ_WRITE);
-            var node = methodGenerator.createNewArray(arrayType, List.of());
+            var node = methodGenerator.createNewArray(arrayType, null);
 //            var listType = (ClassType) typeResolver.resolve(type);
 //            var listType.getTypeArguments()[0];
 //            var signature = resolveMethodSignature(expression);
@@ -654,12 +658,8 @@ public class ExpressionResolver {
                 ClassType instanceType = (ClassType) methodGenerator.getExpressionType(self);
                 typeResolver.ensureDeclared(instanceType);
                 Field field = instanceType.getFieldByCode(psiField.getName());
-                if (field.isChild()) {
-                    processChildAssignment(self, field, assignment);
-                } else {
-                    UpdateObjectNode node = methodGenerator.createUpdateObject(self);
-                    node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
-                }
+                UpdateObjectNode node = methodGenerator.createUpdateObject(self);
+                node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
             } else {
                 variableTable.set(
                         variable.getName(),

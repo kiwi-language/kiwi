@@ -6,12 +6,11 @@ import tech.metavm.expression.NodeExpression;
 
 import java.util.List;
 
-public class ListRemoveCallResolver implements MethodCallResolver {
+public class ListGetResolver implements MethodCallResolver {
 
-    public static final List<MethodSignature> SIGNATURES = List.of(
-            MethodSignature.create(TranspileUtil.createType(List.class), "remove",
-                    TranspileUtil.createType(Object.class))
-    );
+    public static final List<MethodSignature> SIGNATURES =
+            List.of(MethodSignature.create(TranspileUtil.createType(List.class), "get",
+                    TranspileUtil.createPrimitiveType(int.class)));
 
     @Override
     public List<MethodSignature> getSignatures() {
@@ -21,7 +20,7 @@ public class ListRemoveCallResolver implements MethodCallResolver {
     @Override
     public Expression resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         return new NodeExpression(
-                methodGenerator.createRemoveElement(
+                methodGenerator.createGetElement(
                         expressionResolver.resolve(methodCallExpression.getMethodExpression().getQualifierExpression()),
                         expressionResolver.resolve(methodCallExpression.getArgumentList().getExpressions()[0])
                 )

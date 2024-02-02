@@ -89,7 +89,7 @@ public class Compiler {
             throw new RuntimeException(e);
         }
         project = projectEnv.getProject();
-        TranspileUtil.setElementFactory(project.getService(PsiElementFactory.class));
+        TranspileUtil.init(project.getService(PsiElementFactory.class), project);
     }
 
     public void compile(List<String> sources) {

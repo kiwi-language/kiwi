@@ -2,6 +2,7 @@ package tech.metavm.autograph;
 
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
+import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
@@ -24,6 +25,7 @@ import static java.util.Objects.requireNonNull;
 public class TranspileUtil {
 
     private static PsiElementFactory elementFactory;
+    private static Project project;
 
     public static PsiElementFactory getElementFactory() {
         return elementFactory;
@@ -85,6 +87,11 @@ public class TranspileUtil {
                 ReflectionUtils.getPrimitiveClass(primitiveType.getKind().getBinaryName());
             default -> throw new IllegalStateException("Unexpected value: " + psiType);
         };
+    }
+
+    public static PsiType createExtendsWildcardType(PsiType bound) {
+        var psiManager = PsiManager.getInstance(project);
+        return PsiWildcardType.createExtends(psiManager, bound);
     }
 
     public static String getCanonicalName(PsiType type) {
@@ -341,8 +348,9 @@ public class TranspileUtil {
         return Objects.equals(psiClass.getQualifiedName(), klass.getName());
     }
 
-    public static void setElementFactory(PsiElementFactory elementFactory) {
+    public static void init(PsiElementFactory elementFactory, Project project) {
         TranspileUtil.elementFactory = elementFactory;
+        TranspileUtil.project = project;
     }
 
     @SuppressWarnings("UnusedReturnValue")

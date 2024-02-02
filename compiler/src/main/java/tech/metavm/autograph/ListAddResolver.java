@@ -33,8 +33,6 @@ public class ListAddResolver implements MethodCallResolver {
         var qualifier = Objects.requireNonNull(methodCallExpression.getMethodExpression().getQualifierExpression());
         var array = expressionResolver.resolve(qualifier);
         var value = expressionResolver.resolve(methodCallExpression.getArgumentList().getExpressions()[0]);
-        if(CHILD_LIST_TYPE.isAssignableFrom(Objects.requireNonNull(qualifier.getType())))
-            expressionResolver.processChildAssignment(array, null, value);
         methodGenerator.createAddElement(array, value);
         return Expressions.trueExpression();
     }

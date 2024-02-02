@@ -39,7 +39,7 @@ public class TranspileTestTools {
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(SOURCE_ROOT)));
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TEST_SOURCE_ROOT)));
         PROJECT = PROJECT_ENV.getProject();
-        TranspileUtil.setElementFactory(PROJECT.getService(PsiElementFactory.class));
+        TranspileUtil.init(PROJECT.getService(PsiElementFactory.class), PROJECT);
     }
 
     public static PsiJavaFile findFile(PsiDirectory directory, Class<?> klass) {
