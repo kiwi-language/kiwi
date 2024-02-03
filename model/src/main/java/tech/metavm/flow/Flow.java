@@ -144,6 +144,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         stage = ResolutionStage.INIT;
         if(codeSource != null)
             codeSource.generateCode(this, CompositeTypeFacadeImpl.createFromContext(context));
+        nodes();
     }
 
     @SuppressWarnings("unused")
@@ -188,7 +189,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public void clearNodes() {
-        nodes.clear();
+        if(nodes != null)
+            nodes.clear();
+        if(rootScope != null)
+            rootScope.clearNodes();
     }
 
     public boolean isSynthetic() {

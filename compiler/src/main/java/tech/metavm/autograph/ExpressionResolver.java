@@ -597,7 +597,7 @@ public class ExpressionResolver {
         var methodGenerics = constructorCall.resolveMethodGenerics();
         if (methodGenerics.getElement() == null) {
             var flow = declaringType.getDefaultConstructor();
-            return new NodeExpression(methodGenerator.createNew(flow, List.of(), false));
+            return new NodeExpression(methodGenerator.createNew(flow, arguments, false));
         } else {
             var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
             var substitutor = methodGenerics.getSubstitutor();

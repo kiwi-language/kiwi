@@ -11,6 +11,7 @@ import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
 import tech.metavm.flow.rest.FlowExecutionRequest;
+import tech.metavm.flow.rest.GetFlowRequest;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.*;
@@ -28,6 +29,7 @@ import tech.metavm.util.*;
 
 import java.io.File;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +42,8 @@ public class MainTest extends TestCase {
     public static final String SHOPPING_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/shopping";
 
     public static final String LAB_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab";
+
+    public static final String METAVM_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/metavm";
 
     public static final String AUTH_FILE = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
 
@@ -59,6 +63,7 @@ public class MainTest extends TestCase {
     private InstanceManager instanceManager;
     private AllocatorStore allocatorStore;
     private FlowExecutionService flowExecutionService;
+    private FlowManager flowManager;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
@@ -82,7 +87,7 @@ public class MainTest extends TestCase {
         instanceManager = new InstanceManager(bootResult.entityContextFactory(),
                 bootResult.instanceStore(), instanceQueryService);
         typeManager.setInstanceManager(instanceManager);
-        FlowManager flowManager = new FlowManager(bootResult.entityContextFactory());
+        flowManager = new FlowManager(bootResult.entityContextFactory());
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
@@ -284,10 +289,45 @@ public class MainTest extends TestCase {
         main.run();
     }
 
+    public void testMetavm() throws ExecutionException, InterruptedException {
+        main = new Main(HOME, METAVM_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
+        main.run();
+        var ref = new Object() {
+            long getCodeMethodId;
+            int numNodes;
+        };
+        executor.submit(() -> {
+            var typeType = queryClassType("类型", List.of(TypeCategory.CLASS.code()));
+            Assert.assertTrue(typeType.getClassParam().errors().isEmpty());
+            ref.getCodeMethodId = TestUtils.getMethodIdByCode(typeType, "getCode");
+            var getCodeMethod = flowManager.get(new GetFlowRequest(ref.getCodeMethodId, true)).flow();
+            ref.numNodes = Objects.requireNonNull(getCodeMethod.rootScope()).nodes().size();
+
+            var typeCategoryType = queryClassType("类型分类", List.of(TypeCategory.ENUM.code()));
+            var firstEnumConstant = typeCategoryType.getClassParam().enumConstants().get(0);
+            Assert.assertEquals("类", firstEnumConstant.title());
+        }).get();
+
+        // test recompile
+        main = new Main(HOME, METAVM_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
+        main.run();
+
+        // assert that the number of nodes doesn't change after recompilation
+        executor.submit(() -> {
+            var getCodeMethod = flowManager.get(new GetFlowRequest(ref.getCodeMethodId, true)).flow();
+            int numNodes = Objects.requireNonNull(getCodeMethod.rootScope()).nodes().size();
+            Assert.assertEquals(ref.numNodes, numNodes);
+        }).get();
+    }
+
     private TypeDTO queryClassType(String name) {
+        return queryClassType(name, List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(),TypeCategory.INTERFACE.code()));
+    }
+
+    private TypeDTO queryClassType(String name, List<Integer> categories) {
         var types = typeManager.query(new TypeQuery(
                 name,
-                List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(),TypeCategory.INTERFACE.code()),
+                categories,
                 false,
                 false,
                 false,

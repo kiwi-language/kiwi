@@ -59,16 +59,12 @@ public class Declarator extends JavaRecursiveElementVisitor {
                         .access(Access.PRIVATE)
                         .build();
             }
-            visitedMethods.add(Objects.requireNonNull(metaClass.findMethodByCode("<init>")));
-            visitedMethods.add(Objects.requireNonNull(metaClass.findMethodByCode("<cinit>")));
-        }
-        boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
-        if (!metaClass.isInterface() && !hashConstructor) {
-            String constructorName = metaClass.getEffectiveTemplate().getName();
-            String constructorCode = Types.getConstructorCode(metaClass);
-            visitedMethods.add(MethodBuilder.newBuilder(metaClass, constructorName, constructorCode, context.getFunctionTypeContext())
-                    .isConstructor(true)
-                    .build());
+            var initMethod = Objects.requireNonNull(metaClass.findMethodByCode("<init>"));
+            var cinitMethod = Objects.requireNonNull(metaClass.findMethodByCode("<cinit>"));
+            initMethod.clearNodes();
+            cinitMethod.clearNodes();
+            visitedMethods.add(initMethod);
+            visitedMethods.add(cinitMethod);
         }
         classStack.push(metaClass);
         super.visitClass(psiClass);
@@ -108,7 +104,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
                     .access(resolveAccess(method.getModifierList()))
                     .isAbstract(method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT))
                     .parameters(resolvedParams)
-                    .returnType(getOutputType(method))
+                    .returnType(getReturnType(method))
                     .overridden(overridden)
                     .build();
         } else {
@@ -119,7 +115,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
             );
             flow.update(
                     flow.getParameters(),
-                    getOutputType(method),
+                    getReturnType(method),
                     overridden,
                     context.getFunctionTypeContext()
             );
@@ -200,11 +196,14 @@ public class Declarator extends JavaRecursiveElementVisitor {
         return NncUtils.requireNonNull(classStack.peek());
     }
 
-    private Type getOutputType(PsiMethod method) {
+    private Type getReturnType(PsiMethod method) {
         var type = method.isConstructor() ?
                 TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())) :
                 method.getReturnType();
-        return resolveType(type);
+        var metaType = resolveType(type);
+        if (TranspileUtil.getAnnotation(method, Nullable.class) != null)
+            metaType = context.getNullableType(metaType);
+        return metaType;
     }
 
     private Type resolveType(PsiType psiType) {

@@ -18,6 +18,7 @@ public class CodeGenerator {
 
     void transform(PsiClass psiClass) {
         executeCommand(() -> {
+            psiClass.accept(new DefaultConstructorCreator());
             psiClass.accept(new SwitchExpressionTransformer());
             psiClass.accept(new SwitchLabelStatementTransformer());
             psiClass.accept(new ForeachTransformer());

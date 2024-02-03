@@ -87,16 +87,6 @@ public class Generator extends VisitorBase {
     public void visitEnumConstant(PsiEnumConstant enumConstant) {
         var field = NncUtils.requireNonNull(enumConstant.getUserData(Keys.FIELD));
         var builder = currentClassInfo().staticBuilder;
-        var constructor = enumConstant.resolveConstructor();
-        List<Type> paramTypes = new ArrayList<>();
-        paramTypes.add(entityContext.getType(String.class));
-        paramTypes.add(entityContext.getType(long.class));
-        paramTypes.addAll(
-                NncUtils.map(
-                        requireNonNull(constructor).getParameterList().getParameters(),
-                        param -> typeResolver.resolveTypeOnly(param.getType())
-                )
-        );
         List<Expression> args = new ArrayList<>();
         args.add(Expressions.constantString(getEnumConstantName(enumConstant)));
         args.add(Expressions.constantLong(currentClassInfo().nextEnumConstantOrdinal()));
@@ -267,6 +257,7 @@ public class Generator extends VisitorBase {
         if(CompilerConfig.isMethodBlacklisted(psiMethod))
             return;
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
+        method.clearNodes();
         MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);
         builder.enterScope(method.getRootScope());

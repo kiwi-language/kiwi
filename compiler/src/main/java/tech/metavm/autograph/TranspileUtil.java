@@ -396,6 +396,13 @@ public class TranspileUtil {
         return elementFactory.createStatementFromText(text, null);
     }
 
+    public static PsiMethod createMethod(String className, boolean isPublic) {
+        if(isPublic)
+            return elementFactory.createMethodFromText(String.format("public %s() {}", className), null);
+        else
+            return elementFactory.createMethodFromText(String.format("%s() {}", className), null);
+    }
+
     public static PsiStatement getEnclosingStatement(PsiExpression expression) {
         PsiElement element = expression;
         while (element != null && !(element instanceof PsiStatement)) {
