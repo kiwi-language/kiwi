@@ -2,6 +2,7 @@ package tech.metavm.expression;
 
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.Password;
 import tech.metavm.util.ValueUtil;
 
 import java.util.Arrays;
@@ -44,6 +45,10 @@ public enum Func {
     HAS_NEXT(Boolean.class, Object.class),
 
     TO_STRING(String.class, Object.class),
+
+    PASSWORD(Password.class, String.class),
+
+    GET_PASSWORD(String.class, Password.class)
 
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 

@@ -61,11 +61,12 @@ public class ExpressionResolver {
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListAddResolver(), new ListRemoveResolver(), new ListGetResolver(),
             new ListIsEmptyResolver(), new ListSizeResolver(), new StringConcatResolver(),
-            new ToStringResolver()
+            new ToStringResolver(), new ListClearResolver(), new ListAddAllResolver(),
+            new GetPasswordResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
-            new NewListResolver(), new NewListWithInitialResolver()
+            new NewListResolver(), new NewListWithInitialResolver(), new NewPasswordResolver()
     );
 
     public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,

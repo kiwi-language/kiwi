@@ -238,7 +238,7 @@ public class TestUtils {
     }
 
     public static void clearDirectory(File file) {
-        if(file.isDirectory()) {
+        if (file.isDirectory()) {
             for (File subFile : Objects.requireNonNull(file.listFiles())) {
                 clearDirectory(subFile);
                 subFile.delete();
@@ -326,15 +326,14 @@ public class TestUtils {
     private static void extractDescendantIds(InstanceDTO instanceDTO, Set<String> ids) {
         if (instanceDTO.id() != null)
             ids.add(instanceDTO.id());
-        if(instanceDTO.param() instanceof ClassInstanceParam classInstanceParam) {
+        if (instanceDTO.param() instanceof ClassInstanceParam classInstanceParam) {
             for (InstanceFieldDTO field : classInstanceParam.fields()) {
-                if(field.value() instanceof InstanceFieldValue instanceFieldValue)
+                if (field.value() instanceof InstanceFieldValue instanceFieldValue)
                     extractDescendantIds(instanceFieldValue.getInstance(), ids);
             }
-        }
-        else if(instanceDTO.param() instanceof ArrayInstanceParam arrayInstanceParam) {
+        } else if (instanceDTO.param() instanceof ArrayInstanceParam arrayInstanceParam) {
             for (FieldValue element : arrayInstanceParam.elements()) {
-                if(element instanceof InstanceFieldValue instanceFieldValue)
+                if (element instanceof InstanceFieldValue instanceFieldValue)
                     extractDescendantIds(instanceFieldValue.getInstance(), ids);
             }
         }
@@ -357,6 +356,15 @@ public class TestUtils {
 
     public static long getMethodIdByCode(TypeDTO typeDTO, String methodCode) {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
+    }
+
+    public static long getMethodId(TypeDTO typeDTO, String code, Long...parameterTypeIds) {
+        var paramTypeidList = List.of(parameterTypeIds);
+        return NncUtils.findRequired(typeDTO.getClassParam().flows(),
+                f -> code.equals(f.code()) && paramTypeidList.equals(
+                        NncUtils.map(f.parameters(), p -> p.typeRef().id())
+                )
+        ).id();
     }
 
     public static String getEnumConstantIdByName(TypeDTO typeDTO, String name) {

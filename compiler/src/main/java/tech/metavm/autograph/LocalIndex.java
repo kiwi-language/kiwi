@@ -101,6 +101,8 @@ public class LocalIndex {
     public record Query(long indexId, List<QueryItem> items, boolean desc, Long limit) {
 
         boolean match(Key key) {
+            if(indexId != key.constraintId)
+                return false;
             int i = 0;
             for (var item : items) {
                 if(!item.operator.evaluate(key.bytes[i++], item.value))

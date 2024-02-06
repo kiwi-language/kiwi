@@ -4,7 +4,7 @@ public class DefaultMain {
 
     public static void main(String[] args) {
         Main.main(new String[] {
-                "/Users/leen/workspace/object/lab/src/main/metavm"
+                "/Users/leen/workspace/object/lab/src/main/users"
         });
     }
 

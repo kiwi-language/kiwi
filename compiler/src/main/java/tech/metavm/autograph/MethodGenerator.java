@@ -389,7 +389,7 @@ public class MethodGenerator {
                 scope().getLastNode(), scope()));
     }
 
-    private <T extends NodeRT> T setNodeExprTypes(T node) {
+    public  <T extends NodeRT> T setNodeExprTypes(T node) {
         var scope = scope();
         var lastNode = scope.getLastNode();
         if (lastNode == null) {
@@ -439,6 +439,9 @@ public class MethodGenerator {
 
     public PsiMethod getJavaMethod() {
         return null;
+    }
+
+    public void createClearArray(Expression array) {
     }
 
     private static final class ScopeInfo {

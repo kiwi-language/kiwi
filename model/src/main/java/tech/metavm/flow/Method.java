@@ -334,7 +334,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        if (isStatic())
+        if (_static)
             NncUtils.requireNull(self);
         else
             Objects.requireNonNull(self);

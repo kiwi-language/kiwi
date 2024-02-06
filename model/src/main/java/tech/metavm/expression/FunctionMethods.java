@@ -66,6 +66,14 @@ public class FunctionMethods {
         return str.isBlank();
     }
 
+    public static PasswordInstance PASSWORD(StringInstance str) {
+        return Instances.passwordInstance(str.getValue());
+    }
+
+    public static StringInstance GET_PASSWORD(PasswordInstance password) {
+        return Instances.stringInstance(password.getValue());
+    }
+
     public static BooleanInstance STARTS_WITH(Instance first, StringInstance prefix) {
         if(first instanceof NullInstance)
             return Instances.falseInstance();

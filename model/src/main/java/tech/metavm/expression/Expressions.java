@@ -221,6 +221,10 @@ public class Expressions {
         return new BinaryExpression(BinaryOperator.LT, first, second);
     }
 
+    public static Expression func(Func func, Expression...arguments) {
+        return new FunctionExpression(func, List.of(arguments));
+    }
+
     public static Expression le(Expression first, Expression second) {
         return new BinaryExpression(BinaryOperator.LE, first, second);
     }

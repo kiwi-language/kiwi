@@ -209,12 +209,6 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     private Node<T> getEquals(Object o) {
-        @SuppressWarnings ("unchecked") T t =  (T) o;
-        if(!indexes.isEmpty()) {
-            Map.Entry<IndexDesc<T>, Map<Object, LinkedList<Node<T>>>> entry
-                    = indexes.entrySet().iterator().next();
-            return NncUtils.first(entry.getValue().get(entry.getKey().map(t)));
-        }
         return findNode(v -> Objects.equals(v, o));
     }
 

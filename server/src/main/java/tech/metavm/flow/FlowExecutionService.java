@@ -31,9 +31,10 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
         try (var context = newContext()) {
-            Flow flow = context.getEntity(Flow.class, request.flowId());
-            ClassInstance self = (ClassInstance) context.getInstanceContext().get(Id.parse(request.instanceId()));
-            List<Instance> arguments = new ArrayList<>();
+            var flow = context.getEntity(Flow.class, request.flowId());
+            var self = NncUtils.get(request.instanceId(),
+                    id -> (ClassInstance) context.getInstanceContext().get(Id.parse(id)));
+            var arguments = new ArrayList<Instance>();
             NncUtils.biForEach(
                     request.arguments(),
                     flow.getParameterTypes(),
@@ -41,15 +42,21 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
                             InstanceFactory.resolveValue(arg, paramType, context)
                     )
             );
-            Instance result = executeInternal(flow, self, arguments, context);
+            var result = executeInternal(flow, self, arguments, context);
             context.finish();
             return NncUtils.get(result, Instance::toDTO);
         }
     }
 
     public Instance executeInternal(Flow flow, @Nullable ClassInstance self, List<Instance> arguments, IEntityContext context) {
-        if (flow instanceof Method method && method.isInstanceMethod())
-            flow = Objects.requireNonNull(self).getType().resolveMethod(method, context.getGenericContext());
+        if (flow instanceof Method method && method.isInstanceMethod()) {
+            if(method.isConstructor()) {
+                self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType()).build();
+                context.getInstanceContext().bind(self);
+            }
+            else
+                flow = Objects.requireNonNull(self).getType().resolveMethod(method, context.getGenericContext());
+        }
         var result = flow.execute(self, arguments, context.getInstanceContext(), context.getGenericContext());
         if (result.exception() == null)
             return result.ret();

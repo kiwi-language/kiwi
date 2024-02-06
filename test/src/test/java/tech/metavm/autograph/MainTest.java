@@ -15,10 +15,7 @@ import tech.metavm.flow.rest.GetFlowRequest;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.AllocatorStore;
-import tech.metavm.object.type.ArrayKind;
-import tech.metavm.object.type.TypeCategory;
-import tech.metavm.object.type.TypeManager;
+import tech.metavm.object.type.*;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeQuery;
@@ -35,6 +32,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static tech.metavm.util.TestUtils.getFieldIdByCode;
+
 public class MainTest extends TestCase {
 
     public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/java";
@@ -44,6 +43,8 @@ public class MainTest extends TestCase {
     public static final String LAB_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/lab";
 
     public static final String METAVM_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/metavm";
+
+    public static final String USERS_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/users";
 
     public static final String AUTH_FILE = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
 
@@ -121,11 +122,11 @@ public class MainTest extends TestCase {
                     productType.getRef(),
                     List.of(
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "title"),
+                                    getFieldIdByCode(productType, "title"),
                                     PrimitiveFieldValue.createString("鞋子")
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "skus"),
+                                    getFieldIdByCode(productType, "skus"),
                                     InstanceFieldValue.of(
                                             InstanceDTO.createArrayInstance(
                                                     RefDTO.fromId(skuChildArrayTypeId),
@@ -136,15 +137,15 @@ public class MainTest extends TestCase {
                                                                             skuType.getRef(),
                                                                             List.of(
                                                                                     InstanceFieldDTO.create(
-                                                                                            TestUtils.getFieldIdByCode(skuType, "title"),
+                                                                                            getFieldIdByCode(skuType, "title"),
                                                                                             PrimitiveFieldValue.createString("40")
                                                                                     ),
                                                                                     InstanceFieldDTO.create(
-                                                                                            TestUtils.getFieldIdByCode(skuType, "amount"),
+                                                                                            getFieldIdByCode(skuType, "amount"),
                                                                                             PrimitiveFieldValue.createLong(100)
                                                                                     ),
                                                                                     InstanceFieldDTO.create(
-                                                                                            TestUtils.getFieldIdByCode(skuType, "price"),
+                                                                                            getFieldIdByCode(skuType, "price"),
                                                                                             PrimitiveFieldValue.createDouble(90.0)
                                                                                     )
                                                                             )
@@ -155,15 +156,15 @@ public class MainTest extends TestCase {
                                                                             skuType.getRef(),
                                                                             List.of(
                                                                                     InstanceFieldDTO.create(
-                                                                                            TestUtils.getFieldIdByCode(skuType, "title"),
+                                                                                            getFieldIdByCode(skuType, "title"),
                                                                                             PrimitiveFieldValue.createString("41")
                                                                                     ),
                                                                                     InstanceFieldDTO.create(
-                                                                                            TestUtils.getFieldIdByCode(skuType, "amount"),
+                                                                                            getFieldIdByCode(skuType, "amount"),
                                                                                             PrimitiveFieldValue.createLong(100)
                                                                                     ),
                                                                                     InstanceFieldDTO.create(
-                                                                                            TestUtils.getFieldIdByCode(skuType, "price"),
+                                                                                            getFieldIdByCode(skuType, "price"),
                                                                                             PrimitiveFieldValue.createDouble(100.0)
                                                                                     )
                                                                             )
@@ -197,7 +198,7 @@ public class MainTest extends TestCase {
             Assert.assertEquals(1, productViews.size());
             var productView = productViews.get(0);
             var priceFieldValue = (PrimitiveFieldValue) productView.getFieldValue(
-                    TestUtils.getFieldIdByCode(productViewType, "price"));
+                    getFieldIdByCode(productViewType, "price"));
             Assert.assertEquals(95.0, (double) priceFieldValue.getValue(), 0.0);
         }).get();
         CompilerConfig.setMethodBlacklist(Set.of("tech.metavm.lab.Product.setSkus"));
@@ -220,23 +221,23 @@ public class MainTest extends TestCase {
                     productType.getRef(),
                     List.of(
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "title"),
+                                    getFieldIdByCode(productType, "title"),
                                     PrimitiveFieldValue.createString("鞋子")
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "orderCount"),
+                                    getFieldIdByCode(productType, "orderCount"),
                                     PrimitiveFieldValue.createLong(0L)
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "price"),
+                                    getFieldIdByCode(productType, "price"),
                                     PrimitiveFieldValue.createLong(100L)
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "inventory"),
+                                    getFieldIdByCode(productType, "inventory"),
                                     PrimitiveFieldValue.createLong(100L)
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(productType, "state"),
+                                    getFieldIdByCode(productType, "state"),
                                     ReferenceFieldValue.create(productNormalStateId)
                             )
                     )
@@ -248,15 +249,15 @@ public class MainTest extends TestCase {
                     directCouponType.getRef(),
                     List.of(
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(directCouponType, "discount"),
+                                    getFieldIdByCode(directCouponType, "discount"),
                                     PrimitiveFieldValue.createLong(5L)
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(directCouponType, "state"),
+                                    getFieldIdByCode(directCouponType, "state"),
                                     ReferenceFieldValue.create(couponNormalStateId)
                             ),
                             InstanceFieldDTO.create(
-                                    TestUtils.getFieldIdByCode(directCouponType, "product"),
+                                    getFieldIdByCode(directCouponType, "product"),
                                     ReferenceFieldValue.create(product.id())
                             )
                     )
@@ -277,8 +278,8 @@ public class MainTest extends TestCase {
                     )
             )));
             var orderType = queryClassType("AST订单");
-            var price = (long) ((PrimitiveFieldValue) order.getFieldValue(TestUtils.getFieldIdByCode(orderType, "price"))).getValue();
-            var orderCoupons = ((InstanceFieldValue) order.getFieldValue(TestUtils.getFieldIdByCode(orderType, "coupons"))).getInstance();
+            var price = (long) ((PrimitiveFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "price"))).getValue();
+            var orderCoupons = ((InstanceFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "coupons"))).getInstance();
             Assert.assertEquals(1, orderCoupons.getArraySize());
             Assert.assertEquals(95, price);
         }).get();
@@ -318,6 +319,61 @@ public class MainTest extends TestCase {
             int numNodes = Objects.requireNonNull(getCodeMethod.rootScope()).nodes().size();
             Assert.assertEquals(ref.numNodes, numNodes);
         }).get();
+    }
+
+    public void testUsers() throws ExecutionException, InterruptedException {
+        main = new Main(HOME, USERS_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
+        main.run();
+        executor.submit(() -> {
+            var roleType = queryClassType("LabRole");
+            var roleNameFieldId = getFieldIdByCode(roleType, "name");
+            var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getId());
+            var role = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            roleConstructorId,
+                            null,
+                            List.of(PrimitiveFieldValue.createString("admin"))
+                    )
+            ));
+            Assert.assertEquals(
+                    "admin",
+                    ((PrimitiveFieldValue) role.getFieldValue(roleNameFieldId)).getValue()
+            );
+            var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
+            var userConstructorId = TestUtils.getMethodIdByCode(userType, "LabUser");
+            var user = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            userConstructorId,
+                            null,
+                            List.of(
+                                    PrimitiveFieldValue.createString("leen"),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("leen"),
+                                    new ArrayFieldValue(
+                                            null,
+                                            false,
+                                            List.of(ReferenceFieldValue.create(role.id()))
+                                    )
+                            )
+                    )
+            ));
+            var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
+            var userNameFieldId = getFieldIdByCode(userType, "name");
+            Assert.assertEquals(
+                    "leen", ((PrimitiveFieldValue)user.getFieldValue(userLoginNameFieldId)).getValue()
+            );
+            Assert.assertEquals(
+                    "leen", ((PrimitiveFieldValue)user.getFieldValue(userNameFieldId)).getValue()
+            );
+            var passwordValue = user.getFieldValue(getFieldIdByCode(userType, "password"));
+            Assert.assertTrue(passwordValue instanceof PrimitiveFieldValue primitiveFieldValue
+                    && primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.PASSWORD.code());
+            var userRoles = ((InstanceFieldValue) user.getFieldValue(getFieldIdByCode(userType, "roles"))).getInstance();
+            Assert.assertEquals(1, userRoles.getArraySize());
+            Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
+        }).get();
+
+        new Main(HOME, USERS_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore).run();
     }
 
     private TypeDTO queryClassType(String name) {

@@ -2,6 +2,7 @@ package tech.metavm.autograph;
 
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
+import tech.metavm.builtin.Password;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.ChildList;
@@ -55,7 +56,8 @@ public class TypeResolverImpl implements TypeResolver {
             Enum.class, StandardTypes::getEnumType,
             Throwable.class, StandardTypes::getThrowableType,
             Exception.class, StandardTypes::getExceptionType,
-            RuntimeException.class, StandardTypes::getRuntimeExceptionType
+            RuntimeException.class, StandardTypes::getRuntimeExceptionType,
+            Password.class, StandardTypes::getPasswordType
     );
 
     private static final List<KeyValue<Class<?>, BiFunction<Type, IEntityContext, ClassType>>> COLLECTION_CLASSES = List.of(
