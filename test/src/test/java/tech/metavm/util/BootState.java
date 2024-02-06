@@ -1,5 +1,6 @@
 package tech.metavm.util;
 
+import tech.metavm.entity.DefContext;
 import tech.metavm.entity.MemIndexEntryMapper;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
@@ -10,6 +11,7 @@ import tech.metavm.system.persistence.MemBlockMapper;
 import tech.metavm.system.persistence.MemRegionMapper;
 
 public record BootState(
+        DefContext defContext,
         MemInstanceMapper instanceMapper,
         MemReferenceMapper referenceMapper,
         MemIndexEntryMapper indexEntryMapper,
@@ -23,6 +25,7 @@ public record BootState(
     public BootState copy() {
         // deep copy
         return new BootState(
+                defContext,
                 instanceMapper.copy(),
                 referenceMapper.copy(),
                 indexEntryMapper.copy(),
