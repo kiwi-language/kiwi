@@ -7,7 +7,10 @@ import tech.metavm.flow.rest.FunctionParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceRepository;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.FunctionType;
+import tech.metavm.object.type.MetadataState;
+import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -84,4 +87,11 @@ public class Function extends Flow implements GlobalKey {
         return visitor.visitFunction(this);
     }
 
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        if (current == this)
+            return "this";
+        return getCodeRequired() + "(" +
+                NncUtils.join(getParameterTypes(), t -> t.getInternalName(this), ",") + ")";
+    }
 }

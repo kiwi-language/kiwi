@@ -5,7 +5,6 @@ import com.intellij.psi.*;
 import tech.metavm.builtin.Password;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
-import tech.metavm.entity.ChildList;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
@@ -136,11 +135,11 @@ public class TypeResolverImpl implements TypeResolver {
                     return entry.getValue().get();
                 }
             }
-            if(TranspileUtil.createType(ChildList.class).isAssignableFrom(classType)) {
+            if (TranspileUtil.createType(ChildList.class).isAssignableFrom(classType)) {
                 var childListType = TranspileUtil.getSuperType(classType, ChildList.class);
                 return context.getArrayType(resolve(childListType.getParameters()[0], stage), ArrayKind.CHILD);
             }
-            if(TranspileUtil.createType(List.class).isAssignableFrom(classType)) {
+            if (TranspileUtil.createType(List.class).isAssignableFrom(classType)) {
                 var listType = TranspileUtil.getSuperType(classType, List.class);
                 return context.getArrayType(resolve(listType.getParameters()[0], stage), ArrayKind.READ_WRITE);
             }
@@ -212,13 +211,8 @@ public class TypeResolverImpl implements TypeResolver {
 
     public Flow resolveFlow(PsiMethod method) {
         var type = (ClassType) resolveDeclaration(TranspileUtil.createType(method.getContainingClass()));
-        return type.getMethodByCodeAndParamTypes(
-                method.getName(),
-                NncUtils.map(
-                        requireNonNull(method.getParameterList().getParameters()),
-                        param -> resolveTypeOnly(param.getType())
-                )
-        );
+        return NncUtils.findRequired(type.getMethods(), f ->
+                f.getInternalName(null).equals(TranspileUtil.getInternalName(method)));
     }
 
     private boolean isArrayType(PsiType psiType) {
@@ -237,8 +231,15 @@ public class TypeResolverImpl implements TypeResolver {
         return type.findFieldByCode(field.getName());
     }
 
-    private GenericDeclaration resolveGenericDeclaration(PsiTypeParameterListOwner typeParameterOwner,
-                                                         IEntityContext context) {
+    private GenericDeclaration tryResolveGenericDeclaration(PsiTypeParameterListOwner typeParameterListOwner) {
+        if (typeParameterListOwner instanceof PsiClass psiClass)
+            return psiClass.getUserData(Keys.MV_CLASS);
+        if (typeParameterListOwner instanceof PsiMethod method)
+            return method.getUserData(Keys.Method);
+        throw new InternalException("Unexpected type parameter owner: " + typeParameterListOwner);
+    }
+
+    private GenericDeclaration resolveGenericDeclaration(PsiTypeParameterListOwner typeParameterOwner) {
         if (typeParameterOwner instanceof PsiClass psiClass) {
             return (GenericDeclaration) resolveTypeOnly(TranspileUtil.createType(psiClass));
         } else if (typeParameterOwner instanceof PsiMethod method) {
@@ -254,11 +255,15 @@ public class TypeResolverImpl implements TypeResolver {
         if (builtInTypeVar != null)
             return builtInTypeVar;
         var typeVariable = typeParameter.getUserData(Keys.TYPE_VARIABLE);
-        if (typeVariable != null) {
+        if (typeVariable != null)
             return typeVariable;
-        }
-        typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()), typeParameter.getName(),
-                DummyGenericDeclaration.INSTANCE);
+        var genericDeclaration = tryResolveGenericDeclaration(typeParameter.getOwner());
+        if (genericDeclaration != null)
+            typeVariable = NncUtils.find(genericDeclaration.getTypeParameters(),
+                    tv -> Objects.equals(tv.getCode(), typeParameter.getName()));
+        if (typeVariable == null)
+            typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()), typeParameter.getName(),
+                    DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
         generatedTypes.add(typeVariable);
         typeVariable.setBounds(NncUtils.map(

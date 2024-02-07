@@ -1,7 +1,9 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import tech.metavm.object.type.rest.dto.PrimitiveTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
@@ -108,6 +110,11 @@ public class PrimitiveType extends Type {
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         return kind.getJavaClass().getName();
+    }
+
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        return kind.getTypeCode();
     }
 
     @Override

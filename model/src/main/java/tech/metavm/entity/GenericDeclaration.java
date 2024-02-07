@@ -1,6 +1,7 @@
 package tech.metavm.entity;
 
 import tech.metavm.common.RefDTO;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.TypeVariable;
 import tech.metavm.util.InternalException;
@@ -29,5 +30,6 @@ public interface GenericDeclaration {
 
     RefDTO getRef();
 
-//    GenericDeclaration getTemplate();
+    String getInternalName(@Nullable Flow current);
+
 }

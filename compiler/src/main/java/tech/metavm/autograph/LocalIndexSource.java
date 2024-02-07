@@ -5,10 +5,7 @@ import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.InstanceIndexQueryItem;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
-import tech.metavm.object.instance.core.ClassInstance;
-import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexField;
 import tech.metavm.util.*;
@@ -39,17 +36,23 @@ public class LocalIndexSource implements IndexSource {
     public void populateIndex() {
         try (var context = newContext()) {
             var ids = treeStore.getAllInstanceIds();
+            var instanceContext = context.getInstanceContext();
             Map<LocalIndex.Key, Long> indexMap = new HashMap<>();
             Map<Long, List<Long>> typeId2ids = new HashMap<>();
             for (Long id : ids) {
-                var inst = context.getInstanceContext().get(PhysicalId.of(id));
-                typeId2ids.computeIfAbsent(inst.getType().tryGetId(), k -> new ArrayList<>()).add(id);
-                if (inst instanceof ClassInstance classInstance) {
-                    var keys = classInstance.getIndexKeys(context.getGenericContext());
-                    for (IndexKeyRT key : keys) {
-                        indexMap.put(convertKey(key), id);
+                instanceContext.get(PhysicalId.of(id)).accept(new StructuralVisitor() {
+                    @Override
+                    public Void visitClassInstance(ClassInstance instance) {
+                        if (instance.isEphemeral())
+                            return null;
+                        typeId2ids.computeIfAbsent(instance.getType().tryGetId(), k -> new ArrayList<>()).add(instance.getPhysicalId());
+                        var keys = instance.getIndexKeys(context.getGenericContext());
+                        for (IndexKeyRT key : keys) {
+                            indexMap.put(convertKey(key), instance.getPhysicalId());
+                        }
+                        return super.visitClassInstance(instance);
                     }
-                }
+                });
             }
             index.reset(indexMap);
             typeIndex.reset(typeId2ids);

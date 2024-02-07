@@ -50,7 +50,6 @@ public class MainTest extends TestCase {
 
     public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
 
-    private Main main;
     private TypeClient typeClient;
     private ExecutorService executor;
     private TypeManager typeManager;
@@ -88,20 +87,18 @@ public class MainTest extends TestCase {
         typeManager.setFlowExecutionService(flowExecutionService);
         var blockManager = new BlockManager(bootResult.blockMapper());
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
-        main = new Main(HOME, SOURCE_ROOT, AUTH_FILE, typeClient, bootResult.allocatorStore());
         FlowSavingContext.initConfig();
         typeManager.setVersionManager(new VersionManager(bootResult.entityContextFactory()));
     }
 
     @Override
     protected void tearDown() throws Exception {
-        main = null;
         typeClient = null;
         executor.close();
     }
 
     public void test() throws ExecutionException, InterruptedException {
-        main.run();
+        compile(SOURCE_ROOT);
         var ref = new Object() {
             long productTypeId;
         };
@@ -195,8 +192,7 @@ public class MainTest extends TestCase {
             Assert.assertEquals(95.0, (double) priceFieldValue.getValue(), 0.0);
         }).get();
         CompilerConfig.setMethodBlacklist(Set.of("tech.metavm.lab.Product.setSkus"));
-        main = new Main(HOME, SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
-        main.run();
+        compile(SOURCE_ROOT);
         executor.submit(() -> {
             var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
             Assert.assertNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
@@ -204,8 +200,7 @@ public class MainTest extends TestCase {
     }
 
     public void testShopping() throws ExecutionException, InterruptedException {
-        main = new Main(HOME, SHOPPING_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
-        main.run();
+        compileTwice(SHOPPING_SOURCE_ROOT);
         executor.submit(() -> {
             var productStateType = queryClassType("商品状态");
             var productNormalStateId = TestUtils.getEnumConstantIdByName(productStateType, "正常");
@@ -279,13 +274,11 @@ public class MainTest extends TestCase {
     }
 
     public void _testLab() {
-        main = new Main(HOME, LAB_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
-        main.run();
+        compileTwice(LAB_SOURCE_ROOT);
     }
 
     public void testMetavm() throws ExecutionException, InterruptedException {
-        main = new Main(HOME, METAVM_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
-        main.run();
+        compile(METAVM_SOURCE_ROOT);
         var ref = new Object() {
             long getCodeMethodId;
             int numNodes;
@@ -303,8 +296,7 @@ public class MainTest extends TestCase {
         }).get();
 
         // test recompile
-        main = new Main(HOME, METAVM_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
-        main.run();
+        compile(METAVM_SOURCE_ROOT);
 
         // assert that the number of nodes doesn't change after recompilation
         executor.submit(() -> {
@@ -315,8 +307,7 @@ public class MainTest extends TestCase {
     }
 
     public void testUsers() throws ExecutionException, InterruptedException {
-        main = new Main(HOME, USERS_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore);
-        main.run();
+        compileTwice(USERS_SOURCE_ROOT);
         executor.submit(() -> {
             var roleType = queryClassType("LabRole");
             var roleNameFieldId = getFieldIdByCode(roleType, "name");
@@ -366,8 +357,16 @@ public class MainTest extends TestCase {
             Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
             Assert.assertEquals(2, userType.getClassParam().constraints().size());
         }).get();
+    }
 
-        new Main(HOME, USERS_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore).run();
+
+    private void compileTwice(String sourceRoot) {
+        compile(sourceRoot);
+        compile(sourceRoot);
+    }
+
+    private void compile(String sourceRoot) {
+        new Main(HOME, sourceRoot, AUTH_FILE, typeClient, allocatorStore).run();
     }
 
     private TypeDTO queryClassType(String name) {

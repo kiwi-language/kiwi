@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.rest.dto.TypeDTO;
@@ -448,5 +449,7 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
     }
+
+    public abstract String getInternalName(@org.jetbrains.annotations.Nullable Flow current);
 
 }

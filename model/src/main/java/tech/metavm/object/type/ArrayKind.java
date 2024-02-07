@@ -1,9 +1,11 @@
 package tech.metavm.object.type;
 
-import tech.metavm.entity.ChildArray;
-import tech.metavm.entity.ReadWriteArray;
-import tech.metavm.entity.ReadonlyArray;
+import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.util.*;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 public enum ArrayKind {
 
@@ -12,17 +14,33 @@ public enum ArrayKind {
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
              return (that == READ_WRITE || that == CHILD) && assignedElementType.contains(assignmentElementType);
         }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return List.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
+
     },
     READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, ReadonlyArray.class, "[R]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return assignedElementType.isAssignableFrom(assignmentElementType);
         }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return ReadonlyList.class.getName() + "<" + elementType.getInternalName(current) + ">";
+        }
     },
     CHILD(3, TypeCategory.CHILD_ARRAY, ChildArray.class, "[C]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return that == CHILD && assignedElementType.contains(assignmentElementType);
+        }
+
+        @Override
+        public String getInternalName(Type elementType, @Nullable Flow current) {
+            return ChildList.class.getName() + "<" + elementType.getInternalName(current) + ">";
         }
     },
 
@@ -53,6 +71,8 @@ public enum ArrayKind {
     }
 
     public abstract boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType);
+
+    public abstract String getInternalName(Type elementType, @Nullable Flow current);
 
     @SuppressWarnings("rawtypes")
     public Class<? extends ReadonlyArray> getEntityClass() {

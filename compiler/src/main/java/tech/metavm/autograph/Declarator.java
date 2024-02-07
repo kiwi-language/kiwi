@@ -91,12 +91,14 @@ public class Declarator extends JavaRecursiveElementVisitor {
                     overriddenMethod, typeResolver)
             );
         }
+        var flow = NncUtils.find(currentClass().getMethods(),
+                f -> f.getInternalName(null).equals(TranspileUtil.getInternalName(method)));
+        if (flow != null)
+            method.putUserData(Keys.Method, flow);
         List<Parameter> resolvedParams = new ArrayList<>();
         if (method.isConstructor() && currentClass().isEnum())
             resolvedParams.addAll(getEnumConstructorParams());
         resolvedParams.addAll(processParameters(method.getParameterList()));
-        var paramTypes = NncUtils.map(resolvedParams, Parameter::getType);
-        var flow = currentClass().findSelfMethod(method.getName(), paramTypes);
         if (flow == null) {
             flow = MethodBuilder.newBuilder(currentClass(), getFlowName(method), getFlowCode(method), context.getFunctionTypeContext())
                     .isConstructor(method.isConstructor())
@@ -107,6 +109,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
                     .returnType(getReturnType(method))
                     .overridden(overridden)
                     .build();
+            method.putUserData(Keys.Method, flow);
         } else {
             flow.setName(getFlowName(method));
             NncUtils.biForEach(
@@ -122,9 +125,10 @@ public class Declarator extends JavaRecursiveElementVisitor {
         }
         visitedMethods.add(flow);
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
-            typeResolver.resolveTypeVariable(typeParameter).setGenericDeclaration(flow);
+            var typeVar = typeResolver.resolveTypeVariable(typeParameter);
+            if(typeVar.getGenericDeclaration() != flow)
+                typeVar.setGenericDeclaration(flow);
         }
-        method.putUserData(Keys.Method, flow);
     }
 
     private Access resolveAccess(PsiModifierList modifierList) {
@@ -151,7 +155,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitField(PsiField psiField) {
-        if(isIndexDefField(psiField))
+        if (isIndexDefField(psiField))
             return;
         var type = resolveType(psiField.getType());
         if (TranspileUtil.getAnnotation(psiField, Nullable.class) != null)

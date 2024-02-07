@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.ArrayTypeKey;
 import tech.metavm.object.type.rest.dto.ArrayTypeParam;
@@ -99,6 +100,11 @@ public class ArrayType extends CompositeType {
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         return kind.getEntityClass().getName() + "<" + context.getModelName(elementType, this) + ">";
+    }
+
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        return kind.getInternalName(elementType, current);
     }
 
     public ArrayKind getKind() {

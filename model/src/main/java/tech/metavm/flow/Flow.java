@@ -142,7 +142,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     @Override
     public void onLoad(IEntityContext context) {
         stage = ResolutionStage.INIT;
-        if(codeSource != null)
+        if (codeSource != null)
             codeSource.generateCode(this, CompositeTypeFacadeImpl.createFromContext(context));
         nodes();
     }
@@ -189,9 +189,9 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
     }
 
     public void clearNodes() {
-        if(nodes != null)
+        if (nodes != null)
             nodes.clear();
-        if(rootScope != null)
+        if (rootScope != null)
             rootScope.clearNodes();
     }
 
@@ -243,7 +243,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void addTemplateInstance(Flow flow) {
         assert !typeParameters.isEmpty();
-        if(templateInstances == null)
+        if (templateInstances == null)
             templateInstances = addChild(new ChildArray<>(Flow.class), "templateInstances");
         templateInstances.addChild(flow);
     }
@@ -430,7 +430,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
 
     public void setTypeParameters(List<TypeVariable> typeParameters) {
         isTemplate = !typeParameters.isEmpty();
-        typeParameters.forEach(tp -> tp.setGenericDeclaration(this));
+        typeParameters.forEach(tp -> {
+            if (tp.getGenericDeclaration() != this)
+                tp.setGenericDeclaration(this);
+        });
         this.typeParameters.resetChildren(typeParameters);
         if (isTemplate())
             setTypeArguments(typeParameters);
@@ -448,6 +451,10 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         return new FlowSignatureDTO(name,
                 NncUtils.map(parameterTypes, Entity::getRef)
         );
+    }
+
+    public String getSignatureString() {
+        return getCode() + "(" + NncUtils.join(getParameterTypes(), Type::getCode) + ")";
     }
 
     public FlowInfo toGenericElementDTO(SerializeContext serializeContext) {

@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeVariableKey;
 import tech.metavm.object.type.rest.dto.TypeVariableParam;
@@ -135,6 +136,11 @@ public class TypeVariable extends Type implements LocalKey, GenericElement {
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        return genericDeclaration.getInternalName(current) + "." + getCodeRequired();
     }
 
     public TypeVariable copy() {

@@ -7,7 +7,15 @@ import com.intellij.psi.PsiType;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.autograph.mocks.PTypeFoo;
+import tech.metavm.autograph.mocks.SignatureFoo;
 import tech.metavm.autograph.mocks.TypeFoo;
+import tech.metavm.entity.DummyGenericDeclaration;
+import tech.metavm.entity.MockStandardTypesInitializer;
+import tech.metavm.entity.StandardTypes;
+import tech.metavm.flow.MethodBuilder;
+import tech.metavm.flow.Parameter;
+import tech.metavm.object.type.*;
+import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 
@@ -18,9 +26,13 @@ import static java.util.Objects.requireNonNull;
 
 public class TranspileUtilTest extends TestCase {
 
+    private TypeProviders typeProviders;
+
     @Override
     protected void setUp() throws Exception {
         TranspileTestTools.touch();
+        MockStandardTypesInitializer.init();
+        typeProviders = new TypeProviders();
     }
 
     public void testGetTemplateType() {
@@ -46,6 +58,32 @@ public class TranspileUtilTest extends TestCase {
                         TranspileUtil.createPrimitiveType(int.class))),
                 signature
         );
+    }
+
+    public void testGetSignatureString() {
+        var listClass = Objects.requireNonNull(TranspileUtil.createType(SignatureFoo.class).resolve());
+        var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
+        var sig = TranspileUtil.getInternalName(getMethod);
+
+        var fooType = ClassTypeBuilder.newBuilder("SignatureFoo", SignatureFoo.class.getName()).build();
+        var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
+
+        var addMethod = MethodBuilder.newBuilder(fooType, "add", "add", typeProviders.functionTypeProvider)
+                .typeParameters(List.of(typeVar))
+                .parameters(
+                        new Parameter(null, "list", "list",
+                                new ArrayType(
+                                        null,
+                                        new UncertainType(null,
+                                                typeVar, StandardTypes.getAnyType()),
+                                        ArrayKind.READ_WRITE
+                                )
+                        ),
+                        new Parameter(null, "element", "element", typeVar)
+                )
+                .build();
+        var sig2 = addMethod.getInternalName(null);
+        Assert.assertEquals(sig, sig2);
     }
 
     private static class Visitor extends JavaRecursiveElementVisitor {

@@ -1,9 +1,11 @@
 package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tech.metavm.entity.BuildKeyContext;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.ElementVisitor;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.NothingTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
@@ -37,6 +39,11 @@ public class NeverType extends Type {
 
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return "Nothing";
+        return "Never";
+    }
+
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        return "Never";
     }
 }

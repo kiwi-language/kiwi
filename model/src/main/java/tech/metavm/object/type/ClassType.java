@@ -442,6 +442,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         );
     }
 
+    public Method findMethodBySignatureString(String signatureString) {
+        return methods.get(Flow::getSignatureString, signatureString);
+    }
+
     public @Nullable Method findMethodByCode(String code) {
         return getMethod(Method::getCode, code);
     }
@@ -1382,6 +1386,14 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         if (super.isViewType(type))
             return true;
         return NncUtils.anyMatch(mappings, m -> m.getTargetType() == type);
+    }
+
+    @Override
+    public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
+        if(typeArguments.isEmpty())
+            return getCodeRequired();
+        else
+            return getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
     }
 }
 

@@ -1,13 +1,11 @@
 package tech.metavm.entity;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.common.RefDTO;
-import tech.metavm.object.type.Type;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.TypeVariable;
 
 import java.util.List;
-import java.util.function.Function;
 
 @EntityType("DummyGenericDeclaration")
 public enum DummyGenericDeclaration implements GenericDeclaration {
@@ -43,5 +41,10 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     @Override
     public RefDTO getRef() {
         return new RefDTO(-1L, 0L);
+    }
+
+    @Override
+    public String getInternalName(@javax.annotation.Nullable Flow current) {
+        throw new UnsupportedOperationException();
     }
 }

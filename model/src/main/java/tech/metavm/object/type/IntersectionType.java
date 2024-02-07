@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.IntersectionTypeKey;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.TypeParam;
@@ -68,6 +69,11 @@ public class IntersectionType extends CompositeType {
                 String::compareTo
         );
         return String.join("&", memberCanonicalNames);
+    }
+
+    @Override
+    public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
+        return NncUtils.join(types, type -> type.getInternalName(current), "&");
     }
 
     public Set<Type> getTypes() {

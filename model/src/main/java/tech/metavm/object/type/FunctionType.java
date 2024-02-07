@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.FunctionTypeKey;
 import tech.metavm.object.type.rest.dto.FunctionTypeParam;
 import tech.metavm.object.type.rest.dto.TypeKey;
@@ -106,6 +107,12 @@ public class FunctionType extends CompositeType {
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         return "(" + NncUtils.join(parameterTypes, object -> context.getModelName(object, this)) + ")"
                 + "->" + context.getModelName(returnType, this);
+    }
+
+    @Override
+    public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
+        return "(" + NncUtils.join(parameterTypes, type -> type.getInternalName(current)) + ")"
+                + "->" + returnType.getInternalName(current);
     }
 
     @Override

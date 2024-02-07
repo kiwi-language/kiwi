@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.instance.ColumnKind;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.UnionTypeKey;
@@ -100,6 +101,11 @@ public class UnionType extends CompositeType {
                 String::compareTo
         );
         return String.join("|", memberCanonicalNames);
+    }
+
+    @Override
+    public String getInternalName(@Nullable Flow current) {
+        return NncUtils.join(members, type -> type.getInternalName(current), "|");
     }
 
     @Override

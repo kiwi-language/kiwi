@@ -2,6 +2,7 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.flow.Flow;
 import tech.metavm.object.type.rest.dto.TypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeKey;
 import tech.metavm.object.type.rest.dto.UncertainTypeParam;
@@ -95,6 +96,11 @@ public class UncertainType extends CompositeType implements LoadAware  {
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         return "[" + context.getModelName(lowerBound, this) +
                 "," + context.getModelName(upperBound, this) + "]";
+    }
+
+    @Override
+    public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
+        return "[" + lowerBound.getInternalName(current) + "," + upperBound.getInternalName(current) + "]";
     }
 
     @Override
