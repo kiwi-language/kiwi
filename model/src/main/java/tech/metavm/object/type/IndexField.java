@@ -50,6 +50,11 @@ public class IndexField extends Entity implements LocalKey {
         return name;
     }
 
+    @Nullable
+    public String getCode() {
+        return code;
+    }
+
     public Value getValue() {
         return value;
     }

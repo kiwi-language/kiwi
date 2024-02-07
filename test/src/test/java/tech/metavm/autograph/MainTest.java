@@ -46,16 +46,9 @@ public class MainTest extends TestCase {
 
     public static final String USERS_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/users";
 
-    public static final String AUTH_FILE = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
-
-    public static final String REQUEST_FILE =
-            "/Users/leen/workspace/object/compiler/src/test/resources/requests/request.2023-12-05 10:44:23.json";
-
-    public static final String AUTH_FIle = "/Users/leen/workspace/object/compiler/src/test/resources/auth";
+    public static final String AUTH_FILE = "/Users/leen/workspace/object/test/src/test/resources/auth";
 
     public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
-
-    public static final String HOME_1 = System.getProperty("user.home") + File.separator + ".metavm_1";
 
     private Main main;
     private TypeClient typeClient;
@@ -371,6 +364,7 @@ public class MainTest extends TestCase {
             var userRoles = ((InstanceFieldValue) user.getFieldValue(getFieldIdByCode(userType, "roles"))).getInstance();
             Assert.assertEquals(1, userRoles.getArraySize());
             Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
+            Assert.assertEquals(2, userType.getClassParam().constraints().size());
         }).get();
 
         new Main(HOME, USERS_SOURCE_ROOT, AUTH_FILE, typeClient, allocatorStore).run();

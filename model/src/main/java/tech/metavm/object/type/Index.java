@@ -175,4 +175,7 @@ public class Index extends Constraint implements LocalKey {
         return visitor.visitIndex(this);
     }
 
+    public void setFields(List<IndexField> fields) {
+        this.fields.resetChildren(fields);
+    }
 }

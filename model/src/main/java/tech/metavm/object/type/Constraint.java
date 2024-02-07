@@ -78,7 +78,7 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
             return new ConstraintDTO(
                     tryGetId(), serContext.getTmpId(this),
                     kind.code(),
-                    getDeclaringType().getId(),
+                    serContext.getRef(declaringType),
                     name,
                     code,
                     message,

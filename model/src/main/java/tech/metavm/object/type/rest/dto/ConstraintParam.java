@@ -2,6 +2,7 @@ package tech.metavm.object.type.rest.dto;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import tech.metavm.object.type.IndexParam;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes(

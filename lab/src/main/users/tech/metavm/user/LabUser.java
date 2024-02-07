@@ -1,5 +1,6 @@
 package tech.metavm.user;
 
+import tech.metavm.builtin.IndexDef;
 import tech.metavm.builtin.Password;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
@@ -12,9 +13,9 @@ import java.util.List;
 @EntityType("用户")
 public class LabUser {
 
-//    public static final IndexDef<LabUser> IDX_PLATFORM_USER_ID = IndexDef.createUnique(LabUser.class, "platformUserId");
+    public static final IndexDef<LabUser> IDX_PLATFORM_USER_ID = IndexDef.createUnique(LabUser.class, "platformUserId");
 
-//    public static final IndexDef<LabUser> IDX_LOGIN_NAME = IndexDef.createUnique(LabUser.class, "loginName");
+    public static final IndexDef<LabUser> IDX_LOGIN_NAME = IndexDef.createUnique(LabUser.class, "loginName");
 
     @EntityField("账号")
     private final String loginName;

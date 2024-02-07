@@ -28,7 +28,7 @@ public class ConstraintFactory {
     }
 
     public static Constraint createFromDTO(ConstraintDTO constraintDTO, IEntityContext entityContext) {
-        ClassType type = entityContext.getClassType(constraintDTO.typeId());
+        ClassType type = entityContext.getClassType(constraintDTO.typeRef());
         ParsingContext parsingContext = TypeParsingContext.create(type, entityContext);
         String message = constraintDTO.message();
         if (constraintDTO.param() instanceof IndexParam) {
@@ -75,7 +75,7 @@ public class ConstraintFactory {
     public static void update(ConstraintDTO constraintDTO, IEntityContext entityContext) {
         Constraint constraint = entityContext.getEntity(new TypeReference<>() {
         }, constraintDTO.id());
-        ClassType type = entityContext.getClassType(constraintDTO.typeId());
+        ClassType type = entityContext.getClassType(constraintDTO.typeRef());
         ParsingContext parsingContext = TypeParsingContext.create(type, entityContext);
         constraint.update(constraintDTO, entityContext);
         if (constraint instanceof Index indexConstraint) {

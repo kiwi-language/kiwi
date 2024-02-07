@@ -1,23 +1,18 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
-import tech.metavm.expression.Func;
-import tech.metavm.object.type.*;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
+import tech.metavm.object.type.*;
 import tech.metavm.util.CompilerConfig;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import tech.metavm.expression.Expression;
-import tech.metavm.flow.Parameter;
 import java.util.*;
 import java.util.function.BiConsumer;
-
-import tech.metavm.flow.Flow;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.getEnumConstantName;
@@ -44,7 +39,7 @@ public class Generator extends VisitorBase {
     @Override
     public void visitClass(PsiClass psiClass) {
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
-        if(klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
+        if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
             return;
         klass.setStage(ResolutionStage.DEFINITION);
         klass.setCode(psiClass.getQualifiedName());
@@ -102,6 +97,33 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitField(PsiField psiField) {
+        if (TranspileUtil.isIndexDefField(psiField)) {
+            var initializer = (PsiMethodCallExpression) requireNonNull(psiField.getInitializer());
+            var arguments = initializer.getArgumentList().getExpressions();
+            var fields = new ArrayList<Field>();
+            var type = currentClass();
+            for (int i = 1; i < arguments.length; i++) {
+                var fieldCode = (String) ((PsiLiteralExpression) arguments[i]).getValue();
+                fields.add(type.getFieldByCode(fieldCode));
+            }
+            var method = (PsiMethod) requireNonNull(initializer.getMethodExpression().resolve());
+            var unique = method.getName().equals("createUnique");
+            var index = (Index) NncUtils.find(type.getConstraints(), c -> c instanceof Index idx &&
+                    Objects.equals(idx.getCode(), psiField.getName()));
+            if (index == null)
+                index = new Index(type, psiField.getName(), psiField.getName(), "", unique, fields);
+            var code2IndexField = new HashMap<String, IndexField>();
+            index.getFields().forEach(f -> code2IndexField.put(f.getCode(), f));
+            var indexFields = new ArrayList<IndexField>();
+            for (Field field : fields) {
+                var indexField = code2IndexField.get(field.getCode());
+                if (indexField == null)
+                    indexField = IndexField.createFieldItem(index, field);
+                indexFields.add(indexField);
+            }
+            index.setFields(indexFields);
+            return;
+        }
         var field = NncUtils.requireNonNull(psiField.getUserData(Keys.FIELD));
         if (psiField.getInitializer() != null) {
             if (field.isStatic()) {
@@ -113,8 +135,7 @@ public class Generator extends VisitorBase {
                 var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
                 builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
             }
-        }
-        else if(field.getType().isNullable()) {
+        } else if(field.getType().isNullable()) {
             var builder = currentClassInfo().fieldBuilder;
             builder.createUpdate(builder.getVariable("this"), Map.of(field, Expressions.nullExpression()));
         }
@@ -254,7 +275,7 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitMethod(PsiMethod psiMethod) {
-        if(CompilerConfig.isMethodBlacklisted(psiMethod))
+        if (CompilerConfig.isMethodBlacklisted(psiMethod))
             return;
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
         method.clearNodes();
@@ -527,7 +548,7 @@ public class Generator extends VisitorBase {
         }
         var node = builder().createWhile();
         Field condField = null;
-        if(condition != null) {
+        if (condition != null) {
             condField = builder().newTemproryField(node.getType(), "循环条件", StandardTypes.getBooleanType());
         }
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));

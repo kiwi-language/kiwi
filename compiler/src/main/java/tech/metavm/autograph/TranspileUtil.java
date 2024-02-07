@@ -7,6 +7,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.builtin.IndexDef;
 import tech.metavm.entity.*;
 import tech.metavm.object.type.Access;
 import tech.metavm.object.type.ClassType;
@@ -38,6 +39,11 @@ public class TranspileUtil {
     public static String getCanonicalName(PsiTypeParameter typeParameter) {
         var owner = NncUtils.requireNonNull(typeParameter.getOwner());
         return getCanonicalName(owner) + "-" + typeParameter.getName();
+    }
+
+    public static boolean isIndexDefField(PsiField psiField) {
+        return requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC)
+                && TranspileUtil.getRawType(psiField.getType()).equals(TranspileUtil.createType(IndexDef.class));
     }
 
     public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {

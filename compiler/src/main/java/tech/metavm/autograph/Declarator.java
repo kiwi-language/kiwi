@@ -151,6 +151,8 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitField(PsiField psiField) {
+        if(isIndexDefField(psiField))
+            return;
         var type = resolveType(psiField.getType());
         if (TranspileUtil.getAnnotation(psiField, Nullable.class) != null)
             type = context.getNullableType(type);
