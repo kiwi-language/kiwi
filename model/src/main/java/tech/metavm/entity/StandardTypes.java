@@ -92,8 +92,16 @@ public class StandardTypes {
         return holder.getAnyArrayType();
     }
 
-    public static ArrayType getReadOnlyObjectArrayType() {
-        return ModelDefRegistry.getDefContext().getArrayType(getAnyType(), ArrayKind.READ_ONLY);
+    public static ArrayType getNeverArrayType() {
+        return holder.getNeverArrayType();
+    }
+
+    public static ArrayType getReadOnlyAnyArrayType() {
+        return holder.getReadonlyAnyArrayType();
+    }
+
+    public static void setReadonlyAnyArrayType(ArrayType type) {
+        holder.setReadonlyAnyArrayType(type);
     }
 
     public static ArrayType getObjectChildArrayType() {
@@ -216,6 +224,10 @@ public class StandardTypes {
 
     public static void setNeverType(NeverType neverType) {
         holder.setNeverType(neverType);
+    }
+
+    public static void setNeverArrayType(ArrayType neverArrayType) {
+        holder.setNeverArrayType(neverArrayType);
     }
 
     public static void setAnyType(AnyType anyType) {

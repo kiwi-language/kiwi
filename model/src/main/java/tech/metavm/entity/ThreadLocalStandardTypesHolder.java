@@ -57,6 +57,11 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
+    public ArrayType getNeverArrayType() {
+        return TL.get().getNeverArrayType();
+    }
+
+    @Override
     public UnionType getNullableAnyType() {
         return TL.get().getNullableAnyType();
     }
@@ -127,6 +132,11 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
+    public ArrayType getReadonlyAnyArrayType() {
+        return TL.get().getReadonlyAnyArrayType();
+    }
+
+    @Override
     public PrimitiveType getPasswordType() {
         return TL.get().getPasswordType();
     }
@@ -184,6 +194,11 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setAnyArrayType(ArrayType type) {
         TL.get().setAnyArrayType(type);
+    }
+
+    @Override
+    public void setNeverArrayType(ArrayType type) {
+        TL.get().setNeverArrayType(type);
     }
 
     @Override
@@ -254,5 +269,10 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setIteratorImplType(ClassType type) {
         TL.get().setIteratorImplType(type);
+    }
+
+    @Override
+    public void setReadonlyAnyArrayType(ArrayType type) {
+        TL.get().setReadonlyAnyArrayType(type);
     }
 }

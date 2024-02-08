@@ -377,8 +377,9 @@ public class Expressions {
             if (lastBackslash) {
                 if (c == '\\' || c == '\"') {
                     builder.append(c);
+                    lastBackslash = false;
                 } else {
-                    throw new ExpressionParsingException("Invalid single escaped string '" + escaped + "'");
+                    throw new ExpressionParsingException("Invalid double escaped string '" + escaped + "'");
                 }
             } else {
                 if (c == '\\') {
@@ -401,6 +402,7 @@ public class Expressions {
             if (lastBackslash) {
                 if (c == '\\' || c == '\'') {
                     builder.append(c);
+                    lastBackslash = false;
                 } else {
                     throw new ExpressionParsingException("Invalid single escaped string '" + escaped + "'");
                 }

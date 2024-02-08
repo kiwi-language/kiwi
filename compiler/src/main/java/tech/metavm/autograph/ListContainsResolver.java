@@ -2,19 +2,21 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.PsiMethodCallExpression;
 import tech.metavm.expression.Expression;
-import tech.metavm.expression.Expressions;
+import tech.metavm.expression.Func;
+import tech.metavm.expression.FunctionExpression;
 
 import java.util.List;
-import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.createType;
 
-public class ListAddResolver implements MethodCallResolver {
+public class ListContainsResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(createType(List.class), "add",
-                            TranspileUtil.createTypeVariableType(List.class, 0))
+                    MethodSignature.create(createType(List.class), "contains",
+                            createType(Object.class)
+                    )
             );
 
     @Override
@@ -26,10 +28,10 @@ public class ListAddResolver implements MethodCallResolver {
     public Expression resolve(PsiMethodCallExpression methodCallExpression,
                               ExpressionResolver expressionResolver,
                               MethodGenerator methodGenerator) {
-        var qualifier = Objects.requireNonNull(methodCallExpression.getMethodExpression().getQualifierExpression());
-        var array = expressionResolver.resolve(qualifier);
+        var array = expressionResolver.resolve(
+                requireNonNull(methodCallExpression.getMethodExpression().getQualifierExpression())
+        );
         var value = expressionResolver.resolve(methodCallExpression.getArgumentList().getExpressions()[0]);
-        methodGenerator.createAddElement(array, value);
-        return Expressions.trueExpression();
+        return new FunctionExpression(Func.ARRAY_CONTAINS, List.of(array, value));
     }
 }

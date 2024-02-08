@@ -49,12 +49,30 @@ public class Generator extends VisitorBase {
         initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
         initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
         initFlowBuilder.createInput();
-
+        if(klass.getSuperClass() != null) {
+            var superInit = klass.getSuperClass().findSelfMethodByCode("<init>");
+            if(superInit != null) {
+                initFlowBuilder.createMethodCall(
+                        initFlowBuilder.getVariable("this"),
+                        superInit,
+                        List.of()
+                );
+            }
+        }
         var classInit = klass.getMethodByCodeAndParamTypes("<cinit>", List.of());
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, entityContext, this);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getRootScope());
         classInitFlowBuilder.createInput();
-
+        if(klass.getSuperClass() != null) {
+            var superCInit = klass.getSuperClass().findSelfMethodByCode("<cinit>");
+            if(superCInit != null) {
+                classInitFlowBuilder.createMethodCall(
+                        null,
+                        superCInit,
+                        List.of()
+                );
+            }
+        }
         enterClass(new ClassInfo(klass, psiClass, initFlowBuilder, classInitFlowBuilder));
 
         super.visitClass(psiClass);
@@ -282,42 +300,47 @@ public class Generator extends VisitorBase {
         MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);
         builder.enterScope(method.getRootScope());
-        var selfNode = builder().createSelf();
-        builder.setVariable("this", new NodeExpression(selfNode));
-        processParameters(psiMethod.getParameterList(), method);
-        if (psiMethod.isConstructor()) {
-            var superClass = currentClass().getSuperClass();
-            if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
-                    && !isSuperCallPresent(psiMethod)) {
-                builder().createMethodCall(
-                        builder().getVariable("this"),
-                        superClass.getMethodByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
+        if(TranspileUtil.isStatic(psiMethod)) {
+            processParameters(psiMethod.getParameterList(), method);
+        }
+        else {
+            var selfNode = builder().createSelf();
+            builder.setVariable("this", new NodeExpression(selfNode));
+            processParameters(psiMethod.getParameterList(), method);
+            if (psiMethod.isConstructor()) {
+                var superClass = currentClass().getSuperClass();
+                if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
+                        && !isSuperCallPresent(psiMethod)) {
+                    builder().createMethodCall(
+                            builder().getVariable("this"),
+                            superClass.getMethodByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
+                            List.of()
+                    );
+                }
+                builder.createMethodCall(
+                        new NodeExpression(selfNode),
+                        currentClassInfo().fieldBuilder.getMethod(),
                         List.of()
                 );
-            }
-            builder.createMethodCall(
-                    new NodeExpression(selfNode),
-                    currentClassInfo().fieldBuilder.getMethod(),
-                    List.of()
-            );
-            if (currentClass().isEnum()) {
-                var klass = currentClass();
-                var inputNode = method.getInputNode();
-                builder.createUpdate(
-                        new NodeExpression(selfNode),
-                        Map.of(
-                                klass.getFieldByCode("name"),
-                                new PropertyExpression(
-                                        new NodeExpression(inputNode),
-                                        inputNode.getType().getFieldByCode("name")
-                                ),
-                                klass.getFieldByCode("ordinal"),
-                                new PropertyExpression(
-                                        new NodeExpression(inputNode),
-                                        inputNode.getType().getFieldByCode("ordinal")
-                                )
-                        )
-                );
+                if (currentClass().isEnum()) {
+                    var klass = currentClass();
+                    var inputNode = method.getInputNode();
+                    builder.createUpdate(
+                            new NodeExpression(selfNode),
+                            Map.of(
+                                    klass.getFieldByCode("name"),
+                                    new PropertyExpression(
+                                            new NodeExpression(inputNode),
+                                            inputNode.getType().getFieldByCode("name")
+                                    ),
+                                    klass.getFieldByCode("ordinal"),
+                                    new PropertyExpression(
+                                            new NodeExpression(inputNode),
+                                            inputNode.getType().getFieldByCode("ordinal")
+                                    )
+                            )
+                    );
+                }
             }
         }
         requireNonNull(psiMethod.getBody()).accept(this);

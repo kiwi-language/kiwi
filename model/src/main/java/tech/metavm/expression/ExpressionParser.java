@@ -115,15 +115,13 @@ public class ExpressionParser {
     }
 
     private Expression parsePrefix(MetaVMParser.ExpressionContext expression) {
-        return switch (expression.prefix.getType()) {
-            case MetaVMParser.ADD -> new UnaryExpression(
-                    UnaryOperator.POS, parse(expression.expression(0))
-            );
-            case MetaVMParser.SUB -> new UnaryExpression(
-                    UnaryOperator.NEG, parse(expression.expression(0))
-            );
+        var operator =  switch (expression.prefix.getType()) {
+            case MetaVMParser.ADD -> UnaryOperator.POS;
+            case MetaVMParser.SUB -> UnaryOperator.NEG;
+            case MetaVMParser.BANG -> UnaryOperator.NOT;
             default -> throw new IllegalStateException("Unexpected prefix: " + expression.prefix.getTokenIndex());
         };
+        return new UnaryExpression(operator, parse(expression.expression(0)));
     }
 
     private ArrayExpression parseArray(MetaVMParser.ListContext list) {

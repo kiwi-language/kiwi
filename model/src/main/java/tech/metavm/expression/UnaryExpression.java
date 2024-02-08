@@ -33,10 +33,10 @@ public class UnaryExpression extends Expression {
         boolean operandParenthesized = operand.precedence() >= precedence();
         String operandExpr = operand.build(symbolType, operandParenthesized);
         if(operator.isPrefix()) {
-            return operator + " " + operandExpr;
+            return operator.operator() + " " + operandExpr;
         }
         else {
-            return operandExpr + " " + operator;
+            return operandExpr + " " + operator.operator();
         }
     }
 

@@ -130,7 +130,7 @@ public class SubstitutorV2 extends CopyVisitor {
         if (type == method.getDeclaringType())
             subst = method;
         else
-            subst = NncUtils.requireNonNull(type.findMethod(
+            subst = NncUtils.requireNonNull(type.findSelfMethod(
                     m -> m.getEffectiveVerticalTemplate() == method.getEffectiveVerticalTemplate()));
         var typeArgs = NncUtils.map(method.getTypeArguments(), this::substituteType);
         if (subst.getTypeArguments().equals(typeArgs))

@@ -102,7 +102,7 @@ public class SaveTypeBatch implements DTOProvider {
             var flowDTO = NncUtils.requireNonNull(flowMap.get(ref), "Flow '" + ref + " not available");
             var param = (MethodParam) flowDTO.param();
             var declaringType = getClassType(param.declaringTypeRef());
-            return NncUtils.requireNonNull(declaringType.findMethod(f -> f.getRef().equals(ref)));
+            return NncUtils.requireNonNull(declaringType.findSelfMethod(f -> f.getRef().equals(ref)));
         }
     }
 

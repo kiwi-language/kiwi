@@ -13,7 +13,7 @@ public class Application extends Entity {
 
     public static final int MAX_NUM_ADMINS = 16;
 
-    @EntityField("名称")
+    @EntityField(value = "名称", asTitle = true)
     private String name;
 
     @EntityField("所有人")

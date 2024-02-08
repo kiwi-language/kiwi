@@ -1,8 +1,8 @@
 package tech.metavm.util;
 
-public class Nothing {
+public class Never {
 
-    private Nothing() {
+    private Never() {
         throw new RuntimeException("Can not instantiate");
     }
 

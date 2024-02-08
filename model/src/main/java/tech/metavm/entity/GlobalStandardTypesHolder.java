@@ -16,6 +16,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private AnyType anyType;
     private UnionType nullableAnyType;
     private ArrayType anyArrayType;
+    private ArrayType neverArrayType;
     private UnionType nullableStringType;
     private ClassType enumType;
     private ClassType throwableType;
@@ -29,6 +30,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType mapType;
     private ClassType iteratorType;
     private ClassType iteratorImplType;
+    private ArrayType readonlyAnyArrayType;
 
     @Override
     public PrimitiveType getLongType() {
@@ -78,6 +80,11 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public ArrayType getAnyArrayType() {
         return anyArrayType;
+    }
+
+    @Override
+    public ArrayType getNeverArrayType() {
+        return neverArrayType;
     }
 
     @Override
@@ -151,6 +158,11 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     }
 
     @Override
+    public ArrayType getReadonlyAnyArrayType() {
+        return readonlyAnyArrayType;
+    }
+
+    @Override
     public PrimitiveType getPasswordType() {
         return passwordType;
     }
@@ -208,6 +220,11 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setAnyArrayType(ArrayType type) {
         anyArrayType = type;
+    }
+
+    @Override
+    public void setNeverArrayType(ArrayType type) {
+        neverArrayType = type;
     }
 
     @Override
@@ -278,6 +295,11 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setIteratorImplType(ClassType type) {
         iteratorImplType = type;
+    }
+
+    @Override
+    public void setReadonlyAnyArrayType(ArrayType type) {
+        readonlyAnyArrayType = type;
     }
 
 }

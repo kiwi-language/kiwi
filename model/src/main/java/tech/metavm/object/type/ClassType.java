@@ -450,11 +450,15 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return getMethod(Method::getCode, code);
     }
 
+    public @Nullable Method findSelfMethodByCode(String code) {
+        return methods.get(Flow::getCode, code);
+    }
+
     public @Nullable Method findMethodByVerticalTemplate(Method template) {
         return getMethod(Method::getVerticalTemplate, template);
     }
 
-    public Method findMethod(Predicate<Method> predicate) {
+    public Method findSelfMethod(Predicate<Method> predicate) {
         return NncUtils.find(methods.toList(), predicate);
     }
 
@@ -1136,10 +1140,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
 //    }
 
     public Index getUniqueConstraint(List<Field> fields) {
-        return find(getUniqueConstraints(), c -> c.getTypeFields().equals(fields));
+        return find(getIndices(), c -> c.isUnique() && c.getTypeFields().equals(fields));
     }
 
-    public List<Index> getUniqueConstraints() {
+    public List<Index> getIndices() {
         return getConstraints(Index.class);
     }
 

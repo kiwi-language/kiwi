@@ -30,7 +30,7 @@ public class ConstantExpression extends Expression {
     @Override
     public String buildSelf(VarType symbolType) {
         if(value instanceof StringInstance stringInstance) {
-            return "'" + stringInstance.getValue().replaceAll("'", "''") + "'";
+            return "\"" + NncUtils.escape(stringInstance.getValue()) + "\"";
         }
         else if(value instanceof PrimitiveInstance primitiveInstance) {
             return primitiveInstance.getValue() + "";

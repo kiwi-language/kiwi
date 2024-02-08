@@ -48,10 +48,10 @@ public class StandardDefBuilder {
         StandardTypes.setAnyType(new AnyType());
         objectDef = new DirectDef<>(Object.class, StandardTypes.getAnyType());
         StandardTypes.setNeverType(new NeverType());
-        var neverDef = new DirectDef<>(Nothing.class, StandardTypes.getNeverType());
+        var neverDef = new DirectDef<>(Never.class, StandardTypes.getNeverType());
         defContext.addDef(neverDef);
 
-        primTypeFactory.addAuxType(Nothing.class, StandardTypes.getNeverType());
+        primTypeFactory.addAuxType(Never.class, StandardTypes.getNeverType());
         primTypeFactory.addAuxType(Object.class, StandardTypes.getAnyType());
         StandardTypes.setNullType(primTypeFactory.createPrimitive(PrimitiveKind.NULL));
         StandardTypes.setLongType(primTypeFactory.createPrimitive(PrimitiveKind.LONG));
@@ -91,6 +91,8 @@ public class StandardDefBuilder {
         defContext.createCompositeTypes(StandardTypes.getAnyType());
         StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
         StandardTypes.setAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_WRITE));
+        StandardTypes.setReadonlyAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
+        StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
 
         for (var entry : primitiveTypeMap.entrySet()) {
             var primClass = entry.getKey();

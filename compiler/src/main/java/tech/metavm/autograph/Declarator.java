@@ -48,19 +48,19 @@ public class Declarator extends JavaRecursiveElementVisitor {
         var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         metaClass.setStage(ResolutionStage.DECLARATION);
         if (!metaClass.isInterface()) {
-            if (metaClass.findMethodByCode("<init>") == null) {
+            if (metaClass.findSelfMethodByCode("<init>") == null) {
                 MethodBuilder.newBuilder(metaClass, "实例初始化", "<init>", context.getFunctionTypeContext())
                         .access(Access.PRIVATE)
                         .build();
             }
-            if (metaClass.findMethodByCode("<cinit>") == null) {
+            if (metaClass.findSelfMethodByCode("<cinit>") == null) {
                 MethodBuilder.newBuilder(metaClass, "类型初始化", "<cinit>", context.getFunctionTypeContext())
                         .isStatic(true)
                         .access(Access.PRIVATE)
                         .build();
             }
-            var initMethod = Objects.requireNonNull(metaClass.findMethodByCode("<init>"));
-            var cinitMethod = Objects.requireNonNull(metaClass.findMethodByCode("<cinit>"));
+            var initMethod = Objects.requireNonNull(metaClass.findSelfMethodByCode("<init>"));
+            var cinitMethod = Objects.requireNonNull(metaClass.findSelfMethodByCode("<cinit>"));
             initMethod.clearNodes();
             cinitMethod.clearNodes();
             visitedMethods.add(initMethod);

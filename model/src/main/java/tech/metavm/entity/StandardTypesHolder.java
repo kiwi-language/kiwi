@@ -24,6 +24,8 @@ public interface StandardTypesHolder {
 
     ArrayType getAnyArrayType();
 
+    ArrayType getNeverArrayType();
+
     UnionType getNullableAnyType();
 
     UnionType getNullableStringType();
@@ -51,6 +53,8 @@ public interface StandardTypesHolder {
     ClassType getIteratorType();
 
     ClassType getIteratorImplType();
+
+    ArrayType getReadonlyAnyArrayType();
     
     PrimitiveType getPasswordType();
 
@@ -75,6 +79,8 @@ public interface StandardTypesHolder {
     void setAnyType(AnyType type);
 
     void setAnyArrayType(ArrayType type);
+
+    void setNeverArrayType(ArrayType type);
 
     void setNullableAnyType(UnionType type);
 
@@ -103,5 +109,7 @@ public interface StandardTypesHolder {
     void setIteratorType(ClassType type);
 
     void setIteratorImplType(ClassType type);
+
+    void setReadonlyAnyArrayType(ArrayType type);
 
 }

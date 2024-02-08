@@ -58,10 +58,14 @@ public class BootstrapUtils {
             StandardTypes.setVoidType((PrimitiveType) defContext.getType(Void.class));
             StandardTypes.setNullType((PrimitiveType) defContext.getType(Null.class));
             StandardTypes.setAnyType((AnyType) defContext.getType(Object.class));
-            StandardTypes.setNeverType((NeverType) defContext.getType(Nothing.class));
+            StandardTypes.setNeverType((NeverType) defContext.getType(Never.class));
             StandardTypes.setAnyArrayType(
                     defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_WRITE)
             );
+            StandardTypes.setReadonlyAnyArrayType(
+                    defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_ONLY)
+            );
+            StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
             StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
             StandardTypes.setEntityType(defContext.getClassType(Entity.class));
             StandardTypes.setEnumType(defContext.getClassType(Enum.class));

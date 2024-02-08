@@ -55,11 +55,18 @@ public class NativeMethods {
     }
 
     private static Class<?> tryGetNativeClass(ClassType type) {
-        var def = ModelDefRegistry.getDef(type.getEffectiveTemplate());
-        if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
-            return directDef.getNativeClass();
-        else
-            return null;
+        while (type != null) {
+            var def = ModelDefRegistry.tryGetDef(type.getEffectiveTemplate());
+            if(def != null) {
+                if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
+                    return directDef.getNativeClass();
+                else
+                    return null;
+            }
+            else
+                type = type.getSuperClass();
+        }
+        return null;
     }
 
 }

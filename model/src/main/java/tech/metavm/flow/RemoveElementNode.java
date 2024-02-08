@@ -3,7 +3,6 @@ package tech.metavm.flow;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.expression.FlowParsingContext;
-import tech.metavm.flow.rest.DeleteElementParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.flow.rest.RemoveElementNodeParam;
 import tech.metavm.object.instance.core.ArrayInstance;
@@ -58,8 +57,8 @@ public class RemoveElementNode extends NodeRT {
     }
 
     @Override
-    protected DeleteElementParam getParam(SerializeContext serializeContext) {
-        return new DeleteElementParam(array.toDTO(), element.toDTO());
+    protected RemoveElementNodeParam getParam(SerializeContext serializeContext) {
+        return new RemoveElementNodeParam(array.toDTO(), element.toDTO());
     }
 
     public void update(Value array, Value element) {

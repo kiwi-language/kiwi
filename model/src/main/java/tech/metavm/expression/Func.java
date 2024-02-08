@@ -1,5 +1,6 @@
 package tech.metavm.expression;
 
+import tech.metavm.entity.ReadonlyList;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.Password;
@@ -48,7 +49,13 @@ public enum Func {
 
     PASSWORD(Password.class, String.class),
 
-    GET_PASSWORD(String.class, Password.class)
+    GET_PASSWORD(String.class, Password.class),
+
+    REPLACE(String.class, String.class, String.class, String.class),
+
+    REPLACE_FIRST(String.class, String.class, String.class, String.class),
+
+    ARRAY_CONTAINS(Boolean.class, ReadonlyList.class, Object.class),
 
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 

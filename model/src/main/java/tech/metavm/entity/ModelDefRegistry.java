@@ -9,6 +9,8 @@ import tech.metavm.object.type.Index;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.ReflectionUtils;
 
+import javax.annotation.Nullable;
+
 public class ModelDefRegistry {
 
     private static DefContextHolder holder = new GlobalDefContextHolder();
@@ -109,6 +111,10 @@ public class ModelDefRegistry {
 
     public static ModelDef<?,?> getDef(ClassType type) {
         return holder.get().getDef(type);
+    }
+
+    public static @Nullable  ModelDef<?,?> tryGetDef(ClassType type) {
+        return holder.get().tryGetDef(type);
     }
 
     public static boolean isInitialized() {

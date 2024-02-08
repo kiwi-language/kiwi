@@ -343,19 +343,134 @@ public class MainTest extends TestCase {
             ));
             var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
             var userNameFieldId = getFieldIdByCode(userType, "name");
+            var userPasswordFieldId = getFieldIdByCode(userType, "password");
+            var userRolesFieldId = getFieldIdByCode(userType, "roles");
             Assert.assertEquals(
-                    "leen", ((PrimitiveFieldValue)user.getFieldValue(userLoginNameFieldId)).getValue()
+                    "leen", ((PrimitiveFieldValue) user.getFieldValue(userLoginNameFieldId)).getValue()
             );
             Assert.assertEquals(
-                    "leen", ((PrimitiveFieldValue)user.getFieldValue(userNameFieldId)).getValue()
+                    "leen", ((PrimitiveFieldValue) user.getFieldValue(userNameFieldId)).getValue()
             );
-            var passwordValue = user.getFieldValue(getFieldIdByCode(userType, "password"));
+            var passwordValue = user.getFieldValue(userPasswordFieldId);
             Assert.assertTrue(passwordValue instanceof PrimitiveFieldValue primitiveFieldValue
                     && primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.PASSWORD.code());
-            var userRoles = ((InstanceFieldValue) user.getFieldValue(getFieldIdByCode(userType, "roles"))).getInstance();
+            var userRoles = ((InstanceFieldValue) user.getFieldValue(userRolesFieldId)).getInstance();
             Assert.assertEquals(1, userRoles.getArraySize());
             Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
             Assert.assertEquals(2, userType.getClassParam().constraints().size());
+
+            var platformUserType = queryClassType("LabPlatformUser", List.of(TypeCategory.CLASS.code()));
+            var platformUserConstructorId = TestUtils.getMethodIdByCode(platformUserType, "LabPlatformUser");
+            var platformUser = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            platformUserConstructorId,
+                            null,
+                            List.of(
+                                    PrimitiveFieldValue.createString("lyq"),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("lyq"),
+                                    new ArrayFieldValue(
+                                            null,
+                                            false,
+                                            List.of(ReferenceFieldValue.create(role.id()))
+                                    )
+                            )
+                    )
+            ));
+            Assert.assertEquals(
+                    "lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userLoginNameFieldId)).getValue()
+            );
+            Assert.assertEquals(
+                    "lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userNameFieldId)).getValue()
+            );
+            var platformUserRoles = ((InstanceFieldValue) platformUser.getFieldValue(userRolesFieldId)).getInstance();
+            Assert.assertEquals(1, platformUserRoles.getArraySize());
+            Assert.assertEquals(role.id(), platformUserRoles.getElement(0).referenceId());
+            var platformUserApplicationsFieldId = getFieldIdByCode(platformUserType, "applications");
+            var platformUserApplications = ((InstanceFieldValue) platformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
+            Assert.assertEquals(0, platformUserApplications.getArraySize());
+
+            // test joinApplication method
+            var joinApplicationMethodId = TestUtils.getMethodIdByCode(platformUserType, "joinApplication");
+            var applicationType = queryClassType("LabApplication", List.of(TypeCategory.CLASS.code()));
+            var applicationConstructorId = TestUtils.getMethodIdByCode(applicationType, "LabApplication");
+            var application = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            applicationConstructorId,
+                            null,
+                            List.of(
+                                    PrimitiveFieldValue.createString("lab"),
+                                    ReferenceFieldValue.create(platformUser.id())
+                            )
+                    )
+            ));
+            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            joinApplicationMethodId,
+                            platformUser.id(),
+                            List.of(ReferenceFieldValue.create(application.id()))
+                    )
+            ));
+            var reloadedPlatformUser = instanceManager.get(platformUser.id(), 1).instance();
+            var joinedApplications = ((InstanceFieldValue) reloadedPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
+            Assert.assertEquals(1, joinedApplications.getArraySize());
+            Assert.assertEquals(application.id(), joinedApplications.getElement(0).referenceId());
+
+            // test leave application
+            var leaveApplicationMethodId = TestUtils.getMethodIdByCode(platformUserType, "leaveApplication");
+            try {
+                TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                        new FlowExecutionRequest(
+                                leaveApplicationMethodId,
+                                platformUser.id(),
+                                List.of(ReferenceFieldValue.create(application.id()))
+                        )
+                ));
+                Assert.fail("应用所有人无法退出应用");
+            }
+            catch (FlowExecutionException e) {
+                Assert.assertEquals("应用所有人无法退出应用", e.getMessage());
+            }
+
+            // create a platform user to join the application and then leave
+            var anotherPlatformUser = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            platformUserConstructorId,
+                            null,
+                            List.of(
+                                    PrimitiveFieldValue.createString("lyq2"),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("lyq2"),
+                                    new ArrayFieldValue(
+                                            null,
+                                            false,
+                                            List.of(ReferenceFieldValue.create(role.id()))
+                                    )
+                            )
+                    )
+            ));
+            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            joinApplicationMethodId,
+                            anotherPlatformUser.id(),
+                            List.of(ReferenceFieldValue.create(application.id()))
+                    )
+            ));
+            // assert that the user has joined the application
+            var reloadedAnotherPlatformUser = instanceManager.get(anotherPlatformUser.id(), 1).instance();
+            var anotherJoinedApplications = ((InstanceFieldValue) reloadedAnotherPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
+            Assert.assertEquals(1, anotherJoinedApplications.getArraySize());
+            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            leaveApplicationMethodId,
+                            anotherPlatformUser.id(),
+                            List.of(ReferenceFieldValue.create(application.id()))
+                    )
+            ));
+            // assert that the user has left the application
+            var reloadedAnotherPlatformUser2 = instanceManager.get(anotherPlatformUser.id(), 1).instance();
+            var anotherJoinedApplications2 = ((InstanceFieldValue) reloadedAnotherPlatformUser2.getFieldValue(platformUserApplicationsFieldId)).getInstance();
+            Assert.assertEquals(0, anotherJoinedApplications2.getArraySize());
         }).get();
     }
 
@@ -370,7 +485,7 @@ public class MainTest extends TestCase {
     }
 
     private TypeDTO queryClassType(String name) {
-        return queryClassType(name, List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(),TypeCategory.INTERFACE.code()));
+        return queryClassType(name, List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(), TypeCategory.INTERFACE.code()));
     }
 
     private TypeDTO queryClassType(String name, List<Integer> categories) {

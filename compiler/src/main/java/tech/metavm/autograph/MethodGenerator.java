@@ -346,7 +346,7 @@ public class MethodGenerator {
         );
         return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null,
                 scope().getLastNode(), scope(),
-                Values.expression(self), method, args));
+                NncUtils.get(self, Values::expression), method, args));
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, ClassType functionalInterface) {

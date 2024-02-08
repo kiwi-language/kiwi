@@ -61,8 +61,9 @@ public class ExpressionResolver {
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListAddResolver(), new ListRemoveResolver(), new ListGetResolver(),
             new ListIsEmptyResolver(), new ListSizeResolver(), new StringConcatResolver(),
-            new ToStringResolver(), new ListClearResolver(), new ListAddAllResolver(),
-            new GetPasswordResolver()
+            new PrimitiveToStringResolver(), new ListClearResolver(), new ListAddAllResolver(),
+            new GetPasswordResolver(), new ObjectsToStringResolver(), new StringReplaceFirstResolver(),
+            new StringReplaceResolver(), new ListContainsResolver(), new ListOfResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -449,22 +450,22 @@ public class ExpressionResolver {
     private Expression resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var ref = expression.getMethodExpression();
         var rawMethod = (PsiMethod) Objects.requireNonNull(ref.resolve());
+        var isStatic = TranspileUtil.isStatic(rawMethod);
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
         if (psiSelf != null) {
-            if (rawMethod.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
+            if (isStatic) {
                 var psiClass = (PsiClass) ((PsiReferenceExpression) psiSelf).resolve();
                 ensureTypeDeclared(TranspileUtil.createType(psiClass));
             } else {
                 ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
             }
         }
-        Expression qualifier = getQualifier(psiSelf, context);
-        var selfType = Types.getClassType(methodGenerator.getExpressionType(qualifier));
-        var method = resolveMethod(selfType, expression);
+        var method = resolveMethod(expression);
         List<Expression> args = NncUtils.map(
                 expression.getArgumentList().getExpressions(),
                 expr -> resolve(expr, context)
         );
+        var qualifier = isStatic ? null : getQualifier(psiSelf, context);
         var node = methodGenerator.createMethodCall(qualifier, method, args);
         if (method.getReturnType().isVoid()) {
             return null;
@@ -478,10 +479,13 @@ public class ExpressionResolver {
                 : resolve(requireNonNull(qualifierExpression), context);
     }
 
-    private Method resolveMethod(ClassType declaringType, PsiCallExpression expression) {
+    private Method resolveMethod(PsiCallExpression expression) {
         var methodGenerics = expression.resolveMethodGenerics();
         var substitutor = methodGenerics.getSubstitutor();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
+        var declaringType = (ClassType) typeResolver.resolveDeclaration(
+                substitutor.substitute(TranspileUtil.createType(method.getContainingClass()))
+        );
         var psiParameters = NncUtils.requireNonNull(method.getParameterList()).getParameters();
         var template = declaringType.getEffectiveTemplate();
         List<Type> rawParamTypes = NncUtils.map(

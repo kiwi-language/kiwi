@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ToStringResolver implements MethodCallResolver {
+public class PrimitiveToStringResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES;
 

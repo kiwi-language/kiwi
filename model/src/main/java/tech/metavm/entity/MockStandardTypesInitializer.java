@@ -23,6 +23,8 @@ public class MockStandardTypesInitializer {
         StandardTypes.setDoubleType(new PrimitiveType(PrimitiveKind.DOUBLE));
         StandardTypes.setNullableAnyType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getAnyType())));
         StandardTypes.setAnyArrayType(new ArrayType(null, StandardTypes.getAnyType(), ArrayKind.READ_WRITE));
+        StandardTypes.setReadonlyAnyArrayType(new ArrayType(null, StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
+        StandardTypes.setNeverArrayType(new ArrayType(null, StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
         StandardTypes.setNullableStringType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getStringType())));
 
         var enumTypeParam = new TypeVariable(null, "枚举类型", "EnumType",

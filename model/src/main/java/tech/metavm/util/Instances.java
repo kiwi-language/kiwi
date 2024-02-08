@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.entity.ModelDefRegistry;
+import tech.metavm.entity.ReadonlyList;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
@@ -11,16 +12,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class Instances {
-
-//    private static volatile Function<Class<?>, Type> getTypeFunc = ModelDefRegistry::getType;
-
-//    public static void setGetTypeFunc(Function<Class<?>, Type> getTypeFunc) {
-//        getTypeFunc = getTypeFunc;
-//    }
-
-//    public static void resetGetTypeFunc() {
-//        getTypeFunc = ModelDefRegistry::getType;
-//    }
 
     public static NullInstance nullInstance;
     public static BooleanInstance trueInstance;
@@ -40,17 +31,17 @@ public class Instances {
 
     public static final Map<Type, Class<?>> BASIC_TYPE_JAVA_CLASS;
 
-    public static final Map<Class<?>, Class<?>> JAVA_CLASS_TO_INSTANCE_CLASS = Map.of(
-            Integer.class, LongInstance.class,
-            Long.class, LongInstance.class,
-            Double.class, DoubleInstance.class,
-            Boolean.class, BooleanInstance.class,
-            String.class, StringInstance.class,
-            Date.class, TimeInstance.class,
-            Password.class, PasswordInstance.class,
-            Null.class, NullInstance.class,
-            Object.class, Instance.class,
-            Table.class, ArrayInstance.class
+    public static final Map<Class<?>, Class<?>> JAVA_CLASS_TO_INSTANCE_CLASS = Map.ofEntries(
+            Map.entry(Integer.class, LongInstance.class),
+            Map.entry(Long.class, LongInstance.class),
+            Map.entry(Double.class, DoubleInstance.class),
+            Map.entry(Boolean.class, BooleanInstance.class),
+            Map.entry(String.class, StringInstance.class),
+            Map.entry(Date.class, TimeInstance.class),
+            Map.entry(Password.class, PasswordInstance.class),
+            Map.entry(Null.class, NullInstance.class),
+            Map.entry(Object.class, Instance.class),
+            Map.entry(ReadonlyList.class, ArrayInstance.class)
     );
 
     private static final Map<Class<?>, Class<?>> INSTANCE_CLASS_TO_JAVA_CLASS;
@@ -90,7 +81,7 @@ public class Instances {
     }
 
     public static <T extends DurableInstance> List<T> sort(List<T> instances, boolean desc) {
-        if(desc)
+        if (desc)
             instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetPhysicalId(), i1.tryGetPhysicalId()));
         else
             instances.sort((i1, i2) -> NncUtils.compareId(i1.tryGetPhysicalId(), i2.tryGetPhysicalId()));
@@ -99,7 +90,7 @@ public class Instances {
 
     public static <T extends DurableInstance> List<T> sortAndLimit(List<T> instances, boolean desc, long limit) {
         sort(instances, desc);
-        if(limit == -1L)
+        if (limit == -1L)
             return instances;
         else
             return instances.subList(0, Math.min(instances.size(), (int) limit));
@@ -393,6 +384,10 @@ public class Instances {
             return StandardTypes.getNullType();
         if (javaClass == Object.class)
             return StandardTypes.getAnyType();
+        if (javaClass == Table.class)
+            return StandardTypes.getAnyArrayType();
+        if (javaClass == ReadonlyList.class)
+            return StandardTypes.getReadOnlyAnyArrayType();
         return NncUtils.requireNonNull(
                 getTypeFunc.apply(javaClass),
                 "Can not find a basic type for java class '" + javaClass.getName() + "'"
@@ -450,14 +445,10 @@ public class Instances {
     }
 
     public static @Nullable Long getSourceMappingId(Instance instance) {
-        if(instance instanceof DurableInstance durableInstance)
+        if (instance instanceof DurableInstance durableInstance)
             return durableInstance.isView() ? durableInstance.getSourceRef().getMappingId() : null;
         else
             return null;
     }
-
-//    public static PrimitiveType getPrimitiveType(Class<?> klass) {
-//        return (PrimitiveType) getTypeFunc.apply(klass);
-//    }
 
 }

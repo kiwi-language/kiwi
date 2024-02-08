@@ -35,7 +35,7 @@ public class ExpressionTypeResolverTest extends TestCase {
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo").build();
         typeRepository.save(List.of(fooType));
         FieldBuilder.newBuilder("名称", "name", fooType, StandardTypes.getStringType()).build();
-        String exprString = "this.名称 = 'Big Foo'";
+        String exprString = "this.名称 = \"Big Foo\"";
         var expression = ExpressionParser.parse(exprString, createTypeParsingContext(fooType));
         Assert.assertNotNull(expression);
         Assert.assertEquals(exprString, expression.build(VarType.NAME));

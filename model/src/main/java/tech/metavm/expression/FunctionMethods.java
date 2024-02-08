@@ -95,6 +95,14 @@ public class FunctionMethods {
         return new StringInstance(str1.getTitle() + str2.getTitle(), StandardTypes.getStringType());
     }
 
+    public static StringInstance REPLACE(StringInstance string, StringInstance target, StringInstance replacement) {
+        return Instances.stringInstance(string.getValue().replace(target.getValue(), replacement.getValue()));
+    }
+
+    public static StringInstance REPLACE_FIRST(StringInstance string, StringInstance regex, StringInstance replacement) {
+        return Instances.stringInstance(string.getValue().replaceFirst(regex.getValue(), replacement.getValue()));
+    }
+
     public static LongInstance RANDOM() {
         return new LongInstance(NncUtils.random(), StandardTypes.getLongType());
     }
@@ -133,6 +141,10 @@ public class FunctionMethods {
 
     public static StringInstance TO_STRING(Instance instance) {
         return Instances.stringInstance(instance.getTitle());
+    }
+
+    public static BooleanInstance ARRAY_CONTAINS(ArrayInstance array, Instance value) {
+        return Instances.booleanInstance(array.contains(value));
     }
 
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {
