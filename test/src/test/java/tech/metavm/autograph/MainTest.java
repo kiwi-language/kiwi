@@ -490,6 +490,11 @@ public class MainTest extends TestCase {
                     )
             ).page().data();
             Assert.assertEquals(1, applicationViewList.size());
+
+            // assert that fields of LabToken type has been generated correctly
+            var tokenType = queryClassType("LabToken");
+            Assert.assertTrue(tokenType.ephemeral());
+            Assert.assertEquals(2, tokenType.getClassParam().fields().size());
         }).get();
     }
 

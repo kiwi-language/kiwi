@@ -549,7 +549,7 @@ public class TranspileUtil {
         return statement.getUpdate();
     }
 
-    public static String getBizFieldName(PsiField psiField) {
+    public static String getBizFieldName(PsiVariable psiField) {
         String bizName = tryGetNameFromAnnotation(psiField, EntityField.class);
         if (bizName != null) {
             return bizName;
@@ -581,17 +581,24 @@ public class TranspileUtil {
         return bizName != null ? bizName : enumConstant.getName();
     }
 
-    public static boolean isTitleField(PsiField psiField) {
+    public static boolean isTitleField(PsiVariable psiField) {
         Boolean asTitle = (Boolean) getAnnotationAttr(psiField, EntityField.class, "asTitle");
         return asTitle == Boolean.TRUE;
     }
 
-    public static boolean isUnique(PsiField psiField) {
+    public static boolean isUnique(PsiVariable psiField) {
         Boolean asTitle = (Boolean) getAnnotationAttr(psiField, EntityField.class, "unique");
         return asTitle == Boolean.TRUE;
     }
 
-    public static Access getAccess(PsiField psiField) {
+    public static boolean isEphemeral(PsiClass psiClass) {
+        Boolean ephemeral = (Boolean) getAnnotationAttr(psiClass, EntityType.class, "ephemeral");
+        return ephemeral == Boolean.TRUE;
+    }
+
+    public static Access getAccess(PsiVariable psiField) {
+        if(psiField instanceof PsiRecordComponent)
+            return Access.PUBLIC;
         var modifiers = Objects.requireNonNull(psiField.getModifierList());
         if (modifiers.hasModifierProperty(PsiModifier.PUBLIC))
             return Access.PUBLIC;
@@ -602,7 +609,7 @@ public class TranspileUtil {
         return Access.PACKAGE;
     }
 
-    public static boolean isChild(PsiField psiField) {
+    public static boolean isChild(PsiVariable psiField) {
         return getAnnotation(psiField, ChildEntity.class) != null;
     }
 
@@ -638,17 +645,17 @@ public class TranspileUtil {
         }
     }
 
-    private static String tryGetNameFromAnnotation(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass) {
+    private static String tryGetNameFromAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
         return (String) getAnnotationAttr(element, annotationClass, "value");
     }
 
-    public static PsiAnnotation getAnnotation(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass) {
+    public static PsiAnnotation getAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
         var annotation = element.getAnnotation(annotationClass.getName());
         if (annotation == null) annotation = element.getAnnotation(annotationClass.getSimpleName());
         return annotation;
     }
 
-    public static Object getAnnotationAttr(PsiJvmModifiersOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
+    public static Object getAnnotationAttr(PsiModifierListOwner element, Class<? extends Annotation> annotationClass, String attributeName) {
         var annotation = getAnnotation(element, annotationClass);
         if (annotation != null) {
             var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));

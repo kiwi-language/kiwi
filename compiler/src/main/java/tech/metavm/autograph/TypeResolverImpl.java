@@ -54,6 +54,7 @@ public class TypeResolverImpl implements TypeResolver {
             Object.class, StandardTypes::getAnyType,
             Entity.class, StandardTypes::getEntityType,
             Enum.class, StandardTypes::getEnumType,
+            Record.class, StandardTypes::getRecordType,
             Throwable.class, StandardTypes::getThrowableType,
             Exception.class, StandardTypes::getExceptionType,
             RuntimeException.class, StandardTypes::getRuntimeExceptionType,
@@ -320,6 +321,7 @@ public class TypeResolverImpl implements TypeResolver {
         } else {
             classType = ClassTypeBuilder.newBuilder(name, psiClass.getQualifiedName())
                     .category(category)
+                    .ephemeral(TranspileUtil.isEphemeral(psiClass))
                     .isTemplate(isTemplate)
                     .build();
             context.bind(classType);

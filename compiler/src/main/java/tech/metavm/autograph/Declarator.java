@@ -85,6 +85,8 @@ public class Declarator extends JavaRecursiveElementVisitor {
         List<Method> overridden = new ArrayList<>();
         for (PsiMethod overriddenMethod : overriddenMethods) {
             var overriddenMethodCls = NncUtils.requireNonNull(overriddenMethod.getContainingClass());
+            if(Object.class.getName().equals(overriddenMethodCls.getQualifiedName()))
+                continue;
             var overriddenMethodType = TranspileUtil.createTemplateType(overriddenMethodCls);
             overridden.add(TranspileUtil.getMethidByJavaMethod(
                     (ClassType) typeResolver.resolveDeclaration(overriddenMethodType),
@@ -154,9 +156,17 @@ public class Declarator extends JavaRecursiveElementVisitor {
     }
 
     @Override
+    public void visitRecordComponent(PsiRecordComponent recordComponent) {
+        processField(recordComponent);
+    }
+
+    @Override
     public void visitField(PsiField psiField) {
-        if (isIndexDefField(psiField))
-            return;
+        if (!isIndexDefField(psiField))
+            processField(psiField);
+    }
+
+    private void processField(PsiVariable psiField) {
         var type = resolveType(psiField.getType());
         if (TranspileUtil.getAnnotation(psiField, Nullable.class) != null)
             type = context.getNullableType(type);

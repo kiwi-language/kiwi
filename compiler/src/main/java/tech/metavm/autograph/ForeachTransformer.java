@@ -47,7 +47,7 @@ public class ForeachTransformer extends VisitorBase {
 
     @Override
     public void visitVariable(PsiVariable variable) {
-        if (!(variable instanceof PsiField))
+        if (!(variable instanceof PsiMember))
             nameTracker.addName(variable.getName());
         super.visitVariable(variable);
     }
