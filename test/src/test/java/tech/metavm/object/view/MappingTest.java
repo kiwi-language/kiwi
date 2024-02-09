@@ -476,6 +476,42 @@ public class MappingTest extends TestCase {
         MatcherAssert.assertThat(listView, new InstanceDTOMatcher(loadedView, TestUtils.extractDescendantIds(loadedView)));
     }
 
+    public void testUser() {
+        var userTypeIds = MockUtils.createUserTypes(typeManager);
+        // save user instance
+        var userId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
+                null, RefDTO.fromId(userTypeIds.platformUserTypeId()), null, null, null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(userTypeIds.platformUserLoginNameFieldId(), PrimitiveFieldValue.createString("user001")),
+                                InstanceFieldDTO.create(userTypeIds.platformUserPasswordFieldId(), PrimitiveFieldValue.createPassword("123456"))
+                        )
+                )
+        )));
+        // save application instance
+        var applicationId = TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
+                null, RefDTO.fromId(userTypeIds.applicationTypeId()), null, null, null,
+                new ClassInstanceParam(
+                        List.of(
+                                InstanceFieldDTO.create(userTypeIds.applicationNameFieldId(), PrimitiveFieldValue.createString("test")),
+                                InstanceFieldDTO.create(userTypeIds.applicationOwnerFieldId(), ReferenceFieldValue.create(userId))
+                        )
+                )
+        )));
+        // query application view list
+        var applicationViewTypeDTO = typeManager.getType(new GetTypeRequest(userTypeIds.applicationTypeId(), true)).type();
+        var applicationDefaultMapping = TestUtils.getDefaultMapping(applicationViewTypeDTO);
+        var applicationViewTypeId = applicationDefaultMapping.targetTypeRef().id();
+        var applicationViews = instanceManager.query(new InstanceQueryDTO(
+                applicationViewTypeId, applicationDefaultMapping.id(), null, null, List.of(), 1, 20,
+                true, false, List.of()
+        )).page().data();
+        Assert.assertEquals(1, applicationViews.size());
+        var applicationView = applicationViews.get(0);
+        var viewId = (DefaultViewId) Id.parse(applicationView.id());
+        Assert.assertEquals(Id.parse(applicationId), viewId.getSourceId());
+    }
+
     private String saveInstance(InstanceDTO instanceDTO) {
         String id;
         if (instanceDTO.id() == null)

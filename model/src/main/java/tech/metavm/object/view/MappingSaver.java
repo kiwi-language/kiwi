@@ -398,8 +398,9 @@ public class MappingSaver {
                                                          Map<Flow, FlowFieldMapping> propertyFieldMappings) {
         var propertyMapping = propertyFieldMappings.get(property.getter);
         var underlyingField = property.underlyingField;
-        var codeGenerator = getNestedMapping(property.getter.getReturnType(),
-                NncUtils.get(underlyingField, Property::getType));
+        var codeGenerator = underlyingField != null && underlyingField.isChild() ?
+                getNestedMapping(property.getter.getReturnType(), underlyingField.getType()) :
+                new IdentityNestedMapping(property.getter.getReturnType());
         if (propertyMapping == null) {
             propertyMapping = new FlowFieldMapping(null,
                     declaringMapping,

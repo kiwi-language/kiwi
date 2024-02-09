@@ -507,4 +507,39 @@ public class MappingSaverTest extends TestCase {
         logger.info(listOfStrView.getTitle());
     }
 
+    public void testApplication() {
+        var platformUserType = ClassTypeBuilder.newBuilder("平台用户", "PlatformUser").build();
+        var loginNameField = FieldBuilder.newBuilder("登录名", "loginName", platformUserType, getStringType()).asTitle().build();
+
+        var applicationType = ClassTypeBuilder.newBuilder("应用", "Application").build();
+        var nameField = FieldBuilder.newBuilder("名称", "name", applicationType, getStringType()).asTitle().build();
+        var ownerField = FieldBuilder.newBuilder("所有人", "owner", applicationType, platformUserType)
+                .access(Access.PRIVATE).build();
+        // create getOwner method
+        var getOwnerMethod = MethodBuilder.newBuilder(applicationType, "获取所有人", "getOwner", typeProviders.functionTypeProvider)
+                .returnType(platformUserType)
+                .build();
+        {
+            var scope = getOwnerMethod.getRootScope();
+            var selfNode = Nodes.self("Self", null, applicationType, scope);
+            Nodes.ret("Return", scope, Values.nodeProperty(selfNode, ownerField));
+        }
+        TestUtils.initEntityIds(applicationType);
+
+        var typeRepository = new MockTypeRepository();
+        typeRepository.save(platformUserType);
+        typeRepository.save(applicationType);
+        var mappingProvider = new MockMappingRepository();
+        MappingSaver saver = new MappingSaver(
+                instanceRepository,
+                typeRepository,
+                typeProviders.createFacade(),
+                typeProviders.parameterizedTypeProvider,
+                typeProviders.parameterizedFlowProvider,
+                mappingProvider
+        );
+        var applicationMapping = saver.saveBuiltinMapping(applicationType, true);
+        System.out.println(applicationMapping.getReadMethod().getText());
+    }
+
 }

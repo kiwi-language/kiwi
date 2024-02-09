@@ -1283,7 +1283,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     }
 
     public boolean isParameterized() {
-        return !getTypeArguments().isEmpty();
+        return template != null && template != this;
     }
 
     @Override

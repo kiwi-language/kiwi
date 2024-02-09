@@ -74,7 +74,8 @@ public class SaveTypeBatch implements DTOProvider {
                 new SaveStage(ResolutionStage.INIT, this::initDependencies),
                 new SaveStage(ResolutionStage.SIGNATURE, this::noDependencies),
                 new SaveStage(ResolutionStage.DECLARATION, this::declarationDependencies),
-                new SaveStage(ResolutionStage.DEFINITION, this::noDependencies)
+                new SaveStage(ResolutionStage.DEFINITION, this::noDependencies),
+                new SaveStage(ResolutionStage.MAPPING_DEFINITION, this::noDependencies)
         );
         for (var stage : stages) {
             for (var typeDTO : stage.sort(typeMap.values()))

@@ -48,6 +48,10 @@ public class PrimitiveFieldValue extends FieldValue {
         return new PrimitiveFieldValue(null, PrimitiveKind.TIME.code(), value);
     }
 
+    public static PrimitiveFieldValue createPassword(String value) {
+        return new PrimitiveFieldValue(null, PrimitiveKind.PASSWORD.code(), value);
+    }
+
     public Object getValue() {
         return value;
     }

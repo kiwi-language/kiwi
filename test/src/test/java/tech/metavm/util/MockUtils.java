@@ -1494,6 +1494,69 @@ public class MockUtils {
         return foo;
     }
 
+    public static UserTypeIds createUserTypes(TypeManager typeManager) {
+        var platformUserTypeDTO = ClassTypeDTOBuilder.newBuilder("平台用户")
+                .code("PlatformUser")
+                .tmpId(NncUtils.randomNonNegative())
+                .titleFieldRef(RefDTO.fromTmpId(NncUtils.randomNonNegative()))
+                .addField(FieldDTOBuilder.newBuilder("登录名", getStringType().getRef())
+                        .code("loginName")
+                        .asTitle(true)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+                )
+                .addField(FieldDTOBuilder.newBuilder("密码", getPasswordType().getRef())
+                        .code("password")
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+                )
+                .build();
+        long applicationTypeTmpId = NncUtils.randomNonNegative();
+        var applicationTypeDTO = ClassTypeDTOBuilder.newBuilder("应用")
+                .tmpId(applicationTypeTmpId)
+                .code("Application")
+                .titleFieldRef(RefDTO.fromTmpId(NncUtils.randomNonNegative()))
+                .addField(FieldDTOBuilder.newBuilder("名称", getStringType().getRef())
+                        .code("name")
+                        .asTitle(true)
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+                )
+                .addField(FieldDTOBuilder.newBuilder("所有者", platformUserTypeDTO.getRef())
+                        .code("owner")
+                        .access(Access.PRIVATE.code())
+                        .tmpId(NncUtils.randomNonNegative())
+                        .build()
+                )
+                .addMethod(MethodDTOBuilder.newBuilder(RefDTO.fromTmpId(applicationTypeTmpId), "获取所有者")
+                        .tmpId(NncUtils.randomNonNegative())
+                        .code("getOwner")
+                        .returnTypeRef(platformUserTypeDTO.getRef())
+                        .addNode(NodeDTOFactory.createSelfNode(
+                                NncUtils.randomNonNegative(),
+                                "当前记录",
+                                RefDTO.fromTmpId(applicationTypeTmpId)
+                        ))
+                        .addNode(NodeDTOFactory.createReturnNode(
+                                NncUtils.randomNonNegative(),
+                                "返回",
+                                ValueDTOFactory.createReference("当前记录.所有者")
+                        ))
+                        .build())
+                .build();
+        var typeIds = TestUtils.doInTransaction(() -> typeManager.batchSave(
+                new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), List.of())
+        ));
+        var applicationType = typeManager.getType(new GetTypeRequest(typeIds.get(1), false)).type();
+        var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");
+        var applicationOwnerFieldId = TestUtils.getFieldIdByCode(applicationType, "owner");
+        // get the longName field id and password field id of the platform user type
+        var platformUserType = typeManager.getType(new GetTypeRequest(typeIds.get(0), false)).type();
+        var platformUserLoginNameFieldId = TestUtils.getFieldIdByCode(platformUserType, "loginName");
+        var platformUserPasswordFieldId = TestUtils.getFieldIdByCode(platformUserType, "password");
+        return new UserTypeIds(typeIds.get(0), typeIds.get(1), applicationNameFieldId, applicationOwnerFieldId, platformUserLoginNameFieldId,
+                platformUserPasswordFieldId);
+    }
 
     public static Foo getFoo() {
         Foo foo = new Foo(

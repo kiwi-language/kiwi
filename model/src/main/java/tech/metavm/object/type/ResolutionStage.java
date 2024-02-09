@@ -3,6 +3,7 @@ package tech.metavm.object.type;
 import tech.metavm.flow.rest.FlowDTO;
 import tech.metavm.object.type.rest.dto.ParameterizedFlowDTO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.object.view.MappingSaver;
 import tech.metavm.util.NncUtils;
 
 public enum ResolutionStage {
@@ -51,9 +52,21 @@ public enum ResolutionStage {
             var type = Types.saveType(typeDTO, DEFINITION, batch);
             if (type instanceof ClassType classType)
                 batch.saveParameterizedFlows(classType, DEFINITION);
+            if (type instanceof ClassType classType && classType.isClass() && !classType.isAnonymous())
+                MappingSaver.create(batch.getContext()).saveBuiltinMapping(classType, false);
             return type;
         }
 
+    },
+
+    MAPPING_DEFINITION(5) {
+        @Override
+        Type saveType(TypeDTO typeDTO, SaveTypeBatch batch) {
+            var type = batch.get(typeDTO.getRef());
+            if (type instanceof ClassType classType && classType.isClass() && !classType.isAnonymous())
+                MappingSaver.create(batch.getContext()).saveBuiltinMapping(classType, true);
+            return type;
+        }
     };
 
     private final int code;

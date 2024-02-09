@@ -471,6 +471,25 @@ public class MainTest extends TestCase {
             var reloadedAnotherPlatformUser2 = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications2 = ((InstanceFieldValue) reloadedAnotherPlatformUser2.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(0, anotherJoinedApplications2.getArraySize());
+
+            // test application view list
+            var applicationMapping = TestUtils.getDefaultMapping(applicationType);
+            var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetTypeRef().id(), false)).type();
+            var applicationViewList = instanceManager.query(
+                    new InstanceQueryDTO(
+                            applicationViewType.id(),
+                            applicationMapping.id(),
+                            null,
+                            null,
+                            List.of(),
+                            1,
+                            20,
+                            false,
+                            false,
+                            List.of()
+                    )
+            ).page().data();
+            Assert.assertEquals(1, applicationViewList.size());
         }).get();
     }
 
