@@ -30,15 +30,15 @@ public class LabPlatformUser extends LabUser {
 
     public void joinApplication(LabApplication application) {
         if(applications.contains(application))
-            throw new LabBusinessException(LabErrorCode.ALREADY_JOINED_APP, List.of(getName()));
+            throw new LabBusinessException(LabErrorCode.ALREADY_JOINED_APP, getName());
         applications.add(application);
     }
 
     public boolean leaveApplication(LabApplication application) {
         if(application.getOwner() == this && application.getState() != LabApplicationState.REMOVING)
-            throw new LabBusinessException(LabErrorCode.CAN_NOT_EVICT_APP_OWNER, List.of());
+            throw new LabBusinessException(LabErrorCode.CAN_NOT_EVICT_APP_OWNER);
         if(!applications.contains(application))
-            throw new LabBusinessException(LabErrorCode.NOT_IN_APP, List.of());
+            throw new LabBusinessException(LabErrorCode.NOT_IN_APP);
         application.removeAdminIfPresent(this);
         return this.applications.remove(application);
     }

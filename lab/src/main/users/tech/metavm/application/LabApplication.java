@@ -54,15 +54,15 @@ public class LabApplication {
     public void addAdmin(LabPlatformUser user) {
         if (!this.admins.contains(user)) {
             if (this.admins.size() >= MAX_NUM_ADMINS)
-                throw new LabBusinessException(LabErrorCode.REENTERING_APP, List.of());
+                throw new LabBusinessException(LabErrorCode.REENTERING_APP);
             this.admins.add(user);
         } else
-            throw new LabBusinessException(LabErrorCode.ALREADY_AN_ADMIN, List.of());
+            throw new LabBusinessException(LabErrorCode.ALREADY_AN_ADMIN);
     }
 
     public void removeAdmin(LabPlatformUser user) {
         if (!removeAdminIfPresent(user))
-            throw new LabBusinessException(LabErrorCode.USER_NOT_ADMIN, List.of(user.getName()));
+            throw new LabBusinessException(LabErrorCode.USER_NOT_ADMIN, user.getName());
     }
 
     public boolean removeAdminIfPresent(LabPlatformUser user) {

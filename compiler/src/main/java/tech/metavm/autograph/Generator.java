@@ -120,8 +120,10 @@ public class Generator extends VisitorBase {
             var arguments = initializer.getArgumentList().getExpressions();
             var fields = new ArrayList<Field>();
             var type = currentClass();
-            for (int i = 1; i < arguments.length; i++) {
-                var fieldCode = (String) ((PsiLiteralExpression) arguments[i]).getValue();
+            var fieldNames = requireNonNull(requireNonNull((PsiNewExpression) arguments[1]).getArrayInitializer())
+                    .getInitializers();
+            for (PsiExpression fieldName : fieldNames) {
+                var fieldCode = (String) ((PsiLiteralExpression) fieldName).getValue();
                 fields.add(type.getFieldByCode(fieldCode));
             }
             var method = (PsiMethod) requireNonNull(initializer.getMethodExpression().resolve());
