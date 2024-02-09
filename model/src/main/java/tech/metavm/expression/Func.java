@@ -57,6 +57,12 @@ public enum Func {
 
     ARRAY_CONTAINS(Boolean.class, ReadonlyList.class, Object.class),
 
+    UUID(String.class),
+
+    DATE_BEFORE(Boolean.class, Date.class, Date.class),
+
+    DATE_AFTER(Boolean.class, Date.class, Date.class),
+
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 
     ;

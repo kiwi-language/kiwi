@@ -26,19 +26,19 @@ public class TimeInstance extends PrimitiveInstance implements Comparable<TimeIn
         output.writeLong(value);
     }
 
-    public BooleanInstance isBefore(TimeInstance that) {
+    public BooleanInstance before(TimeInstance that) {
         return Instances.booleanInstance(value < that.value);
     }
 
-    public BooleanInstance isBeforeOrAt(TimeInstance that) {
+    public BooleanInstance beforeOrEqual(TimeInstance that) {
         return Instances.booleanInstance(value <= that.value);
     }
 
-    public BooleanInstance isAfter(TimeInstance that) {
+    public BooleanInstance after(TimeInstance that) {
         return Instances.booleanInstance(value > that.value);
     }
 
-    public BooleanInstance isAfterOrAt(TimeInstance that) {
+    public BooleanInstance afterOrEqual(TimeInstance that) {
         return Instances.booleanInstance(value >= that.value);
     }
 

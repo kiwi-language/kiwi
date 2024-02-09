@@ -63,11 +63,13 @@ public class ExpressionResolver {
             new ListIsEmptyResolver(), new ListSizeResolver(), new StringConcatResolver(),
             new PrimitiveToStringResolver(), new ListClearResolver(), new ListAddAllResolver(),
             new GetPasswordResolver(), new ObjectsToStringResolver(), new StringReplaceFirstResolver(),
-            new StringReplaceResolver(), new ListContainsResolver(), new ListOfResolver()
+            new StringReplaceResolver(), new ListContainsResolver(), new ListOfResolver(),
+            new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
-            new NewListResolver(), new NewListWithInitialResolver(), new NewPasswordResolver()
+            new NewListResolver(), new NewListWithInitialResolver(), new NewPasswordResolver(),
+            new NewDateResolver()
     );
 
     public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,

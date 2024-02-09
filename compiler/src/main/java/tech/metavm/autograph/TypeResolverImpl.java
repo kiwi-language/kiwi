@@ -29,6 +29,7 @@ public class TypeResolverImpl implements TypeResolver {
     public static final Map<JvmPrimitiveTypeKind, Class<?>> KIND_2_PRIM_CLASS = Map.of(
             INT, int.class,
             SHORT, short.class,
+            BYTE, byte.class,
             BOOLEAN, boolean.class,
             LONG, long.class,
             CHAR, char.class,

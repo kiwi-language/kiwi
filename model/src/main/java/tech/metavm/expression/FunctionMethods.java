@@ -9,6 +9,7 @@ import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
 import java.util.List;
+import java.util.UUID;
 
 public class FunctionMethods {
 
@@ -72,6 +73,18 @@ public class FunctionMethods {
 
     public static StringInstance GET_PASSWORD(PasswordInstance password) {
         return Instances.stringInstance(password.getValue());
+    }
+
+    public static BooleanInstance DATE_BEFORE(TimeInstance date1, TimeInstance date2) {
+        return date1.before(date2);
+    }
+
+    public static BooleanInstance DATE_AFTER(TimeInstance date1, TimeInstance date2) {
+        return date1.after(date2);
+    }
+
+    public static StringInstance UUID() {
+        return Instances.stringInstance(UUID.randomUUID().toString());
     }
 
     public static BooleanInstance STARTS_WITH(Instance first, StringInstance prefix) {
