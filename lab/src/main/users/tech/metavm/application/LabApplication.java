@@ -35,8 +35,10 @@ public class LabApplication {
     }
 
     public void setOwner(LabPlatformUser owner) {
-        this.owner = owner;
-        addAdmin(owner);
+        if(owner != this.owner) {
+            this.owner = owner;
+            addAdmin(owner);
+        }
     }
 
     public LabPlatformUser getOwner() {

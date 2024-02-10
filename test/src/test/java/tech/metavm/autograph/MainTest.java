@@ -390,6 +390,34 @@ public class MainTest extends TestCase {
             var platformUserApplications = ((InstanceFieldValue) platformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(0, platformUserApplications.getArraySize());
 
+            // test platform user view list
+            var platformUserMapping = TestUtils.getDefaultMapping(platformUserType);
+            var platformUserViewType = typeManager.getType(new GetTypeRequest(platformUserMapping.targetTypeRef().id(), false)).type();
+            var platformUserViewList = instanceManager.query(
+                    new InstanceQueryDTO(
+                            platformUserViewType.id(),
+                            platformUserMapping.id(),
+                            null,
+                            null,
+                            List.of(),
+                            1,
+                            20,
+                            false,
+                            false,
+                            List.of()
+                    )
+            ).page().data();
+            Assert.assertEquals(1, platformUserViewList.size());
+            // test platform user view update
+            var platformUserView = platformUserViewList.get(0);
+            TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(platformUserView));
+            // reload platform user view and check its roles field
+            var reloadedPlatformUserView = instanceManager.get(platformUserView.id(), 1).instance();
+            var userViewRolesFieldId = TestUtils.getFieldIdByCode(platformUserViewType, "roles");
+            var reloadedPlatformUserRoles = ((InstanceFieldValue) reloadedPlatformUserView.getFieldValue(userViewRolesFieldId)).getInstance();
+            Assert.assertEquals(1, reloadedPlatformUserRoles.getArraySize());
+
+
             // test joinApplication method
             var joinApplicationMethodId = TestUtils.getMethodIdByCode(platformUserType, "joinApplication");
             var applicationType = queryClassType("LabApplication", List.of(TypeCategory.CLASS.code()));
@@ -490,6 +518,10 @@ public class MainTest extends TestCase {
                     )
             ).page().data();
             Assert.assertEquals(1, applicationViewList.size());
+
+            // test update application view
+            var applicationView = applicationViewList.get(0);
+            TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(applicationView));
 
             // assert that fields of LabToken type has been generated correctly
             var tokenType = queryClassType("LabToken");

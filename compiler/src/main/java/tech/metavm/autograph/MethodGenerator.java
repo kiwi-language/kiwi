@@ -441,7 +441,11 @@ public class MethodGenerator {
         return null;
     }
 
-    public void createClearArray(Expression array) {
+    public ClearArrayNode createClearArray(Expression array) {
+        return setNodeExprTypes(new ClearArrayNode(
+                null, nextName("ClearArray"), null,
+                scope().getLastNode(), scope(), Values.expression(array)
+        ));
     }
 
     private static final class ScopeInfo {

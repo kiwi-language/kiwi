@@ -64,7 +64,7 @@ public class LabUser {
     }
 
     public List<LabRole> getRoles() {
-        return roles;
+        return new ArrayList<>(roles);
     }
 
     public void setRoles(List<LabRole> roles) {
