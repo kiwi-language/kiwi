@@ -19,14 +19,14 @@ public class IndexCountNode extends NodeRT {
         var index = requireNonNull(context.getEntity(Index.class, param.indexRef()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var node = (IndexCountNode) context.getNode(nodeDTO.getRef());
-        var min = IndexQueryKey.create(param.min(), context, parsingContext);
-        var max = IndexQueryKey.create(param.min(), context, parsingContext);
+        var from = IndexQueryKey.create(param.from(), context, parsingContext);
+        var to = IndexQueryKey.create(param.to(), context, parsingContext);
         if (node != null) {
             node.setIndex(index);
-            node.setFrom(min);
-            node.setTo(max);
+            node.setFrom(from);
+            node.setTo(to);
         } else
-            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, index, min, max);
+            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, index, from, to);
         return node;
     }
 

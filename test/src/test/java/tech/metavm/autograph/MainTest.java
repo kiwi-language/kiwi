@@ -547,6 +547,29 @@ public class MainTest extends TestCase {
             var loginResultType = queryClassType("LabLoginResult");
             var token = ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
             Assert.assertNotNull(token);
+
+            // test login with too many attempts
+            var loginRequest = new FlowExecutionRequest(
+                    loginMethodId,
+                    null,
+                    List.of(
+                            PrimitiveFieldValue.createLong(1L),
+                            PrimitiveFieldValue.createString("leen"),
+                            PrimitiveFieldValue.createString("123123"),
+                            PrimitiveFieldValue.createString("127.0.0.1")
+                    )
+            );
+            for (int i = 0; i < 5; i++) {
+                try {
+                    TestUtils.doInTransaction(() -> flowExecutionService.execute(loginRequest));
+                    if(i == 4) {
+                        Assert.fail("登录尝试次数过多，应该抛出异常");
+                    }
+                }
+                catch (FlowExecutionException e) {
+                    Assert.assertEquals("登录尝试次数过多，请稍后再试", e.getMessage());
+                }
+            }
         }).get();
     }
 

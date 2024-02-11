@@ -14,7 +14,7 @@ import java.util.List;
 @EntityType("用户")
 public class LabUser {
 
-    public static final long MAX_ATTEMPTS_IN_15_MINUTES = 30;
+    public static final long MAX_ATTEMPTS_IN_15_MINUTES = 3;
 
     public static final long _15_MINUTES_IN_MILLIS = 15 * 60 * 1000;
 
@@ -64,16 +64,14 @@ public class LabUser {
 
     public static LabLoginResult login(long appId, String loginName, String password, String clientIP) {
         var failedCountByIP = IndexUtils.count(
-                new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date(0L)),
-                new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))
+                new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
+                new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date())
         );
         if (failedCountByIP > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
         var failedCountByLoginName = IndexUtils.count(
-                new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date(0L)),
-                new LabLoginAttempt.LoginNameSuccTimeIndex(
-                        loginName, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)
-                )
+                new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
+                new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date())
         );
         if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);

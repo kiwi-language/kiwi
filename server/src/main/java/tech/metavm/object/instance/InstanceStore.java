@@ -86,12 +86,12 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public List<Long> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return null;
+        return NncUtils.map(indexEntryMapper.scan(context.getAppId(), from, to), IndexEntryPO::getInstanceId);
     }
 
     @Override
     public long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return 0;
+        return indexEntryMapper.countRange(context.getAppId(), from, to);
     }
 
     @Override
