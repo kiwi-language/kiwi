@@ -85,6 +85,16 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
+    public List<Long> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
+        return null;
+    }
+
+    @Override
+    public long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
+        return 0;
+    }
+
+    @Override
     public List<Long> query(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.query")) {
             return NncUtils.map(

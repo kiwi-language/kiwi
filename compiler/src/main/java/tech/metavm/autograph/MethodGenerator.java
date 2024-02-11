@@ -27,26 +27,29 @@ public class MethodGenerator {
     private final Map<String, Integer> varNames = new HashMap<>();
     private final FunctionTypeProvider functionTypeProvider;
     private final ParameterizedTypeProvider parameterizedTypeProvider;
+    private final ArrayTypeProvider arrayTypeProvider;
 
     public MethodGenerator(Method method, TypeResolver typeResolver,
                            IEntityContext context,
-                           Generator visitor) {
-        this(method, typeResolver, new ContextArrayTypeProvider(context), context.getFunctionTypeContext(),
-                context.getGenericContext(), context.getGenericContext(), visitor);
+                           VisitorBase visitor) {
+        this(method, typeResolver, new ContextArrayTypeProvider(context), context.getUnionTypeContext(),
+                context.getFunctionTypeContext(), context.getGenericContext(), context.getGenericContext(), visitor);
     }
 
     public MethodGenerator(Method method, TypeResolver typeResolver,
                            ArrayTypeProvider arrayTypeProvider,
-                           FunctionTypeProvider functionTypeProvider,
+                           UnionTypeProvider unionTypeProvider, FunctionTypeProvider functionTypeProvider,
                            ParameterizedTypeProvider parameterizedTypeProvider,
                            ParameterizedFlowProvider parameterizedFlowProvider,
-                           Generator visitor) {
+                           VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
         this.functionTypeProvider = functionTypeProvider;
         this.parameterizedTypeProvider = parameterizedTypeProvider;
+        this.arrayTypeProvider = arrayTypeProvider;
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
                 arrayTypeProvider,
+                unionTypeProvider,
                 parameterizedFlowProvider,
                 visitor);
     }
@@ -324,6 +327,29 @@ public class MethodGenerator {
                 null, nextName("Foreach"), null, loopType,
                 scope().getLastNode(), scope(), Values.expression(array),
                 Values.expression(Expressions.trueExpression())
+        ));
+    }
+
+    IndexCountNode createIndexCount(Index index, IndexQueryKey from, IndexQueryKey to) {
+        return setNodeExprTypes(new IndexCountNode(
+                null, nextName("IndexCount"), null, scope().getLastNode(), scope(),
+                index, from, to
+        ));
+    }
+
+    IndexScanNode createIndexScan(Index index, IndexQueryKey from, IndexQueryKey to) {
+        var arrayType = arrayTypeProvider.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
+        return setNodeExprTypes(new IndexScanNode(
+                null, nextName("IndexScan"), null, arrayType, scope().getLastNode(),
+                scope(), index, from, to
+        ));
+    }
+
+    public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
+        var arrayType = arrayTypeProvider.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
+        return setNodeExprTypes(new IndexSelectNode(
+                null, nextName("IndexSelect"), null, arrayType,
+                scope().getLastNode(), scope(), index, key
         ));
     }
 

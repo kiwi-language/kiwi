@@ -143,4 +143,28 @@
              #{item.column4})
         </foreach>
     </select>
+
+    <select id="countRange" resultType="long">
+        select
+        count(1)
+        from index_entry
+        where app_id = #{appId}
+        and index_id = #{from.indexId}
+        and (column0, column1, column2, column3, column4) between
+        (#{from.column0}, #{from.column1}, #{from.column2}, #{from.column3}, #{from.column4})
+        and
+        (#{to.column0}, #{to.column1}, #{to.column2}, #{to.column3}, #{to.column4})
+    </select>
+
+    <select id="scan" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from index_entry
+        where app_id = #{appId}
+          and index_id = #{from.indexId}
+          and (column0, column1, column2, column3, column4) between
+            (#{from.column0}, #{from.column1}, #{from.column2}, #{from.column3}, #{from.column4})
+            and
+            (#{to.column0}, #{to.column1}, #{to.column2}, #{to.column3}, #{to.column4})
+    </select>
 </mapper>

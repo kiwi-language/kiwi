@@ -11,6 +11,10 @@ public interface IndexSource {
 
     long count(InstanceIndexQuery query, IInstanceContext context);
 
+    long count(IndexKeyRT from, IndexKeyRT to, IInstanceContext context);
+
+    List<Long> scan(IndexKeyRT from, IndexKeyRT to, IInstanceContext context);
+
     List<Long> queryByType(long typeId, long startId, long limit, IInstanceContext context);
 
 }

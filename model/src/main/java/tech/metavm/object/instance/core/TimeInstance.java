@@ -1,6 +1,5 @@
 package tech.metavm.object.instance.core;
 
-import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.type.PrimitiveType;
 import tech.metavm.util.InstanceOutput;
 import tech.metavm.util.Instances;
@@ -10,7 +9,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class TimeInstance extends PrimitiveInstance implements Comparable<TimeInstance> {
+public class TimeInstance extends PrimitiveInstance /*implements Comparable<TimeInstance>*/ {
 
     public static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -62,8 +61,8 @@ public class TimeInstance extends PrimitiveInstance implements Comparable<TimeIn
         return visitor.visitTimeInstance(this);
     }
 
-    @Override
-    public int compareTo(@NotNull TimeInstance o) {
-        return Long.compare(value, o.value);
-    }
+//    @Override
+//    public int compareTo(@NotNull TimeInstance o) {
+//        return Long.compare(value, o.value);
+//    }
 }

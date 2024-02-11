@@ -1,1 +1,1 @@
-1 Performance degrade because new instances are being created when mapper/unmapper methods are loaded. 
+1 Enum class failed to deploy when new an enum constant is added to the enum class.

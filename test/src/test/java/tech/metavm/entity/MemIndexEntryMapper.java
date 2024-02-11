@@ -12,7 +12,7 @@ import java.util.*;
 public class MemIndexEntryMapper implements IndexEntryMapper {
 
     private final Map<GlobalKey, List<IndexEntryPO>> key2items = new HashMap<>();
-    private final Set<IndexEntryPO> items = new HashSet<>();
+    private final Set<IndexEntryPO> entries = new HashSet<>();
     private final Map<Long, List<IndexEntryPO>> instanceId2items = new HashMap<>();
 
     private List<IndexEntryPO> getItems(GlobalKey key) {
@@ -25,11 +25,39 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @Override
     public List<IndexEntryPO> query(IndexQueryPO query) {
-        return query.execute(new HashSet<>(items));
+        return query.execute(new HashSet<>(entries));
+    }
+
+    @Override
+    public long countRange(long appId, IndexKeyPO from, IndexKeyPO to) {
+        if(from.getIndexId() != to.getIndexId())
+            throw new InternalException("from.getIndexId() != to.getIndexId()");
+        long count = 0;
+        for (IndexEntryPO entry : entries) {
+            if (entry.getAppId() == appId && entry.getIndexId() == from.getIndexId() &&
+                    entry.getKey().compareTo(from) >= 0 && entry.getKey().compareTo(to) <= 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @Override
+    public List<IndexEntryPO> scan(long appId, IndexKeyPO from, IndexKeyPO to) {
+        if(from.getIndexId() != to.getIndexId())
+            throw new InternalException("from.getIndexId() != to.getIndexId()");
+        var result = new ArrayList<IndexEntryPO>();
+        for (IndexEntryPO entry : entries) {
+            if (entry.getAppId() == appId && entry.getIndexId() == from.getIndexId() &&
+                    entry.getKey().compareTo(from) >= 0 && entry.getKey().compareTo(to) <= 0) {
+                result.add(entry.copy());
+            }
+        }
+        return result;
     }
 
     public long count(IndexQueryPO query) {
-        return query.count(items);
+        return query.count(entries);
     }
 
     @Override
@@ -59,14 +87,14 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
         for (IndexEntryPO item : items) {
             getItems(new GlobalKey(item.getAppId(), item.getKey())).add(item);
             getItemsByInstanceId(item.getInstanceId()).add(item);
-            this.items.add(item);
+            this.entries.add(item);
         }
     }
 
     @Override
     public void batchDelete(Collection<IndexEntryPO> items) {
         for (IndexEntryPO item : items) {
-            if(!this.items.remove(item))
+            if(!this.entries.remove(item))
                 throw new InternalException(item + " does not exist");
             getItems(new GlobalKey(item.getAppId(), item.getKey())).remove(item);
             getItemsByInstanceId(item.getInstanceId()).remove(item);
@@ -75,7 +103,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     @SuppressWarnings("unused")
     public void clear() {
-        items.clear();
+        entries.clear();
         key2items.clear();
         instanceId2items.clear();
     }
@@ -89,7 +117,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     public MemIndexEntryMapper copy() {
         var copy = new MemIndexEntryMapper();
-        copy.batchInsert(NncUtils.map(items, IndexEntryPO::copy));
+        copy.batchInsert(NncUtils.map(entries, IndexEntryPO::copy));
         return copy;
     }
 

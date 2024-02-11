@@ -2,10 +2,7 @@ package tech.metavm.object.instance.core.mocks;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.object.instance.core.InstanceRepository;
-import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.object.instance.core.*;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
@@ -27,6 +24,21 @@ public class MockInstanceRepository implements InstanceRepository {
     @Override
     public DurableInstance selectFirstByKey(IndexKeyRT key) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<ClassInstance> indexScan(IndexKeyRT from, IndexKeyRT to) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long indexCount(IndexKeyRT from, IndexKeyRT to) {
+        return 0;
+    }
+
+    @Override
+    public List<ClassInstance> indexSelect(IndexKeyRT key) {
+        return List.of();
     }
 
     @Override

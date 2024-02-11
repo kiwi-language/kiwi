@@ -1,0 +1,54 @@
+package tech.metavm.flow;
+
+import tech.metavm.entity.*;
+import tech.metavm.expression.EvaluationContext;
+import tech.metavm.expression.ParsingContext;
+import tech.metavm.flow.rest.IndexQueryKeyDTO;
+import tech.metavm.object.instance.IndexKeyRT;
+import tech.metavm.object.type.Index;
+import tech.metavm.util.NncUtils;
+
+import java.util.List;
+
+@EntityType("索引查询键")
+public class IndexQueryKey extends Entity {
+
+    public static IndexQueryKey create(IndexQueryKeyDTO indexQueryKeyDTO, IEntityContext context, ParsingContext parsingContext) {
+        return new IndexQueryKey(
+                context.getEntity(Index.class, indexQueryKeyDTO.indexRef()),
+                NncUtils.map(indexQueryKeyDTO.items(), item -> IndexQueryKeyItem.create(item, context, parsingContext))
+        );
+    }
+
+    @EntityField("索引")
+    private final Index index;
+
+    @ChildEntity("项目列表")
+    private final ChildArray<IndexQueryKeyItem> items = addChild(new ChildArray<>(IndexQueryKeyItem.class), "items");
+
+    public IndexQueryKey(Index index, List<IndexQueryKeyItem> items) {
+        this.index = index;
+        this.items.resetChildren(items);
+    }
+
+    public List<IndexQueryKeyItem> getItems() {
+        return items.toList();
+    }
+
+    public IndexQueryKeyDTO toDTO(SerializeContext serializeContext) {
+        return new IndexQueryKeyDTO(
+                serializeContext.getRef(index),
+                NncUtils.map(items, indexQueryKeyItem -> indexQueryKeyItem.toDTO(serializeContext)));
+    }
+
+    public String getText() {
+        return "{" + NncUtils.join(items, IndexQueryKeyItem::getText) + "}";
+    }
+
+    public IndexKeyRT buildIndexKey(EvaluationContext evaluationContext) {
+        return index.createIndexKey(
+                NncUtils.map(items, item -> item.getValue().evaluate(evaluationContext))
+        );
+    }
+
+}

@@ -3,10 +3,7 @@ package tech.metavm.object.instance;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.entity.StoreLoadRequest;
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.persistence.InstancePO;
-import tech.metavm.object.instance.persistence.ReferencePO;
-import tech.metavm.object.instance.persistence.Version;
-import tech.metavm.object.instance.persistence.VersionPO;
+import tech.metavm.object.instance.persistence.*;
 import tech.metavm.util.ChangeList;
 import tech.metavm.util.NncUtils;
 
@@ -29,6 +26,10 @@ public interface IInstanceStore {
     ReferencePO getFirstReference(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds);
 
     List<ReferencePO> getAllStrongReferences(long appId, Set<Long> targetIds, Set<Long> excludedSourceIds);
+
+    List<Long> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
+
+    long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
 
     List<Long> query(InstanceIndexQuery query, IInstanceContext context);
 

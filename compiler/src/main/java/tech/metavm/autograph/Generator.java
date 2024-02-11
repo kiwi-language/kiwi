@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
+import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.*;
@@ -26,7 +27,6 @@ public class Generator extends VisitorBase {
     private final TypeResolver typeResolver;
     private final IEntityContext entityContext;
 
-
     public Generator(TypeResolver typeResolver, IEntityContext entityContext) {
         this.typeResolver = typeResolver;
         this.entityContext = entityContext;
@@ -38,6 +38,8 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitClass(PsiClass psiClass) {
+        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null)
+            return;
         var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
             return;
@@ -49,9 +51,9 @@ public class Generator extends VisitorBase {
         initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
         initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
         initFlowBuilder.createInput();
-        if(klass.getSuperClass() != null) {
+        if (klass.getSuperClass() != null) {
             var superInit = klass.getSuperClass().findSelfMethodByCode("<init>");
-            if(superInit != null) {
+            if (superInit != null) {
                 initFlowBuilder.createMethodCall(
                         initFlowBuilder.getVariable("this"),
                         superInit,
@@ -63,9 +65,9 @@ public class Generator extends VisitorBase {
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, entityContext, this);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getRootScope());
         classInitFlowBuilder.createInput();
-        if(klass.getSuperClass() != null) {
+        if (klass.getSuperClass() != null) {
             var superCInit = klass.getSuperClass().findSelfMethodByCode("<cinit>");
-            if(superCInit != null) {
+            if (superCInit != null) {
                 classInitFlowBuilder.createMethodCall(
                         null,
                         superCInit,
@@ -155,7 +157,7 @@ public class Generator extends VisitorBase {
                 var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
                 builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
             }
-        } else if(field.getType().isNullable()) {
+        } else if (field.getType().isNullable()) {
             var builder = currentClassInfo().fieldBuilder;
             builder.createUpdate(builder.getVariable("this"), Map.of(field, Expressions.nullExpression()));
         }
@@ -231,10 +233,6 @@ public class Generator extends VisitorBase {
             List<QualifiedName> catchOutputVars = catchLiveOut == null ? List.of()
                     : new ArrayList<>(NncUtils.intersect(catchModified, catchLiveOut));
             var mergeNode = builder().createMerge();
-            for (QualifiedName catchOutputVar : catchOutputVars) {
-                FieldBuilder.newBuilder(catchOutputVar.toString(), catchOutputVar.toString(),
-                        mergeNode.getType(), resolveType(catchOutputVar.type())).build();
-            }
             exitCondSection(mergeNode, catchOutputVars);
 
             var exceptionField = FieldBuilder.newBuilder("异常", "exception",
@@ -302,10 +300,9 @@ public class Generator extends VisitorBase {
         MethodGenerator builder = new MethodGenerator(method, typeResolver, entityContext, this);
         builders.push(builder);
         builder.enterScope(method.getRootScope());
-        if(TranspileUtil.isStatic(psiMethod)) {
+        if (TranspileUtil.isStatic(psiMethod)) {
             processParameters(psiMethod.getParameterList(), method);
-        }
-        else {
+        } else {
             var selfNode = builder().createSelf();
             builder.setVariable("this", new NodeExpression(selfNode));
             processParameters(psiMethod.getParameterList(), method);
@@ -522,12 +519,7 @@ public class Generator extends VisitorBase {
                 elseScope = requireNonNull(statement.getUserData(Keys.ELSE_SCOPE));
         Set<QualifiedName> modified = NncUtils.union(bodyScope.getModified(), elseScope.getModified());
         Set<QualifiedName> outputVars = getBlockOutputVariables(statement, modified);
-        List<QualifiedName> outputVariables = new ArrayList<>();
-        for (QualifiedName var : outputVars) {
-            FieldBuilder.newBuilder(var.toString(), var.toString(), mergeNode.getType(), resolveType(var.type())).build();
-            outputVariables.add(var);
-        }
-
+        List<QualifiedName> outputVariables = new ArrayList<>(outputVars);
         exitCondSection(mergeNode, outputVariables);
     }
 
@@ -542,16 +534,24 @@ public class Generator extends VisitorBase {
     }
 
     private void exitCondSection(MergeNode mergeNode, List<QualifiedName> outputVariables) {
-        List<String> outputVars = NncUtils.map(outputVariables, Objects::toString);
+        var outputVars = NncUtils.map(outputVariables, Objects::toString);
         var condOutputs = builder().exitCondSection(mergeNode, outputVars);
         for (var qn : outputVariables) {
-            var field = mergeNode.getType().getFieldByCode(qn.toString());
-            var mergeField = new MergeNodeField(field, mergeNode);
+            var branch2value = new HashMap<Branch, Value>();
             for (var entry2 : condOutputs.entrySet()) {
                 var branch = entry2.getKey();
                 var branchOutputs = entry2.getValue();
-                mergeField.setValue(branch, Values.expression(branchOutputs.get(qn.toString())));
+                branch2value.put(branch, Values.expression(branchOutputs.get(qn.toString())));
             }
+            var memberTypes = new HashSet<Type>();
+            for (var value : branch2value.values()) {
+                if(NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
+                    memberTypes.add(value.getType());
+            }
+            var fieldType =
+                    memberTypes.size() == 1 ? memberTypes.iterator().next() : entityContext.getUnionType(memberTypes);
+            var field = FieldBuilder.newBuilder(qn.toString(), qn.toString(), mergeNode.getType(), fieldType).build();
+            var mergeField = new MergeNodeField(field, mergeNode, branch2value);
             builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField()));
         }
     }

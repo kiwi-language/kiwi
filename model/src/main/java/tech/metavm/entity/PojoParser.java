@@ -8,6 +8,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
 import tech.metavm.object.view.MappingSaver;
 import tech.metavm.util.*;
 
@@ -181,7 +182,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
 
     private void parseUniqueConstraint(Field indexDefField, PojoDef<T> declaringTypeDef) {
         IndexDef<?> indexDef = (IndexDef<?>) ReflectionUtils.get(null, indexDefField);
-        Index uniqueConstraint = new Index(
+        var uniqueConstraint = new Index(
                 declaringTypeDef.getType(),
                 EntityUtils.getMetaConstraintName(indexDefField), indexDefField.getName(), null, indexDef.isUnique(), NncUtils.map(indexDef.getFieldNames(), this::getFiled)
         );

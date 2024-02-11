@@ -1,9 +1,12 @@
 package tech.metavm.object.instance.persistence;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class IndexKeyPO {
+public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
     public static final int MAX_KEY_COLUMNS = 5;
     public static final byte[] NULL = {'\0'};
@@ -13,6 +16,13 @@ public class IndexKeyPO {
 
     public IndexKeyPO() {
         fillNull();
+    }
+
+    public IndexKeyPO(long indexId, byte[][] columns) {
+        this.indexId = indexId;
+        for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
+            this.columns[i] = Arrays.copyOf(columns[i], columns[i].length);
+        }
     }
 
     public void fillNull() {
@@ -106,4 +116,18 @@ public class IndexKeyPO {
         }
         return copy;
     }
+
+
+    @Override
+    public int compareTo(@NotNull IndexKeyPO o) {
+        if(indexId != o.indexId)
+            throw new RuntimeException("Can not compare keys from different indexes");
+        for (int i = 0; i < MAX_KEY_COLUMNS; i++) {
+            var cmp = Arrays.compare(columns[i], o.columns[i]);
+            if(cmp != 0)
+                return cmp;
+        }
+        return 0;
+    }
+
 }

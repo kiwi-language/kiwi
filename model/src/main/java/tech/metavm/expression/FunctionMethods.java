@@ -68,7 +68,7 @@ public class FunctionMethods {
     }
 
     public static PasswordInstance PASSWORD(StringInstance str) {
-        return Instances.passwordInstance(str.getValue());
+        return Instances.passwordInstance(EncodingUtils.md5(str.getValue()));
     }
 
     public static StringInstance GET_PASSWORD(PasswordInstance password) {
@@ -85,6 +85,10 @@ public class FunctionMethods {
 
     public static StringInstance UUID() {
         return Instances.stringInstance(UUID.randomUUID().toString());
+    }
+
+    public static StringInstance MD5(StringInstance stringInstance) {
+        return Instances.stringInstance(EncodingUtils.md5(stringInstance.getValue()));
     }
 
     public static BooleanInstance STARTS_WITH(Instance first, StringInstance prefix) {
@@ -146,6 +150,10 @@ public class FunctionMethods {
 
     public static TimeInstance NOW() {
         return Instances.timeInstance(System.currentTimeMillis());
+    }
+
+    public static LongInstance NOW_MILLIS() {
+        return Instances.longInstance(System.currentTimeMillis());
     }
 
     public static TimeInstance TIME(LongInstance timeMillis) {

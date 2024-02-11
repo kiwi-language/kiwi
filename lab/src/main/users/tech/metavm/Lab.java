@@ -7,6 +7,8 @@ import tech.metavm.user.LabPlatformUser;
 import tech.metavm.user.LabRole;
 import tech.metavm.user.LabSession;
 import tech.metavm.user.LabUser;
+import tech.metavm.utils.LabBusinessException;
+import tech.metavm.utils.LabErrorCode;
 
 import java.util.Date;
 import java.util.List;
@@ -25,6 +27,13 @@ public class Lab {
     @EntityFlow("创建会话")
     public LabSession createSession(LabUser user, Date autoCloseAt) {
         return new LabSession(user, autoCloseAt);
+    }
+
+    @EntityFlow("登录")
+    public void login(long appId, String loginName, String password, String clientIP) {
+        var result = LabUser.login(appId, loginName, password, clientIP);
+        if (result.token() == null)
+            throw new LabBusinessException(LabErrorCode.LOGIN_FAILED);
     }
 
 }

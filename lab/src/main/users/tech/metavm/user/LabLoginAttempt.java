@@ -2,7 +2,9 @@ package tech.metavm.user;
 
 import tech.metavm.builtin.IndexDef;
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.Index;
 
 import java.util.Date;
 
@@ -32,6 +34,24 @@ public class LabLoginAttempt {
         this.loginName = loginName;
         this.clientIP = clientIP;
         this.time = time;
+    }
+
+    @EntityIndex("登录名")
+    public record LoginNameSuccTimeIndex(String loginName, boolean successful, Date time)
+            implements Index<LabLoginAttempt> {
+
+        public LoginNameSuccTimeIndex(LabLoginAttempt labLoginAttempt) {
+            this(labLoginAttempt.loginName, labLoginAttempt.successful, labLoginAttempt.time);
+        }
+    }
+
+    @EntityIndex("ID地址")
+    public record ClientIpSuccTimeIndex(String clientIP, boolean successful, Date time)
+            implements Index<LabLoginAttempt> {
+
+        public ClientIpSuccTimeIndex(LabLoginAttempt labLoginAttempt) {
+            this(labLoginAttempt.clientIP, labLoginAttempt.successful, labLoginAttempt.time);
+        }
     }
 
     public boolean isSuccessful() {

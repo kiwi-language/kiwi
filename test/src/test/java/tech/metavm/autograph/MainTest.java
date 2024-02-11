@@ -63,6 +63,7 @@ public class MainTest extends TestCase {
         StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
         NativeFunctions.setHolder(new ThreadLocalNativeFunctionsHolder());
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
+        Instances.setHolder(new ThreadLocalBuiltinInstanceHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = executor.submit(() -> {
@@ -527,9 +528,27 @@ public class MainTest extends TestCase {
             var tokenType = queryClassType("LabToken");
             Assert.assertTrue(tokenType.ephemeral());
             Assert.assertEquals(2, tokenType.getClassParam().fields().size());
+
+            // test login
+            var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
+            var loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            loginMethodId,
+                            null,
+                            List.of(
+                                    PrimitiveFieldValue.createLong(1L),
+                                    PrimitiveFieldValue.createString("leen"),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("127.0.0.1")
+                            )
+                    )
+            ));
+            // get LoginResult type
+            var loginResultType = queryClassType("LabLoginResult");
+            var token = ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            Assert.assertNotNull(token);
         }).get();
     }
-
 
     private void compileTwice(String sourceRoot) {
         compile(sourceRoot);

@@ -32,7 +32,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         super(id, type, 0, 0, ephemeral, load);
     }
 
-    public ArrayInstance(ArrayType type, List<Instance> elements) {
+    public ArrayInstance(ArrayType type, List<? extends Instance> elements) {
         super(type);
         this.addAll(elements);
     }

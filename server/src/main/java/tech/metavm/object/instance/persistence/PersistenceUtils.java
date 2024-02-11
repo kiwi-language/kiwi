@@ -7,7 +7,6 @@ import tech.metavm.object.instance.ReferenceKind;
 import tech.metavm.object.instance.core.ArrayInstance;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -31,7 +30,7 @@ public class PersistenceUtils {
         List<IndexKeyRT> keys = index.createIndexKey(instance, parameterizedFlowProvider);
         return NncUtils.map(
                 keys,
-                key -> new IndexEntryPO(appId, toIndexKeyPO(key), instance.getPhysicalId())
+                key -> new IndexEntryPO(appId, key.toPO(), instance.getPhysicalId())
         );
     }
 
@@ -79,24 +78,8 @@ public class PersistenceUtils {
         return NncUtils.anyMatch(index.getFields(), item -> isItemNull(item, key));
     }
 
-    private static void setKeyItem(IndexField field, IndexKeyPO key, Instance fieldValue) {
-        key.setColumn(field.getIndex().getFieldIndex(field), BytesUtils.toIndexBytes(fieldValue));
-    }
-
     private static boolean isItemNull(IndexField field, IndexKeyPO key) {
         return Arrays.equals(key.getColumn(field.getIndex().getFieldIndex(field)), IndexKeyPO.NULL);
-    }
-
-    public static IndexKeyPO toIndexKeyPO(IndexKeyRT indexKeyRT) {
-        IndexKeyPO key = new IndexKeyPO();
-        var index = indexKeyRT.getIndex();
-        key.setIndexId(index.getId());
-        for (IndexField field : index.getFields()) {
-            var fieldValue = indexKeyRT.getFields().get(field);
-            if(fieldValue != null)
-                setKeyItem(field, key, fieldValue);
-        }
-        return key;
     }
 
     public static IndexQueryPO toIndexQueryPO(InstanceIndexQuery query, long appId, int lockMode) {

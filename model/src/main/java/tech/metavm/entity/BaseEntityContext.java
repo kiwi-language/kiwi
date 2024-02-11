@@ -13,6 +13,7 @@ import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
 import tech.metavm.object.type.generic.*;
 import tech.metavm.util.*;
 import tech.metavm.util.profile.Profiler;
@@ -556,7 +557,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     private InstanceIndexQuery convertToInstanceIndexQuery(EntityIndexQuery<?> query) {
         Class<?> javaClass = query.indexDef().getType();
-        Index indexConstraint = getDefContext().getIndexConstraint(query.indexDef());
+        var indexConstraint = getDefContext().getIndexConstraint(query.indexDef());
         return new InstanceIndexQuery(
                 indexConstraint,
                 NncUtils.map(
@@ -721,7 +722,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private IndexKeyRT createIndexKey(IndexDef<?> uniqueConstraintDef, Object... values) {
-        Index constraint = getDefContext().getIndexConstraint(uniqueConstraintDef);
+        var constraint = getDefContext().getIndexConstraint(uniqueConstraintDef);
         NncUtils.requireNonNull(constraint);
         return constraint.createIndexKeyByModels(Arrays.asList(values), this);
     }

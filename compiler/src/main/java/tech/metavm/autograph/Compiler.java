@@ -14,6 +14,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ResolutionStage;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
@@ -100,7 +101,9 @@ public class Compiler {
             var psiClassTypes = NncUtils.map(
                     psiClasses, TranspileUtil.getElementFactory()::createType
             );
-            psiClassTypes.forEach(typeResolver::resolve);
+            for (ResolutionStage stage : ResolutionStage.values()) {
+                psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
+            }
             var generatedTypes = typeResolver.getGeneratedTypes();
             var generatedPFlows = typeResolver.getGeneratedParameterizedFlows();
             LOGGER.info("Compilation done. {} types generated", generatedTypes.size());

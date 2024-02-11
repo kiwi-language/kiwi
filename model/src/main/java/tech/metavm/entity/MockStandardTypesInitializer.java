@@ -37,9 +37,9 @@ public class MockStandardTypesInitializer {
         FieldBuilder.newBuilder("名称", "name", enumType, StandardTypes.getStringType()).build();
         FieldBuilder.newBuilder("序号", "ordinal", enumType, StandardTypes.getLongType()).build();
         StandardTypes.setEnumType(enumType);
-        Instances.nullInstance = new NullInstance(StandardTypes.getNullType());
-        Instances.trueInstance = new BooleanInstance(true, StandardTypes.getBooleanType());
-        Instances.falseInstance = new BooleanInstance(false, StandardTypes.getBooleanType());
+        Instances.setNullInstance(new NullInstance(StandardTypes.getNullType()));
+        Instances.setTrueInstance(new BooleanInstance(true, StandardTypes.getBooleanType()));
+        Instances.setFalseInstance(new BooleanInstance(false, StandardTypes.getBooleanType()));
 
         StandardTypes.setEntityType(ClassTypeBuilder.newBuilder("实体", Entity.class.getSimpleName())
                 .source(ClassSource.BUILTIN)

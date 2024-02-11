@@ -26,9 +26,8 @@ public class MergeNodeField extends Entity implements LocalKey {
     public MergeNodeField(Field field, MergeNode mergeNode, @Nullable Map<Branch, Value> values) {
         this.field = field;
         mergeNode.addField(this);
-        if (values != null) {
+        if (values != null)
             setValues(values);
-        }
     }
 
     public Field getField() {

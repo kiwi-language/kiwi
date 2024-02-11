@@ -6,6 +6,7 @@ import tech.metavm.entity.InstanceIndexQueryItem;
 import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.type.Index;
 import tech.metavm.object.type.IndexField;
 import tech.metavm.util.*;
@@ -37,7 +38,7 @@ public class LocalIndexSource implements IndexSource {
         try (var context = newContext()) {
             var ids = treeStore.getAllInstanceIds();
             var instanceContext = context.getInstanceContext();
-            Map<LocalIndex.Key, Long> indexMap = new HashMap<>();
+            Map<IndexKeyPO, Long> indexMap = new HashMap<>();
             Map<Long, List<Long>> typeId2ids = new HashMap<>();
             for (Long id : ids) {
                 instanceContext.get(PhysicalId.of(id)).accept(new StructuralVisitor() {
@@ -59,7 +60,7 @@ public class LocalIndexSource implements IndexSource {
         }
     }
 
-    private LocalIndex.Key convertKey(IndexKeyRT indexKeyRT) {
+    private IndexKeyPO convertKey(IndexKeyRT indexKeyRT) {
         var fields = indexKeyRT.getIndex().getFields();
         byte[][] bytes = new byte[CompilerConstants.NUM_INDEX_COLS][];
         for (int i = 0; i < CompilerConstants.NUM_INDEX_COLS; i++) {
@@ -70,16 +71,16 @@ public class LocalIndexSource implements IndexSource {
                 value = Instances.nullInstance();
             bytes[i] = BytesUtils.toIndexBytes(value);
         }
-        return new LocalIndex.Key(indexKeyRT.getIndex().getId(), bytes);
+        return new IndexKeyPO(indexKeyRT.getIndex().getId(), bytes);
     }
 
-    private IndexKeyRT convertFromKey(LocalIndex.Key key, IEntityContext context) {
-        var index = context.getEntity(Index.class, key.constraintId());
+    private IndexKeyRT convertFromKey(IndexKeyPO key, IEntityContext context) {
+        var index = context.getEntity(Index.class, key.getIndexId());
         var fields = index.getFields();
         var fieldMap = new HashMap<IndexField, Instance>();
         int i = 0;
         for (IndexField field : fields) {
-            try (var input = new IndexKeyReader(new ByteArrayInputStream(key.bytes()[i]), context.getInstanceContext()::get)) {
+            try (var input = new IndexKeyReader(new ByteArrayInputStream(key.getColumn(i)), context.getInstanceContext()::get)) {
                 fieldMap.put(field, input.readInstance());
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -117,6 +118,16 @@ public class LocalIndexSource implements IndexSource {
     @Override
     public long count(InstanceIndexQuery query, IInstanceContext context) {
         return index.query(convertQuery(query)).total();
+    }
+
+    @Override
+    public long count(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
+        return index.count(from.toPO(), to.toPO());
+    }
+
+    @Override
+    public List<Long> scan(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
+        return index.scan(from.toPO(), to.toPO());
     }
 
     @Override

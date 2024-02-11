@@ -34,6 +34,14 @@ public class InstanceMemoryIndex {
         return subIndex(query.index()).query(query);
     }
 
+    public List<ClassInstance> scan(Index index, IndexKeyRT from, IndexKeyRT to) {
+        return subIndex(index).scan(index, from, to);
+    }
+
+    public long count(Index index, IndexKeyRT from, IndexKeyRT to) {
+        return subIndex(index).count(index, from, to);
+    }
+
     private SubIndex subIndex(Index index) {
         return indexMap.computeIfAbsent(index, SubIndex::new);
     }
@@ -92,6 +100,28 @@ public class InstanceMemoryIndex {
                 }
             }
             return Instances.sortAndLimit(new ArrayList<>(matches), query.desc(), NncUtils.orElse(query.limit(), -1L));
+        }
+
+        public List<ClassInstance> scan(Index index, IndexKeyRT from, IndexKeyRT to) {
+            var matches = new IdentitySet<ClassInstance>();
+            for (var entry : map.entrySet()) {
+                var key = entry.getKey();
+                if (key.getIndex() == index && key.compareTo(from) >= 0 && key.compareTo(to) <= 0) {
+                    matches.addAll(entry.getValue());
+                }
+            }
+            return new ArrayList<>(matches);
+        }
+
+        public long count(Index index, IndexKeyRT from, IndexKeyRT to) {
+            long count = 0L;
+            for (var entry : map.entrySet()) {
+                var key = entry.getKey();
+                if (key.getIndex() == index && key.compareTo(from) >= 0 && key.compareTo(to) <= 0) {
+                    count++;
+                }
+            }
+            return count;
         }
 
     }

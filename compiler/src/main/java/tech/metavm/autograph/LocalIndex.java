@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import tech.metavm.entity.IndexOperator;
+import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
 
@@ -18,7 +19,7 @@ public class LocalIndex {
 
     public static final int NUM_COLS = 5;
     private final String path;
-    private Map<Key, Long> indexMap = new HashMap<>();
+    private Map<IndexKeyPO, Long> indexMap = new HashMap<>();
 
     LocalIndex(String path) {
         this.path = path;
@@ -30,9 +31,9 @@ public class LocalIndex {
             var instOutput = new InstanceOutput(output);
             instOutput.writeInt(indexMap.size());
             indexMap.forEach((key, id) -> {
-                instOutput.writeLong(key.constraintId);
+                instOutput.writeLong(key.getIndexId());
                 for (int i = 0; i < NUM_COLS; i++) {
-                    var bytes = key.bytes[i];
+                    var bytes = key.getColumn(i);
                     instOutput.writeInt(bytes.length);
                     instOutput.write(bytes);
                 }
@@ -50,17 +51,17 @@ public class LocalIndex {
         try (var input = new FileInputStream(path)) {
             var instInput = new InstanceInput(input);
             int size = instInput.readInt();
-            var indexMap = new HashMap<Key, Long>(size);
+            var indexMap = new HashMap<IndexKeyPO, Long>(size);
             for (int i = 0; i < size; i++) {
-                long indexId = instInput.readLong();
-                byte[][] bytes = new byte[NUM_COLS][];
+                var key = new IndexKeyPO();
+                key.setIndexId(instInput.readLong());
                 for (int j = 0; j < NUM_COLS; j++) {
                     int n = instInput.readInt();
-                    bytes[j] = new byte[n];
-                    input.read(bytes[j]);
+                    var bytes = new byte[n];
+                    input.read(bytes);
+                    key.setColumn(j, bytes);
                 }
                 long id = instInput.readLong();
-                var key = new Key(indexId, bytes);
                 indexMap.put(key, id);
             }
             this.indexMap = indexMap;
@@ -69,7 +70,7 @@ public class LocalIndex {
         }
     }
 
-    public void reset(Map<Key, Long> indexMap) {
+    public void reset(Map<IndexKeyPO, Long> indexMap) {
         this.indexMap = new HashMap<>(indexMap);
         save();
     }
@@ -98,14 +99,37 @@ public class LocalIndex {
         );
     }
 
+    public long count(IndexKeyPO from, IndexKeyPO to) {
+        if(from.getIndexId() != to.getIndexId())
+            throw new RuntimeException("Can not count keys from different indexes");
+        long count = 0;
+        for (IndexKeyPO key : indexMap.keySet()) {
+            if(key.getIndexId() == from.getIndexId() && key.compareTo(from) >= 0 && key.compareTo(to) <= 0)
+                count++;
+        }
+        return count;
+    }
+
+    public List<Long> scan(IndexKeyPO from, IndexKeyPO to) {
+        if(from.getIndexId() != to.getIndexId())
+            throw new RuntimeException("Can not scan keys from different indexes");
+        List<Long> ids = new ArrayList<>();
+        for (var e : indexMap.entrySet()) {
+            var key = e.getKey();
+            if(key.getIndexId() == from.getIndexId() && key.compareTo(from) >= 0 && key.compareTo(to) <= 0)
+                ids.add(e.getValue());
+        }
+        return ids;
+    }
+
     public record Query(long indexId, List<QueryItem> items, boolean desc, Long limit) {
 
-        boolean match(Key key) {
-            if(indexId != key.constraintId)
+        boolean match(IndexKeyPO key) {
+            if(indexId != key.getIndexId())
                 return false;
             int i = 0;
             for (var item : items) {
-                if(!item.operator.evaluate(key.bytes[i++], item.value))
+                if(!item.operator.evaluate(key.getColumn(i++), item.value))
                     return false;
             }
             return true;
@@ -117,30 +141,5 @@ public class LocalIndex {
     }
 
     public record QueryResult(List<Long> ids, long total) {}
-
-    public record Key(long constraintId, byte[][] bytes) {
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) return true;
-            if (obj == null || obj.getClass() != this.getClass()) return false;
-            var that = (Key) obj;
-            return this.constraintId == that.constraintId &&
-                    Arrays.deepEquals(this.bytes, that.bytes);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(constraintId, Arrays.deepHashCode(bytes));
-        }
-
-        @Override
-        public String toString() {
-            return "Key[" +
-                    "constraintId=" + constraintId + ", " +
-                    "bytes=" + Arrays.deepToString(bytes) + ']';
-        }
-
-    }
 
 }

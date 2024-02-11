@@ -5,6 +5,7 @@ import tech.metavm.flow.Function;
 import tech.metavm.flow.Value;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
 import tech.metavm.object.view.*;
 
 public abstract class ElementVisitor<R> {
@@ -182,6 +183,18 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitGetUniqueNode(GetUniqueNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIndexSelectNode(IndexSelectNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIndexQueryNode(IndexScanNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIndexCountNode(IndexCountNode node) {
         return visitNode(node);
     }
 

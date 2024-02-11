@@ -147,8 +147,8 @@ public class DoubleInstance extends NumberInstance {
         return value;
     }
 
-    @Override
-    public int compareTo(@NotNull NumberInstance o) {
-        return Double.compare(value, o.doubleValue());
-    }
+//    @Override
+//    public int compareTo(@NotNull NumberInstance o) {
+//        return Double.compare(value, o.doubleValue());
+//    }
 }

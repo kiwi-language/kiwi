@@ -89,12 +89,15 @@ public class IndexField extends Entity implements LocalKey {
     }
 
     public IndexFieldDTO toDTO() {
-        return new IndexFieldDTO(
-                id,
-                name,
-                code,
-                value.toDTO()
-        );
+        try(var serializeContext = SerializeContext.enter()) {
+            return new IndexFieldDTO(
+                    serializeContext.getTmpId(this),
+                    id,
+                    name,
+                    code,
+                    value.toDTO()
+            );
+        }
     }
 
     public int getFieldIndex() {

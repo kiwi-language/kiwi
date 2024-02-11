@@ -57,6 +57,7 @@ public class CodeGenerator {
 
     void generateCode(PsiClass psiClass, TypeResolver typeResolver) {
         psiClass.accept(new Generator(typeResolver, context));
+        psiClass.accept(new IndexDefiner(typeResolver, context));
     }
 
 }

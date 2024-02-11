@@ -17,6 +17,12 @@ public enum LabErrorCode {
 
     CAN_NOT_EVICT_APP_OWNER(1001, "应用所有人无法退出应用"),
 
+    TOO_MANY_LOGIN_ATTEMPTS(613, "登录尝试次数过多，请稍后再试"),
+
+    LOGIN_NAME_NOT_FOUND(602, "账号'{}'不存在"),
+
+    LOGIN_FAILED(603, "登录失败"),
+
     ;
 
     private final int code;

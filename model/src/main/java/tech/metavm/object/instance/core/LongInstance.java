@@ -192,12 +192,12 @@ public class LongInstance extends NumberInstance {
             return that.ge(this);
     }
 
-    @Override
-    public int compareTo(@NotNull NumberInstance o) {
-        return switch (o) {
-            case LongInstance l -> Long.compare(value, l.value);
-            default -> o.compareTo(this);
-        };
-    }
+//    @Override
+//    public int compareTo(@NotNull NumberInstance o) {
+//        return switch (o) {
+//            case LongInstance l -> Long.compare(value, l.value);
+//            default -> o.compareTo(this);
+//        };
+//    }
 
 }

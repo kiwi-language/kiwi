@@ -33,7 +33,9 @@ public enum Func {
 
     NOW(Date.class),
 
-    TIME(Long.class, Long.class),
+    NOW_MILLIS(Long.class),
+
+    TIME(Date.class, Long.class),
 
     LEN(Boolean.class, Object.class),
 
@@ -62,6 +64,8 @@ public enum Func {
     DATE_BEFORE(Boolean.class, Date.class, Date.class),
 
     DATE_AFTER(Boolean.class, Date.class, Date.class),
+
+    MD5(String.class, String.class)
 
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 

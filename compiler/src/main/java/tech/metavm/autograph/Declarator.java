@@ -1,11 +1,13 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
+import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.flow.Method;
 import tech.metavm.flow.MethodBuilder;
 import tech.metavm.flow.Parameter;
+import tech.metavm.flow.Values;
 import tech.metavm.object.type.*;
 import tech.metavm.util.CompilerConfig;
 import tech.metavm.util.IdentitySet;
@@ -28,6 +30,8 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     private final LinkedList<ClassType> classStack = new LinkedList<>();
 
+    private @Nullable Index currentIndex;
+
     private final IdentitySet<Field> visitedFields = new IdentitySet<>();
 
     private final IdentitySet<Method> visitedMethods = new IdentitySet<>();
@@ -43,6 +47,24 @@ public class Declarator extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitClass(PsiClass psiClass) {
+        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null) {
+            Index index = NncUtils.find(currentClass().getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
+            if (index == null) {
+                index = new Index(
+                        currentClass(),
+                        TranspileUtil.getIndexName(psiClass),
+                        psiClass.getName(),
+                        "",
+                        TranspileUtil.isUniqueIndex(psiClass)
+                );
+            } else {
+                index.setName(TranspileUtil.getIndexName(psiClass));
+            }
+            currentIndex = index;
+            psiClass.putUserData(Keys.INDEX, index);
+            super.visitClass(psiClass);
+            return;
+        }
         visitedFields.clear();
         visitedMethods.clear();
         var metaClass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
@@ -81,11 +103,14 @@ public class Declarator extends JavaRecursiveElementVisitor {
     public void visitMethod(PsiMethod method) {
         if (CompilerConfig.isMethodBlacklisted(method))
             return;
+        var psiClass = requireNonNull(method.getContainingClass());
+        if(TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null)
+            return;
         List<PsiMethod> overriddenMethods = TranspileUtil.getOverriddenMethods(method);
         List<Method> overridden = new ArrayList<>();
         for (PsiMethod overriddenMethod : overriddenMethods) {
             var overriddenMethodCls = NncUtils.requireNonNull(overriddenMethod.getContainingClass());
-            if(Object.class.getName().equals(overriddenMethodCls.getQualifiedName()))
+            if (Object.class.getName().equals(overriddenMethodCls.getQualifiedName()))
                 continue;
             var overriddenMethodType = TranspileUtil.createTemplateType(overriddenMethodCls);
             overridden.add(TranspileUtil.getMethidByJavaMethod(
@@ -128,7 +153,7 @@ public class Declarator extends JavaRecursiveElementVisitor {
         visitedMethods.add(flow);
         for (PsiTypeParameter typeParameter : method.getTypeParameters()) {
             var typeVar = typeResolver.resolveTypeVariable(typeParameter);
-            if(typeVar.getGenericDeclaration() != flow)
+            if (typeVar.getGenericDeclaration() != flow)
                 typeVar.setGenericDeclaration(flow);
         }
     }
@@ -151,8 +176,15 @@ public class Declarator extends JavaRecursiveElementVisitor {
     private List<Parameter> processParameters(PsiParameterList parameterList) {
         return NncUtils.map(
                 parameterList.getParameters(),
-                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveType(param.getType()))
+                param -> new Parameter(null, getFlowParamName(param), param.getName(), resolveParameterType(param))
         );
+    }
+
+    private Type resolveParameterType(PsiParameter parameter) {
+        var type = resolveType(parameter.getType());
+        if (TranspileUtil.getAnnotation(parameter, Nullable.class) != null)
+            type = context.getNullableType(type);
+        return type;
     }
 
     @Override
@@ -167,6 +199,14 @@ public class Declarator extends JavaRecursiveElementVisitor {
     }
 
     private void processField(PsiVariable psiField) {
+        var psiClass = requireNonNull(((PsiMember) psiField).getContainingClass());
+        if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null) {
+            var index = requireNonNull(currentIndex);
+            var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), psiField.getName()));
+            if (indexField == null)
+                new IndexField(index, getBizFieldName(psiField), psiField.getName(), Values.nullValue());
+            return;
+        }
         var type = resolveType(psiField.getType());
         if (TranspileUtil.getAnnotation(psiField, Nullable.class) != null)
             type = context.getNullableType(type);

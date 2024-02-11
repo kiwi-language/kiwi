@@ -12,6 +12,7 @@ import tech.metavm.object.instance.core.IInstanceContext;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
 import tech.metavm.util.*;
 
 import javax.annotation.Nullable;

@@ -12,6 +12,12 @@ public interface InstanceRepository extends InstanceProvider {
 
     @Nullable DurableInstance selectFirstByKey(IndexKeyRT key);
 
+    List<ClassInstance> indexScan(IndexKeyRT from, IndexKeyRT to);
+
+    long indexCount(IndexKeyRT from, IndexKeyRT to);
+
+    List<ClassInstance> indexSelect(IndexKeyRT key);
+
     boolean contains(Id id);
 
     void bind(DurableInstance instance);

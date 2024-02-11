@@ -16,6 +16,16 @@ public interface IndexEntryMapper {
 
     List<IndexEntryPO> query(IndexQueryPO queryPO);
 
+    long countRange(
+            @Param("appId") long appId,
+            @Param("from") IndexKeyPO from,
+            @Param("to") IndexKeyPO to);
+
+    List<IndexEntryPO> scan(
+            @Param("appId") long appId,
+            @Param("from") IndexKeyPO from,
+            @Param("to") IndexKeyPO to);
+
     List<IndexEntryPO> selectByInstanceIdsOrKeys(
             @Param("appId") long appId,
             @Param("instanceIds") Collection<Long> instanceIds,

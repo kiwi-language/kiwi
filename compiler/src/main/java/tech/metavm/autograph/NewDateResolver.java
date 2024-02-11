@@ -8,11 +8,15 @@ import tech.metavm.expression.FunctionExpression;
 import java.util.Date;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class NewDateResolver implements NewResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(TranspileUtil.createType(Date.class), "Date")
+                    MethodSignature.create(TranspileUtil.createType(Date.class), "Date"),
+                    MethodSignature.create(TranspileUtil.createType(Date.class), "Date",
+                            TranspileUtil.createPrimitiveType(long.class))
             );
 
     @Override
@@ -22,6 +26,10 @@ public class NewDateResolver implements NewResolver {
 
     @Override
     public Expression resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
-        return new FunctionExpression(Func.NOW, List.of());
+        var args = requireNonNull(methodCallExpression.getArgumentList()).getExpressions();
+        if(args.length == 0)
+            return new FunctionExpression(Func.NOW, List.of());
+        else
+            return new FunctionExpression(Func.TIME, List.of(expressionResolver.resolve(args[0])));
     }
 }

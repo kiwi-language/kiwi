@@ -39,6 +39,9 @@ public enum NodeKind {
     COPY(NodeKindCodes.COPY, CopyNode.class, CopyNodeParam.class),
     MAP(NodeKindCodes.MAP, MapNode.class, MapNodeParam.class),
     UNMAP(NodeKindCodes.UNMAP, UnmapNode.class, UnmapNodeParam.class),
+    INDEX_SCAN(NodeKindCodes.INDEX_SCAN, IndexScanNode.class, IndexScanNodeParam.class),
+    INDEX_COUNT(NodeKindCodes.INDEX_COUNT, IndexCountNode.class, IndexCountNodeParam.class),
+    INDEX_SELECT(NodeKindCodes.INDEX_SELECT, IndexSelectNode.class, IndexSelectNodeParam.class),
 
     ;
 

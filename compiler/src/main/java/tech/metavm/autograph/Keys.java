@@ -4,6 +4,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
+import tech.metavm.object.type.Index;
 import tech.metavm.object.type.TypeVariable;
 
 import java.util.HashSet;
@@ -67,6 +68,8 @@ public class Keys {
     public static final Key<Set<String>> BLOCK_VARS = createKey("BlockVars");
 
     public static final Key<Block> CONTAINING_BLOCK = createKey("ContainingBlock");
+
+    public static final Key<Index> INDEX = createKey("Index");
 
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);

@@ -54,6 +54,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final IndexSource indexSource;
     private final MappingProvider mappingProvider;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
+    private int seq;
 
     public BaseInstanceContext(long appId,
                                IInstanceContext parent,
@@ -93,6 +94,20 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     public LockMode getLockMode() {
         return lockMode;
+    }
+
+    @Override
+    public List<ClassInstance> indexScan(IndexKeyRT from, IndexKeyRT to) {
+        return NncUtils.map(indexSource.scan(from, to, this), id -> (ClassInstance) get(PhysicalId.of(id)));
+    }
+
+    @Override
+    public long indexCount(IndexKeyRT from, IndexKeyRT to) {
+        return indexSource.count(from, to, this);
+    }
+
+    public List<ClassInstance> indexSelect(IndexKeyRT key) {
+        return query(key.toQuery());
     }
 
     @Override
@@ -431,7 +446,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         instanceMap.put(instance.getId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
         forEachView(instance, v ->
-                v.initId(new DefaultViewId(v.getSourceRef().mapping().getId(), v.getSource().getId())));
+                v.initId(new DefaultViewId(requireNonNull(v.getSourceRef().mapping()).getId(), v.getSource().getId())));
     }
 
     protected void onContextInitializeId() {
@@ -651,6 +666,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail = instance;
         }
         instance.setContext(this);
+        instance.setSeq(seq++);
         if(instance.isView())
             source2views.computeIfAbsent(instance.getSource(), k -> new ArrayList<>()).add(instance);
         if(instance.getId() != null) {

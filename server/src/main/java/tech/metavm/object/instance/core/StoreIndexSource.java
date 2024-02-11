@@ -3,6 +3,7 @@ package tech.metavm.object.instance.core;
 import tech.metavm.entity.InstanceIndexQuery;
 import tech.metavm.object.instance.ByTypeQuery;
 import tech.metavm.object.instance.IInstanceStore;
+import tech.metavm.object.instance.IndexKeyRT;
 import tech.metavm.object.instance.IndexSource;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.util.NncUtils;
@@ -25,6 +26,16 @@ public class StoreIndexSource implements IndexSource {
     @Override
     public long count(InstanceIndexQuery query, IInstanceContext context) {
         return instanceStore.count(query, context);
+    }
+
+    @Override
+    public long count(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
+        return instanceStore.indexCount(from.toPO(), to.toPO(), context);
+    }
+
+    @Override
+    public List<Long> scan(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
+        return instanceStore.indexScan(from.toPO(), to.toPO(), context);
     }
 
     @Override

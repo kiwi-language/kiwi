@@ -13,9 +13,11 @@ import java.util.function.Predicate;
 
 public class Instances {
 
-    public static NullInstance nullInstance;
-    public static BooleanInstance trueInstance;
-    public static BooleanInstance falseInstance;
+    private static BuiltinInstanceHolder holder = new GlobalBuiltinInstanceHolder();
+
+    public static void setHolder(BuiltinInstanceHolder holder) {
+        Instances.holder = holder;
+    }
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
             Integer.class, new PrimitiveType(PrimitiveKind.LONG),
@@ -214,7 +216,7 @@ public class Instances {
     }
 
     public static BooleanInstance booleanInstance(boolean value) {
-        return value ? trueInstance : falseInstance;
+        return value ? holder.getTrueInstance() : holder.getFalseInstance();
     }
 
     public static BooleanInstance booleanInstance(boolean value, Function<Class<?>, Type> getTypeFunc) {
@@ -238,27 +240,27 @@ public class Instances {
     }
 
     public static NullInstance nullInstance() {
-        return nullInstance;
+        return holder.getNullInstance();
     }
 
     public static void setNullInstance(NullInstance nullInstance) {
-        Instances.nullInstance = nullInstance;
+        holder.setNullInstance(nullInstance);
     }
 
     public static BooleanInstance trueInstance() {
-        return trueInstance;
+        return holder.getTrueInstance();
     }
 
     public static BooleanInstance falseInstance() {
-        return falseInstance;
+        return holder.getFalseInstance();
     }
 
     public static void setTrueInstance(BooleanInstance trueInstance) {
-        Instances.trueInstance = trueInstance;
+        holder.setTrueInstance(trueInstance);
     }
 
     public static void setFalseInstance(BooleanInstance falseInstance) {
-        Instances.falseInstance = falseInstance;
+        holder.setFalseInstance(falseInstance);
     }
 
     public static PasswordInstance passwordInstance(String password) {
@@ -335,7 +337,7 @@ public class Instances {
     }
 
     public static BooleanInstance createBoolean(boolean b) {
-        return b ? trueInstance : falseInstance;
+        return b ? trueInstance() : falseInstance();
     }
 
     private static ArrayType getObjectArrayType() {

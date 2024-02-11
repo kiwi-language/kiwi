@@ -33,4 +33,7 @@ public class NodeKindCodes {
     public static final int COPY = 33;
     public static final int MAP = 34;
     public static final int UNMAP = 35;
+    public static final int INDEX_SCAN = 36;
+    public static final int INDEX_COUNT = 37;
+    public static final int INDEX_SELECT = 38;
 }

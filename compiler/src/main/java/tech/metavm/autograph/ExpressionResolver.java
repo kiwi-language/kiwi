@@ -56,7 +56,8 @@ public class ExpressionResolver {
     private final VariableTable variableTable;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final ArrayTypeProvider arrayTypeProvider;
-    private final Generator visitor;
+    private final UnionTypeProvider unionTypeProvider;
+    private final VisitorBase visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListAddResolver(), new ListRemoveResolver(), new ListGetResolver(),
@@ -64,7 +65,9 @@ public class ExpressionResolver {
             new PrimitiveToStringResolver(), new ListClearResolver(), new ListAddAllResolver(),
             new GetPasswordResolver(), new ObjectsToStringResolver(), new StringReplaceFirstResolver(),
             new StringReplaceResolver(), new ListContainsResolver(), new ListOfResolver(),
-            new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver()
+            new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver(),
+            new IndexUtilsCallResolver(), new SystemCurrentTimeMillisResolver(),
+            new EqualsResolver(), new Md5CallResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -74,12 +77,14 @@ public class ExpressionResolver {
 
     public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,
                               ArrayTypeProvider arrayTypeProvider,
+                              UnionTypeProvider unionTypeProvider,
                               ParameterizedFlowProvider parameterizedFlowProvider,
-                              Generator visitor) {
+                              VisitorBase visitor) {
         this.methodGenerator = methodGenerator;
         this.typeResolver = typeResolver;
         this.variableTable = variableTable;
         this.arrayTypeProvider = arrayTypeProvider;
+        this.unionTypeProvider = unionTypeProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.visitor = visitor;
     }
@@ -108,6 +113,7 @@ public class ExpressionResolver {
     private Expression resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
         return switch (psiExpression) {
             case PsiBinaryExpression binaryExpression -> resolveBinary(binaryExpression, context);
+            case PsiPolyadicExpression polyadicExpression -> resolvePolyadic(polyadicExpression, context);
             case PsiUnaryExpression unaryExpression -> resolveUnary(unaryExpression, context);
             case PsiMethodCallExpression methodCallExpression -> resolveMethodCall(methodCallExpression, context);
             case PsiNewExpression newExpression -> resolveNew(newExpression, context);
@@ -122,6 +128,16 @@ public class ExpressionResolver {
             case PsiLambdaExpression lambdaExpression -> resolveLambdaExpression(lambdaExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
+    }
+
+    private Expression resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
+        var operator = resolveOperator(psiExpression.getOperationTokenType());
+        var operands = NncUtils.map(psiExpression.getOperands(), expr -> resolve(expr, context));
+        var current = operands.get(0);
+        for (int i = 1; i < operands.size(); i++) {
+            current = new BinaryExpression(operator, current, operands.get(i));
+        }
+        return current;
     }
 
     private Expression resolveInstanceOf(PsiInstanceOfExpression instanceOfExpression, ResolutionContext context) {
@@ -614,7 +630,12 @@ public class ExpressionResolver {
             );
             var paramTypes = NncUtils.map(
                     requireNonNull(method.getParameterList()).getParameters(),
-                    param -> typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()))
+                    param -> {
+                        var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
+                        if(TranspileUtil.getAnnotation(param, Nullable.class) != null)
+                            t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
+                        return t;
+                    }
             );
             paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
             var flow = declaringType.getMethodByCodeAndParamTypes(Types.getConstructorCode(declaringType), paramTypes);

@@ -58,6 +58,8 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     private transient @Nullable SourceRef sourceRef;
 
+    private int seq;
+
     public DurableInstance(Type type) {
         this(null, type, 0L, 0L, false, null);
     }
@@ -470,4 +472,11 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         return prev;
     }
 
+    public int getSeq() {
+        return seq;
+    }
+
+    public void setSeq(int seq) {
+        this.seq = seq;
+    }
 }

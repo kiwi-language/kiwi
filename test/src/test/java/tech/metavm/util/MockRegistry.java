@@ -9,6 +9,7 @@ import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.Index;
 import tech.metavm.task.JobSchedulerStatus;
 import tech.metavm.task.TaskSignal;
 

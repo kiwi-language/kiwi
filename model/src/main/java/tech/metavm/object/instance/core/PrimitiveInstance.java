@@ -1,5 +1,6 @@
 package tech.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.PrimitiveInstanceParam;
 import tech.metavm.object.type.PrimitiveType;
@@ -7,7 +8,7 @@ import tech.metavm.object.type.PrimitiveType;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public abstract class PrimitiveInstance extends Instance {
+public abstract class PrimitiveInstance extends Instance implements Comparable<PrimitiveInstance> {
 
     public PrimitiveInstance(PrimitiveType type) {
         super(type);
@@ -81,4 +82,12 @@ public abstract class PrimitiveInstance extends Instance {
         );
     }
 
+    @Override
+    public int compareTo(@NotNull PrimitiveInstance o) {
+        int cmp = Integer.compare(getType().getKind().code(), o.getType().getKind().code());
+        if(cmp != 0)
+            return cmp;
+        //noinspection unchecked,rawtypes
+        return ((Comparable) getValue()).compareTo(o.getValue());
+    }
 }

@@ -297,6 +297,12 @@ public class TranspileUtil {
         return createType(Objects.requireNonNull(psiClass.getTypeParameters())[typeParameterIndex]);
     }
 
+    public static PsiClassType createTypeVariableType(Method method, int typeParameterIndex) {
+        var psiClass = requireNonNull(createType(method.getDeclaringClass()).resolve());
+        var psiMethod = NncUtils.find(psiClass.getMethods(), m -> matchMethod(m, method));
+        return createType(Objects.requireNonNull(psiMethod).getTypeParameters()[typeParameterIndex]);
+    }
+
     public static PsiClassType getSuperType(PsiType type, Class<?> superClass) {
         Queue<PsiType> queue = new LinkedList<>(List.of(type));
         while (!queue.isEmpty()) {
@@ -635,6 +641,16 @@ public class TranspileUtil {
     public static String getFlowName(PsiMethod method) {
         String bizName = tryGetNameFromAnnotation(method, EntityFlow.class);
         return bizName != null ? bizName : getFlowCode(method);
+    }
+
+    public static String getIndexName(PsiClass klass) {
+        String bizName = tryGetNameFromAnnotation(klass, EntityIndex.class);
+        return bizName != null ? bizName : klass.getName();
+    }
+
+    public static boolean isUniqueIndex(PsiClass klass) {
+        var unique = getAnnotationAttr(klass, EntityIndex.class, "unique");
+        return unique != null ? (Boolean) unique : false;
     }
 
     public static String getFlowCode(PsiMethod method) {

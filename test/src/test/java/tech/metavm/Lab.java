@@ -1,5 +1,8 @@
 package tech.metavm;
 
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
+
 import java.io.*;
 
 public class Lab {
@@ -15,7 +18,8 @@ public class Lab {
     }
 
     public static void main(String[] args) throws IOException {
-        test("Hello", "a");
+        var physicalId = (PhysicalId) Id.parse("01aec5a6bf07");
+        System.out.println(physicalId.getId());
     }
 
 }
