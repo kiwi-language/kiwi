@@ -22,7 +22,7 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
 
-public class Declarator extends JavaRecursiveElementVisitor {
+public class Declarator extends CodeGenVisitor {
 
     private final TypeResolver typeResolver;
 
@@ -187,18 +187,9 @@ public class Declarator extends JavaRecursiveElementVisitor {
         return type;
     }
 
-    @Override
-    public void visitRecordComponent(PsiRecordComponent recordComponent) {
-        processField(recordComponent);
-    }
 
     @Override
     public void visitField(PsiField psiField) {
-        if (!isIndexDefField(psiField))
-            processField(psiField);
-    }
-
-    private void processField(PsiVariable psiField) {
         var psiClass = requireNonNull(((PsiMember) psiField).getContainingClass());
         if (TranspileUtil.getAnnotation(psiClass, EntityIndex.class) != null) {
             var index = requireNonNull(currentIndex);

@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 @EntityType("实验室")
-public class Lab {
+public class UserLab {
 
     @EntityField(value = "标签", asTitle = true)
     private String label;

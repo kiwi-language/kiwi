@@ -1,8 +1,10 @@
 package tech.metavm.autograph;
 
+import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
@@ -24,6 +26,8 @@ import java.util.*;
 import static java.util.Objects.requireNonNull;
 
 public class TranspileUtil {
+
+    private static final String DUMMY_FILE_NAME = "_Dummy_." + JavaFileType.INSTANCE.getDefaultExtension();
 
     private static PsiElementFactory elementFactory;
     private static Project project;
@@ -316,6 +320,30 @@ public class TranspileUtil {
                 + "' in the hierarchy of '" + type.getCanonicalText() + "'");
     }
 
+    public static boolean isPublic(PsiClass psiClass) {
+        return requireNonNull(psiClass.getModifierList()).hasModifierProperty(PsiModifier.PUBLIC);
+    }
+
+    public static PsiMethod createGetter(String name, PsiType type) {
+        String text = String.format(
+                "public %s %s() { return this.%s; }",
+                type.getCanonicalText(), name, name
+        );
+        return elementFactory.createMethodFromText(text, null);
+    }
+
+    public static PsiMethod createMethodFromText(String text) {
+        return elementFactory.createMethodFromText(text, null);
+    }
+
+    public static boolean isPrivate(PsiClass psiClass) {
+        return requireNonNull(psiClass.getModifierList()).hasModifierProperty(PsiModifier.PRIVATE);
+    }
+
+    public static boolean isProtected(PsiClass psiClass) {
+        return requireNonNull(psiClass.getModifierList()).hasModifierProperty(PsiModifier.PROTECTED);
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -407,11 +435,41 @@ public class TranspileUtil {
         return elementFactory.createStatementFromText(text, null);
     }
 
-    public static PsiMethod createMethod(String className, boolean isPublic) {
+    public static PsiClass createClassFromText(String text) {
+        var file = (PsiJavaFile) PsiFileFactory.getInstance(project).createFileFromText(DUMMY_FILE_NAME, JavaFileType.INSTANCE, text);
+        return file.getClasses()[0];
+    }
+
+    public static PsiClass createClass(String name, boolean isPublic) {
         if (isPublic)
-            return elementFactory.createMethodFromText(String.format("public %s() {}", className), null);
+            return elementFactory.createClassFromText(String.format("public class %s {}", name), null);
         else
-            return elementFactory.createMethodFromText(String.format("%s() {}", className), null);
+            return elementFactory.createClassFromText(String.format("class %s {}", name), null);
+    }
+
+    public static PsiField createFieldFromText(String text) {
+        return elementFactory.createFieldFromText(text, null);
+    }
+
+    public static PsiField createField(String name, PsiType type, boolean isFinal, @Nullable String access) {
+        if (isFinal) {
+            if (access != null)
+                return elementFactory.createFieldFromText(String.format("%s final %s %s;", access, type.getCanonicalText(), name), null);
+            else
+                return elementFactory.createFieldFromText(String.format("final %s %s;", type.getCanonicalText(), name), null);
+        } else {
+            if (access != null)
+                return elementFactory.createFieldFromText(String.format("%s %s %s;", access, type.getCanonicalText(), name), null);
+            else
+                return elementFactory.createFieldFromText(String.format("%s %s;", type.getCanonicalText(), name), null);
+        }
+    }
+
+    public static PsiMethod createConstructor(String name, boolean isPublic) {
+        if (isPublic)
+            return elementFactory.createMethodFromText(String.format("public %s() {}", name), null);
+        else
+            return elementFactory.createMethodFromText(String.format("%s() {}", name), null);
     }
 
     public static PsiStatement getEnclosingStatement(PsiExpression expression) {
@@ -603,7 +661,7 @@ public class TranspileUtil {
     }
 
     public static Access getAccess(PsiVariable psiField) {
-        if(psiField instanceof PsiRecordComponent)
+        if (psiField instanceof PsiRecordComponent)
             return Access.PUBLIC;
         var modifiers = Objects.requireNonNull(psiField.getModifierList());
         if (modifiers.hasModifierProperty(PsiModifier.PUBLIC))
@@ -666,9 +724,25 @@ public class TranspileUtil {
     }
 
     public static PsiAnnotation getAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
-        var annotation = element.getAnnotation(annotationClass.getName());
-        if (annotation == null) annotation = element.getAnnotation(annotationClass.getSimpleName());
+        var annotation = findAnnotation(element.getAnnotations(), annotationClass.getName());
+        if (annotation == null) annotation = findAnnotation(element.getAnnotations(), annotationClass.getSimpleName());
         return annotation;
+    }
+
+    private static @Nullable PsiAnnotation findAnnotation(PsiAnnotation[] annotations, String qualifiedName) {
+        if (annotations.length == 0) return null;
+
+        String shortName = StringUtil.getShortName(qualifiedName);
+        for (PsiAnnotation annotation : annotations) {
+            PsiJavaCodeReferenceElement referenceElement = annotation.getNameReferenceElement();
+            if (referenceElement != null && shortName.equals(referenceElement.getReferenceName())) {
+                if (qualifiedName.equals(annotation.getQualifiedName())) {
+                    return annotation;
+                }
+            }
+        }
+
+        return null;
     }
 
     public static Object getAnnotationAttr(PsiModifierListOwner element, Class<? extends Annotation> annotationClass, String attributeName) {

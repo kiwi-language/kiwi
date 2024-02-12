@@ -19,7 +19,7 @@ import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.getEnumConstantName;
 import static tech.metavm.expression.Expressions.trueExpression;
 
-public class Generator extends VisitorBase {
+public class Generator extends CodeGenVisitor {
 
     private final LinkedList<MethodGenerator> builders = new LinkedList<>();
     private final Map<String, ClassType> classes = new HashMap<>();
@@ -309,7 +309,7 @@ public class Generator extends VisitorBase {
             if (psiMethod.isConstructor()) {
                 var superClass = currentClass().getSuperClass();
                 if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
-                        && !isSuperCallPresent(psiMethod)) {
+                        && !isRecordType(superClass) && !isSuperCallPresent(psiMethod)) {
                     builder().createMethodCall(
                             builder().getVariable("this"),
                             superClass.getMethodByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
@@ -358,6 +358,10 @@ public class Generator extends VisitorBase {
 
     private boolean isEntityType(ClassType classType) {
         return classType == StandardTypes.getEntityType();
+    }
+
+    private boolean isRecordType(ClassType classType) {
+        return classType == StandardTypes.getRecordType();
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {
@@ -545,7 +549,7 @@ public class Generator extends VisitorBase {
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
-                if(NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
+                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
                     memberTypes.add(value.getType());
             }
             var fieldType =

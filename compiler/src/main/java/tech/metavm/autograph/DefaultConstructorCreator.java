@@ -19,7 +19,7 @@ public class DefaultConstructorCreator extends VisitorBase {
             return;
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!psiClass.isInterface() && !hashConstructor) {
-            psiClass.addBefore(TranspileUtil.createMethod(psiClass.getName(), !psiClass.isEnum()), null);
+            psiClass.addBefore(TranspileUtil.createConstructor(psiClass.getName(), !psiClass.isEnum()), null);
         }
     }
 }
