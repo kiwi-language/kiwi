@@ -52,6 +52,14 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
                             ReflectionUtils.getMethod(IndexUtils.class, "select", tech.metavm.entity.Index.class),
                             1
                     )
+            ),
+            MethodSignature.createStatic(
+                    TranspileUtil.createType(IndexUtils.class),
+                    "selectFirst",
+                    TranspileUtil.createTypeVariableType(
+                            ReflectionUtils.getMethod(IndexUtils.class, "selectFirst", tech.metavm.entity.Index.class),
+                            1
+                    )
             )
     );
 
@@ -73,6 +81,9 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
         if (methodName.equals("select")) {
             var key = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
             return new NodeExpression(methodGenerator.createIndexSelect(index, key));
+        } else if (methodName.equals("selectFirst")) {
+            var key = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
+            return new NodeExpression(methodGenerator.createIndexSelectFirst(index, key));
         } else {
             var from = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
             var to = resolveIndexQueryKey(index, (PsiCallExpression) args[1], expressionResolver);

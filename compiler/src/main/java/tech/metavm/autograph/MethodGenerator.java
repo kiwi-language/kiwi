@@ -353,6 +353,13 @@ public class MethodGenerator {
         ));
     }
 
+    public IndexSelectFirstNode createIndexSelectFirst(Index index, IndexQueryKey key) {
+        return setNodeExprTypes(new IndexSelectFirstNode(
+                null, nextName("IndexSelectFirst"), null,
+                scope().getLastNode(), scope(), index, key
+        ));
+    }
+
     public Field newTemproryField(ClassType klass, String name, Type type) {
         return FieldBuilder.newBuilder(name, null, klass, type).build();
     }

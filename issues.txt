@@ -1,1 +1,3 @@
 1 Enum class failed to deploy when new an enum constant is added to the enum class.
+
+2 Method not generated for implicit record constructor.

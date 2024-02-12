@@ -345,7 +345,7 @@ public class Generator extends VisitorBase {
         requireNonNull(psiMethod.getBody()).accept(this);
         if (psiMethod.isConstructor()) {
             builder.createReturn(new NodeExpression(method.getRootNode()));
-        } else if (!requireNonNull(method.getRootScope().getLastNode()).isExit()) {
+        } else if (method.getReturnType().isVoid() && !requireNonNull(method.getRootScope().getLastNode()).isExit()) {
             builder.createReturn();
         }
         builder.exitScope();

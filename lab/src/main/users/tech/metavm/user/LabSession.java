@@ -1,8 +1,9 @@
 package tech.metavm.user;
 
-import tech.metavm.builtin.IndexDef;
 import tech.metavm.entity.EntityField;
+import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.Index;
 import tech.metavm.util.UUIDUtils;
 
 import javax.annotation.Nullable;
@@ -10,9 +11,6 @@ import java.util.Date;
 
 @EntityType("会话")
 public class LabSession {
-
-    public static final IndexDef<LabSession> IDX_USER_STATE = IndexDef.create(LabSession.class, "user", "state");
-    public static final IndexDef<LabSession> IDX_TOKEN = IndexDef.createUnique(LabSession.class, "token");
 
     @EntityField("令牌")
     private final String token;
@@ -35,11 +33,25 @@ public class LabSession {
         this.autoCloseAt = autoCloseAt;
     }
 
+    @EntityIndex("用户状态索引")
+    public record UserStateIndex(LabUser user, LabSessionState state) implements Index<LabSession> {
+        public UserStateIndex(LabSession session) {
+            this(session.user, session.state);
+        }
+    }
+
+    @EntityIndex("令牌索引")
+    public record TokenIndex(String token) implements Index<LabSession> {
+        public TokenIndex(LabSession session) {
+            this(session.token);
+        }
+    }
+
     public String getToken() {
         return token;
     }
 
-    public LabUser getLabUser() {
+    public LabUser getUser() {
         return user;
     }
 

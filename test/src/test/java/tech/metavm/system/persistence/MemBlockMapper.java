@@ -22,8 +22,6 @@ public class MemBlockMapper implements BlockMapper {
             blocks.put(block.getId(), block);
             treeMap.put(block.getEndId(), block);
             if (block.getActive()) {
-                if(block.getTypeId() == 50285L)
-                    System.out.println("Caught");
                 activeBlocks.put(block.getTypeId(), block);
             }
         });
@@ -43,8 +41,6 @@ public class MemBlockMapper implements BlockMapper {
                 block.setNextId(record.getNextId());
                 block.setActive(record.getActive());
                 if (block.getActive()) {
-                    if(block.getTypeId() == 50285L)
-                        System.out.println("Caught");
                     activeBlocks.put(block.getTypeId(), block);
                 }
                 else if (activeBlocks.get(block.getTypeId()) == block)

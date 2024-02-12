@@ -325,6 +325,7 @@ public class MainTest extends TestCase {
                     ((PrimitiveFieldValue) role.getFieldValue(roleNameFieldId)).getValue()
             );
             var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
+            assertNoError(userType);
             var userConstructorId = TestUtils.getMethodIdByCode(userType, "LabUser");
             var user = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
@@ -361,6 +362,7 @@ public class MainTest extends TestCase {
             Assert.assertEquals(2, userType.getClassParam().constraints().size());
 
             var platformUserType = queryClassType("LabPlatformUser", List.of(TypeCategory.CLASS.code()));
+            assertNoError(platformUserType);
             var platformUserConstructorId = TestUtils.getMethodIdByCode(platformUserType, "LabPlatformUser");
             var platformUser = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
@@ -456,8 +458,7 @@ public class MainTest extends TestCase {
                         )
                 ));
                 Assert.fail("应用所有人无法退出应用");
-            }
-            catch (FlowExecutionException e) {
+            } catch (FlowExecutionException e) {
                 Assert.assertEquals("应用所有人无法退出应用", e.getMessage());
             }
 
@@ -545,7 +546,7 @@ public class MainTest extends TestCase {
             ));
             // get LoginResult type
             var loginResultType = queryClassType("LabLoginResult");
-            var token = ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
             Assert.assertNotNull(token);
 
             // test login with too many attempts
@@ -562,14 +563,68 @@ public class MainTest extends TestCase {
             for (int i = 0; i < 5; i++) {
                 try {
                     TestUtils.doInTransaction(() -> flowExecutionService.execute(loginRequest));
-                    if(i == 4) {
+                    if (i == 4) {
                         Assert.fail("登录尝试次数过多，应该抛出异常");
                     }
-                }
-                catch (FlowExecutionException e) {
+                } catch (FlowExecutionException e) {
                     Assert.assertEquals("登录尝试次数过多，请稍后再试", e.getMessage());
                 }
             }
+
+            // execute the LabUser.verify method and check verification result
+            var verifyMethodId = TestUtils.getMethodIdByCode(userType, "verify");
+            var tokenValue = InstanceFieldValue.of(InstanceDTO.createClassInstance(
+                    tokenType.getRef(),
+                    List.of(
+                            InstanceFieldDTO.create(
+                                    getFieldIdByCode(tokenType, "appId"),
+                                    PrimitiveFieldValue.createLong(1)
+                            ),
+                            InstanceFieldDTO.create(
+                                    getFieldIdByCode(tokenType, "token"),
+                                    PrimitiveFieldValue.createString(token)
+                            )
+                    )
+            ));
+            var loginInfo = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            verifyMethodId,
+                            null,
+                            List.of(tokenValue)
+                    )
+            ));
+            var loginInfoType = queryClassType("LabLoginInfo");
+            assertNoError(loginInfoType);
+            var appIdFieldId = getFieldIdByCode(loginInfoType, "appId");
+            var userFieldId = getFieldIdByCode(loginInfoType, "user");
+            Assert.assertEquals(1L, ((PrimitiveFieldValue) loginInfo.getFieldValue(appIdFieldId)).getValue());
+            Assert.assertEquals(user.id(), ((ReferenceFieldValue) loginInfo.getFieldValue(userFieldId)).getId());
+
+            // test logout
+            var logoutMethodId = TestUtils.getMethodIdByCode(userType, "logout");
+            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            logoutMethodId,
+                            null,
+                            List.of(
+                                    new ArrayFieldValue(
+                                            null,
+                                            false,
+                                            List.of(tokenValue)
+                                    )
+                            )
+                    )
+            ));
+
+            // verify that the token has been invalidated
+            loginInfo = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            verifyMethodId,
+                            null,
+                            List.of(tokenValue)
+                    )
+            ));
+            Assert.assertEquals(-1L, ((PrimitiveFieldValue) loginInfo.getFieldValue(appIdFieldId)).getValue());
         }).get();
     }
 
@@ -584,6 +639,10 @@ public class MainTest extends TestCase {
 
     private TypeDTO queryClassType(String name) {
         return queryClassType(name, List.of(TypeCategory.CLASS.code(), TypeCategory.ENUM.code(), TypeCategory.INTERFACE.code()));
+    }
+
+    private void assertNoError(TypeDTO typeDTO) {
+        Assert.assertEquals(0, typeDTO.getClassParam().errors().size());
     }
 
     private TypeDTO queryClassType(String name, List<Integer> categories) {

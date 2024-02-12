@@ -190,6 +190,10 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
+    public R visitIndexSelectFirstNode(IndexSelectFirstNode node) {
+        return visitNode(node);
+    }
+
     public R visitIndexQueryNode(IndexScanNode node) {
         return visitNode(node);
     }

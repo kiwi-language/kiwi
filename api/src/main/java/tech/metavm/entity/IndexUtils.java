@@ -19,6 +19,10 @@ public class IndexUtils {
         return List.of();
     }
 
+    public static <R, I extends Index<R>> R selectFirst(I key) {
+        return null;
+    }
+
     public static <R, I extends Index<R>> long count(Class<I> klass, Predicate<I> filter) {
         return 0L;
     }

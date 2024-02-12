@@ -3,12 +3,7 @@ package tech.metavm;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityFlow;
 import tech.metavm.entity.EntityType;
-import tech.metavm.user.LabPlatformUser;
-import tech.metavm.user.LabRole;
-import tech.metavm.user.LabSession;
-import tech.metavm.user.LabUser;
-import tech.metavm.utils.LabBusinessException;
-import tech.metavm.utils.LabErrorCode;
+import tech.metavm.user.*;
 
 import java.util.Date;
 import java.util.List;
@@ -30,10 +25,18 @@ public class Lab {
     }
 
     @EntityFlow("登录")
-    public void login(long appId, String loginName, String password, String clientIP) {
-        var result = LabUser.login(appId, loginName, password, clientIP);
-        if (result.token() == null)
-            throw new LabBusinessException(LabErrorCode.LOGIN_FAILED);
+    public void login(String loginName, String password, String clientIP) {
+        LabUser.login(1L, loginName, password, clientIP);
+    }
+
+    @EntityFlow("验证")
+    public void verify(String token) {
+        LabUser.verify(new LabToken(1L, token));
+    }
+
+    @EntityFlow("登出")
+    public void logout(String token) {
+        LabUser.logout(List.of(new LabToken(1L, token)));
     }
 
 }

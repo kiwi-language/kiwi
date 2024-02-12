@@ -42,6 +42,7 @@ public enum NodeKind {
     INDEX_SCAN(NodeKindCodes.INDEX_SCAN, IndexScanNode.class, IndexScanNodeParam.class),
     INDEX_COUNT(NodeKindCodes.INDEX_COUNT, IndexCountNode.class, IndexCountNodeParam.class),
     INDEX_SELECT(NodeKindCodes.INDEX_SELECT, IndexSelectNode.class, IndexSelectNodeParam.class),
+    INDEX_SELECT_FIRST(NodeKindCodes.INDEX_SELECT_FIRST, IndexSelectFirstNode.class, IndexSelectFirstNodeParam.class),
 
     ;
 

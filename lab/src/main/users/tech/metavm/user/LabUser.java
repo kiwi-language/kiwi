@@ -93,6 +93,24 @@ public class LabUser {
         return new LabToken(appId, session.getToken());
     }
 
+    public static void logout(List<LabToken> tokens) {
+        for (LabToken token : tokens) {
+            var session = IndexUtils.selectFirst(new LabSession.TokenIndex(token.token()));
+            if (session != null) {
+                if (session.isActive())
+                    session.close();
+            }
+        }
+    }
+
+    public static LabLoginInfo verify(LabToken token) {
+        var session = IndexUtils.selectFirst(new LabSession.TokenIndex(token.token()));
+        if (session != null && session.isActive()) {
+            return new LabLoginInfo(token.appId(), session.getUser());
+        } else
+            return LabLoginInfo.failed();
+    }
+
     public void setName(String name) {
         this.name = name;
     }

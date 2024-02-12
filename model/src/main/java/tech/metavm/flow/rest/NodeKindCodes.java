@@ -36,4 +36,5 @@ public class NodeKindCodes {
     public static final int INDEX_SCAN = 36;
     public static final int INDEX_COUNT = 37;
     public static final int INDEX_SELECT = 38;
+    public static final int INDEX_SELECT_FIRST = 39;
 }
