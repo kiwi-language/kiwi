@@ -13,8 +13,11 @@ import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
+import tech.metavm.flow.rest.MethodParam;
+import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.instance.core.DurableInstance;
@@ -358,7 +361,16 @@ public class TestUtils {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
     }
 
-    public static long getMethodId(TypeDTO typeDTO, String code, Long...parameterTypeIds) {
+    public static long getStaticMethod(TypeDTO typeDTO, String code, RefDTO...parameterTypeRefs) {
+        var paramTypeRefList = List.of(parameterTypeRefs);
+        return NncUtils.findRequired(typeDTO.getClassParam().flows(),
+                f -> code.equals(f.code()) &&
+                        ((MethodParam) f.param()).isStatic() &&
+                        paramTypeRefList.equals(NncUtils.map(f.parameters(), ParameterDTO::typeRef))
+        ).id();
+    }
+
+    public static long getMethodId(TypeDTO typeDTO, String code, Long... parameterTypeIds) {
         var paramTypeidList = List.of(parameterTypeIds);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),
                 f -> code.equals(f.code()) && paramTypeidList.equals(

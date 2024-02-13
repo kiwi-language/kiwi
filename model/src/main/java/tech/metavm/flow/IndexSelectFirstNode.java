@@ -7,6 +7,8 @@ import tech.metavm.flow.rest.IndexSelectFirstNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Index;
+import tech.metavm.util.Instances;
+import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
@@ -69,7 +71,7 @@ public class IndexSelectFirstNode extends NodeRT {
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var result = frame.getInstanceRepository().selectFirstByKey(key.buildIndexKey(frame));
-        return next(result);
+        return next(NncUtils.orElse(result, Instances.nullInstance()));
     }
 
     @Override

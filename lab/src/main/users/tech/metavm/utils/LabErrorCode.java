@@ -23,6 +23,8 @@ public enum LabErrorCode {
 
     LOGIN_FAILED(603, "登录失败"),
 
+    NOT_A_MEMBER_OF_THE_APP(607, "用户未加入应用无法进入"),
+
     ;
 
     private final int code;

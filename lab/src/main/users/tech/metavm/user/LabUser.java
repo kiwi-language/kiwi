@@ -1,5 +1,6 @@
 package tech.metavm.user;
 
+import tech.metavm.application.LabApplication;
 import tech.metavm.builtin.Password;
 import tech.metavm.entity.*;
 import tech.metavm.util.MD5Utils;
@@ -32,37 +33,43 @@ public class LabUser {
     @EntityField("状态")
     private LabUserState state = LabUserState.ACTIVE;
 
-    @EntityField("平台用户ID")
+    @EntityField("应用")
+    private final LabApplication application;
+
+    @EntityField("平台用户")
     @Nullable
-    private Long platformUserId;
+    private LabPlatformUser platformUser;
 
     @ChildEntity("角色列表")
     private final List<LabRole> roles = new ArrayList<>();
 
-    public LabUser(String loginName, String password, String name, List<LabRole> roles) {
+    public LabUser(String loginName, String password, String name, List<LabRole> roles, LabApplication application) {
         this.loginName = loginName;
         this.password = new Password(password);
         this.name = name;
+        this.application = application;
         this.roles.addAll(roles);
     }
 
-    @EntityIndex("平台用户ID")
-    public record PlatformUserIdIndex(Long platformUserId) implements Index<LabUser> {
+    @EntityIndex("平台用户索引")
+    public record IndexAppPlatformUser(LabApplication application, LabPlatformUser platformUser) implements Index<LabUser> {
 
-        public PlatformUserIdIndex(LabUser user) {
-            this(user.platformUserId);
+        public IndexAppPlatformUser(LabUser user) {
+            this(user.application, user.platformUser);
         }
     }
 
-    @EntityIndex("登录名")
-    public record LoginNameIndex(@EntityIndexField("登录名") String loginName) implements Index<LabUser> {
+    @EntityIndex(value = "登录名", unique = true)
+    public record LoginNameIndex(
+            @EntityIndexField("应用") LabApplication application,
+            @EntityIndexField("登录名") String loginName) implements Index<LabUser> {
 
         public LoginNameIndex(LabUser user) {
-            this(user.loginName);
+            this(user.application, user.loginName);
         }
     }
 
-    public static LabLoginResult login(long appId, String loginName, String password, String clientIP) {
+    public static LabLoginResult login(LabApplication application, String loginName, String password, String clientIP) {
         var failedCountByIP = IndexUtils.count(
                 new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
                 new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date())
@@ -75,7 +82,7 @@ public class LabUser {
         );
         if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
-        var users = IndexUtils.select(new LoginNameIndex(loginName));
+        var users = IndexUtils.select(new LoginNameIndex(application, loginName));
         if (users.isEmpty())
             throw new LabBusinessException(LabErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
         var user = users.get(0);
@@ -83,14 +90,14 @@ public class LabUser {
         if (!user.getPassword().equals(MD5Utils.md5(password)))
             token = null;
         else
-            token = directLogin(appId, user).token();
+            token = directLogin(application, user).token();
         new LabLoginAttempt(token != null, loginName, clientIP, new Date());
         return new LabLoginResult(token, user);
     }
 
-    public static LabToken directLogin(long appId, LabUser user) {
+    public static LabToken directLogin(LabApplication application, LabUser user) {
         var session = new LabSession(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
-        return new LabToken(appId, session.getToken());
+        return new LabToken(application, session.getToken());
     }
 
     public static void logout(List<LabToken> tokens) {
@@ -106,7 +113,7 @@ public class LabUser {
     public static LabLoginInfo verify(LabToken token) {
         var session = IndexUtils.selectFirst(new LabSession.TokenIndex(token.token()));
         if (session != null && session.isActive()) {
-            return new LabLoginInfo(token.appId(), session.getUser());
+            return new LabLoginInfo(token.application(), session.getUser());
         } else
             return LabLoginInfo.failed();
     }
@@ -140,12 +147,16 @@ public class LabUser {
         this.roles.addAll(roles);
     }
 
+    public LabApplication getApplication() {
+        return application;
+    }
+
     public void setState(LabUserState state) {
         this.state = state;
     }
 
-    public void setPlatformUserId(@Nullable Long platformUserId) {
-        this.platformUserId = platformUserId;
+    public void setPlatformUser(@Nullable LabPlatformUser platformUser) {
+        this.platformUser = platformUser;
     }
 
 }

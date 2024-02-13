@@ -326,40 +326,11 @@ public class MainTest extends TestCase {
             );
             var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
             assertNoError(userType);
-            var userConstructorId = TestUtils.getMethodIdByCode(userType, "LabUser");
-            var user = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            userConstructorId,
-                            null,
-                            List.of(
-                                    PrimitiveFieldValue.createString("leen"),
-                                    PrimitiveFieldValue.createString("123456"),
-                                    PrimitiveFieldValue.createString("leen"),
-                                    new ArrayFieldValue(
-                                            null,
-                                            false,
-                                            List.of(ReferenceFieldValue.create(role.id()))
-                                    )
-                            )
-                    )
-            ));
             var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
             var userNameFieldId = getFieldIdByCode(userType, "name");
             var userPasswordFieldId = getFieldIdByCode(userType, "password");
             var userRolesFieldId = getFieldIdByCode(userType, "roles");
-            Assert.assertEquals(
-                    "leen", ((PrimitiveFieldValue) user.getFieldValue(userLoginNameFieldId)).getValue()
-            );
-            Assert.assertEquals(
-                    "leen", ((PrimitiveFieldValue) user.getFieldValue(userNameFieldId)).getValue()
-            );
-            var passwordValue = user.getFieldValue(userPasswordFieldId);
-            Assert.assertTrue(passwordValue instanceof PrimitiveFieldValue primitiveFieldValue
-                    && primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.PASSWORD.code());
-            var userRoles = ((InstanceFieldValue) user.getFieldValue(userRolesFieldId)).getInstance();
-            Assert.assertEquals(1, userRoles.getArraySize());
-            Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
-            Assert.assertEquals(2, userType.getClassParam().constraints().size());
+            var userConstructorId = TestUtils.getMethodIdByCode(userType, "LabUser");
 
             var platformUserType = queryClassType("LabPlatformUser", List.of(TypeCategory.CLASS.code()));
             assertNoError(platformUserType);
@@ -420,11 +391,9 @@ public class MainTest extends TestCase {
             var reloadedPlatformUserRoles = ((InstanceFieldValue) reloadedPlatformUserView.getFieldValue(userViewRolesFieldId)).getInstance();
             Assert.assertEquals(1, reloadedPlatformUserRoles.getArraySize());
 
-
-            // test joinApplication method
-            var joinApplicationMethodId = TestUtils.getMethodIdByCode(platformUserType, "joinApplication");
-            var applicationType = queryClassType("LabApplication", List.of(TypeCategory.CLASS.code()));
-            var applicationConstructorId = TestUtils.getMethodIdByCode(applicationType, "LabApplication");
+            // test join application
+            var userApplicationType = queryClassType("UserApplication");
+            var applicationConstructorId = TestUtils.getMethodIdByCode(userApplicationType, "UserApplication");
             var application = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             applicationConstructorId,
@@ -435,11 +404,17 @@ public class MainTest extends TestCase {
                             )
                     )
             ));
+            var applicationType = queryClassType("LabApplication", List.of(TypeCategory.CLASS.code()));
+            var joinApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "joinApplication",
+                    platformUserType.getRef(), applicationType.getRef());
             TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             joinApplicationMethodId,
-                            platformUser.id(),
-                            List.of(ReferenceFieldValue.create(application.id()))
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(platformUser.id()),
+                                    ReferenceFieldValue.create(application.id())
+                            )
                     )
             ));
             var reloadedPlatformUser = instanceManager.get(platformUser.id(), 1).instance();
@@ -447,14 +422,39 @@ public class MainTest extends TestCase {
             Assert.assertEquals(1, joinedApplications.getArraySize());
             Assert.assertEquals(application.id(), joinedApplications.getElement(0).referenceId());
 
+            // enter application
+            var enterApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "enterApp",
+                    platformUserType.getRef(), userApplicationType.getRef());
+            var loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            enterApplicationMethodId,
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(platformUser.id()),
+                                    ReferenceFieldValue.create(application.id())
+                            )
+                    )
+            ));
+            var loginResultType = queryClassType("LabLoginResult");
+            var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            Assert.assertNotNull(token);
+
             // test leave application
-            var leaveApplicationMethodId = TestUtils.getMethodIdByCode(platformUserType, "leaveApplication");
+            var platformUserArrayType = typeManager.getArrayType(platformUserType.id(), ArrayKind.READ_WRITE.code()).type();
+            var leaveApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "leaveApp",
+                    platformUserArrayType.getRef(), userApplicationType.getRef());
             try {
                 TestUtils.doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
                                 leaveApplicationMethodId,
-                                platformUser.id(),
-                                List.of(ReferenceFieldValue.create(application.id()))
+                                null,
+                                List.of(
+                                        new ArrayFieldValue(
+                                                null,
+                                                false,
+                                                List.of(ReferenceFieldValue.create(platformUser.id()))
+                                        ),
+                                        ReferenceFieldValue.create(application.id()))
                         )
                 ));
                 Assert.fail("应用所有人无法退出应用");
@@ -479,31 +479,72 @@ public class MainTest extends TestCase {
                             )
                     )
             ));
+
             TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             joinApplicationMethodId,
-                            anotherPlatformUser.id(),
-                            List.of(ReferenceFieldValue.create(application.id()))
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(anotherPlatformUser.id()),
+                                    ReferenceFieldValue.create(application.id())
+                            )
                     )
             ));
             // assert that the user has joined the application
             var reloadedAnotherPlatformUser = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications = ((InstanceFieldValue) reloadedAnotherPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(1, anotherJoinedApplications.getArraySize());
+            loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            enterApplicationMethodId,
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(anotherPlatformUser.id()),
+                                    ReferenceFieldValue.create(application.id())
+                            )
+                    )
+            ));
+            loginResultType = queryClassType("LabLoginResult");
+            token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            Assert.assertNotNull(token);
+
+            // test leaving the application
             TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             leaveApplicationMethodId,
-                            anotherPlatformUser.id(),
-                            List.of(ReferenceFieldValue.create(application.id()))
+                            null,
+                            List.of(
+                                    new ArrayFieldValue(
+                                            null,
+                                            false,
+                                            List.of(ReferenceFieldValue.create(anotherPlatformUser.id()))
+                                    ),
+                                    ReferenceFieldValue.create(application.id()))
                     )
             ));
+
             // assert that the user has left the application
             var reloadedAnotherPlatformUser2 = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications2 = ((InstanceFieldValue) reloadedAnotherPlatformUser2.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(0, anotherJoinedApplications2.getArraySize());
+            try {
+                TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                        new FlowExecutionRequest(
+                                enterApplicationMethodId,
+                                null,
+                                List.of(
+                                        ReferenceFieldValue.create(anotherPlatformUser.id()),
+                                        ReferenceFieldValue.create(application.id())
+                                )
+                        )
+                ));
+                Assert.fail("用户未加入应用无法进入");
+            } catch (FlowExecutionException e) {
+                Assert.assertEquals("用户未加入应用无法进入", e.getMessage());
+            }
 
             // test application view list
-            var applicationMapping = TestUtils.getDefaultMapping(applicationType);
+            var applicationMapping = TestUtils.getDefaultMapping(userApplicationType);
             var applicationViewType = typeManager.getType(new GetTypeRequest(applicationMapping.targetTypeRef().id(), false)).type();
             var applicationViewList = instanceManager.query(
                     new InstanceQueryDTO(
@@ -530,14 +571,47 @@ public class MainTest extends TestCase {
             Assert.assertTrue(tokenType.ephemeral());
             Assert.assertEquals(2, tokenType.getClassParam().fields().size());
 
+            // create an ordinary user
+            var user = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            userConstructorId,
+                            null,
+                            List.of(
+                                    PrimitiveFieldValue.createString("leen"),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("leen"),
+                                    new ArrayFieldValue(
+                                            null,
+                                            false,
+                                            List.of(ReferenceFieldValue.create(role.id()))
+                                    ),
+                                    ReferenceFieldValue.create(application.id())
+                            )
+                    )
+            ));
+
+            Assert.assertEquals(
+                    "leen", ((PrimitiveFieldValue) user.getFieldValue(userLoginNameFieldId)).getValue()
+            );
+            Assert.assertEquals(
+                    "leen", ((PrimitiveFieldValue) user.getFieldValue(userNameFieldId)).getValue()
+            );
+            var passwordValue = user.getFieldValue(userPasswordFieldId);
+            Assert.assertTrue(passwordValue instanceof PrimitiveFieldValue primitiveFieldValue
+                    && primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.PASSWORD.code());
+            var userRoles = ((InstanceFieldValue) user.getFieldValue(userRolesFieldId)).getInstance();
+            Assert.assertEquals(1, userRoles.getArraySize());
+            Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
+            Assert.assertEquals(2, userType.getClassParam().constraints().size());
+
             // test login
             var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
-            var loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             loginMethodId,
                             null,
                             List.of(
-                                    PrimitiveFieldValue.createLong(1L),
+                                    ReferenceFieldValue.create(application.id()),
                                     PrimitiveFieldValue.createString("leen"),
                                     PrimitiveFieldValue.createString("123456"),
                                     PrimitiveFieldValue.createString("127.0.0.1")
@@ -545,8 +619,8 @@ public class MainTest extends TestCase {
                     )
             ));
             // get LoginResult type
-            var loginResultType = queryClassType("LabLoginResult");
-            var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            loginResultType = queryClassType("LabLoginResult");
+            token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
             Assert.assertNotNull(token);
 
             // test login with too many attempts
@@ -554,7 +628,7 @@ public class MainTest extends TestCase {
                     loginMethodId,
                     null,
                     List.of(
-                            PrimitiveFieldValue.createLong(1L),
+                            ReferenceFieldValue.create(application.id()),
                             PrimitiveFieldValue.createString("leen"),
                             PrimitiveFieldValue.createString("123123"),
                             PrimitiveFieldValue.createString("127.0.0.1")
@@ -577,8 +651,8 @@ public class MainTest extends TestCase {
                     tokenType.getRef(),
                     List.of(
                             InstanceFieldDTO.create(
-                                    getFieldIdByCode(tokenType, "appId"),
-                                    PrimitiveFieldValue.createLong(1)
+                                    getFieldIdByCode(tokenType, "application"),
+                                    ReferenceFieldValue.create(application.id())
                             ),
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(tokenType, "token"),
@@ -595,9 +669,9 @@ public class MainTest extends TestCase {
             ));
             var loginInfoType = queryClassType("LabLoginInfo");
             assertNoError(loginInfoType);
-            var appIdFieldId = getFieldIdByCode(loginInfoType, "appId");
+            var applicationFieldId = getFieldIdByCode(loginInfoType, "application");
             var userFieldId = getFieldIdByCode(loginInfoType, "user");
-            Assert.assertEquals(1L, ((PrimitiveFieldValue) loginInfo.getFieldValue(appIdFieldId)).getValue());
+            Assert.assertEquals(application.id(), ((ReferenceFieldValue) loginInfo.getFieldValue(applicationFieldId)).getId());
             Assert.assertEquals(user.id(), ((ReferenceFieldValue) loginInfo.getFieldValue(userFieldId)).getId());
 
             // test logout
@@ -624,7 +698,7 @@ public class MainTest extends TestCase {
                             List.of(tokenValue)
                     )
             ));
-            Assert.assertEquals(-1L, ((PrimitiveFieldValue) loginInfo.getFieldValue(appIdFieldId)).getValue());
+            Assert.assertNull(((PrimitiveFieldValue) loginInfo.getFieldValue(applicationFieldId)).getValue());
         }).get();
     }
 

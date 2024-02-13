@@ -67,7 +67,7 @@ public class ExpressionResolver {
             new StringReplaceResolver(), new ListContainsResolver(), new ListOfResolver(),
             new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver(),
             new IndexUtilsCallResolver(), new SystemCurrentTimeMillisResolver(),
-            new EqualsResolver(), new Md5CallResolver()
+            new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -508,7 +508,12 @@ public class ExpressionResolver {
         var template = declaringType.getEffectiveTemplate();
         List<Type> rawParamTypes = NncUtils.map(
                 psiParameters,
-                param -> typeResolver.resolveDeclaration(param.getType())
+                param -> {
+                    var t = typeResolver.resolveDeclaration(param.getType());
+                    if(TranspileUtil.getAnnotation(param, Nullable.class) != null)
+                        t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
+                    return t;
+                }
         );
         var templateMethod = template.getMethodByCodeAndParamTypes(method.getName(), rawParamTypes);
         Method piFlow = Objects.requireNonNull(template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod);
@@ -630,18 +635,20 @@ public class ExpressionResolver {
             );
             var paramTypes = NncUtils.map(
                     requireNonNull(method.getParameterList()).getParameters(),
-                    param -> {
-                        var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
-                        if(TranspileUtil.getAnnotation(param, Nullable.class) != null)
-                            t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
-                        return t;
-                    }
+                    param -> resolveParameterType(param, substitutor)
             );
             paramTypes = NncUtils.union(prefixParamTypes, paramTypes);
             var flow = declaringType.getMethodByCodeAndParamTypes(Types.getConstructorCode(declaringType), paramTypes);
             var newNode = methodGenerator.createNew(flow, arguments, false);
             return new NodeExpression(newNode);
         }
+    }
+
+    private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
+        var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
+        if(TranspileUtil.getAnnotation(param, Nullable.class) != null)
+            t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
+        return t;
     }
 
     private Expression createNodeExpression(NodeRT node) {

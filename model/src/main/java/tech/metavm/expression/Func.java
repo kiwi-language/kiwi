@@ -65,7 +65,9 @@ public enum Func {
 
     DATE_AFTER(Boolean.class, Date.class, Date.class),
 
-    MD5(String.class, String.class)
+    MD5(String.class, String.class),
+
+    RANDOM_PASSWORD(String.class),
 
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
 

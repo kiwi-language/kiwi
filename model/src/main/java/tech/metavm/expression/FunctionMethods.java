@@ -168,6 +168,10 @@ public class FunctionMethods {
         return Instances.booleanInstance(array.contains(value));
     }
 
+    public static StringInstance RANDOM_PASSWORD() {
+        return Instances.stringInstance(NncUtils.randomPassword());
+    }
+
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {
         NncUtils.requireTrue(argumentCLasses.size() == 2,
                 "Incorrect number of arguments for function IF");

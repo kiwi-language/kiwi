@@ -106,7 +106,7 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(604, "角色(id:{})不存在"),
     VERIFICATION_FAILED(605, "请先登录"),
     ILLEGAL_SESSION_STATE(606, "会话状态错误"),
-    NOT_A_MEMBER_OF_THE_APP(607, "未加入该应用"),
+    NOT_A_MEMBER_OF_THE_APP(607, "用户未加入应用无法进入"),
     REENTERING_APP(608, "请先退出当前应用再进行操作"),
     NOT_IN_APP(609, "当前未进入任何APP"),
     PLATFORM_USER_REQUIRED(610, "请登录平台账户再进行操作"),
