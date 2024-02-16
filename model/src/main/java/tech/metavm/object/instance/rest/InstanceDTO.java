@@ -51,6 +51,18 @@ public record InstanceDTO(
         );
     }
 
+    public static InstanceDTO createListInstance(RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
+        return createListInstance(null, typeRef, elementAsChild, elements);
+    }
+
+    public static InstanceDTO createListInstance(@Nullable String id, RefDTO typeRef, boolean elementAsChild, List<FieldValue> elements) {
+        return new InstanceDTO(
+                id, typeRef, null, null, null,
+                new ListInstanceParam(elementAsChild, elements)
+        );
+    }
+
+
     public InstanceDTO copyWithParam(InstanceParam param) {
         return new InstanceDTO(id, typeRef, typeName, title, sourceMappingId, param);
     }
@@ -81,13 +93,23 @@ public record InstanceDTO(
 
     @JsonIgnore
     public FieldValue getElement(int index) {
-        var param = (ArrayInstanceParam) param();
-        return param.elements().get(index);
+        if(param() instanceof ArrayInstanceParam arrayInstanceParam)
+            return arrayInstanceParam.elements().get(index);
+        else if(param() instanceof ListInstanceParam listInstanceParam)
+            return listInstanceParam.elements().get(index);
+        else
+            throw new IllegalStateException("Not an array or list instance");
     }
 
     @JsonIgnore
     public int getArraySize() {
         var param = (ArrayInstanceParam) param();
+        return param.elements().size();
+    }
+
+    @JsonIgnore
+    public int getListSize() {
+        var param = (ListInstanceParam) param();
         return param.elements().size();
     }
 

@@ -74,6 +74,8 @@ public class BootstrapUtils {
             StandardTypes.setNullableStringType(defContext.getNullableType(StandardTypes.getStringType()));
             StandardTypes.setCollectionType(defContext.getClassType(Collection.class));
             StandardTypes.setListType(defContext.getClassType(MetaList.class));
+            StandardTypes.setReadWriteListType(defContext.getClassType(ReadWriteMetaList.class));
+            StandardTypes.setChildListType(defContext.getClassType(ChildMetaList.class));
             StandardTypes.setSetType(defContext.getClassType(MetaSet.class));
             StandardTypes.setMapType(defContext.getClassType(MetaMap.class));
             StandardTypes.setIteratorImplType(defContext.getClassType(IteratorImpl.class));

@@ -26,7 +26,24 @@ public class MockStandardTypesInitializer {
         StandardTypes.setReadonlyAnyArrayType(new ArrayType(null, StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
         StandardTypes.setNeverArrayType(new ArrayType(null, StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
         StandardTypes.setNullableStringType(new UnionType(null, Set.of(StandardTypes.getNullType(), StandardTypes.getStringType())));
-
+        StandardTypes.setListType(
+                ClassTypeBuilder.newBuilder("列表", List.class.getSimpleName())
+                        .source(ClassSource.BUILTIN)
+                        .typeParameters(new TypeVariable(null, "元素类型", "E", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
+        StandardTypes.setReadWriteListType(
+                ClassTypeBuilder.newBuilder("读写列表", "ReadWriteList")
+                        .source(ClassSource.BUILTIN)
+                        .typeParameters(new TypeVariable(null, "读写列表元素", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
+        StandardTypes.setChildListType(
+                ClassTypeBuilder.newBuilder("子对象列表", "ChildList")
+                        .source(ClassSource.BUILTIN)
+                        .typeParameters(new TypeVariable(null, "子对象列表元素", "ChildListElement", DummyGenericDeclaration.INSTANCE))
+                        .build()
+        );
         var enumTypeParam = new TypeVariable(null, "枚举类型", "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         var enumType = ClassTypeBuilder.newBuilder("枚举", Enum.class.getSimpleName())

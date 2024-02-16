@@ -1,12 +1,13 @@
 package tech.metavm.autograph;
 
+import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
-import tech.metavm.expression.ArrayExpression;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.Expression;
-import tech.metavm.expression.NodeExpression;
-import tech.metavm.object.type.ArrayType;
+import tech.metavm.expression.Expressions;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -43,12 +44,25 @@ public class ListOfResolver implements MethodCallResolver {
                               MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
-        var arrayType = (ArrayType) expressionResolver.getTypeResolver().resolve(
-                        methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var initialValues = NncUtils.map(
-                methodCallExpression.getArgumentList().getExpressions(),
-                expressionResolver::resolve
+        var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
+                methodGenerics.getSubstitutor().substitute(method.getReturnType()));
+        var readWriteListType = expressionResolver.getParameterizedTypeProvider().getParameterizedType(
+                StandardTypes.getReadWriteListType(), List.of(listType.getListElementType())
         );
-        return new NodeExpression(methodGenerator.createNewArray(arrayType, new ArrayExpression(initialValues, arrayType)));
+        var list = methodGenerator.createNew(
+                readWriteListType.getDefaultConstructor(),
+                List.of(),
+                true
+        );
+        for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
+            var value = expressionResolver.resolve(expression);
+            var addMethod = readWriteListType.getMethodByCodeAndParamTypes("add", List.of(listType.getListElementType()));
+            methodGenerator.createMethodCall(
+                    Expressions.node(list),
+                    addMethod,
+                    List.of(value)
+            );
+        }
+        return Expressions.node(list);
     }
 }

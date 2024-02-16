@@ -26,8 +26,8 @@ public class ListNative extends NativeBase {
     }
 
     public Instance List() {
-        array = new ArrayInstance((ArrayType) arrayField.getType(),
-                new InstanceParentRef(instance, arrayField));
+        array = new ArrayInstance((ArrayType) arrayField.getType());
+        instance.initField(arrayField, array);
         return instance;
     }
 
@@ -37,11 +37,28 @@ public class ListNative extends NativeBase {
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
             array = new ArrayInstance((ArrayType) arrayField.getType(),
                     new InstanceParentRef(instance, arrayField));
+            instance.initField(arrayField, array);
             array.addAll(thatArray);
             return instance;
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
+
+    public Instance ChildList() {
+        return List();
+    }
+
+    public Instance ChildList(Instance c) {
+        return List(c);
+    }
+
+    public Instance ReadWriteList() {
+        return List();
+    }
+
+    public Instance ReadWriteList(Instance c) {
+        return List(c);
     }
 
     public ClassInstance iterator() {
@@ -76,8 +93,32 @@ public class ListNative extends NativeBase {
         array.clear();
     }
 
-    public void add(Instance instance) {
+    public BooleanInstance add(Instance instance) {
         array.addElement(instance);
+        return Instances.trueInstance();
+    }
+
+    public BooleanInstance addAll(Instance c) {
+        if(c instanceof ClassInstance collection && collection.isList()) {
+            var thatArrayField = collection.getType().getFieldByCode("array");
+            var thatArray = (ArrayInstance) collection.getField(thatArrayField);
+            array.addAll(thatArray);
+            return Instances.trueInstance();
+        }
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
+
+    public static ClassInstance of(ClassType type, Instance values) {
+        if(values instanceof ArrayInstance array) {
+            var list = ClassInstance.allocate(type);
+            var listNative = (ListNative) NativeMethods.getNativeObject(list);
+            listNative.List();
+            array.forEach(listNative::add);
+            return list;
+        }
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
     public Instance isEmpty() {
@@ -88,5 +129,8 @@ public class ListNative extends NativeBase {
         return Instances.longInstance(array.size());
     }
 
+    public ArrayInstance toArray() {
+        return array;
+    }
 
 }

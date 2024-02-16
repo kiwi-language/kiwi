@@ -1,7 +1,9 @@
 package tech.metavm.object.view;
 
 import tech.metavm.entity.DummyGenericDeclaration;
+import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.TypeParsingContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
@@ -36,11 +38,14 @@ public class MappingSaver {
                         context.getGenericContext()),
                 context.getGenericContext(),
                 context.getGenericContext(),
-                context);
+                context,
+                context
+                );
     }
 
     // TODO MOVE TO NamingUtils
     private static final Pattern GETTER_CODE_PATTERN = Pattern.compile("^get([A-Z][A-Za-z0-9_$]+$)");
+
 
     private final InstanceProvider instanceProvider;
     private final IndexedTypeProvider typeProvider;
@@ -48,19 +53,22 @@ public class MappingSaver {
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final CompositeTypeFacade compositeTypeFacade;
     private final MappingProvider mappingProvider;
+    private final EntityRepository entityRepository;
 
     public MappingSaver(InstanceProvider instanceProvider,
                         IndexedTypeProvider typeProvider,
                         CompositeTypeFacade compositeTypeFacade,
                         ParameterizedTypeProvider parameterizedTypeProvider,
                         ParameterizedFlowProvider parameterizedFlowProvider,
-                        MappingProvider mappingProvider) {
+                        MappingProvider mappingProvider,
+                        EntityRepository entityRepository) {
         this.instanceProvider = instanceProvider;
         this.typeProvider = typeProvider;
         this.parameterizedTypeProvider = parameterizedTypeProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.compositeTypeFacade = compositeTypeFacade;
         this.mappingProvider = mappingProvider;
+        this.entityRepository = entityRepository;
     }
 
     public ObjectMapping save(ObjectMappingDTO mappingDTO) {
@@ -101,7 +109,7 @@ public class MappingSaver {
                 templateInstance.setStage(ResolutionStage.INIT);
                 var subst = new SubstitutorV2(
                         sourceType, sourceType.getTypeParameters(), templateInstance.getTypeArguments(),
-                        ResolutionStage.DEFINITION, null, compositeTypeFacade, parameterizedTypeProvider,
+                        ResolutionStage.DEFINITION, entityRepository, compositeTypeFacade, parameterizedTypeProvider,
                         parameterizedFlowProvider, new MockDTOProvider()
                 );
                 sourceType.accept(subst);
@@ -289,7 +297,7 @@ public class MappingSaver {
             var subst = new SubstitutorV2(
                     template, template.getTypeParameters(),
                     sourceType.getTypeParameters(), ResolutionStage.INIT,
-                    null, compositeTypeFacade,
+                    entityRepository, compositeTypeFacade,
                     parameterizedTypeProvider,
                     null, new MockDTOProvider()
             );
@@ -309,7 +317,7 @@ public class MappingSaver {
     }
 
     public static @Nullable String getTargetTypeCode(ClassType sourceType, @Nullable String mappingCode) {
-        if(sourceType.getCode() == null || mappingCode == null)
+        if (sourceType.getCode() == null || mappingCode == null)
             return null;
         if (mappingCode.endsWith("View") && mappingCode.length() > 4)
             mappingCode = mappingCode.substring(0, mappingCode.length() - 4);
@@ -337,7 +345,7 @@ public class MappingSaver {
             var subst = new SubstitutorV2(
                     template, template.getTypeParameters(),
                     targetType.getTypeArguments(), ResolutionStage.DECLARATION,
-                    null,
+                    entityRepository,
                     compositeTypeFacade,
                     parameterizedTypeProvider,
                     null, new MockDTOProvider()
@@ -359,8 +367,34 @@ public class MappingSaver {
     private NestedMapping getNestedMapping(Type type, @Nullable Type underlyingType) {
         return switch (type) {
             case ClassType classType -> {
-                var nestedMapping = classType.getBuiltinMapping();
-                yield nestedMapping != null ? new ObjectNestedMapping(nestedMapping) : new IdentityNestedMapping(type);
+                if (classType.isListType()) {
+                    if (underlyingType instanceof ClassType underlyingClassType && underlyingClassType.isListType()) {
+                        var underlyingElementType = underlyingClassType.getListElementType();
+                        var elementNestedMapping = underlyingClassType.isChildListType() ?
+                                getNestedMapping(underlyingClassType.getListElementType(), underlyingElementType) :
+                                new IdentityNestedMapping(classType.getListElementType());
+                        var targetType = (ClassType) underlyingClassType.accept(new TypeSubstitutor(
+                                List.of(underlyingClassType.getListElementType()),
+                                List.of(elementNestedMapping.getTargetType()),
+                                compositeTypeFacade,
+                                new MockDTOProvider()
+                        ));;
+                        yield new ListNestedMapping(classType, targetType,
+                                parameterizedTypeProvider.getParameterizedType(
+                                        StandardTypes.getReadWriteListType(),
+                                        List.of(classType.getListElementType())
+                                ),
+                                parameterizedTypeProvider.getParameterizedType(
+                                        StandardTypes.getReadWriteListType(),
+                                        List.of(targetType.getListElementType())
+                                ),
+                                elementNestedMapping);
+                    }
+                    yield new IdentityNestedMapping(type);
+                } else {
+                    var nestedMapping = classType.getBuiltinMapping();
+                    yield nestedMapping != null ? new ObjectNestedMapping(nestedMapping) : new IdentityNestedMapping(type);
+                }
             }
             case ArrayType arrayType -> {
                 if (underlyingType instanceof ArrayType underlyingArrayType) {

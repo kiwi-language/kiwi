@@ -2,9 +2,7 @@ package tech.metavm.entity.natives;
 
 import tech.metavm.entity.DirectDef;
 import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.flow.Flow;
 import tech.metavm.flow.FlowExecResult;
-import tech.metavm.flow.Function;
 import tech.metavm.flow.Method;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -15,26 +13,48 @@ import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.List;
 
 public class NativeMethods {
 
     public static FlowExecResult invoke(Method method, @Nullable Instance self, List<Instance> arguments) {
-        if (self instanceof ClassInstance classInstance) {
-            Object nativeObject = getNativeObject(classInstance);
-            var instanceClass = nativeObject.getClass();
-            List<Class<?>> paramTypes = NncUtils.multipleOf(Instance.class, method.getParameters().size());
-            Instance[] args = new Instance[arguments.size()];
-            arguments.toArray(args);
-            var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getCode(), paramTypes);
-            var result = (Instance) ReflectionUtils.invoke(nativeObject, javaMethod, (Object[]) args);
+        if (method.isStatic()) {
+            var nativeClass = tryGetNativeClass(method.getDeclaringType());
+            NncUtils.requireNonNull(nativeClass,
+                    "Native class not available for type '" + method.getDeclaringType().getName() + "'");
+            List<Class<?>> paramTypes = new ArrayList<>();
+            paramTypes.add(ClassType.class);
+            paramTypes.addAll(NncUtils.multipleOf(Instance.class, method.getParameters().size()));
+            Object[] args = new Object[1 + arguments.size()];
+            args[0] = method.getDeclaringType();
+            for (int i = 0; i < arguments.size(); i++) {
+                args[i + 1] = arguments.get(i);
+            }
+            var javaMethod = ReflectionUtils.getMethod(nativeClass, method.getCode(), paramTypes);
+            var result = (Instance) ReflectionUtils.invoke(null, javaMethod, args);
             if (method.getReturnType().isVoid()) {
                 return new FlowExecResult(null, null);
             } else {
                 return new FlowExecResult(result, null);
             }
-        } else
-            throw new InternalException("Native invocation is not supported for non class instances");
+        } else {
+            if (self instanceof ClassInstance classInstance) {
+                Object nativeObject = getNativeObject(classInstance);
+                var instanceClass = nativeObject.getClass();
+                List<Class<?>> paramTypes = NncUtils.multipleOf(Instance.class, method.getParameters().size());
+                Instance[] args = new Instance[arguments.size()];
+                arguments.toArray(args);
+                var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getCode(), paramTypes);
+                var result = (Instance) ReflectionUtils.invoke(nativeObject, javaMethod, (Object[]) args);
+                if (method.getReturnType().isVoid()) {
+                    return new FlowExecResult(null, null);
+                } else {
+                    return new FlowExecResult(result, null);
+                }
+            } else
+                throw new InternalException("Native invocation is not supported for non class instances");
+        }
     }
 
     public static Object getNativeObject(ClassInstance instance) {
@@ -57,13 +77,12 @@ public class NativeMethods {
     private static Class<?> tryGetNativeClass(ClassType type) {
         while (type != null) {
             var def = ModelDefRegistry.tryGetDef(type.getEffectiveTemplate());
-            if(def != null) {
+            if (def != null) {
                 if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
                     return directDef.getNativeClass();
                 else
                     return null;
-            }
-            else
+            } else
                 type = type.getSuperClass();
         }
         return null;

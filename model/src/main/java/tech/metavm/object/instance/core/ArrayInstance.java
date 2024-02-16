@@ -302,7 +302,7 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
                     true,
                     NncUtils.map(elements, e ->
                             new InstanceFieldValue(
-                                    e.getTitle(), ((DurableInstance) e).toDTO()
+                                    e.getTitle(), e.toDTO()
                             )
                     )
             );

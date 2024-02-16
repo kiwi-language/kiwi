@@ -275,4 +275,25 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
     public void setReadonlyAnyArrayType(ArrayType type) {
         TL.get().setReadonlyAnyArrayType(type);
     }
+
+    @Override
+    public void setReadWriteListType(ClassType type) {
+        TL.get().setReadWriteListType(type);
+    }
+
+    @Override
+    public void setChildListType(ClassType type) {
+        TL.get().setChildListType(type);
+    }
+
+    @Override
+    public ClassType getChildListType() {
+        return TL.get().getChildListType();
+    }
+
+    @Override
+    public ClassType getReadWriteListType() {
+        return TL.get().getReadWriteListType();
+    }
+
 }

@@ -1,12 +1,12 @@
 package tech.metavm.flow;
 
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.ListNative;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.IndexSelectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
-import tech.metavm.object.instance.core.ArrayInstance;
-import tech.metavm.object.type.ArrayKind;
-import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.instance.core.ClassInstance;
+import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Index;
 
 import javax.annotation.Nullable;
@@ -20,7 +20,7 @@ public class IndexSelectNode extends NodeRT {
         var param = (IndexSelectNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, param.indexRef()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = context.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
+        var type = context.getReadWriteListType(index.getDeclaringType());
         var key = IndexQueryKey.create(param.key(), context, parsingContext);
         var node = (IndexSelectNode) context.getNode(nodeDTO.getRef());
         if (node != null) {
@@ -36,7 +36,7 @@ public class IndexSelectNode extends NodeRT {
     @ChildEntity("键")
     private IndexQueryKey key;
 
-    public IndexSelectNode(Long tmpId, String name, @Nullable String code, ArrayType type,NodeRT previous, ScopeRT scope,
+    public IndexSelectNode(Long tmpId, String name, @Nullable String code, ClassType type, NodeRT previous, ScopeRT scope,
                            Index index, IndexQueryKey key) {
         super(tmpId, name, code, type, previous, scope);
         this.index = index;
@@ -64,14 +64,18 @@ public class IndexSelectNode extends NodeRT {
     }
 
     @Override
-    public ArrayType getType() {
-        return requireNonNull((ArrayType) super.getType());
+    public ClassType getType() {
+        return requireNonNull((ClassType) super.getType());
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
         var result = frame.getInstanceRepository().indexSelect(key.buildIndexKey(frame));
-        return next(new ArrayInstance(getType(), result));
+        var list = ClassInstance.allocate(getType());
+        var listNative = new ListNative(list);
+        listNative.List();
+        result.forEach(listNative::add);
+        return next(list);
     }
 
     @Override

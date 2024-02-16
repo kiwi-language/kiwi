@@ -1,6 +1,7 @@
 package tech.metavm.object.instance;
 
 import tech.metavm.entity.SerializeContext;
+import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.util.Instances;
@@ -30,6 +31,38 @@ public class InstanceDTOBuilder {
     }
 
     private static FieldValue buildForClassInstance(ClassInstance instance, int depth, boolean isChild) {
+        if(instance.getType().isListType())
+            return buildForListInstance(instance, depth, isChild);
+        else
+            return buildForOrdinaryClassInstance(instance, depth, isChild);
+    }
+
+    private static FieldValue buildForListInstance(ClassInstance instance, int depth, boolean isChild) {
+        try (var serContext = SerializeContext.enter()) {
+            if (depth <= 0 && !isChild) {
+                return instance.toFieldValueDTO();
+            } else {
+                var array = new ListNative(instance).toArray();
+                InstanceDTO instanceDTO = new InstanceDTO(
+                        instance.getInstanceIdString(),
+                        serContext.getRef(instance.getType()),
+                        instance.getType().getName(),
+                        instance.getTitle(),
+                        Instances.getSourceMappingId(instance),
+                        new ListInstanceParam(
+                                array.isChildArray(),
+                                NncUtils.map(
+                                        array.getElements(),
+                                        e -> build(e, depth, isChild && array.isChildArray())
+                                )
+                        )
+                );
+                return new InstanceFieldValue(instance.getTitle(), instanceDTO);
+            }
+        }
+    }
+
+    private static FieldValue buildForOrdinaryClassInstance(ClassInstance instance, int depth, boolean isChild) {
         try (var serContext = SerializeContext.enter()) {
             if (depth <= 0 && !isChild) {
                 return instance.toFieldValueDTO();

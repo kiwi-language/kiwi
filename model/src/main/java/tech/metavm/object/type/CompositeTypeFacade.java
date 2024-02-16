@@ -21,6 +21,11 @@ public interface CompositeTypeFacade extends FunctionTypeProvider, ArrayTypeProv
     @Override
     UncertainType getUncertainType(Type lowerBound, Type upperBound, @Nullable Long tmpId);
 
-    Type getParameterizedType(ClassType template, List<Type> typeArguments,
+    ClassType getParameterizedType(ClassType template, List<Type> typeArguments,
                               ResolutionStage resolutionStage, DTOProvider dtoProvider);
+
+    default ClassType getParameterizedType(ClassType template, List<Type> typeArguments) {
+        return getParameterizedType(template, typeArguments, ResolutionStage.DEFINITION, new MockDTOProvider());
+    }
+
 }

@@ -50,6 +50,7 @@ public class MethodGenerator {
         expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
                 arrayTypeProvider,
                 unionTypeProvider,
+                parameterizedTypeProvider,
                 parameterizedFlowProvider,
                 visitor);
     }
@@ -346,9 +347,10 @@ public class MethodGenerator {
     }
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
-        var arrayType = arrayTypeProvider.getArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
+        var listType = parameterizedTypeProvider.getParameterizedType(
+                StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType()));
         return setNodeExprTypes(new IndexSelectNode(
-                null, nextName("IndexSelect"), null, arrayType,
+                null, nextName("IndexSelect"), null, listType,
                 scope().getLastNode(), scope(), index, key
         ));
     }

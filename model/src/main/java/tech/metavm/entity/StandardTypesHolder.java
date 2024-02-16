@@ -112,4 +112,11 @@ public interface StandardTypesHolder {
 
     void setReadonlyAnyArrayType(ArrayType type);
 
+    void setReadWriteListType(ClassType type);
+
+    void setChildListType(ClassType type);
+
+    ClassType getChildListType();
+
+    ClassType getReadWriteListType();
 }

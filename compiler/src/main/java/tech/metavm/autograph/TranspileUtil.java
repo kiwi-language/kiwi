@@ -768,6 +768,10 @@ public class TranspileUtil {
             Map.entry(Set.class.getName(), "Set"),
             Map.entry(Map.class.getName(), "Map"),
             Map.entry(Collection.class.getName(), "Collection"),
+            Map.entry(List.class.getName(), "List"),
+            Map.entry(ChildList.class.getName(), "ChildList"),
+            Map.entry(ArrayList.class.getName(), "ReadWriteList"),
+            Map.entry(LinkedList.class.getName(), "ReadWriteList"),
             Map.entry(Object.class.getName(), "Any")
     );
 
@@ -798,7 +802,9 @@ public class TranspileUtil {
             }
             if (classType.getParameters().length > 0) {
                 var typeArgs = NncUtils.map(classType.getParameters(), t -> getInternalName(t, current));
-                return Types.parameterizedName(psiClass.getQualifiedName(), typeArgs);
+                return Types.parameterizedName(
+                        typeNameMap.getOrDefault(psiClass.getQualifiedName(), psiClass.getQualifiedName()),
+                        typeArgs);
             } else
                 return typeNameMap.getOrDefault(psiClass.getQualifiedName(), psiClass.getQualifiedName());
         }

@@ -31,6 +31,8 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType iteratorType;
     private ClassType iteratorImplType;
     private ArrayType readonlyAnyArrayType;
+    private ClassType childListType;
+    private ClassType readWriteListType;
 
     @Override
     public PrimitiveType getLongType() {
@@ -300,6 +302,26 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setReadonlyAnyArrayType(ArrayType type) {
         readonlyAnyArrayType = type;
+    }
+
+    @Override
+    public void setChildListType(ClassType type) {
+        childListType = type;
+    }
+
+    @Override
+    public void setReadWriteListType(ClassType type) {
+        readWriteListType = type;
+    }
+
+    @Override
+    public ClassType getChildListType() {
+        return childListType;
+    }
+
+    @Override
+    public ClassType getReadWriteListType() {
+        return readWriteListType;
     }
 
 }

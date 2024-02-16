@@ -2,7 +2,6 @@ package tech.metavm.object.view;
 
 import tech.metavm.entity.*;
 import tech.metavm.flow.*;
-import tech.metavm.object.instance.core.StructuralVisitor;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.MappingDTO;
@@ -51,7 +50,7 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
 
     public DurableInstance mapRoot(DurableInstance instance, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
         var view = map(instance, repository, parameterizedFlowProvider);
-        view.accept(new StructuralVisitor() {
+        view.accept(new CollectionAwareStructuralVisitor() {
 
             @Override
             public Void visitArrayInstance(ArrayInstance instance) {
@@ -78,9 +77,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                     if(mappingId == null)
                         mappingId = 0L;
                     if (getParentField() != null)
-                        instance.initId(new FieldViewId((ViewId) getParent().getId(), mappingId, getParentField().getId(), sourceId));
+                        instance.initId(new FieldViewId((ViewId) getParent().getId(), mappingId, getParentField().getId(), sourceId, instance.getType().getId()));
                     else
-                        instance.initId(new ElementViewId((ViewId) getParent().getId(), mappingId, getIndex(), sourceId));
+                        instance.initId(new ElementViewId((ViewId) getParent().getId(), mappingId, getIndex(), sourceId, instance.getType().getId()));
                 }
             }
         });

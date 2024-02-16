@@ -21,6 +21,10 @@ public class UncertainTypeContext extends CompositeTypeContext<UncertainType> im
     }
 
     public UncertainType getUncertainType(Type lowerBound, Type upperBound, Long tmpId) {
+        if(lowerBound instanceof UncertainType u)
+            lowerBound = u.getLowerBound();
+        if(upperBound instanceof UncertainType u)
+            upperBound = u.getUpperBound();
         return get(List.of(lowerBound, upperBound), tmpId);
     }
 

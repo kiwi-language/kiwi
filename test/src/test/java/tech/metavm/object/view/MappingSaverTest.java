@@ -53,7 +53,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
         var fooType = ClassTypeBuilder.newBuilder("Foo", "Foo")
                 .build();
@@ -132,7 +133,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
 
         var barMapping = saver.saveBuiltinMapping(barType, true);
@@ -234,7 +236,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
         var orderMapping = (FieldsObjectMapping) saver.saveBuiltinMapping(shoppingTypes.orderType(), true);
         TestUtils.initEntityIds(shoppingTypes.orderType());
@@ -346,7 +349,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
         saver.saveBuiltinMapping(skuType, true);
         var productMapping = saver.saveBuiltinMapping(productType, true);
@@ -394,7 +398,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
         var scopeMapping = saver.saveBuiltinMapping(scopeType, true);
         var flowMapping = saver.saveBuiltinMapping(flowType, true);
@@ -446,7 +451,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
 
         var nodeType = ClassTypeBuilder.newBuilder("节点", "Node")
@@ -536,7 +542,8 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.createFacade(),
                 typeProviders.parameterizedTypeProvider,
                 typeProviders.parameterizedFlowProvider,
-                mappingProvider
+                mappingProvider,
+                typeProviders.entityRepository
         );
         var applicationMapping = saver.saveBuiltinMapping(applicationType, true);
         System.out.println(applicationMapping.getReadMethod().getText());

@@ -340,6 +340,12 @@ public class TestUtils {
                     extractDescendantIds(instanceFieldValue.getInstance(), ids);
             }
         }
+        else if(instanceDTO.param() instanceof ListInstanceParam listInstanceParam) {
+            for (FieldValue element : listInstanceParam.elements()) {
+                if (element instanceof InstanceFieldValue instanceFieldValue)
+                    extractDescendantIds(instanceFieldValue.getInstance(), ids);
+            }
+        }
     }
 
     public static long getFieldIdByCode(TypeDTO typeDTO, String fieldCode) {

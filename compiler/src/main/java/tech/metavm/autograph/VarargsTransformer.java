@@ -2,7 +2,9 @@ package tech.metavm.autograph;
 
 import com.intellij.psi.*;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectionUtils;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,11 +12,15 @@ import static java.util.Objects.requireNonNull;
 
 public class VarargsTransformer extends VisitorBase {
 
+    public static final List<Method> BLACKLIST = List.of(
+            ReflectionUtils.getMethod(List.class, "of", Object[].class)
+    );
+
     @Override
     public void visitCallExpression(PsiCallExpression expression) {
         super.visitCallExpression(expression);
         var method = expression.resolveMethod();
-        if (method != null && method.isVarArgs()) {
+        if (method != null && method.isVarArgs() && !isBlacklisted(method)) {
             var args = requireNonNull(expression.getArgumentList()).getExpressions();
             var params = method.getParameterList().getParameters();
             var varargParam = params[params.length - 1];
@@ -35,4 +41,9 @@ public class VarargsTransformer extends VisitorBase {
             replace(expression.getArgumentList(), dummyCallExpr.getArgumentList());
         }
     }
+
+    private boolean isBlacklisted(PsiMethod psiMethod) {
+        return BLACKLIST.stream().anyMatch(m -> TranspileUtil.matchMethod(psiMethod, m));
+    }
+
 }

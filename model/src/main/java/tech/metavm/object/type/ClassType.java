@@ -424,13 +424,23 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         );
     }
 
-    public Method findMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
+    public @Nullable Method findMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
         var method = NncUtils.find(methods,
                 f -> Objects.equals(f.getCode(), code) && f.getParameterTypes().equals(parameterTypes));
         if (method != null)
             return method;
-        if (superClass != null)
-            return superClass.findMethodByCodeAndParamTypes(code, parameterTypes);
+        if (superClass != null) {
+            var m = superClass.findMethodByCodeAndParamTypes(code, parameterTypes);
+            if(m != null)
+                return m;
+        }
+        if(isAbstract()) {
+            for (ClassType it : interfaces) {
+                var m = it.findMethodByCodeAndParamTypes(code, parameterTypes);
+                if(m != null)
+                    return m;
+            }
+        }
         return null;
     }
 
@@ -466,8 +476,18 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         var method = methods.get(property, value);
         if (method != null)
             return method;
-        if (superClass != null)
-            return superClass.getMethod(property, value);
+        if (superClass != null) {
+            var m = superClass.getMethod(property, value);
+            if(m != null)
+                return m;
+        }
+        if(isAbstract()) {
+            for (ClassType it : interfaces) {
+                var m = it.getMethod(property, value);
+                if(m != null)
+                    return m;
+            }
+        }
         return null;
     }
 
@@ -1397,7 +1417,22 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         if(typeArguments.isEmpty())
             return getCodeRequired();
         else
-            return getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+            return requireNonNull(template).getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
     }
+
+    public boolean isListType() {
+        var t = getEffectiveTemplate();
+        return t == StandardTypes.getListType() || StandardTypes.getChildListType() == t || StandardTypes.getReadWriteListType() == t;
+    }
+
+    public boolean isChildListType() {
+        return getEffectiveTemplate() == StandardTypes.getChildListType();
+    }
+
+    public Type getListElementType() {
+        NncUtils.requireTrue(isListType());
+        return getTypeArguments().get(0);
+    }
+
 }
 

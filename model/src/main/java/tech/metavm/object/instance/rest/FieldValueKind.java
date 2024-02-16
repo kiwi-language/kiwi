@@ -8,7 +8,9 @@ public enum FieldValueKind {
     REFERENCE(2, ReferenceFieldValue.class),
     ARRAY(3, ArrayFieldValue.class),
     INSTANCE_DTO(4, InstanceFieldValue.class),
-    EXPRESSION(5, ExpressionFieldValue.class)
+    EXPRESSION(5, ExpressionFieldValue.class),
+    LIST(6, ArrayFieldValue.class),
+
     ;
 
     private final int code;

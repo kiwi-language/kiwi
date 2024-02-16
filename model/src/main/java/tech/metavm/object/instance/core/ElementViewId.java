@@ -12,8 +12,8 @@ public class ElementViewId extends PathViewId {
     public static final int TAG = 5;
     private final int index;
 
-    public ElementViewId(ViewId parent, long mappingId, int index, @Nullable Id sourceId) {
-        super(parent, mappingId, sourceId);
+    public ElementViewId(ViewId parent, long mappingId, int index, @Nullable Id sourceId, long typeId) {
+        super(parent, mappingId, sourceId, typeId);
         this.index = index;
     }
 
@@ -24,6 +24,7 @@ public class ElementViewId extends PathViewId {
         output.writeLong(getMappingId());
         output.writeInt(index);
         writeSourceId(output);
+        output.writeLong(getTypeId());
     }
 
     @Override

@@ -120,6 +120,14 @@ public class StandardTypes {
         return holder.getListType();
     }
 
+    public static ClassType getReadWriteListType() {
+        return holder.getReadWriteListType();
+    }
+
+    public static ClassType getChildListType() {
+        return holder.getChildListType();
+    }
+
     public static ClassType getSetType() {
         return holder.getSetType();
     }
@@ -284,6 +292,16 @@ public class StandardTypes {
     public static ClassType setListType(ClassType listType) {
         holder.setListType(listType);
         return listType;
+    }
+
+    public static ClassType setReadWriteListType(ClassType readWriteListType) {
+        holder.setReadWriteListType(readWriteListType);
+        return readWriteListType;
+    }
+
+    public static ClassType setChildListType(ClassType childListType) {
+        holder.setChildListType(childListType);
+        return childListType;
     }
 
     public static ClassType setMapType(ClassType mapType) {

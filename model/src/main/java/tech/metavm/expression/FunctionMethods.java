@@ -183,12 +183,10 @@ public class FunctionMethods {
     }
 
     public static LongInstance LEN(Instance instance) {
-        if(instance instanceof ArrayInstance array) {
+        if(instance instanceof ArrayInstance array)
             return Instances.longInstance(array.length());
-        }
-        else {
-            throw new BusinessException(ErrorCode.ERROR_DELETING_TYPE, "LEN");
-        }
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT, "LEN");
     }
 
     public static BooleanInstance HAS_NEXT(Instance iterator) {

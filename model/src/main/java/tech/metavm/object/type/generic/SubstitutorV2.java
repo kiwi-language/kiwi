@@ -289,6 +289,7 @@ public class SubstitutorV2 extends CopyVisitor {
             var code = Types.getParameterizedCode(template.getCode(), typeArguments);
             if (copy == null) {
                 copy = ClassTypeBuilder.newBuilder(name, code)
+                        .category(type.getCategory())
                         .typeArguments(typeArguments)
                         .anonymous(true)
                         .ephemeral(type.isEphemeral())
@@ -331,6 +332,7 @@ public class SubstitutorV2 extends CopyVisitor {
             exitElement();
             if (type == root && stage.isAfterOrAt(DEFINITION))
                 check();
+            entityRepository.rebind(copy);
             return copy;
         } else
             return super.visitClassType(type);

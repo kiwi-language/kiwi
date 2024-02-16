@@ -16,6 +16,7 @@ import tech.metavm.object.instance.InstanceManager;
 import tech.metavm.object.instance.InstanceQueryService;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
+import tech.metavm.object.type.rest.dto.GetParameterizedTypeRequest;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeQuery;
@@ -108,7 +109,13 @@ public class MainTest extends TestCase {
             ref.productTypeId = productType.id();
             Assert.assertNotNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
             var skuType = queryClassType("SKU");
-            var skuChildArrayTypeId = typeManager.getArrayType(skuType.id(), ArrayKind.CHILD.code()).type().id();
+            var skuListType = typeManager.getParameterizedType(
+                    new GetParameterizedTypeRequest(
+                            StandardTypes.getChildListType().getRef(),
+                            List.of(skuType.getRef()),
+                            List.of()
+                    )
+            ).type().id();
             var product = InstanceDTO.createClassInstance(
                     productType.getRef(),
                     List.of(
@@ -119,8 +126,8 @@ public class MainTest extends TestCase {
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "skus"),
                                     InstanceFieldValue.of(
-                                            InstanceDTO.createArrayInstance(
-                                                    RefDTO.fromId(skuChildArrayTypeId),
+                                            InstanceDTO.createListInstance(
+                                                    RefDTO.fromId(skuListType),
                                                     true,
                                                     List.of(
                                                             InstanceFieldValue.of(
@@ -269,7 +276,7 @@ public class MainTest extends TestCase {
             var orderType = queryClassType("AST订单");
             var price = (long) ((PrimitiveFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "price"))).getValue();
             var orderCoupons = ((InstanceFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "coupons"))).getInstance();
-            Assert.assertEquals(1, orderCoupons.getArraySize());
+            Assert.assertEquals(1, orderCoupons.getListSize());
             Assert.assertEquals(95, price);
         }).get();
     }
@@ -311,6 +318,13 @@ public class MainTest extends TestCase {
         compileTwice(USERS_SOURCE_ROOT);
         executor.submit(() -> {
             var roleType = queryClassType("LabRole");
+            var roleReadWriteListType = typeManager.getParameterizedType(
+                    new GetParameterizedTypeRequest(
+                            StandardTypes.getReadWriteListType().getRef(),
+                            List.of(roleType.getRef()),
+                            List.of()
+                    )
+            ).type();
             var roleNameFieldId = getFieldIdByCode(roleType, "name");
             var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getId());
             var role = TestUtils.doInTransaction(() -> flowExecutionService.execute(
@@ -343,10 +357,14 @@ public class MainTest extends TestCase {
                                     PrimitiveFieldValue.createString("lyq"),
                                     PrimitiveFieldValue.createString("123456"),
                                     PrimitiveFieldValue.createString("lyq"),
-                                    new ArrayFieldValue(
+                                    new InstanceFieldValue(
                                             null,
-                                            false,
-                                            List.of(ReferenceFieldValue.create(role.id()))
+                                            InstanceDTO.createListInstance(
+                                                    roleReadWriteListType.getRef(),
+                                                    false,
+                                                    List.of(ReferenceFieldValue.create(role.id())
+                                                    )
+                                            )
                                     )
                             )
                     )
@@ -358,11 +376,11 @@ public class MainTest extends TestCase {
                     "lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userNameFieldId)).getValue()
             );
             var platformUserRoles = ((InstanceFieldValue) platformUser.getFieldValue(userRolesFieldId)).getInstance();
-            Assert.assertEquals(1, platformUserRoles.getArraySize());
+            Assert.assertEquals(1, platformUserRoles.getListSize());
             Assert.assertEquals(role.id(), platformUserRoles.getElement(0).referenceId());
             var platformUserApplicationsFieldId = getFieldIdByCode(platformUserType, "applications");
             var platformUserApplications = ((InstanceFieldValue) platformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
-            Assert.assertEquals(0, platformUserApplications.getArraySize());
+            Assert.assertEquals(0, platformUserApplications.getListSize());
 
             // test platform user view list
             var platformUserMapping = TestUtils.getDefaultMapping(platformUserType);
@@ -389,7 +407,7 @@ public class MainTest extends TestCase {
             var reloadedPlatformUserView = instanceManager.get(platformUserView.id(), 1).instance();
             var userViewRolesFieldId = TestUtils.getFieldIdByCode(platformUserViewType, "roles");
             var reloadedPlatformUserRoles = ((InstanceFieldValue) reloadedPlatformUserView.getFieldValue(userViewRolesFieldId)).getInstance();
-            Assert.assertEquals(1, reloadedPlatformUserRoles.getArraySize());
+            Assert.assertEquals(1, reloadedPlatformUserRoles.getListSize());
 
             // test join application
             var userApplicationType = queryClassType("UserApplication");
@@ -419,7 +437,7 @@ public class MainTest extends TestCase {
             ));
             var reloadedPlatformUser = instanceManager.get(platformUser.id(), 1).instance();
             var joinedApplications = ((InstanceFieldValue) reloadedPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
-            Assert.assertEquals(1, joinedApplications.getArraySize());
+            Assert.assertEquals(1, joinedApplications.getListSize());
             Assert.assertEquals(application.id(), joinedApplications.getElement(0).referenceId());
 
             // enter application
@@ -440,19 +458,35 @@ public class MainTest extends TestCase {
             Assert.assertNotNull(token);
 
             // test leave application
-            var platformUserArrayType = typeManager.getArrayType(platformUserType.id(), ArrayKind.READ_WRITE.code()).type();
+            var platformUserListType = typeManager.getParameterizedType(
+                    new GetParameterizedTypeRequest(
+                            StandardTypes.getListType().getRef(),
+                            List.of(platformUserType.getRef()),
+                            List.of()
+                    )
+            ).type();
+            var platformUserReadWriteListType = typeManager.getParameterizedType(
+                    new GetParameterizedTypeRequest(
+                            StandardTypes.getReadWriteListType().getRef(),
+                            List.of(platformUserType.getRef()),
+                            List.of()
+                    )
+            ).type();
             var leaveApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "leaveApp",
-                    platformUserArrayType.getRef(), userApplicationType.getRef());
+                    platformUserListType.getRef(), userApplicationType.getRef());
             try {
                 TestUtils.doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
                                 leaveApplicationMethodId,
                                 null,
                                 List.of(
-                                        new ArrayFieldValue(
+                                        new InstanceFieldValue(
                                                 null,
-                                                false,
-                                                List.of(ReferenceFieldValue.create(platformUser.id()))
+                                                InstanceDTO.createListInstance(
+                                                        platformUserReadWriteListType.getRef(),
+                                                        false,
+                                                        List.of(ReferenceFieldValue.create(platformUser.id()))
+                                                )
                                         ),
                                         ReferenceFieldValue.create(application.id()))
                         )
@@ -471,10 +505,13 @@ public class MainTest extends TestCase {
                                     PrimitiveFieldValue.createString("lyq2"),
                                     PrimitiveFieldValue.createString("123456"),
                                     PrimitiveFieldValue.createString("lyq2"),
-                                    new ArrayFieldValue(
+                                    new InstanceFieldValue(
                                             null,
-                                            false,
-                                            List.of(ReferenceFieldValue.create(role.id()))
+                                            InstanceDTO.createListInstance(
+                                                    roleReadWriteListType.getRef(),
+                                                    false,
+                                                    List.of(ReferenceFieldValue.create(role.id()))
+                                            )
                                     )
                             )
                     )
@@ -493,7 +530,7 @@ public class MainTest extends TestCase {
             // assert that the user has joined the application
             var reloadedAnotherPlatformUser = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications = ((InstanceFieldValue) reloadedAnotherPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
-            Assert.assertEquals(1, anotherJoinedApplications.getArraySize());
+            Assert.assertEquals(1, anotherJoinedApplications.getListSize());
             loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             enterApplicationMethodId,
@@ -514,10 +551,12 @@ public class MainTest extends TestCase {
                             leaveApplicationMethodId,
                             null,
                             List.of(
-                                    new ArrayFieldValue(
-                                            null,
-                                            false,
-                                            List.of(ReferenceFieldValue.create(anotherPlatformUser.id()))
+                                    InstanceFieldValue.of(
+                                            InstanceDTO.createListInstance(
+                                                    platformUserReadWriteListType.getRef(),
+                                                    false,
+                                                    List.of(ReferenceFieldValue.create(anotherPlatformUser.id()))
+                                            )
                                     ),
                                     ReferenceFieldValue.create(application.id()))
                     )
@@ -526,7 +565,7 @@ public class MainTest extends TestCase {
             // assert that the user has left the application
             var reloadedAnotherPlatformUser2 = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications2 = ((InstanceFieldValue) reloadedAnotherPlatformUser2.getFieldValue(platformUserApplicationsFieldId)).getInstance();
-            Assert.assertEquals(0, anotherJoinedApplications2.getArraySize());
+            Assert.assertEquals(0, anotherJoinedApplications2.getListSize());
             try {
                 TestUtils.doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
@@ -568,6 +607,13 @@ public class MainTest extends TestCase {
 
             // assert that fields of LabToken type has been generated correctly
             var tokenType = queryClassType("LabToken");
+            var tokenReadWriteListType = typeManager.getParameterizedType(
+                    new GetParameterizedTypeRequest(
+                            StandardTypes.getReadWriteListType().getRef(),
+                            List.of(tokenType.getRef()),
+                            List.of()
+                    )
+            ).type();
             Assert.assertTrue(tokenType.ephemeral());
             Assert.assertEquals(2, tokenType.getClassParam().fields().size());
 
@@ -580,10 +626,12 @@ public class MainTest extends TestCase {
                                     PrimitiveFieldValue.createString("leen"),
                                     PrimitiveFieldValue.createString("123456"),
                                     PrimitiveFieldValue.createString("leen"),
-                                    new ArrayFieldValue(
-                                            null,
-                                            false,
-                                            List.of(ReferenceFieldValue.create(role.id()))
+                                    InstanceFieldValue.of(
+                                            InstanceDTO.createListInstance(
+                                                    roleReadWriteListType.getRef(),
+                                                    false,
+                                                    List.of(ReferenceFieldValue.create(role.id()))
+                                            )
                                     ),
                                     ReferenceFieldValue.create(application.id())
                             )
@@ -600,7 +648,7 @@ public class MainTest extends TestCase {
             Assert.assertTrue(passwordValue instanceof PrimitiveFieldValue primitiveFieldValue
                     && primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.PASSWORD.code());
             var userRoles = ((InstanceFieldValue) user.getFieldValue(userRolesFieldId)).getInstance();
-            Assert.assertEquals(1, userRoles.getArraySize());
+            Assert.assertEquals(1, userRoles.getListSize());
             Assert.assertEquals(role.id(), userRoles.getElement(0).referenceId());
             Assert.assertEquals(2, userType.getClassParam().constraints().size());
 
@@ -681,10 +729,12 @@ public class MainTest extends TestCase {
                             logoutMethodId,
                             null,
                             List.of(
-                                    new ArrayFieldValue(
-                                            null,
-                                            false,
-                                            List.of(tokenValue)
+                                    InstanceFieldValue.of(
+                                            InstanceDTO.createListInstance(
+                                                    tokenReadWriteListType.getRef(),
+                                                    false,
+                                                    List.of(tokenValue)
+                                            )
                                     )
                             )
                     )

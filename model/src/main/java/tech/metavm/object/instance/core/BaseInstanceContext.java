@@ -276,7 +276,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private DurableInstance allocateView(ViewId viewId) {
-        var viewType = viewId.getViewType(mappingProvider);
+        var viewType = viewId.getViewType(mappingProvider, typeProvider);
         DurableInstance view;
         if(viewType instanceof ClassType classViewType) {
             view = ClassInstanceBuilder.newBuilder(classViewType)
@@ -318,7 +318,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private long getTypeId(Id id) {
         return switch (id) {
             case PhysicalId physicalId -> getTypeId(physicalId.getId());
-            case ViewId viewId -> viewId.getViewType(mappingProvider).getId();
+            case ViewId viewId -> viewId.getViewType(mappingProvider, typeProvider).getId();
             default -> throw new IllegalStateException("Unexpected value: " + id);
         };
     }
@@ -400,7 +400,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected void saveViews() {
         for (Instance value : instanceMap.values()) {
             if (value instanceof ClassInstance classInstance) {
-                if (classInstance.isView() && !classInstance.isRemoved())
+                if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved())
                     saveView(classInstance);
             }
         }

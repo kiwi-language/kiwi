@@ -11,6 +11,7 @@ import java.util.Set;
                 @JsonSubTypes.Type(name = "1", value = ClassInstanceParam.class),
                 @JsonSubTypes.Type(name = "2", value = ArrayInstanceParam.class),
                 @JsonSubTypes.Type(name = "3", value = PrimitiveInstanceParam.class),
+                @JsonSubTypes.Type(name = "4", value = ListInstanceParam.class),
         }
 )
 public interface InstanceParam {

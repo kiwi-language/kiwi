@@ -33,8 +33,6 @@ public class ExpressionResolver {
     private static final Map<IElementType, BinaryOperator> OPERATOR_MAP = Map.ofEntries(
             Map.entry(JavaTokenType.PLUS, BinaryOperator.ADD),
             Map.entry(JavaTokenType.MINUS, BinaryOperator.MINUS),
-//            Map.entry(JavaTokenType.PLUSPLUS, Operator.PLUS_PLUS),
-//            Map.entry(JavaTokenType.MINUSMINUS, Operator.MINUS_MINUS),
             Map.entry(JavaTokenType.EQEQ, BinaryOperator.EQ),
             Map.entry(JavaTokenType.NE, BinaryOperator.NE),
             Map.entry(JavaTokenType.GT, BinaryOperator.GT),
@@ -54,30 +52,30 @@ public class ExpressionResolver {
     private final MethodGenerator methodGenerator;
     private final TypeResolver typeResolver;
     private final VariableTable variableTable;
+    private final ParameterizedTypeProvider parameterizedTypeProvider;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final ArrayTypeProvider arrayTypeProvider;
     private final UnionTypeProvider unionTypeProvider;
     private final VisitorBase visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListAddResolver(), new ListRemoveResolver(), new ListGetResolver(),
-            new ListIsEmptyResolver(), new ListSizeResolver(), new StringConcatResolver(),
-            new PrimitiveToStringResolver(), new ListClearResolver(), new ListAddAllResolver(),
-            new GetPasswordResolver(), new ObjectsToStringResolver(), new StringReplaceFirstResolver(),
-            new StringReplaceResolver(), new ListContainsResolver(), new ListOfResolver(),
+            new ListOfResolver(),
+            new ObjectsToStringResolver(),
+            new StringReplaceFirstResolver(), new PrimitiveToStringResolver(), new GetPasswordResolver(),
+            new StringReplaceResolver(), new StringConcatResolver(),
             new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver(),
             new IndexUtilsCallResolver(), new SystemCurrentTimeMillisResolver(),
             new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
-            new NewListResolver(), new NewListWithInitialResolver(), new NewPasswordResolver(),
-            new NewDateResolver()
+            new NewPasswordResolver(), new NewDateResolver()
     );
 
     public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver,
                               ArrayTypeProvider arrayTypeProvider,
                               UnionTypeProvider unionTypeProvider,
+                              ParameterizedTypeProvider parameterizedTypeProvider,
                               ParameterizedFlowProvider parameterizedFlowProvider,
                               VisitorBase visitor) {
         this.methodGenerator = methodGenerator;
@@ -85,6 +83,7 @@ public class ExpressionResolver {
         this.variableTable = variableTable;
         this.arrayTypeProvider = arrayTypeProvider;
         this.unionTypeProvider = unionTypeProvider;
+        this.parameterizedTypeProvider = parameterizedTypeProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
         this.visitor = visitor;
     }
@@ -108,6 +107,10 @@ public class ExpressionResolver {
 
     public ArrayTypeProvider getArrayTypeProvider() {
         return arrayTypeProvider;
+    }
+
+    public ParameterizedTypeProvider getParameterizedTypeProvider() {
+        return parameterizedTypeProvider;
     }
 
     private Expression resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
@@ -365,28 +368,6 @@ public class ExpressionResolver {
         var method = requireNonNull(expression.resolveMethod());
         var klass = requireNonNull(method.getContainingClass());
         var argumentList = expression.getArgumentList();
-        if (TranspileUtil.matchClass(klass, List.class)) {
-            var array = resolveQualifier(ref.getQualifierExpression(), context);
-            if (matchMethod(method, getMethod(List.class, "size"))) {
-                return invokeFlow(array, "size", argumentList, context);
-            } else if (matchMethod(method, getMethod(List.class, "add", Object.class))) {
-                createInvokeFlowNode(array, "add", argumentList, context);
-                return Expressions.trueExpression();
-            } else if (matchMethod(method, getMethod(List.class, "remove", Object.class))) {
-                return invokeFlow(array, "remove", argumentList, context);
-            } else if (matchMethod(method, getMethod(List.class, "get", int.class))) {
-                return invokeFlow(array, "get", argumentList, context);
-            } else if (matchMethod(method, getMethod(List.class, "set", int.class, Object.class))) {
-                return invokeFlow(array, "set", argumentList, context);
-            } else if (matchMethod(method, getMethod(List.class, "remove", int.class))) {
-                return invokeFlow(array, "removeAt", argumentList, context);
-            } else if (matchMethod(method, getMethod(List.class, "clear"))) {
-                invokeFlow(array, "clear", expression.getArgumentList(), context);
-                return null;
-            } else {
-                throw new InternalException("Unsupported List method: " + method);
-            }
-        }
         if (matchClass(klass, Map.class)) {
             var map = resolveQualifier(ref.getQualifierExpression(), context);
             if (matchMethod(method, getMethod(Map.class, "get", Object.class))) {
@@ -441,6 +422,7 @@ public class ExpressionResolver {
     private MethodCallNode createInvokeFlowNode(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
         List<Expression> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
         var exprType = (ClassType) methodGenerator.getExpressionType(self);
+        typeResolver.ensureDeclared(exprType);
         return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments);
     }
 
@@ -502,7 +484,7 @@ public class ExpressionResolver {
         var substitutor = methodGenerics.getSubstitutor();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var declaringType = (ClassType) typeResolver.resolveDeclaration(
-                substitutor.substitute(TranspileUtil.createType(method.getContainingClass()))
+                substitutor.substitute(TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())))
         );
         var psiParameters = NncUtils.requireNonNull(method.getParameterList()).getParameters();
         var template = declaringType.getEffectiveTemplate();
@@ -515,7 +497,7 @@ public class ExpressionResolver {
                     return t;
                 }
         );
-        var templateMethod = template.getMethodByCodeAndParamTypes(method.getName(), rawParamTypes);
+        var templateMethod = template.getMethodByCodeAndParamTypes(method.getName(), rawParamTypes).getEffectiveVerticalTemplate();
         Method piFlow = Objects.requireNonNull(template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod);
         Method flow;
         if (piFlow.getTypeParameters().isEmpty()) {
@@ -559,22 +541,6 @@ public class ExpressionResolver {
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
         var type = NncUtils.requireNonNull(expression.getType());
-//        var psiClass = requireNonNull(((PsiClassType) type).resolve());
-        var psiListType = TranspileUtil.createType(List.class);
-        if (psiListType.isAssignableFrom(type)) {
-            var listType = TranspileUtil.getSuperType(type, List.class);
-            var mvElementType = typeResolver.resolve(listType.getParameters()[0]);
-            var arrayType = arrayTypeProvider.getArrayType(mvElementType, ArrayKind.READ_WRITE);
-            var node = methodGenerator.createNewArray(arrayType, null);
-//            var listType = (ClassType) typeResolver.resolve(type);
-//            var listType.getTypeArguments()[0];
-//            var signature = resolveMethodSignature(expression);
-//            var subFlow = listType.getFlowByCodeAndParamTypes("List", signature.parameterTypes);
-//            var newNode = flowGenerator.createNew(subFlow,
-//                    resolveExpressionList(requireNonNull(expression.getArgumentList()), context),
-//                    true);
-            return new NodeExpression(node);
-        }
         var psiMapType = TranspileUtil.createType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = (ClassType) typeResolver.resolve(type);

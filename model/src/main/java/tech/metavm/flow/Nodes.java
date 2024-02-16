@@ -30,6 +30,12 @@ public class Nodes {
         return new NewArrayNode(null, name, code, type, value, parentRef, scope.getLastNode(), scope);
     }
 
+    public static NewObjectNode newObject(String name, ClassType type, ScopeRT scope, Method constructor,
+                                          List<Argument> arguments, boolean ephemeral) {
+        return new NewObjectNode(null, name, null,
+                constructor, arguments, scope.getLastNode(), scope, null, ephemeral);
+    }
+
     public static ReturnNode ret(String name, ScopeRT scope, @Nullable Value value) {
         return new ReturnNode(null, name, null, scope.getLastNode(), scope, value);
     }
@@ -72,6 +78,53 @@ public class Nodes {
         return node;
     }
 
+    public static NodeRT listForEach(
+            String name,
+            Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
+            Supplier<Value>> action,
+            ScopeRT scope) {
+        var seq = NncUtils.randomNonNegative();
+        var whileOutputType = ClassTypeBuilder.newBuilder("循环输出", "LoopOutput")
+                .temporary()
+                .build();
+        var indexField = FieldBuilder.newBuilder("索引", "index", whileOutputType, StandardTypes.getLongType())
+                .build();
+        var list = getArray.get();
+        var listType = (ClassType) list.getType();
+        var size = methodCall(
+                "列表大小_" + seq, scope, list,
+                listType.getMethodByCodeAndParamTypes("size", List.of()),
+                List.of()
+        );
+        var node = new WhileNode(
+                null, name, null, whileOutputType, scope.getLastNode(), scope,
+                Values.constant(Expressions.trueExpression())
+        );
+        node.setField(indexField, Values.constantLong(0L),
+                Values.expression(
+                        Expressions.add(
+                                Expressions.nodeProperty(node, indexField),
+                                Expressions.constantLong(1L)
+                        )
+                )
+        );
+        node.setCondition(Values.expression(
+                Expressions.lt(
+                        Expressions.nodeProperty(node, indexField),
+                        Expressions.node(size)
+                )
+        ));
+        var bodyScope = node.getBodyScope();
+        var getMethod = ((ClassType )list.getType()).getMethodByCodeAndParamTypes("get", List.of(StandardTypes.getLongType()));
+        var element = new MethodCallNode(
+                null, "获取元素_" + seq, null, bodyScope.getLastNode(), bodyScope,
+                getArray.get(), getMethod,
+                List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))
+        );
+        action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
+        return node;
+    }
+
     public static MapNode map(String name, ScopeRT scope, Value source, ObjectMapping mapping) {
         return new MapNode(null, name, null, scope.getLastNode(), scope, source, mapping);
     }
@@ -97,7 +150,7 @@ public class Nodes {
         });
         var elseBranch = node.addDefaultBranch();
         defaultBranchGenerator.accept(elseBranch);
-        var mergeOutput = ClassTypeBuilder.newBuilder("mergeOutput", "mergeOutput").temporary().build();
+        var mergeOutput = ClassTypeBuilder.newBuilder("MergeOutput", null).temporary().build();
         var mergeNode = new MergeNode(
                 null, name + "_merge", NncUtils.get(code, c -> c + "_merge"),
                 node, mergeOutput, scope
@@ -129,7 +182,7 @@ public class Nodes {
     }
 
     public static InputNode input(Flow flow) {
-        var inputType = ClassTypeBuilder.newBuilder("输入", "Input")
+        var inputType = ClassTypeBuilder.newBuilder("输入", null)
                 .temporary()
                 .build();
         for (var parameter : flow.getParameters()) {

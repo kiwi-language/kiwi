@@ -12,8 +12,8 @@ public class FieldViewId extends PathViewId {
     public static final int TAG = 6;
     public final long fieldId;
 
-    public FieldViewId(ViewId parent, long mappingId, long fieldId, @Nullable Id sourceId) {
-        super(parent, mappingId, sourceId);
+    public FieldViewId(ViewId parent, long mappingId, long fieldId, @Nullable Id sourceId, long typeId) {
+        super(parent, mappingId, sourceId, typeId);
         this.fieldId = fieldId;
     }
 
@@ -24,6 +24,7 @@ public class FieldViewId extends PathViewId {
         output.writeLong(getMappingId());
         output.writeLong(fieldId);
         writeSourceId(output);
+        output.writeLong(getTypeId());
     }
 
     @Override

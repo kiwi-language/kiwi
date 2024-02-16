@@ -1,9 +1,13 @@
 package tech.metavm.entity;
 
 import tech.metavm.entity.natives.*;
-import tech.metavm.flow.*;
-import tech.metavm.object.instance.*;
-import tech.metavm.object.instance.core.*;
+import tech.metavm.flow.FunctionBuilder;
+import tech.metavm.flow.Method;
+import tech.metavm.flow.MethodBuilder;
+import tech.metavm.flow.Parameter;
+import tech.metavm.object.instance.ColumnKind;
+import tech.metavm.object.instance.core.BooleanInstance;
+import tech.metavm.object.instance.core.NullInstance;
 import tech.metavm.object.type.*;
 import tech.metavm.util.*;
 
@@ -12,7 +16,8 @@ import java.util.*;
 
 import static tech.metavm.object.type.Types.getParameterizedCode;
 import static tech.metavm.object.type.Types.getParameterizedName;
-import static tech.metavm.util.ReflectionUtils.*;
+import static tech.metavm.util.ReflectionUtils.ENUM_NAME_FIELD;
+import static tech.metavm.util.ReflectionUtils.ENUM_ORDINAL_FIELD;
 
 public class StandardDefBuilder {
 
@@ -32,6 +37,8 @@ public class StandardDefBuilder {
 
     private static final Map<java.lang.reflect.Type, Class<?>> NATIVE_CLASS_MAP = Map.of(
             MetaSet.class, SetNative.class,
+            ChildMetaList.class, ListNative.class,
+            ReadWriteMetaList.class, ListNative.class,
             MetaList.class, ListNative.class,
             MetaMap.class, MapNative.class,
             IteratorImpl.class, IteratorImplNative.class,
@@ -85,6 +92,8 @@ public class StandardDefBuilder {
         collectionTypeMap.put(IteratorImpl.class, StandardTypes.setIteratorImplType(createIteratorImplType()));
         collectionTypeMap.put(MetaSet.class, StandardTypes.setSetType(createSetType()));
         collectionTypeMap.put(MetaList.class, StandardTypes.setListType(createListType()));
+        collectionTypeMap.put(ReadWriteMetaList.class, StandardTypes.setReadWriteListType(createReadWriteListType()));
+        collectionTypeMap.put(ChildMetaList.class, StandardTypes.setChildListType(createChildListType()));
         collectionTypeMap.put(MetaMap.class, StandardTypes.setMapType(createMapType()));
 
         defContext.addDef(objectDef);
@@ -241,7 +250,7 @@ public class StandardDefBuilder {
     }
 
     private void initBuiltinFlows() {
-        var getSourceFunc = FunctionBuilder.newBuilder( "获取来源", "getSource", defContext.getFunctionTypeContext())
+        var getSourceFunc = FunctionBuilder.newBuilder("获取来源", "getSource", defContext.getFunctionTypeContext())
                 .isNative()
                 .parameters(new Parameter(null, "视图", "view", getObjectType()))
                 .returnType(getObjectType())
@@ -413,11 +422,11 @@ public class StandardDefBuilder {
                 .category(TypeCategory.INTERFACE)
                 .build();
         primTypeFactory.putType(Collection.class, collectionType);
-        createCollectionFlows(collectionType, elementType, true);
+        createCollectionFlows(collectionType, elementType);
         return collectionType;
     }
 
-    private void createCollectionFlows(ClassType collectionType, TypeVariable elementType, boolean witAdd) {
+    private void createCollectionFlows(ClassType collectionType, TypeVariable elementType) {
         var pIteratorType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorType(), elementType);
         MethodBuilder.newBuilder(collectionType, "获取迭代器", "iterator", defContext.getFunctionTypeContext())
                 .isNative(true)
@@ -437,21 +446,26 @@ public class StandardDefBuilder {
         MethodBuilder.newBuilder(collectionType, "是否包含", "contains", defContext.getFunctionTypeContext())
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
+                .parameters(new Parameter(null, "元素", "element", StandardTypes.getAnyType()))
+                .build();
+
+        MethodBuilder.newBuilder(collectionType, "添加", "add", defContext.getFunctionTypeContext())
+                .isNative(true)
+                .returnType(StandardTypes.getBooleanType())
                 .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
 
-        if (witAdd) {
-            MethodBuilder.newBuilder(collectionType, "添加", "add", defContext.getFunctionTypeContext())
-                    .isNative(true)
-                    .returnType(StandardTypes.getBooleanType())
-                    .parameters(new Parameter(null, "元素", "element", elementType))
-                    .build();
-        }
+        MethodBuilder.newBuilder(collectionType, "添加全部", "addAll", defContext.getFunctionTypeContext())
+                .isNative(true)
+                .returnType(StandardTypes.getBooleanType())
+                .parameters(new Parameter(null, "集合", "c",
+                        defContext.getParameterizedType(collectionType, defContext.getUncertainType(StandardTypes.getNeverType(), elementType))))
+                .build();
 
         MethodBuilder.newBuilder(collectionType, "删除", "remove", defContext.getFunctionTypeContext())
                 .isNative(true)
                 .returnType(StandardTypes.getBooleanType())
-                .parameters(new Parameter(null, "元素", "element", elementType))
+                .parameters(new Parameter(null, "元素", "element", StandardTypes.getAnyType()))
                 .build();
 
         MethodBuilder.newBuilder(collectionType, "清空", "clear", defContext.getFunctionTypeContext())
@@ -499,39 +513,21 @@ public class StandardDefBuilder {
     }
 
     public ClassType createListType() {
-        String name = getParameterizedName("列表");
-        String code = getParameterizedName("List");
-        var elementType = new TypeVariable(null, "元素",
-                "Element",
+        var elementType = new TypeVariable(null, "列表元素",
+                "ListElement",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(MetaList.class.getTypeParameters()[0], elementType);
         var pCollectionType = defContext.getGenericContext().getParameterizedType(StandardTypes.getCollectionType(), elementType);
         var pIteratorImplType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorImplType(), elementType);
-        ClassType listType = ClassTypeBuilder.newBuilder(name, code)
+        var listType = ClassTypeBuilder.newBuilder("列表", "List")
+                .category(TypeCategory.INTERFACE)
                 .interfaces(pCollectionType)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
                 .dependencies(List.of(pIteratorImplType))
                 .build();
         primTypeFactory.putType(MetaList.class, listType);
-        FieldBuilder.newBuilder("数组", "array", listType,
-                        defContext.getArrayType(elementType, ArrayKind.READ_WRITE))
-                .nullType(getNullType())
-                .access(Access.PRIVATE)
-                .isChild(true)
-                .build();
-        createCommonListFlows(listType, elementType);
-        createOrdinaryListFlows(listType, elementType, pCollectionType);
-        return listType;
-    }
-
-    private void createCommonListFlows(ClassType listType, TypeVariable elementType) {
-        MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode(), defContext.getFunctionTypeContext())
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(listType)
-                .build();
 
         var nullableElementType = defContext.getUnionType(Set.of(elementType, StandardTypes.getNullType()));
         MethodBuilder.newBuilder(listType, "按索引删除", "removeAt", defContext.getFunctionTypeContext())
@@ -544,6 +540,102 @@ public class StandardDefBuilder {
                 .parameters(new Parameter(null, "索引", "index", StandardTypes.getLongType()))
                 .isNative(true)
                 .returnType(nullableElementType)
+                .build();
+
+        var uncertainType = defContext.getUncertainType(StandardTypes.getNeverType(), elementType);
+        var uncertainCollType = defContext.getParameterizedType(StandardTypes.getCollectionType(), uncertainType);
+        MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode(), defContext.getFunctionTypeContext())
+                .isConstructor(true)
+                .isNative(true)
+                .parameters(
+                        new Parameter(null, "collection", "collection", uncertainCollType)
+                )
+                .returnType(listType)
+                .build();
+
+        MethodBuilder.newBuilder(listType, "写入", "set", defContext.getFunctionTypeContext())
+                .parameters(
+                        new Parameter(null, "索引", "index", StandardTypes.getLongType()),
+                        new Parameter(null, "值", "value", elementType)
+                )
+                .isNative(true)
+                .returnType(nullableElementType)
+                .build();
+
+        MethodBuilder.newBuilder(listType, "of", "of", defContext.getFunctionTypeContext())
+                .isStatic(true)
+                .isNative(true)
+                .parameters(
+                        new Parameter(null, "元素", "elements", defContext.getArrayType(elementType, ArrayKind.READ_ONLY))
+                )
+                .returnType(listType)
+                .build();
+
+        listType.setStage(ResolutionStage.DEFINITION);
+        return listType;
+    }
+
+    public ClassType createReadWriteListType() {
+        return createListImplType("读写列表", "ReadWriteList", ReadWriteMetaList.class, ArrayKind.READ_WRITE);
+    }
+
+    public ClassType createChildListType() {
+        return createListImplType("子对象列表", "ChildList", ChildMetaList.class, ArrayKind.CHILD);
+    }
+
+    public ClassType createListImplType(String name, String code, Class<?> javaClass, ArrayKind arrayKind) {
+        var elementType = new TypeVariable(null, name + "元素", code + "Element",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(getObjectType()));
+        primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
+        var pCollectionType = defContext.getGenericContext().getParameterizedType(StandardTypes.getCollectionType(), elementType);
+        var pListType = defContext.getGenericContext().getParameterizedType(StandardTypes.getListType(), elementType);
+        var pIteratorImplType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorImplType(), elementType);
+        var listImplType = ClassTypeBuilder.newBuilder(name, code)
+                .interfaces(pListType)
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .dependencies(List.of(pIteratorImplType))
+                .build();
+        primTypeFactory.putType(javaClass, listImplType);
+        FieldBuilder.newBuilder("数组", "array", listImplType,
+                        defContext.getArrayType(elementType, arrayKind))
+                .nullType(getNullType())
+                .access(Access.PRIVATE)
+                .isChild(true)
+                .build();
+        createOverridingFlows(listImplType, pCollectionType);
+        createOverridingFlows(listImplType, pListType);
+
+        MethodBuilder.newBuilder(listImplType, listImplType.getName(), listImplType.getCode(), defContext.getFunctionTypeContext())
+                .isConstructor(true)
+                .isNative(true)
+                .returnType(listImplType)
+                .build();
+
+
+        MethodBuilder.newBuilder(listImplType, listImplType.getName(), listImplType.getCode(), defContext.getFunctionTypeContext())
+                .isConstructor(true)
+                .isNative(true)
+                .parameters(
+                        new Parameter(
+                                null, "collection", "collection",
+                                defContext.getParameterizedType(
+                                        StandardTypes.getCollectionType(),
+                                        defContext.getUncertainTypeContext().get(StandardTypes.getNeverType(), elementType)
+                                )
+                        )
+                )
+                .returnType(listImplType)
+                .build();
+        return listImplType;
+    }
+
+    private void createCommonListFlows(ClassType listType, TypeVariable elementType) {
+        MethodBuilder.newBuilder(listType, listType.getName(), listType.getCode(), defContext.getFunctionTypeContext())
+                .isConstructor(true)
+                .isNative(true)
+                .returnType(listType)
                 .build();
     }
 

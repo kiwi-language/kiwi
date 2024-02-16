@@ -2,6 +2,7 @@ package tech.metavm.object.instance.core;
 
 import org.jetbrains.annotations.Nullable;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 import tech.metavm.util.InstanceInput;
 import tech.metavm.util.InstanceOutput;
@@ -14,10 +15,13 @@ public abstract class PathViewId extends ViewId {
 
     private final @Nullable Id sourceId;
 
-    protected PathViewId(ViewId parent, long mappingId, @Nullable Id sourceId) {
+    private final long typeId;
+
+    protected PathViewId(ViewId parent, long mappingId, @Nullable Id sourceId, long typeId) {
         super(mappingId);
         this.parent = parent;
         this.sourceId = sourceId;
+        this.typeId = typeId;
     }
 
     public Id getParent() {
@@ -47,12 +51,12 @@ public abstract class PathViewId extends ViewId {
         if (this == object) return true;
         if (!(object instanceof PathViewId that)) return false;
         if (!super.equals(object)) return false;
-        return Objects.equals(parent, that.parent) && Objects.equals(sourceId, that.sourceId);
+        return typeId == that.typeId && Objects.equals(parent, that.parent) && Objects.equals(sourceId, that.sourceId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), parent, sourceId);
+        return Objects.hash(super.hashCode(), parent, sourceId, typeId);
     }
 
     @Override
@@ -71,13 +75,17 @@ public abstract class PathViewId extends ViewId {
     }
 
     @Override
-    public Type getViewType(MappingProvider mappingProvider) {
+    public Type getViewType(MappingProvider mappingProvider, TypeProvider typeProvider) {
         var mappingId = getMappingId();
         if(mappingId > 0L)
-            return super.getViewType(mappingProvider);
-        return getViewTypeByPath(parent.getViewType(mappingProvider));
+            return super.getViewType(mappingProvider, typeProvider);
+        return typeProvider.getType(typeId);
+//        return getViewTypeByPath(parent.getViewType(mappingProvider, typeProvider));
     }
 
     protected abstract Type getViewTypeByPath(Type parentType);
 
+    public long getTypeId() {
+        return typeId;
+    }
 }

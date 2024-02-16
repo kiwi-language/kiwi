@@ -2,6 +2,7 @@ package tech.metavm.object.instance;
 
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.natives.ListNative;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.*;
@@ -75,9 +76,10 @@ public class InstanceFactory {
                 "Id of new instance must be null or zero");
         Type type = getType.apply(instanceDTO.typeRef().id());
         DurableInstance instance;
-        if (type instanceof ClassType classType) {
-            ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
-            Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(param.fields(), InstanceFieldDTO::fieldId);
+        var param = instanceDTO.param();
+        if (param instanceof ClassInstanceParam classInstanceParam) {
+            var classType = (ClassType) type;
+            Map<Long, InstanceFieldDTO> fieldMap = NncUtils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
             ClassInstance object = ClassInstance.allocate(classType, parentRef);
             instance = object;
             for (Field field : classType.getAllFields()) {
@@ -95,27 +97,36 @@ public class InstanceFactory {
                 }
             }
             object.ensureAllFieldsInitialized();
-        } else if (type instanceof ArrayType arrayType) {
-            ArrayInstanceParam param = (ArrayInstanceParam) instanceDTO.param();
+        } else if (param instanceof ArrayInstanceParam arrayInstanceParam) {
+            var arrayType = (ArrayType) type;
             ArrayInstance array = new ArrayInstance(arrayType, parentRef);
             instance = array;
             var elements = NncUtils.map(
-                    param.elements(),
+                    arrayInstanceParam.elements(),
                     v -> resolveValue(v, arrayType.getElementType(), getType,
                             InstanceParentRef.ofArray(array), context)
             );
             array.addAll(elements);
+        } else if (param instanceof ListInstanceParam listInstanceParam) {
+            var listType = (ClassType) type;
+            var list = ClassInstance.allocate(listType);
+            var listNative = new ListNative(list);
+            listNative.List();
+            NncUtils.forEach(
+                    listInstanceParam.elements(),
+                    v -> listNative.add(resolveValue(v, listType.getTypeArguments().get(0), getType, null, context))
+            );
+            instance = list;
         } else {
             throw new InternalException("Can not create instance for type '" + type + "'");
         }
-        if(instanceDTO.sourceMappingId() != null) {
+        if (instanceDTO.sourceMappingId() != null) {
             var sourceMapping = context.getMappingProvider().getMapping(instanceDTO.sourceMappingId());
             var source = sourceMapping.unmap(instance, context, context.getParameterizedFlowProvider());
             instance.setSourceRef(new SourceRef(source, sourceMapping));
             context.bind(instance);
             context.bind(source);
-        }
-        else
+        } else
             context.bind(instance);
         return instance;
     }

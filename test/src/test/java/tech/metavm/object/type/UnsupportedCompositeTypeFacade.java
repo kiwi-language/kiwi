@@ -33,7 +33,7 @@ public class UnsupportedCompositeTypeFacade implements CompositeTypeFacade {
     }
 
     @Override
-    public Type getParameterizedType(ClassType template, List<Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
+    public ClassType getParameterizedType(ClassType template, List<Type> typeArguments, ResolutionStage resolutionStage, DTOProvider dtoProvider) {
         throw new UnsupportedOperationException();
     }
 }

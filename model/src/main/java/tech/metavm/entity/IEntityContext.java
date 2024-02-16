@@ -149,6 +149,14 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     ArrayType getArrayType(Type elementType, ArrayKind kind);
 
+    default ClassType getListType(Type elementType) {
+        return getGenericContext().getParameterizedType(StandardTypes.getListType(), List.of(elementType));
+    }
+
+    default ClassType getReadWriteListType(Type elementType) {
+        return getGenericContext().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(elementType));
+    }
+
     default ClassType getClassType(Long id, String code) {
         NncUtils.requireTrue(id != null || code != null, "id and code can't both be null");
         if(id != null) {

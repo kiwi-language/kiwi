@@ -5,14 +5,12 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
+import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
 import tech.metavm.flow.ParameterizedFlowProvider;
 import tech.metavm.object.instance.IndexKeyRT;
-import tech.metavm.object.instance.rest.ClassInstanceParam;
-import tech.metavm.object.instance.rest.FieldValue;
-import tech.metavm.object.instance.rest.InstanceFieldValue;
-import tech.metavm.object.instance.rest.ReferenceFieldValue;
+import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Index;
@@ -371,9 +369,27 @@ public class ClassInstance extends DurableInstance {
     }
 
     @Override
-    protected ClassInstanceParam getParam() {
+    protected InstanceParam getParam() {
         ensureLoaded();
-        return new ClassInstanceParam(NncUtils.map(fields, InstanceField::toDTO));
+        if (isList()) {
+            var elements = new ListNative(this).toArray().getElements();
+            if (isChildList()) {
+                return new ListInstanceParam(
+                        true,
+                        NncUtils.map(elements, e ->
+                                new InstanceFieldValue(
+                                        e.getTitle(), e.toDTO()
+                                )
+                        )
+                );
+            } else {
+                return new ListInstanceParam(
+                        false,
+                        NncUtils.map(elements, Instance::toFieldValueDTO)
+                );
+            }
+        } else
+            return new ClassInstanceParam(NncUtils.map(fields, InstanceField::toDTO));
     }
 
     @Override
@@ -403,7 +419,7 @@ public class ClassInstance extends DurableInstance {
     @Override
     public FieldValue toFieldValueDTO() {
         ensureLoaded();
-        if (isValue()) {
+        if (isValue() || isList()) {
             return new InstanceFieldValue(
                     getTitle(),
                     toDTO()
@@ -414,6 +430,14 @@ public class ClassInstance extends DurableInstance {
                     Objects.requireNonNull(getInstanceIdString(), "Id required")
             );
         }
+    }
+
+    public boolean isList() {
+        return getType().isListType();
+    }
+
+    public boolean isChildList() {
+        return getType().isChildListType();
     }
 
     public List<InstanceField> fields() {

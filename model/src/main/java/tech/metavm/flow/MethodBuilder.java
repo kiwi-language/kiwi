@@ -161,7 +161,7 @@ public class MethodBuilder {
         }
         if (NncUtils.isNotEmpty(typeParameters))
             typeArguments = new ArrayList<>(typeParameters);
-        if(declaringType.isInterface())
+        if(declaringType.isInterface() && !_static)
             isAbstract = true;
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
         if (type == null)

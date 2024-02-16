@@ -270,12 +270,15 @@ public abstract class Type extends Element implements LoadAware, GlobalKey {
     public boolean isAssignableFrom(Type that) {
         if (that instanceof NeverType)
             return true;
-        var bound = that.getUpperBound();
-        return switch (bound) {
+        return that instanceof TypeVariable && isAssignableFrom1(that) || isAssignableFrom1(that.getUpperBound());
+    }
+
+    private boolean isAssignableFrom1(Type that) {
+        return switch (that) {
             case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
             case IntersectionType intersectionType ->
                     NncUtils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
-            default -> isAssignableFrom0(bound);
+            default -> isAssignableFrom0(that);
         };
     }
 
