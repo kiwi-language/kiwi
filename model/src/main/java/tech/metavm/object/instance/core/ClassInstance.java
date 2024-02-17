@@ -433,11 +433,11 @@ public class ClassInstance extends DurableInstance {
     }
 
     public boolean isList() {
-        return getType().isListType();
+        return getType().isList();
     }
 
     public boolean isChildList() {
-        return getType().isChildListType();
+        return getType().isChildList();
     }
 
     public List<InstanceField> fields() {

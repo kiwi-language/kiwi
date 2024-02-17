@@ -14,6 +14,7 @@ import java.util.Set;
                 @JsonSubTypes.Type(value = ArrayFieldValue.class, name = "3"),
                 @JsonSubTypes.Type(value = InstanceFieldValue.class, name = "4"),
                 @JsonSubTypes.Type(value = ExpressionFieldValue.class, name = "5"),
+                @JsonSubTypes.Type(value = ListFieldValue.class, name = "7"),
         }
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)

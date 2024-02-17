@@ -9,7 +9,7 @@ public enum FieldValueKind {
     ARRAY(3, ArrayFieldValue.class),
     INSTANCE_DTO(4, InstanceFieldValue.class),
     EXPRESSION(5, ExpressionFieldValue.class),
-    LIST(6, ArrayFieldValue.class),
+    LIST(7, ListFieldValue.class),
 
     ;
 

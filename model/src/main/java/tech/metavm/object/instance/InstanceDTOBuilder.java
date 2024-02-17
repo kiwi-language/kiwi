@@ -31,7 +31,7 @@ public class InstanceDTOBuilder {
     }
 
     private static FieldValue buildForClassInstance(ClassInstance instance, int depth, boolean isChild) {
-        if(instance.getType().isListType())
+        if(instance.getType().isList())
             return buildForListInstance(instance, depth, isChild);
         else
             return buildForOrdinaryClassInstance(instance, depth, isChild);

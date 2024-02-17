@@ -16,6 +16,7 @@ import tech.metavm.object.instance.query.Path;
 import tech.metavm.object.instance.query.PathTree;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.ParameterizedTypeProvider;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.util.*;
@@ -104,39 +105,39 @@ public class InstanceManager extends EntityContextFactoryBean {
 
     @Transactional
     public void update(InstanceDTO instanceDTO) {
-        try (var context = newInstanceContext()) {
+        try (var context = newContext()) {
             if (instanceDTO.id() == null) {
                 throw BusinessException.invalidParams("实例ID为空");
             }
-            update(instanceDTO, context);
+            update(instanceDTO, context.getInstanceContext(), context.getGenericContext());
             context.finish();
         }
     }
 
 
-    public void save(InstanceDTO instanceDTO, IInstanceContext context) {
+    public void save(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
         if (instanceDTO.id() != null) {
-            update(instanceDTO, context);
+            update(instanceDTO, context, parameterizedTypeProvider);
         } else {
-            create(instanceDTO, context);
+            create(instanceDTO, context, parameterizedTypeProvider);
         }
     }
 
-    public Instance update(InstanceDTO instanceDTO, IInstanceContext context) {
-        return ValueFormatter.parseInstance(instanceDTO, context);
+    public Instance update(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+        return ValueFormatter.parseInstance(instanceDTO, context, parameterizedTypeProvider);
     }
 
     @Transactional
     public String create(InstanceDTO instanceDTO) {
-        try (var context = newInstanceContext()) {
-            Instance instance = create(instanceDTO, context);
+        try (var context = newContext()) {
+            Instance instance = create(instanceDTO, context.getInstanceContext(), context.getGenericContext());
             context.finish();
             return Objects.requireNonNull(instance.getId()).toString();
         }
     }
 
-    public Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
-        return InstanceFactory.create(instanceDTO, context);
+    public Instance create(InstanceDTO instanceDTO, IInstanceContext context, ParameterizedTypeProvider parameterizedTypeProvider) {
+        return InstanceFactory.create(instanceDTO, context, parameterizedTypeProvider);
     }
 
     @Transactional

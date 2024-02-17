@@ -367,10 +367,10 @@ public class MappingSaver {
     private NestedMapping getNestedMapping(Type type, @Nullable Type underlyingType) {
         return switch (type) {
             case ClassType classType -> {
-                if (classType.isListType()) {
-                    if (underlyingType instanceof ClassType underlyingClassType && underlyingClassType.isListType()) {
+                if (classType.isList()) {
+                    if (underlyingType instanceof ClassType underlyingClassType && underlyingClassType.isList()) {
                         var underlyingElementType = underlyingClassType.getListElementType();
-                        var elementNestedMapping = underlyingClassType.isChildListType() ?
+                        var elementNestedMapping = underlyingClassType.isChildList() ?
                                 getNestedMapping(underlyingClassType.getListElementType(), underlyingElementType) :
                                 new IdentityNestedMapping(classType.getListElementType());
                         var targetType = (ClassType) underlyingClassType.accept(new TypeSubstitutor(

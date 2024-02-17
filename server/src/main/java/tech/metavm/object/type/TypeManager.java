@@ -586,7 +586,7 @@ public class TypeManager extends EntityContextFactoryBean {
             ClassInstance instance;
             if (instanceDTO.id() == null) {
                 instanceDTO = setOrdinal(instanceDTO, type.getEnumConstants().size(), type);
-                instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext);
+                instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext, context.getGenericContext());
                 FieldBuilder.newBuilder(instance.getTitle(), null, type, type)
                         .isStatic(true)
                         .staticValue(instance)
@@ -597,7 +597,7 @@ public class TypeManager extends EntityContextFactoryBean {
                 int ordinal = instance.getLongField(ordinalField).getValue().intValue();
                 instanceDTO = setOrdinal(instanceDTO, ordinal, type);
                 var field = type.getStaticFieldByName(instance.getTitle());
-                instanceManager.update(instanceDTO, instanceContext);
+                instanceManager.update(instanceDTO, instanceContext, context.getGenericContext());
                 field.setName(instance.getTitle());
             }
             context.finish();

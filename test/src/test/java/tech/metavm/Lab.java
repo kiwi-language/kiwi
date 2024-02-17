@@ -1,16 +1,14 @@
 package tech.metavm;
 
-import tech.metavm.autograph.LabVisitor;
-import tech.metavm.autograph.TranspileTestTools;
-import tech.metavm.autograph.mocks.RecordFoo;
+import tech.metavm.object.instance.core.PhysicalId;
 
 import java.io.IOException;
 
 public class Lab {
 
     public static void main(String[] args) throws IOException {
-        var file = TranspileTestTools.getPsiJavaFile(RecordFoo.class);
-        TranspileTestTools.executeCommand(() -> file.accept(new LabVisitor()));
+        var id = PhysicalId.of(1568311369L);
+        System.out.println(id);
     }
 
 }

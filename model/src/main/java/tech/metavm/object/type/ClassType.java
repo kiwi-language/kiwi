@@ -1420,17 +1420,17 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return requireNonNull(template).getCodeRequired() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
     }
 
-    public boolean isListType() {
+    public boolean isList() {
         var t = getEffectiveTemplate();
         return t == StandardTypes.getListType() || StandardTypes.getChildListType() == t || StandardTypes.getReadWriteListType() == t;
     }
 
-    public boolean isChildListType() {
+    public boolean isChildList() {
         return getEffectiveTemplate() == StandardTypes.getChildListType();
     }
 
     public Type getListElementType() {
-        NncUtils.requireTrue(isListType());
+        NncUtils.requireTrue(isList());
         return getTypeArguments().get(0);
     }
 
