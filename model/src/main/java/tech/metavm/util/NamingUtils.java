@@ -11,7 +11,7 @@ public class NamingUtils {
             " ", "\b", "\t", "\n", "\r"/*, "$"*/
     };
 
-    private static final Pattern TYPE_CODE_PATTERN = Pattern.compile("^[\\[\\(a-zA-Z_$][&\\|,\\)\\-\\.a-zA-Z_$0-9<>\\[\\]]*$");
+    private static final Pattern TYPE_CODE_PATTERN = Pattern.compile("^[\\[\\(a-zA-Z_$][&\\|,\\(\\)\\-\\.a-zA-Z_$0-9<>\\[\\]]*$");
 
     private static final Pattern CODE_PATTERN = Pattern.compile("^[a-zA-Z_<$][a-zA-Z_$0-9]*>?$");
 

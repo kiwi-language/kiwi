@@ -18,18 +18,22 @@ public class IteratorImplNative extends NativeBase {
         this.instance = instance;
     }
 
-    public Instance IteratorImpl(ClassInstance collection) {
+    public Instance IteratorImpl(ClassInstance collection, NativeCallContext callContext) {
         var arrayField = collection.getType().getFieldByCode("array");
         array = (ArrayInstance) collection.getField(arrayField);
         size = array.size();
         return instance;
     }
 
+    public BooleanInstance hasNext(NativeCallContext callContext) {
+        return hasNext();
+    }
+
     public BooleanInstance hasNext() {
         return Instances.booleanInstance(index < size);
     }
 
-    public Instance next() {
+    public Instance next(NativeCallContext callContext) {
         NncUtils.requireTrue(index < size);
         return array.get(index++);
     }

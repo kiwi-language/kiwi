@@ -346,6 +346,12 @@ public class MethodGenerator {
         ));
     }
 
+    SAMNode createSAM(ClassType samInterface, Expression function) {
+        return setNodeExprTypes(new SAMNode(
+                null, nextName("SAM"), null, samInterface, scope().getLastNode(), scope(), Values.expression(function)
+        ));
+    }
+
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
         var listType = parameterizedTypeProvider.getParameterizedType(
                 StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType()));

@@ -27,7 +27,7 @@ public class ExpressionPlaceholder extends Expression {
 
     @Override
     public Type getType() {
-        return StandardTypes.getNothingType();
+        return StandardTypes.getNeverType();
     }
 
     @Override

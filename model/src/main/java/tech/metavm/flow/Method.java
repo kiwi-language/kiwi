@@ -3,6 +3,7 @@ package tech.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.NativeCallContext;
 import tech.metavm.entity.natives.NativeMethods;
 import tech.metavm.flow.rest.FlowParam;
 import tech.metavm.flow.rest.FlowSummaryDTO;
@@ -340,7 +341,7 @@ public class Method extends Flow implements Property, GenericElement {
             Objects.requireNonNull(self);
         checkArguments(arguments);
         if (isNative())
-            return NativeMethods.invoke(this, self, arguments);
+            return NativeMethods.invoke(this, self, arguments, new NativeCallContext(instanceRepository, parameterizedFlowProvider));
         else
             return new MetaFrame(this.getRootNode(), declaringType, self,
                     arguments, instanceRepository, parameterizedFlowProvider).execute();

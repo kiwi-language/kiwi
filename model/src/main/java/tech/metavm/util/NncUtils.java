@@ -956,7 +956,7 @@ public class NncUtils {
         return list;
     }
 
-    public static <T> @Nullable T find(Iterable<T> iterable, Predicate<T> filter) {
+    public static <T> @Nullable T find(Iterable<T> iterable, Predicate<? super T> filter) {
         if (iterable == null) {
             return null;
         }

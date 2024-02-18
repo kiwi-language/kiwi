@@ -11,7 +11,9 @@ import tech.metavm.util.BusinessException;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
-public class ListNative extends NativeBase {
+import java.util.List;
+
+public class ListNative extends IterableNative {
 
     private final ClassInstance instance;
     private final Field arrayField;
@@ -25,13 +27,17 @@ public class ListNative extends NativeBase {
         }
     }
 
+    public Instance List(NativeCallContext callContext) {
+        return List();
+    }
+
     public Instance List() {
         array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initField(arrayField, array);
         return instance;
     }
 
-    public Instance List(Instance c) {
+    public Instance List(Instance c, NativeCallContext callContext) {
         if(c instanceof ClassInstance collection) {
             var thatArrayField = collection.getType().getFieldByCode("array");
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
@@ -45,52 +51,60 @@ public class ListNative extends NativeBase {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Instance ChildList() {
-        return List();
+    public Instance ChildList(NativeCallContext callContext) {
+        return List(callContext);
     }
 
-    public Instance ChildList(Instance c) {
-        return List(c);
+    public Instance ChildList(Instance c, NativeCallContext callContext) {
+        return List(c, callContext);
     }
 
-    public Instance ReadWriteList() {
-        return List();
+    public Instance ReadWriteList(NativeCallContext callContext) {
+        return List(callContext);
     }
 
-    public Instance ReadWriteList(Instance c) {
-        return List(c);
+    public Instance ReadWriteList(Instance c, NativeCallContext callContext) {
+        return List(c, callContext);
     }
 
-    public ClassInstance iterator() {
+    public ClassInstance iterator(NativeCallContext callContext) {
         var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
-        itNative.IteratorImpl(instance);
+        itNative.IteratorImpl(instance, callContext);
         return it;
     }
 
-    public Instance get(Instance index) {
+    public Instance get(Instance index, NativeCallContext callContext) {
         return array.get(getInt(index));
     }
 
-    public Instance set(Instance index, Instance value) {
+    public Instance set(Instance index, Instance value, NativeCallContext callContext) {
         return array.setElement(getInt(index), value);
     }
 
-    public BooleanInstance remove(Instance instance) {
+    public BooleanInstance remove(Instance instance, NativeCallContext callContext) {
         return Instances.booleanInstance(array.removeElement(instance));
     }
 
-    public Instance removeAt(Instance index) {
+    public Instance removeAt(Instance index, NativeCallContext callContext) {
         return array.removeElement(getInt(index));
     }
 
-    public Instance contains(Instance value) {
+    public Instance contains(Instance value, NativeCallContext callContext) {
         return Instances.booleanInstance(array.contains(value));
+    }
+
+    public void clear(NativeCallContext callContext) {
+        clear();
     }
 
     public void clear() {
         array.clear();
+    }
+
+    public BooleanInstance add(Instance instance, NativeCallContext callContext) {
+        return add(instance);
     }
 
     public BooleanInstance add(Instance instance) {
@@ -98,7 +112,7 @@ public class ListNative extends NativeBase {
         return Instances.trueInstance();
     }
 
-    public BooleanInstance addAll(Instance c) {
+    public BooleanInstance addAll(Instance c, NativeCallContext callContext) {
         if(c instanceof ClassInstance collection && collection.isList()) {
             var thatArrayField = collection.getType().getFieldByCode("array");
             var thatArray = (ArrayInstance) collection.getField(thatArrayField);
@@ -109,23 +123,23 @@ public class ListNative extends NativeBase {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public static ClassInstance of(ClassType type, Instance values) {
+    public static ClassInstance of(ClassType type, Instance values, NativeCallContext callContext) {
         if(values instanceof ArrayInstance array) {
             var list = ClassInstance.allocate(type);
             var listNative = (ListNative) NativeMethods.getNativeObject(list);
-            listNative.List();
-            array.forEach(listNative::add);
+            listNative.List(callContext);
+            array.forEach(e -> listNative.add(e, callContext));
             return list;
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Instance isEmpty() {
+    public Instance isEmpty(NativeCallContext callContext) {
         return Instances.booleanInstance(array.isEmpty());
     }
 
-    public LongInstance size() {
+    public LongInstance size(NativeCallContext callContext) {
         return Instances.longInstance(array.size());
     }
 
@@ -133,4 +147,14 @@ public class ListNative extends NativeBase {
         return array;
     }
 
+    @Override
+    public void forEach(Instance action, NativeCallContext callContext) {
+        if(action instanceof ClassInstance classInstance) {
+            var method = classInstance.getType().getMethods().get(0);
+            array.forEach(e -> method.execute(
+                    classInstance, List.of(e), callContext.instanceRepository(), callContext.parameterizedFlowProvider()));
+        }
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
 }

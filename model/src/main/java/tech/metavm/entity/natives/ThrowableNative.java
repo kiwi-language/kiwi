@@ -20,27 +20,31 @@ public class ThrowableNative extends NativeBase {
         causeField = instance.getType().getFieldByCode("cause");
     }
 
-    public ClassInstance Throwable() {
-        return Throwable(Instances.nullInstance(), Instances.nullInstance());
+    public ClassInstance Throwable(NativeCallContext callContext) {
+        return Throwable(Instances.nullInstance(), Instances.nullInstance(), callContext);
     }
 
-    public ClassInstance Throwable(Instance causeOrMessage) {
+    public ClassInstance Throwable(Instance causeOrMessage, NativeCallContext callContext) {
         if(causeOrMessage instanceof NullInstance nullInstance) {
-            return Throwable(nullInstance, nullInstance);
+            return Throwable(nullInstance, nullInstance, callContext);
         }
         else if(causeOrMessage instanceof StringInstance message) {
-            return Throwable(message, Instances.nullInstance());
+            return Throwable(message, Instances.nullInstance(), callContext);
         }
         else if(causeOrMessage instanceof ClassInstance cause) {
-            return Throwable(Instances.nullInstance(), cause);
+            return Throwable(Instances.nullInstance(), cause, callContext);
         }
         throw new InternalException("Invalid argument: " + causeOrMessage);
     }
 
-    public ClassInstance Throwable(Instance message, Instance cause) {
+    public ClassInstance Throwable(Instance message, Instance cause, NativeCallContext callContext) {
         instance.initField(messageField, message);
         instance.initField(causeField, cause);
         return instance;
+    }
+
+    public Instance getMessage(NativeCallContext callContext) {
+        return getMessage();
     }
 
     public Instance getMessage() {

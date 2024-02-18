@@ -119,4 +119,13 @@ public interface StandardTypesHolder {
     ClassType getChildListType();
 
     ClassType getReadWriteListType();
+
+    ClassType getIterableType();
+
+    void setIterableType(ClassType iterableType);
+
+    ClassType getConsumerType();
+
+    void setConsumerType(ClassType consumerType);
+
 }

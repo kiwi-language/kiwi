@@ -73,8 +73,8 @@ public class IndexSelectNode extends NodeRT {
         var result = frame.getInstanceRepository().indexSelect(key.buildIndexKey(frame));
         var list = ClassInstance.allocate(getType());
         var listNative = new ListNative(list);
-        listNative.List();
-        result.forEach(listNative::add);
+        listNative.List(frame.getNativeCallContext());
+        result.forEach(e -> listNative.add(e, frame.getNativeCallContext()));
         return next(list);
     }
 

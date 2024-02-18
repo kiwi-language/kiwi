@@ -496,7 +496,7 @@ public class TypeManager extends EntityContextFactoryBean {
 
     public GetTypesResponse getDescendants(long id) {
         return getByRange(new GetByRangeRequest(
-                StandardTypes.getNothingType().getId(),
+                StandardTypes.getNeverType().getId(),
                 id,
                 false,
                 false,
@@ -510,7 +510,7 @@ public class TypeManager extends EntityContextFactoryBean {
             var upperBound = context.getType(request.upperBoundId());
 
             List<ClassType> types;
-            if (lowerBound == StandardTypes.getNothingType() && upperBound == StandardTypes.getAnyType()) {
+            if (lowerBound == StandardTypes.getNeverType() && upperBound == StandardTypes.getAnyType()) {
                 types = NncUtils.filterByType(query0(
                         new TypeQuery(null, request.categories(), request.isTemplate(),
                                 request.includeParameterized(), request.includeBuiltin(), null,

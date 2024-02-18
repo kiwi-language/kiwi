@@ -1,6 +1,7 @@
 package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.natives.NativeCallContext;
 import tech.metavm.expression.EvaluationContext;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.NodeExpression;
@@ -224,4 +225,9 @@ public class MetaFrame implements EvaluationContext, Frame {
     public InstanceRepository getInstanceRepository() {
         return instanceRepository;
     }
+
+    public NativeCallContext getNativeCallContext() {
+        return new NativeCallContext(instanceRepository, parameterizedFlowProvider);
+    }
+
 }

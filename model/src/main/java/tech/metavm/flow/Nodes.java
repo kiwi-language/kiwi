@@ -177,6 +177,10 @@ public class Nodes {
         return new MethodCallNode(null, name, null, scope.getLastNode(), scope, self, method, arguments);
     }
 
+    public static FunctionNode function(String name, ScopeRT scope, Value function, List<Value> arguments) {
+        return new FunctionNode(null, name, null, scope.getLastNode(), scope, function, arguments);
+    }
+
     public static CastNode cast(String name, Type outputType, Value object, ScopeRT scope) {
         return new CastNode(null, name, null, outputType, scope.getLastNode(), scope, object);
     }

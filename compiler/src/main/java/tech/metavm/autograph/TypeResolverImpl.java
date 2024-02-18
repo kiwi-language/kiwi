@@ -12,6 +12,7 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
@@ -51,7 +52,6 @@ public class TypeResolverImpl implements TypeResolver {
     private final IEntityContext context;
 
     private static final Map<PsiClassType, Supplier<ClassType>> STANDARD_CLASSES = Map.ofEntries(
-//            Object.class, StandardTypes::getAnyType,
             Map.entry(TranspileUtil.createType(Entity.class), StandardTypes::getEntityType),
             Map.entry(TranspileUtil.createType(Enum.class), StandardTypes::getEnumType),
             Map.entry(TranspileUtil.createType(Record.class), StandardTypes::getRecordType),
@@ -60,14 +60,15 @@ public class TypeResolverImpl implements TypeResolver {
             Map.entry(TranspileUtil.createType(RuntimeException.class), StandardTypes::getRuntimeExceptionType),
             Map.entry(TranspileUtil.createType(IteratorImpl.class), StandardTypes::getIteratorImplType),
             Map.entry(TranspileUtil.createType(Iterator.class), StandardTypes::getIteratorType),
+            Map.entry(TranspileUtil.createType(Iterable.class), StandardTypes::getIterableType),
             Map.entry(TranspileUtil.createType(List.class), StandardTypes::getListType),
             Map.entry(TranspileUtil.createType(ArrayList.class), StandardTypes::getReadWriteListType),
             Map.entry(TranspileUtil.createType(LinkedList.class), StandardTypes::getReadWriteListType),
             Map.entry(TranspileUtil.createType(tech.metavm.util.LinkedList.class), StandardTypes::getReadWriteListType),
             Map.entry(TranspileUtil.createType(ChildList.class), StandardTypes::getChildListType),
             Map.entry(TranspileUtil.createType(Set.class), StandardTypes::getSetType),
-            Map.entry(TranspileUtil.createType(Collection.class), StandardTypes::getCollectionType)
-//            Password.class, StandardTypes::getPasswordType
+            Map.entry(TranspileUtil.createType(Collection.class), StandardTypes::getCollectionType),
+            Map.entry(TranspileUtil.createType(Consumer.class), StandardTypes::getConsumerType)
     );
 
     private static final List<Class<?>> COLLECTION_CLASSES = List.of(
@@ -124,17 +125,17 @@ public class TypeResolverImpl implements TypeResolver {
         if (wildcardType.isBounded()) {
             if (wildcardType.isExtends()) {
                 return context.getUncertainType(
-                        StandardTypes.getNothingType(), resolve(wildcardType.getExtendsBound(), stage)
+                        StandardTypes.getNeverType(), resolve(wildcardType.getExtendsBound(), stage)
                 );
             } else {
                 return context.getUncertainType(
                         resolve(wildcardType.getSuperBound(), stage),
-                        StandardTypes.getAnyArrayType()
+                        StandardTypes.getNullableAnyType()
                 );
             }
         } else {
             return context.getUncertainType(
-                    StandardTypes.getNothingType(),
+                    StandardTypes.getNeverType(),
                     StandardTypes.getNullableAnyType()
             );
         }
@@ -227,10 +228,23 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private GenericDeclaration tryResolveGenericDeclaration(PsiTypeParameterListOwner typeParameterListOwner) {
-        if (typeParameterListOwner instanceof PsiClass psiClass)
+        if (typeParameterListOwner instanceof PsiClass psiClass) {
+            var psiType = TranspileUtil.createType(psiClass);
+            var stdTypeSupplier = STANDARD_CLASSES.get(psiType);
+            if(stdTypeSupplier != null)
+                return stdTypeSupplier.get();
             return psiClass.getUserData(Keys.MV_CLASS);
-        if (typeParameterListOwner instanceof PsiMethod method)
+        }
+        if (typeParameterListOwner instanceof PsiMethod method) {
+            var psiClass = method.getContainingClass();
+            var stdTypeSupplier = STANDARD_CLASSES.get(TranspileUtil.createType(psiClass));
+            if(stdTypeSupplier != null) {
+                var classType = stdTypeSupplier.get();
+                return NncUtils.findRequired(classType.getMethods(), m ->
+                        m.getInternalName(null).equals(TranspileUtil.getInternalName(method)));
+            }
             return method.getUserData(Keys.Method);
+        }
         throw new InternalException("Unexpected type parameter owner: " + typeParameterListOwner);
     }
 

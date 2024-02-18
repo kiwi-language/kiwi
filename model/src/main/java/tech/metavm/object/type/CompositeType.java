@@ -46,7 +46,7 @@ public abstract class CompositeType extends Type {
 
     @Override
     protected boolean afterContextInitIdsInternal() {
-        if(key == null) {
+        if(key == null && !isEphemeralEntity()) {
             key = getKey();
             return true;
         }

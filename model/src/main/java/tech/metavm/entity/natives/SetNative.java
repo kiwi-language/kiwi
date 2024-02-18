@@ -1,6 +1,8 @@
 package tech.metavm.entity.natives;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.core.ArrayInstance;
+import tech.metavm.object.instance.core.FunctionInstance;
 import tech.metavm.object.type.ArrayType;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
@@ -8,13 +10,15 @@ import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.rest.dto.InstanceParentRef;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class SetNative extends NativeBase {
+public class SetNative extends IterableNative {
 
     private final ClassInstance instance;
     private final Map<Instance, Integer> element2index = new HashMap<>();
@@ -32,21 +36,21 @@ public class SetNative extends NativeBase {
         }
     }
 
-    public Instance Set() {
+    public Instance Set(NativeCallContext callContext) {
         array = new ArrayInstance((ArrayType) arrayField.getType(),
                 new InstanceParentRef(instance, arrayField));
         return instance;
     }
 
-    public ClassInstance iterator() {
+    public ClassInstance iterator(NativeCallContext callContext) {
         var iteratorImplType = (ClassType) instance.getType().getDependency(StandardTypes.getIteratorImplType());
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
-        itNative.IteratorImpl(instance);
+        itNative.IteratorImpl(instance, callContext);
         return it;
     }
 
-    public Instance add(Instance value) {
+    public Instance add(Instance value, NativeCallContext callContext) {
         if (!element2index.containsKey(value)) {
             element2index.put(value, array.size());
             array.addElement(value);
@@ -56,7 +60,7 @@ public class SetNative extends NativeBase {
         }
     }
 
-    public Instance remove(Instance value) {
+    public Instance remove(Instance value, NativeCallContext callContext) {
         Integer index = element2index.remove(value);
         if (index != null) {
             int lastIdx = array.size() - 1;
@@ -71,21 +75,28 @@ public class SetNative extends NativeBase {
         }
     }
 
-    public Instance isEmpty() {
+    public Instance isEmpty(NativeCallContext callContext) {
         return Instances.booleanInstance(element2index.isEmpty());
     }
 
-    public Instance contains(Instance value) {
+    public Instance contains(Instance value, NativeCallContext callContext) {
         return Instances.booleanInstance(element2index.containsKey(value));
     }
 
-    public Instance size() {
+    public Instance size(NativeCallContext callContext) {
         return Instances.longInstance(element2index.size());
     }
 
-    public void clear() {
+    public void clear(NativeCallContext callContext) {
         array.clear();
         element2index.clear();
     }
 
+    @Override
+    public void forEach(Instance action, NativeCallContext callContext) {
+        if(action instanceof FunctionInstance functionInstance)
+            array.forEach(e -> functionInstance.execute(List.of(e), callContext.instanceRepository(), callContext.parameterizedFlowProvider()));
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
 }

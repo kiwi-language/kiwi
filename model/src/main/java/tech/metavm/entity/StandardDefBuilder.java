@@ -13,6 +13,7 @@ import tech.metavm.util.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static tech.metavm.object.type.Types.getParameterizedCode;
 import static tech.metavm.object.type.Types.getParameterizedName;
@@ -86,8 +87,17 @@ public class StandardDefBuilder {
 
         initBuiltinFlows();
 
+        defContext.addDef(objectDef);
+        defContext.createCompositeTypes(StandardTypes.getAnyType());
+        StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
+        StandardTypes.setAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_WRITE));
+        StandardTypes.setReadonlyAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
+        StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
+
         var collectionTypeMap = new LinkedHashMap<Class<?>, ClassType>();
+        collectionTypeMap.put(Consumer.class, StandardTypes.setConsumerType(createConsumerType()));
         collectionTypeMap.put(MetaIterator.class, StandardTypes.setIteratorType(createIteratorType()));
+        collectionTypeMap.put(MetaIterable.class, StandardTypes.setIterableType(createIterableType()));
         collectionTypeMap.put(Collection.class, StandardTypes.setCollectionType(createCollectionType()));
         collectionTypeMap.put(IteratorImpl.class, StandardTypes.setIteratorImplType(createIteratorImplType()));
         collectionTypeMap.put(MetaSet.class, StandardTypes.setSetType(createSetType()));
@@ -95,13 +105,6 @@ public class StandardDefBuilder {
         collectionTypeMap.put(ReadWriteMetaList.class, StandardTypes.setReadWriteListType(createReadWriteListType()));
         collectionTypeMap.put(ChildMetaList.class, StandardTypes.setChildListType(createChildListType()));
         collectionTypeMap.put(MetaMap.class, StandardTypes.setMapType(createMapType()));
-
-        defContext.addDef(objectDef);
-        defContext.createCompositeTypes(StandardTypes.getAnyType());
-        StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
-        StandardTypes.setAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_WRITE));
-        StandardTypes.setReadonlyAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
-        StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
 
         for (var entry : primitiveTypeMap.entrySet()) {
             var primClass = entry.getKey();
@@ -247,6 +250,24 @@ public class StandardDefBuilder {
         createRuntimeExceptionFlows(StandardTypes.getRuntimeExceptionType());
         defContext.addDef(new DirectDef<>(
                 RuntimeException.class, StandardTypes.getRuntimeExceptionType(), RuntimeExceptionNative.class));
+    }
+
+    private ClassType createConsumerType() {
+        var elementType = new TypeVariable(null, "消费者元素", "ConsumerElement",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(getObjectType()));
+        primTypeFactory.putType(Consumer.class.getTypeParameters()[0], elementType);
+        var consumerType = ClassTypeBuilder.newBuilder("消费者", "Consumer")
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .category(TypeCategory.INTERFACE)
+                .build();
+        primTypeFactory.putType(Consumer.class, consumerType);
+        MethodBuilder.newBuilder(consumerType, "消费", "accept", defContext.getFunctionTypeContext())
+                .returnType(StandardTypes.getVoidType())
+                .parameters(new Parameter(null, "元素", "element", elementType))
+                .build();
+        return consumerType;
     }
 
     private void initBuiltinFlows() {
@@ -408,17 +429,51 @@ public class StandardDefBuilder {
         iteratorType.setStage(ResolutionStage.DEFINITION);
     }
 
+    public ClassType createIterableType() {
+        var elementType = new TypeVariable(null, "元素", "T",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(getObjectType()));
+        primTypeFactory.putType(MetaIterable.class.getTypeParameters()[0], elementType);
+        var iterableType = ClassTypeBuilder.newBuilder("可迭代", "Iterable")
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .category(TypeCategory.INTERFACE)
+                .build();
+        primTypeFactory.putType(MetaIterable.class, iterableType);
+        createIterableFlows(iterableType, elementType);
+        return iterableType;
+    }
+
+    private void createIterableFlows(ClassType iterableType, TypeVariable elementType) {
+//        MethodBuilder.newBuilder(iterableType, "获取迭代器", "iterator", defContext.getFunctionTypeContext())
+//                .isNative(true)
+//                .returnType(defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorType(), elementType))
+//                .build();
+        MethodBuilder.newBuilder(iterableType, "forEach", "forEach", defContext.getFunctionTypeContext())
+                .isNative(true)
+                .returnType(StandardTypes.getVoidType())
+                .parameters(new Parameter(null, "action", "action",
+                        defContext.getGenericContext().getParameterizedType(
+                                StandardTypes.getConsumerType(),
+                                defContext.getUncertainType(elementType, StandardTypes.getNullableAnyType())
+                        ))
+                )
+                .build();
+        iterableType.setStage(ResolutionStage.DEFINITION);
+    }
 
     public ClassType createCollectionType() {
         String name = getParameterizedName("Collection");
         String code = getParameterizedCode("Collection");
         var elementType = new TypeVariable(null, "Collection元素", "CollectionElement",
                 DummyGenericDeclaration.INSTANCE);
+        var pIterableType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIterableType(), elementType);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Collection.class.getTypeParameters()[0], elementType);
         ClassType collectionType = ClassTypeBuilder.newBuilder(name, code)
                 .typeParameters(elementType)
                 .source(ClassSource.BUILTIN)
+                .interfaces(pIterableType)
                 .category(TypeCategory.INTERFACE)
                 .build();
         primTypeFactory.putType(Collection.class, collectionType);
@@ -483,6 +538,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(MetaSet.class.getTypeParameters()[0], elementType);
+        var pIterableType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIterableType(), elementType);
         var pCollectionType = defContext.getGenericContext().getParameterizedType(StandardTypes.getCollectionType(), elementType);
         var pIteratorImplType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorImplType(), elementType);
         ClassType setType = ClassTypeBuilder.newBuilder(name, code)
@@ -498,17 +554,18 @@ public class StandardDefBuilder {
                 .isChild(true)
                 .nullType(StandardTypes.getNullType())
                 .build();
-        createSetFlows(setType, pCollectionType);
+        createSetFlows(setType, pCollectionType, pIterableType);
         return setType;
     }
 
-    private void createSetFlows(ClassType setType, /*ClassType pSetType, */ClassType collectionType) {
+    private void createSetFlows(ClassType setType, /*ClassType pSetType, */ClassType collectionType, ClassType iterableType) {
         MethodBuilder.newBuilder(setType, "集合", "Set", defContext.getFunctionTypeContext())
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(setType)
                 .build();
         createOverridingFlows(setType, collectionType);
+        createOverridingFlows(setType, iterableType);
         setType.setStage(ResolutionStage.DEFINITION);
     }
 
@@ -588,6 +645,7 @@ public class StandardDefBuilder {
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(javaClass.getTypeParameters()[0], elementType);
+        var pIterableType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIterableType(), elementType);
         var pCollectionType = defContext.getGenericContext().getParameterizedType(StandardTypes.getCollectionType(), elementType);
         var pListType = defContext.getGenericContext().getParameterizedType(StandardTypes.getListType(), elementType);
         var pIteratorImplType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorImplType(), elementType);
@@ -604,6 +662,7 @@ public class StandardDefBuilder {
                 .access(Access.PRIVATE)
                 .isChild(true)
                 .build();
+        createOverridingFlows(listImplType, pIterableType);
         createOverridingFlows(listImplType, pCollectionType);
         createOverridingFlows(listImplType, pListType);
 

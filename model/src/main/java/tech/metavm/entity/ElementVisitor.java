@@ -266,7 +266,7 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expression);
     }
 
-    public R visitStaticFieldExpression(StaticFieldExpression expression) {
+    public R visitStaticFieldExpression(StaticPropertyExpression expression) {
         return visitExpression(expression);
     }
 
@@ -374,4 +374,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(unmapNode);
     }
 
+    public R visitSAMNode(SAMNode samNode) {
+        return visitNode(samNode);
+    }
 }

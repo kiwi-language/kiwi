@@ -397,6 +397,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return NncUtils.listOf(getMethods());
     }
 
+    public Method getMethodByInternalName(String internalName) {
+        return NncUtils.findRequired(methods, m -> m.getInternalName(null).equals(internalName));
+    }
+
     public ReadonlyArray<Method> getDeclaredMethods() {
         return methods;
     }
@@ -673,6 +677,50 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             return getStaticField(var.getId());
         else
             return tryGetStaticFieldByName(var.getName());
+    }
+
+    /**
+     * Get static field, instance method or static method by var.
+     */
+    public Property getStaticPropertyByVar(Var var) {
+        return Objects.requireNonNull(
+                findStaticPropertyByVar(var),
+                () -> "Can not find property for var " + var + " in type " + name
+        );
+    }
+
+    /**
+     * Find static field, instance method or static method by var.
+     */
+    public Property findStaticPropertyByVar(Var var) {
+        if(var.isId()) {
+            var p = findSelfStaticProperty(m -> m.idEquals(var.getId()));
+            if(p != null)
+                return p;
+        }
+        else {
+            var p = findSelfStaticProperty(m -> m.getName().equals(var.getName()));
+            if(p != null)
+                return p;
+        }
+        if(superClass != null) {
+            var p = superClass.findStaticPropertyByVar(var);
+            if(p != null)
+                return p;
+        }
+        for (ClassType it : interfaces) {
+            var p = it.findStaticPropertyByVar(var);
+            if(p != null)
+                return p;
+        }
+        return null;
+    }
+
+    private Property findSelfStaticProperty(Predicate<Property> predicate) {
+        var field = NncUtils.find(staticFields, predicate);
+        if (field != null)
+            return field;
+        return NncUtils.find(methods, predicate);
     }
 
     public void setSource(ClassSource source) {
@@ -1432,6 +1480,16 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public Type getListElementType() {
         NncUtils.requireTrue(isList());
         return getTypeArguments().get(0);
+    }
+
+    public boolean isSAMInterface() {
+        return isInterface() && getMethods().size() == 1;
+    }
+
+    public Method getSingleAbstractMethod() {
+        if (!isSAMInterface())
+            throw new InternalException("Type " + getName() + " is not a SAM interface");
+        return getMethods().get(0);
     }
 
 }

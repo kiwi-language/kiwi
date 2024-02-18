@@ -76,6 +76,10 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return ephemeralEntity;
     }
 
+    public void setEphemeralEntity(boolean ephemeralEntity) {
+        this.ephemeralEntity = ephemeralEntity;
+    }
+
     @NoProxy
     public final long getId() {
         if (id != null)

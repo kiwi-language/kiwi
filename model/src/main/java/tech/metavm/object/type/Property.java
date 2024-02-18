@@ -64,4 +64,10 @@ public interface Property extends ClassMember, LocalKey {
     default long getId() {
         return Objects.requireNonNull(tryGetId());
     }
+
+    default boolean idEquals(long id) {
+        var selfId = tryGetId();
+        return selfId != null && selfId == id;
+    }
+
 }

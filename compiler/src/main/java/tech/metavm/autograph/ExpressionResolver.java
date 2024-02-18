@@ -236,7 +236,7 @@ public class ExpressionResolver {
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
                     ClassType klass = (ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass));
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
-                    return new StaticFieldExpression(field);
+                    return new StaticPropertyExpression(field);
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     ClassType klass = (ClassType) methodGenerator.getExpressionType(qualifierExpr);
@@ -245,11 +245,39 @@ public class ExpressionResolver {
                     return new PropertyExpression(qualifierExpr, field);
                 }
             }
-        } else if (target instanceof PsiVariable variable) {
+        } else if(target instanceof PsiMethod psiMethod) {
+            PsiClass psiClass = requireNonNull(psiMethod.getContainingClass());
+            Method method;
+            if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
+                ClassType klass = (ClassType) typeResolver.resolveDeclaration(TranspileUtil.getRawType(psiClass));
+                method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
+                return new StaticPropertyExpression(method);
+            } else {
+                if(psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
+                        refExpr.resolve() instanceof PsiClass) {
+                    var klass = (ClassType) typeResolver.resolve(TranspileUtil.createType(psiClass));
+                    method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
+                    return new StaticPropertyExpression(method);
+                }
+                else {
+                    var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
+                    ClassType klass = (ClassType) methodGenerator.getExpressionType(qualifierExpr);
+                    typeResolver.ensureDeclared(klass);
+                    method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
+                    return new PropertyExpression(qualifierExpr, method);
+                }
+            }
+        }
+        else if (target instanceof PsiVariable variable) {
             return variableTable.get(variable.getName());
         } else {
             throw new InternalException("Can not resolve reference expression with target: " + target);
         }
+    }
+
+    private boolean isClassRef(PsiExpression psiExpression) {
+        return psiExpression instanceof PsiReferenceExpression refExpr &&
+                refExpr.resolve() instanceof PsiClass;
     }
 
     private Expression resolveQualifier(PsiExpression qualifier, ResolutionContext context) {
@@ -460,11 +488,19 @@ public class ExpressionResolver {
                 ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
             }
         }
+        var substitutor = expression.resolveMethodGenerics().getSubstitutor();
         var method = resolveMethod(expression);
-        List<Expression> args = NncUtils.map(
-                expression.getArgumentList().getExpressions(),
-                expr -> resolve(expr, context)
-        );
+        var psiArgs = expression.getArgumentList().getExpressions();
+        var args = new ArrayList<Expression>();
+        for (PsiExpression psiArg : psiArgs) {
+            var arg = resolve(psiArg, context);
+            var paramType = typeResolver.resolveDeclaration(substitutor.substitute(psiArg.getType()));
+            if (paramType instanceof ClassType classType && classType.isSAMInterface()
+                    && arg.getType() instanceof FunctionType) {
+                arg = new NodeExpression(methodGenerator.createSAM(classType, arg));
+            }
+            args.add(arg);
+        }
         var qualifier = isStatic ? null : getQualifier(psiSelf, context);
         var node = methodGenerator.createMethodCall(qualifier, method, args);
         if (method.getReturnType().isVoid()) {

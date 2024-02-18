@@ -122,7 +122,7 @@ public class Types {
 //    }
 
     public static @NotNull Type getLeastUpperBound(Collection<Type> types) {
-        Type lub = StandardTypes.getNothingType();
+        Type lub = StandardTypes.getNeverType();
         for (Type type : types)
             lub = getLeastUpperBound(lub, type);
         return lub;

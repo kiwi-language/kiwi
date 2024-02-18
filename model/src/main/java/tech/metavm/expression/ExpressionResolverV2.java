@@ -1,9 +1,7 @@
 package tech.metavm.expression;
 
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.CopyVisitor;
 import tech.metavm.entity.Element;
-import tech.metavm.entity.EntityProvider;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.type.*;
 import tech.metavm.util.LinkedList;
@@ -61,7 +59,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
             Type elementType = assignedElementType;
             if (elementType == null) {
                 if (types.isEmpty()) {
-                    elementType = StandardTypes.getNothingType();
+                    elementType = StandardTypes.getNeverType();
                 } else {
                     elementType = Types.getLeastUpperBound(types);
                 }
@@ -84,8 +82,9 @@ public class ExpressionResolverV2 extends CopyVisitor {
                 if (!context.isContextVar(qualifierVar) && context.getTypeProvider() != null) {
                     ClassType type = getClassType(qualifierVar, context.getTypeProvider());
                     if (type != null) {
-                        return new StaticFieldExpression(
-                                type.getStaticFieldByVar(Var.parse(expression.getField().getVariable()))
+
+                        return new StaticPropertyExpression(
+                                type.getStaticPropertyByVar(Var.parse(expression.getField().getVariable()))
                         );
                     }
                 }

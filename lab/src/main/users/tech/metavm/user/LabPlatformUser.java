@@ -107,9 +107,10 @@ public class LabPlatformUser extends LabUser {
             if (user != null) {
                 user.setState(LabUserState.DETACHED);
                 var sessions = IndexUtils.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE));
-                for (LabSession session : sessions) { // TODO use forEach
-                    session.close();
-                }
+                sessions.forEach(LabSession::close);
+//                for (LabSession session : sessions) { // TODO use forEach
+//                    session.close();
+//                }
             }
         }
 //        var eventQueue = platformContext.getEventQueue();

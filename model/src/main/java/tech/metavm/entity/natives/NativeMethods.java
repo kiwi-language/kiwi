@@ -18,7 +18,7 @@ import java.util.List;
 
 public class NativeMethods {
 
-    public static FlowExecResult invoke(Method method, @Nullable Instance self, List<Instance> arguments) {
+    public static FlowExecResult invoke(Method method, @Nullable Instance self, List<Instance> arguments, NativeCallContext nativeCallContext) {
         if (method.isStatic()) {
             var nativeClass = tryGetNativeClass(method.getDeclaringType());
             NncUtils.requireNonNull(nativeClass,
@@ -26,11 +26,13 @@ public class NativeMethods {
             List<Class<?>> paramTypes = new ArrayList<>();
             paramTypes.add(ClassType.class);
             paramTypes.addAll(NncUtils.multipleOf(Instance.class, method.getParameters().size()));
-            Object[] args = new Object[1 + arguments.size()];
+            paramTypes.add(NativeCallContext.class);
+            Object[] args = new Object[2 + arguments.size()];
             args[0] = method.getDeclaringType();
             for (int i = 0; i < arguments.size(); i++) {
                 args[i + 1] = arguments.get(i);
             }
+            args[arguments.size() + 1] = nativeCallContext;
             var javaMethod = ReflectionUtils.getMethod(nativeClass, method.getCode(), paramTypes);
             var result = (Instance) ReflectionUtils.invoke(null, javaMethod, args);
             if (method.getReturnType().isVoid()) {
@@ -42,11 +44,15 @@ public class NativeMethods {
             if (self instanceof ClassInstance classInstance) {
                 Object nativeObject = getNativeObject(classInstance);
                 var instanceClass = nativeObject.getClass();
-                List<Class<?>> paramTypes = NncUtils.multipleOf(Instance.class, method.getParameters().size());
-                Instance[] args = new Instance[arguments.size()];
-                arguments.toArray(args);
+                List<Class<?>> paramTypes = new ArrayList<>(NncUtils.multipleOf(Instance.class, method.getParameters().size()));
+                paramTypes.add(NativeCallContext.class);
+                var args = new Object[arguments.size() + 1];
+                for (int i = 0; i < arguments.size(); i++) {
+                    args[i] = arguments.get(i);
+                }
+                args[arguments.size()] = nativeCallContext;
                 var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getCode(), paramTypes);
-                var result = (Instance) ReflectionUtils.invoke(nativeObject, javaMethod, (Object[]) args);
+                var result = (Instance) ReflectionUtils.invoke(nativeObject, javaMethod, args);
                 if (method.getReturnType().isVoid()) {
                     return new FlowExecResult(null, null);
                 } else {

@@ -132,13 +132,13 @@ public class ExpressionParser {
         );
     }
 
-    private StaticFieldExpression parseStaticField(MetaVMParser.ExpressionContext expression) {
+    private StaticPropertyExpression parseStaticField(MetaVMParser.ExpressionContext expression) {
         var type = (ClassType) parseTypeType(expression.typeType(0));
         String identifier = expression.identifier().IDENTIFIER().getText();
         Field field = identifier.startsWith(Constants.CONSTANT_ID_PREFIX) ?
                 type.getField(Long.parseLong(identifier.substring(Constants.CONSTANT_ID_PREFIX.length()))) :
                 type.getFieldByName(identifier);
-        return new StaticFieldExpression(field);
+        return new StaticPropertyExpression(field);
     }
 
     private Expression parseArrayAccess(MetaVMParser.ExpressionContext expression) {

@@ -30,7 +30,7 @@ public class StandardTypes {
     }
 
     public static UnionType getNullableAnyType() {
-        return holder.getNullableStringType();
+        return holder.getNullableAnyType();
     }
 
     public static Type getAnyType(boolean nullable) {
@@ -140,6 +140,10 @@ public class StandardTypes {
         return holder.getCollectionType();
     }
 
+    public static ClassType getIterableType() {
+        return holder.getIterableType();
+    }
+
     public static ClassType getIteratorType() {
         return holder.getIteratorType();
     }
@@ -166,10 +170,6 @@ public class StandardTypes {
 
     public static UnionType getNullableStringType() {
         return holder.getNullableStringType();
-    }
-
-    public static NeverType getNothingType() {
-        return getNeverType();
     }
 
     private static volatile Map<PrimitiveKind, PrimitiveType> primitiveTypes;
@@ -224,6 +224,15 @@ public class StandardTypes {
 
     public static void setVoidType(PrimitiveType voidType) {
         holder.setVoidType(voidType);
+    }
+
+    public static ClassType getConsumerType() {
+        return holder.getConsumerType();
+    }
+
+    public static ClassType setConsumerType(ClassType type) {
+        holder.setConsumerType(type);
+        return type;
     }
 
     public static NeverType getNeverType() {
@@ -312,6 +321,11 @@ public class StandardTypes {
     public static ClassType setIteratorType(ClassType iteratorType) {
         holder.setIteratorType(iteratorType);
         return iteratorType;
+    }
+
+    public static ClassType setIterableType(ClassType iterableType) {
+        holder.setIterableType(iterableType);
+        return iterableType;
     }
 
     public static ClassType setIteratorImplType(ClassType iteratorImplType) {

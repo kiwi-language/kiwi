@@ -296,4 +296,24 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
         return TL.get().getReadWriteListType();
     }
 
+    @Override
+    public ClassType getIterableType() {
+        return TL.get().getIterableType();
+    }
+
+    @Override
+    public void setIterableType(ClassType iterableType) {
+        TL.get().setIterableType(iterableType);
+    }
+
+    @Override
+    public ClassType getConsumerType() {
+        return TL.get().getConsumerType();
+    }
+
+    @Override
+    public void setConsumerType(ClassType consumerType) {
+        TL.get().setConsumerType(consumerType);
+    }
+
 }

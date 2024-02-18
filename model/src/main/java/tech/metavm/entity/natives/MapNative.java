@@ -46,7 +46,7 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance Map() {
+    public Instance Map(NativeCallContext callContext) {
         keyArray = new ArrayInstance(
                 (ArrayType) keyArrayField.getType(), new InstanceParentRef(instance, keyArrayField)
         );
@@ -56,33 +56,33 @@ public class MapNative extends NativeBase {
         return instance;
     }
 
-    public ClassInstance keySet() {
+    public ClassInstance keySet(NativeCallContext callContext) {
         var keySetType = (ClassType) instance.getType().getDependency(StandardTypes.getSetType());
         ClassInstance keySet = ClassInstance.allocate(keySetType);
         var setNative = (SetNative) NativeMethods.getNativeObject(keySet);
-        setNative.Set();
+        setNative.Set(callContext);
         for (Instance key : keyArray) {
-            setNative.add(key);
+            setNative.add(key, callContext);
         }
         return keySet;
     }
 
-    public Instance get(Instance key) {
-        checkKey(key);
+    public Instance get(Instance key, NativeCallContext callContext) {
+        checkKey(key, callContext);
         var entry = map.get(key);
         return entry != null ? entry.value : Instances.nullInstance();
     }
 
-    public Instance getOrDefault(Instance key, Instance value) {
-        checkKey(key);
-        checkValue(value);
+    public Instance getOrDefault(Instance key, Instance value, NativeCallContext callContext) {
+        checkKey(key, callContext);
+        checkValue(value, callContext);
         var entry = map.get(key);
         return entry != null ? entry.getValue() : value;
     }
 
-    public Instance put(Instance key, Instance value) {
-        checkKey(key);
-        checkValue(value);
+    public Instance put(Instance key, Instance value, NativeCallContext callContext) {
+        checkKey(key, callContext);
+        checkValue(value, callContext);
         var existingEntry = map.get(key);
         if (existingEntry != null) {
             var removed = existingEntry.value;
@@ -99,13 +99,13 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public BooleanInstance containsKey(Instance key) {
-        checkKey(key);
+    public BooleanInstance containsKey(Instance key, NativeCallContext callContext) {
+        checkKey(key, callContext);
         return Instances.booleanInstance(map.containsKey(key));
     }
 
-    public Instance remove(Instance key) {
-        checkKey(key);
+    public Instance remove(Instance key, NativeCallContext callContext) {
+        checkKey(key, callContext);
         var entry = map.remove(key);
         if (entry != null) {
             int lastIndex = keyArray.size() - 1;
@@ -124,17 +124,17 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public Instance size() {
+    public Instance size(NativeCallContext callContext) {
         return Instances.longInstance(keyArray.size());
     }
 
-    public void clear() {
+    public void clear(NativeCallContext callContext) {
         map.clear();
         keyArray.clear();
         valueArray.clear();
     }
 
-    private boolean getBoolean(Instance instance) {
+    private boolean getBoolean(Instance instance, NativeCallContext callContext) {
         if (instance instanceof BooleanInstance booleanInstance) {
             return booleanInstance.isTrue();
         } else {
@@ -142,11 +142,11 @@ public class MapNative extends NativeBase {
         }
     }
 
-    private void checkKey(Instance key) {
+    private void checkKey(Instance key, NativeCallContext callContext) {
         NncUtils.requireTrue(keyType.isInstance(key));
     }
 
-    private void checkValue(Instance value) {
+    private void checkValue(Instance value, NativeCallContext callContext) {
         NncUtils.requireTrue(valueType.isInstance(value));
     }
 
