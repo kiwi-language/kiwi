@@ -316,6 +316,7 @@ public class MainTest extends TestCase {
 
     public void testUsers() throws ExecutionException, InterruptedException {
         compileTwice(USERS_SOURCE_ROOT);
+//        compile(USERS_SOURCE_ROOT);
         executor.submit(() -> {
             var roleType = queryClassType("LabRole");
             var roleReadWriteListType = typeManager.getParameterizedType(

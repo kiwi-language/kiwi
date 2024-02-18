@@ -2,10 +2,12 @@ package tech.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.expression.Expressions;
 import tech.metavm.expression.NodeExpression;
 import tech.metavm.expression.PropertyExpression;
 import tech.metavm.flow.*;
 import tech.metavm.flow.rest.FlowDTO;
+import tech.metavm.object.instance.core.FunctionInstance;
 import tech.metavm.object.type.generic.TypeArgumentMap;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.PTypeDTO;
@@ -199,6 +201,44 @@ public class Types {
             throw new InternalException(functionalInterface + " is not a functional interface");
         }
         return abstractFlows.get(0);
+    }
+
+    public static ClassType createSAMInterfaceImpl(ClassType samInterface, FunctionInstance function) {
+        var klass = ClassTypeBuilder.newBuilder(
+                samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
+                .interfaces(samInterface)
+                .ephemeral(true)
+                .anonymous(true)
+                .build();
+        klass.setEphemeralEntity(true);
+        var sam = samInterface.getSingleAbstractMethod();
+        var methodStaticType = new FunctionType(
+                null,
+                NncUtils.prepend(klass, sam.getParameterTypes()),
+                sam.getReturnType()
+        );
+        methodStaticType.setEphemeralEntity(true);
+        var method = MethodBuilder.newBuilder(klass, sam.getName(), null, null)
+                .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
+                .returnType(sam.getReturnType())
+                .type(sam.getType())
+                .staticType(methodStaticType)
+                .build();
+        var scope = method.getRootScope();
+        var input = Nodes.input(method);
+        var func = Nodes.function(
+                "function",
+                scope,
+                Values.constant(Expressions.constant(function)),
+                function.getType().getParameterTypes().isEmpty() ?
+                        List.of() :
+                        NncUtils.map(input.getType().getFields(), f -> Values.nodeProperty(input, f))
+        );
+        if (sam.getReturnType().isVoid())
+            Nodes.ret("ret", scope, null);
+        else
+            Nodes.ret("ret", scope, Values.node(func));
+        return klass;
     }
 
     public static boolean isArray(Type type) {

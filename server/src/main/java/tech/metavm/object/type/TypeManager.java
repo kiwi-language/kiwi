@@ -77,33 +77,39 @@ public class TypeManager extends EntityContextFactoryBean {
         return primitiveTypes;
     }
 
-    public TypeTreeResponse queryTypeTrees(TypeTreeQuery query) {
+    public TreeResponse queryTrees(TypeTreeQuery query) {
         try (var context = newContext()) {
-            List<Type> types;
-            List<Long> removedTypeIds;
+            List<?> entities;
+            List<Long> removedIds;
             long version;
             if (query.version() == -1L) {
-                types = getAllTypes(context);
-                removedTypeIds = List.of();
+                entities = getAllTypes(context);
+                removedIds = List.of();
                 version = Versions.getLatestVersion(context);
             } else {
                 var patch = versionManager.pullInternal(query.version(), context);
-                types = NncUtils.map(patch.changedTypeIds(), context::getType);
-                removedTypeIds = patch.removedTypeIds();
+                entities = NncUtils.merge(
+                        NncUtils.map(patch.changedTypeIds(), context::getType),
+                        NncUtils.map(patch.changedFunctionIds(), context::getFunction)
+                );
+                removedIds = NncUtils.merge(
+                        patch.removedTypeIds(),
+                        patch.removedFunctionIds()
+                );
                 version = patch.version();
             }
-            return new TypeTreeResponse(
+            return new TreeResponse(
                     version,
-                    NncUtils.filterAndMap(types,
+                    NncUtils.filterAndMap(entities,
                             t -> context.getInstance(t).isRoot(),
                             t -> getTypeTree(t, context)),
-                    removedTypeIds
+                    removedIds
             );
         }
     }
 
-    private TreeDTO getTypeTree(Type type, IEntityContext context) {
-        var typeInstance = context.getInstance(type);
+    private TreeDTO getTypeTree(Object entity, IEntityContext context) {
+        var typeInstance = context.getInstance(entity);
         return typeInstance.toTree(true).toDTO();
     }
 
@@ -352,7 +358,7 @@ public class TypeManager extends EntityContextFactoryBean {
             if (param.flows() != null) {
                 for (FlowDTO flowDTO : param.flows()) {
                     var flow = context.getMethod(flowDTO.getRef());
-                    if(!flow.isSynthetic())
+                    if (!flow.isSynthetic())
                         flowManager.saveContent(flowDTO, context.getMethod(flowDTO.getRef()), context);
                 }
             }

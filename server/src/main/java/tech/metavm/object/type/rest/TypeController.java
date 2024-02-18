@@ -28,8 +28,8 @@ public class TypeController {
     }
 
     @PostMapping("/query-trees")
-    public Result<TypeTreeResponse> queryTrees(@RequestBody TypeTreeQuery query) {
-        return Result.success(typeManager.queryTypeTrees(query));
+    public Result<TreeResponse> queryTrees(@RequestBody TypeTreeQuery query) {
+        return Result.success(typeManager.queryTrees(query));
     }
 
     @PostMapping("/get-by-range")

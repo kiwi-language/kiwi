@@ -346,12 +346,6 @@ public class MethodGenerator {
         ));
     }
 
-    SAMNode createSAM(ClassType samInterface, Expression function) {
-        return setNodeExprTypes(new SAMNode(
-                null, nextName("SAM"), null, samInterface, scope().getLastNode(), scope(), Values.expression(function)
-        ));
-    }
-
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
         var listType = parameterizedTypeProvider.getParameterizedType(
                 StandardTypes.getReadWriteListType(), List.of(index.getDeclaringType()));
@@ -388,6 +382,19 @@ public class MethodGenerator {
         return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null,
                 scope().getLastNode(), scope(),
                 NncUtils.get(self, Values::expression), method, args));
+    }
+
+    FunctionCallNode createFunctionCall(Function function, List<Expression> arguments) {
+        List<Argument> args = NncUtils.biMap(
+                function.getParameters(), arguments,
+                (param, arg) -> new Argument(null, param, Values.expression(arg))
+        );
+        return setNodeExprTypes(new FunctionCallNode(
+                null,
+                nextName(function.getName()),
+                null,
+                scope().getLastNode(), scope(),
+                function, args));
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, ClassType functionalInterface) {

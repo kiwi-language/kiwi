@@ -4,9 +4,9 @@ import tech.metavm.object.instance.rest.TreeDTO;
 
 import java.util.List;
 
-public record TypeTreeResponse(
+public record TreeResponse(
         long version,
         List<TreeDTO> trees,
-        List<Long> removeTypeIds
+        List<Long> removedIds
 ) {
 }

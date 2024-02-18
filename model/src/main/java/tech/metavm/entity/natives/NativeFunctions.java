@@ -43,4 +43,12 @@ public class NativeFunctions {
         holder.setSetSourceFunc(function);
     }
 
+    public static Function getFunctionToInstance() {
+        return holder.getFunctionToInstance();
+    }
+
+    public static void setFunctionToInstance(@NotNull Function function) {
+        holder.setFunctionToInstance(function);
+    }
+
 }

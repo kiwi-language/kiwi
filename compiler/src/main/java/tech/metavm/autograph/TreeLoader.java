@@ -24,7 +24,7 @@ public class TreeLoader {
         var resp = typeClient.queryTrees(new TypeTreeQuery(version));
         var trees = NncUtils.map(resp.trees(), Tree::fromDTO);
         metaVersionStore.setMetaVersion(resp.version());
-        diskTreeStore.remove(resp.removeTypeIds());
+        diskTreeStore.remove(resp.removedIds());
         diskTreeStore.save(trees);
         diskTreeStore.persist();
         indexSource.populateIndex();

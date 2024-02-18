@@ -86,21 +86,20 @@ public class SubstitutorV2 extends CopyVisitor {
         if (existingRoot != null) {
             existingCopies.put(root, existingRoot);
             EntityUtils.forEachDescendant(existingRoot, d -> {
-                if (d instanceof GenericElement genericElement) {
-                    var temp = genericElement.getCopySource();
-                    if(temp != null) {
-                        var parentTemp = ((Entity) temp).getParentEntity();
-                        if (existingRoot == d || parentTemp == null || existingCopies.containsKey(parentTemp)) {
-                            existingCopies.put(temp, genericElement);
-                            var childMap = ((Entity) d).getChildMap();
-                            var tempChildMap = ((Entity) temp).getChildMap();
-                            childMap.forEach((field, child) -> {
-                                var tempChild = tempChildMap.get(field);
-                                if (tempChild != null
-                                        && EntityUtils.getRealType(tempChild) == EntityUtils.getRealType(child.getClass()))
-                                    existingCopies.put(tempChild, child);
-                            });
-                        }
+                var temp = d instanceof GenericElement genericElement ? genericElement.getCopySource() :
+                        (d == existingRoot ? root : null);
+                if (temp != null) {
+                    var parentTemp = ((Entity) temp).getParentEntity();
+                    if (existingRoot == d || parentTemp == null || existingCopies.containsKey(parentTemp)) {
+                        existingCopies.put(temp, d);
+                        var childMap = ((Entity) d).getChildMap();
+                        var tempChildMap = ((Entity) temp).getChildMap();
+                        childMap.forEach((field, child) -> {
+                            var tempChild = tempChildMap.get(field);
+                            if (tempChild != null
+                                    && EntityUtils.getRealType(tempChild) == EntityUtils.getRealType(child.getClass()))
+                                existingCopies.put(tempChild, child);
+                        });
                     }
                 }
             });
@@ -156,7 +155,7 @@ public class SubstitutorV2 extends CopyVisitor {
 
     private ObjectMapping substituteObjectMapping(ObjectMapping objectMapping) {
         var sourceType = (ClassType) substituteType(objectMapping.getSourceType());
-        if(sourceType == objectMapping.getSourceType())
+        if (sourceType == objectMapping.getSourceType())
             return objectMapping;
         else {
             return NncUtils.findRequired(
@@ -259,7 +258,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setStage(stage);
             copy.setNative(function.isNative());
             addCopy(function, copy);
-            if(function.isRootScopePresent())
+            if (function.isRootScopePresent())
                 addCopy(function.getRootScope(), copy.getRootScope());
             enterElement(copy);
             copy.update(
@@ -274,8 +273,7 @@ public class SubstitutorV2 extends CopyVisitor {
             }
             exitElement();
             return copy;
-        }
-        else
+        } else
             return super.visitFunction(function);
     }
 

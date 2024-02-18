@@ -374,7 +374,4 @@ public abstract class ElementVisitor<R> {
         return visitNode(unmapNode);
     }
 
-    public R visitSAMNode(SAMNode samNode) {
-        return visitNode(samNode);
-    }
 }

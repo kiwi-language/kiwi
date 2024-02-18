@@ -45,4 +45,14 @@ public class ThreadLocalNativeFunctionsHolder implements NativeFunctionsHolder {
     public FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments) {
         return TL.get().invoke(flow, arguments);
     }
+
+    @Override
+    public Function getFunctionToInstance() {
+        return TL.get().getFunctionToInstance();
+    }
+
+    @Override
+    public void setFunctionToInstance(Function function) {
+        TL.get().setFunctionToInstance(function);
+    }
 }

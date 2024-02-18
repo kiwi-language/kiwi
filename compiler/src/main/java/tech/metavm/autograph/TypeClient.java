@@ -6,7 +6,7 @@ import tech.metavm.object.instance.rest.InstanceVersionsRequest;
 import tech.metavm.object.instance.rest.TreeDTO;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeTreeQuery;
-import tech.metavm.object.type.rest.dto.TypeTreeResponse;
+import tech.metavm.object.type.rest.dto.TreeResponse;
 import tech.metavm.system.rest.dto.BlockDTO;
 
 import java.util.List;
@@ -29,6 +29,6 @@ public interface TypeClient {
 
     List<TreeDTO> getTrees(GetTreesRequest request);
 
-    TypeTreeResponse queryTrees(TypeTreeQuery query);
+    TreeResponse queryTrees(TypeTreeQuery query);
 
 }

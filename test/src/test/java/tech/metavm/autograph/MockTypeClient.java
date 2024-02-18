@@ -1,6 +1,5 @@
 package tech.metavm.autograph;
 
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.object.instance.InstanceManager;
@@ -11,7 +10,7 @@ import tech.metavm.object.instance.rest.TreeDTO;
 import tech.metavm.object.type.TypeManager;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeTreeQuery;
-import tech.metavm.object.type.rest.dto.TypeTreeResponse;
+import tech.metavm.object.type.rest.dto.TreeResponse;
 import tech.metavm.system.BlockManager;
 import tech.metavm.system.rest.dto.BlockDTO;
 import tech.metavm.util.ContextUtil;
@@ -82,8 +81,8 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public TypeTreeResponse queryTrees(TypeTreeQuery query) {
-        return submit(() -> typeManager.queryTypeTrees(query));
+    public TreeResponse queryTrees(TypeTreeQuery query) {
+        return submit(() -> typeManager.queryTrees(query));
     }
 
     private void submit(Runnable task) {

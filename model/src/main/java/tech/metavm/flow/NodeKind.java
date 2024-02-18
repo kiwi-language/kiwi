@@ -43,7 +43,6 @@ public enum NodeKind {
     INDEX_COUNT(NodeKindCodes.INDEX_COUNT, IndexCountNode.class, IndexCountNodeParam.class),
     INDEX_SELECT(NodeKindCodes.INDEX_SELECT, IndexSelectNode.class, IndexSelectNodeParam.class),
     INDEX_SELECT_FIRST(NodeKindCodes.INDEX_SELECT_FIRST, IndexSelectFirstNode.class, IndexSelectFirstNodeParam.class),
-    SAM(NodeKindCodes.SAM, SAMNode.class, SAMNodeParam.class),
 
     ;
 

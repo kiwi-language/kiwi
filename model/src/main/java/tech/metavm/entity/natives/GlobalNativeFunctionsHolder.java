@@ -3,10 +3,9 @@ package tech.metavm.entity.natives;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.flow.FlowExecResult;
 import tech.metavm.flow.Function;
-import tech.metavm.object.instance.core.BooleanInstance;
-import tech.metavm.object.instance.core.DurableInstance;
-import tech.metavm.object.instance.core.Instance;
-import tech.metavm.object.instance.core.SourceRef;
+import tech.metavm.object.instance.core.*;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Types;
 import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 
@@ -14,10 +13,11 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
 
-    private final Map<Function, java.util.function.Function<List<Instance>, Instance>> functions = new IdentityHashMap<>();
+    private final Map<Function, BiFunction<Function, List<Instance>, Instance>> functions = new IdentityHashMap<>();
 
     private Function isSourcePresentFunc;
 
@@ -25,6 +25,7 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
 
     private Function setSourceFunc;
 
+    private Function functionToInstance;
 
     private static Instance getSource(@NotNull Instance instance) {
         if(instance instanceof DurableInstance durableInstance)
@@ -49,6 +50,12 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
             throw new InternalException("Can not set source for a non-durable instance: " + instance);
     }
 
+    private static Instance functionToInstance(Function function, @NotNull FunctionInstance functionInstance) {
+        var samInterface = (ClassType) function.getTypeArguments().get(0);
+        var type = Types.createSAMInterfaceImpl(samInterface, functionInstance);
+        return new ClassInstance(null, Map.of(), type);
+    }
+
     @Override
     public Function getGetSourceFunc() {
         return getSourceFunc;
@@ -67,24 +74,35 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     @Override
     public void setGetSourceFunc(@NotNull Function function) {
         getSourceFunc = function;
-        functions.put(function, args -> getSource(args.get(0)));
+        functions.put(function, (func, args) -> getSource(args.get(0)));
     }
 
     @Override
     public void setIsSourcePresent(@NotNull Function function) {
         isSourcePresentFunc = function;
-        functions.put(function, args -> isSourcePresent(args.get(0)));
+        functions.put(function, (func, args) -> isSourcePresent(args.get(0)));
     }
 
     @Override
     public void setSetSourceFunc(@NotNull Function function) {
         setSourceFunc = function;
-        functions.put(function, args -> setSource(args.get(0), args.get(1)));
+        functions.put(function, (func, args) -> setSource(args.get(0), args.get(1)));
     }
 
     @Override
     public FlowExecResult invoke(@NotNull Function flow, @NotNull List<Instance> arguments) {
-        var func = Objects.requireNonNull(functions.get(flow));
-        return new FlowExecResult(func.apply(arguments), null);
+        var func = Objects.requireNonNull(functions.get(flow.getEffectiveHorizontalTemplate()));
+        return new FlowExecResult(func.apply(flow, arguments), null);
+    }
+
+    @Override
+    public Function getFunctionToInstance() {
+        return functionToInstance;
+    }
+
+    @Override
+    public void setFunctionToInstance(Function function) {
+        this.functionToInstance = function;
+        functions.put(function, (func, args) -> functionToInstance(func, (FunctionInstance) args.get(0)));
     }
 }

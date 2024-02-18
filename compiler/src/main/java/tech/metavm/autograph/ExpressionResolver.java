@@ -3,6 +3,7 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.BooleanInstance;
@@ -497,7 +498,7 @@ public class ExpressionResolver {
             var paramType = typeResolver.resolveDeclaration(substitutor.substitute(psiArg.getType()));
             if (paramType instanceof ClassType classType && classType.isSAMInterface()
                     && arg.getType() instanceof FunctionType) {
-                arg = new NodeExpression(methodGenerator.createSAM(classType, arg));
+                arg = new NodeExpression(createSAMConversion(classType, arg));
             }
             args.add(arg);
         }
@@ -508,6 +509,13 @@ public class ExpressionResolver {
         } else {
             return createNodeExpression(node);
         }
+    }
+
+    private NodeRT createSAMConversion(ClassType samInterface, Expression function) {
+        var func = parameterizedFlowProvider.getParameterizedFlow(
+                NativeFunctions.getFunctionToInstance(), List.of(samInterface)
+        );
+        return methodGenerator.createFunctionCall(func, List.of(function));
     }
 
     private Expression getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {

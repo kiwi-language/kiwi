@@ -297,6 +297,16 @@ public class StandardDefBuilder {
                 .build();
         NativeFunctions.setIsSourcePresent(isSourcePresentFunc);
         defContext.writeEntity(isSourcePresentFunc);
+
+        var funcType = new TypeVariable(null, "函数类型", "FunctionType", DummyGenericDeclaration.INSTANCE);
+        var function2instance = FunctionBuilder.newBuilder("函数转实例", "functionToInstance", defContext.getFunctionTypeContext())
+                .isNative()
+                .typeParameters(List.of(funcType))
+                .parameters(new Parameter(null, "函数", "function", StandardTypes.getAnyType()))
+                .returnType(funcType)
+                .build();
+        NativeFunctions.setFunctionToInstance(function2instance);
+        defContext.writeEntity(function2instance);
     }
 
     @SuppressWarnings("SameParameterValue")

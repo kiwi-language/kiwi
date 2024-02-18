@@ -6,7 +6,7 @@ import tech.metavm.object.instance.rest.InstanceVersionsRequest;
 import tech.metavm.object.instance.rest.TreeDTO;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeTreeQuery;
-import tech.metavm.object.type.rest.dto.TypeTreeResponse;
+import tech.metavm.object.type.rest.dto.TreeResponse;
 import tech.metavm.system.rest.dto.BlockDTO;
 import tech.metavm.system.rest.dto.GetActiveBlocksRequest;
 import tech.metavm.user.rest.dto.LoginInfo;
@@ -68,11 +68,11 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
-    public TypeTreeResponse queryTrees(TypeTreeQuery query) {
+    public TreeResponse queryTrees(TypeTreeQuery query) {
         return CompilerHttpUtils.post(
                 "/type/query-trees",
                 query,
-                new TypeReference<TypeTreeResponse>() {
+                new TypeReference<TreeResponse>() {
                 }
         );
     }
