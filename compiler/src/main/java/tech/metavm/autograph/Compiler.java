@@ -22,6 +22,7 @@ import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.system.RegionConstants;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
+import tech.metavm.util.profile.Profiler;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -48,6 +49,7 @@ public class Compiler {
     private final Project project;
     private final CompilerInstanceContextFactory contextFactory;
     private final TypeClient typeClient;
+    private final Profiler profiler = new Profiler();
 
     static {
         NncUtils.ensureDirectoryExists(REQUEST_DIR);
@@ -94,7 +96,7 @@ public class Compiler {
     }
 
     public void compile(List<String> sources) {
-        try (var context = newContext()) {
+        try (var context = newContext(); var entry = profiler.enter("compile")) {
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
             var psiClasses = NncUtils.flatMap(files, file -> List.of(file.getClasses()));
@@ -102,7 +104,9 @@ public class Compiler {
                     psiClasses, TranspileUtil.getElementFactory()::createType
             );
             for (ResolutionStage stage : ResolutionStage.values()) {
-                psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
+                try(var stageEntry = profiler.enter("stage: " + stage)) {
+                    psiClassTypes.forEach(t -> typeResolver.resolve(t, stage));
+                }
             }
             var generatedTypes = typeResolver.getGeneratedTypes();
             var generatedPFlows = typeResolver.getGeneratedParameterizedFlows();
@@ -110,12 +114,14 @@ public class Compiler {
             deploy(generatedTypes, generatedPFlows, typeResolver);
             LOGGER.info("Deploy done");
         }
+        LOGGER.info(profiler.finish().output());
     }
 
     private void deploy(Collection<Type> generatedTypes,
                         Collection<Flow> generatedPFlows,
                         TypeResolver typeResolver) {
-        try (SerializeContext serContext = SerializeContext.enter()) {
+        try (var serContext = SerializeContext.enter();
+             var entry = profiler.enter("deploy")) {
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false)
