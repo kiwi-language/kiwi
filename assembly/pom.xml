@@ -9,7 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>lab</artifactId>
+    <artifactId>assembly</artifactId>
 
     <properties>
         <maven.compiler.source>20</maven.compiler.source>
@@ -20,29 +20,19 @@
     <dependencies>
         <dependency>
             <groupId>tech.metavm</groupId>
-            <artifactId>api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>3.0.2</version>
+            <artifactId>server</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>.</sourceDirectory>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.version}</version>
                 <configuration>
-                    <includes>
-                        <include>src/main/java/**/*.java</include>
-                        <include>src/main/lab/**/*.java</include>
-                        <include>src/main/metavm/**/*.java</include>
-                        <include>src/main/shopping/**/*.java</include>
-                        <include>src/main/users/**/*.java</include>
-                    </includes>
+                    <mainClass>tech.metavm.ObjectApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

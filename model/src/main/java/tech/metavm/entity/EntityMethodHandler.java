@@ -3,6 +3,7 @@ package tech.metavm.entity;
 import javassist.util.proxy.MethodHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.util.ContextUtil;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;

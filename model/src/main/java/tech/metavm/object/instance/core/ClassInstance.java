@@ -66,26 +66,32 @@ public class ClassInstance extends DurableInstance {
 
     @NoProxy
     public void reset(Map<Field, Instance> data, long version, long syncVersion) {
-        setModified();
-        clear();
-        setVersion(version);
-        setSyncVersion(syncVersion);
-        getType().forEachField(field -> {
-            Instance fieldValue = data.get(field);
-            if (fieldValue == null || fieldValue.isNull()) {
-                fieldValue = field.getDefaultValue();
-            }
-            initFieldInternal(field, fieldValue);
-        });
-        if (!isNew() && !isLoaded())
-            setLoaded(false);
+//        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.reset")) {
+            setModified();
+            clear();
+            setVersion(version);
+            setSyncVersion(syncVersion);
+            getType().forEachField(field -> {
+//                try( var ignored1 = ContextUtil.getProfiler().enter("ClassInstance.reset.forEachField")) {
+                    Instance fieldValue = data.get(field);
+                    if (fieldValue == null || fieldValue.isNull()) {
+                        fieldValue = field.getDefaultValue();
+                    }
+                    initFieldInternal(field, fieldValue);
+//                }
+            });
+            if (!isNew() && !isLoaded())
+                setLoaded(false);
+//        }
     }
 
 
     private void clear() {
-        new ArrayList<>(getOutgoingReferences()).forEach(ReferenceRT::clear);
-        this.fields.clear();
-        this.unknownFields.clear();
+//        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.clear")) {
+            new ArrayList<>(getOutgoingReferences()).forEach(ReferenceRT::clear);
+            this.fields.clear();
+            this.unknownFields.clear();
+//        }
     }
 
     public void forEachField(BiConsumer<Field, Instance> action) {
@@ -195,48 +201,51 @@ public class ClassInstance extends DurableInstance {
 
     @Override
     public void writeTo(InstanceOutput output, boolean includeChildren) {
-        ensureLoaded();
-        var nonNullFields = NncUtils.filterAndSort(fields,
-                f -> f.getValue().isNotNull(),
-                Comparator.comparingLong(InstanceField::getId)
-        );
-        output.writeInt(nonNullFields.size());
-        for (InstanceField field : nonNullFields) {
-            output.writeLong(field.getId());
-            if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
-                output.writeValue(field.getValue());
-            else
-                output.writeInstance(field.getValue());
-        }
+//        try( var ignored = ContextUtil.getProfiler().enter("ClassInstance.writeTo")) {
+            ensureLoaded();
+            var nonNullFields = NncUtils.filterAndSort(fields,
+                    f -> f.getValue().isNotNull(),
+                    Comparator.comparingLong(InstanceField::getId)
+            );
+            output.writeInt(nonNullFields.size());
+            for (InstanceField field : nonNullFields) {
+                output.writeLong(field.getId());
+                if (includeChildren && field.getField().isChild() && !field.getField().isLazy())
+                    output.writeValue(field.getValue());
+                else
+                    output.writeInstance(field.getValue());
+            }
+//        }
     }
 
     @Override
     @NoProxy
     public void readFrom(InstanceInput input) {
-        setLoaded(input.isLoadedFromCache());
-        List<Field> fields = getType().getSortedFields();
-        var instFields = this.fields;
-        int numFields = input.readInt();
-        int j = 0;
-        for (int i = 0; i < numFields; i++) {
-            var fieldId = input.readLong();
-            while (j < fields.size() && fields.get(j).getId() < fieldId) {
+//        try( var ignored = ContextUtil.getProfiler().enter("ClassInstance.readFrom")) {
+            setLoaded(input.isLoadedFromCache());
+            List<Field> fields = getType().getSortedFields();
+            var instFields = this.fields;
+            int numFields = input.readInt();
+            int j = 0;
+            for (int i = 0; i < numFields; i++) {
+                var fieldId = input.readLong();
+                while (j < fields.size() && fields.get(j).getId() < fieldId) {
+                    instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
+                    j++;
+                }
+                Field field;
+                if (j < fields.size() && (field = fields.get(j)).getId() == fieldId) {
+                    input.setParent(this, field);
+                    var value = input.readInstance();
+                    instFields.add(new InstanceField(this, field, value, false));
+                    j++;
+                } else // the field corresponding to the fieldId has been removed
+                    input.skipInstance();
+            }
+            input.setParent(getParent(), getParentField());
+            for (; j < fields.size(); j++)
                 instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
-                j++;
-            }
-            Field field;
-            if (j < fields.size() && (field = fields.get(j)).getId() == fieldId) {
-                input.setParent(this, field);
-                var value = input.readInstance();
-                instFields.add(new InstanceField(this, field, value, false));
-                j++;
-            }
-            else // the field corresponding to the fieldId has been removed
-                input.skipInstance();
-        }
-        input.setParent(getParent(), getParentField());
-        for (; j < fields.size(); j++)
-            instFields.add(new InstanceField(this, fields.get(j), Instances.nullInstance(), false));
+//        }
     }
 
     public ClassInstance getClassInstance(Field field) {
@@ -274,7 +283,7 @@ public class ClassInstance extends DurableInstance {
 
     void setOrInitField(Field field, Instance value) {
         ensureLoaded();
-        if(isFieldInitialized(field))
+        if (isFieldInitialized(field))
             setFieldInternal(field, value);
         else
             initFieldInternal(field, value);
@@ -308,11 +317,13 @@ public class ClassInstance extends DurableInstance {
     }
 
     private void initFieldInternal(Field field, Instance value) {
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
-        NncUtils.requireFalse(isFieldInitialized(field));
-        if (field.isChild() && value.isNotNull())
-            ((DurableInstance) value).setParent(this, field);
-        addField(new InstanceField(this, field, value));
+//        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.initFieldInternal")) {
+            NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(getType()));
+            NncUtils.requireFalse(isFieldInitialized(field));
+            if (field.isChild() && value.isNotNull())
+                ((DurableInstance) value).setParent(this, field);
+            addField(new InstanceField(this, field, value));
+//        }
     }
 
     public StringInstance getStringField(Field field) {

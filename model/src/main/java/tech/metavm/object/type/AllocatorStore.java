@@ -13,6 +13,8 @@ public interface AllocatorStore {
 
     boolean fileNameExists(String fileName);
 
+    void saveFileNames(List<String> fileNames);
+
     void save(String fileName, Properties properties);
 
 }

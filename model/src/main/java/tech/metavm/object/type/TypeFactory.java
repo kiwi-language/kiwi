@@ -8,6 +8,7 @@ import tech.metavm.flow.rest.MethodParam;
 import tech.metavm.flow.rest.ParameterDTO;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.type.rest.dto.*;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.Instances;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.Null;
@@ -25,114 +26,127 @@ public abstract class TypeFactory {
     }
 
     public TypeVariable saveTypeVariable(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var param = typeDTO.getTypeVariableParam();
-        var context = batch.getContext();
-        var type = batch.getContext().getTypeVariable(typeDTO.getRef());
-        if (type == null) {
-            type = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(), DummyGenericDeclaration.INSTANCE);
-            context.bind(type);
-        } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
-            type.setName(typeDTO.name());
-            type.setCode(typeDTO.code());
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveTypeVariable")) {
+            var param = typeDTO.getTypeVariableParam();
+            var context = batch.getContext();
+            var type = batch.getContext().getTypeVariable(typeDTO.getRef());
+            if (type == null) {
+                type = new TypeVariable(typeDTO.tmpId(), typeDTO.name(), typeDTO.code(), DummyGenericDeclaration.INSTANCE);
+                context.bind(type);
+            } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
+                type.setName(typeDTO.name());
+                type.setCode(typeDTO.code());
+            }
+            var curStage = type.setStage(stage);
+            if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
+                type.setBounds(NncUtils.map(param.boundRefs(), batch::get));
+            return type;
         }
-        var curStage = type.setStage(stage);
-        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
-            type.setBounds(NncUtils.map(param.boundRefs(), batch::get));
-        return type;
     }
 
     public ArrayType saveArrayType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var context = batch.getContext();
-        var param = typeDTO.getArrayTypeParam();
-        var elementType = context.getType(param.elementTypeRef());
-        var kind = ArrayKind.getByCode(param.kind());
-        return context.getArrayTypeContext(kind).get(elementType, typeDTO.tmpId());
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveArrayType")) {
+            var context = batch.getContext();
+            var param = typeDTO.getArrayTypeParam();
+            var elementType = context.getType(param.elementTypeRef());
+            var kind = ArrayKind.getByCode(param.kind());
+            return context.getArrayTypeContext(kind).get(elementType, typeDTO.tmpId());
+        }
     }
 
     public UnionType saveUnionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var context = batch.getContext();
-        var param = typeDTO.getUnionParam();
-        var members = NncUtils.mapUnique(param.memberRefs(), batch::get);
-        return context.getUnionTypeContext().getUnionType(members, typeDTO.tmpId());
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUnionType")) {
+            var context = batch.getContext();
+            var param = typeDTO.getUnionParam();
+            var members = NncUtils.mapUnique(param.memberRefs(), batch::get);
+            return context.getUnionTypeContext().getUnionType(members, typeDTO.tmpId());
+        }
     }
 
     public UncertainType saveUncertainType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var context = batch.getContext();
-        var param = typeDTO.getUncertainTypeParam();
-        var lb = batch.get(param.lowerBoundRef());
-        var ub = batch.get(param.upperBoundRef());
-        return context.getUncertainTypeContext().getUncertainType(lb, ub, typeDTO.tmpId());
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveUncertainType")) {
+            var context = batch.getContext();
+            var param = typeDTO.getUncertainTypeParam();
+            var lb = batch.get(param.lowerBoundRef());
+            var ub = batch.get(param.upperBoundRef());
+            return context.getUncertainTypeContext().getUncertainType(lb, ub, typeDTO.tmpId());
+        }
     }
 
     public FunctionType saveFunctionType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var context = batch.getContext();
-        var param = typeDTO.getFunctionTypeParam();
-        var paramTypes = NncUtils.map(param.parameterTypeRefs(), batch::get);
-        var returnType = batch.get(param.returnTypeRef());
-        return context.getFunctionTypeContext().getFunctionType(paramTypes, returnType, typeDTO.tmpId());
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveFunctionType")) {
+            var context = batch.getContext();
+            var param = typeDTO.getFunctionTypeParam();
+            var paramTypes = NncUtils.map(param.parameterTypeRefs(), batch::get);
+            var returnType = batch.get(param.returnTypeRef());
+            return context.getFunctionTypeContext().getFunctionType(paramTypes, returnType, typeDTO.tmpId());
+        }
     }
 
     public ClassType saveParameterized(PTypeDTO pTypeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var template = batch.getClassType(pTypeDTO.getTemplateRef());
-        var typeArgs = NncUtils.map(pTypeDTO.getTypeArgumentRefs(), batch::get);
-        return batch.getContext().getGenericContext()
-                .getParameterizedType(template, typeArgs, stage, batch);
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveParameterized")) {
+            var template = batch.getClassType(pTypeDTO.getTemplateRef());
+            var typeArgs = NncUtils.map(pTypeDTO.getTypeArgumentRefs(), batch::get);
+            return batch.getContext().getGenericContext()
+                    .getParameterizedType(template, typeArgs, stage, batch);
+        }
     }
 
     public ClassType saveClassType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var param = typeDTO.getClassParam();
-        var type = batch.getContext().getClassType(typeDTO.getRef());
-        var context = batch.getContext();
-        if (type == null) {
-            type = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
-                    .tmpId(typeDTO.tmpId())
-                    .category(TypeCategory.getByCode(typeDTO.category()))
-                    .ephemeral(typeDTO.ephemeral())
-                    .anonymous(typeDTO.anonymous())
-                    .typeParameters(NncUtils.map(param.typeParameterRefs(), batch::getTypeVariable))
-                    .isTemplate(param.isTemplate())
-                    .desc(param.desc())
-                    .source(ClassSource.getByCode(param.source()))
-                    .tmpId(typeDTO.tmpId())
-                    .build();
-            context.bind(type);
-        } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
-            type.setCode(typeDTO.code());
-            type.setName(typeDTO.name());
-            type.setDesc(param.desc());
-        }
-        var curStage = type.setStage(stage);
-        if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
-            if(type.isEnum()) {
-                var enumSuperClass = context.getGenericContext().getParameterizedType(
-                        StandardTypes.getEnumType(), List.of(type), ResolutionStage.DEFINITION, batch
-                );
-                type.setSuperClass(enumSuperClass);
+        try(var ignored = ContextUtil.getProfiler().enter("TypeFactory.saveClassType")) {
+            var param = typeDTO.getClassParam();
+            var type = batch.getContext().getClassType(typeDTO.getRef());
+            var context = batch.getContext();
+            if (type == null) {
+                type = ClassTypeBuilder.newBuilder(typeDTO.name(), typeDTO.code())
+                        .tmpId(typeDTO.tmpId())
+                        .category(TypeCategory.getByCode(typeDTO.category()))
+                        .ephemeral(typeDTO.ephemeral())
+                        .anonymous(typeDTO.anonymous())
+                        .typeParameters(NncUtils.map(param.typeParameterRefs(), batch::getTypeVariable))
+                        .isTemplate(param.isTemplate())
+                        .desc(param.desc())
+                        .source(ClassSource.getByCode(param.source()))
+                        .tmpId(typeDTO.tmpId())
+                        .build();
+                context.bind(type);
+            } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
+                type.setCode(typeDTO.code());
+                type.setName(typeDTO.name());
+                type.setDesc(param.desc());
             }
-            else
-                type.setSuperClass(NncUtils.get(param.superClassRef(), batch::getClassType));
-            type.setInterfaces(NncUtils.map(param.interfaceRefs(), batch::getClassType));
-            if (!type.isTemplate())
-                type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
-            if (param.dependencyRefs() != null)
-                type.setDependencies(NncUtils.map(param.dependencyRefs(), context::getClassType));
-            type.setStage(ResolutionStage.SIGNATURE);
+            var curStage = type.setStage(stage);
+            if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {
+                if (type.isEnum()) {
+                    var enumSuperClass = context.getGenericContext().getParameterizedType(
+                            StandardTypes.getEnumType(), List.of(type), ResolutionStage.DEFINITION, batch
+                    );
+                    type.setSuperClass(enumSuperClass);
+                } else
+                    type.setSuperClass(NncUtils.get(param.superClassRef(), batch::getClassType));
+                type.setInterfaces(NncUtils.map(param.interfaceRefs(), batch::getClassType));
+                if (!type.isTemplate())
+                    type.setTypeArguments(NncUtils.map(param.typeArgumentRefs(), context::getType));
+                if (param.dependencyRefs() != null)
+                    type.setDependencies(NncUtils.map(param.dependencyRefs(), context::getClassType));
+                type.setStage(ResolutionStage.SIGNATURE);
+            }
+            if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
+                var declaringType = type;
+                if (param.fields() != null)
+                    type.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
+                if (param.staticFields() != null)
+                    type.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
+                if (param.constraints() != null)
+                    type.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
+                if (param.flows() != null)
+                    type.setMethods(NncUtils.map(param.flows(), f -> saveMethod(f, stage, batch)));
+                if (param.titleFieldRef() != null)
+                    type.setTitleField(NncUtils.find(type.getFields(), f -> f.getRef().equals(param.titleFieldRef())));
+                type.setStage(ResolutionStage.DECLARATION);
+            }
+            return type;
         }
-        if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION)) {
-            var declaringType = type;
-            if (param.fields() != null)
-                type.setFields(NncUtils.map(param.fields(), f -> saveField(declaringType, f, context)));
-            if (param.staticFields() != null)
-                type.setStaticFields(NncUtils.map(param.staticFields(), f -> saveField(declaringType, f, context)));
-            if (param.constraints() != null)
-                type.setConstraints(NncUtils.map(param.constraints(), c -> ConstraintFactory.save(c, context)));
-            if (param.flows() != null)
-                type.setMethods(NncUtils.map(param.flows(), f -> saveMethod(f, stage, batch)));
-            if(param.titleFieldRef() != null)
-                type.setTitleField(NncUtils.find(type.getFields(), f -> f.getRef().equals(param.titleFieldRef())));
-            type.setStage(ResolutionStage.DECLARATION);
-        }
-        return type;
     }
 
     public TypeVariable createTypeVariable(TypeDTO typeDTO,

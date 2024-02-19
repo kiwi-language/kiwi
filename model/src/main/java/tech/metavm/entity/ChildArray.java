@@ -74,7 +74,7 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
 
     public void addChildAfter(T child, T anchor) {
         super.addChild(child, null);
-        table.addAfter(child, anchor);
+        table.add(table.indexOf(anchor)+ 1, child);
     }
 
     public void addChild(T child) {
@@ -89,7 +89,7 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
 
     public void addFirstChild(T child) {
         super.addChild(child, null);
-        table.addFirst(child);
+        table.add(0, child);
     }
 
     public <P extends BaseDTO> void update(List<P> params,

@@ -4,6 +4,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IndexDef;
 import tech.metavm.object.type.CompositeType;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
@@ -13,7 +14,7 @@ import java.util.*;
 public abstract class CompositeTypeContext<T extends CompositeType> {
 
     private final IEntityContext context;
-    private final Set<T> newTypes = new IdentitySet<>();
+    private final Map<Object, T> newTypes = new HashMap<>();
     private final Map<String, T> persistedTypes = new HashMap<>();
     @Nullable
     private final CompositeTypeContext<T> parent;
@@ -30,12 +31,15 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
     }
 
     private T getNew(List<Type> componentTypes) {
-        if(parent != null) {
-            var t = parent.getNew(componentTypes);
-            if(t != null)
-                return t;
-        }
-        return NncUtils.find(newTypes, t -> componentTypesEquals(t.getComponentTypes(), componentTypes));
+//        try(var ignored = ContextUtil.getProfiler().enter("CompositeTypeContext.getNew")) {
+            if (parent != null) {
+                var t = parent.getNew(componentTypes);
+                if (t != null)
+                    return t;
+            }
+//            return NncUtils.find(newTypes, t -> componentTypesEquals(t.getComponentTypes(), componentTypes));
+            return newTypes.get(getMemKey(componentTypes));
+//        }
     }
 
     public T get(List<Type> componentTypes, Long tmpId) {
@@ -55,15 +59,15 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
             }
         }
         T type = create(componentTypes, tmpId);
-        newTypes.add(type);
+        newTypes.put(getMemKey(componentTypes), type);
         if(context != null && context.isBindSupported()) {
             context.bind(type);
         }
         return type;
     }
 
-    protected boolean componentTypesEquals(List<Type> types1, List<Type> types2) {
-        return types1.equals(types2);
+    protected Object getMemKey(List<Type> types) {
+        return types;
     }
 
     public void checkComponentTypes(List<Type> types) {
@@ -74,11 +78,11 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
     }
 
     public Set<T> getNewTypes() {
-        return Collections.unmodifiableSet(newTypes);
+        return new IdentitySet<>(newTypes.values());
     }
 
     public void addNewType(T type) {
-        newTypes.add(type);
+        newTypes.put(getMemKey(type.getComponentTypes()), type);
     }
 
     protected abstract T create(List<Type> componentTypes, Long tmpId);

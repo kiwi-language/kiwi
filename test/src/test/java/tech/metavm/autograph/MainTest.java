@@ -29,6 +29,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,10 +68,10 @@ public class MainTest extends TestCase {
         Instances.setHolder(new ThreadLocalBuiltinInstanceHolder());
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
-        var bootResult = executor.submit(() -> {
+        var bootResult = submit(() -> {
             FlowSavingContext.initConfig();
             return BootstrapUtils.bootstrap();
-        }).get();
+        });
         allocatorStore = bootResult.allocatorStore();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(
@@ -104,7 +105,7 @@ public class MainTest extends TestCase {
         var ref = new Object() {
             long productTypeId;
         };
-        executor.submit(() -> {
+        submit(() -> {
             var productType = queryClassType("商品");
             ref.productTypeId = productType.id();
             Assert.assertNotNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
@@ -198,18 +199,38 @@ public class MainTest extends TestCase {
             var priceFieldValue = (PrimitiveFieldValue) productView.getFieldValue(
                     getFieldIdByCode(productViewType, "price"));
             Assert.assertEquals(95.0, (double) priceFieldValue.getValue(), 0.0);
-        }).get();
+        });
         CompilerConfig.setMethodBlacklist(Set.of("tech.metavm.lab.Product.setSkus"));
         compile(SOURCE_ROOT);
-        executor.submit(() -> {
+        submit(() -> {
             var productType = typeManager.getType(new GetTypeRequest(ref.productTypeId, false)).type();
             Assert.assertNull(NncUtils.find(productType.getClassParam().flows(), f -> "setSkus".equals(f.code())));
-        }).get();
+        });
     }
 
-    public void testShopping() throws ExecutionException, InterruptedException {
-        compileTwice(SHOPPING_SOURCE_ROOT);
+    private void submit(Runnable task) {
         executor.submit(() -> {
+            ContextUtil.resetProfiler();
+            task.run();
+        });
+    }
+
+    private <T> T submit(Callable<T> task) {
+        try {
+            return executor.submit(() -> {
+                ContextUtil.resetProfiler();
+                return task.call();
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
+    public void testShopping() {
+        compileTwice(SHOPPING_SOURCE_ROOT);
+        submit(() -> {
             var productStateType = queryClassType("商品状态");
             var productNormalStateId = TestUtils.getEnumConstantIdByName(productStateType, "正常");
             var productType = queryClassType("AST产品");
@@ -278,20 +299,20 @@ public class MainTest extends TestCase {
             var orderCoupons = ((InstanceFieldValue) order.getFieldValue(getFieldIdByCode(orderType, "coupons"))).getInstance();
             Assert.assertEquals(1, orderCoupons.getListSize());
             Assert.assertEquals(95, price);
-        }).get();
+        });
     }
 
-    public void _testLab() {
-        compileTwice(LAB_SOURCE_ROOT);
+    public void testLab() {
+        compile(USERS_SOURCE_ROOT);
     }
 
-    public void testMetavm() throws ExecutionException, InterruptedException {
+    public void testMetavm() {
         compile(METAVM_SOURCE_ROOT);
         var ref = new Object() {
             long getCodeMethodId;
             int numNodes;
         };
-        executor.submit(() -> {
+        submit(() -> {
             var typeType = queryClassType("类型", List.of(TypeCategory.CLASS.code()));
             Assert.assertTrue(typeType.getClassParam().errors().isEmpty());
             ref.getCodeMethodId = TestUtils.getMethodIdByCode(typeType, "getCode");
@@ -301,23 +322,23 @@ public class MainTest extends TestCase {
             var typeCategoryType = queryClassType("类型分类", List.of(TypeCategory.ENUM.code()));
             var firstEnumConstant = typeCategoryType.getClassParam().enumConstants().get(0);
             Assert.assertEquals("类", firstEnumConstant.title());
-        }).get();
+        });
 
         // test recompile
         compile(METAVM_SOURCE_ROOT);
 
         // assert that the number of nodes doesn't change after recompilation
-        executor.submit(() -> {
+        submit(() -> {
             var getCodeMethod = flowManager.get(new GetFlowRequest(ref.getCodeMethodId, true)).flow();
             int numNodes = Objects.requireNonNull(getCodeMethod.rootScope()).nodes().size();
             Assert.assertEquals(ref.numNodes, numNodes);
-        }).get();
+        });
     }
 
-    public void testUsers() throws ExecutionException, InterruptedException {
+    public void testUsers() {
         compileTwice(USERS_SOURCE_ROOT);
 //        compile(USERS_SOURCE_ROOT);
-        executor.submit(() -> {
+        submit(() -> {
             var roleType = queryClassType("LabRole");
             var roleReadWriteListType = typeManager.getParameterizedType(
                     new GetParameterizedTypeRequest(
@@ -750,7 +771,7 @@ public class MainTest extends TestCase {
                     )
             ));
             Assert.assertNull(((PrimitiveFieldValue) loginInfo.getFieldValue(applicationFieldId)).getValue());
-        }).get();
+        });
     }
 
     private void compileTwice(String sourceRoot) {

@@ -6,7 +6,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.List;
 
 public class FunctionTypeContext extends CompositeTypeContext<FunctionType> implements FunctionTypeProvider {
 

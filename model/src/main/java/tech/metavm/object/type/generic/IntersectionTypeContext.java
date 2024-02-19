@@ -34,8 +34,8 @@ public class IntersectionTypeContext extends CompositeTypeContext<IntersectionTy
     }
 
     @Override
-    protected boolean componentTypesEquals(List<Type> types1, List<Type> types2) {
-        return new HashSet<>(types1).equals(new HashSet<>(types2));
+    protected Object getMemKey(List<Type> types) {
+        return new HashSet<>(types);
     }
 
     @Override

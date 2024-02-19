@@ -14,7 +14,7 @@ public class ContextUtil {
         long userId = -1L;
         long appId = -1L;
         long nextTmpId = 1L;
-        private final Profiler profiler = new Profiler();
+        private Profiler profiler = new Profiler();
 
         long nextTmpId() {
             return nextTmpId++;
@@ -36,6 +36,10 @@ public class ContextUtil {
             this.appId = Constants.PLATFORM_APP_ID;
             this.userId = platformUserId;
             this.platformUserId = -1L;
+        }
+
+        public void resetProfiler() {
+            profiler = new Profiler();
         }
 
     }
@@ -109,6 +113,10 @@ public class ContextUtil {
 
     public static void clearContextInfo() {
         THREAD_LOCAL.remove();
+    }
+
+    public static void resetProfiler() {
+        getContextInfo().resetProfiler();
     }
 
 }

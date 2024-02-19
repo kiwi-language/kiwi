@@ -9,7 +9,6 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.example</groupId>
     <artifactId>test</artifactId>
 
     <properties>
@@ -23,16 +22,19 @@
             <groupId>tech.metavm</groupId>
             <artifactId>model</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>tech.metavm</groupId>
             <artifactId>server</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>tech.metavm</groupId>
             <artifactId>compiler</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

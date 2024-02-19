@@ -477,8 +477,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void updateInstances() {
         try (var ignored = getProfiler().enter("updateInstances")) {
             var list = new ArrayList<>(model2instance.entrySet());
-            for (int i = 0; i < list.size(); i++) {
-                var entry = list.get(i);
+            for (var entry : list) {
                 updateInstance(entry.getKey(), entry.getValue());
             }
 //            new IdentityHashMap<>(model2instance).forEach(this::updateInstance);
@@ -502,11 +501,13 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     private void updateInstance(Object object, DurableInstance instance) {
-        if (isModelInitialized(object) && !instance.isRemoved()) {
-            ModelDef<?, ?> def = getDefContext().getDef(instance.getType());
-            def.updateInstanceHelper(object, instance, objectInstanceMap);
-            updateMemIndex(object);
-        }
+//        try(var ignored = getProfiler().enter("updateInstance")) {
+            if (isModelInitialized(object) && !instance.isRemoved()) {
+                ModelDef<?, ?> def = getDefContext().getDef(instance.getType());
+                def.updateInstanceHelper(object, instance, objectInstanceMap);
+                updateMemIndex(object);
+            }
+//        }
     }
 
     @Override
@@ -807,10 +808,12 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     protected void updateMemIndex(Object object) {
-        var instance = getInstance(object);
-        if (!manualInstanceWriting() && instanceContext != null && instance instanceof ClassInstance clsInst) {
-            instanceContext.updateMemoryIndex(clsInst);
-        }
+//        try(var ignored = getProfiler().enter("updateMemIndex")) {
+            var instance = getInstance(object);
+            if (!manualInstanceWriting() && instanceContext != null && instance instanceof ClassInstance clsInst) {
+                instanceContext.updateMemoryIndex(clsInst);
+            }
+//        }
     }
 
     @Override

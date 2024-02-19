@@ -5,10 +5,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
-import tech.metavm.util.ReflectionUtils;
-import tech.metavm.util.TypeReference;
+import tech.metavm.util.*;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -101,14 +98,16 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     private void resetInstance(ClassInstance instance, Object model, ObjectInstanceMap instanceMap) {
-        ClassType instanceType = instance.getType();
-        if (type == instance.getType()) {
-            if (model instanceof Entity entity)
-                reloadParent(entity, instance, instanceMap, defContext);
-            instance.reset(getInstanceFields(model, instanceMap), instance.getVersion(), instance.getSyncVersion());
-        } else {
-            getSubTypeDef(instanceType).initInstanceHelper(instance, model, instanceMap);
-        }
+//        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.resetInstance")) {
+            ClassType instanceType = instance.getType();
+            if (type == instance.getType()) {
+                if (model instanceof Entity entity)
+                    reloadParent(entity, instance, instanceMap, defContext);
+                instance.reset(getInstanceFields(model, instanceMap), instance.getVersion(), instance.getSyncVersion());
+            } else {
+                getSubTypeDef(instanceType).resetInstance(instance, model, instanceMap);
+            }
+//        }
     }
 
     protected Long getId(T model) {
@@ -134,13 +133,15 @@ public abstract class PojoDef<T> extends ModelDef<T, ClassInstance> {
     }
 
     protected Map<Field, Instance> getInstanceFields(Object object, ObjectInstanceMap instanceMap) {
-        Map<Field, Instance> fieldData = new HashMap<>();
-        if (superDef != null)
-            fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
-        for (IFieldDef fieldDef : fieldDefList) {
-            fieldData.put(fieldDef.getField(), fieldDef.getInstanceFieldValue(object, instanceMap));
-        }
-        return fieldData;
+//        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.getInstanceFields")) {
+            Map<Field, Instance> fieldData = new HashMap<>();
+            if (superDef != null)
+                fieldData.putAll(superDef.getInstanceFields(object, instanceMap));
+            for (IFieldDef fieldDef : fieldDefList) {
+                fieldData.put(fieldDef.getField(), fieldDef.getInstanceFieldValue(object, instanceMap));
+            }
+            return fieldData;
+//        }
     }
 
     public <S extends T> void addSubTypeDef(PojoDef<S> def) {

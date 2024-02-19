@@ -4,6 +4,7 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.object.type.Type;
 import tech.metavm.object.type.UnionType;
 import tech.metavm.object.type.UnionTypeProvider;
+import tech.metavm.util.IdentitySet;
 import tech.metavm.util.InternalException;
 
 import javax.annotation.Nullable;
@@ -38,8 +39,8 @@ public class UnionTypeContext extends CompositeTypeContext<UnionType> implements
     }
 
     @Override
-    protected boolean componentTypesEquals(List<Type> types1, List<Type> types2) {
-        return new HashSet<>(types1).equals(new HashSet<>(types2));
+    protected Object getMemKey(List<Type> types) {
+        return new HashSet<>(types);
     }
 
     @Override

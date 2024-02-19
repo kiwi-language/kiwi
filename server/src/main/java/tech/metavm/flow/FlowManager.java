@@ -276,18 +276,20 @@ public class FlowManager extends EntityContextFactoryBean {
     }
 
     public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {
-        if (flow.isNative() || (flow instanceof Method method && method.isAbstract()))
-            return;
-        if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {
-            if (context.isNewEntity(flow))
-                initNodes(flow, context);
-        } else
-            saveNodes(flowDTO, flow, context);
+        try(var ignored = context.getProfiler().enter("FlowManager.saveContent")) {
+            if (flow.isNative() || (flow instanceof Method method && method.isAbstract()))
+                return;
+            if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {
+                if (context.isNewEntity(flow))
+                    initNodes(flow, context);
+            } else
+                saveNodes(flowDTO, flow, context);
 //        if (flowDTO.horizontalInstances() != null) {
 //            for (FlowDTO inst : flowDTO.horizontalInstances()) {
 //                saveContent(inst, context.getFlow(inst.getRef()), context);
 //            }
 //        }
+        }
     }
 
     private SelfNode createSelfNode(Method flow, IEntityContext context) {

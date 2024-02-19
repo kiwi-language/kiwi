@@ -7,6 +7,7 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
@@ -51,16 +52,17 @@ public abstract class ModelDef<T, I extends DurableInstance> {
     }
 
     protected void reloadParent(Entity entity, DurableInstance instance, ObjectInstanceMap instanceMap, DefContext defContext) {
-        if(entity.getParentEntity() != null) {
-            var parent = (DurableInstance) instanceMap.getInstance(entity.getParentEntity());
-            Field parentField = null;
-            if(entity.getParentEntityField() != null)
-                parentField = defContext.getField(entity.getParentEntityField());
-            instance.setParentInternal(parent, parentField);
-        }
-        else {
-            instance.setParentInternal(null, null);
-        }
+//        try(var ignored = ContextUtil.getProfiler().enter("ModelDef.reloadParent")) {
+            if (entity.getParentEntity() != null) {
+                var parent = (DurableInstance) instanceMap.getInstance(entity.getParentEntity());
+                Field parentField = null;
+                if (entity.getParentEntityField() != null)
+                    parentField = defContext.getField(entity.getParentEntityField());
+                instance.setParentInternal(parent, parentField);
+            } else {
+                instance.setParentInternal(null, null);
+            }
+//        }
     }
 
     public abstract void updateModel(T model, I instance, ObjectInstanceMap objectInstanceMap);
@@ -82,7 +84,9 @@ public abstract class ModelDef<T, I extends DurableInstance> {
     }
 
     public final void updateInstanceHelper(Object object, Instance instance, ObjectInstanceMap instanceMap) {
-        updateInstance(instanceType.cast(instance), javaClass.cast(object), instanceMap);
+//        try(var ignored = ContextUtil.getProfiler().enter("updateInstanceHelper")) {
+            updateInstance(instanceType.cast(instance), javaClass.cast(object), instanceMap);
+//        }
     }
 
     public abstract void updateInstance(I instance, T model, ObjectInstanceMap instanceMap);

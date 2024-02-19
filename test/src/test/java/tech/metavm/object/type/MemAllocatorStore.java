@@ -7,6 +7,7 @@ import java.util.*;
 
 public class MemAllocatorStore implements AllocatorStore {
 
+    private final List<String> fileNames = new ArrayList<>();
     private final Map<String, Properties> propertiesMap = new HashMap<>();
 
     @Override
@@ -16,7 +17,7 @@ public class MemAllocatorStore implements AllocatorStore {
 
     @Override
     public List<String> getFileNames() {
-        return new ArrayList<>(propertiesMap.keySet());
+        return fileNames;
     }
 
     @Override
@@ -27,6 +28,12 @@ public class MemAllocatorStore implements AllocatorStore {
     @Override
     public boolean fileNameExists(String fileName) {
         return propertiesMap.containsKey(fileName);
+    }
+
+    @Override
+    public void saveFileNames(List<String> fileNames) {
+        this.fileNames.clear();
+        this.fileNames.addAll(fileNames);
     }
 
     @Override
@@ -44,6 +51,7 @@ public class MemAllocatorStore implements AllocatorStore {
 
     public MemAllocatorStore copy() {
         var result = new MemAllocatorStore();
+        result.fileNames.addAll(fileNames);
         for (var entry : propertiesMap.entrySet()) {
             result.propertiesMap.put(entry.getKey(), copyProperties(entry.getValue()));
         }

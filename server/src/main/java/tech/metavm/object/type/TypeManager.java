@@ -676,9 +676,11 @@ public class TypeManager extends EntityContextFactoryBean {
     }
 
     private void ensureClassNameAvailable(TypeDTO typeDTO, IEntityContext context) {
-        var classWithSameName = context.selectFirstByKey(ClassType.IDX_NAME, typeDTO.name());
-        if (classWithSameName != null && !classWithSameName.isAnonymous()) {
-            throw BusinessException.invalidType(typeDTO, "类型名称已存在");
+        if(!typeDTO.anonymous()) {
+            var classWithSameName = context.selectFirstByKey(ClassType.IDX_NAME, typeDTO.name());
+            if (classWithSameName != null && !classWithSameName.isAnonymous()) {
+                throw BusinessException.invalidType(typeDTO, "类型名称已存在");
+            }
         }
     }
 

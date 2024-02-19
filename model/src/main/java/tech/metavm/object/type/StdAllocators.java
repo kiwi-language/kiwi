@@ -34,6 +34,7 @@ public class StdAllocators {
 
     public StdAllocators(AllocatorStore store) {
         this.store = store;
+        LOGGER.info("id files: " + store.getFileNames());
         for (String fileName : store.getFileNames()) {
             StdAllocator allocator = new StdAllocator(store, fileName);
             allocatorMap.put(allocator.getJavaType(), allocator);
@@ -178,6 +179,7 @@ public class StdAllocators {
     }
 
     public void save() {
+        store.saveFileNames(NncUtils.map(allocatorMap.values(), StdAllocator::getFileName));
         allocatorMap.values().forEach(StdAllocator::save);
     }
 

@@ -60,12 +60,12 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     private Instance readInstance(InstanceInput input) {
-        try (var entry = getProfiler().enter("readInstance")) {
+//        try (var entry = getProfiler().enter("readInstance")) {
             var instance = input.readMessage();
-            entry.addMessage("id", instance.getPhysicalId());
+//            entry.addMessage("id", instance.getPhysicalId());
             onInstanceInitialized(instance);
             return instance;
-        }
+//        }
     }
 
     @Override

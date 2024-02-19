@@ -361,7 +361,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private Patch beforeSaving(Patch patch, PatchContext patchContext) {
-        try (var ignored = getProfiler().enter("beforeSaving")) {
+        try (var ignored = getProfiler().enter("InstanceContext.beforeSaving")) {
             for (ContextPlugin plugin : plugins) {
                 if (plugin.beforeSaving(patch.entityChange, this))
                     patch = buildPatch(patch, patchContext);
@@ -371,7 +371,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void afterSaving(Patch patch) {
-        try (var ignored = getProfiler().enter("afterSaving")) {
+        try (var ignored = getProfiler().enter("InstanceContext.afterSaving")) {
             plugins.forEach(plugin -> plugin.afterSaving(patch.entityChange, this));
         }
     }

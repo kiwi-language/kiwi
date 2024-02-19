@@ -706,7 +706,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private List<DurableInstance> crawNewInstances(Iterable<DurableInstance> instances) {
-        try (var entry = getProfiler().enter("crawNewInstances")) {
+//        try (var entry = getProfiler().enter("crawNewInstances")) {
             var result = new ArrayList<DurableInstance>();
             var visitor = new GraphVisitor() {
 
@@ -730,9 +730,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (instance.isInitialized() && !instance.isRemoved())
                     visitor.visit(instance);
             }
-            entry.addMessage("numCalls", visitor.numCalls);
+//            entry.addMessage("numCalls", visitor.numCalls);
             return result;
-        }
+//        }
     }
 
     private boolean isIdInParent(long id) {

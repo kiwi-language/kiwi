@@ -3,9 +3,8 @@ package tech.metavm.util.profile;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class Profiler {
 
@@ -45,16 +44,93 @@ public class Profiler {
     }
 
     public Result finish() {
+        return finish(true, false);
+    }
+
+    public Result finish(boolean withTraces, boolean withHisto) {
         root.close();
         StringBuilder builder = new StringBuilder("Profiler result\n");
-        root.print(builder, 1);
+        builder.append("Total duration: ").append(root.duration()).append(" us\n");
+        if(withTraces)
+            root.print(builder, 1);
+        if (withHisto)
+            buildHisto(root.duration()).print(builder);
         return new Result(builder.toString(), root.duration());
+    }
+
+    private Histo buildHisto(long totalDuration) {
+        Map<String, HistoEntryBuilder> builderMap = new HashMap<>();
+        forEachEntry(entry -> {
+            HistoEntryBuilder builder = builderMap.computeIfAbsent(entry.name, HistoEntryBuilder::new);
+            builder.add(entry.selfTime());
+        });
+        List<HistoEntry> entries = new ArrayList<>();
+        builderMap.forEach((name, builder) -> entries.add(builder.build(totalDuration)));
+        entries.sort(Comparator.comparingLong(HistoEntry::totalDuration).reversed());
+        return new Histo(entries);
+    }
+
+    private void forEachEntry(Consumer<Entry> consumer) {
+        forEachEntry(root, consumer);
+    }
+
+    private void forEachEntry(Entry entry, Consumer<Entry> consumer) {
+        consumer.accept(entry);
+        for (Entry child : entry.children) {
+            forEachEntry(child, consumer);
+        }
     }
 
     public record Result(
             String output,
             long duration
     ) {
+    }
+
+    private record Histo(
+            List<HistoEntry> entries
+    ) {
+
+        public void print(StringBuilder buf) {
+            buf.append("Histo\n");
+            for (HistoEntry entry : entries) {
+                buf.append(entry.name).append(": ").append(entry.count).append(", ").append(entry.totalDuration)
+                        .append(", ").append(entry.getFormattedPercent()).append('%').append('\n');
+            }
+        }
+
+    }
+
+    private static class HistoEntryBuilder {
+        private final String name;
+        private long count;
+        private long durable;
+
+        private HistoEntryBuilder(String name) {
+            this.name = name;
+        }
+
+        public void add(long duration) {
+            count++;
+            durable += duration;
+        }
+
+        public HistoEntry build(long totalDurable) {
+            return new HistoEntry(name, count, durable, (double) durable / totalDurable);
+        }
+    }
+
+    private record HistoEntry(
+            String name,
+            long count,
+            long totalDuration,
+            double percent
+    ) {
+
+        public String getFormattedPercent() {
+            return String.format("%.2f", percent * 100);
+        }
+
     }
 
     public class Entry implements Closeable {
@@ -89,6 +165,14 @@ public class Profiler {
 
         long duration() {
             return (this.end - this.start) / 1000;
+        }
+
+        long selfTime() {
+            long selfTime = duration();
+            for (Entry child : children) {
+                selfTime -= child.duration();
+            }
+            return selfTime;
         }
 
         @Override

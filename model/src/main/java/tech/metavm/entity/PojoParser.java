@@ -128,7 +128,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, C
     @Override
     public void generateDefinition() {
         var type = def.getType();
-        type.getAllFields().forEach(f ->
+        type.forEachField(f ->
                 defContext.ensureStage(f.getType().getUnderlyingType(), DECLARATION));
         getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
         saveBuiltinMapping(true);

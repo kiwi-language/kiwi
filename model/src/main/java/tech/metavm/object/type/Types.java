@@ -12,6 +12,7 @@ import tech.metavm.object.type.generic.TypeArgumentMap;
 import tech.metavm.object.type.rest.dto.FieldDTO;
 import tech.metavm.object.type.rest.dto.PTypeDTO;
 import tech.metavm.object.type.rest.dto.TypeDTO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
@@ -253,23 +254,25 @@ public class Types {
     }
 
     public static Type saveType(TypeDTO typeDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        var category = TypeCategory.getByCode(typeDTO.category());
-        if (typeDTO.param() instanceof PTypeDTO pTypeDTO) {
-            return TYPE_FACTORY.saveParameterized(pTypeDTO, stage, batch);
-        } else if (category.isPojo()) {
-            return TYPE_FACTORY.saveClassType(typeDTO, stage, batch);
-        } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
-            return TYPE_FACTORY.saveTypeVariable(typeDTO, stage, batch);
-        } else if (category.isArray()) {
-            return TYPE_FACTORY.saveArrayType(typeDTO, stage, batch);
-        } else if (typeDTO.category() == TypeCategory.UNION.code()) {
-            return TYPE_FACTORY.saveUnionType(typeDTO, stage, batch);
-        } else if (typeDTO.category() == TypeCategory.UNCERTAIN.code()) {
-            return TYPE_FACTORY.saveUncertainType(typeDTO, stage, batch);
-        } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
-            return TYPE_FACTORY.saveFunctionType(typeDTO, stage, batch);
-        } else {
-            throw new InternalException("Invalid type category: " + typeDTO.category());
+        try(var ignored= ContextUtil.getProfiler().enter("Types.saveType")) {
+            var category = TypeCategory.getByCode(typeDTO.category());
+            if (typeDTO.param() instanceof PTypeDTO pTypeDTO) {
+                return TYPE_FACTORY.saveParameterized(pTypeDTO, stage, batch);
+            } else if (category.isPojo()) {
+                return TYPE_FACTORY.saveClassType(typeDTO, stage, batch);
+            } else if (typeDTO.category() == TypeCategory.VARIABLE.code()) {
+                return TYPE_FACTORY.saveTypeVariable(typeDTO, stage, batch);
+            } else if (category.isArray()) {
+                return TYPE_FACTORY.saveArrayType(typeDTO, stage, batch);
+            } else if (typeDTO.category() == TypeCategory.UNION.code()) {
+                return TYPE_FACTORY.saveUnionType(typeDTO, stage, batch);
+            } else if (typeDTO.category() == TypeCategory.UNCERTAIN.code()) {
+                return TYPE_FACTORY.saveUncertainType(typeDTO, stage, batch);
+            } else if (typeDTO.category() == TypeCategory.FUNCTION.code()) {
+                return TYPE_FACTORY.saveFunctionType(typeDTO, stage, batch);
+            } else {
+                throw new InternalException("Invalid type category: " + typeDTO.category());
+            }
         }
     }
 

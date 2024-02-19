@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.util.*;
+import tech.metavm.util.LinkedList;
 
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
 
 public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeGeneric, Iterable<T> {
 
-    final Table<T> table;
+    final List<T> table;
 
     public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
 
@@ -55,10 +56,10 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
                 getRawClass(),
                 new Type[]{ReflectionUtils.eraseType(elementType)}
         );
-        table = new Table<T>(elementType, data, buildIndexThreshold);
+        table = new ArrayList<>(data);
     }
 
-    private ReadonlyArray(Type elementType, Type genericType, Table<T> table) {
+    private ReadonlyArray(Type elementType, Type genericType, List<T> table) {
         this.elementType = elementType;
         this.genericType = genericType;
         this.table = table;
@@ -79,46 +80,44 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
 
     @NoProxy
     public void initialize(Collection<? extends T> data) {
-        table.initialize(data);
+        table.clear();
+        table.addAll(data);
     }
 
     protected Class<?> getRawClass() {
         return ReadonlyArray.class;
     }
 
-//    public void initId(long id) {
-//        NncUtils.requireNull(this.id, "id already initialized");
-//        this.id = id;
-//    }
-
     public T get(int index) {
         return table.get(index);
     }
 
     public <K> T get(IndexMapper<? super T, K> keyMapper, K key) {
-        return table.get(keyMapper, key);
+        return NncUtils.find(table, t -> keyMapper.apply(t).equals(key));
     }
 
     public <K> T remove(IndexMapper<T, K> keyMapper, K key) {
-        return table.remove(keyMapper, key);
+        var toRemove = get(keyMapper, key);
+        if(toRemove != null) {
+            table.remove(toRemove);
+            return toRemove;
+        }
+        else
+            return null;
     }
 
     public <K> List<T> filter(IndexMapper<T, K> keyMapper, K key) {
-        return table.filter(keyMapper, key);
+        return table.stream().filter(t -> keyMapper.apply(t).equals(key)).toList();
     }
-
-//    public Long getId() {
-//        return id;
-//    }
-
 
     @SuppressWarnings("unused")
     public <K> void buildIndex(IndexMapper<T, K> keyMapper) {
-        table.buildIndex(keyMapper);
+//        table.buildIndex(keyMapper);
     }
 
     public ReadonlyArray<T> merge(ReadonlyArray<T> that) {
-        var mergedTable = this.table.merge(that.table);
+        var mergedTable = new ArrayList<>(this.table);
+        mergedTable.addAll(that.table);
         return new ReadonlyArray<>(genericType, elementType, mergedTable);
     }
 
@@ -127,7 +126,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     }
 
     public <R> List<R> mapAndFilter(Function<T, R> mapper, Predicate<R> filter) {
-        return table.mapAndFilter(mapper, filter);
+        return table.stream().map(mapper).filter(filter).toList();
     }
 
     public ModelIdentity getIdentifier() {
