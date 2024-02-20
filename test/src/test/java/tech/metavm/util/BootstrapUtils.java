@@ -91,6 +91,9 @@ public class BootstrapUtils {
             NativeFunctions.setGetSourceFunc(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "getSource"
             )));
+            NativeFunctions.setFunctionToInstance(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "functionToInstance"
+            )));
             Instances.setFalseInstance(new BooleanInstance(false, StandardTypes.getBooleanType()));
             Instances.setTrueInstance(new BooleanInstance(true, StandardTypes.getBooleanType()));
             Instances.setNullInstance(new NullInstance(StandardTypes.getNullType()));
