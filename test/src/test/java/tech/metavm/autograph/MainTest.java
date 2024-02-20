@@ -3,6 +3,8 @@ package tech.metavm.autograph;
 import junit.framework.TestCase;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeFunctions;
@@ -37,6 +39,8 @@ import java.util.concurrent.Executors;
 import static tech.metavm.util.TestUtils.getFieldIdByCode;
 
 public class MainTest extends TestCase {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(MainTest.class);
 
     public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/java";
 
@@ -209,10 +213,14 @@ public class MainTest extends TestCase {
     }
 
     private void submit(Runnable task) {
-        executor.submit(() -> {
-            ContextUtil.resetProfiler();
-            task.run();
-        });
+        try {
+            executor.submit(() -> {
+                ContextUtil.resetProfiler();
+                task.run();
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private <T> T submit(Callable<T> task) {
@@ -304,6 +312,74 @@ public class MainTest extends TestCase {
 
     public void testLab() {
         compile(USERS_SOURCE_ROOT);
+        submit(() -> {
+            // create an UserLab instance
+            var userLabType = queryClassType("UserLab");
+            var userLabId = TestUtils.doInTransaction(() -> instanceManager.create(InstanceDTO.createClassInstance(
+                    userLabType.getRef(),
+                    List.of(
+                            InstanceFieldDTO.create(
+                                    getFieldIdByCode(userLabType, "label"),
+                                    PrimitiveFieldValue.createString("实验室")
+                            )
+                    )
+            )));
+
+            // call UserLab.createRole
+            var createRoleMethodId = TestUtils.getMethodIdByCode(userLabType, "createRole");
+            var role = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            createRoleMethodId,
+                            userLabId,
+                            List.of(PrimitiveFieldValue.createString("admin"))
+                    )
+            ));
+            var roleType = queryClassType("LabRole");
+            var roleNameFieldId = getFieldIdByCode(roleType, "name");
+            Assert.assertEquals("admin", ((PrimitiveFieldValue) role.getFieldValue(roleNameFieldId)).getValue());
+            // call UserLab.createPlatformUser
+            var roleReadWriteListType = typeManager.getParameterizedType(
+                    new GetParameterizedTypeRequest(
+                            StandardTypes.getReadWriteListType().getRef(),
+                            List.of(roleType.getRef()),
+                            List.of()
+                    )
+            ).type();
+            var createPlatformUserMethodId = TestUtils.getMethodIdByCode(userLabType, "createPlatformUser");
+            var platformUser = TestUtils.doInTransaction(() -> {
+//                ContextUtil.resetProfiler();
+                InstanceDTO result;
+//                try(var ignored = ContextUtil.getProfiler().enter("createPlatformUser")) {
+                    result =  flowExecutionService.execute(
+                            new FlowExecutionRequest(
+                                    createPlatformUserMethodId,
+                                    userLabId,
+                                    List.of(
+                                            PrimitiveFieldValue.createString("lyq"),
+                                            PrimitiveFieldValue.createString("123456"),
+                                            PrimitiveFieldValue.createString("lyq"),
+                                            new InstanceFieldValue(
+                                                    null,
+                                                    InstanceDTO.createListInstance(
+                                                            roleReadWriteListType.getRef(),
+                                                            false,
+                                                            List.of(ReferenceFieldValue.create(role.id()))
+                                                    )
+                                            )
+                                    )
+                            )
+                    );
+//                }
+//                LOGGER.info(ContextUtil.getProfiler().finish(false, true).output());
+                return result;
+            });
+            var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
+//            var platformUserType = queryClassType("LabPlatformUser");
+            var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");
+            var userNameFieldId = getFieldIdByCode(userType, "name");
+            Assert.assertEquals("lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userLoginNameFieldId)).getValue());
+            Assert.assertEquals("lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userNameFieldId)).getValue());
+        });
     }
 
     public void testMetavm() {
@@ -780,6 +856,7 @@ public class MainTest extends TestCase {
     }
 
     private void compile(String sourceRoot) {
+        ContextUtil.resetProfiler();
         new Main(HOME, sourceRoot, AUTH_FILE, typeClient, allocatorStore).run();
     }
 

@@ -30,27 +30,29 @@ public class CompilerBootstrap {
     public synchronized void boot() {
         if(boot)
             throw new IllegalStateException("Already boot");
-        boot = true;
-        ContextUtil.setAppId(ROOT_APP_ID);
-        var bridge = new EntityInstanceContextBridge();
-        var standardInstanceContext = contextFactory.newBridgedInstanceContext(ROOT_APP_ID, bridge,
-                new BootIdProvider(stdAllocators));
-        contextFactory.setStdContext(standardInstanceContext);
-        var defContext = new DefContext(
-                stdAllocators::getId,
-                standardInstanceContext, columnStore);
-        bridge.setEntityContext(defContext);
-        ModelDefRegistry.setDefContext(defContext);
-        contextFactory.setDefContext(defContext);
-        for (Class<?> entityClass : EntityUtils.getModelClasses()) {
-            if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
-                defContext.getDef(entityClass);
+        try(var ignored = ContextUtil.getProfiler().enter("CompilerBootstrap.boot")) {
+            boot = true;
+            ContextUtil.setAppId(ROOT_APP_ID);
+            var bridge = new EntityInstanceContextBridge();
+            var standardInstanceContext = contextFactory.newBridgedInstanceContext(ROOT_APP_ID, bridge,
+                    new BootIdProvider(stdAllocators));
+            contextFactory.setStdContext(standardInstanceContext);
+            var defContext = new DefContext(
+                    stdAllocators::getId,
+                    standardInstanceContext, columnStore);
+            bridge.setEntityContext(defContext);
+            ModelDefRegistry.setDefContext(defContext);
+            contextFactory.setDefContext(defContext);
+            for (Class<?> entityClass : EntityUtils.getModelClasses()) {
+                if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass())
+                    defContext.getDef(entityClass);
+            }
+            defContext.flushAndWriteInstances();
+            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetPhysicalId() == null);
+            if (!idNullInstances.isEmpty())
+                LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
+            ContextUtil.resetLoginInfo();
         }
-        defContext.flushAndWriteInstances();
-        var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.tryGetPhysicalId() == null);
-        if (!idNullInstances.isEmpty())
-            LOGGER.warn(idNullInstances.size() + " instances have null ids. Save is required");
-        ContextUtil.clearContextInfo();
     }
 
 }

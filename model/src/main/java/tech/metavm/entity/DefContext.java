@@ -485,7 +485,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     public void generateInstances() {
-        try(var ignored = getProfiler().enter("generateInstances")) {
+        try(var ignored = getProfiler().enter("DefContext.generateInstances")) {
             while (!pendingModels.isEmpty()) {
                 new IdentitySet<>(pendingModels).forEach(this::generateInstance);
             }

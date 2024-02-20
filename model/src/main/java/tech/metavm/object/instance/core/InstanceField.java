@@ -69,6 +69,10 @@ public class InstanceField {
         return value;
     }
 
+    public boolean shouldSkipWrite() {
+        return value.isNull() || value instanceof DurableInstance d && d.isEphemeral();
+    }
+
     @SuppressWarnings("unused")
     public ClassInstance getOwner() {
         return owner;

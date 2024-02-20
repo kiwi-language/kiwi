@@ -2,6 +2,7 @@ package tech.metavm.autograph;
 
 import tech.metavm.entity.Tree;
 import tech.metavm.object.type.rest.dto.TypeTreeQuery;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.MetaVersionStore;
 import tech.metavm.util.NncUtils;
 
@@ -20,14 +21,16 @@ public class TreeLoader {
     }
 
     public void load() {
-        var version = metaVersionStore.getMetaVersion();
-        var resp = typeClient.queryTrees(new TypeTreeQuery(version));
-        var trees = NncUtils.map(resp.trees(), Tree::fromDTO);
-        metaVersionStore.setMetaVersion(resp.version());
-        diskTreeStore.remove(resp.removedIds());
-        diskTreeStore.save(trees);
-        diskTreeStore.persist();
-        indexSource.populateIndex();
+        try(var ignored = ContextUtil.getProfiler().enter("TreeLoader.load")) {
+            var version = metaVersionStore.getMetaVersion();
+            var resp = typeClient.queryTrees(new TypeTreeQuery(version));
+            var trees = NncUtils.map(resp.trees(), Tree::fromDTO);
+            metaVersionStore.setMetaVersion(resp.version());
+            diskTreeStore.remove(resp.removedIds());
+            diskTreeStore.save(trees);
+            diskTreeStore.persist();
+            indexSource.populateIndex();
+        }
     }
 
 }

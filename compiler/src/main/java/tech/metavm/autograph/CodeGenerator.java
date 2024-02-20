@@ -5,6 +5,7 @@ import com.intellij.psi.PsiClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.metavm.entity.IEntityContext;
+import tech.metavm.util.ContextUtil;
 
 public class CodeGenerator {
 
@@ -17,17 +18,37 @@ public class CodeGenerator {
     }
 
     void transform(PsiClass psiClass) {
-        executeCommand(() -> {
-            psiClass.accept(new VarargsTransformer());
-            psiClass.accept(new DefaultConstructorCreator());
-            psiClass.accept(new SwitchExpressionTransformer());
-            psiClass.accept(new SwitchLabelStatementTransformer());
-            psiClass.accept(new ForeachTransformer());
-            psiClass.accept(new ForTransformer());
-            psiClass.accept(new BreakTransformer());
-            psiClass.accept(new ContinueTransformer());
-            psiClass.accept(new StringConcatTransformer());
-        });
+        try(var entry = ContextUtil.getProfiler().enter("CodeGenerator.transform")) {
+            executeCommand(() -> {
+                try(var ignored1 = ContextUtil.getProfiler().enter("VarargsTransformer")) {
+                    psiClass.accept(new VarargsTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("DefaultConstructorCreator")) {
+                    psiClass.accept(new DefaultConstructorCreator());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("SwitchExpressionTransformer")) {
+                    psiClass.accept(new SwitchExpressionTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("SwitchLabelStatementTransformer")) {
+                    psiClass.accept(new SwitchLabelStatementTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("ForeachTransformer")) {
+                    psiClass.accept(new ForeachTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("ForTransformer")) {
+                    psiClass.accept(new ForTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("BreakTransformer")) {
+                    psiClass.accept(new BreakTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("ContinueTransformer")) {
+                    psiClass.accept(new ContinueTransformer());
+                }
+                try(var ignored1 = ContextUtil.getProfiler().enter("StringConcatTransformer")) {
+                    psiClass.accept(new StringConcatTransformer());
+                }
+            });
+        }
     }
 
     void generateDecl(PsiClass psiClass, TypeResolver typeResolver) {

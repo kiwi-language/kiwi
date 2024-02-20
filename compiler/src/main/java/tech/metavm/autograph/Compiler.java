@@ -20,9 +20,9 @@ import tech.metavm.object.type.ValueFormatter;
 import tech.metavm.object.type.rest.dto.BatchSaveRequest;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.system.RegionConstants;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.profile.Profiler;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -49,7 +49,6 @@ public class Compiler {
     private final Project project;
     private final CompilerInstanceContextFactory contextFactory;
     private final TypeClient typeClient;
-    private final Profiler profiler = new Profiler();
 
     static {
         NncUtils.ensureDirectoryExists(REQUEST_DIR);
@@ -96,6 +95,7 @@ public class Compiler {
     }
 
     public void compile(List<String> sources) {
+        var profiler = ContextUtil.getProfiler();
         try (var context = newContext(); var entry = profiler.enter("compile")) {
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
@@ -114,14 +114,14 @@ public class Compiler {
             deploy(generatedTypes, generatedPFlows, typeResolver);
             LOGGER.info("Deploy done");
         }
-        LOGGER.info(profiler.finish().output());
+        LOGGER.info(profiler.finish(false, true).output());
     }
 
     private void deploy(Collection<Type> generatedTypes,
                         Collection<Flow> generatedPFlows,
                         TypeResolver typeResolver) {
         try (var serContext = SerializeContext.enter();
-             var entry = profiler.enter("deploy")) {
+             var ignored = ContextUtil.getProfiler().enter("deploy")) {
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false)

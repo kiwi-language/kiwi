@@ -11,7 +11,8 @@ import java.util.Scanner;
 public class LoginUtils {
 
     public static void loginWithAuthFile(String filePath, TypeClient typeClient) {
-        try (Scanner scanner = new Scanner(new FileInputStream(filePath))) {
+        try (Scanner scanner = new Scanner(new FileInputStream(filePath));
+             var ignored = ContextUtil.getProfiler().enter("LoginUtils.loginWithAuthFile")) {
             long appId = scanner.nextLong();
             String loginName = scanner.next();
             String password = scanner.next();

@@ -32,7 +32,7 @@ public class RequestTimeFilter extends OncePerRequestFilter {
             entry.addMessage("request", request.getMethod() + " " + request.getRequestURI());
             filterChain.doFilter(request, response);
         }
-        var result = ContextUtil.getProfiler().finish();
+        var result = ContextUtil.getProfiler().finish(true, true);
         String requestUri = request.getRequestURI();
         if (result.duration() >= LOG_PROFILE_THRESHOLD) {
             LOGGER.info(result.output());

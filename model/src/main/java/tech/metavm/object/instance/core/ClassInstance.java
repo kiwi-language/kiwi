@@ -204,9 +204,13 @@ public class ClassInstance extends DurableInstance {
 //        try( var ignored = ContextUtil.getProfiler().enter("ClassInstance.writeTo")) {
             ensureLoaded();
             var nonNullFields = NncUtils.filterAndSort(fields,
-                    f -> f.getValue().isNotNull(),
+                    f -> !f.shouldSkipWrite(),
                     Comparator.comparingLong(InstanceField::getId)
             );
+//            if(getTitle().equals("反映射$应用_预设视图") && getMappedEntity() instanceof Method m
+//                    && "tech.metavm.application.LabApplication".equals(m.getDeclaringType().getCode())) {
+//                System.out.println("Caught");
+//            }
             output.writeInt(nonNullFields.size());
             for (InstanceField field : nonNullFields) {
                 output.writeLong(field.getId());

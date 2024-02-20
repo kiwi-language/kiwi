@@ -1,6 +1,7 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 
@@ -15,6 +16,17 @@ public class VarargsTransformer extends VisitorBase {
     public static final List<Method> BLACKLIST = List.of(
             ReflectionUtils.getMethod(List.class, "of", Object[].class)
     );
+
+    @Override
+    public void visitNewExpression(PsiNewExpression expression) {
+        super.visitNewExpression(expression);
+    }
+
+    @Override
+    public void visitClass(PsiClass aClass) {
+        super.visitClass(aClass);
+
+    }
 
     @Override
     public void visitCallExpression(PsiCallExpression expression) {

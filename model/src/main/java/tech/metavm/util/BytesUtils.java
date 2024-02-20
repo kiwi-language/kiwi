@@ -109,7 +109,7 @@ public class BytesUtils {
                 var fields = new ArrayList<>(numFields);
                 map.put("fields", fields);
                 for (int i = 0; i < numFields; i++)
-                    fields.add(Map.of("id", readLong(), "value", readValue()));
+                    fields.add(Map.of("id", readLong(), "value", NncUtils.orElse(readValue(), "null")));
             }
             return map;
         }

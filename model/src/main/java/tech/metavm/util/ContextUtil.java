@@ -115,6 +115,13 @@ public class ContextUtil {
         THREAD_LOCAL.remove();
     }
 
+    public static void resetLoginInfo() {
+        var clientInfo = getContextInfo();
+        clientInfo.userId = -1L;
+        clientInfo.clientId = null;
+        clientInfo.appId = -1L;
+    }
+
     public static void resetProfiler() {
         getContextInfo().resetProfiler();
     }

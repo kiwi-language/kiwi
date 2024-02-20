@@ -475,7 +475,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 
     @Override
     public void updateInstances() {
-        try (var ignored = getProfiler().enter("updateInstances")) {
+        try (var profilerEntry = getProfiler().enter("updateInstances")) {
+            profilerEntry.addMessage("numInstances", model2instance.size());
             var list = new ArrayList<>(model2instance.entrySet());
             for (var entry : list) {
                 updateInstance(entry.getKey(), entry.getValue());
