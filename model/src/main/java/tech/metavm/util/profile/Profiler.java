@@ -51,8 +51,8 @@ public class Profiler {
         root.close();
         StringBuilder builder = new StringBuilder("Profiler result\n");
         builder.append("Total duration: ").append(root.duration()).append(" us\n");
-        if(withTraces)
-            root.print(builder, 1);
+        if (withTraces)
+            root.print(builder, 1, root.start, root.duration());
         if (withHisto)
             buildHisto(root.duration()).print(builder);
         return new Result(builder.toString(), root.duration());
@@ -175,20 +175,21 @@ public class Profiler {
             return selfTime;
         }
 
-        @Override
-        public String toString() {
-            String str = String.format("%s, duration: %d", name, duration());
+        public String getOutput(long start, long totalDuration) {
+            String str = String.format("%s, start: %d, duration: %d, percent: %.2f", name,
+                    (this.start - start) / 1000L, duration(),
+                    (double) duration() / totalDuration * 100) + "%";
             if (!messages.isEmpty()) {
                 str += ", " + String.join(", ", messages);
             }
             return str;
         }
 
-        public void print(StringBuilder buffer, int indent) {
+        public void print(StringBuilder buffer, int indent, long start, long totalDuration) {
             buffer.append("  ".repeat(Math.max(0, indent)));
-            buffer.append(this).append('\n');
+            buffer.append(getOutput(start, totalDuration)).append('\n');
             for (Entry child : children) {
-                child.print(buffer, indent + 1);
+                child.print(buffer, indent + 1, start, totalDuration);
             }
         }
 

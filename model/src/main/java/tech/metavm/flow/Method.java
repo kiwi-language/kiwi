@@ -12,10 +12,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.InstanceRepository;
 import tech.metavm.object.type.*;
-import tech.metavm.util.AssertUtils;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.InternalException;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -335,16 +332,18 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<Instance> arguments, InstanceRepository instanceRepository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        if (_static)
-            NncUtils.requireNull(self);
-        else
-            Objects.requireNonNull(self);
-        checkArguments(arguments);
-        if (isNative())
-            return NativeMethods.invoke(this, self, arguments, new NativeCallContext(instanceRepository, parameterizedFlowProvider));
-        else
-            return new MetaFrame(this.getRootNode(), declaringType, self,
-                    arguments, instanceRepository, parameterizedFlowProvider).execute();
+        try(var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName()+ "." + getName())) {
+            if (_static)
+                NncUtils.requireNull(self);
+            else
+                Objects.requireNonNull(self);
+            checkArguments(arguments);
+            if (isNative())
+                return NativeMethods.invoke(this, self, arguments, new NativeCallContext(instanceRepository, parameterizedFlowProvider));
+            else
+                return new MetaFrame(this.getRootNode(), declaringType, self,
+                        arguments, instanceRepository, parameterizedFlowProvider).execute();
+        }
     }
 
     @Override

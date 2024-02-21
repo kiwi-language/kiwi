@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.object.instance.TreeSource;
 import tech.metavm.object.instance.core.IInstanceContext;
@@ -12,6 +14,8 @@ import java.io.ByteArrayInputStream;
 import java.util.*;
 
 public class LoadingBuffer {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(LoadingBuffer.class);
 
     private final List<Long> bufferedIds = new ArrayList<>();
     private final Set<Long> visited = new HashSet<>();
@@ -65,28 +69,30 @@ public class LoadingBuffer {
     }
 
     private void loadForest(List<Long> ids) {
-        var rootVersions = versionSource.getRootVersions(ids, context);
-        Map<Long, Long> versionMap = NncUtils.toMap(rootVersions, InstanceVersion::id, InstanceVersion::version);
-        Set<Long> misses = new HashSet<>(versionMap.keySet());
-        List<TreeSource> prevSources = new ArrayList<>();
-        for (TreeSource treeSource : treeSources) {
-            if(misses.isEmpty())
-                break;
-            var trees = treeSource.load(misses, context);
-            var hits = new ArrayList<Tree>();
-            for (Tree tree : trees) {
-                if (tree.version() == versionMap.get(tree.id())) {
-                    addTree(tree);
-                    hits.add(tree);
-                    misses.remove(tree.id());
+        try(var ignored = context.getProfiler().enter("LoadingBuffer.loadForest")) {
+            var rootVersions = versionSource.getRootVersions(ids, context);
+            Map<Long, Long> versionMap = NncUtils.toMap(rootVersions, InstanceVersion::id, InstanceVersion::version);
+            Set<Long> misses = new HashSet<>(versionMap.keySet());
+            List<TreeSource> prevSources = new ArrayList<>();
+            for (TreeSource treeSource : treeSources) {
+                if (misses.isEmpty())
+                    break;
+                var trees = treeSource.load(misses, context);
+                var hits = new ArrayList<Tree>();
+                for (Tree tree : trees) {
+                    if (tree.version() == versionMap.get(tree.id())) {
+                        addTree(tree);
+                        hits.add(tree);
+                        misses.remove(tree.id());
+                    }
                 }
-            }
-            if(!hits.isEmpty()) {
-                for (TreeSource prevSource : prevSources) {
-                    prevSource.save(hits);
+                if (!hits.isEmpty()) {
+                    for (TreeSource prevSource : prevSources) {
+                        prevSource.save(hits);
+                    }
                 }
+                prevSources.add(treeSource);
             }
-            prevSources.add(treeSource);
         }
     }
 

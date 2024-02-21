@@ -9,6 +9,7 @@ import tech.metavm.flow.rest.UpdateObjectNodeParam;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -104,12 +105,14 @@ public class UpdateObjectNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        ClassInstance instance = (ClassInstance) object.evaluate(frame);
-        for (UpdateField updateField : fields) {
-            var inConstructor = Flows.isConstructor(getFlow()) || Objects.equals(getFlow().getCode(), "<init>");
-            updateField.execute(instance, frame, inConstructor);
+        try(var ignored = ContextUtil.getProfiler().enter("UpdateObjectNode.execute")) {
+            ClassInstance instance = (ClassInstance) object.evaluate(frame);
+            for (UpdateField updateField : fields) {
+                var inConstructor = Flows.isConstructor(getFlow()) || Objects.equals(getFlow().getCode(), "<init>");
+                updateField.execute(instance, frame, inConstructor);
+            }
+            return next(null);
         }
-        return next(null);
     }
 
     @Override

@@ -11,6 +11,7 @@ import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.Field;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -63,9 +64,11 @@ public class InputNode extends ChildTypeNode {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        Map<Field, Instance> fieldValues = new HashMap<>();
-        NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
-        return next(ClassInstance.create(fieldValues, getType()));
+        try(var ignored = ContextUtil.getProfiler().enter("InputNode.execute")) {
+            Map<Field, Instance> fieldValues = new HashMap<>();
+            NncUtils.biForEach(getType().getReadyFields(), frame.getArguments(), fieldValues::put);
+            return next(ClassInstance.create(fieldValues, getType()));
+        }
     }
 
     @Override

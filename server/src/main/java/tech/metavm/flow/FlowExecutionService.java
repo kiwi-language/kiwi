@@ -11,6 +11,7 @@ import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.rest.InstanceDTO;
+import tech.metavm.util.ContextUtil;
 import tech.metavm.util.FlowExecutionException;
 import tech.metavm.util.NncUtils;
 
@@ -28,18 +29,20 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
 
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
-        try (var context = newContext()) {
+        try (var context = newContext(); var ignored =ContextUtil.getProfiler().enter("FlowExecutionService.execute")) {
             var flow = context.getEntity(Flow.class, request.flowId());
             var self = NncUtils.get(request.instanceId(),
                     id -> (ClassInstance) context.getInstanceContext().get(Id.parse(id)));
             var arguments = new ArrayList<Instance>();
-            NncUtils.biForEach(
-                    request.arguments(),
-                    flow.getParameterTypes(),
-                    (arg, paramType) -> arguments.add(
-                            InstanceFactory.resolveValue(arg, paramType, context)
-                    )
-            );
+            try(var ignored2 = ContextUtil.getProfiler().enter("FlowExecutionService.execute.resolveArguments")) {
+                NncUtils.biForEach(
+                        request.arguments(),
+                        flow.getParameterTypes(),
+                        (arg, paramType) -> arguments.add(
+                                InstanceFactory.resolveValue(arg, paramType, context)
+                        )
+                );
+            }
             var result = executeInternal(flow, self, arguments, context);
             context.finish();
             return NncUtils.get(result, Instance::toDTO);
@@ -47,21 +50,22 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
     }
 
     public Instance executeInternal(Flow flow, @Nullable ClassInstance self, List<Instance> arguments, IEntityContext context) {
-        if (flow instanceof Method method && method.isInstanceMethod()) {
-            if(method.isConstructor()) {
-                self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType()).build();
-                context.getInstanceContext().bind(self);
+        try(var ignored = ContextUtil.getProfiler().enter("FlowExecutionService.executeInternal")) {
+            if (flow instanceof Method method && method.isInstanceMethod()) {
+                if (method.isConstructor()) {
+                    self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType()).build();
+                    context.getInstanceContext().bind(self);
+                } else
+                    flow = Objects.requireNonNull(self).getType().resolveMethod(method, context.getGenericContext());
             }
-            else
-                flow = Objects.requireNonNull(self).getType().resolveMethod(method, context.getGenericContext());
-        }
-        var result = flow.execute(self, arguments, context.getInstanceContext(), context.getGenericContext());
-        if (result.exception() == null)
-            return result.ret();
-        else {
-            ThrowableNative nativeObject = (ThrowableNative) NativeMethods.getNativeObject(result.exception());
-            String message = nativeObject.getMessage() instanceof StringInstance str ? str.getValue() : "执行失败";
-            throw new FlowExecutionException(message);
+            var result = flow.execute(self, arguments, context.getInstanceContext(), context.getGenericContext());
+            if (result.exception() == null)
+                return result.ret();
+            else {
+                ThrowableNative nativeObject = (ThrowableNative) NativeMethods.getNativeObject(result.exception());
+                String message = nativeObject.getMessage() instanceof StringInstance str ? str.getValue() : "执行失败";
+                throw new FlowExecutionException(message);
+            }
         }
     }
 

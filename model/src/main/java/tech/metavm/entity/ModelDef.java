@@ -1,5 +1,7 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.object.instance.InstanceFactory;
 import tech.metavm.object.instance.ObjectInstanceMap;
 import tech.metavm.object.instance.core.DurableInstance;
@@ -7,7 +9,6 @@ import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.type.Field;
 import tech.metavm.object.type.Type;
-import tech.metavm.util.ContextUtil;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.ReflectionUtils;
 import tech.metavm.util.TypeReference;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class ModelDef<T, I extends DurableInstance> {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(ModelDef.class);
 
     protected final Class<T> javaClass;
     protected final java.lang.reflect.Type javaType;

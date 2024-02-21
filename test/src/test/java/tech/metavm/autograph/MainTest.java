@@ -346,10 +346,9 @@ public class MainTest extends TestCase {
                     )
             ).type();
             var createPlatformUserMethodId = TestUtils.getMethodIdByCode(userLabType, "createPlatformUser");
+            ContextUtil.resetProfiler();
             var platformUser = TestUtils.doInTransaction(() -> {
-//                ContextUtil.resetProfiler();
                 InstanceDTO result;
-//                try(var ignored = ContextUtil.getProfiler().enter("createPlatformUser")) {
                     result =  flowExecutionService.execute(
                             new FlowExecutionRequest(
                                     createPlatformUserMethodId,
@@ -370,9 +369,11 @@ public class MainTest extends TestCase {
                             )
                     );
 //                }
-//                LOGGER.info(ContextUtil.getProfiler().finish(false, true).output());
                 return result;
             });
+            LOGGER.info(ContextUtil.getProfiler().finish(true, true).output());
+
+            ContextUtil.resetProfiler();
             var userType = queryClassType("LabUser", List.of(TypeCategory.CLASS.code()));
 //            var platformUserType = queryClassType("LabPlatformUser");
             var userLoginNameFieldId = getFieldIdByCode(userType, "loginName");

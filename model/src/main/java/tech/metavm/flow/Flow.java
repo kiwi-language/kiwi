@@ -144,7 +144,6 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         stage = ResolutionStage.INIT;
         if (codeSource != null)
             codeSource.generateCode(this, CompositeTypeFacadeImpl.createFromContext(context));
-        nodes();
     }
 
     @SuppressWarnings("unused")

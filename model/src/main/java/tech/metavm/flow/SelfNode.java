@@ -7,6 +7,7 @@ import tech.metavm.entity.SerializeContext;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.type.ClassType;
 import tech.metavm.object.type.ParameterizedTypeProvider;
+import tech.metavm.util.ContextUtil;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -38,7 +39,9 @@ public class SelfNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        return next(Objects.requireNonNull(frame.getSelf()));
+        try(var ignored = ContextUtil.getProfiler().enter("SelfNode.execute")) {
+            return next(Objects.requireNonNull(frame.getSelf()));
+        }
     }
 
     @Override
