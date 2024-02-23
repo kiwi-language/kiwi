@@ -1,8 +1,6 @@
 package tech.metavm;
 
-import tech.metavm.application.LabApplication;
-import tech.metavm.application.PlatformApplication;
-import tech.metavm.application.UserApplication;
+import tech.metavm.application.*;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityFlow;
 import tech.metavm.entity.EntityType;
@@ -24,7 +22,7 @@ public class UserLab {
 
     @EntityFlow("创建应用")
     public UserApplication createApplication(String name, LabPlatformUser owner) {
-        return new UserApplication(name, owner);
+        return UserApplication.create(name, owner);
     }
 
     @EntityFlow("创建平台用户")
@@ -70,6 +68,30 @@ public class UserLab {
     @EntityFlow("进入应用")
     public void enterApp(LabPlatformUser user, UserApplication application) {
         LabPlatformUser.enterApp(user, application);
+    }
+
+    @EntityFlow("邀请")
+    public void invite(UserApplication application, LabPlatformUser user, boolean isAdmin) {
+        UserApplication.invite(new LabAppInvitationRequest(
+                application,
+                user,
+                isAdmin
+        ));
+    }
+
+    @EntityFlow("接受邀请")
+    public void acceptInvitation(LabAppInvitation invitation) {
+        UserApplication.acceptInvitation(invitation);
+    }
+
+    @EntityFlow("发送验证码")
+    public void sendVerificationCode(String receiver) {
+        LabVerificationCode.sendVerificationCode(receiver, "MetaVM注册验证码", "127.0.0.1");
+    }
+
+    @EntityFlow("注册")
+    public void register(String loginName, String name, String password, String verificationCode) {
+        LabPlatformUser.register(new LabRegisterRequest(loginName, name, password, verificationCode));
     }
 
 }

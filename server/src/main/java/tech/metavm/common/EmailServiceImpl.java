@@ -7,12 +7,17 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.util.InternalException;
 
 import java.util.Properties;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @Component
 public class EmailServiceImpl implements EmailService {
+
+    public static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final String host;
     private final int port;
@@ -27,6 +32,9 @@ public class EmailServiceImpl implements EmailService {
         this.port = port;
         this.username = username;
         this.password = password;
+        NativeFunctions.setEmailSender(((recipient, subject, content) -> {
+            EXECUTOR.execute(() -> send(recipient, subject, content));
+        }));
     }
 
     @Override

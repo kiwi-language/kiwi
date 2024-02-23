@@ -452,8 +452,8 @@ public class MainTest extends TestCase {
             LOGGER.info(loginInfo.toString());
             AUTH_CONFIG = new AuthConfig(sysApp.appId(), "admin", "123456");
         });
-//        compileTwice(USERS_SOURCE_ROOT);
-        compile(USERS_SOURCE_ROOT);
+        compileTwice(USERS_SOURCE_ROOT);
+//        compile(USERS_SOURCE_ROOT);
         submit(() -> {
             var roleType = queryClassType("LabRole");
             var roleReadWriteListType = typeManager.getParameterizedType(

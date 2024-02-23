@@ -219,7 +219,7 @@ public class FunctionMethods {
 
     public static StringInstance STRING_FORMAT(StringInstance format, ArrayInstance values) {
         var args = new Object[values.size()];
-        values.getElements().toArray(args);
+        NncUtils.map(values, Instance::getTitle).toArray(args);
         return Instances.stringInstance(String.format(format.getValue(), args));
     }
 
