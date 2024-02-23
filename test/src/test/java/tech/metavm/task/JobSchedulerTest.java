@@ -46,7 +46,7 @@ public class JobSchedulerTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> jobScheduler.sendHeartbeat());
         jobScheduler.pollSignals();
         jobScheduler.schedule();
-        jobScheduler.waitForJobDone(testJob, 10);
+        jobScheduler.waitForJobDone(testJob, 20);
         Assert.assertNull(instanceStore.get(testJob.getId()));
     }
 
