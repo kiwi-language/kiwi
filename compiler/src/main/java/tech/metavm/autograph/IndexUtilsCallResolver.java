@@ -22,7 +22,7 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES = List.of(
             MethodSignature.createStatic(
-                    TranspileUtil.createType(IndexUtils.class),
+                    TranspileUtil.createClassType(IndexUtils.class),
                     "count",
                     TranspileUtil.createTypeVariableType(
                             ReflectionUtils.getMethod(IndexUtils.class, "count", tech.metavm.entity.Index.class, tech.metavm.entity.Index.class),
@@ -34,7 +34,7 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
                     )
             ),
             MethodSignature.createStatic(
-                    TranspileUtil.createType(IndexUtils.class),
+                    TranspileUtil.createClassType(IndexUtils.class),
                     "scan",
                     TranspileUtil.createTypeVariableType(
                             ReflectionUtils.getMethod(IndexUtils.class, "scan", tech.metavm.entity.Index.class, tech.metavm.entity.Index.class),
@@ -46,7 +46,7 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
                     )
             ),
             MethodSignature.createStatic(
-                    TranspileUtil.createType(IndexUtils.class),
+                    TranspileUtil.createClassType(IndexUtils.class),
                     "select",
                     TranspileUtil.createTypeVariableType(
                             ReflectionUtils.getMethod(IndexUtils.class, "select", tech.metavm.entity.Index.class),
@@ -54,7 +54,7 @@ public class IndexUtilsCallResolver implements MethodCallResolver {
                     )
             ),
             MethodSignature.createStatic(
-                    TranspileUtil.createType(IndexUtils.class),
+                    TranspileUtil.createClassType(IndexUtils.class),
                     "selectFirst",
                     TranspileUtil.createTypeVariableType(
                             ReflectionUtils.getMethod(IndexUtils.class, "selectFirst", tech.metavm.entity.Index.class),

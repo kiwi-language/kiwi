@@ -35,6 +35,7 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType readWriteListType;
     private ClassType iterableType;
     private ClassType consumerType;
+    private ClassType predicateType;
 
     @Override
     public PrimitiveType getLongType() {
@@ -344,6 +345,16 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setConsumerType(ClassType consumerType) {
         this.consumerType = consumerType;
+    }
+
+    @Override
+    public ClassType getPredicateType() {
+        return predicateType;
+    }
+
+    @Override
+    public void setPredicateType(ClassType type) {
+        predicateType = type;
     }
 
 }

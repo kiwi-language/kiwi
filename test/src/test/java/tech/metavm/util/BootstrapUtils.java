@@ -94,6 +94,22 @@ public class BootstrapUtils {
             NativeFunctions.setFunctionToInstance(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "functionToInstance"
             )));
+            NativeFunctions.setSendEmail(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "sendEmail"
+            )));
+            NativeFunctions.setGetSessionEntry(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "getSessionEntry"
+            )));
+            NativeFunctions.setSetSessionEntry(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "setSessionEntry"
+            )));
+            NativeFunctions.setTypeCast(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "typeCast"
+            )));
+            NativeFunctions.setPrint(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "print"
+            )));
+            NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
             Instances.setFalseInstance(new BooleanInstance(false, StandardTypes.getBooleanType()));
             Instances.setTrueInstance(new BooleanInstance(true, StandardTypes.getBooleanType()));
             Instances.setNullInstance(new NullInstance(StandardTypes.getNullType()));
@@ -125,6 +141,7 @@ public class BootstrapUtils {
             );
         }
         else {
+            NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
             var regionMapper = new MemRegionMapper();
             var regionManager = new RegionManager(regionMapper);
             regionManager.initialize();

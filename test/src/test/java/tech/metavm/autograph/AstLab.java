@@ -1,18 +1,18 @@
 package tech.metavm.autograph;
 
-import tech.metavm.autograph.mocks.AstLabFoo;
-
-import java.util.List;
-import java.util.Objects;
+import tech.metavm.autograph.mocks.PsiArrayTypeFoo;
 
 public class AstLab {
 
     public static void main(String[] args) {
-        var file = TranspileTestTools.getPsiJavaFile(AstLabFoo.class);
-        var listClass = Objects.requireNonNull(TranspileUtil.createType(List.class).resolve());
-        var typeParamClass = Objects.requireNonNull(listClass.getTypeParameters())[0];
-        var typeParamType = TranspileUtil.createType(typeParamClass);
-        System.out.println(typeParamType);
+        TranspileTestTools.touch();
+        var type = TranspileUtil.createArrayType(Object[].class);
+        System.out.println(type.getCanonicalText());
+
+        var file = TranspileTestTools.getPsiJavaFile(PsiArrayTypeFoo.class);
+        var type2 = file.getClasses()[0].getFields()[0].getType();
+
+        System.out.println(type.equals(type2));
     }
 
 }

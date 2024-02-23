@@ -84,6 +84,10 @@ public abstract class Instance {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isEphemeral() {
+        return false;
+    }
+
     public abstract @Nullable Id getId();
 
     public @Nullable String getInstanceIdString() {

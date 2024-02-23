@@ -8,7 +8,7 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexUtils;
-import tech.metavm.util.PasswordUtils;
+import tech.metavm.lang.PasswordUtils;
 import tech.metavm.utils.LabBusinessException;
 import tech.metavm.utils.LabErrorCode;
 
@@ -22,7 +22,7 @@ public class LabPlatformUser extends LabUser {
     private final List<LabApplication> applications = new ArrayList<>();
 
     public LabPlatformUser(String loginName, String password, String name, List<LabRole> roles) {
-        super(loginName, password, name, roles, PlatformApplication.INSTANCE);
+        super(loginName, password, name, roles, PlatformApplication.getInstance());
     }
 
     @EntityIndex("应用索引")
@@ -57,7 +57,7 @@ public class LabPlatformUser extends LabUser {
 
     public static void joinApplication(LabPlatformUser platformUser, LabApplication app) {
         platformUser.joinApplication(app);
-        if (app != PlatformApplication.INSTANCE) {
+        if (app != PlatformApplication.getInstance()) {
             var user = IndexUtils.selectFirst(new IndexAppPlatformUser(app, platformUser));
             if (user == null) {
                 user = new LabUser(generateLoginName(app, platformUser.getLoginName()),
@@ -130,6 +130,24 @@ public class LabPlatformUser extends LabUser {
             return new LabLoginResult(token.token(), user);
         } else
             throw new LabBusinessException(LabErrorCode.NOT_A_MEMBER_OF_THE_APP);
+    }
+
+    public static LabPlatformUser register(LabRegisterRequest request) {
+//        EmailUtils.ensureEmailAddress(request.loginName());
+        LabVerificationCode.checkVerificationCode(request.loginName(), request.verificationCode());
+        return new LabPlatformUser(request.loginName(), request.password(), request.name(), List.of());
+    }
+
+    public static void changePassword(LabChangePasswordRequest request) {
+        LabVerificationCode.checkVerificationCode(request.loginName(), request.verificationCode());
+        var user = IndexUtils.selectFirst(new LabUser.LoginNameIndex(PlatformApplication.getInstance(), request.loginName()));
+        if (user == null)
+            throw new LabBusinessException(LabErrorCode.USER_NOT_FOUND);
+        user.changePassword(request.password());
+    }
+
+    public static LabPlatformUser currentPlatformUser() {
+        return (LabPlatformUser) LabUser.currentUser(PlatformApplication.getInstance());
     }
 
 }

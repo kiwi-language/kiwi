@@ -16,8 +16,9 @@ public abstract class EnclosingNodesVisitor<R> extends ElementVisitor<R> {
     public R visitNode(NodeRT node) {
         var scope = node.getScope();
         if(scope.getOwner() != null)
-            scope.getOwner().accept(this);
-        return super.visitNode(node);
+            return scope.getOwner().accept(this);
+        else
+            return super.visitNode(node);
     }
 
 }

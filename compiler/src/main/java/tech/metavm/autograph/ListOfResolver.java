@@ -22,7 +22,7 @@ public class ListOfResolver implements MethodCallResolver {
     private static final List<MethodSignature> SIGNATURES;
 
     static {
-        var listType = createType(List.class);
+        var listType = TranspileUtil.createClassType(List.class);
         var listClass = requireNonNull(listType.resolve());
         var methods = NncUtils.filter(List.of(listClass.getMethods()),
                 m -> m.getModifierList().hasModifierProperty(PsiModifier.STATIC) && m.getName().equals("of"));

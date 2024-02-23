@@ -1,10 +1,8 @@
 package tech.metavm.user;
 
 import tech.metavm.common.ErrorCode;
-import tech.metavm.entity.Entity;
-import tech.metavm.entity.EntityField;
-import tech.metavm.entity.EntityType;
-import tech.metavm.entity.IndexDef;
+import tech.metavm.entity.*;
+import tech.metavm.object.instance.core.Instance;
 import tech.metavm.util.AssertUtils;
 
 import javax.annotation.Nullable;
@@ -30,6 +28,8 @@ public class Session extends Entity {
     private Date autoCloseAt;
     @EntityField("状态")
     private SessionState state = SessionState.ACTIVE;
+    @ChildEntity("会话条目")
+    private final ReadWriteArray<SessionEntry> entries = addChild(new ReadWriteArray<>(SessionEntry.class), "entries");
 
     public Session(User user, Date autoCloseAt) {
         createdAt = new Date();
@@ -71,10 +71,28 @@ public class Session extends Entity {
         return state == SessionState.ACTIVE && autoCloseAt.after(new Date());
     }
 
+    public void setEntry(String key, Instance value) {
+        AssertUtils.assertTrue(state == SessionState.ACTIVE,
+                ErrorCode.ILLEGAL_SESSION_STATE);
+        var existing = entries.stream().filter(e -> e.getKey().equals(key)).findFirst();
+        if(existing.isPresent()) {
+            existing.get().setValue(value);
+        } else {
+            entries.add(new SessionEntry(key, value));
+        }
+    }
+
+    public @Nullable Instance getEntry(String key) {
+        AssertUtils.assertTrue(state == SessionState.ACTIVE,
+                ErrorCode.ILLEGAL_SESSION_STATE);
+        return entries.stream().filter(e -> e.getKey().equals(key)).findFirst().map(SessionEntry::getValue).orElse(null);
+    }
+
     public void close() {
         AssertUtils.assertTrue(state == SessionState.ACTIVE,
                 ErrorCode.ILLEGAL_SESSION_STATE);
         state = SessionState.CLOSED;
         closedAt = new Date();
+        entries.clear();
     }
 }

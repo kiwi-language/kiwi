@@ -78,6 +78,12 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
 
     public void setEphemeralEntity(boolean ephemeralEntity) {
         this.ephemeralEntity = ephemeralEntity;
+        if(ephemeralEntity) {
+            EntityUtils.forEachDescendant(this, e -> {
+                if(e instanceof Entity entity)
+                    entity.ephemeralEntity = true;
+            });
+        }
     }
 
     @NoProxy

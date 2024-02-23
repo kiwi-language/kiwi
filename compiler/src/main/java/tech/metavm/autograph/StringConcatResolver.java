@@ -8,12 +8,10 @@ import tech.metavm.expression.FunctionExpression;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class StringConcatResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
-            List.of(MethodSignature.create(createType(String.class), "concat", createType(String.class)));
+            List.of(MethodSignature.create(TranspileUtil.createClassType(String.class), "concat", TranspileUtil.createClassType(String.class)));
 
     @Override
     public List<MethodSignature> getSignatures() {

@@ -7,13 +7,11 @@ import tech.metavm.expression.Expressions;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class ListAddResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(createType(List.class), "add",
+                    MethodSignature.create(TranspileUtil.createClassType(List.class), "add",
                             TranspileUtil.createTypeVariableType(List.class, 0))
             );
 

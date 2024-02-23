@@ -85,13 +85,23 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
     @Override
     public void writeTo(InstanceOutput output, boolean includeChildren) {
         ensureLoaded();
-        output.writeInt(size());
-        boolean isChildArray = isChildArray();
+        var elements = this.elements;
+        int size = 0;
         for (Instance element : elements) {
-            if (isChildArray && includeChildren)
-                output.writeValue(element);
-            else
-                output.writeInstance(element);
+            if (!element.isEphemeral())
+                size++;
+        }
+        output.writeInt(size);
+        if (isChildArray() && includeChildren) {
+            for (Instance element : elements) {
+                if (!element.isEphemeral())
+                    output.writeValue(element);
+            }
+        } else {
+            for (Instance element : elements) {
+                if (!element.isEphemeral())
+                    output.writeInstance(element);
+            }
         }
     }
 

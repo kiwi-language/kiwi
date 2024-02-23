@@ -14,8 +14,8 @@ public class NewPasswordResolver implements NewResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(TranspileUtil.createType(Password.class), "Password",
-                             TranspileUtil.createType(String.class))
+                    MethodSignature.create(TranspileUtil.createClassType(Password.class), "Password",
+                             TranspileUtil.createClassType(String.class))
             );
 
     @Override

@@ -55,4 +55,59 @@ public class ThreadLocalNativeFunctionsHolder implements NativeFunctionsHolder {
     public void setFunctionToInstance(Function function) {
         TL.get().setFunctionToInstance(function);
     }
+
+    @Override
+    public void setSendEmail(Function function) {
+        TL.get().setSendEmail(function);
+    }
+
+    @Override
+    public Function getSendEmail() {
+        return TL.get().getSendEmail();
+    }
+
+    @Override
+    public void setEmailSender(EmailSender emailSender) {
+        TL.get().setEmailSender(emailSender);
+    }
+
+    @Override
+    public Function getGetSessionEntry() {
+        return TL.get().getGetSessionEntry();
+    }
+
+    @Override
+    public void setGetSessionEntry(Function function) {
+        TL.get().setGetSessionEntry(function);
+    }
+
+    @Override
+    public void setSetSessionEntry(Function function) {
+        TL.get().setSetSessionEntry(function);
+    }
+
+    @Override
+    public Function getTypeCast() {
+        return TL.get().getTypeCast();
+    }
+
+    @Override
+    public void setTypeCast(Function function) {
+        TL.get().setTypeCast(function);
+    }
+
+    @Override
+    public Function getPrint() {
+        return TL.get().getPrint();
+    }
+
+    @Override
+    public void setPrint(Function function) {
+        TL.get().setPrint(function);
+    }
+
+    @Override
+    public Function getSetSessionEntry() {
+        return TL.get().getSetSessionEntry();
+    }
 }

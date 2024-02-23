@@ -13,7 +13,7 @@ import java.util.*;
 
 public class NewListWithInitialResolver implements NewResolver {
 
-    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createType(ChildList.class);
+    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createClassType(ChildList.class);
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
@@ -24,7 +24,7 @@ public class NewListWithInitialResolver implements NewResolver {
                                             TranspileUtil.createTypeVariableType(ChildList.class, 0)
                                     )
                             )),
-                    MethodSignature.create(TranspileUtil.createType(ArrayList.class),
+                    MethodSignature.create(TranspileUtil.createClassType(ArrayList.class),
                             "ArrayList",
                             TranspileUtil.createType(
                                     Collection.class,
@@ -33,7 +33,7 @@ public class NewListWithInitialResolver implements NewResolver {
                                     )
                             )
                     ),
-                    MethodSignature.create(TranspileUtil.createType(LinkedList.class),
+                    MethodSignature.create(TranspileUtil.createClassType(LinkedList.class),
                             "LinkedList",
                             TranspileUtil.createType(
                                     Collection.class,

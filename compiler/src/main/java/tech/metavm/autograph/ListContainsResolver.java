@@ -8,14 +8,13 @@ import tech.metavm.expression.FunctionExpression;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static tech.metavm.autograph.TranspileUtil.createType;
 
 public class ListContainsResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(createType(List.class), "contains",
-                            createType(Object.class)
+                    MethodSignature.create(TranspileUtil.createClassType(List.class), "contains",
+                            TranspileUtil.createClassType(Object.class)
                     )
             );
 

@@ -17,7 +17,7 @@ public class PrimitiveFieldValue extends FieldValue {
     );
 
     public static final PrimitiveFieldValue FALSE = new PrimitiveFieldValue(
-            "是", PrimitiveKind.BOOLEAN.code(), false
+            "否", PrimitiveKind.BOOLEAN.code(), false
     );
 
     private final Object value;
@@ -50,6 +50,10 @@ public class PrimitiveFieldValue extends FieldValue {
 
     public static PrimitiveFieldValue createPassword(String value) {
         return new PrimitiveFieldValue(null, PrimitiveKind.PASSWORD.code(), value);
+    }
+
+    public static FieldValue createBoolean(boolean value) {
+        return value ? TRUE : FALSE;
     }
 
     public Object getValue() {

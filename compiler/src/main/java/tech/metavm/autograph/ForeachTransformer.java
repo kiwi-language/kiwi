@@ -13,7 +13,7 @@ public class ForeachTransformer extends VisitorBase {
     public void visitForeachStatement(PsiForeachStatement statement) {
 
         var iterated = Objects.requireNonNull(statement.getIteratedValue());
-        var lisType = TranspileUtil.createType(List.class);
+        var lisType = TranspileUtil.createClassType(List.class);
         var iterationParam = statement.getIterationParameter().getName();
         var isListType = lisType.isAssignableFrom(Objects.requireNonNull(iterated.getType()));
         if (isListType) {

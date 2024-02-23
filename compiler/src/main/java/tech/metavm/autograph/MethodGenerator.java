@@ -391,7 +391,7 @@ public class MethodGenerator {
         );
         return setNodeExprTypes(new FunctionCallNode(
                 null,
-                nextName(function.getName()),
+                nextName(function.getEffectiveHorizontalTemplate().getName()),
                 null,
                 scope().getLastNode(), scope(),
                 function, args));

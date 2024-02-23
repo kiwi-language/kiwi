@@ -9,14 +9,13 @@ import tech.metavm.expression.FunctionExpression;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static tech.metavm.autograph.TranspileUtil.createType;
 
 public class StringReplaceResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(createType(String.class), "replace",
-                            createType(CharSequence.class), createType(CharSequence.class)
+                    MethodSignature.create(TranspileUtil.createClassType(String.class), "replace",
+                            TranspileUtil.createClassType(CharSequence.class), TranspileUtil.createClassType(CharSequence.class)
                     )
             );
 

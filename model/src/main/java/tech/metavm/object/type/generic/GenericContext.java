@@ -1,5 +1,6 @@
 package tech.metavm.object.type.generic;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;

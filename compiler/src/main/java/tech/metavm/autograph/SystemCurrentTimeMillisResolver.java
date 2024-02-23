@@ -11,7 +11,7 @@ public class SystemCurrentTimeMillisResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES = List.of(
             MethodSignature.createStatic(
-                    TranspileUtil.createType(System.class),
+                    TranspileUtil.createClassType(System.class),
                     "currentTimeMillis"
             )
     );

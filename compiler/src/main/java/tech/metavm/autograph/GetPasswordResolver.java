@@ -12,7 +12,7 @@ public class GetPasswordResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(TranspileUtil.createType(Password.class), "getPassword")
+                    MethodSignature.create(TranspileUtil.createClassType(Password.class), "getPassword")
             );
 
     @Override

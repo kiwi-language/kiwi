@@ -206,7 +206,8 @@ public class ApplicationManager extends EntityContextFactoryBean {
             var invitationInst = platformCtx.getInstance(invitation);
             platformCtx.bind(
                     new Message(
-                            invitee, String.format("'%s'邀请您加入应用'%s'", currentUser.getName(), app.getName()),
+                            invitee,
+                            String.format("'%s'邀请您加入应用'%s'", currentUser.getName(), app.getName()),
                             MessageKind.INVITATION, invitationInst)
             );
             platformCtx.finish();

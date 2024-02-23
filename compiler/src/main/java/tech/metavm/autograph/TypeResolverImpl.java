@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
@@ -52,23 +53,24 @@ public class TypeResolverImpl implements TypeResolver {
     private final IEntityContext context;
 
     private static final Map<PsiClassType, Supplier<ClassType>> STANDARD_CLASSES = Map.ofEntries(
-            Map.entry(TranspileUtil.createType(Entity.class), StandardTypes::getEntityType),
-            Map.entry(TranspileUtil.createType(Enum.class), StandardTypes::getEnumType),
-            Map.entry(TranspileUtil.createType(Record.class), StandardTypes::getRecordType),
-            Map.entry(TranspileUtil.createType(Throwable.class), StandardTypes::getThrowableType),
-            Map.entry(TranspileUtil.createType(Exception.class), StandardTypes::getExceptionType),
-            Map.entry(TranspileUtil.createType(RuntimeException.class), StandardTypes::getRuntimeExceptionType),
-            Map.entry(TranspileUtil.createType(IteratorImpl.class), StandardTypes::getIteratorImplType),
-            Map.entry(TranspileUtil.createType(Iterator.class), StandardTypes::getIteratorType),
-            Map.entry(TranspileUtil.createType(Iterable.class), StandardTypes::getIterableType),
-            Map.entry(TranspileUtil.createType(List.class), StandardTypes::getListType),
-            Map.entry(TranspileUtil.createType(ArrayList.class), StandardTypes::getReadWriteListType),
-            Map.entry(TranspileUtil.createType(LinkedList.class), StandardTypes::getReadWriteListType),
-            Map.entry(TranspileUtil.createType(tech.metavm.util.LinkedList.class), StandardTypes::getReadWriteListType),
-            Map.entry(TranspileUtil.createType(ChildList.class), StandardTypes::getChildListType),
-            Map.entry(TranspileUtil.createType(Set.class), StandardTypes::getSetType),
-            Map.entry(TranspileUtil.createType(Collection.class), StandardTypes::getCollectionType),
-            Map.entry(TranspileUtil.createType(Consumer.class), StandardTypes::getConsumerType)
+            Map.entry(TranspileUtil.createClassType(Entity.class), StandardTypes::getEntityType),
+            Map.entry(TranspileUtil.createClassType(Enum.class), StandardTypes::getEnumType),
+            Map.entry(TranspileUtil.createClassType(Record.class), StandardTypes::getRecordType),
+            Map.entry(TranspileUtil.createClassType(Throwable.class), StandardTypes::getThrowableType),
+            Map.entry(TranspileUtil.createClassType(Exception.class), StandardTypes::getExceptionType),
+            Map.entry(TranspileUtil.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionType),
+            Map.entry(TranspileUtil.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplType),
+            Map.entry(TranspileUtil.createClassType(Iterator.class), StandardTypes::getIteratorType),
+            Map.entry(TranspileUtil.createClassType(Iterable.class), StandardTypes::getIterableType),
+            Map.entry(TranspileUtil.createClassType(List.class), StandardTypes::getListType),
+            Map.entry(TranspileUtil.createClassType(ArrayList.class), StandardTypes::getReadWriteListType),
+            Map.entry(TranspileUtil.createClassType(LinkedList.class), StandardTypes::getReadWriteListType),
+            Map.entry(TranspileUtil.createClassType(tech.metavm.util.LinkedList.class), StandardTypes::getReadWriteListType),
+            Map.entry(TranspileUtil.createClassType(ChildList.class), StandardTypes::getChildListType),
+            Map.entry(TranspileUtil.createClassType(Set.class), StandardTypes::getSetType),
+            Map.entry(TranspileUtil.createClassType(Collection.class), StandardTypes::getCollectionType),
+            Map.entry(TranspileUtil.createClassType(Consumer.class), StandardTypes::getConsumerType),
+            Map.entry(TranspileUtil.createClassType(Predicate.class), StandardTypes::getPredicateType)
     );
 
     private static final List<Class<?>> COLLECTION_CLASSES = List.of(
@@ -148,12 +150,12 @@ public class TypeResolverImpl implements TypeResolver {
     private Type resolveClassType(PsiClassType classType, ResolutionStage stage) {
         try(var entry = ContextUtil.getProfiler().enter("resolveClassType: " + stage)) {
             for (var collClass : COLLECTION_CLASSES) {
-                if (TranspileUtil.createType(collClass).isAssignableFrom(classType)) {
+                if (TranspileUtil.createClassType(collClass).isAssignableFrom(classType)) {
                     classType = TranspileUtil.getSuperType(classType, collClass);
                     break;
                 }
             }
-            if (TranspileUtil.createType(Map.class).isAssignableFrom(classType)) {
+            if (TranspileUtil.createClassType(Map.class).isAssignableFrom(classType)) {
                 classType = TranspileUtil.getSuperType(classType, Map.class);
             }
             var psiClass = requireNonNull(classType.resolve());
@@ -190,8 +192,8 @@ public class TypeResolverImpl implements TypeResolver {
                 List.of(
                         generatedTypes,
                         typeFactory.getGeneratedTypes(),
-                        context.getNewCompositeTypes(),
-                        context.getGenericContext().getNewTypes()
+                        NncUtils.filter(context.getNewCompositeTypes(), t -> !t.isEphemeralEntity()),
+                        NncUtils.filter(context.getGenericContext().getNewTypes(), t -> !t.isEphemeralEntity())
                 )
         );
     }
@@ -204,7 +206,7 @@ public class TypeResolverImpl implements TypeResolver {
         if (parameterizedEnumType != null) {
             return parameterizedEnumType;
         }
-        var psiEnumClass = TranspileUtil.createType(Enum.class).resolve();
+        var psiEnumClass = TranspileUtil.createClassType(Enum.class).resolve();
         var typeArg = TranspileUtil.createType(
                 requireNonNull(requireNonNull(psiEnumClass).getTypeParameterList()).getTypeParameters()[0]
         );
@@ -294,21 +296,21 @@ public class TypeResolverImpl implements TypeResolver {
     private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
             var ownerType = TranspileUtil.createType(psiClass);
-            var listType = TranspileUtil.createType(List.class);
+            var listType = TranspileUtil.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType)) {
                 return StandardTypes.getListType().getTypeParameters().get(0);
             }
-            var setType = TranspileUtil.createType(Set.class);
+            var setType = TranspileUtil.createClassType(Set.class);
             if (setType.isAssignableFrom(ownerType)) {
                 return StandardTypes.getSetType().getTypeParameters().get(0);
             }
-            var mapType = TranspileUtil.createType(Map.class);
+            var mapType = TranspileUtil.createClassType(Map.class);
             if (mapType.isAssignableFrom(ownerType)) {
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
                         .getTypeParameterIndex(typeParameter);
                 return StandardTypes.getMapType().getTypeParameters().get(index);
             }
-            var enumType = TranspileUtil.createType(Enum.class);
+            var enumType = TranspileUtil.createClassType(Enum.class);
             if (ownerType.equals(enumType)) {
                 return StandardTypes.getEnumType().getTypeParameters().get(0);
             }

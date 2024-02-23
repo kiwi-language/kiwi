@@ -9,8 +9,8 @@ import java.util.List;
 public class ListRemoveResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES = List.of(
-            MethodSignature.create(TranspileUtil.createType(List.class), "remove",
-                    TranspileUtil.createType(Object.class))
+            MethodSignature.create(TranspileUtil.createClassType(List.class), "remove",
+                    TranspileUtil.createClassType(Object.class))
     );
 
     @Override

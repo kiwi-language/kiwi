@@ -11,8 +11,8 @@ import java.util.List;
 public class DateAfterResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES = List.of(
-            MethodSignature.create(TranspileUtil.createType(Date.class),
-                    "after", TranspileUtil.createType(Date.class))
+            MethodSignature.create(TranspileUtil.createClassType(Date.class),
+                    "after", TranspileUtil.createClassType(Date.class))
     );
 
     @Override

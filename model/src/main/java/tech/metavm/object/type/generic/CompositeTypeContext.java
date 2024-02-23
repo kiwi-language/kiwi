@@ -1,5 +1,6 @@
 package tech.metavm.object.type.generic;
 
+import tech.metavm.entity.Entity;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.IndexDef;
 import tech.metavm.object.type.CompositeType;
@@ -59,6 +60,8 @@ public abstract class CompositeTypeContext<T extends CompositeType> {
             }
         }
         T type = create(componentTypes, tmpId);
+        if(NncUtils.anyMatch(componentTypes, Entity::isEphemeralEntity))
+            type.setEphemeralEntity(true);
         newTypes.put(getMemKey(componentTypes), type);
         if(context != null && context.isBindSupported()) {
             context.bind(type);

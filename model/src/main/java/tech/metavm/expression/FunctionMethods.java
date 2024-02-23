@@ -4,12 +4,16 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.natives.IteratorImplNative;
 import tech.metavm.entity.natives.NativeMethods;
+import tech.metavm.lang.NumberUtils;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.Type;
 import tech.metavm.util.*;
 
+import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class FunctionMethods {
 
@@ -89,6 +93,13 @@ public class FunctionMethods {
 
     public static StringInstance MD5(StringInstance stringInstance) {
         return Instances.stringInstance(EncodingUtils.md5(stringInstance.getValue()));
+    }
+
+    public static LongInstance GET_ID(Instance instance) {
+        if(instance instanceof DurableInstance d)
+            return Instances.longInstance(NncUtils.orElse(d.tryGetPhysicalId(), 0L));
+        else
+            return Instances.longInstance(0L);
     }
 
     public static BooleanInstance STARTS_WITH(Instance first, StringInstance prefix) {
@@ -192,6 +203,24 @@ public class FunctionMethods {
     public static BooleanInstance HAS_NEXT(Instance iterator) {
         var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject((ClassInstance) iterator);
         return iteratorNative.hasNext();
+    }
+
+    public static BooleanInstance REGEX_MATCH(StringInstance regex, StringInstance value) {
+        return Instances.booleanInstance(Pattern.compile(regex.getValue()).matcher(value.getValue()).matches());
+    }
+
+    public static StringInstance NUMBER_FORMAT(StringInstance format, LongInstance value) {
+        return Instances.stringInstance(new DecimalFormat(format.getValue()).format(value.getValue()));
+    }
+
+    public static LongInstance BOUNDED_RANDOM(LongInstance bound) {
+        return Instances.longInstance(new Random().nextLong(bound.getValue()));
+    }
+
+    public static StringInstance STRING_FORMAT(StringInstance format, ArrayInstance values) {
+        var args = new Object[values.size()];
+        values.getElements().toArray(args);
+        return Instances.stringInstance(String.format(format.getValue(), args));
     }
 
 }

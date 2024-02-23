@@ -128,4 +128,7 @@ public interface StandardTypesHolder {
 
     void setConsumerType(ClassType consumerType);
 
+    ClassType getPredicateType();
+
+    void setPredicateType(ClassType type);
 }

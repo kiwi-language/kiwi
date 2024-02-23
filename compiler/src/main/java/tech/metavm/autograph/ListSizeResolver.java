@@ -8,12 +8,10 @@ import tech.metavm.expression.FunctionExpression;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class ListSizeResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
-            List.of(MethodSignature.create(createType(List.class), "size"));
+            List.of(MethodSignature.create(TranspileUtil.createClassType(List.class), "size"));
 
     @Override
     public List<MethodSignature> getSignatures() {

@@ -30,20 +30,27 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>.</sourceDirectory>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>src/main/java/**/*.java</include>
-                        <include>src/main/lab/**/*.java</include>
-                        <include>src/main/metavm/**/*.java</include>
-                        <include>src/main/shopping/**/*.java</include>
-                        <include>src/main/users/**/*.java</include>
-                    </includes>
-                </configuration>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/main/lab</source>
+                                <source>src/main/metavm</source>
+                                <source>src/main/shopping</source>
+                                <source>src/main/users</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

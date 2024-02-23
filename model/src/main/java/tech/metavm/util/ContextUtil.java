@@ -1,6 +1,7 @@
 package tech.metavm.util;
 
 import tech.metavm.common.ErrorCode;
+import tech.metavm.entity.IEntityContext;
 import tech.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
@@ -14,7 +15,9 @@ public class ContextUtil {
         long userId = -1L;
         long appId = -1L;
         long nextTmpId = 1L;
+        String token;
         private Profiler profiler = new Profiler();
+        private IEntityContext entityContext;
 
         long nextTmpId() {
             return nextTmpId++;
@@ -36,6 +39,10 @@ public class ContextUtil {
             this.appId = Constants.PLATFORM_APP_ID;
             this.userId = platformUserId;
             this.platformUserId = -1L;
+        }
+
+        public IEntityContext getEntityContext() {
+            return entityContext;
         }
 
         public void resetProfiler() {
@@ -124,6 +131,22 @@ public class ContextUtil {
 
     public static void resetProfiler() {
         getContextInfo().resetProfiler();
+    }
+
+    public static void setEntityContext(IEntityContext entityContext) {
+        getContextInfo().entityContext = entityContext;
+    }
+
+    public static IEntityContext getEntityContext() {
+        return getContextInfo().getEntityContext();
+    }
+
+    public static String getToken() {
+        return getContextInfo().token;
+    }
+
+    public static void setToken(String token) {
+        getContextInfo().token = token;
     }
 
 }

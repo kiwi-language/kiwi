@@ -51,19 +51,19 @@ public class TranspileUtilTest extends TestCase {
     }
 
     public void testGetSignature() {
-        var listClass = Objects.requireNonNull(TranspileUtil.createType(List.class).resolve());
+        var listClass = Objects.requireNonNull(TranspileUtil.createClassType(List.class).resolve());
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("get"));
         var signature = TranspileUtil.getSignature(getMethod, null);
         Assert.assertEquals(
                 new MethodSignature(
-                        TranspileUtil.createType(List.class), false, "get", List.of(
+                        TranspileUtil.createClassType(List.class), false, "get", List.of(
                         TranspileUtil.createPrimitiveType(int.class))),
                 signature
         );
     }
 
     public void testGetSignatureString() {
-        var listClass = Objects.requireNonNull(TranspileUtil.createType(SignatureFoo.class).resolve());
+        var listClass = Objects.requireNonNull(TranspileUtil.createClassType(SignatureFoo.class).resolve());
         var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
         var sig = TranspileUtil.getInternalName(getMethod);
 

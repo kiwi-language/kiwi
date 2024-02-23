@@ -23,6 +23,16 @@ public class NamingUtils {
         return ensureValidCode(code, TYPE_CODE_PATTERN);
     }
 
+    public static String ensureValidFlowCode(@Nullable String code) {
+        if (code == null || NncUtils.isBlank(code))
+            return null;
+        code = removeSpaces(code);
+        if (TYPE_CODE_PATTERN.matcher(code).matches() || CODE_PATTERN.matcher(code).matches())
+            return code;
+        else
+            throw new BusinessException(ErrorCode.INVALID_CODE, code);
+    }
+
     private static String ensureValidCode(@Nullable String code, Pattern pattern) {
         if (code == null || NncUtils.isBlank(code))
             return null;

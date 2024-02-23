@@ -316,4 +316,14 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
         TL.get().setConsumerType(consumerType);
     }
 
+    @Override
+    public ClassType getPredicateType() {
+        return TL.get().getPredicateType();
+    }
+
+    @Override
+    public void setPredicateType(ClassType type) {
+        TL.get().setPredicateType(type);
+    }
+
 }

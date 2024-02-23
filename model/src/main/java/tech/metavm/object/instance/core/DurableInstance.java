@@ -79,6 +79,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
         return !isEphemeral();
     }
 
+    @Override
     public boolean isEphemeral() {
         return ephemeral || getType().isEphemeral();
     }

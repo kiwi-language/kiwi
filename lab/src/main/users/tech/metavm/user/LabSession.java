@@ -4,7 +4,7 @@ import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.Index;
-import tech.metavm.util.UUIDUtils;
+import tech.metavm.lang.UUIDUtils;
 
 import javax.annotation.Nullable;
 import java.util.Date;

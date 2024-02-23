@@ -51,4 +51,48 @@ public class NativeFunctions {
         holder.setFunctionToInstance(function);
     }
 
+    public static Function getSendEmail() {
+        return holder.getSendEmail();
+    }
+
+    public static void setSendEmail(@NotNull Function function) {
+        holder.setSendEmail(function);
+    }
+
+    public static void setEmailSender(EmailSender emailSender) {
+        holder.setEmailSender(emailSender);
+    }
+
+    public static Function getGetSessionEntry() {
+        return holder.getGetSessionEntry();
+    }
+
+    public static void setGetSessionEntry(@NotNull Function function) {
+        holder.setGetSessionEntry(function);
+    }
+
+    public static void setSetSessionEntry(@NotNull Function function) {
+        holder.setSetSessionEntry(function);
+    }
+
+    public static Function getSetSessionEntry() {
+        return holder.getSetSessionEntry();
+    }
+
+    public static Function getTypeCast() {
+        return holder.getTypeCast();
+    }
+
+    public static void setTypeCast(@NotNull Function function) {
+        holder.setTypeCast(function);
+    }
+
+    public static Function getPrint() {
+        return holder.getPrint();
+    }
+
+    public static void setPrint(@NotNull Function function) {
+        holder.setPrint(function);
+    }
+
 }

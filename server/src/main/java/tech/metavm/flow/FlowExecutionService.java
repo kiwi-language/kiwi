@@ -30,6 +30,7 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
         try (var context = newContext(); var ignored =ContextUtil.getProfiler().enter("FlowExecutionService.execute")) {
+            ContextUtil.setEntityContext(context);
             var flow = context.getEntity(Flow.class, request.flowId());
             var self = NncUtils.get(request.instanceId(),
                     id -> (ClassInstance) context.getInstanceContext().get(Id.parse(id)));
@@ -46,6 +47,9 @@ public class FlowExecutionService extends EntityContextFactoryBean  {
             var result = executeInternal(flow, self, arguments, context);
             context.finish();
             return NncUtils.get(result, Instance::toDTO);
+        }
+        finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 

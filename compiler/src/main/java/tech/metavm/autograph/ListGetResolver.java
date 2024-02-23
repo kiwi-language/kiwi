@@ -9,7 +9,7 @@ import java.util.List;
 public class ListGetResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES =
-            List.of(MethodSignature.create(TranspileUtil.createType(List.class), "get",
+            List.of(MethodSignature.create(TranspileUtil.createClassType(List.class), "get",
                     TranspileUtil.createPrimitiveType(int.class)));
 
     @Override

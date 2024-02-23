@@ -20,7 +20,7 @@ public class PrimitiveToStringResolver implements MethodCallResolver {
         for (PsiPrimitiveType primitiveType : TranspileUtil.getPrimitiveTypes()) {
             signatures.add(
                     MethodSignature.createStatic(
-                            TranspileUtil.createType(ReflectionUtils.classForName(primitiveType.getBoxedTypeName())),
+                            TranspileUtil.createClassType(ReflectionUtils.classForName(primitiveType.getBoxedTypeName())),
                             "toString",
                             primitiveType
                     )

@@ -3,7 +3,10 @@ package tech.metavm.user;
 import tech.metavm.application.LabApplication;
 import tech.metavm.builtin.Password;
 import tech.metavm.entity.*;
-import tech.metavm.util.MD5Utils;
+import tech.metavm.lang.IdUtils;
+import tech.metavm.lang.MD5Utils;
+import tech.metavm.lang.SessionUtils;
+import tech.metavm.lang.SystemUtils;
 import tech.metavm.utils.LabBusinessException;
 import tech.metavm.utils.LabErrorCode;
 
@@ -52,7 +55,8 @@ public class LabUser {
     }
 
     @EntityIndex("平台用户索引")
-    public record IndexAppPlatformUser(LabApplication application, LabPlatformUser platformUser) implements Index<LabUser> {
+    public record IndexAppPlatformUser(LabApplication application,
+                                       LabPlatformUser platformUser) implements Index<LabUser> {
 
         public IndexAppPlatformUser(LabUser user) {
             this(user.application, user.platformUser);
@@ -97,7 +101,24 @@ public class LabUser {
 
     public static LabToken directLogin(LabApplication application, LabUser user) {
         var session = new LabSession(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
+        SessionUtils.setEntry("CurrentApp", application);
+        SessionUtils.setEntry("LoggedInUser" + IdUtils.getId(application), user);
+        SystemUtils.print("User " + user.getName() + " logged in application " + application.getName());
         return new LabToken(application, session.getToken());
+    }
+
+    public static LabApplication currentApplication() {
+        var app = (LabApplication) SessionUtils.getEntry("CurrentApp");
+        if (app != null)
+            return app;
+        throw new LabBusinessException(LabErrorCode.APPLICATION_NOT_SELECTED);
+    }
+
+    public static LabUser currentUser(LabApplication application) {
+        var user = (LabUser) SessionUtils.getEntry("LoggedInUser" + IdUtils.getId(application));
+        if (user != null)
+            return user;
+        throw new LabBusinessException(LabErrorCode.USER_NOT_LOGGED_IN);
     }
 
     public static void logout(List<LabToken> tokens) {
@@ -122,7 +143,7 @@ public class LabUser {
         this.name = name;
     }
 
-    public void setPassword(String password) {
+    public void changePassword(String password) {
         this.password = new Password(password);
     }
 

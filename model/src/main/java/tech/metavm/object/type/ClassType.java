@@ -149,7 +149,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         this.desc = desc;
     }
 
-    void addSubType(ClassType subType) {
+    void addSubType(@NotNull ClassType subType) {
         if (subTypes.contains(subType))
             throw new InternalException("Subtype '" + subType + "' is already added to this type");
         subTypes.add(subType);

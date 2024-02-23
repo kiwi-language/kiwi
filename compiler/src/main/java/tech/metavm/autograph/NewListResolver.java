@@ -16,13 +16,13 @@ import java.util.Objects;
 
 public class NewListResolver implements NewResolver {
 
-    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createType(ChildList.class);
+    public static final PsiClassType CHILD_LIST_TYPE = TranspileUtil.createClassType(ChildList.class);
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
                     MethodSignature.create(CHILD_LIST_TYPE, "ChildList"),
-                    MethodSignature.create(TranspileUtil.createType(ArrayList.class), "ArrayList"),
-                    MethodSignature.create(TranspileUtil.createType(LinkedList.class), "LinkedList")
+                    MethodSignature.create(TranspileUtil.createClassType(ArrayList.class), "ArrayList"),
+                    MethodSignature.create(TranspileUtil.createClassType(LinkedList.class), "LinkedList")
             );
 
     @Override

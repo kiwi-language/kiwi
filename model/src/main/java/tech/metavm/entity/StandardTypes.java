@@ -235,6 +235,15 @@ public class StandardTypes {
         return type;
     }
 
+    public static ClassType getPredicateType() {
+        return holder.getPredicateType();
+    }
+
+    public static ClassType setPredicateType(ClassType type) {
+        holder.setPredicateType(type);
+        return type;
+    }
+
     public static NeverType getNeverType() {
         return holder.getNeverType();
     }

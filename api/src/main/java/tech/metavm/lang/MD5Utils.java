@@ -1,4 +1,4 @@
-package tech.metavm.util;
+package tech.metavm.lang;
 
 public class MD5Utils {
 

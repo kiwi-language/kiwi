@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class StringConcatTransformer extends VisitorBase {
 
-    private final PsiClassType stringType = TranspileUtil.createType(String.class);
+    private final PsiClassType stringType = TranspileUtil.createClassType(String.class);
 
     @Override
     public void visitPolyadicExpression(PsiPolyadicExpression expression) {

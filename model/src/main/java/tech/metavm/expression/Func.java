@@ -26,6 +26,8 @@ public enum Func {
 
     RANDOM(Long.class),
 
+    BOUNDED_RANDOM(Long.class, Long.class),
+
     IF(Object.class, List.of(Boolean.class, Object.class, Object.class),
             types -> ValueUtil.getCompatibleType(types.get(1), types.get(2))),
 
@@ -69,7 +71,15 @@ public enum Func {
 
     RANDOM_PASSWORD(String.class),
 
+    NUMBER_FORMAT(String.class, String.class, Long.class),
+
+    REGEX_MATCH(Boolean.class, String.class, String.class),
+
 //    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
+
+    GET_ID(Long.class, Object.class),
+
+    STRING_FORMAT(String.class, String.class, ReadonlyList.class),
 
     ;
 

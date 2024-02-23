@@ -9,10 +9,10 @@ public class FlowAnalyzer extends VoidStructuralVisitor {
     @Override
     public Void visitNode(NodeRT node) {
         if(node.getPredecessor() != null) {
-            node.setExpressionTypes(node.getPredecessor().getExpressionTypes());
+            node.mergeExpressionTypes(node.getPredecessor().getExpressionTypes());
         }
         else {
-            node.setExpressionTypes(node.getScope().getExpressionTypes());
+            node.mergeExpressionTypes(node.getScope().getExpressionTypes());
         }
         return super.visitNode(node);
     }

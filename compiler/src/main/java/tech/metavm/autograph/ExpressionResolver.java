@@ -60,13 +60,15 @@ public class ExpressionResolver {
     private final VisitorBase visitor;
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListOfResolver(),
-            new ObjectsToStringResolver(),
+            new ListOfResolver(), new ObjectsToStringResolver(), new ToStringResolver(),
             new StringReplaceFirstResolver(), new PrimitiveToStringResolver(), new GetPasswordResolver(),
             new StringReplaceResolver(), new StringConcatResolver(),
             new RandomUUIDResolver(), new DateBeforeResolver(), new DateAfterResolver(),
             new IndexUtilsCallResolver(), new SystemCurrentTimeMillisResolver(),
-            new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver()
+            new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver(),
+            new SendEmailResolver(), new RegexMatchResolver(), new RandomNumberMatcher(),
+            new NumberFormatMatcher(), new GetSessionEntryResolver(), new SetSessionEntryResolver(),
+            new StringFormatResolver(), new GetIdResolver(), new PrintResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -130,8 +132,20 @@ public class ExpressionResolver {
             case PsiArrayAccessExpression arrayAccessExpression -> resolveArrayAccess(arrayAccessExpression, context);
             case PsiInstanceOfExpression instanceOfExpression -> resolveInstanceOf(instanceOfExpression, context);
             case PsiLambdaExpression lambdaExpression -> resolveLambdaExpression(lambdaExpression, context);
+            case PsiTypeCastExpression typeCastExpression -> resolveTypeCast(typeCastExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
+    }
+
+    private Expression resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
+        var operand = resolve(typeCastExpression.getOperand(), context);
+        var targetType = typeResolver.resolveDeclaration(requireNonNull(typeCastExpression.getCastType()).getType());
+        if(operand.getType().isNullable() && !targetType.isNullable())
+            targetType = unionTypeProvider.getUnionType(Set.of(targetType, StandardTypes.getNullType()));
+        return Expressions.node(methodGenerator.createFunctionCall(
+                parameterizedFlowProvider.getParameterizedFlow(NativeFunctions.getTypeCast(), List.of(targetType)),
+                List.of(operand)
+        ));
     }
 
     private Expression resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
@@ -246,7 +260,7 @@ public class ExpressionResolver {
                     return new PropertyExpression(qualifierExpr, field);
                 }
             }
-        } else if(target instanceof PsiMethod psiMethod) {
+        } else if (target instanceof PsiMethod psiMethod) {
             PsiClass psiClass = requireNonNull(psiMethod.getContainingClass());
             Method method;
             if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
@@ -254,13 +268,12 @@ public class ExpressionResolver {
                 method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
                 return new StaticPropertyExpression(method);
             } else {
-                if(psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
+                if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                         refExpr.resolve() instanceof PsiClass) {
                     var klass = (ClassType) typeResolver.resolve(TranspileUtil.createType(psiClass));
                     method = klass.getMethodByInternalName(TranspileUtil.getInternalName(psiMethod));
                     return new StaticPropertyExpression(method);
-                }
-                else {
+                } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     ClassType klass = (ClassType) methodGenerator.getExpressionType(qualifierExpr);
                     typeResolver.ensureDeclared(klass);
@@ -268,8 +281,7 @@ public class ExpressionResolver {
                     return new PropertyExpression(qualifierExpr, method);
                 }
             }
-        }
-        else if (target instanceof PsiVariable variable) {
+        } else if (target instanceof PsiVariable variable) {
             return variableTable.get(variable.getName());
         } else {
             throw new InternalException("Can not resolve reference expression with target: " + target);
@@ -479,6 +491,10 @@ public class ExpressionResolver {
     private Expression resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var ref = expression.getMethodExpression();
         var rawMethod = (PsiMethod) Objects.requireNonNull(ref.resolve());
+        var klassName = requireNonNull(requireNonNull(rawMethod.getContainingClass()).getQualifiedName());
+        if (klassName.startsWith("tech.metavm.lang.")) {
+            throw new InternalException("Native method should be resolved by MethodResolver: " + klassName + "." + rawMethod.getName());
+        }
         var isStatic = TranspileUtil.isStatic(rawMethod);
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
         if (psiSelf != null) {
@@ -536,7 +552,7 @@ public class ExpressionResolver {
                 psiParameters,
                 param -> {
                     var t = typeResolver.resolveDeclaration(param.getType());
-                    if(TranspileUtil.getAnnotation(param, Nullable.class) != null)
+                    if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
                         t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
                     return t;
                 }
@@ -585,7 +601,7 @@ public class ExpressionResolver {
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
         var type = NncUtils.requireNonNull(expression.getType());
-        var psiMapType = TranspileUtil.createType(Map.class);
+        var psiMapType = TranspileUtil.createClassType(Map.class);
         if (psiMapType.isAssignableFrom(type)) {
             var mapType = (ClassType) typeResolver.resolve(type);
             var subFlow = Objects.requireNonNull(mapType.findMethodByCode("Map"));
@@ -656,7 +672,7 @@ public class ExpressionResolver {
 
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
         var t = typeResolver.resolveTypeOnly(substitutor.substitute(param.getType()));
-        if(TranspileUtil.getAnnotation(param, Nullable.class) != null)
+        if (TranspileUtil.getAnnotation(param, Nullable.class) != null)
             t = unionTypeProvider.getUnionType(Set.of(t, StandardTypes.getNullType()));
         return t;
     }

@@ -4,7 +4,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import tech.metavm.expression.Expression;
 import tech.metavm.expression.Func;
 import tech.metavm.expression.FunctionExpression;
-import tech.metavm.util.MD5Utils;
+import tech.metavm.lang.MD5Utils;
 
 import java.util.List;
 
@@ -12,9 +12,9 @@ public class Md5CallResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES = List.of(
             MethodSignature.createStatic(
-                    TranspileUtil.createType(MD5Utils.class),
+                    TranspileUtil.createClassType(MD5Utils.class),
                     "md5",
-                    TranspileUtil.createType(String.class)
+                    TranspileUtil.createClassType(String.class)
             )
     );
 

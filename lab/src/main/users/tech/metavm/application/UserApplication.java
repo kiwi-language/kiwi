@@ -3,9 +3,14 @@ package tech.metavm.application;
 import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
+import tech.metavm.lang.SystemUtils;
+import tech.metavm.message.LabMessage;
+import tech.metavm.message.LabMessageKind;
 import tech.metavm.user.LabPlatformUser;
+import tech.metavm.user.LabUser;
 import tech.metavm.utils.LabErrorCode;
 import tech.metavm.utils.LabBusinessException;
+import tech.metavm.utils.UserUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,4 +88,48 @@ public class UserApplication extends LabApplication {
     public boolean isActive() {
         return state == LabApplicationState.ACTIVE;
     }
+
+    public static UserApplication create(String name, LabPlatformUser owner) {
+        var application = new UserApplication(name, owner);
+        LabPlatformUser.joinApplication(owner, application);
+        return application;
+    }
+
+
+    public static LabAppInvitation invite(LabAppInvitationRequest request) {
+        SystemUtils.print("Current application: " + LabUser.currentApplication().getName());
+        SystemUtils.print("Current user: " + LabUser.currentUser(LabUser.currentApplication()));
+        SystemUtils.print("Current platform user: " + LabUser.currentUser(PlatformApplication.getInstance()));
+
+        var app = request.application();
+        ensureAppAdmin(app);
+        var invitee = request.user();
+        if (invitee.hasJoinedApplication(app))
+            throw new LabBusinessException(LabErrorCode.ALREADY_JOINED_APP, invitee.getLoginName());
+        var currentUser = LabPlatformUser.currentPlatformUser();
+        var invitation = new LabAppInvitation(app, invitee, request.isAdmin());
+        new LabMessage(
+                invitee, String.format("'%s'邀请您加入应用'%s'", currentUser.getName(), app.getName()),
+                LabMessageKind.INVITATION, invitation);
+        return invitation;
+    }
+
+    public static void acceptInvitation(LabAppInvitation invitation) {
+        var user = LabPlatformUser.currentPlatformUser();
+        if (invitation.getUser() != user)
+            throw new LabBusinessException(LabErrorCode.ILLEGAL_ACCESS);
+        invitation.accept();
+        LabPlatformUser.joinApplication(user, invitation.getApplication());
+    }
+
+    private static void ensureAppAdmin(UserApplication application) {
+        if (UserUtils.nonMatch(application.getAdmins(), admin -> admin == LabPlatformUser.currentPlatformUser()))
+            throw new LabBusinessException(LabErrorCode.CURRENT_USER_NOT_APP_ADMIN);
+    }
+
+    private static void ensureAppOwner(UserApplication application) {
+        if (application.getOwner() != LabPlatformUser.currentPlatformUser())
+            throw new LabBusinessException(LabErrorCode.CURRENT_USER_NOT_APP_OWNER);
+    }
+
 }

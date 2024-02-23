@@ -14,8 +14,8 @@ public class ObjectsToStringResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.createStatic(createType(Objects.class), "toString",
-                            createType(Object.class)
+                    MethodSignature.createStatic(TranspileUtil.createClassType(Objects.class), "toString",
+                            TranspileUtil.createClassType(Object.class)
                     )
             );
 

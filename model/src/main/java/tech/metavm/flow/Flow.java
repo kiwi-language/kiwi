@@ -94,7 +94,7 @@ public abstract class Flow extends Element implements GenericDeclaration, Callab
         if (horizontalTemplate == null && typeParameters.isEmpty() && !typeArguments.isEmpty())
             throw new InternalException("Missing flow template");
         this.name = NamingUtils.ensureValidName(name);
-        this.code = NamingUtils.ensureValidCode(code);
+        this.code = NamingUtils.ensureValidFlowCode(code);
         this.isNative = isNative;
         this.isSynthetic = isSynthetic;
         this.returnType = returnType;

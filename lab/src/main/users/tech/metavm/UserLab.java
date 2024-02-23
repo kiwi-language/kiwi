@@ -1,6 +1,7 @@
 package tech.metavm;
 
 import tech.metavm.application.LabApplication;
+import tech.metavm.application.PlatformApplication;
 import tech.metavm.application.UserApplication;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityFlow;
@@ -29,6 +30,11 @@ public class UserLab {
     @EntityFlow("创建平台用户")
     public LabPlatformUser createPlatformUser(String loginName, String password, String name, List<LabRole> roles) {
         return new LabPlatformUser(loginName, password, name, roles);
+    }
+
+    @EntityFlow("发送验证码")
+    public void sendVerificationCode(String receiver, String code, String clientIP) {
+        LabVerificationCode.sendVerificationCode(receiver, code, clientIP);
     }
 
     @EntityFlow("创建会话")

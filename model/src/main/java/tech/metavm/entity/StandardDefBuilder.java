@@ -14,6 +14,7 @@ import tech.metavm.util.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static tech.metavm.object.type.Types.getParameterizedCode;
 import static tech.metavm.object.type.Types.getParameterizedName;
@@ -85,8 +86,6 @@ public class StandardDefBuilder {
 
         primitiveTypeMap.forEach((klass, primType) -> defContext.addDef(new DirectDef<>(klass, primType)));
 
-        initBuiltinFlows();
-
         defContext.addDef(objectDef);
         defContext.createCompositeTypes(StandardTypes.getAnyType());
         StandardTypes.setNullableAnyType(defContext.getNullableType(StandardTypes.getAnyType()));
@@ -94,8 +93,11 @@ public class StandardDefBuilder {
         StandardTypes.setReadonlyAnyArrayType(defContext.getArrayType(StandardTypes.getAnyType(), ArrayKind.READ_ONLY));
         StandardTypes.setNeverArrayType(defContext.getArrayType(StandardTypes.getNeverType(), ArrayKind.READ_WRITE));
 
+        initBuiltinFlows();
+
         var collectionTypeMap = new LinkedHashMap<Class<?>, ClassType>();
         collectionTypeMap.put(Consumer.class, StandardTypes.setConsumerType(createConsumerType()));
+        collectionTypeMap.put(Predicate.class, StandardTypes.setPredicateType(createPredicateType()));
         collectionTypeMap.put(MetaIterator.class, StandardTypes.setIteratorType(createIteratorType()));
         collectionTypeMap.put(MetaIterable.class, StandardTypes.setIterableType(createIterableType()));
         collectionTypeMap.put(Collection.class, StandardTypes.setCollectionType(createCollectionType()));
@@ -253,7 +255,7 @@ public class StandardDefBuilder {
     }
 
     private ClassType createConsumerType() {
-        var elementType = new TypeVariable(null, "消费者元素", "ConsumerElement",
+        var elementType = new TypeVariable(null, "元素", "T",
                 DummyGenericDeclaration.INSTANCE);
         elementType.setBounds(List.of(getObjectType()));
         primTypeFactory.putType(Consumer.class.getTypeParameters()[0], elementType);
@@ -268,6 +270,24 @@ public class StandardDefBuilder {
                 .parameters(new Parameter(null, "元素", "element", elementType))
                 .build();
         return consumerType;
+    }
+
+    private ClassType createPredicateType() {
+        var elementType = new TypeVariable(null, "元素", "T",
+                DummyGenericDeclaration.INSTANCE);
+        elementType.setBounds(List.of(getObjectType()));
+        primTypeFactory.putType(Predicate.class.getTypeParameters()[0], elementType);
+        var predicateType = ClassTypeBuilder.newBuilder("断言", "Predicate")
+                .typeParameters(elementType)
+                .source(ClassSource.BUILTIN)
+                .category(TypeCategory.INTERFACE)
+                .build();
+        primTypeFactory.putType(Predicate.class, predicateType);
+        MethodBuilder.newBuilder(predicateType, "测试", "test", defContext.getFunctionTypeContext())
+                .returnType(StandardTypes.getBooleanType())
+                .parameters(new Parameter(null, "元素", "element", elementType))
+                .build();
+        return predicateType;
     }
 
     private void initBuiltinFlows() {
@@ -307,6 +327,59 @@ public class StandardDefBuilder {
                 .build();
         NativeFunctions.setFunctionToInstance(function2instance);
         defContext.writeEntity(function2instance);
+
+        var sendEmail = FunctionBuilder.newBuilder("发送邮件", "sendEmail", defContext.getFunctionTypeContext())
+                        .isNative()
+                        .parameters(
+                                new Parameter(null, "收件人", "recipient", StandardTypes.getStringType()),
+                                new Parameter(null, "主题", "subject", StandardTypes.getStringType()),
+                                new Parameter(null, "内容", "content", StandardTypes.getStringType())
+                        )
+                        .returnType(StandardTypes.getVoidType())
+                        .build();
+        NativeFunctions.setSendEmail(sendEmail);
+        defContext.writeEntity(sendEmail);
+
+        var getSessionEntry = FunctionBuilder.newBuilder("获取会话条目", "getSessionEntry", defContext.getFunctionTypeContext())
+                .isNative()
+                .parameters(
+                        new Parameter(null, "键", "key", StandardTypes.getStringType())
+                )
+                .returnType(StandardTypes.getNullableAnyType())
+                .build();
+        NativeFunctions.setGetSessionEntry(getSessionEntry);
+        defContext.writeEntity(getSessionEntry);
+
+        var setSessionEntry = FunctionBuilder.newBuilder("设置会话条目", "setSessionEntry", defContext.getFunctionTypeContext())
+                .isNative()
+                .parameters(
+                        new Parameter(null, "键", "key", StandardTypes.getStringType()),
+                        new Parameter(null, "值", "value", StandardTypes.getAnyType())
+                )
+                .returnType(StandardTypes.getVoidType())
+                .build();
+        NativeFunctions.setSetSessionEntry(setSessionEntry);
+        defContext.writeEntity(setSessionEntry);
+
+        var castedType = new TypeVariable(null, "转换类型", "CastedType", DummyGenericDeclaration.INSTANCE);
+        var typeCast = FunctionBuilder.newBuilder("类型转换", "typeCast", defContext.getFunctionTypeContext())
+                .isNative()
+                .typeParameters(List.of(castedType))
+                .parameters(
+                        new Parameter(null, "实例", "instance", StandardTypes.getNullableAnyType())
+                )
+                .returnType(castedType)
+                .build();
+        NativeFunctions.setTypeCast(typeCast);
+        defContext.writeEntity(typeCast);
+
+        var print = FunctionBuilder.newBuilder("打印", "print", defContext.getFunctionTypeContext())
+                .isNative()
+                .parameters(new Parameter(null, "内容", "content", StandardTypes.getNullableAnyType()))
+                .returnType(StandardTypes.getVoidType())
+                .build();
+        NativeFunctions.setPrint(print);
+        defContext.writeEntity(print);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -455,10 +528,6 @@ public class StandardDefBuilder {
     }
 
     private void createIterableFlows(ClassType iterableType, TypeVariable elementType) {
-//        MethodBuilder.newBuilder(iterableType, "获取迭代器", "iterator", defContext.getFunctionTypeContext())
-//                .isNative(true)
-//                .returnType(defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorType(), elementType))
-//                .build();
         MethodBuilder.newBuilder(iterableType, "forEach", "forEach", defContext.getFunctionTypeContext())
                 .isNative(true)
                 .returnType(StandardTypes.getVoidType())
@@ -469,6 +538,13 @@ public class StandardDefBuilder {
                         ))
                 )
                 .build();
+
+        var pIteratorType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorType(), elementType);
+        MethodBuilder.newBuilder(iterableType, "获取迭代器", "iterator", defContext.getFunctionTypeContext())
+                .isNative(true)
+                .returnType(pIteratorType)
+                .build();
+
         iterableType.setStage(ResolutionStage.DEFINITION);
     }
 
@@ -492,12 +568,6 @@ public class StandardDefBuilder {
     }
 
     private void createCollectionFlows(ClassType collectionType, TypeVariable elementType) {
-        var pIteratorType = defContext.getGenericContext().getParameterizedType(StandardTypes.getIteratorType(), elementType);
-        MethodBuilder.newBuilder(collectionType, "获取迭代器", "iterator", defContext.getFunctionTypeContext())
-                .isNative(true)
-                .returnType(pIteratorType)
-                .build();
-
         MethodBuilder.newBuilder(collectionType, "计数", "size", defContext.getFunctionTypeContext())
                 .isNative(true)
                 .returnType(StandardTypes.getLongType())

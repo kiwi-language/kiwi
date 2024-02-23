@@ -160,17 +160,19 @@ public class Types {
     public static ClassType createFunctionalClass(ClassType functionalInterface,
                                                   FunctionTypeProvider functionTypeProvider,
                                                   ParameterizedTypeProvider parameterizedTypeProvider) {
-        var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现",
-                        NncUtils.get(functionalInterface.getCode(), k -> k + "Impl"))
+        var klass = ClassTypeBuilder.newBuilder(functionalInterface.getName() + "实现", null)
                 .interfaces(functionalInterface)
                 .ephemeral(true)
                 .build();
+        klass.setEphemeralEntity(true);
         var sam = getSAM(functionalInterface);
         var funcType = functionTypeProvider.getFunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("函数", "func", klass, funcType).build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode(), functionTypeProvider)
                 .overridden(List.of(sam))
+                .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
+                .returnType(sam.getReturnType())
                 .build();
 
         var selfNode = new SelfNode(null, "当前对象", null, SelfNode.getSelfType(flow, parameterizedTypeProvider), null, flow.getRootScope());

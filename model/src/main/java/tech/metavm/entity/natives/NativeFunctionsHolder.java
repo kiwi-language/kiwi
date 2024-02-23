@@ -26,4 +26,26 @@ public interface NativeFunctionsHolder {
     Function getFunctionToInstance();
 
     void setFunctionToInstance(Function function);
+
+    void setSendEmail(Function function);
+
+    Function getSendEmail();
+
+    void setEmailSender(EmailSender emailSender);
+
+    Function getGetSessionEntry();
+
+    void setGetSessionEntry(Function function);
+
+    Function getSetSessionEntry();
+
+    void setSetSessionEntry(Function function);
+
+    Function getTypeCast();
+
+    void setTypeCast(Function function);
+
+    Function getPrint();
+
+    void setPrint(Function function);
 }

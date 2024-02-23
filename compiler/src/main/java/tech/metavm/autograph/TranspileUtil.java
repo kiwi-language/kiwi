@@ -22,6 +22,8 @@ import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,7 +49,7 @@ public class TranspileUtil {
 
     public static boolean isIndexDefField(PsiField psiField) {
         return requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC)
-                && TranspileUtil.getRawType(psiField.getType()).equals(TranspileUtil.createType(IndexDef.class));
+                && TranspileUtil.getRawType(psiField.getType()).equals(TranspileUtil.createClassType(IndexDef.class));
     }
 
     public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {
@@ -190,7 +192,7 @@ public class TranspileUtil {
 
     public static boolean matchMethod(PsiMethod psiMethod, Method method) {
         var psiType = createType(requireNonNull(psiMethod.getContainingClass()));
-        var type = createType(method.getDeclaringClass());
+        var type = createClassType(method.getDeclaringClass());
         if (!type.isAssignableFrom(psiType) || !psiMethod.getName().equals(method.getName())) {
             return false;
         }
@@ -279,8 +281,27 @@ public class TranspileUtil {
         return elementFactory.createPrimitiveType(klass.getName());
     }
 
-    public static PsiClassType createType(Class<?> klass) {
+    public static PsiClassType createClassType(Class<?> klass) {
         return elementFactory.createTypeByFQClassName(klass.getName());
+    }
+
+    public static PsiArrayType createArrayType(Class<?> klass) {
+        NncUtils.requireTrue(klass.isArray());
+        return new PsiArrayType(createType(klass.getComponentType()));
+    }
+
+    public static PsiArrayType createEllipsisType(Class<?> klass) {
+        NncUtils.requireTrue(klass.isArray());
+        return new PsiEllipsisType(createType(klass.getComponentType()));
+    }
+
+    public static PsiType createType(Class<?> klass) {
+        if(klass.isPrimitive())
+            return createPrimitiveType(klass);
+        else if(klass.isArray())
+            return createArrayType(klass);
+        else
+            return createClassType(klass);
     }
 
     public static PsiClassType createType(Class<?> rawClass, List<PsiType> typeArguments) {
@@ -291,18 +312,18 @@ public class TranspileUtil {
 
     public static PsiClassType createType(Class<?> rawClass, PsiType... typeArguments) {
         return elementFactory.createType(
-                requireNonNull(createType(rawClass).resolve()),
+                requireNonNull(createClassType(rawClass).resolve()),
                 typeArguments
         );
     }
 
     public static PsiClassType createTypeVariableType(Class<?> rawClass, int typeParameterIndex) {
-        var psiClass = Objects.requireNonNull(createType(rawClass).resolve());
+        var psiClass = Objects.requireNonNull(createClassType(rawClass).resolve());
         return createType(Objects.requireNonNull(psiClass.getTypeParameters())[typeParameterIndex]);
     }
 
     public static PsiClassType createTypeVariableType(Method method, int typeParameterIndex) {
-        var psiClass = requireNonNull(createType(method.getDeclaringClass()).resolve());
+        var psiClass = requireNonNull(createClassType(method.getDeclaringClass()).resolve());
         var psiMethod = NncUtils.find(psiClass.getMethods(), m -> matchMethod(m, method));
         return createType(Objects.requireNonNull(psiMethod).getTypeParameters()[typeParameterIndex]);
     }
@@ -772,7 +793,10 @@ public class TranspileUtil {
             Map.entry(ChildList.class.getName(), "ChildList"),
             Map.entry(ArrayList.class.getName(), "ReadWriteList"),
             Map.entry(LinkedList.class.getName(), "ReadWriteList"),
-            Map.entry(Object.class.getName(), "Any")
+            Map.entry(Object.class.getName(), "Any"),
+            Map.entry(Iterable.class.getName(), "Iterable"),
+            Map.entry(Consumer.class.getName(), "Consumer"),
+            Map.entry(Predicate.class.getName(), "Predicate")
     );
 
     public static String getInternalName(PsiMethod method) {

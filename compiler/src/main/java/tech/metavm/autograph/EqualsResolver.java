@@ -11,9 +11,9 @@ public class EqualsResolver implements MethodCallResolver {
 
     public static final List<MethodSignature> SIGNATURES = List.of(
         MethodSignature.create(
-                TranspileUtil.createType(Object.class),
+                TranspileUtil.createClassType(Object.class),
                 "equals",
-                TranspileUtil.createType(Object.class)
+                TranspileUtil.createClassType(Object.class)
         )
     );
 

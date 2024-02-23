@@ -6,12 +6,10 @@ import tech.metavm.expression.Expression;
 
 import java.util.List;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class ListClearResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
-            List.of(MethodSignature.create(createType(List.class), "clear"));
+            List.of(MethodSignature.create(TranspileUtil.createClassType(List.class), "clear"));
 
     @Override
     public List<MethodSignature> getSignatures() {

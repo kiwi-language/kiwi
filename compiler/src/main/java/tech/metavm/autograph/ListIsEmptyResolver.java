@@ -6,12 +6,10 @@ import tech.metavm.expression.*;
 import java.util.List;
 import java.util.Objects;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class ListIsEmptyResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
-            List.of(MethodSignature.create(createType(List.class), "isEmpty"));
+            List.of(MethodSignature.create(TranspileUtil.createClassType(List.class), "isEmpty"));
 
     @Override
     public List<MethodSignature> getSignatures() {

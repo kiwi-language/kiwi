@@ -30,7 +30,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void send(String receiver, String title, String content) {
+    public void send(String recipient, String subject, String content) {
         Properties prop = new Properties();
         prop.put("mail.smtp.auth", true);
         prop.put("mail.smtp.starttls.enable", "true");
@@ -49,8 +49,8 @@ public class EmailServiceImpl implements EmailService {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(username));
             message.setRecipients(
-                    Message.RecipientType.TO, InternetAddress.parse(receiver));
-            message.setSubject(title);
+                    Message.RecipientType.TO, InternetAddress.parse(recipient));
+            message.setSubject(subject);
             MimeBodyPart mimeBodyPart = new MimeBodyPart();
             mimeBodyPart.setContent(content, "text/html; charset=utf-8");
             Multipart multipart = new MimeMultipart();

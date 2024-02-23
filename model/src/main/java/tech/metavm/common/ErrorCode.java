@@ -47,6 +47,7 @@ public enum ErrorCode {
     MULTI_PARENT(309, "子对象归属于多个父对象: {}"),
     CONVERSION_FAILED(410, "对象'{}'不能转化为类型'{}'"),
     CAN_NOT_MODIFY_READONLY_FIELD(411, "无法修改对象只读字段"),
+    TYPE_CAST_ERROR(412, "类型转换错误，原类型: {}, 目标类型: {}"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),
@@ -113,6 +114,7 @@ public enum ErrorCode {
     INCORRECT_VERIFICATION_CODE(611, "验证码错误"),
     VERIFICATION_CODE_SENT_TOO_OFTEN(612, "验证码发送太频繁，请稍后再试"),
     TOO_MANY_LOGIN_ATTEMPTS(613, "登录尝试次数过多，请稍后再试"),
+    LOGIN_REQUIRED(614, "请先登录"),
 
     // Constraint
     DUPLICATE_KEY(701, "唯一属性'{}'重复"),
@@ -151,7 +153,8 @@ public enum ErrorCode {
     INVALID_ELEMENT_MAPPING(1408, "无效的数组元素映射"),
     INVALID_SOURCE_MAPPING(1409, "无效的源头映射"),
     INCORRECT_ARRAY_MAPPING_ARGUMENTS(1410, "数组映射参数错误"),
-    INCORRECT_MAPPING(1411, "映射配置错误")
+    INCORRECT_MAPPING(1411, "映射配置错误"),
+
     ;
 
 

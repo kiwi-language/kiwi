@@ -97,6 +97,7 @@ public class LoginService extends EntityContextFactoryBean  {
             if (session != null && session.isActive()) {
                 ContextUtil.setAppId(token.appId());
                 ContextUtil.setUserId(session.getUser().getId());
+                ContextUtil.setToken(token.token());
                 return new LoginInfo(token.appId(), session.getUser().getId());
             } else
                 return LoginInfo.failed();

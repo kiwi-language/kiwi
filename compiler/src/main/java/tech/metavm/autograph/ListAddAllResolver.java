@@ -15,13 +15,11 @@ import tech.metavm.util.NncUtils;
 import java.util.Collection;
 import java.util.List;
 
-import static tech.metavm.autograph.TranspileUtil.createType;
-
 public class ListAddAllResolver implements MethodCallResolver {
 
     private static final List<MethodSignature> SIGNATURES =
             List.of(
-                    MethodSignature.create(createType(List.class), "addAll",
+                    MethodSignature.create(TranspileUtil.createClassType(List.class), "addAll",
                             TranspileUtil.createType(
                                     Collection.class,
                                     TranspileUtil.createExtendsWildcardType(

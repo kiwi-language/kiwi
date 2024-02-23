@@ -5,10 +5,14 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.metavm.application.ApplicationManager;
+import tech.metavm.application.rest.dto.ApplicationCreateRequest;
+import tech.metavm.common.MockEmailService;
 import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.entity.natives.ThreadLocalNativeFunctionsHolder;
+import tech.metavm.event.MockEventQueue;
 import tech.metavm.flow.FlowExecutionService;
 import tech.metavm.flow.FlowManager;
 import tech.metavm.flow.FlowSavingContext;
@@ -24,7 +28,13 @@ import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.type.rest.dto.TypeQuery;
 import tech.metavm.object.version.VersionManager;
 import tech.metavm.system.BlockManager;
+import tech.metavm.system.IdService;
 import tech.metavm.task.TaskManager;
+import tech.metavm.user.LoginService;
+import tech.metavm.user.PlatformUserManager;
+import tech.metavm.user.RoleManager;
+import tech.metavm.user.VerificationCodeService;
+import tech.metavm.user.rest.dto.LoginRequest;
 import tech.metavm.util.*;
 
 import java.io.File;
@@ -36,6 +46,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static tech.metavm.util.NncUtils.requireNonNull;
+import static tech.metavm.util.TestUtils.doInTransaction;
 import static tech.metavm.util.TestUtils.getFieldIdByCode;
 
 public class MainTest extends TestCase {
@@ -52,7 +64,7 @@ public class MainTest extends TestCase {
 
     public static final String USERS_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/users";
 
-    public static final String AUTH_FILE = "/Users/leen/workspace/object/test/src/test/resources/auth";
+    public AuthConfig AUTH_CONFIG;
 
     public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
 
@@ -63,9 +75,13 @@ public class MainTest extends TestCase {
     private AllocatorStore allocatorStore;
     private FlowExecutionService flowExecutionService;
     private FlowManager flowManager;
+    private ApplicationManager applicationManager;
+    private LoginService loginService;
+    private PlatformUserManager platformUserManager;
 
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
+        AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
         StandardTypes.setHolder(new ThreadLocalStandardTypesHolder());
         NativeFunctions.setHolder(new ThreadLocalNativeFunctionsHolder());
         ModelDefRegistry.setHolder(new ThreadLocalDefContextHolder());
@@ -96,6 +112,15 @@ public class MainTest extends TestCase {
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
         typeManager.setVersionManager(new VersionManager(bootResult.entityContextFactory()));
+
+        var entityQueryService = new EntityQueryService(instanceQueryService);
+        var roleManager = new RoleManager(bootResult.entityContextFactory(), entityQueryService);
+        loginService = new LoginService(bootResult.entityContextFactory());
+        var verificationCodeService = new VerificationCodeService(bootResult.entityContextFactory(), new MockEmailService());
+        platformUserManager = new PlatformUserManager(bootResult.entityContextFactory(),
+                loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
+        applicationManager = new ApplicationManager(bootResult.entityContextFactory(), roleManager, platformUserManager,
+                (IdService) bootResult.idProvider(), entityQueryService);
     }
 
     @Override
@@ -179,7 +204,7 @@ public class MainTest extends TestCase {
                             )
                     )
             );
-            var productId = TestUtils.doInTransaction(() -> instanceManager.create(product));
+            var productId = doInTransaction(() -> instanceManager.create(product));
             var loadedProduct = instanceManager.get(productId, 1).instance();
             MatcherAssert.assertThat(loadedProduct, new InstanceDTOMatcher(product, TestUtils.extractDescendantIds(loadedProduct)));
             var productMapping = TestUtils.getDefaultMapping(productType);
@@ -233,7 +258,6 @@ public class MainTest extends TestCase {
             throw new RuntimeException(e);
         }
     }
-
 
 
     public void testShopping() {
@@ -290,7 +314,7 @@ public class MainTest extends TestCase {
             var buyMethodId = TestUtils.getMethodIdByCode(productType, "buy");
             var couponType = queryClassType("AST优惠券");
             var couponArrayType = typeManager.getArrayType(couponType.id(), ArrayKind.READ_WRITE.code()).type();
-            var order = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+            var order = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                     buyMethodId,
                     product.id(),
                     List.of(
@@ -315,7 +339,7 @@ public class MainTest extends TestCase {
         submit(() -> {
             // create an UserLab instance
             var userLabType = queryClassType("UserLab");
-            var userLabId = TestUtils.doInTransaction(() -> instanceManager.create(InstanceDTO.createClassInstance(
+            var userLabId = doInTransaction(() -> instanceManager.create(InstanceDTO.createClassInstance(
                     userLabType.getRef(),
                     List.of(
                             InstanceFieldDTO.create(
@@ -327,7 +351,7 @@ public class MainTest extends TestCase {
 
             // call UserLab.createRole
             var createRoleMethodId = TestUtils.getMethodIdByCode(userLabType, "createRole");
-            var role = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            var role = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             createRoleMethodId,
                             userLabId,
@@ -347,27 +371,27 @@ public class MainTest extends TestCase {
             ).type();
             var createPlatformUserMethodId = TestUtils.getMethodIdByCode(userLabType, "createPlatformUser");
             ContextUtil.resetProfiler();
-            var platformUser = TestUtils.doInTransaction(() -> {
+            var platformUser = doInTransaction(() -> {
                 InstanceDTO result;
-                    result =  flowExecutionService.execute(
-                            new FlowExecutionRequest(
-                                    createPlatformUserMethodId,
-                                    userLabId,
-                                    List.of(
-                                            PrimitiveFieldValue.createString("lyq"),
-                                            PrimitiveFieldValue.createString("123456"),
-                                            PrimitiveFieldValue.createString("lyq"),
-                                            new InstanceFieldValue(
-                                                    null,
-                                                    InstanceDTO.createListInstance(
-                                                            roleReadWriteListType.getRef(),
-                                                            false,
-                                                            List.of(ReferenceFieldValue.create(role.id()))
-                                                    )
-                                            )
-                                    )
-                            )
-                    );
+                result = flowExecutionService.execute(
+                        new FlowExecutionRequest(
+                                createPlatformUserMethodId,
+                                userLabId,
+                                List.of(
+                                        PrimitiveFieldValue.createString("lyq"),
+                                        PrimitiveFieldValue.createString("123456"),
+                                        PrimitiveFieldValue.createString("lyq"),
+                                        new InstanceFieldValue(
+                                                null,
+                                                InstanceDTO.createListInstance(
+                                                        roleReadWriteListType.getRef(),
+                                                        false,
+                                                        List.of(ReferenceFieldValue.create(role.id()))
+                                                )
+                                        )
+                                )
+                        )
+                );
 //                }
                 return result;
             });
@@ -413,8 +437,23 @@ public class MainTest extends TestCase {
     }
 
     public void testUsers() {
-        compileTwice(USERS_SOURCE_ROOT);
-//        compile(USERS_SOURCE_ROOT);
+        submit(() -> {
+            var sysApp = doInTransaction(() -> applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser("test", "admin", "123456")));
+            var sysLoginResult = doInTransaction(() -> loginService.login(new LoginRequest(
+                    Constants.PLATFORM_APP_ID,
+                    "admin",
+                    "123456"
+            ), "127.0.0.1"));
+            ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
+            ContextUtil.setUserId(sysLoginResult.userId());
+            var sysLoginResult2 = doInTransaction(() -> platformUserManager.enterApp(sysApp.appId()));
+            LOGGER.info(sysLoginResult2.toString());
+            var loginInfo = loginService.verify(requireNonNull(sysLoginResult2.token()));
+            LOGGER.info(loginInfo.toString());
+            AUTH_CONFIG = new AuthConfig(sysApp.appId(), "admin", "123456");
+        });
+//        compileTwice(USERS_SOURCE_ROOT);
+        compile(USERS_SOURCE_ROOT);
         submit(() -> {
             var roleType = queryClassType("LabRole");
             var roleReadWriteListType = typeManager.getParameterizedType(
@@ -426,7 +465,7 @@ public class MainTest extends TestCase {
             ).type();
             var roleNameFieldId = getFieldIdByCode(roleType, "name");
             var roleConstructorId = TestUtils.getMethodId(roleType, "LabRole", StandardTypes.getStringType().getId());
-            var role = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            var role = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             roleConstructorId,
                             null,
@@ -448,35 +487,66 @@ public class MainTest extends TestCase {
             var platformUserType = queryClassType("LabPlatformUser", List.of(TypeCategory.CLASS.code()));
             assertNoError(platformUserType);
             var platformUserConstructorId = TestUtils.getMethodIdByCode(platformUserType, "LabPlatformUser");
-            var platformUser = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+
+            // send verification code by invoking LabVerificationCode.sendVerificationCode
+            var verificationCodeType = queryClassType("LabVerificationCode");
+            var sendVerificationCodeMethodId = TestUtils.getMethodIdByCode(verificationCodeType, "sendVerificationCode");
+            String email = "15968879210@163.com";
+            doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            platformUserConstructorId,
+                            sendVerificationCodeMethodId,
                             null,
                             List.of(
-                                    PrimitiveFieldValue.createString("lyq"),
-                                    PrimitiveFieldValue.createString("123456"),
-                                    PrimitiveFieldValue.createString("lyq"),
-                                    new InstanceFieldValue(
-                                            null,
-                                            InstanceDTO.createListInstance(
-                                                    roleReadWriteListType.getRef(),
-                                                    false,
-                                                    List.of(ReferenceFieldValue.create(role.id())
+                                    PrimitiveFieldValue.createString(email),
+                                    PrimitiveFieldValue.createString("MetaVM注册验证码"),
+                                    PrimitiveFieldValue.createString("127.0.0.1")
+                            )
+                    )
+            ));
+            var verificationCode = Objects.requireNonNull(MockEmailSender.INSTANCE.getLastSentEmail()).content();
+            var registerMethodId = TestUtils.getMethodIdByCode(platformUserType, "register");
+            var registerRequestType = queryClassType("LabRegisterRequest");
+            var platformUser = doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            registerMethodId,
+                            null,
+                            List.of(
+                                    InstanceFieldValue.of(
+                                            InstanceDTO.createClassInstance(
+                                                    registerRequestType.getRef(),
+                                                    List.of(
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(registerRequestType, "loginName"),
+                                                                    PrimitiveFieldValue.createString(email)
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(registerRequestType, "name"),
+                                                                    PrimitiveFieldValue.createString("lyq")
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(registerRequestType, "password"),
+                                                                    PrimitiveFieldValue.createString("123456")
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(registerRequestType, "verificationCode"),
+                                                                    PrimitiveFieldValue.createString(verificationCode)
+                                                            )
                                                     )
+
                                             )
                                     )
                             )
                     )
             ));
             Assert.assertEquals(
-                    "lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userLoginNameFieldId)).getValue()
+                    email, ((PrimitiveFieldValue) platformUser.getFieldValue(userLoginNameFieldId)).getValue()
             );
             Assert.assertEquals(
                     "lyq", ((PrimitiveFieldValue) platformUser.getFieldValue(userNameFieldId)).getValue()
             );
             var platformUserRoles = ((InstanceFieldValue) platformUser.getFieldValue(userRolesFieldId)).getInstance();
-            Assert.assertEquals(1, platformUserRoles.getListSize());
-            Assert.assertEquals(role.id(), platformUserRoles.getElement(0).referenceId());
+//            Assert.assertEquals(1, platformUserRoles.getListSize());
+//            Assert.assertEquals(role.id(), platformUserRoles.getElement(0).referenceId());
             var platformUserApplicationsFieldId = getFieldIdByCode(platformUserType, "applications");
             var platformUserApplications = ((InstanceFieldValue) platformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(0, platformUserApplications.getListSize());
@@ -506,31 +576,18 @@ public class MainTest extends TestCase {
             var reloadedPlatformUserView = instanceManager.get(platformUserView.id(), 1).instance();
             var userViewRolesFieldId = TestUtils.getFieldIdByCode(platformUserViewType, "roles");
             var reloadedPlatformUserRoles = ((InstanceFieldValue) reloadedPlatformUserView.getFieldValue(userViewRolesFieldId)).getInstance();
-            Assert.assertEquals(1, reloadedPlatformUserRoles.getListSize());
+//            Assert.assertEquals(1, reloadedPlatformUserRoles.getListSize());
 
-            // test join application
+            // create an UserApplication by invoking the UserApplication.create method
             var userApplicationType = queryClassType("UserApplication");
-            var applicationConstructorId = TestUtils.getMethodIdByCode(userApplicationType, "UserApplication");
-            var application = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            var createApplicationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "create");
+            var application = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            applicationConstructorId,
+                            createApplicationMethodId,
                             null,
                             List.of(
                                     PrimitiveFieldValue.createString("lab"),
                                     ReferenceFieldValue.create(platformUser.id())
-                            )
-                    )
-            ));
-            var applicationType = queryClassType("LabApplication", List.of(TypeCategory.CLASS.code()));
-            var joinApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "joinApplication",
-                    platformUserType.getRef(), applicationType.getRef());
-            TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            joinApplicationMethodId,
-                            null,
-                            List.of(
-                                    ReferenceFieldValue.create(platformUser.id()),
-                                    ReferenceFieldValue.create(application.id())
                             )
                     )
             ));
@@ -539,10 +596,39 @@ public class MainTest extends TestCase {
             Assert.assertEquals(1, joinedApplications.getListSize());
             Assert.assertEquals(application.id(), joinedApplications.getElement(0).referenceId());
 
+            // get PlatformApplication
+            var platformApplicationType = queryClassType("PlatformApplication");
+            var getInstanceMethodId = TestUtils.getMethodIdByCode(platformApplicationType, "getInstance");
+            var platformApplication = doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            getInstanceMethodId,
+                            null,
+                            List.of()
+                    )
+            ));
+
+            // login
+            var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
+            var loginResult = doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            loginMethodId,
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(platformApplication.id()),
+                                    PrimitiveFieldValue.createString(email),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("127.0.0.1")
+                            )
+                    )
+            ));
+            var loginResultType = queryClassType("LabLoginResult");
+            var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            Assert.assertNotNull(token);
+
             // enter application
             var enterApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "enterApp",
                     platformUserType.getRef(), userApplicationType.getRef());
-            var loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             enterApplicationMethodId,
                             null,
@@ -552,8 +638,7 @@ public class MainTest extends TestCase {
                             )
                     )
             ));
-            var loginResultType = queryClassType("LabLoginResult");
-            var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+            token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
             Assert.assertNotNull(token);
 
             // test leave application
@@ -574,7 +659,7 @@ public class MainTest extends TestCase {
             var leaveApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "leaveApp",
                     platformUserListType.getRef(), userApplicationType.getRef());
             try {
-                TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
                                 leaveApplicationMethodId,
                                 null,
@@ -596,7 +681,7 @@ public class MainTest extends TestCase {
             }
 
             // create a platform user to join the application and then leave
-            var anotherPlatformUser = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            var anotherPlatformUser = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             platformUserConstructorId,
                             null,
@@ -616,21 +701,78 @@ public class MainTest extends TestCase {
                     )
             ));
 
-            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            // send invitation
+            var appInvitationRequestType = queryClassType("LabAppInvitationRequest");
+            var inviteMethodId = TestUtils.getMethodIdByCode(userApplicationType, "invite");
+            var invitation = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            joinApplicationMethodId,
+                            inviteMethodId,
                             null,
                             List.of(
-                                    ReferenceFieldValue.create(anotherPlatformUser.id()),
-                                    ReferenceFieldValue.create(application.id())
+                                    InstanceFieldValue.of(
+                                            InstanceDTO.createClassInstance(
+                                                    appInvitationRequestType.getRef(),
+                                                    List.of(
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(appInvitationRequestType, "application"),
+                                                                    ReferenceFieldValue.create(application.id())
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(appInvitationRequestType, "user"),
+                                                                    ReferenceFieldValue.create(anotherPlatformUser.id())
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(appInvitationRequestType, "isAdmin"),
+                                                                    PrimitiveFieldValue.createBoolean(true)
+                                                            )
+                                                    )
+                                            )
+                                    )
                             )
                     )
             ));
+
+            // Login as anotherPlatformUser by invoking the login method
+            var anotherLoginResult = doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            loginMethodId,
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(platformApplication.id()),
+                                    PrimitiveFieldValue.createString("lyq2"),
+                                    PrimitiveFieldValue.createString("123456"),
+                                    PrimitiveFieldValue.createString("127.0.0.1")
+                            )
+                    )
+            ));
+
+            // accept invitation
+            var acceptInvitationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "acceptInvitation");
+            doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            acceptInvitationMethodId,
+                            null,
+                            List.of(
+                                    ReferenceFieldValue.create(invitation.id())
+                            )
+                    )
+            ));
+
+//            doInTransaction(() -> flowExecutionService.execute(
+//                    new FlowExecutionRequest(
+//                            joinApplicationMethodId,
+//                            null,
+//                            List.of(
+//                                    ReferenceFieldValue.create(anotherPlatformUser.id()),
+//                                    ReferenceFieldValue.create(application.id())
+//                            )
+//                    )
+//            ));
             // assert that the user has joined the application
             var reloadedAnotherPlatformUser = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications = ((InstanceFieldValue) reloadedAnotherPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(1, anotherJoinedApplications.getListSize());
-            loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             enterApplicationMethodId,
                             null,
@@ -645,7 +787,7 @@ public class MainTest extends TestCase {
             Assert.assertNotNull(token);
 
             // test leaving the application
-            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             leaveApplicationMethodId,
                             null,
@@ -666,7 +808,7 @@ public class MainTest extends TestCase {
             var anotherJoinedApplications2 = ((InstanceFieldValue) reloadedAnotherPlatformUser2.getFieldValue(platformUserApplicationsFieldId)).getInstance();
             Assert.assertEquals(0, anotherJoinedApplications2.getListSize());
             try {
-                TestUtils.doInTransaction(() -> flowExecutionService.execute(
+                doInTransaction(() -> flowExecutionService.execute(
                         new FlowExecutionRequest(
                                 enterApplicationMethodId,
                                 null,
@@ -717,7 +859,7 @@ public class MainTest extends TestCase {
             Assert.assertEquals(2, tokenType.getClassParam().fields().size());
 
             // create an ordinary user
-            var user = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            var user = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             userConstructorId,
                             null,
@@ -752,8 +894,8 @@ public class MainTest extends TestCase {
             Assert.assertEquals(2, userType.getClassParam().constraints().size());
 
             // test login
-            var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
-            loginResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+//            var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
+            loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             loginMethodId,
                             null,
@@ -783,7 +925,7 @@ public class MainTest extends TestCase {
             );
             for (int i = 0; i < 5; i++) {
                 try {
-                    TestUtils.doInTransaction(() -> flowExecutionService.execute(loginRequest));
+                    doInTransaction(() -> flowExecutionService.execute(loginRequest));
                     if (i == 4) {
                         Assert.fail("登录尝试次数过多，应该抛出异常");
                     }
@@ -807,7 +949,7 @@ public class MainTest extends TestCase {
                             )
                     )
             ));
-            var loginInfo = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            var loginInfo = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             verifyMethodId,
                             null,
@@ -823,7 +965,7 @@ public class MainTest extends TestCase {
 
             // test logout
             var logoutMethodId = TestUtils.getMethodIdByCode(userType, "logout");
-            TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             logoutMethodId,
                             null,
@@ -840,7 +982,7 @@ public class MainTest extends TestCase {
             ));
 
             // verify that the token has been invalidated
-            loginInfo = TestUtils.doInTransaction(() -> flowExecutionService.execute(
+            loginInfo = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             verifyMethodId,
                             null,
@@ -858,7 +1000,7 @@ public class MainTest extends TestCase {
 
     private void compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        new Main(HOME, sourceRoot, AUTH_FILE, typeClient, allocatorStore).run();
+        new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore).run();
     }
 
     private TypeDTO queryClassType(String name) {

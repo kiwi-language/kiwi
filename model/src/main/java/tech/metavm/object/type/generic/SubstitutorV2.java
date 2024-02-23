@@ -86,8 +86,9 @@ public class SubstitutorV2 extends CopyVisitor {
         if (existingRoot != null) {
             existingCopies.put(root, existingRoot);
             EntityUtils.forEachDescendant(existingRoot, d -> {
-                var temp = d instanceof GenericElement genericElement ? genericElement.getCopySource() :
-                        (d == existingRoot ? root : null);
+                var temp = d == existingRoot ? root : (
+                        d instanceof GenericElement genericElement ? genericElement.getCopySource() : null
+                );
                 if (temp != null) {
                     var parentTemp = ((Entity) temp).getParentEntity();
                     if (existingRoot == d || parentTemp == null || existingCopies.containsKey(parentTemp)) {
@@ -214,6 +215,8 @@ public class SubstitutorV2 extends CopyVisitor {
                         .isStatic(method.isStatic())
                         .typeArguments(typeArgs)
                         .build();
+                if(method.isEphemeralEntity() || NncUtils.anyMatch(typeArgs, Entity::isEphemeralEntity))
+                    copy.setEphemeralEntity(true);
                 parameterizedFlowProvider.add(copy);
             }
             copy.setStage(stage);
@@ -246,13 +249,17 @@ public class SubstitutorV2 extends CopyVisitor {
             var typeArgs = NncUtils.map(function.getTypeParameters(), this::substituteType);
             var copy = (Function) getExistingCopy(function);
             if (copy == null) {
+                var name = Types.getParameterizedName(function.getName(), typeArgs);
+                var code = Types.getParameterizedCode(function.getCode(), typeArgs);
                 copy = FunctionBuilder
-                        .newBuilder(function.getName(), function.getCode(), compositeTypeFacade)
+                        .newBuilder(name, code, compositeTypeFacade)
                         .tmpId(getCopyTmpId(function))
                         .horizontalTemplate(function)
                         .typeArguments(typeArgs)
                         .isSynthetic(function.isSynthetic())
                         .build();
+                if(function.isEphemeralEntity() || NncUtils.anyMatch(typeArgs, Entity::isEphemeralEntity))
+                    copy.setEphemeralEntity(true);
                 parameterizedFlowProvider.add(copy);
             }
             copy.setStage(stage);
@@ -294,6 +301,8 @@ public class SubstitutorV2 extends CopyVisitor {
                         .template(template)
                         .tmpId(getCopyTmpId(template))
                         .build();
+                if(type.isEphemeralEntity() || NncUtils.anyMatch(typeArguments, Entity::isEphemeralEntity))
+                    copy.setEphemeralEntity(true);
                 parameterizedTypeProvider.add(copy);
             } else {
                 copy.setName(name);
