@@ -88,6 +88,10 @@ public class Session extends Entity {
         return entries.stream().filter(e -> e.getKey().equals(key)).findFirst().map(SessionEntry::getValue).orElse(null);
     }
 
+    public boolean removeEntry(String key) {
+        return entries.removeIf(e -> e.getKey().equals(key));
+    }
+
     public void close() {
         AssertUtils.assertTrue(state == SessionState.ACTIVE,
                 ErrorCode.ILLEGAL_SESSION_STATE);

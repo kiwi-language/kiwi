@@ -79,6 +79,14 @@ public class NativeFunctions {
         return holder.getSetSessionEntry();
     }
 
+    public static Function getRemoveSessionEntry() {
+        return holder.getRemoveSessionEntry();
+    }
+
+    public static void setRemoveSessionEntry(@NotNull Function function) {
+        holder.setRemoveSessionEntry(function);
+    }
+
     public static Function getTypeCast() {
         return holder.getTypeCast();
     }

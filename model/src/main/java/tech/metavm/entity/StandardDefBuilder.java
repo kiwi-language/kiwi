@@ -361,6 +361,16 @@ public class StandardDefBuilder {
         NativeFunctions.setSetSessionEntry(setSessionEntry);
         defContext.writeEntity(setSessionEntry);
 
+        var removeSessionEntry = FunctionBuilder.newBuilder("删除会话条目", "removeSessionEntry", defContext.getFunctionTypeContext())
+                .isNative()
+                .parameters(
+                        new Parameter(null, "键", "key", StandardTypes.getStringType())
+                )
+                .returnType(StandardTypes.getBooleanType())
+                .build();
+        NativeFunctions.setRemoveSessionEntry(removeSessionEntry);
+        defContext.writeEntity(removeSessionEntry);
+
         var castedType = new TypeVariable(null, "转换类型", "CastedType", DummyGenericDeclaration.INSTANCE);
         var typeCast = FunctionBuilder.newBuilder("类型转换", "typeCast", defContext.getFunctionTypeContext())
                 .isNative()

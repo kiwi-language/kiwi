@@ -48,4 +48,8 @@ public interface NativeFunctionsHolder {
     Function getPrint();
 
     void setPrint(Function function);
+
+    Function getRemoveSessionEntry();
+
+    void setRemoveSessionEntry(Function function);
 }

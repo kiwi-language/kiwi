@@ -68,7 +68,7 @@ public class ExpressionResolver {
             new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver(),
             new SendEmailResolver(), new RegexMatchResolver(), new RandomNumberMatcher(),
             new NumberFormatMatcher(), new GetSessionEntryResolver(), new SetSessionEntryResolver(),
-            new StringFormatResolver(), new GetIdResolver(), new PrintResolver()
+            new StringFormatResolver(), new GetIdResolver(), new PrintResolver(), new RemoveSessionEntryResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -822,6 +822,11 @@ public class ExpressionResolver {
             methodGenerator.createReturn(resolve(bodyExpr, context));
         } else {
             requireNonNull(expression.getBody()).accept(visitor);
+            if(lambdaNode.getReturnType().isVoid()) {
+                var lastNode = lambdaNode.getBodyScope().getLastNode();
+                if (lastNode == null || !lastNode.isExit())
+                    methodGenerator.createReturn();
+            }
         }
         methodGenerator.exitScope();
         return new NodeExpression(lambdaNode);

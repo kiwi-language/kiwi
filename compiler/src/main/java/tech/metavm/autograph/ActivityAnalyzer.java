@@ -72,7 +72,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
             enterScope(method.getName());
 
             enterScope(method.getName());
-            visitArgumentDeclarations(method);
+            visitParameterDeclarations(method);
             exitAndRecordScope(method.getParameterList());
 
             enterScope(method.getName());
@@ -85,9 +85,19 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitLambdaExpression(PsiLambdaExpression expression) {
-        for (PsiParameter param : expression.getParameterList().getParameters()) {
-
+        enterScope();
+        {
+            enterScope();
+            expression.getParameterList().accept(this);
+            exitAndRecordScope(expression.getParameterList());
         }
+        {
+            enterScope();
+            if (expression.getBody() != null)
+                expression.getBody().accept(this);
+            exitAndRecordScope(expression, BODY_SCOPE);
+        }
+        exitAndRecordScope(expression, ARGS_BODY_SCOPE);
     }
 
     private void defineSelfParameter() {
@@ -119,7 +129,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
         }
     }
 
-    private void visitArgumentDeclarations(PsiMethod method) {
+    private void visitParameterDeclarations(PsiMethod method) {
         if (!method.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
             PsiParameter firstParam = method.getParameterList().getParameter(0);
             if (firstParam == null || !firstParam.getName().equals("this")) {
@@ -152,7 +162,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitTryStatement(PsiTryStatement statement) {
-        if(statement.getResourceList() != null) {
+        if (statement.getResourceList() != null) {
             enterScope();
             statement.getResourceList().accept(this);
             exitAndRecordScope(statement, RESOURCE_SCOPE);
@@ -166,7 +176,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
             catchSection.accept(this);
             exitAndRecordScope(catchSection, BODY_SCOPE);
         }
-        if(statement.getFinallyBlock() != null) {
+        if (statement.getFinallyBlock() != null) {
             enterScope();
             statement.getFinallyBlock().accept(this);
             exitAndRecordScope(statement, FINALLY_SCOPE);
@@ -196,7 +206,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitCallExpression(PsiCallExpression callExpression) {
-        if(callExpression.getArgumentList() != null) {
+        if (callExpression.getArgumentList() != null) {
             enterScope();
             requireNonNull(callExpression.getArgumentList()).accept(this);
             exitAndRecordScope(callExpression, ARGS_SCOPE);

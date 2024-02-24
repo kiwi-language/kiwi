@@ -10,4 +10,8 @@ public class SessionUtils {
 
     public static void setEntry(String key, Object value) {}
 
+    public static boolean removeEntry(String key) {
+        return true;
+    }
+
 }

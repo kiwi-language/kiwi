@@ -8,7 +8,9 @@ import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
 import tech.metavm.entity.IndexUtils;
+import tech.metavm.lang.IdUtils;
 import tech.metavm.lang.PasswordUtils;
+import tech.metavm.lang.SessionUtils;
 import tech.metavm.utils.LabBusinessException;
 import tech.metavm.utils.LabErrorCode;
 
@@ -148,6 +150,15 @@ public class LabPlatformUser extends LabUser {
 
     public static LabPlatformUser currentPlatformUser() {
         return (LabPlatformUser) LabUser.currentUser(PlatformApplication.getInstance());
+    }
+
+    public static void logout() {
+        var user = currentPlatformUser();
+        SessionUtils.removeEntry("CurrentApp");
+        IndexUtils.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE)).forEach(s -> {
+            s.close();
+            SessionUtils.removeEntry("LoggedInUser" + IdUtils.getId(s.getUser().getApplication()));
+        });
     }
 
 }

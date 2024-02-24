@@ -607,28 +607,15 @@ public class MainTest extends TestCase {
                     )
             ));
 
-            // login
-            var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
-            var loginResult = doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            loginMethodId,
-                            null,
-                            List.of(
-                                    ReferenceFieldValue.create(platformApplication.id()),
-                                    PrimitiveFieldValue.createString(email),
-                                    PrimitiveFieldValue.createString("123456"),
-                                    PrimitiveFieldValue.createString("127.0.0.1")
-                            )
-                    )
-            ));
             var loginResultType = queryClassType("LabLoginResult");
-            var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
-            Assert.assertNotNull(token);
+
+            // login
+            var token = login(userType, loginResultType, platformApplication, email, "123456");
 
             // enter application
             var enterApplicationMethodId = TestUtils.getStaticMethod(platformUserType, "enterApp",
                     platformUserType.getRef(), userApplicationType.getRef());
-            loginResult = doInTransaction(() -> flowExecutionService.execute(
+            var loginResult = doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             enterApplicationMethodId,
                             null,
@@ -733,18 +720,7 @@ public class MainTest extends TestCase {
             ));
 
             // Login as anotherPlatformUser by invoking the login method
-            var anotherLoginResult = doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            loginMethodId,
-                            null,
-                            List.of(
-                                    ReferenceFieldValue.create(platformApplication.id()),
-                                    PrimitiveFieldValue.createString("lyq2"),
-                                    PrimitiveFieldValue.createString("123456"),
-                                    PrimitiveFieldValue.createString("127.0.0.1")
-                            )
-                    )
-            ));
+            login(userType, loginResultType, platformApplication, "lyq2", "123456");
 
             // accept invitation
             var acceptInvitationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "acceptInvitation");
@@ -894,38 +870,12 @@ public class MainTest extends TestCase {
             Assert.assertEquals(2, userType.getClassParam().constraints().size());
 
             // test login
-//            var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
-            loginResult = doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            loginMethodId,
-                            null,
-                            List.of(
-                                    ReferenceFieldValue.create(application.id()),
-                                    PrimitiveFieldValue.createString("leen"),
-                                    PrimitiveFieldValue.createString("123456"),
-                                    PrimitiveFieldValue.createString("127.0.0.1")
-                            )
-                    )
-            ));
-            // get LoginResult type
-            loginResultType = queryClassType("LabLoginResult");
-            token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
-            Assert.assertNotNull(token);
+            token = login(userType, loginResultType, application, "leen", "123456");
 
             // test login with too many attempts
-            var loginRequest = new FlowExecutionRequest(
-                    loginMethodId,
-                    null,
-                    List.of(
-                            ReferenceFieldValue.create(application.id()),
-                            PrimitiveFieldValue.createString("leen"),
-                            PrimitiveFieldValue.createString("123123"),
-                            PrimitiveFieldValue.createString("127.0.0.1")
-                    )
-            );
             for (int i = 0; i < 5; i++) {
                 try {
-                    doInTransaction(() -> flowExecutionService.execute(loginRequest));
+                    login(userType, loginResultType, application, "leen", "123123", "192.168.0.1", false);
                     if (i == 4) {
                         Assert.fail("登录尝试次数过多，应该抛出异常");
                     }
@@ -935,27 +885,8 @@ public class MainTest extends TestCase {
             }
 
             // execute the LabUser.verify method and check verification result
-            var verifyMethodId = TestUtils.getMethodIdByCode(userType, "verify");
-            var tokenValue = InstanceFieldValue.of(InstanceDTO.createClassInstance(
-                    tokenType.getRef(),
-                    List.of(
-                            InstanceFieldDTO.create(
-                                    getFieldIdByCode(tokenType, "application"),
-                                    ReferenceFieldValue.create(application.id())
-                            ),
-                            InstanceFieldDTO.create(
-                                    getFieldIdByCode(tokenType, "token"),
-                                    PrimitiveFieldValue.createString(token)
-                            )
-                    )
-            ));
-            var loginInfo = doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            verifyMethodId,
-                            null,
-                            List.of(tokenValue)
-                    )
-            ));
+            var tokenValue = createTokenValue(tokenType, application, token);
+            var loginInfo = verify(userType, tokenValue);
             var loginInfoType = queryClassType("LabLoginInfo");
             assertNoError(loginInfoType);
             var applicationFieldId = getFieldIdByCode(loginInfoType, "application");
@@ -982,15 +913,81 @@ public class MainTest extends TestCase {
             ));
 
             // verify that the token has been invalidated
-            loginInfo = doInTransaction(() -> flowExecutionService.execute(
+            assertTokenInvalidated(userType, tokenValue, applicationFieldId);
+
+            // login again
+            token = login(userType, loginResultType, platformApplication, email, "123456");
+            var tokenValue2 = createTokenValue(tokenType, platformApplication, token);
+
+//            // test logout platform user
+            var logoutPlatformUserMethodId = TestUtils.getMethodIdByCode(platformUserType, "logout");
+            doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
-                            verifyMethodId,
+                            logoutPlatformUserMethodId,
                             null,
-                            List.of(tokenValue)
+                            List.of()
                     )
             ));
-            Assert.assertNull(((PrimitiveFieldValue) loginInfo.getFieldValue(applicationFieldId)).getValue());
+
+            // assert that the token has been invalidated
+            assertTokenInvalidated(userType, tokenValue, applicationFieldId);
         });
+    }
+
+    private void assertTokenInvalidated(TypeDTO userType, FieldValue tokenValue, long applicationFieldId) {
+        var loginInfo = verify(userType, tokenValue);
+        Assert.assertNull(((PrimitiveFieldValue) loginInfo.getFieldValue(applicationFieldId)).getValue());
+    }
+
+    private InstanceDTO verify(TypeDTO userType, FieldValue tokenValue) {
+        var verifyMethodId = TestUtils.getMethodIdByCode(userType, "verify");
+        return doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        verifyMethodId,
+                        null,
+                        List.of(tokenValue)
+                )
+        ));
+    }
+
+    private String login(TypeDTO userType, TypeDTO loginResultType, InstanceDTO platformApplication, String loginName, @SuppressWarnings("SameParameterValue") String password) {
+        return login(userType, loginResultType, platformApplication, loginName, password, "127.0.0.1", true);
+    }
+
+    private String login(TypeDTO userType, TypeDTO loginResultType, InstanceDTO platformApplication, String loginName, String password, String clientIP, boolean checkToken) {
+        var loginMethodId = TestUtils.getMethodIdByCode(userType, "login");
+        var loginResult = doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        loginMethodId,
+                        null,
+                        List.of(
+                                ReferenceFieldValue.create(platformApplication.id()),
+                                PrimitiveFieldValue.createString(loginName),
+                                PrimitiveFieldValue.createString(password),
+                                PrimitiveFieldValue.createString(clientIP)
+                        )
+                )
+        ));
+        var token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
+        if (checkToken)
+            Assert.assertNotNull(token);
+        return token;
+    }
+
+    private FieldValue createTokenValue(TypeDTO tokenType, InstanceDTO application, String token) {
+        return InstanceFieldValue.of(InstanceDTO.createClassInstance(
+                tokenType.getRef(),
+                List.of(
+                        InstanceFieldDTO.create(
+                                getFieldIdByCode(tokenType, "application"),
+                                ReferenceFieldValue.create(application.id())
+                        ),
+                        InstanceFieldDTO.create(
+                                getFieldIdByCode(tokenType, "token"),
+                                PrimitiveFieldValue.createString(token)
+                        )
+                )
+        ));
     }
 
     private void compileTwice(String sourceRoot) {

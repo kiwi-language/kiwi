@@ -107,6 +107,16 @@ public class ThreadLocalNativeFunctionsHolder implements NativeFunctionsHolder {
     }
 
     @Override
+    public Function getRemoveSessionEntry() {
+        return TL.get().getRemoveSessionEntry();
+    }
+
+    @Override
+    public void setRemoveSessionEntry(Function function) {
+        TL.get().setRemoveSessionEntry(function);
+    }
+
+    @Override
     public Function getSetSessionEntry() {
         return TL.get().getSetSessionEntry();
     }

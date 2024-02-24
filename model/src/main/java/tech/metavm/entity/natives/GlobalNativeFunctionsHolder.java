@@ -36,6 +36,8 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
 
     private Function setSessionEntry;
 
+    private Function removeSessionEntry;
+
     private Function typeCast;
 
     private Function print;
@@ -181,6 +183,24 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
     }
 
     @Override
+    public Function getRemoveSessionEntry() {
+        return removeSessionEntry;
+    }
+
+    @Override
+    public void setRemoveSessionEntry(Function function) {
+        this.removeSessionEntry = function;
+        functions.put(function, (func, args) -> {
+            var key = ((StringInstance) args.get(0)).getValue();
+            var entityContext = ContextUtil.getEntityContext();
+            var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
+            if(session == null || !session.isActive())
+                throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
+            return Instances.booleanInstance(session.removeEntry(key));
+        });
+    }
+
+    @Override
     public Function getTypeCast() {
         return typeCast;
     }
@@ -211,4 +231,5 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
             return null;
         });
     }
+
 }

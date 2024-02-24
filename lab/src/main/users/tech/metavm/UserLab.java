@@ -21,23 +21,13 @@ public class UserLab {
     }
 
     @EntityFlow("创建应用")
-    public UserApplication createApplication(String name, LabPlatformUser owner) {
-        return UserApplication.create(name, owner);
+    public UserApplication createApplication(String name) {
+        return UserApplication.create(name, LabPlatformUser.currentPlatformUser());
     }
 
     @EntityFlow("创建平台用户")
     public LabPlatformUser createPlatformUser(String loginName, String password, String name, List<LabRole> roles) {
         return new LabPlatformUser(loginName, password, name, roles);
-    }
-
-    @EntityFlow("发送验证码")
-    public void sendVerificationCode(String receiver, String code, String clientIP) {
-        LabVerificationCode.sendVerificationCode(receiver, code, clientIP);
-    }
-
-    @EntityFlow("创建会话")
-    public LabSession createSession(LabUser user, Date autoCloseAt) {
-        return new LabSession(user, autoCloseAt);
     }
 
     @EntityFlow("登录")
@@ -51,8 +41,8 @@ public class UserLab {
     }
 
     @EntityFlow("登出")
-    public void logout(LabApplication application, String token) {
-        LabUser.logout(List.of(new LabToken(application, token)));
+    public void logout() {
+        LabPlatformUser.logout();
     }
 
     @EntityFlow("加入应用")

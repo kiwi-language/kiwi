@@ -103,6 +103,9 @@ public class BootstrapUtils {
             NativeFunctions.setSetSessionEntry(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "setSessionEntry"
             )));
+            NativeFunctions.setRemoveSessionEntry(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "removeSessionEntry"
+            )));
             NativeFunctions.setTypeCast(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "typeCast"
             )));
