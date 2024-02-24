@@ -43,7 +43,10 @@ public enum LabErrorCode {
 
     ILLEGAL_ACCESS(413, "无权限访问"),
 
-    APPLICATION_NOT_SELECTED(414, "未选择应用"),;
+    APPLICATION_NOT_SELECTED(414, "未选择应用"),
+
+    ;
+
 
     private final int code;
     private final String message;

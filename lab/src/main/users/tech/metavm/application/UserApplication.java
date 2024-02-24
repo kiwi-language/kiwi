@@ -8,8 +8,8 @@ import tech.metavm.message.LabMessage;
 import tech.metavm.message.LabMessageKind;
 import tech.metavm.user.LabPlatformUser;
 import tech.metavm.user.LabUser;
-import tech.metavm.utils.LabErrorCode;
 import tech.metavm.utils.LabBusinessException;
+import tech.metavm.utils.LabErrorCode;
 import tech.metavm.utils.UserUtils;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class UserApplication extends LabApplication {
     }
 
     public void setOwner(LabPlatformUser owner) {
-        if(owner != this.owner) {
+        if (owner != this.owner) {
             this.owner = owner;
             addAdmin(owner);
         }
@@ -53,7 +53,7 @@ public class UserApplication extends LabApplication {
                 throw new LabBusinessException(LabErrorCode.REENTERING_APP);
             this.admins.add(user);
         } else
-            throw new LabBusinessException(LabErrorCode.ALREADY_AN_ADMIN);
+            throw new LabBusinessException(LabErrorCode.ALREADY_AN_ADMIN, user.getName());
     }
 
     public void removeAdmin(LabPlatformUser user) {
@@ -120,6 +120,29 @@ public class UserApplication extends LabApplication {
             throw new LabBusinessException(LabErrorCode.ILLEGAL_ACCESS);
         invitation.accept();
         LabPlatformUser.joinApplication(user, invitation.getApplication());
+    }
+
+    public static void evict(UserApplication app, List<LabPlatformUser> users) {
+        ensureAppAdmin(app);
+        for (var user : users) {
+            if (app.isOwner(user))
+                throw new LabBusinessException(LabErrorCode.CAN_NOT_EVICT_APP_OWNER);
+            user.leaveApplication(app);
+        }
+    }
+
+    public static void promote(UserApplication app, LabPlatformUser user) {
+        ensureAppAdmin(app);
+        app.addAdmin(user);
+        new LabMessage(user, String.format("您已成为应用'%s'的管理员", app.getName()),
+                LabMessageKind.DEFAULT, null);
+    }
+
+    public static void demote(UserApplication app, LabPlatformUser user) {
+        ensureAppAdmin(app);
+        app.removeAdmin(user);
+        new LabMessage(user, String.format("您不再是应用'%s'的管理员", app.getName()),
+                LabMessageKind.DEFAULT, null);
     }
 
     private static void ensureAppAdmin(UserApplication application) {

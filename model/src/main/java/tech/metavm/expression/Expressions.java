@@ -122,6 +122,10 @@ public class Expressions {
         return new ConstantExpression(Instances.longInstance(value));
     }
 
+    public static Expression constantDouble(double value) {
+        return new ConstantExpression(Instances.doubleInstance(value));
+    }
+
     public static Expression fieldStartsWith(Field field, PrimitiveInstance strInstance) {
         return new FunctionExpression(
                 Func.STARTS_WITH,

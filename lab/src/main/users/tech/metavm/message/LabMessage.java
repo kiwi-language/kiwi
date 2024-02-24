@@ -3,7 +3,10 @@ package tech.metavm.message;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.EntityType;
+import tech.metavm.user.LabPlatformUser;
 import tech.metavm.user.LabUser;
+import tech.metavm.utils.LabBusinessException;
+import tech.metavm.utils.LabErrorCode;
 
 import javax.annotation.Nullable;
 
@@ -63,6 +66,15 @@ public class LabMessage {
 
     public void clearTarget() {
         this.target = null;
+    }
+
+    public static void read(LabMessage message) {
+        var user = LabUser.currentUser();
+        if (message.getReceiver() != user)
+            throw new LabBusinessException(LabErrorCode.ILLEGAL_ACCESS);
+        if (!message.isRead()) {
+            message.setRead(true);
+        }
     }
 
 //    public MessageDTO toDTO() {

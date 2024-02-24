@@ -4,6 +4,7 @@ import tech.metavm.application.*;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityFlow;
 import tech.metavm.entity.EntityType;
+import tech.metavm.message.LabMessage;
 import tech.metavm.user.*;
 
 import java.util.Date;
@@ -45,19 +46,14 @@ public class UserLab {
         LabPlatformUser.logout();
     }
 
-    @EntityFlow("加入应用")
-    public void joinApp(LabPlatformUser user, LabApplication application) {
-        LabPlatformUser.joinApplication(user, application);
-    }
-
     @EntityFlow("离开应用")
-    public void leaveApp(LabPlatformUser user, UserApplication application) {
-        LabPlatformUser.leaveApp(List.of(user), application);
+    public void leaveApp(UserApplication application) {
+        LabPlatformUser.leaveApp(List.of(LabPlatformUser.currentPlatformUser()), application);
     }
 
     @EntityFlow("进入应用")
-    public void enterApp(LabPlatformUser user, UserApplication application) {
-        LabPlatformUser.enterApp(user, application);
+    public void enterApp(UserApplication application) {
+        LabPlatformUser.enterApp(LabPlatformUser.currentPlatformUser(), application);
     }
 
     @EntityFlow("邀请")
@@ -82,6 +78,31 @@ public class UserLab {
     @EntityFlow("注册")
     public void register(String loginName, String name, String password, String verificationCode) {
         LabPlatformUser.register(new LabRegisterRequest(loginName, name, password, verificationCode));
+    }
+
+    @EntityFlow("修改密码")
+    public void changePassword(String verificationCode, String loginName, String password) {
+        LabPlatformUser.changePassword(new LabChangePasswordRequest(verificationCode, loginName, password));
+    }
+
+    @EntityFlow("移除用户")
+    public void evict(UserApplication app, List<LabPlatformUser> users) {
+        UserApplication.evict(app, users);
+    }
+
+    @EntityFlow("晋升管理员")
+    public void promote(UserApplication app, LabPlatformUser user) {
+        UserApplication.promote(app, user);
+    }
+
+    @EntityFlow("撤销管理员")
+    public void demote(UserApplication app, LabPlatformUser user) {
+        UserApplication.demote(app, user);
+    }
+
+    @EntityFlow("标记消息已读")
+    public void readMessage(LabMessage message) {
+        LabMessage.read(message);
     }
 
 }

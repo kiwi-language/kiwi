@@ -114,6 +114,10 @@ public class LabUser {
         throw new LabBusinessException(LabErrorCode.APPLICATION_NOT_SELECTED);
     }
 
+    public static LabUser currentUser() {
+        return currentUser(currentApplication());
+    }
+
     public static LabUser currentUser(LabApplication application) {
         var user = (LabUser) SessionUtils.getEntry("LoggedInUser" + IdUtils.getId(application));
         if (user != null)

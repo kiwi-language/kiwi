@@ -490,20 +490,9 @@ public class MainTest extends TestCase {
 
             // send verification code by invoking LabVerificationCode.sendVerificationCode
             var verificationCodeType = queryClassType("LabVerificationCode");
-            var sendVerificationCodeMethodId = TestUtils.getMethodIdByCode(verificationCodeType, "sendVerificationCode");
             String email = "15968879210@163.com";
-            doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            sendVerificationCodeMethodId,
-                            null,
-                            List.of(
-                                    PrimitiveFieldValue.createString(email),
-                                    PrimitiveFieldValue.createString("MetaVM注册验证码"),
-                                    PrimitiveFieldValue.createString("127.0.0.1")
-                            )
-                    )
-            ));
-            var verificationCode = Objects.requireNonNull(MockEmailSender.INSTANCE.getLastSentEmail()).content();
+            sendVerificationCode(verificationCodeType, email);
+            var verificationCode = getLastSentEmailContent();
             var registerMethodId = TestUtils.getMethodIdByCode(platformUserType, "register");
             var registerRequestType = queryClassType("LabRegisterRequest");
             var platformUser = doInTransaction(() -> flowExecutionService.execute(
@@ -691,7 +680,7 @@ public class MainTest extends TestCase {
             // send invitation
             var appInvitationRequestType = queryClassType("LabAppInvitationRequest");
             var inviteMethodId = TestUtils.getMethodIdByCode(userApplicationType, "invite");
-            var invitation = doInTransaction(() -> flowExecutionService.execute(
+            doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             inviteMethodId,
                             null,
@@ -719,8 +708,43 @@ public class MainTest extends TestCase {
                     )
             ));
 
-            // Login as anotherPlatformUser by invoking the login method
+            // Login as anotherPlatformUser
             login(userType, loginResultType, platformApplication, "lyq2", "123456");
+
+            // query the latest message
+            var messageType = queryClassType("LabMessage", List.of(TypeCategory.CLASS.code()));
+            var messageList = instanceManager.query(
+                    new InstanceQueryDTO(
+                            messageType.id(),
+                            null,
+                            null,
+                            "接受者 = $$" + anotherPlatformUser.id(),
+                            List.of(),
+                            1,
+                            20,
+                            false,
+                            false,
+                            List.of()
+                    )
+            ).page().data();
+            Assert.assertEquals(1, messageList.size());
+            var message = messageList.get(0);
+            // check that the message is not read
+            var messageReadFieldId = getFieldIdByCode(messageType, "read");
+            Assert.assertFalse((boolean) ((PrimitiveFieldValue) message.getFieldValue(messageReadFieldId)).getValue());
+            // read the message
+            var messageReadMethodId = TestUtils.getMethodIdByCode(messageType, "read");
+            doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            messageReadMethodId,
+                            null,
+                            List.of(ReferenceFieldValue.create(message.id()))
+                    )
+            ));
+
+            // get invitationId from the message
+            var messageTargetFieldId = getFieldIdByCode(messageType, "target");
+            var invitationId = ((ReferenceFieldValue) message.getFieldValue(messageTargetFieldId)).getId();
 
             // accept invitation
             var acceptInvitationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "acceptInvitation");
@@ -729,21 +753,11 @@ public class MainTest extends TestCase {
                             acceptInvitationMethodId,
                             null,
                             List.of(
-                                    ReferenceFieldValue.create(invitation.id())
+                                    ReferenceFieldValue.create(invitationId)
                             )
                     )
             ));
 
-//            doInTransaction(() -> flowExecutionService.execute(
-//                    new FlowExecutionRequest(
-//                            joinApplicationMethodId,
-//                            null,
-//                            List.of(
-//                                    ReferenceFieldValue.create(anotherPlatformUser.id()),
-//                                    ReferenceFieldValue.create(application.id())
-//                            )
-//                    )
-//            ));
             // assert that the user has joined the application
             var reloadedAnotherPlatformUser = instanceManager.get(anotherPlatformUser.id(), 1).instance();
             var anotherJoinedApplications = ((InstanceFieldValue) reloadedAnotherPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
@@ -920,18 +934,77 @@ public class MainTest extends TestCase {
             var tokenValue2 = createTokenValue(tokenType, platformApplication, token);
 
 //            // test logout platform user
-            var logoutPlatformUserMethodId = TestUtils.getMethodIdByCode(platformUserType, "logout");
-            doInTransaction(() -> flowExecutionService.execute(
-                    new FlowExecutionRequest(
-                            logoutPlatformUserMethodId,
-                            null,
-                            List.of()
-                    )
-            ));
+            logout(platformUserType);
 
             // assert that the token has been invalidated
             assertTokenInvalidated(userType, tokenValue, applicationFieldId);
+
+            // test changePassword
+            sendVerificationCode(verificationCodeType, email);
+
+            var changePasswordMethodId = TestUtils.getMethodIdByCode(platformUserType, "changePassword");
+            var changePasswordRequestType = queryClassType("LabChangePasswordRequest");
+            doInTransaction(() -> flowExecutionService.execute(
+                    new FlowExecutionRequest(
+                            changePasswordMethodId,
+                            null,
+                            List.of(
+                                    InstanceFieldValue.of(
+                                            InstanceDTO.createClassInstance(
+                                                    changePasswordRequestType.getRef(),
+                                                    List.of(
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(changePasswordRequestType, "verificationCode"),
+                                                                    PrimitiveFieldValue.createString(getLastSentEmailContent())
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(changePasswordRequestType, "loginName"),
+                                                                    PrimitiveFieldValue.createString(email)
+                                                            ),
+                                                            InstanceFieldDTO.create(
+                                                                    getFieldIdByCode(changePasswordRequestType, "password"),
+                                                                    PrimitiveFieldValue.createString("888888")
+                                                            )
+                                                    )
+                                            )
+                                    )
+                            )
+                    )
+            ));
+            var token2 = login(userType, loginResultType, platformApplication, email, "123456", "127.0.0.1", false);
+            Assert.assertNull(token2);
+            login(userType, loginResultType, platformApplication, email, "888888");
         });
+    }
+
+    private void sendVerificationCode(TypeDTO verificationCodeType, String email) {
+        var sendVerificationCodeMethodId = TestUtils.getMethodIdByCode(verificationCodeType, "sendVerificationCode");
+        doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        sendVerificationCodeMethodId,
+                        null,
+                        List.of(
+                                PrimitiveFieldValue.createString(email),
+                                PrimitiveFieldValue.createString("MetaVM验证码"),
+                                PrimitiveFieldValue.createString("127.0.0.1")
+                        )
+                )
+        ));
+    }
+
+    private String getLastSentEmailContent() {
+        return Objects.requireNonNull(MockEmailSender.INSTANCE.getLastSentEmail()).content();
+    }
+
+    private void logout(TypeDTO platformUserType) {
+        var logoutPlatformUserMethodId = TestUtils.getMethodIdByCode(platformUserType, "logout");
+        doInTransaction(() -> flowExecutionService.execute(
+                new FlowExecutionRequest(
+                        logoutPlatformUserMethodId,
+                        null,
+                        List.of()
+                )
+        ));
     }
 
     private void assertTokenInvalidated(TypeDTO userType, FieldValue tokenValue, long applicationFieldId) {

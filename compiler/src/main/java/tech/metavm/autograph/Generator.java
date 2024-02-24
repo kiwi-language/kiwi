@@ -158,8 +158,23 @@ public class Generator extends CodeGenVisitor {
                 builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
             }
         } else if (field.getType().isNullable()) {
+            initField(field, Expressions.nullExpression());
+        } else if(field.getType().isBoolean()) {
+            initField(field, Expressions.constantBoolean(false));
+        } else if (field.getType().isLong()) {
+            initField(field, Expressions.constantLong(0L));
+        } else if(field.getType().isDouble()) {
+            initField(field, Expressions.constantDouble(0.0));
+        }
+    }
+
+    private void initField(Field field, Expression initializer) {
+        if (field.isStatic()) {
+            var builder = currentClassInfo().staticBuilder;
+            builder.createUpdateStatic(currentClass(), Map.of(field, initializer));
+        } else {
             var builder = currentClassInfo().fieldBuilder;
-            builder.createUpdate(builder.getVariable("this"), Map.of(field, Expressions.nullExpression()));
+            builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
         }
     }
 
