@@ -47,7 +47,7 @@ public class InstanceContextTest extends TestCase {
         return new InstanceContext(
                 TestConstants.APP_ID,
                 instanceStore,
-                idProvider,
+                new DefaultIdInitializer(idProvider),
                 executor,
                 false,
                 List.of(),
@@ -113,31 +113,31 @@ public class InstanceContextTest extends TestCase {
             fooId = foo.getPhysicalId();
             bazId = baz.getPhysicalId();
         }
-        TestUtils.beginTransaction();
-        try (var context = newContext()) {
-            var foo = (ClassInstance) context.get(fooId);
-            var baz = (ClassInstance) context.get(bazId);
-            var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
-            var bar001 = (DurableInstance) (bars.get(0));
-            baz.ensureLoaded();
-            context.remove(bar001);
-            final boolean[] onChangeCalled = new boolean[1];
-            context.addListener(new ContextListener() {
-                @Override
-                public boolean onChange(Instance instance) {
-                    if (instance == foo) {
-                        bars.removeElement(bar001);
-                        ((ArrayInstance) baz.getField(fooTypes.bazBarsField())).removeElement(bar001);
-                        onChangeCalled[0] = true;
-                        return true;
-                    } else
-                        return false;
-                }
-            });
-            context.finish();
-            Assert.assertTrue(onChangeCalled[0]);
-        }
-        TestUtils.commitTransaction();
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var foo = (ClassInstance) context.get(fooId);
+                var baz = (ClassInstance) context.get(bazId);
+                var bars = (ArrayInstance) foo.getField(fooTypes.fooBarsField());
+                var bar001 = (DurableInstance) (bars.get(0));
+                baz.ensureLoaded();
+                context.remove(bar001);
+                final boolean[] onChangeCalled = new boolean[1];
+                context.addListener(new ContextListener() {
+                    @Override
+                    public boolean onChange(Instance instance) {
+                        if (instance == foo) {
+                            bars.removeElement(bar001);
+                            ((ArrayInstance) baz.getField(fooTypes.bazBarsField())).removeElement(bar001);
+                            onChangeCalled[0] = true;
+                            return true;
+                        } else
+                            return false;
+                    }
+                });
+                context.finish();
+                Assert.assertTrue(onChangeCalled[0]);
+            }
+        });
     }
 
 

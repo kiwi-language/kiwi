@@ -155,10 +155,12 @@ public class BootstrapUtils {
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             var allocatorStore = new MemAllocatorStore();
             var columnStore = new MemColumnStore();
+            var stdIdStore = new MemoryStdIdStore();
             var bootstrap = new Bootstrap(
                     entityContextFactory,
                     new StdAllocators(allocatorStore),
-                    columnStore
+                    columnStore,
+                    stdIdStore
             );
             bootstrap.boot();
             TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
@@ -170,6 +172,7 @@ public class BootstrapUtils {
                     regionMapper.copy(),
                     blockMapper.copy(),
                     columnStore.copy(),
+                    stdIdStore.copy(),
                     allocatorStore.copy(),
                     instanceSearchService.copy()
             );

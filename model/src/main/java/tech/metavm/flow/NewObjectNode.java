@@ -115,26 +115,6 @@ public class NewObjectNode extends CallNode implements NewNode {
             writer.write(" " + parentRef.getText());
     }
 
-    @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var result = super.execute(frame);
-        if (result.output() != null) {
-            var instance = (ClassInstance) result.output();
-            var uninitializedField = instance.findUninitializedField();
-            if (uninitializedField != null) {
-                var exception = ClassInstance.allocate(StandardTypes.getRuntimeExceptionType());
-                var exceptionNative = new RuntimeExceptionNative(exception);
-                exceptionNative.RuntimeException(Instances.stringInstance(
-                                "Fail to construct object " + instance.getType().getName() + "，"
-                                        + "field" + uninitializedField.getName() + " not initialized."),
-                        frame.getNativeCallContext());
-                return NodeExecResult.exception(exception);
-            }
-        }
-        return result;
-    }
-
-
     public boolean isEphemeral() {
         return ephemeral;
     }

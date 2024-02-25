@@ -5,6 +5,7 @@ import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
 import tech.metavm.entity.natives.NativeCallContext;
 import tech.metavm.entity.natives.NativeMethods;
+import tech.metavm.entity.natives.RuntimeExceptionNative;
 import tech.metavm.flow.rest.FlowParam;
 import tech.metavm.flow.rest.FlowSummaryDTO;
 import tech.metavm.flow.rest.MethodParam;
@@ -338,11 +339,26 @@ public class Method extends Flow implements Property, GenericElement {
             else
                 Objects.requireNonNull(self);
             checkArguments(arguments);
+            FlowExecResult result;
             if (isNative())
-                return NativeMethods.invoke(this, self, arguments, new NativeCallContext(instanceRepository, parameterizedFlowProvider));
+                result = NativeMethods.invoke(this, self, arguments, new NativeCallContext(instanceRepository, parameterizedFlowProvider));
             else
-                return new MetaFrame(this.getRootNode(), declaringType, self,
+                result = new MetaFrame(this.getRootNode(), declaringType, self,
                         arguments, instanceRepository, parameterizedFlowProvider).execute();
+            if (isConstructor && result.ret() != null) {
+                var instance = (ClassInstance) result.ret();
+                var uninitializedField = instance.findUninitializedField();
+                if (uninitializedField != null) {
+                    var exception = ClassInstance.allocate(StandardTypes.getRuntimeExceptionType());
+                    var exceptionNative = new RuntimeExceptionNative(exception);
+                    exceptionNative.RuntimeException(Instances.stringInstance(
+                                    "对象" + instance.getType().getName() + "创建失败，" +
+                                            "字段" + uninitializedField.getName() + "未初始化"),
+                           new NativeCallContext(instanceRepository, parameterizedFlowProvider));
+                    return new FlowExecResult(null, exception);
+                }
+            }
+            return result;
         }
     }
 

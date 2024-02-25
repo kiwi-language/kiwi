@@ -9,6 +9,10 @@ public record ModelIdentity(
         boolean relative
 ) {
 
+    public String qualifiedName() {
+        return type.getTypeName() + "." + name;
+    }
+
     @Override
     public String toString() {
         return "ModelId [" + name + ":" + type.getTypeName() + "]";

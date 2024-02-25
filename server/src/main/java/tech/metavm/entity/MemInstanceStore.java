@@ -6,7 +6,6 @@ import tech.metavm.object.instance.persistence.IndexKeyPO;
 import tech.metavm.object.instance.persistence.InstancePO;
 import tech.metavm.object.instance.persistence.mappers.*;
 import tech.metavm.util.NncUtils;
-import tech.metavm.util.TestConstants;
 
 import java.util.List;
 
@@ -38,8 +37,8 @@ public class MemInstanceStore extends InstanceStore {
         return (MemIndexEntryMapper) indexEntryMapper;
     }
 
-    public InstancePO get(long id) {
-        return NncUtils.first(instanceMapper.selectByIds(TestConstants.APP_ID, List.of(id), 0));
+    public InstancePO get(long appId, long id) {
+        return NncUtils.first(instanceMapper.selectByIds(appId, List.of(id), 0));
     }
 
     public void addIndex(long appId, IndexKeyPO indexKey, Long id) {

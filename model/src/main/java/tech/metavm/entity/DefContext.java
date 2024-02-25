@@ -36,12 +36,12 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private final IdentitySet<ClassType> initializedClassTypes = new IdentitySet<>();
     private final DirectDef<Object> objectDef;
     private final ValueDef<Enum<?>> enumDef;
-    private final Function<Object, Long> getId;
+    private final StdIdProvider stdIdProvider;
     private final Set<Object> pendingModels = new IdentitySet<>();
     private final Set<Object> entities = new IdentitySet<>();
     private final Map<tech.metavm.object.type.Type, tech.metavm.object.type.Type> typeInternMap = new HashMap<>();
 //    private final Map<Object, DurableInstance> instanceMapping = new IdentityHashMap<>();
-    private final IdentityContext identityContext = new IdentityContext();
+    private final IdentityContext identityContext;
     private final ColumnStore columnStore;
     private final Map<Type, DefParser<?, ?, ?>> parsers = new HashMap<>();
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
@@ -55,13 +55,14 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
             Map.entry(Float.class, Double.class)
     );
 
-    public DefContext(Function<Object, Long> getId, ColumnStore columnStore) {
-        this(getId, null, columnStore);
+    public DefContext(StdIdProvider getId, ColumnStore columnStore) {
+        this(getId, null, columnStore, new IdentityContext());
     }
 
-    public DefContext(Function<Object, Long> getId, IInstanceContext instanceContext, ColumnStore columnStore) {
+    public DefContext(StdIdProvider stdIdProvider, IInstanceContext instanceContext, ColumnStore columnStore, IdentityContext identityContext) {
         super(instanceContext, null);
-        this.getId = getId;
+        this.stdIdProvider = stdIdProvider;
+        this.identityContext = identityContext;
         StandardDefBuilder stdBuilder = new StandardDefBuilder(this);
         stdBuilder.initRootTypes();
         objectDef = stdBuilder.getObjectDef();
@@ -194,7 +195,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     private Long getEntityId(Object entity) {
-        return EntityUtils.isEphemeral(entity) ? null : getId.apply(identityContext.getModelId(entity));
+        return EntityUtils.isEphemeral(entity) ? null : stdIdProvider.getId(identityContext.getModelId(entity));
     }
 
     @SuppressWarnings("unchecked")
@@ -316,6 +317,19 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     @Override
     public boolean containsJavaType(Type javaType) {
         return javaType2Def.containsKey(javaType);
+    }
+
+    public Map<String, Long> getStdIdMap() {
+        var stdIds = new HashMap<String, Long>();
+        for (Object entity : entities) {
+            var instance = getInstance(entity);
+            var id = instance.tryGetPhysicalId();
+            if(id != null) {
+                var modeId = identityContext.getModelId(entity);
+                stdIds.put(modeId.qualifiedName(), id);
+            }
+        }
+        return stdIds;
     }
 
     @Override
@@ -683,4 +697,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         throw new UnsupportedOperationException();
     }
 
+    public IdentityContext getIdentityContext() {
+        return identityContext;
+    }
+
+    public Collection<Object> getEntities() {
+        return Collections.unmodifiableSet(entities);
+    }
 }

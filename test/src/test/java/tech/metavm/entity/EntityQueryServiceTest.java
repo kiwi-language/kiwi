@@ -39,12 +39,12 @@ public class EntityQueryServiceTest extends TestCase {
 //            entityContext.initIds();
 //        }
 //        instanceSearchService.add(getAppId(), (ClassInstance) entityContext.getInstance(entity));
-        TestUtils.beginTransaction();
-        try (var context = newContext()) {
-            context.bind(entity);
-            context.finish();
-        }
-        TestUtils.commitTransaction();
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                context.bind(entity);
+                context.finish();
+            }
+        });
         return entity;
     }
 

@@ -676,7 +676,7 @@ public class NncUtils {
         return bytes;
     }
 
-    public static <T, R> Map<R, Integer> mapAndCount(List<T> list, Function<T, R> keyMapper) {
+    public static <T, R> Map<R, Integer> mapAndCount(Iterable<T> list, Function<T, R> keyMapper) {
         Map<R, Integer> countMap = new HashMap<>();
         for (T item : list) {
             R key = keyMapper.apply(item);

@@ -18,14 +18,14 @@ import java.util.concurrent.Executor;
 
 public class EntityContextBuilder {
 
-    public static EntityContextBuilder newBuilder(IInstanceStore instanceStore, Executor executor, EntityIdProvider idProvider) {
-        return new EntityContextBuilder(instanceStore, executor, idProvider);
+    public static EntityContextBuilder newBuilder(IInstanceStore instanceStore, Executor executor, IdInitializer idInitializer) {
+        return new EntityContextBuilder(instanceStore, executor, idInitializer);
     }
 
     private final IInstanceStore instanceStore;
     private final Executor executor;
     private IEntityContext parent;
-    private EntityIdProvider idProvider;
+    private IdInitializer idInitializer;
     private List<ContextPlugin> plugins = List.of();
     private EventQueue eventQueue;
     private long appId;
@@ -39,10 +39,10 @@ public class EntityContextBuilder {
     private boolean readonly;
 
     private EntityContextBuilder(IInstanceStore instanceStore, Executor executor,
-                                 EntityIdProvider idProvider) {
+                                 IdInitializer idInitializer) {
         this.instanceStore = instanceStore;
         this.executor = executor;
-        this.idProvider = idProvider;
+        this.idInitializer = idInitializer;
     }
 
     public EntityContextBuilder plugins(List<ContextPlugin> plugins) {
@@ -50,8 +50,8 @@ public class EntityContextBuilder {
         return this;
     }
 
-    public EntityContextBuilder idProvider(EntityIdProvider idProvider) {
-        this.idProvider = idProvider;
+    public EntityContextBuilder idProvider(IdInitializer idInitializer) {
+        this.idInitializer = idInitializer;
         return this;
     }
 
@@ -118,7 +118,7 @@ public class EntityContextBuilder {
         if(parameterizedFlowProvider == null)
             parameterizedFlowProvider = dep;
         var instanceContext = new InstanceContext(
-                appId, instanceStore, idProvider, executor,
+                appId, instanceStore, idInitializer, executor,
                 asyncLogProcessing, plugins, NncUtils.get(parent, IEntityContext::getInstanceContext),
                 typeProvider , mappingProvider,
                 parameterizedFlowProvider, childrenLazyLoading, cache, eventQueue,

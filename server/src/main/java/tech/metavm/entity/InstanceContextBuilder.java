@@ -21,7 +21,7 @@ public class InstanceContextBuilder {
 
     public static InstanceContextBuilder newBuilder(long appId,
                                                     IInstanceStore instanceStore,
-                                                    EntityIdProvider idProvider,
+                                                    IdInitializer idProvider,
                                                     TypeProvider typeProvider,
                                                     MappingProvider mappingProvider,
                                                     ParameterizedFlowProvider parameterizedFlowProvider) {
@@ -31,7 +31,7 @@ public class InstanceContextBuilder {
 
     private final long appId;
     private IInstanceStore instanceStore;
-    private EntityIdProvider idProvider;
+    private IdInitializer idInitializer;
     private Executor executor;
     private @Nullable IInstanceContext parent;
     private boolean asyncPostProcess;
@@ -47,13 +47,13 @@ public class InstanceContextBuilder {
 
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
-                                  EntityIdProvider idProvider,
+                                  IdInitializer idInitializer,
                                   TypeProvider typeProvider,
                                   MappingProvider mappingProvider,
                                   ParameterizedFlowProvider parameterizedFlowProvider) {
         this.appId = appId;
         this.instanceStore = instanceStore;
-        this.idProvider = idProvider;
+        this.idInitializer = idInitializer;
         this.typeProvider = typeProvider;
         this.mappingProvider = mappingProvider;
         this.parameterizedFlowProvider = parameterizedFlowProvider;
@@ -85,8 +85,8 @@ public class InstanceContextBuilder {
         return this;
     }
 
-    public InstanceContextBuilder idProvider(EntityIdProvider idProvider) {
-        this.idProvider = idProvider;
+    public InstanceContextBuilder idInitializer(IdInitializer idProvider) {
+        this.idInitializer = idProvider;
         return this;
     }
 
@@ -128,11 +128,11 @@ public class InstanceContextBuilder {
     public IInstanceContext build() {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();
-        var idProvider = this.idProvider;
+        var idInitializer = this.idInitializer;
         if(getTypeIdInterceptor != null)
-            idProvider = new WrappedIdProvider(getTypeIdInterceptor, idProvider);
+            idInitializer = new WrappedIdInitializer(getTypeIdInterceptor, idInitializer);
         return new InstanceContext(
-                appId, instanceStore, idProvider, executor, asyncPostProcess,
+                appId, instanceStore, idInitializer, executor, asyncPostProcess,
                 plugins, parent, typeProvider, mappingProvider,
                 parameterizedFlowProvider, childLazyLoading, cache, eventQueue,
                 readonly);

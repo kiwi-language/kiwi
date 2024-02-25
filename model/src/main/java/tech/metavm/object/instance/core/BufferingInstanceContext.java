@@ -15,19 +15,20 @@ import java.util.*;
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     protected final LoadingBuffer loadingBuffer;
-    protected final EntityIdProvider idProvider;
+    protected final IdInitializer idInitializer;
 
     public BufferingInstanceContext(long appId,
                                     List<TreeSource> treeSources,
                                     VersionSource versionSource,
-                                    IndexSource indexSource, EntityIdProvider idProvider,
+                                    IndexSource indexSource,
+                                    IdInitializer idInitializer,
                                     @Nullable IInstanceContext parent,
                                     TypeProvider typeProvider,
                                     MappingProvider mappingProvider,
                                     ParameterizedFlowProvider parameterizedFlowProvider,
                                     boolean readonly) {
         super(appId, parent, readonly, indexSource, typeProvider, mappingProvider, parameterizedFlowProvider);
-        this.idProvider = idProvider;
+        this.idInitializer = idInitializer;
         this.loadingBuffer = new LoadingBuffer(this, treeSources, versionSource);
     }
 
@@ -45,7 +46,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected long getTypeId(long id) {
-        return idProvider.getTypeId(id);
+        return idInitializer.getTypeId(id);
     }
 
     @Override

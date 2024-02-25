@@ -1282,30 +1282,30 @@ public class MockUtils {
                         .type();
         var enumNameFieldId = TestUtils.getFieldIdByCode(enumSuperType, "name");
         var enumOrdinalField = TestUtils.getFieldIdByCode(enumSuperType, "ordinal");
-        TestUtils.beginTransaction();
-        var id = typeManager.saveEnumConstant(
-                new InstanceDTO(
-                        null,
-                        RefDTO.fromId(enumType.id()),
-                        enumType.name(),
-                        name,
-                        null,
-                        new ClassInstanceParam(
-                                List.of(
-                                        InstanceFieldDTO.create(
-                                                enumNameFieldId,
-                                                PrimitiveFieldValue.createString(name)
-                                        ),
-                                        InstanceFieldDTO.create(
-                                                enumOrdinalField,
-                                                PrimitiveFieldValue.createLong(ordinal)
-                                        )
-                                )
-                        )
-                )
-        );
-        TestUtils.commitTransaction();
-        return PhysicalId.of(id).toString();
+        return TestUtils.doInTransaction(() -> {
+            var id = typeManager.saveEnumConstant(
+                    new InstanceDTO(
+                            null,
+                            RefDTO.fromId(enumType.id()),
+                            enumType.name(),
+                            name,
+                            null,
+                            new ClassInstanceParam(
+                                    List.of(
+                                            InstanceFieldDTO.create(
+                                                    enumNameFieldId,
+                                                    PrimitiveFieldValue.createString(name)
+                                            ),
+                                            InstanceFieldDTO.create(
+                                                    enumOrdinalField,
+                                                    PrimitiveFieldValue.createLong(ordinal)
+                                            )
+                                    )
+                            )
+                    )
+            );
+            return PhysicalId.of(id).toString();
+        });
     }
 
     public static FooTypes createFooTypes() {

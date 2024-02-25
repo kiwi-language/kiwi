@@ -130,7 +130,7 @@ public class MetaFrame implements EvaluationContext, Frame {
 
     public static final int MAX_STEPS = 100000;
 
-    public FlowExecResult execute() {
+    public @NotNull FlowExecResult execute() {
         var outputs = this.outputs;
         var pc = entry;
         for(int i = 0; i < MAX_STEPS; i++) {

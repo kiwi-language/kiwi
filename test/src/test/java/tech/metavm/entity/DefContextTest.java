@@ -35,10 +35,11 @@ public class DefContextTest extends TestCase {
         idProvider = new MockIdProvider();
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
-                        new MemInstanceStore(), idProvider, bridge, bridge, bridge)
+                        new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge, bridge)
                 .readonly(false)
                 .build();
-        defContext = new DefContext(o -> null, instanceContext, new MemColumnStore());
+        defContext = new DefContext(
+                new StdIdProvider(new EmptyStdIdStore()), instanceContext, new MemColumnStore(), new IdentityContext());
         bridge.setEntityContext(defContext);
         objectInstanceMap = defContext.getObjectInstanceMap();
         typeFactory = new DefaultTypeFactory(defContext::getType);

@@ -22,7 +22,7 @@ public class EntityContextFactoryBean {
         return newContext(Constants.PLATFORM_APP_ID);
     }
 
-    public IEntityContext newContext(long appId, EntityIdProvider idProvider) {
+    public IEntityContext newContext(long appId, IdInitializer idProvider) {
         return entityContextFactory.newContext(appId, idProvider);
     }
 

@@ -28,24 +28,28 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
 
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
+    private final StdIdStore stdIdStore;
     private final Set<Field> fieldBlacklist = new HashSet<>();
 
-    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore) {
+    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore, StdIdStore stdIdStore) {
         super(entityContextFactory);
         this.stdAllocators = stdAllocators;
         this.columnStore = columnStore;
+        this.stdIdStore = stdIdStore;
     }
 
     public BootstrapResult boot() {
         try (var ignoredEntry = ContextUtil.getProfiler().enter("Bootstrap.boot")) {
             ContextUtil.setAppId(ROOT_APP_ID);
+            var identityContext = new IdentityContext();
+            var idInitializer = new BootIdInitializer(new BootIdProvider(stdAllocators), identityContext);
             var bridge = new EntityInstanceContextBridge();
             var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
                     ROOT_APP_ID, false, null, null,
-                    new BootIdProvider(stdAllocators), bridge);
+                    idInitializer, bridge);
             var defContext = new DefContext(
-                    stdAllocators::getId,
-                    standardInstanceContext, columnStore);
+                    new StdIdProvider(stdIdStore),
+                    standardInstanceContext, columnStore, identityContext);
             defContext.setFieldBlacklist(fieldBlacklist);
             bridge.setEntityContext(defContext);
             ModelDefRegistry.setDefContext(defContext);
@@ -93,6 +97,7 @@ public class Bootstrap extends EntityContextFactoryBean implements InitializingB
                     stdAllocators.save();
                     columnStore.save();
                 }
+                stdIdStore.save(defContext.getStdIdMap());
                 ensureIdInitialized();
                 tempContext.finish();
             }

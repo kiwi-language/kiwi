@@ -43,29 +43,29 @@ public class InstanceManagerTest extends TestCase {
     }
 
     private Foo saveFoo() {
-        TestUtils.beginTransaction();
-        try (var context = newContext()) {
-            var foo = new Foo("Big Foo", new Bar("Bar001"));
-            foo.setBazList(List.of(
-                    new Baz(
-                            List.of(
-                                    new Bar("Bar002"),
-                                    new Bar("Bar003")
-                            )
-                    ),
-                    new Baz(
-                            List.of(
-                                    new Bar("Bar004"),
-                                    new Bar("Bar005")
-                            )
-                    )
-            ));
-            foo.setQux(new Qux(100));
-            context.bind(foo);
-            context.finish();
-            TestUtils.commitTransaction();
-            return foo;
-        }
+        return TestUtils.doInTransaction(() -> {
+            try (var context = newContext()) {
+                var foo = new Foo("Big Foo", new Bar("Bar001"));
+                foo.setBazList(List.of(
+                        new Baz(
+                                List.of(
+                                        new Bar("Bar002"),
+                                        new Bar("Bar003")
+                                )
+                        ),
+                        new Baz(
+                                List.of(
+                                        new Bar("Bar004"),
+                                        new Bar("Bar005")
+                                )
+                        )
+                ));
+                foo.setQux(new Qux(100));
+                context.bind(foo);
+                context.finish();
+                return foo;
+            }
+        });
     }
 
     public void testLoadByPaths() {

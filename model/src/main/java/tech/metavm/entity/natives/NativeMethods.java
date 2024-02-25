@@ -1,5 +1,6 @@
 package tech.metavm.entity.natives;
 
+import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.DirectDef;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.flow.FlowExecResult;
@@ -18,7 +19,7 @@ import java.util.List;
 
 public class NativeMethods {
 
-    public static FlowExecResult invoke(Method method, @Nullable Instance self, List<Instance> arguments, NativeCallContext nativeCallContext) {
+    public static @NotNull FlowExecResult invoke(Method method, @Nullable Instance self, List<Instance> arguments, NativeCallContext nativeCallContext) {
         if (method.isStatic()) {
             var nativeClass = tryGetNativeClass(method.getDeclaringType());
             NncUtils.requireNonNull(nativeClass,

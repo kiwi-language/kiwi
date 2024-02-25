@@ -70,6 +70,10 @@ public class StdAllocator {
         return id;
     }
 
+    public void buildIdMap(Map<String, Long> ids) {
+        code2id.forEach((code, id) -> ids.put(javaType.getTypeName() + "." + code, id));
+    }
+
     public boolean contains(long id) {
         return id2code.containsKey(id);
     }

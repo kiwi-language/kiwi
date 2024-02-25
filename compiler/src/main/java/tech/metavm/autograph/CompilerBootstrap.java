@@ -2,10 +2,7 @@ package tech.metavm.autograph;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.entity.DefContext;
-import tech.metavm.entity.EntityUtils;
-import tech.metavm.entity.ModelDefRegistry;
-import tech.metavm.entity.ReadonlyArray;
+import tech.metavm.entity.*;
 import tech.metavm.object.instance.core.EntityInstanceContextBridge;
 import tech.metavm.object.type.*;
 import tech.metavm.util.ContextUtil;
@@ -34,12 +31,14 @@ public class CompilerBootstrap {
             boot = true;
             ContextUtil.setAppId(ROOT_APP_ID);
             var bridge = new EntityInstanceContextBridge();
+            var identityContext = new IdentityContext();
+            var idInitializer = new BootIdInitializer(new BootIdProvider(stdAllocators), identityContext);
             var standardInstanceContext = contextFactory.newBridgedInstanceContext(ROOT_APP_ID, bridge,
-                    new BootIdProvider(stdAllocators));
+                    idInitializer);
             contextFactory.setStdContext(standardInstanceContext);
             var defContext = new DefContext(
-                    stdAllocators::getId,
-                    standardInstanceContext, columnStore);
+                    new StdIdProvider(new AllocatorStdIdStore(stdAllocators)),
+                    standardInstanceContext, columnStore, identityContext);
             bridge.setEntityContext(defContext);
             ModelDefRegistry.setDefContext(defContext);
             contextFactory.setDefContext(defContext);

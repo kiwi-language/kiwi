@@ -7,7 +7,10 @@ import tech.metavm.entity.IEntityContext;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Foo;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
-import tech.metavm.util.*;
+import tech.metavm.util.BootstrapUtils;
+import tech.metavm.util.ContextUtil;
+import tech.metavm.util.TestConstants;
+import tech.metavm.util.TestUtils;
 
 public class IndexRebuildJobTest extends TestCase {
 
@@ -30,27 +33,26 @@ public class IndexRebuildJobTest extends TestCase {
 
     public void test() {
         IndexRebuildTask job = new IndexRebuildTask();
-        TestUtils.beginTransaction();
-        try(var context = newContext()){
-            for (int i = 0; i < 100; i++) {
-                context.bind(new Foo("foo" + i, new Bar("bar" + i)));
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                for (int i = 0; i < 100; i++) {
+                    context.bind(new Foo("foo" + i, new Bar("bar" + i)));
+                }
+                context.bind(job);
+                context.finish();
             }
-            context.bind(job);
-            context.finish();
-        }
-        TestUtils.commitTransaction();
+        });
         instanceSearchService.clear();
-
-        TestUtils.beginTransaction();
-        try (var context = newContext()) {
-            job = context.getEntity(IndexRebuildTask.class, job.getId());
-            for (int i = 0; i < 50; i++) {
-                if (job.run0(context))
-                    break;
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                var job2 = context.getEntity(IndexRebuildTask.class, job.getId());
+                for (int i = 0; i < 50; i++) {
+                    if (job2.run0(context))
+                        break;
+                }
+                context.finish();
             }
-            context.finish();
-        }
-        TestUtils.commitTransaction();
+        });
         try (var context = newContext()) {
             var instances = context.getByType(Foo.class, null, 100);
             for (var instance : instances) {

@@ -1,5 +1,6 @@
 package tech.metavm.autograph;
 
+import org.junit.Assert;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.rest.PrimitiveFieldValue;
 import tech.metavm.object.instance.rest.ReferenceFieldValue;
@@ -43,6 +44,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                             ReferenceFieldValue.create(unit.id())
                     )
             )));
+            Assert.assertNotNull(material);
         });
     }
 

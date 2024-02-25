@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -10,10 +11,7 @@ import tech.metavm.object.instance.cache.Cache;
 import tech.metavm.object.type.TypeProvider;
 import tech.metavm.object.view.MappingProvider;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Component
 public class InstanceContextFactory {
@@ -27,7 +25,12 @@ public class InstanceContextFactory {
     private Cache cache;
 
     private final Executor executor = new ThreadPoolExecutor(
-            16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000)
+            16, 16, 0L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(1000),
+            r -> {
+                Thread t = Executors.defaultThreadFactory().newThread(r);
+                t.setDaemon(true);
+                return t;
+            }
     );
 
     public InstanceContextFactory(IInstanceStore instanceStore, EventQueue eventQueue) {
@@ -44,7 +47,9 @@ public class InstanceContextFactory {
                                              TypeProvider typeProvider,
                                              MappingProvider mappingProvider,
                                              ParameterizedFlowProvider parameterizedFlowProvider) {
-        return InstanceContextBuilder.newBuilder(appId, instanceStore, idService, typeProvider, mappingProvider, parameterizedFlowProvider)
+        return InstanceContextBuilder.newBuilder(appId, instanceStore,
+                        new DefaultIdInitializer(idService),
+                        typeProvider, mappingProvider, parameterizedFlowProvider)
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

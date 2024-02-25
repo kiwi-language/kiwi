@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.metavm.system.persistence.FileMapper">
+
+    <resultMap id="BaseResultMap" type="tech.metavm.system.persistence.FilePO">
+        <!--@mbg.generated-->
+        <!--@Table files-->
+        <id column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="content" jdbcType="BINARY" property="content"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        name, content
+    </sql>
+
+    <insert id="insert">
+        <!--@mbg.generated-->
+        insert into files (name, content) values (#{name}, #{content})
+    </insert>
+
+    <update id="update">
+        update files set content = #{content} where name = #{name}
+    </update>
+
+    <select id="selectByName" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/> from files where name = #{name}
+    </select>
+
+    <delete id="delete">
+        delete from files where name = #{name}
+    </delete>
+
+    <select id="exists" resultType="boolean">
+        select exists(select 1 from files where name = #{name})
+    </select>
+
+</mapper>

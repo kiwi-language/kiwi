@@ -6,8 +6,8 @@ import tech.metavm.entity.EnumConstant;
 @EntityType("物料类型")
 public enum MaterialKind {
 
-    @EnumConstant("默认")
-    DEFAULT,
+    @EnumConstant("普通")
+    NORMAL,
     @EnumConstant("虚拟件")
     VIRTUAL,
     @EnumConstant("在制品")

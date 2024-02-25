@@ -66,17 +66,6 @@ public class TestUtils {
         }
     }
 
-    public static void beginTransaction() {
-        TransactionSynchronizationManager.setActualTransactionActive(true);
-        TransactionSynchronizationManager.initSynchronization();
-    }
-
-    public static void commitTransaction() {
-        var synchronizations = TransactionSynchronizationManager.getSynchronizations();
-        synchronizations.forEach(TransactionSynchronization::afterCommit);
-        TransactionSynchronizationManager.clear();
-    }
-
     private final static byte[] byteBuf = new byte[1024 * 1024];
 
     public static byte[] readBytes(String path) {
@@ -182,24 +171,11 @@ public class TestUtils {
     }
 
     public static void doInTransactionWithoutResult(Runnable action) {
-        try {
-            beginTransaction();
-            action.run();
-            commitTransaction();
-        } finally {
-            TransactionSynchronizationManager.clear();
-        }
+        MockTransactionUtils.doInTransactionWithoutResult(action);
     }
 
     public static <T> T doInTransaction(Supplier<T> action) {
-        try {
-            beginTransaction();
-            var result = action.get();
-            commitTransaction();
-            return result;
-        } finally {
-            TransactionSynchronizationManager.clear();
-        }
+        return MockTransactionUtils.doInTransaction(action);
     }
 
     public static DataSource createDataSource() {

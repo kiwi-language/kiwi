@@ -1,9 +1,6 @@
 package tech.metavm.autograph;
 
-import tech.metavm.entity.CompilerEntityContext;
-import tech.metavm.entity.DefContext;
-import tech.metavm.entity.EntityIdProvider;
-import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.*;
 import tech.metavm.instance.core.CompilerIdService;
 import tech.metavm.instance.core.CompilerInstanceContext;
 import tech.metavm.object.instance.core.IInstanceContext;
@@ -39,13 +36,13 @@ public class CompilerInstanceContextFactory {
 
     public IEntityContext newEntityContext(long appId) {
         var bridge = new EntityInstanceContextBridge();
-        var context = newBridgedInstanceContext(appId, bridge, idService);
+        var context = newBridgedInstanceContext(appId, bridge, new DefaultIdInitializer(idService));
         var entityContext = new CompilerEntityContext(context, defContext, defContext);
         bridge.setEntityContext(entityContext);
         return entityContext;
     }
 
-    public IInstanceContext newBridgedInstanceContext(long appId, EntityInstanceContextBridge bridge, EntityIdProvider idProvider) {
+    public IInstanceContext newBridgedInstanceContext(long appId, EntityInstanceContextBridge bridge, IdInitializer idProvider) {
         return new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),

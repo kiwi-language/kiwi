@@ -41,7 +41,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
-                           EntityIdProvider idService,
+                           IdInitializer idInitializer,
                            Executor executor,
                            boolean asyncPostProcessing,
                            List<ContextPlugin> plugins,
@@ -58,7 +58,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 List.of(new CacheTreeSource(cache),
                         new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
-                new StoreIndexSource(instanceStore), idService,
+                new StoreIndexSource(instanceStore), idInitializer,
                 parent, typeProvider, mappingProvider, parameterizedFlowProvider, readonly);
         headContext = new SubContext(appId);
         this.asyncPostProcessing = asyncPostProcessing;
@@ -198,25 +198,7 @@ public class InstanceContext extends BufferingInstanceContext {
                     NncUtils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral());
             if (instancesToInitId.isEmpty())
                 return;
-            var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
-            var type2ids = idProvider.allocate(appId, countMap);
-            var type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
-            var allocatedMap = new HashMap<Long, Instance>();
-            type2instances.forEach((type, instances) -> {
-                List<Long> ids = type2ids.get(type);
-                for (Long id : ids) {
-                    boolean contains1 = allocatedMap.containsKey(id);
-                    if (contains1)
-                        throw new InternalException();
-                    boolean contains = containsId(id);
-                    if (contains)
-                        throw new InternalException();
-                }
-                for (var instance : instances) {
-                    allocatedMap.put(instance.tryGetPhysicalId(), instance);
-                }
-                NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id)));
-            });
+            idInitializer.initializeIds(appId, instancesToInitId);
             for (var instance : instancesToInitId) {
                 onIdInitialized(instance);
             }
@@ -574,7 +556,7 @@ public class InstanceContext extends BufferingInstanceContext {
         return new InstanceContext(
                 appId,
                 instanceStore,
-                idProvider,
+                idInitializer,
                 executor,
                 asyncPostProcessing,
                 plugins,

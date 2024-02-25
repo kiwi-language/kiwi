@@ -26,13 +26,13 @@ public class EntityContextTest extends TestCase {
     }
 
     public void test() {
-        TestUtils.beginTransaction();
-        var foo = new EntityFoo("foo");
-        try (var entityContext = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            entityContext.bind(foo);
-            entityContext.finish();
-        }
-        TestUtils.commitTransaction();
+        TestUtils.doInTransactionWithoutResult(() -> {
+            var foo = new EntityFoo("foo");
+            try (var entityContext = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                entityContext.bind(foo);
+                entityContext.finish();
+            }
+        });
     }
 
 

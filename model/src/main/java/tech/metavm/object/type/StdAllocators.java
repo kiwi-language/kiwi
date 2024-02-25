@@ -182,4 +182,10 @@ public class StdAllocators {
         allocatorMap.values().forEach(StdAllocator::save);
     }
 
+    public Map<String, Long> getIdMap() {
+        var ids = new HashMap<String, Long>();
+        allocatorMap.values().forEach(a -> a.buildIdMap(ids));
+        return ids;
+    }
+
 }

@@ -10,6 +10,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -18,6 +19,7 @@ public class IdentityContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(IdentityContext.class);
 
     private final Map<Object, ModelIdentity> model2identity = new IdentityHashMap<>();
+    private final Map<ModelIdentity, Object> identity2model = new HashMap<>();
 
     public IdentityHashMap<Object, ModelIdentity> getIdentityMap(Object object) {
         var buildKeyContext = new BuildKeyContext(this);
@@ -67,6 +69,7 @@ public class IdentityContext {
         if (!identity.relative() && !model2identity.containsKey(model)/* && isEntityReady(model)*/
                 /*&& !pendingObjects.contains(EntityUtils.getRoot(model))*/) {
             model2identity.put(model, identity);
+            identity2model.put(identity, model);
             buildKeyContext.addIdentity(model, identity);
 //            if (model instanceof Entity entity)
 //                EntityUtils.forEachReference(entity, r -> {
@@ -75,6 +78,10 @@ public class IdentityContext {
 //                });
         }
         return identity;
+    }
+
+    public Object getModel(ModelIdentity identity) {
+        return identity2model.get(identity);
     }
 
     private boolean isEntityReady(Object entity) {

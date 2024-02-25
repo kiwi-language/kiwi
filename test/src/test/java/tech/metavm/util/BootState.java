@@ -2,6 +2,7 @@ package tech.metavm.util;
 
 import tech.metavm.entity.DefContext;
 import tech.metavm.entity.MemIndexEntryMapper;
+import tech.metavm.entity.MemoryStdIdStore;
 import tech.metavm.object.instance.MemInstanceSearchServiceV2;
 import tech.metavm.object.instance.persistence.mappers.MemInstanceMapper;
 import tech.metavm.object.instance.persistence.mappers.MemReferenceMapper;
@@ -18,6 +19,7 @@ public record BootState(
         MemRegionMapper regionMapper,
         MemBlockMapper blockMapper,
         MemColumnStore columnStore,
+        MemoryStdIdStore stdIdStore,
         MemAllocatorStore allocatorStore,
         MemInstanceSearchServiceV2 instanceSearchService
 ) {
@@ -32,6 +34,7 @@ public record BootState(
                 regionMapper.copy(),
                 blockMapper.copy(),
                 columnStore.copy(),
+                stdIdStore.copy(),
                 allocatorStore.copy(),
                 instanceSearchService.copy()
         );

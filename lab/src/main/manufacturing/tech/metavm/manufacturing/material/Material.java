@@ -5,6 +5,8 @@ import tech.metavm.entity.ChildList;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 
+import javax.annotation.Nullable;
+
 @EntityType("物料")
 public class Material {
 
@@ -21,10 +23,10 @@ public class Material {
     private final ChildList<UnitConversion> unitConversions = new ChildList<>();
 
     @EntityField("辅助单位")
-    private Unit auxiliaryUnit;
+    private @Nullable Unit auxiliaryUnit;
 
     @EntityField("物料类型")
-    private MaterialKind kind;
+    private MaterialKind kind = MaterialKind.NORMAL;
 
     @EntityField("是否启用批次")
     private boolean enableBatch;

@@ -43,7 +43,7 @@ public class EntityContextFactory {
     }
 
 
-    public IEntityContext newContext(long appId, EntityIdProvider idProvider) {
+    public IEntityContext newContext(long appId, IdInitializer idProvider) {
         return newContext(appId, defContext, idProvider);
     }
 
@@ -55,11 +55,11 @@ public class EntityContextFactory {
         return newContext(appId, parent, null);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable EntityIdProvider idProvider) {
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
         return newContext(appId, parent, idProvider, defaultAsyncLogProcess);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable EntityIdProvider idProvider,
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider,
                                      boolean asyncLogProcessing) {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
@@ -73,7 +73,7 @@ public class EntityContextFactory {
                                                       boolean readonly,
                                                       @Nullable Boolean asyncLogProcessing,
                                                       @Nullable IInstanceContext parent,
-                                                      @Nullable EntityIdProvider idProvider,
+                                                      @Nullable IdInitializer idProvider,
                                                       EntityInstanceContextBridge bridge) {
         var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
                 .readonly(readonly)
@@ -87,7 +87,7 @@ public class EntityContextFactory {
                         new ChangeLogPlugin(instanceLogService)
                 );
         if (idProvider != null)
-            builder.idProvider(idProvider);
+            builder.idInitializer(idProvider);
         return builder.build();
     }
 

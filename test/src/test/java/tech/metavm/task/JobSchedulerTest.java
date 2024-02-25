@@ -3,7 +3,9 @@ package tech.metavm.task;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.springframework.transaction.support.TransactionOperations;
-import tech.metavm.entity.*;
+import tech.metavm.entity.EntityContextFactory;
+import tech.metavm.entity.IEntityContext;
+import tech.metavm.entity.MemInstanceStore;
 import tech.metavm.mocks.TestJob;
 import tech.metavm.util.*;
 
@@ -34,20 +36,22 @@ public class JobSchedulerTest extends TestCase {
     }
 
     public void test() {
-        TestJob testJob;
-        TestUtils.beginTransaction();
-        try(var context = newContext()) {
-            testJob = new TestJob();
-            context.bind(testJob);
-            context.finish();
-        }
-        TestUtils.commitTransaction();
-        Assert.assertNotNull(instanceStore.get(testJob.getId()));
+        var ref = new Object() {
+            TestJob testJob;
+        };
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = newContext()) {
+                ref.testJob = new TestJob();
+                context.bind(ref.testJob);
+                context.finish();
+            }
+        });
+        Assert.assertNotNull(instanceStore.get(TestConstants.APP_ID, ref.testJob.getId()));
         TestUtils.doInTransactionWithoutResult(() -> jobScheduler.sendHeartbeat());
         jobScheduler.pollSignals();
         jobScheduler.schedule();
-        jobScheduler.waitForJobDone(testJob, 20);
-        Assert.assertNull(instanceStore.get(testJob.getId()));
+        jobScheduler.waitForJobDone(ref.testJob, 20);
+        Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.testJob.getId()));
     }
 
     private IEntityContext newContext() {

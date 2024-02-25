@@ -175,7 +175,9 @@ public class DiskFormatter {
             clearColumnFile();
         }
         if (shouldReboot()) {
-
+            System.out.println("Rebooting...");
+            Rebooter.reboot();
+            System.out.println("Rebooted");
         }
     }
 

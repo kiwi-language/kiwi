@@ -8,18 +8,18 @@ import tech.metavm.object.instance.InstanceStore;
 import tech.metavm.object.instance.MockInstanceLogService;
 import tech.metavm.object.instance.cache.MockCache;
 import tech.metavm.object.type.*;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.MockIdProvider;
-import tech.metavm.util.ReflectionUtils;
-import tech.metavm.util.TestUtils;
+import tech.metavm.util.*;
 
 import java.util.Set;
+
+import static tech.metavm.util.TestUtils.doInTransactionWithoutResult;
 
 public class BootstrapTest extends TestCase {
 
     public static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(BootstrapTest.class);
 
     private ColumnStore columnStore;
+    private StdIdStore stdIdStore;
     private MemAllocatorStore allocatorStore;
     private InstanceStore instanceStore;
     private EntityIdProvider idProvider;
@@ -28,6 +28,7 @@ public class BootstrapTest extends TestCase {
     protected void setUp() throws Exception {
         allocatorStore = new MemAllocatorStore();
         columnStore = new MemColumnStore();
+        stdIdStore = new MemoryStdIdStore();
         instanceStore = new MemInstanceStore();
         idProvider = new MockIdProvider();
     }
@@ -36,6 +37,7 @@ public class BootstrapTest extends TestCase {
     protected void tearDown() {
         ContextUtil.clearContextInfo();
         columnStore = null;
+        stdIdStore = null;
         allocatorStore = null;
         instanceStore = null;
         idProvider = null;
@@ -51,7 +53,7 @@ public class BootstrapTest extends TestCase {
         instanceContextFactory.setIdService(idProvider);
         instanceContextFactory.setCache(new MockCache());
         entityContextFactory.setInstanceLogService(new MockInstanceLogService());
-        return new Bootstrap(entityContextFactory, stdAllocators, columnStore);
+        return new Bootstrap(entityContextFactory, stdAllocators, columnStore, stdIdStore);
     }
 
     public void test() {
@@ -59,17 +61,13 @@ public class BootstrapTest extends TestCase {
             var bootstrap = newBootstrap();
             var result = bootstrap.boot();
             Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-            TestUtils.beginTransaction();
-            bootstrap.save(true);
-            TestUtils.commitTransaction();
+            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
         }
         {
             var bootstrap = newBootstrap();
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
-            TestUtils.beginTransaction();
-            bootstrap.save(true);
-            TestUtils.commitTransaction();
+            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
         }
         // test remove field
         {
@@ -77,9 +75,27 @@ public class BootstrapTest extends TestCase {
             bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getDeclaredField(Type.class, "dummyFlag")));
             var result = bootstrap.boot();
             Assert.assertEquals(0, result.numInstancesWithNullIds());
-            TestUtils.beginTransaction();
-            bootstrap.save(true);
-            TestUtils.commitTransaction();
+            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+        }
+        {
+            var originalDefContext = ModelDefRegistry.getDefContext();
+            var entities = NncUtils.filter(originalDefContext.getEntities(), e -> !EntityUtils.isEphemeral(e));
+            var modelIds = NncUtils.map(entities, e -> originalDefContext.getIdentityContext().getModelId(e));
+            var originalIds = NncUtils.map(entities, e -> originalDefContext.getInstance(e).getId());
+            stdIdStore = new MemoryStdIdStore();
+            instanceStore = new MemInstanceStore();
+            idProvider = new MockIdProvider();
+            var bootstrap = newBootstrap();
+            doInTransactionWithoutResult(bootstrap::bootAndSave);
+            var defContext = ModelDefRegistry.getDefContext();
+            Assert.assertEquals(
+                    originalIds,
+                    NncUtils.map(
+                            modelIds,
+                            modelId ->
+                                    defContext.getInstance(defContext.getIdentityContext().getModel(modelId)).getId()
+                    )
+            );
         }
     }
 
