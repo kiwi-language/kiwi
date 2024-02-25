@@ -13,6 +13,11 @@ public class ChildList<T> extends ArrayList<T> {
     }
 
     @Override
+    public boolean addAll(Collection<? extends T> c) {
+        return super.addAll(c);
+    }
+
+    @Override
     public boolean isEmpty() {
         return super.isEmpty();
     }

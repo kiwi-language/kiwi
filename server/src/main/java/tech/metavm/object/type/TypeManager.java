@@ -119,6 +119,16 @@ public class TypeManager extends EntityContextFactoryBean {
         }
     }
 
+    public GetTypeResponse getTypeByCode(String code) {
+        try (IEntityContext context = newContext()) {
+            var type = context.selectFirstByKey(ClassType.UNIQUE_CODE, code);
+            if (type == null) {
+                throw BusinessException.typeNotFound(code);
+            }
+            return new GetTypeResponse(type.toDTO(), List.of());
+        }
+    }
+
     private Page<TypeDTO> query(TypeQuery query,
                                 IEntityContext context) {
         var typePage = query0(query, context);

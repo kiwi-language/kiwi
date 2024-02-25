@@ -39,6 +39,10 @@ public class TranspileTestTools {
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(SOURCE_ROOT)));
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TEST_SOURCE_ROOT)));
         PROJECT = PROJECT_ENV.getProject();
+        initTranspilerUtils();
+    }
+
+    public static void initTranspilerUtils() {
         TranspileUtil.init(PROJECT.getService(PsiElementFactory.class), PROJECT);
     }
 
@@ -121,6 +125,8 @@ public class TranspileTestTools {
         return PROJECT;
     }
 
-    public static void touch() {}
+    public static void touch() {
+        initTranspilerUtils();
+    }
 
 }

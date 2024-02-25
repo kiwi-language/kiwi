@@ -316,6 +316,16 @@ public class ClassInstance extends DurableInstance {
         return fields.get(InstanceField::getField, field) != null;
     }
 
+    public boolean isAllFieldsInitialized() {
+        ensureLoaded();
+        return getType().allFieldsMatch(this::isFieldInitialized);
+    }
+
+    public @Nullable Field findUninitializedField() {
+        ensureLoaded();
+        return getType().findField(f -> !isFieldInitialized(f));
+    }
+
     public void initField(Field field, Instance value) {
         ensureLoaded();
         initFieldInternal(field, value);

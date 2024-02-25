@@ -338,19 +338,20 @@ public class Generator extends CodeGenVisitor {
                 );
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
+                    var enumClass = requireNonNull(klass.getSuperClass());
                     var inputNode = method.getInputNode();
                     builder.createUpdate(
                             new NodeExpression(selfNode),
                             Map.of(
-                                    klass.getFieldByCode("name"),
+                                    enumClass.getFieldByCode("name"),
                                     new PropertyExpression(
                                             new NodeExpression(inputNode),
-                                            inputNode.getType().getFieldByCode("name")
+                                            inputNode.getType().getFieldByCode("__name__")
                                     ),
-                                    klass.getFieldByCode("ordinal"),
+                                    enumClass.getFieldByCode("ordinal"),
                                     new PropertyExpression(
                                             new NodeExpression(inputNode),
-                                            inputNode.getType().getFieldByCode("ordinal")
+                                            inputNode.getType().getFieldByCode("__ordinal__")
                                     )
                             )
                     );

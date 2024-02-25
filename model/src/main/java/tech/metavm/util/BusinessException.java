@@ -103,6 +103,10 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.TYPE_NOT_FOUND, typeId);
     }
 
+    public static BusinessException typeNotFound(String code) {
+        throw new BusinessException(ErrorCode.TYPE_NOT_FOUND, code);
+    }
+
     public static BusinessException fieldNotFound(long fieldId) {
         throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND, fieldId);
     }

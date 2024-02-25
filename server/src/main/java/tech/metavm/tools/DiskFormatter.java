@@ -40,6 +40,7 @@ public class DiskFormatter {
     private static final String CONFIG_JDBC_URL = "db_jdbc_url";
     private static final String CONFIG_DELETE_ID_FILES = "delete_id_files";
     private static final String CONFIG_CLEAR_DB = "delete_clear_db";
+    private static final String CONFIG_REBOOT = "reboot";
 
     public static final Map<String, Object> DEV_CONFIG = Map.of(
             CONFIG_HOST, "47.104.104.66",
@@ -49,7 +50,8 @@ public class DiskFormatter {
             CONFIG_DB_USER, "root",
             CONFIG_DB_PASSWORD, "85263670",
             CONFIG_JDBC_URL, "jdbc:mysql://47.104.104.66:3306/object?allowMultiQueries=true",
-            CONFIG_DB_DRIVER, "com.mysql.cj.jdbc.Driver"
+            CONFIG_DB_DRIVER, "com.mysql.cj.jdbc.Driver",
+            CONFIG_REBOOT, false
     );
 
     public static final Map<String, Object> LOCAL_CONFIG = Map.of(
@@ -61,7 +63,8 @@ public class DiskFormatter {
             CONFIG_DB_USER, "postgres",
             CONFIG_DB_PASSWORD, "85263670",
             CONFIG_JDBC_URL, "jdbc:postgresql://127.0.0.1:5432/object",
-            CONFIG_DB_DRIVER, "org.postgresql.Driver"
+            CONFIG_DB_DRIVER, "org.postgresql.Driver",
+            CONFIG_REBOOT, true
     );
 
     public static final Map<String, Object> CONFIG = LOCAL_CONFIG;
@@ -80,8 +83,12 @@ public class DiskFormatter {
         return (boolean) CONFIG.get(CONFIG_DELETE_ID_FILES);
     }
 
+    private static boolean shouldReboot() {
+        return (boolean) CONFIG.get(CONFIG_REBOOT);
+    }
+
     private static void clearDataBases() {
-        if((boolean) CONFIG.get(CONFIG_CLEAR_DB)) {
+        if ((boolean) CONFIG.get(CONFIG_CLEAR_DB)) {
             try (DruidDataSource dataSource = new DruidDataSource()) {
                 dataSource.setDriverClassName((String) CONFIG.get(CONFIG_DB_DRIVER));
                 dataSource.setUrl((String) CONFIG.get(CONFIG_JDBC_URL));
@@ -111,7 +118,7 @@ public class DiskFormatter {
             );
             var connectionFactory = new JedisConnectionFactory(config);
             connectionFactory.afterPropertiesSet();
-            try(var connection = connectionFactory.getConnection()) {
+            try (var connection = connectionFactory.getConnection()) {
                 connection.serverCommands().flushAll();
             }
         }
@@ -140,7 +147,7 @@ public class DiskFormatter {
         for (String dir : dirs) {
             String idDirPath = dir + "/id";
             File idDir = new File(idDirPath);
-            if(idDir.exists()) {
+            if (idDir.exists()) {
                 for (String idFile : requireNonNull(idDir.list())) {
                     if (!new File(idDirPath + "/" + idFile).delete()) {
                         System.err.println("Fail to delete id file '" + idFile + "'");
@@ -166,6 +173,9 @@ public class DiskFormatter {
         if (shouldDeleteIdFiles()) {
             deleteIdFiles();
             clearColumnFile();
+        }
+        if (shouldReboot()) {
+
         }
     }
 

@@ -85,6 +85,7 @@ public class BootstrapTest extends TestCase {
 
     public void testPerf() {
         {
+            ContextUtil.resetProfiler();
             var profiler = ContextUtil.getProfiler();
             var bootstrap = newBootstrap();
             bootstrap.boot();

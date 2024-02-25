@@ -168,8 +168,8 @@ public class Declarator extends CodeGenVisitor {
 
     private List<Parameter> getEnumConstructorParams() {
         return List.of(
-                new Parameter(null, "名称", "name", StandardTypes.getStringType()),
-                new Parameter(null, "序号", "ordinal", StandardTypes.getLongType())
+                new Parameter(null, "名称", "__name__", StandardTypes.getStringType()),
+                new Parameter(null, "序号", "__ordinal__", StandardTypes.getLongType())
         );
     }
 

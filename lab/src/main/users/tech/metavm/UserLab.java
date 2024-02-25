@@ -1,13 +1,15 @@
 package tech.metavm;
 
-import tech.metavm.application.*;
+import tech.metavm.application.LabAppInvitation;
+import tech.metavm.application.LabAppInvitationRequest;
+import tech.metavm.application.LabApplication;
+import tech.metavm.application.UserApplication;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityFlow;
 import tech.metavm.entity.EntityType;
 import tech.metavm.message.LabMessage;
 import tech.metavm.user.*;
 
-import java.util.Date;
 import java.util.List;
 
 @EntityType("实验室")

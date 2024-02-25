@@ -2,12 +2,14 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.RuntimeExceptionNative;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NewObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.type.ClassType;
+import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -112,6 +114,26 @@ public class NewObjectNode extends CallNode implements NewNode {
         if (parentRef != null)
             writer.write(" " + parentRef.getText());
     }
+
+    @Override
+    public NodeExecResult execute(MetaFrame frame) {
+        var result = super.execute(frame);
+        if (result.output() != null) {
+            var instance = (ClassInstance) result.output();
+            var uninitializedField = instance.findUninitializedField();
+            if (uninitializedField != null) {
+                var exception = ClassInstance.allocate(StandardTypes.getRuntimeExceptionType());
+                var exceptionNative = new RuntimeExceptionNative(exception);
+                exceptionNative.RuntimeException(Instances.stringInstance(
+                                "Fail to construct object " + instance.getType().getName() + "，"
+                                        + "field" + uninitializedField.getName() + " not initialized."),
+                        frame.getNativeCallContext());
+                return NodeExecResult.exception(exception);
+            }
+        }
+        return result;
+    }
+
 
     public boolean isEphemeral() {
         return ephemeral;

@@ -296,14 +296,15 @@ public class TypeResolverImpl implements TypeResolver {
     private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
             var ownerType = TranspileUtil.createType(psiClass);
+            var childListType = TranspileUtil.createClassType(ChildList.class);
+            if (childListType.isAssignableFrom(ownerType))
+                return StandardTypes.getChildListType().getTypeParameters().get(0);
             var listType = TranspileUtil.createClassType(List.class);
-            if (listType.isAssignableFrom(ownerType)) {
+            if (listType.isAssignableFrom(ownerType))
                 return StandardTypes.getListType().getTypeParameters().get(0);
-            }
             var setType = TranspileUtil.createClassType(Set.class);
-            if (setType.isAssignableFrom(ownerType)) {
+            if (setType.isAssignableFrom(ownerType))
                 return StandardTypes.getSetType().getTypeParameters().get(0);
-            }
             var mapType = TranspileUtil.createClassType(Map.class);
             if (mapType.isAssignableFrom(ownerType)) {
                 int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
@@ -311,9 +312,8 @@ public class TypeResolverImpl implements TypeResolver {
                 return StandardTypes.getMapType().getTypeParameters().get(index);
             }
             var enumType = TranspileUtil.createClassType(Enum.class);
-            if (ownerType.equals(enumType)) {
+            if (ownerType.equals(enumType))
                 return StandardTypes.getEnumType().getTypeParameters().get(0);
-            }
         }
         return null;
     }

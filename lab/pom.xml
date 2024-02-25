@@ -47,6 +47,7 @@
                                 <source>src/main/metavm</source>
                                 <source>src/main/shopping</source>
                                 <source>src/main/users</source>
+                                <source>src/main/manufacturing</source>
                             </sources>
                         </configuration>
                     </execution>

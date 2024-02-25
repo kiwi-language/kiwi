@@ -121,7 +121,7 @@ public class SubstitutorV2 extends CopyVisitor {
         if (type == field.getDeclaringType())
             return field;
         else
-            return NncUtils.requireNonNull(type.findField(f -> f.getCopySource() == field.getEffectiveTemplate()));
+            return NncUtils.requireNonNull(type.findSelfField(f -> f.getCopySource() == field.getEffectiveTemplate()));
     }
 
     private Method substituteMethod(Method method) {

@@ -56,6 +56,11 @@ public class TypeController {
         return Result.success(resp);
     }
 
+    @PostMapping("/get-by-code")
+    public Result<GetTypeResponse> getByCode(@RequestBody GetTypeByCodeRequest request) {
+        return Result.success(typeManager.getTypeByCode(request.getCode()));
+    }
+
     @PostMapping("/batch-get")
     public Result<GetTypesResponse> batchGet(@RequestBody GetTypesRequest request) {
         return Result.success(

@@ -204,6 +204,12 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         this.fields.stream().filter(Field::isReady).forEach(action);
     }
 
+    public boolean allFieldsMatch(Predicate<Field> predicate) {
+        if (superClass != null && !superClass.allFieldsMatch(predicate))
+            return false;
+        return this.fields.stream().filter(Field::isReady).allMatch(predicate);
+    }
+
     public void setTitleField(@Nullable Field titleField) {
         if (titleField != null && !titleField.getType().isString())
             throw new BusinessException(ErrorCode.TITLE_FIELD_MUST_BE_STRING);
@@ -527,7 +533,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         if (tryGetFieldByName(field.getName()) != null || tryGetStaticFieldByName(field.getName()) != null)
             throw BusinessException.invalidField(field, "字段名称'" + field.getName() + "'已存在");
         if (field.getCode() != null &&
-                (findFieldByCode(field.getCode()) != null || findStaticFieldByCode(field.getCode()) != null))
+                (findSelfFieldByCode(field.getCode()) != null || findSelfStaticFieldByCode(field.getCode()) != null))
             throw BusinessException.invalidField(field, "字段编号" + field.getCode() + "已存在");
         if (field.isStatic())
             staticFields.addChild(field);
@@ -630,8 +636,17 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return Objects.requireNonNull(methods.get(Entity::getRef, ref));
     }
 
-    public Field findField(Predicate<Field> predicate) {
+    public @Nullable Field findSelfField(Predicate<Field> predicate) {
         return NncUtils.find(fields, predicate);
+    }
+
+    public @Nullable Field findField(Predicate<Field> predicate) {
+        var field = findSelfField(predicate);
+        if (field != null)
+            return field;
+        if (superClass != null)
+            return superClass.findField(predicate);
+        return null;
     }
 
     private List<Field> readyFields() {

@@ -52,8 +52,12 @@ public class PrimitiveFieldValue extends FieldValue {
         return new PrimitiveFieldValue(null, PrimitiveKind.PASSWORD.code(), value);
     }
 
-    public static FieldValue createBoolean(boolean value) {
+    public static PrimitiveFieldValue createBoolean(boolean value) {
         return value ? TRUE : FALSE;
+    }
+
+    public static PrimitiveFieldValue createNull() {
+        return new PrimitiveFieldValue("空", PrimitiveKind.NULL.code(), null);
     }
 
     public Object getValue() {
