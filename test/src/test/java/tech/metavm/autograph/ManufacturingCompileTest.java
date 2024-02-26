@@ -27,7 +27,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                     List.of(
                             PrimitiveFieldValue.createString("米"),
                             PrimitiveFieldValue.createString("meter"),
-                            ReferenceFieldValue.create(roundHalfUpId),
+                            ReferenceFieldValue.create(roundHalfUpId, roundingRuleType.getRef()),
                             PrimitiveFieldValue.createLong(2L),
                             PrimitiveFieldValue.createNull()
                     )
@@ -41,7 +41,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                     List.of(
                             PrimitiveFieldValue.createString("钢板"),
                             PrimitiveFieldValue.createString("sheet metal"),
-                            ReferenceFieldValue.create(unit.id())
+                            ReferenceFieldValue.create(unit.id(), unitType.getRef())
                     )
             )));
             Assert.assertNotNull(material);

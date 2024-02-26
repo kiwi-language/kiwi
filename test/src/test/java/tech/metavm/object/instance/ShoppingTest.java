@@ -96,7 +96,7 @@ public class ShoppingTest extends TestCase {
                         InstanceDTO.createArrayInstance(
                                 RefDTO.fromId(shoppingTypeIds.couponArrayTypeId()),
                                 false,
-                                NncUtils.map(couponsDTOs, c -> ReferenceFieldValue.create(c.id())
+                                NncUtils.map(couponsDTOs, c -> ReferenceFieldValue.create(c.id(), c.typeRef())
                                 )
                         ))
         );

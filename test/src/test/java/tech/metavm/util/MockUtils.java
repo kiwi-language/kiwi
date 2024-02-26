@@ -4,6 +4,7 @@ import tech.metavm.common.RefDTO;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.entity.mocks.MockEntityRepository;
 import tech.metavm.flow.*;
+import tech.metavm.flow.rest.ValueDTO;
 import tech.metavm.flow.rest.*;
 import tech.metavm.mocks.Bar;
 import tech.metavm.mocks.Baz;
@@ -132,7 +133,10 @@ public class MockUtils {
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponStateFieldId(),
-                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
+                                        ReferenceFieldValue.create(
+                                                shoppingTypeIds.couponNormalStateId(),
+                                                RefDTO.fromId(shoppingTypeIds.couponStateTypeId())
+                                        )
                                 )
                         )
                 )
@@ -155,7 +159,11 @@ public class MockUtils {
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponStateFieldId(),
-                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
+                                        ReferenceFieldValue.create(
+                                                shoppingTypeIds.couponNormalStateId(),
+                                                RefDTO.fromId(shoppingTypeIds.couponStateTypeId()
+                                                )
+                                        )
                                 )
                         )
                 )
@@ -178,7 +186,10 @@ public class MockUtils {
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.couponStateFieldId(),
-                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
+                                        ReferenceFieldValue.create(
+                                                shoppingTypeIds.couponNormalStateId(),
+                                                RefDTO.fromId(shoppingTypeIds.couponStateTypeId())
+                                        )
                                 )
                         )
                 )
@@ -1264,7 +1275,13 @@ public class MockUtils {
                                 new UpdateFieldDTO(
                                         RefDTO.fromId(couponStateFieldId),
                                         UpdateOp.SET.code(),
-                                        ValueDTOFactory.createConstant(Id.parse(couponStateUsedId))
+                                        new ValueDTO(
+                                                ValueKind.CONSTANT.code(),
+                                                ReferenceFieldValue.create(
+                                                        couponStateUsedId,
+                                                        couponStateTypeDTO.getRef()
+                                                )
+                                        )
                                 )
                         )
                 ))

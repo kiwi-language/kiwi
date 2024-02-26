@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.NoProxy;
 import tech.metavm.entity.ReadWriteArray;
+import tech.metavm.entity.SerializeContext;
 import tech.metavm.entity.natives.ListNative;
 import tech.metavm.flow.Flow;
 import tech.metavm.flow.Method;
@@ -451,10 +452,13 @@ public class ClassInstance extends DurableInstance {
                     toDTO()
             );
         } else {
-            return new ReferenceFieldValue(
-                    getTitle(),
-                    Objects.requireNonNull(getInstanceIdString(), "Id required")
-            );
+            try(var serContext = SerializeContext.enter()) {
+                return new ReferenceFieldValue(
+                        getTitle(),
+                        Objects.requireNonNull(getInstanceIdString(), "Id required"),
+                        serContext.getRef(getType())
+                );
+            }
         }
     }
 

@@ -73,10 +73,6 @@ public class FieldParam extends Entity implements LocalKey {
         return value.evaluate(executionContext);
     }
 
-    private FieldValue getFieldValue(Value value, EvaluationContext evaluationContext) {
-        return value.evaluate(evaluationContext).toFieldValueDTO();
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

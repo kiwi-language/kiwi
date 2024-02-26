@@ -22,18 +22,18 @@ public class ValueDTOFactory {
     }
 
     public static ValueDTO createConstant(Object value) {
-        if(value instanceof Id id) {
-            return new ValueDTO(
-                    ValueKind.CONSTANT.code(),
-                    ReferenceFieldValue.create(id.toString())
-            );
-        }
-        else {
+//        if(value instanceof Id id) {
+//            return new ValueDTO(
+//                    ValueKind.CONSTANT.code(),
+//                    ReferenceFieldValue.create(id.toString())
+//            );
+//        }
+//        else {
             return new ValueDTO(
                     ValueKind.CONSTANT.code(),
                     new ExpressionFieldValue(constantToExpression(value))
             );
-        }
+//        }
     }
 
     private static String constantToExpression(Object value) {

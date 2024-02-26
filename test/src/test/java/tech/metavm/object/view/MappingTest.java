@@ -302,7 +302,8 @@ public class MappingTest extends TestCase {
                         List.of(
                                 InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("鞋子减5元")),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(5.0)),
-                                InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(), ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId()))
+                                InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(),
+                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId(), RefDTO.fromId(shoppingTypeIds.couponStateTypeId())))
                         )
                 )
         )));
@@ -312,10 +313,11 @@ public class MappingTest extends TestCase {
                         List.of(
                                 InstanceFieldDTO.create(shoppingTypeIds.couponTitleFieldId(), PrimitiveFieldValue.createString("鞋子减10元")),
                                 InstanceFieldDTO.create(shoppingTypeIds.couponDiscountFieldId(), PrimitiveFieldValue.createDouble(10.0)),
-                                InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(), ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId()))
+                                InstanceFieldDTO.create(shoppingTypeIds.couponStateFieldId(),
+                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId(), RefDTO.fromId(shoppingTypeIds.couponStateTypeId()))
                         )
                 )
-        )));
+        ))));
         TestUtils.doInTransaction(() -> instanceManager.create(new InstanceDTO(
                 null, RefDTO.fromId(shoppingTypeIds.orderTypeId()),
                 null,
@@ -333,13 +335,14 @@ public class MappingTest extends TestCase {
                                         shoppingTypeIds.orderAmountFieldId(), PrimitiveFieldValue.createLong(1L)
                                 ),
                                 InstanceFieldDTO.create(
-                                        shoppingTypeIds.orderSkuFieldId(), ReferenceFieldValue.create(skuId)
+                                        shoppingTypeIds.orderSkuFieldId(), ReferenceFieldValue.create(skuId, RefDTO.fromId(shoppingTypeIds.skuTypeId()))
                                 ),
                                 InstanceFieldDTO.create(
                                         shoppingTypeIds.orderCouponsFieldId(), new ArrayFieldValue(
                                                 null, false,
                                                 List.of(
-                                                        ReferenceFieldValue.create(coupon1Id), ReferenceFieldValue.create(coupon2Id)
+                                                        ReferenceFieldValue.create(coupon1Id, RefDTO.fromId(shoppingTypeIds.couponTypeId())),
+                                                        ReferenceFieldValue.create(coupon2Id, RefDTO.fromId(shoppingTypeIds.couponTypeId()))
                                                 )
                                         )
                                 ),
@@ -494,7 +497,7 @@ public class MappingTest extends TestCase {
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(userTypeIds.applicationNameFieldId(), PrimitiveFieldValue.createString("test")),
-                                InstanceFieldDTO.create(userTypeIds.applicationOwnerFieldId(), ReferenceFieldValue.create(userId))
+                                InstanceFieldDTO.create(userTypeIds.applicationOwnerFieldId(), ReferenceFieldValue.create(userId, RefDTO.fromId(userTypeIds.platformUserTypeId())))
                         )
                 )
         )));
