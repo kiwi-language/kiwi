@@ -12,6 +12,10 @@ public class ReferenceFieldValue extends FieldValue {
         return new ReferenceFieldValue(null, id, typeRef);
     }
 
+    public static ReferenceFieldValue create(InstanceDTO instanceDTO) {
+        return new ReferenceFieldValue(instanceDTO.title(), instanceDTO.id(), instanceDTO.typeRef());
+    }
+
     private final String id;
 
     private final RefDTO typeRef;

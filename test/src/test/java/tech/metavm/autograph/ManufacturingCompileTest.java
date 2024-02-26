@@ -18,7 +18,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         new Main(HOME, SOURCE_ROOT, AUTH_CONFIG, typeClient, allocatorStore).run();
         submit(() -> {
             var roundingRuleType = getClassTypeByCode("tech.metavm.manufacturing.material.RoundingRule");
-            var roundHalfUpId = TestUtils.getEnumConstantIdByName(roundingRuleType, "四舍五入");
+            var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "四舍五入");
             var unitType = getClassTypeByCode("tech.metavm.manufacturing.material.Unit");
             var unitConstructorId = TestUtils.getMethodIdByCode(unitType, "Unit");
             var unit = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
@@ -27,7 +27,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                     List.of(
                             PrimitiveFieldValue.createString("米"),
                             PrimitiveFieldValue.createString("meter"),
-                            ReferenceFieldValue.create(roundHalfUpId, roundingRuleType.getRef()),
+                            ReferenceFieldValue.create(roundHalfUp),
                             PrimitiveFieldValue.createLong(2L),
                             PrimitiveFieldValue.createNull()
                     )
@@ -41,7 +41,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                     List.of(
                             PrimitiveFieldValue.createString("钢板"),
                             PrimitiveFieldValue.createString("sheet metal"),
-                            ReferenceFieldValue.create(unit.id(), unitType.getRef())
+                            ReferenceFieldValue.create(unit)
                     )
             )));
             Assert.assertNotNull(material);

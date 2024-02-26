@@ -96,8 +96,7 @@ public class ShoppingTest extends TestCase {
                         InstanceDTO.createArrayInstance(
                                 RefDTO.fromId(shoppingTypeIds.couponArrayTypeId()),
                                 false,
-                                NncUtils.map(couponsDTOs, c -> ReferenceFieldValue.create(c.id(), c.typeRef())
-                                )
+                                NncUtils.map(couponsDTOs, ReferenceFieldValue::create)
                         ))
         );
         var orderDTO = TestUtils.doInTransaction(

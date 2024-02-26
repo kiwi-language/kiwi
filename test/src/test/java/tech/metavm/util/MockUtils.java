@@ -1230,7 +1230,7 @@ public class MockUtils {
 
     private static FlowDTO createCouponUseMethod(TypeDTO couponTypeDTO, TypeDTO couponStateTypeDTO) {
         var couponStateFieldId = TestUtils.getFieldIdByCode(couponTypeDTO, "state");
-        var couponStateUsedId = TestUtils.getEnumConstantIdByName(couponStateTypeDTO, "已使用");
+        var couponStateUsed = TestUtils.getEnumConstantByName(couponStateTypeDTO, "已使用");
         return MethodDTOBuilder.newBuilder(RefDTO.fromId(couponTypeDTO.id()), "使用")
                 .tmpId(NncUtils.randomNonNegative())
                 .returnTypeRef(getVoidType().getRef())
@@ -1248,7 +1248,7 @@ public class MockUtils {
                                 NodeDTOFactory.createBranch(
                                         NncUtils.randomNonNegative(),
                                         1,
-                                        ValueDTOFactory.createExpression("当前记录.状态 = $$" + couponStateUsedId),
+                                        ValueDTOFactory.createExpression("当前记录.状态 = $$" + couponStateUsed.id()),
                                         false,
                                         List.of(
                                                 NodeDTOFactory.createRaiseNode(
@@ -1277,10 +1277,7 @@ public class MockUtils {
                                         UpdateOp.SET.code(),
                                         new ValueDTO(
                                                 ValueKind.CONSTANT.code(),
-                                                ReferenceFieldValue.create(
-                                                        couponStateUsedId,
-                                                        couponStateTypeDTO.getRef()
-                                                )
+                                                ReferenceFieldValue.create(couponStateUsed)
                                         )
                                 )
                         )

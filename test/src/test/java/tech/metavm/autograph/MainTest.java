@@ -156,7 +156,7 @@ public class MainTest extends CompilerTestBase {
         compileTwice(SHOPPING_SOURCE_ROOT);
         submit(() -> {
             var productStateType = queryClassType("商品状态");
-            var productNormalStateId = TestUtils.getEnumConstantIdByName(productStateType, "正常");
+            var productNormalState = TestUtils.getEnumConstantByName(productStateType, "正常");
             var productType = queryClassType("AST产品");
             var product = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
                     productType.getRef(),
@@ -179,13 +179,13 @@ public class MainTest extends CompilerTestBase {
                             ),
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(productType, "state"),
-                                    ReferenceFieldValue.create(productNormalStateId, productStateType.getRef())
+                                    ReferenceFieldValue.create(productNormalState)
                             )
                     )
             ));
             var directCouponType = queryClassType("AST立减优惠券");
             var couponStateType = queryClassType("优惠券状态");
-            var couponNormalStateId = TestUtils.getEnumConstantIdByName(couponStateType, "未使用");
+            var couponNormalState = TestUtils.getEnumConstantByName(couponStateType, "未使用");
             var coupon = TestUtils.createInstanceWithCheck(instanceManager, InstanceDTO.createClassInstance(
                     directCouponType.getRef(),
                     List.of(
@@ -195,11 +195,11 @@ public class MainTest extends CompilerTestBase {
                             ),
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(directCouponType, "state"),
-                                    ReferenceFieldValue.create(couponNormalStateId, couponStateType.getRef())
+                                    ReferenceFieldValue.create(couponNormalState)
                             ),
                             InstanceFieldDTO.create(
                                     getFieldIdByCode(directCouponType, "product"),
-                                    ReferenceFieldValue.create(product.id(), productType.getRef())
+                                    ReferenceFieldValue.create(product)
                             )
                     )
             ));
@@ -214,7 +214,7 @@ public class MainTest extends CompilerTestBase {
                             InstanceFieldValue.of(InstanceDTO.createArrayInstance(
                                     couponArrayType.getRef(),
                                     false,
-                                    List.of(ReferenceFieldValue.create(coupon.id(), directCouponType.getRef()))
+                                    List.of(ReferenceFieldValue.create(coupon))
                             ))
                     )
             )));
@@ -278,7 +278,7 @@ public class MainTest extends CompilerTestBase {
                                                 InstanceDTO.createListInstance(
                                                         roleReadWriteListType.getRef(),
                                                         false,
-                                                        List.of(ReferenceFieldValue.create(role.id(), roleType.getRef()))
+                                                        List.of(ReferenceFieldValue.create(role))
                                                 )
                                         )
                                 )
@@ -468,7 +468,7 @@ public class MainTest extends CompilerTestBase {
                             null,
                             List.of(
                                     PrimitiveFieldValue.createString("lab"),
-                                    ReferenceFieldValue.create(platformUser.id(), platformUserType.getRef())
+                                    ReferenceFieldValue.create(platformUser)
                             )
                     )
             ));
@@ -501,8 +501,8 @@ public class MainTest extends CompilerTestBase {
                             enterApplicationMethodId,
                             null,
                             List.of(
-                                    ReferenceFieldValue.create(platformUser.id(), platformUserType.getRef()),
-                                    ReferenceFieldValue.create(application.id(), userApplicationType.getRef())
+                                    ReferenceFieldValue.create(platformUser),
+                                    ReferenceFieldValue.create(application)
                             )
                     )
             ));
@@ -537,10 +537,10 @@ public class MainTest extends CompilerTestBase {
                                                 InstanceDTO.createListInstance(
                                                         platformUserReadWriteListType.getRef(),
                                                         false,
-                                                        List.of(ReferenceFieldValue.create(platformUser.id(), platformUserType.getRef()))
+                                                        List.of(ReferenceFieldValue.create(platformUser))
                                                 )
                                         ),
-                                        ReferenceFieldValue.create(application.id(), userApplicationType.getRef()))
+                                        ReferenceFieldValue.create(application))
                         )
                 ));
                 Assert.fail("应用所有人无法退出应用");
@@ -562,7 +562,7 @@ public class MainTest extends CompilerTestBase {
                                             InstanceDTO.createListInstance(
                                                     roleReadWriteListType.getRef(),
                                                     false,
-                                                    List.of(ReferenceFieldValue.create(role.id(), roleType.getRef()))
+                                                    List.of(ReferenceFieldValue.create(role))
                                             )
                                     )
                             )
@@ -583,11 +583,11 @@ public class MainTest extends CompilerTestBase {
                                                     List.of(
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(appInvitationRequestType, "application"),
-                                                                    ReferenceFieldValue.create(application.id(), userApplicationType.getRef())
+                                                                    ReferenceFieldValue.create(application)
                                                             ),
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(appInvitationRequestType, "user"),
-                                                                    ReferenceFieldValue.create(anotherPlatformUser.id(), platformUserType.getRef())
+                                                                    ReferenceFieldValue.create(anotherPlatformUser)
                                                             ),
                                                             InstanceFieldDTO.create(
                                                                     getFieldIdByCode(appInvitationRequestType, "isAdmin"),
@@ -630,26 +630,24 @@ public class MainTest extends CompilerTestBase {
                     new FlowExecutionRequest(
                             messageReadMethodId,
                             null,
-                            List.of(ReferenceFieldValue.create(message.id(), messageType.getRef()))
+                            List.of(ReferenceFieldValue.create(message))
                     )
             ));
 
             // get invitationId from the message
             var messageTargetFieldId = getFieldIdByCode(messageType, "target");
-            var invitationId = ((ReferenceFieldValue) message.getFieldValue(messageTargetFieldId)).getId();
 
             // accept invitation
-            var invitationType = queryClassType("LabAppInvitation");
             var acceptInvitationMethodId = TestUtils.getMethodIdByCode(userApplicationType, "acceptInvitation");
             doInTransaction(() -> flowExecutionService.execute(
                     new FlowExecutionRequest(
                             acceptInvitationMethodId,
                             null,
                             List.of(
-                                    ReferenceFieldValue.create(invitationId, invitationType.getRef())
+                                    message.getFieldValue(messageTargetFieldId))
                             )
                     )
-            ));
+            );
 
             // assert that the user has joined the application
             var reloadedAnotherPlatformUser = instanceManager.get(anotherPlatformUser.id(), 1).instance();
@@ -660,8 +658,8 @@ public class MainTest extends CompilerTestBase {
                             enterApplicationMethodId,
                             null,
                             List.of(
-                                    ReferenceFieldValue.create(anotherPlatformUser.id(), platformUserType.getRef()),
-                                    ReferenceFieldValue.create(application.id(), userApplicationType.getRef())
+                                    ReferenceFieldValue.create(anotherPlatformUser),
+                                    ReferenceFieldValue.create(application)
                             )
                     )
             ));
@@ -679,10 +677,10 @@ public class MainTest extends CompilerTestBase {
                                             InstanceDTO.createListInstance(
                                                     platformUserReadWriteListType.getRef(),
                                                     false,
-                                                    List.of(ReferenceFieldValue.create(anotherPlatformUser.id(), platformUserType.getRef()))
+                                                    List.of(ReferenceFieldValue.create(anotherPlatformUser))
                                             )
                                     ),
-                                    ReferenceFieldValue.create(application.id(), userApplicationType.getRef())
+                                    ReferenceFieldValue.create(application)
                             )
                     )
             ));
@@ -697,8 +695,8 @@ public class MainTest extends CompilerTestBase {
                                 enterApplicationMethodId,
                                 null,
                                 List.of(
-                                        ReferenceFieldValue.create(anotherPlatformUser.id(), platformUserType.getRef()),
-                                        ReferenceFieldValue.create(application.id(), userApplicationType.getRef())
+                                        ReferenceFieldValue.create(anotherPlatformUser),
+                                        ReferenceFieldValue.create(application)
                                 )
                         )
                 ));
@@ -755,10 +753,10 @@ public class MainTest extends CompilerTestBase {
                                             InstanceDTO.createListInstance(
                                                     roleReadWriteListType.getRef(),
                                                     false,
-                                                    List.of(ReferenceFieldValue.create(role.id(), roleType.getRef()))
+                                                    List.of(ReferenceFieldValue.create(role))
                                             )
                                     ),
-                                    ReferenceFieldValue.create(application.id(), userApplicationType.getRef())
+                                    ReferenceFieldValue.create(application)
                             )
                     )
             ));
@@ -928,7 +926,7 @@ public class MainTest extends CompilerTestBase {
                         loginMethodId,
                         null,
                         List.of(
-                                ReferenceFieldValue.create(platformApplication.id(), platformApplication.typeRef()),
+                                ReferenceFieldValue.create(platformApplication),
                                 PrimitiveFieldValue.createString(loginName),
                                 PrimitiveFieldValue.createString(password),
                                 PrimitiveFieldValue.createString(clientIP)
@@ -947,7 +945,7 @@ public class MainTest extends CompilerTestBase {
                 List.of(
                         InstanceFieldDTO.create(
                                 getFieldIdByCode(tokenType, "application"),
-                                ReferenceFieldValue.create(application.id(), application.typeRef())
+                                ReferenceFieldValue.create(application)
                         ),
                         InstanceFieldDTO.create(
                                 getFieldIdByCode(tokenType, "token"),

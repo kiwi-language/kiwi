@@ -364,4 +364,8 @@ public class TestUtils {
     public static String getEnumConstantIdByName(TypeDTO typeDTO, String name) {
         return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title())).id();
     }
+
+    public static InstanceDTO getEnumConstantByName(TypeDTO typeDTO, String name) {
+        return NncUtils.findRequired(typeDTO.getClassParam().enumConstants(), f -> name.equals(f.title()));
+    }
 }

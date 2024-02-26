@@ -1,9 +1,7 @@
 package tech.metavm.flow;
 
 import tech.metavm.flow.rest.ValueDTO;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.ExpressionFieldValue;
-import tech.metavm.object.instance.rest.ReferenceFieldValue;
 
 public class ValueDTOFactory {
 
@@ -22,22 +20,14 @@ public class ValueDTOFactory {
     }
 
     public static ValueDTO createConstant(Object value) {
-//        if(value instanceof Id id) {
-//            return new ValueDTO(
-//                    ValueKind.CONSTANT.code(),
-//                    ReferenceFieldValue.create(id.toString())
-//            );
-//        }
-//        else {
-            return new ValueDTO(
-                    ValueKind.CONSTANT.code(),
-                    new ExpressionFieldValue(constantToExpression(value))
-            );
-//        }
+        return new ValueDTO(
+                ValueKind.CONSTANT.code(),
+                new ExpressionFieldValue(constantToExpression(value))
+        );
     }
 
     private static String constantToExpression(Object value) {
-        if(value == null)
+        if (value == null)
             return "null";
         else if (value instanceof String)
             return "\"" + value + "\"";
