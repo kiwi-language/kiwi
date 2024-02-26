@@ -322,9 +322,10 @@ public class ClassInstance extends DurableInstance {
         return getType().allFieldsMatch(this::isFieldInitialized);
     }
 
-    public @Nullable Field findUninitializedField() {
+    public @Nullable Field findUninitializedField(ClassType type) {
         ensureLoaded();
-        return getType().findField(f -> !isFieldInitialized(f));
+        NncUtils.requireTrue(type.isAssignableFrom(getType()));
+        return type.findField(f -> !isFieldInitialized(f));
     }
 
     public void initField(Field field, Instance value) {
