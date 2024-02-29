@@ -48,6 +48,8 @@ public enum ErrorCode {
     CONVERSION_FAILED(410, "对象'{}'不能转化为类型'{}'"),
     CAN_NOT_MODIFY_READONLY_FIELD(411, "无法修改对象只读字段"),
     TYPE_CAST_ERROR(412, "类型转换错误，原类型: {}, 目标类型: {}"),
+    NOT_A_PHYSICAL_INSTANCE(413, "对象'{}'不是物理对象"),
+    NOT_A_CLASS_INSTANCE(414, "对象'{}'不是类对象"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),
@@ -154,6 +156,7 @@ public enum ErrorCode {
     INVALID_SOURCE_MAPPING(1409, "无效的源头映射"),
     INCORRECT_ARRAY_MAPPING_ARGUMENTS(1410, "数组映射参数错误"),
     INCORRECT_MAPPING(1411, "映射配置错误"),
+    DEFAULT_VIEW_NOT_FOUND(1412, "找不到默认视图"),
 
     ;
 

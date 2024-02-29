@@ -42,6 +42,11 @@ public class InstanceController {
         return Result.success(instanceManager.create(instance));
     }
 
+    @GetMapping("/default-view/{id}")
+    public Result<GetInstanceResponse> getDefaultView(@PathVariable("id") String id) {
+        return Result.success(instanceManager.getDefaultView(id));
+    }
+
     @PostMapping
     public Result<String> save(@RequestBody InstanceDTO instance) {
         if (instance.id() == null ) {

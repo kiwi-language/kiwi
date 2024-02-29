@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tech.metavm.common.ErrorCode;
 import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.expression.Expression;
@@ -81,6 +82,26 @@ public class InstanceManager extends EntityContextFactoryBean {
             var instances = context.batchGet(NncUtils.map(ids, Id::parse));
             var roots = NncUtils.mapUnique(instances, DurableInstance::getRoot);
             return NncUtils.map(roots, r -> new InstanceVersionDTO(r.getPhysicalId(), r.getVersion()));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public GetInstanceResponse getDefaultView(String id) {
+        try (var context = newInstanceContext()) {
+            var instanceId = Id.parse(id);
+            var instance = context.get(instanceId);
+            if (instance instanceof ClassInstance classInstance) {
+                if (instanceId instanceof PhysicalId) {
+                    var defaultMapping = classInstance.getType().getDefaultMapping();
+                    if (defaultMapping != null) {
+                        var viewId = new DefaultViewId(defaultMapping.getId(), instanceId);
+                        var view = context.get(viewId);
+                        return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view, 1));
+                    }
+                }
+                return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(instance, 1));
+            } else
+                throw new BusinessException(ErrorCode.NOT_A_CLASS_INSTANCE, id);
         }
     }
 

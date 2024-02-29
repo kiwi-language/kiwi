@@ -398,12 +398,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void saveViews() {
-        for (Instance value : instanceMap.values()) {
+        NncUtils.enhancedForEach(instanceMap.values(), value -> {
             if (value instanceof ClassInstance classInstance) {
                 if (classInstance.isView() && !classInstance.isList() && !classInstance.isRemoved())
                     saveView(classInstance);
             }
-        }
+        });
     }
 
     private void saveView(ClassInstance view) {
