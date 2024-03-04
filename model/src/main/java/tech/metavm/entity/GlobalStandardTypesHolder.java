@@ -36,6 +36,8 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     private ClassType iterableType;
     private ClassType consumerType;
     private ClassType predicateType;
+    private ClassType illegalArgumentExceptionType;
+    private ClassType illegalStateExceptionType;
 
     @Override
     public PrimitiveType getLongType() {
@@ -355,6 +357,26 @@ public class GlobalStandardTypesHolder implements StandardTypesHolder {
     @Override
     public void setPredicateType(ClassType type) {
         predicateType = type;
+    }
+
+    @Override
+    public void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType) {
+        this.illegalArgumentExceptionType = illegalArgumentExceptionType;
+    }
+
+    @Override
+    public void setIllegalStateExceptionType(ClassType illegalStateExceptionType) {
+        this.illegalStateExceptionType = illegalStateExceptionType;
+    }
+
+    @Override
+    public ClassType getIllegalArgumentExceptionType() {
+        return illegalArgumentExceptionType;
+    }
+
+    @Override
+    public ClassType getIllegalStateExceptionType() {
+        return illegalStateExceptionType;
     }
 
 }

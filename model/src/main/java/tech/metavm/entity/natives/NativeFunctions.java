@@ -103,4 +103,12 @@ public class NativeFunctions {
         holder.setPrint(function);
     }
 
+    public static Function getDelete() {
+        return holder.getDelete();
+    }
+
+    public static void setDelete(@NotNull Function function) {
+        holder.setDelete(function);
+    }
+
 }

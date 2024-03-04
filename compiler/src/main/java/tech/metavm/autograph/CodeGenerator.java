@@ -32,6 +32,9 @@ public class CodeGenerator {
                 try(var ignored1 = ContextUtil.getProfiler().enter("SwitchLabelStatementTransformer")) {
                     psiClass.accept(new SwitchLabelStatementTransformer());
                 }
+                try(var ignored1 = ContextUtil.getProfiler().enter("SwitchLabelRuleTransformer")) {
+                    psiClass.accept(new DefaultSwitchCaseAppender());
+                }
                 try(var ignored1 = ContextUtil.getProfiler().enter("ForeachTransformer")) {
                     psiClass.accept(new ForeachTransformer());
                 }

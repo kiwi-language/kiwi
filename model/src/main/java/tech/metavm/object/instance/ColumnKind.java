@@ -11,7 +11,7 @@ public enum ColumnKind {
 
     STRING(2, "varchar(256)","keyword","s",10),
 
-    BOOL(3, "bool","boolean","b",10),
+    BOOL(3, "bool","boolean","b",20),
 
     DOUBLE(4, "double","double","d",10),
 

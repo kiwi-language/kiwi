@@ -62,8 +62,8 @@ public class LocalIndexSource implements IndexSource {
 
     private IndexKeyPO convertKey(IndexKeyRT indexKeyRT) {
         var fields = indexKeyRT.getIndex().getFields();
-        byte[][] bytes = new byte[CompilerConstants.NUM_INDEX_COLS][];
-        for (int i = 0; i < CompilerConstants.NUM_INDEX_COLS; i++) {
+        byte[][] bytes = new byte[IndexKeyPO.MAX_KEY_COLUMNS][];
+        for (int i = 0; i < IndexKeyPO.MAX_KEY_COLUMNS; i++) {
             Instance value;
             if (i < fields.size())
                 value = indexKeyRT.getField(fields.get(i));

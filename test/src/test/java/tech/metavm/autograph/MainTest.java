@@ -955,16 +955,6 @@ public class MainTest extends CompilerTestBase {
         ));
     }
 
-    private void compileTwice(String sourceRoot) {
-        compile(sourceRoot);
-        compile(sourceRoot);
-    }
-
-    private void compile(String sourceRoot) {
-        ContextUtil.resetProfiler();
-        new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore).run();
-    }
-
 //    public void testResend() {
 //        LoginUtils.loginWithAuthFile(AUTH_FILE, typeClient);
 //        var request = NncUtils.readJsonFromFile(REQUEST_FILE, BatchSaveRequest.class);

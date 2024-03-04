@@ -37,16 +37,18 @@ public class StandardDefBuilder {
 
     private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
-    private static final Map<java.lang.reflect.Type, Class<?>> NATIVE_CLASS_MAP = Map.of(
-            MetaSet.class, SetNative.class,
-            ChildMetaList.class, ListNative.class,
-            ReadWriteMetaList.class, ListNative.class,
-            MetaList.class, ListNative.class,
-            MetaMap.class, MapNative.class,
-            IteratorImpl.class, IteratorImplNative.class,
-            Throwable.class, ThrowableNative.class,
-            Exception.class, ExceptionNative.class,
-            RuntimeException.class, RuntimeExceptionNative.class
+    private static final Map<java.lang.reflect.Type, Class<?>> NATIVE_CLASS_MAP = Map.ofEntries(
+            Map.entry(MetaSet.class, SetNative.class),
+            Map.entry(ChildMetaList.class, ListNative.class),
+            Map.entry(ReadWriteMetaList.class, ListNative.class),
+            Map.entry(MetaList.class, ListNative.class),
+            Map.entry(MetaMap.class, MapNative.class),
+            Map.entry(IteratorImpl.class, IteratorImplNative.class),
+            Map.entry(Throwable.class, ThrowableNative.class),
+            Map.entry(Exception.class, ExceptionNative.class),
+            Map.entry(RuntimeException.class, RuntimeExceptionNative.class),
+            Map.entry(IllegalArgumentException.class, IllegalArgumentExceptionNative.class),
+            Map.entry(IllegalStateException.class, IllegalStateExceptionNative.class)
     );
 
     public StandardDefBuilder(DefContext defContext) {
@@ -252,6 +254,20 @@ public class StandardDefBuilder {
         createRuntimeExceptionFlows(StandardTypes.getRuntimeExceptionType());
         defContext.addDef(new DirectDef<>(
                 RuntimeException.class, StandardTypes.getRuntimeExceptionType(), RuntimeExceptionNative.class));
+
+        StandardTypes.setIllegalArgumentExceptionType(ClassTypeBuilder.newBuilder("非法参数异常", IllegalArgumentException.class.getSimpleName())
+                .superClass(StandardTypes.getRuntimeExceptionType())
+                .source(ClassSource.BUILTIN).build());
+        createIllegalArgumentExceptionFlows(StandardTypes.getIllegalArgumentExceptionType());
+        defContext.addDef(new DirectDef<>(
+                IllegalArgumentException.class, StandardTypes.getIllegalArgumentExceptionType(), IllegalArgumentExceptionNative.class));
+
+        StandardTypes.setIllegalStateExceptionType(ClassTypeBuilder.newBuilder("非法状态异常", IllegalStateException.class.getSimpleName())
+                .superClass(StandardTypes.getRuntimeExceptionType())
+                .source(ClassSource.BUILTIN).build());
+        createIllegalStateExceptionFlows(StandardTypes.getIllegalStateExceptionType());
+        defContext.addDef(new DirectDef<>(
+                IllegalStateException.class, StandardTypes.getIllegalStateExceptionType(), IllegalStateExceptionNative.class));
     }
 
     private ClassType createConsumerType() {
@@ -390,6 +406,14 @@ public class StandardDefBuilder {
                 .build();
         NativeFunctions.setPrint(print);
         defContext.writeEntity(print);
+
+        var delete = FunctionBuilder.newBuilder("删除", "delete", defContext.getFunctionTypeContext())
+                .isNative()
+                .parameters(new Parameter(null, "实例", "instance", StandardTypes.getAnyType()))
+                .returnType(StandardTypes.getVoidType())
+                .build();
+        NativeFunctions.setDelete(delete);
+        defContext.writeEntity(delete);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -616,6 +640,16 @@ public class StandardDefBuilder {
         MethodBuilder.newBuilder(collectionType, "清空", "clear", defContext.getFunctionTypeContext())
                 .isNative(true)
                 .returnType(StandardTypes.getVoidType())
+                .build();
+
+        MethodBuilder.newBuilder(collectionType, "条件删除", "removeIf", defContext.getFunctionTypeContext())
+                .isNative(true)
+                .returnType(StandardTypes.getBooleanType())
+                .parameters(new Parameter(null, "条件", "filter",
+                        defContext.getGenericContext().getParameterizedType(
+                                StandardTypes.getPredicateType(),
+                                defContext.getUncertainType(elementType, StandardTypes.getNullableAnyType())
+                        )))
                 .build();
 
         collectionType.setStage(ResolutionStage.DEFINITION);
@@ -966,59 +1000,43 @@ public class StandardDefBuilder {
     }
 
     private void createExceptionFlows(ClassType exceptionType) {
-        MethodBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(exceptionType)
-                .build();
-
-        MethodBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(exceptionType)
-                .parameters(new Parameter(null, "错误详情", "message", StandardTypes.getStringType()))
-                .build();
-
-        MethodBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(exceptionType)
-                .parameters(new Parameter(null, "原因", "cause", StandardTypes.getThrowableType()))
-                .build();
-
-        MethodBuilder.newBuilder(exceptionType, "Exception", "Exception", defContext.getFunctionTypeContext())
-                .isConstructor(true)
-                .isNative(true)
-                .returnType(exceptionType)
-                .parameters(
-                        new Parameter(null, "错误详情", "message", StandardTypes.getStringType()),
-                        new Parameter(null, "原因", "cause", StandardTypes.getThrowableType())
-                )
-                .build();
+        createExceptionFlows("Exception", "Exception", exceptionType);
     }
 
-    private void createRuntimeExceptionFlows(ClassType runtimeExceptionType) {
-        MethodBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
+    private void createRuntimeExceptionFlows(ClassType exceptionType) {
+        createExceptionFlows("RuntimeException", "RuntimeException", exceptionType);
+    }
+
+    private void createIllegalArgumentExceptionFlows(ClassType exceptionType) {
+        createExceptionFlows("IllegalArgumentException", "IllegalArgumentException", exceptionType);
+    }
+
+    private void createIllegalStateExceptionFlows(ClassType exceptionType) {
+        createExceptionFlows("IllegalStateException", "IllegalStateException", exceptionType);
+    }
+
+    private void createExceptionFlows(String name, String code, ClassType runtimeExceptionType) {
+        MethodBuilder.newBuilder(runtimeExceptionType, name, code, defContext.getFunctionTypeContext())
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType)
                 .build();
 
-        MethodBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
+        MethodBuilder.newBuilder(runtimeExceptionType, name, code, defContext.getFunctionTypeContext())
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType)
                 .parameters(new Parameter(null, "错误详情", "message", StandardTypes.getStringType()))
                 .build();
 
-        MethodBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
+        MethodBuilder.newBuilder(runtimeExceptionType, name, code, defContext.getFunctionTypeContext())
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType)
                 .parameters(new Parameter(null, "原因", "cause", StandardTypes.getThrowableType()))
                 .build();
 
-        MethodBuilder.newBuilder(runtimeExceptionType, "RuntimeException", "RuntimeException", defContext.getFunctionTypeContext())
+        MethodBuilder.newBuilder(runtimeExceptionType, name, code, defContext.getFunctionTypeContext())
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType)
@@ -1028,6 +1046,7 @@ public class StandardDefBuilder {
                 )
                 .build();
     }
+
 
     private static class PrimTypeFactory extends TypeFactory {
 

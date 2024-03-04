@@ -6,6 +6,7 @@ import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
+import com.intellij.psi.impl.light.LightRecordCanonicalConstructor;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
@@ -103,6 +104,11 @@ public class TranspileUtil {
     public static PsiType createExtendsWildcardType(PsiType bound) {
         var psiManager = PsiManager.getInstance(project);
         return PsiWildcardType.createExtends(psiManager, bound);
+    }
+
+    public static PsiType createSuperWildcardType(PsiType bound) {
+        var psiManager = PsiManager.getInstance(project);
+        return PsiWildcardType.createSuper(psiManager, bound);
     }
 
     public static String getCanonicalName(PsiType type) {
@@ -296,9 +302,9 @@ public class TranspileUtil {
     }
 
     public static PsiType createType(Class<?> klass) {
-        if(klass.isPrimitive())
+        if (klass.isPrimitive())
             return createPrimitiveType(klass);
-        else if(klass.isArray())
+        else if (klass.isArray())
             return createArrayType(klass);
         else
             return createClassType(klass);
@@ -703,6 +709,11 @@ public class TranspileUtil {
         return bizName != null ? bizName : klass.getQualifiedName();
     }
 
+    public static boolean isStruct(PsiClass psiClass) {
+        return psiClass.isRecord()
+                && NncUtils.count(psiClass.getConstructors(), m -> !(m instanceof LightRecordCanonicalConstructor)) == 0;
+    }
+
     public static boolean isStatic(PsiModifierListOwner modifierListOwner) {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
     }
@@ -742,6 +753,13 @@ public class TranspileUtil {
 
     private static String tryGetNameFromAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
         return (String) getAnnotationAttr(element, annotationClass, "value");
+    }
+
+
+    public static PsiAnnotation getAnnotation(PsiAnnotationOwner element, Class<? extends Annotation> annotationClass) {
+        var annotation = findAnnotation(element.getAnnotations(), annotationClass.getName());
+        if (annotation == null) annotation = findAnnotation(element.getAnnotations(), annotationClass.getSimpleName());
+        return annotation;
     }
 
     public static PsiAnnotation getAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
@@ -837,11 +855,25 @@ public class TranspileUtil {
         }
         if (type instanceof PsiWildcardType wildcardType) {
             if (wildcardType.isSuper())
-                return "[" + getInternalName(wildcardType.getBound(), current) + ",Any]";
+                return "[" + getInternalName(wildcardType.getBound(), current) + ",Any|Null]";
             else
-                return "[Never," + getInternalName(wildcardType.getBound(), current);
+                return "[Never," + getInternalName(wildcardType.getBound(), current) + "]";
         }
         return type.getCanonicalText();
+    }
+
+    public static boolean isColonSwitch(PsiSwitchStatement statement) {
+        var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
+        return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
+    }
+
+    public static boolean isColonSwitch(PsiSwitchExpression expression) {
+        var stmts = NncUtils.requireNonNull(expression.getBody()).getStatements();
+        return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
+    }
+
+    public static List<PsiEnumConstant> getEnumConstants(PsiClass psiClass) {
+        return NncUtils.filterByType(List.of(psiClass.getFields()), PsiEnumConstant.class);
     }
 
 }

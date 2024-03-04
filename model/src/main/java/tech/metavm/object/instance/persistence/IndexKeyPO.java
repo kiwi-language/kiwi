@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
-    public static final int MAX_KEY_COLUMNS = 5;
+    public static final int MAX_KEY_COLUMNS = 15;
     public static final byte[] NULL = {'\0'};
 
     private long indexId;
@@ -75,6 +75,86 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
 
     public void setColumn4(byte[] column4) {
         columns[4] = column4;
+    }
+
+    public byte[] getColumn5() {
+        return columns[5];
+    }
+
+    public void setColumn5(byte[] column5) {
+        columns[5] = column5;
+    }
+
+    public byte[] getColumn6() {
+        return columns[6];
+    }
+
+    public void setColumn6(byte[] column6) {
+        columns[6] = column6;
+    }
+
+    public byte[] getColumn7() {
+        return columns[7];
+    }
+
+    public void setColumn7(byte[] column7) {
+        columns[7] = column7;
+    }
+
+    public byte[] getColumn8() {
+        return columns[8];
+    }
+
+    public void setColumn8(byte[] column8) {
+        columns[8] = column8;
+    }
+
+    public byte[] getColumn9() {
+        return columns[9];
+    }
+
+    public void setColumn9(byte[] column9) {
+        columns[9] = column9;
+    }
+
+    public byte[] getColumn10() {
+        return columns[10];
+    }
+
+    public void setColumn10(byte[] column10) {
+        columns[10] = column10;
+    }
+
+    public byte[] getColumn11() {
+        return columns[11];
+    }
+
+    public void setColumn11(byte[] column11) {
+        columns[11] = column11;
+    }
+
+    public byte[] getColumn12() {
+        return columns[12];
+    }
+
+    public void setColumn12(byte[] column12) {
+        columns[12] = column12;
+    }
+
+    public byte[] getColumn13() {
+        return columns[13];
+    }
+
+    public void setColumn13(byte[] column13) {
+        columns[13] = column13;
+    }
+
+    public byte[] getColumn14() {
+        return columns[14];
+    }
+
+    public void setColumn14(byte[] column14) {
+        columns[14] = column14;
     }
 
     public void setColumn(int i, byte[] column) {

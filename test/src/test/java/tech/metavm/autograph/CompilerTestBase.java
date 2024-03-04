@@ -159,4 +159,15 @@ public abstract class CompilerTestBase extends TestCase  {
         return typeManager.getTypeByCode(code).type();
     }
 
+    protected void compileTwice(String sourceRoot) {
+        compile(sourceRoot);
+        compile(sourceRoot);
+    }
+
+    protected void compile(String sourceRoot) {
+        ContextUtil.resetProfiler();
+        new Main(HOME, sourceRoot, AUTH_CONFIG, typeClient, allocatorStore).run();
+    }
+
+
 }

@@ -1,10 +1,13 @@
 package tech.metavm.object.view;
 
+import tech.metavm.common.ErrorCode;
 import tech.metavm.entity.*;
+import tech.metavm.entity.natives.ExceptionNative;
 import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.*;
 import tech.metavm.object.type.*;
 import tech.metavm.object.view.rest.dto.MappingDTO;
+import tech.metavm.util.BusinessException;
 import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
 
@@ -93,7 +96,12 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     }
 
     public DurableInstance unmap(DurableInstance view, InstanceRepository repository, ParameterizedFlowProvider parameterizedFlowProvider) {
-        var source = (DurableInstance) Objects.requireNonNull(getUnmapper().execute(null, List.of(view), repository, parameterizedFlowProvider).ret());
+        var result = getUnmapper().execute(null, List.of(view), repository, parameterizedFlowProvider);
+        if(result.exception() != null) {
+            var exceptionNative = new ExceptionNative(result.exception());
+            throw new BusinessException(ErrorCode.FAIL_TO_SAVE_VIEW, exceptionNative.getMessage().getTitle());
+        }
+        var source = (DurableInstance) Objects.requireNonNull(result.ret());
         if (source.getContext() == null)
             repository.bind(source);
         return source;

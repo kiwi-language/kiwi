@@ -7,6 +7,7 @@ import com.intellij.psi.PsiType;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import tech.metavm.autograph.mocks.PTypeFoo;
+import tech.metavm.autograph.mocks.RecordFoo;
 import tech.metavm.autograph.mocks.SignatureFoo;
 import tech.metavm.autograph.mocks.TypeFoo;
 import tech.metavm.entity.DummyGenericDeclaration;
@@ -76,7 +77,7 @@ public class TranspileUtilTest extends TestCase {
                         new Parameter(null, "list", "list",
                                 typeProviders.parameterizedTypeProvider.getParameterizedType(
                                         StandardTypes.getListType(),
-                                        List.of(new UncertainType(null, typeVar, StandardTypes.getAnyType()))
+                                        List.of(new UncertainType(null, typeVar, StandardTypes.getNullableAnyType()))
                                 )
                         ),
                         new Parameter(null, "element", "element", typeVar)
@@ -84,6 +85,11 @@ public class TranspileUtilTest extends TestCase {
                 .build();
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);
+    }
+
+    public void testIsStruct() {
+        var file = TranspileTestTools.getPsiJavaFile(RecordFoo.class);
+        Assert.assertTrue(TranspileUtil.isStruct(file.getClasses()[0]));
     }
 
     private static class Visitor extends JavaRecursiveElementVisitor {

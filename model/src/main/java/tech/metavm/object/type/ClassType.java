@@ -98,6 +98,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     @CopyIgnore
     private @Nullable ClassType copySource;
 
+    private boolean struct;
+
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     private transient volatile MethodTable methodTable;
@@ -120,6 +122,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             @Nullable ClassType template,
             boolean anonymous,
             boolean ephemeral,
+            boolean struct,
             @Nullable String desc,
             boolean isTemplate,
             List<TypeVariable> typeParameters,
@@ -1041,6 +1044,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
                     NncUtils.map(typeArguments, serContext::getRef),
                     NncUtils.map(dependencies, serContext::getRef),
                     !subTypes.isEmpty(),
+                    struct,
                     NncUtils.map(errors, Error::toDTO)
             );
             return param;
@@ -1507,5 +1511,12 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return getMethods().get(0);
     }
 
+    public boolean isStruct() {
+        return struct;
+    }
+
+    public void setStruct(boolean struct) {
+        this.struct = struct;
+    }
 }
 

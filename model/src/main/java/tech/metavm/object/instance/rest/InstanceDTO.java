@@ -102,6 +102,16 @@ public record InstanceDTO(
     }
 
     @JsonIgnore
+    public List<FieldValue> getElements() {
+        if(param() instanceof ArrayInstanceParam arrayInstanceParam)
+            return arrayInstanceParam.elements();
+        else if(param() instanceof ListInstanceParam listInstanceParam)
+            return listInstanceParam.elements();
+        else
+            throw new IllegalStateException("Not an array or list instance");
+    }
+
+    @JsonIgnore
     public int getArraySize() {
         var param = (ArrayInstanceParam) param();
         return param.elements().size();

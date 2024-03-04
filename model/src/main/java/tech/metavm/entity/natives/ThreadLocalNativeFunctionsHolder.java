@@ -117,6 +117,16 @@ public class ThreadLocalNativeFunctionsHolder implements NativeFunctionsHolder {
     }
 
     @Override
+    public Function getDelete() {
+        return TL.get().getDelete();
+    }
+
+    @Override
+    public void setDelete(Function function) {
+        TL.get().setDelete(function);
+    }
+
+    @Override
     public Function getSetSessionEntry() {
         return TL.get().getSetSessionEntry();
     }

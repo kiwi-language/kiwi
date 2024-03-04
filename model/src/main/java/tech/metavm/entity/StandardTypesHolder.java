@@ -131,4 +131,12 @@ public interface StandardTypesHolder {
     ClassType getPredicateType();
 
     void setPredicateType(ClassType type);
+
+    void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType);
+
+    void setIllegalStateExceptionType(ClassType illegalStateExceptionType);
+
+    ClassType getIllegalArgumentExceptionType();
+
+    ClassType getIllegalStateExceptionType();
 }

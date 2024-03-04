@@ -112,6 +112,9 @@ public class BootstrapUtils {
             NativeFunctions.setPrint(requireNonNull(defContext.selectFirstByKey(
                     Function.UNIQUE_IDX_CODE, "print"
             )));
+            NativeFunctions.setDelete(requireNonNull(defContext.selectFirstByKey(
+                    Function.UNIQUE_IDX_CODE, "delete"
+            )));
             NativeFunctions.setEmailSender(MockEmailSender.INSTANCE);
             Instances.setFalseInstance(new BooleanInstance(false, StandardTypes.getBooleanType()));
             Instances.setTrueInstance(new BooleanInstance(true, StandardTypes.getBooleanType()));

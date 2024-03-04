@@ -288,6 +288,22 @@ public class StandardTypes {
         holder.setRuntimeExceptionType(runtimeExceptionType);
     }
 
+    public static void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType) {
+        holder.setIllegalArgumentExceptionType(illegalArgumentExceptionType);
+    }
+
+    public static void setIllegalStateExceptionType(ClassType illegalStateExceptionType) {
+        holder.setIllegalStateExceptionType(illegalStateExceptionType);
+    }
+
+    public static ClassType getIllegalArgumentExceptionType() {
+        return holder.getIllegalArgumentExceptionType();
+    }
+
+    public static ClassType getIllegalStateExceptionType() {
+        return holder.getIllegalStateExceptionType();
+    }
+
     public static void setEntityType(ClassType entityType) {
         holder.setEntityType(entityType);
     }

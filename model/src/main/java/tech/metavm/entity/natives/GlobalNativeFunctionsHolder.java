@@ -42,6 +42,8 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
 
     private Function print;
 
+    private Function delete;
+
     private static Instance getSource(@NotNull Instance instance) {
         if (instance instanceof DurableInstance durableInstance)
             return durableInstance.getSource();
@@ -197,6 +199,25 @@ public class GlobalNativeFunctionsHolder implements NativeFunctionsHolder {
             if(session == null || !session.isActive())
                 throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
             return Instances.booleanInstance(session.removeEntry(key));
+        });
+    }
+
+    @Override
+    public Function getDelete() {
+        return delete;
+    }
+
+    @Override
+    public void setDelete(Function function) {
+        this.delete = function;
+        functions.put(function, (func, args) -> {
+            var entityContext = ContextUtil.getEntityContext();
+            var instance = args.get(0);
+            if(instance instanceof DurableInstance durableInstance) {
+                entityContext.getInstanceContext().remove(durableInstance);
+                return Instances.nullInstance();
+            } else
+                throw new BusinessException(ErrorCode.DELETE_NON_DURABLE_INSTANCE, instance);
         });
     }
 

@@ -15,7 +15,8 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
 
     @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
-        if (isColonSwitch(statement)) {
+        super.visitSwitchStatement(statement);
+        if (TranspileUtil.isColonSwitch(statement)) {
             var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
             var newBody = TranspileUtil.createCodeBlock();
             PsiCodeBlock dest = null;
@@ -34,8 +35,6 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
                 }
             }
             replace(statement.getBody(), newBody);
-        } else {
-            super.visitSwitchStatement(statement);
         }
     }
 
@@ -48,9 +47,5 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
         }
     }
 
-    private boolean isColonSwitch(PsiSwitchStatement statement) {
-        var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
-        return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
-    }
 
 }

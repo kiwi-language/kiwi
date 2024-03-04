@@ -59,6 +59,8 @@ public class TypeResolverImpl implements TypeResolver {
             Map.entry(TranspileUtil.createClassType(Throwable.class), StandardTypes::getThrowableType),
             Map.entry(TranspileUtil.createClassType(Exception.class), StandardTypes::getExceptionType),
             Map.entry(TranspileUtil.createClassType(RuntimeException.class), StandardTypes::getRuntimeExceptionType),
+            Map.entry(TranspileUtil.createClassType(IllegalArgumentException.class), StandardTypes::getIllegalArgumentExceptionType),
+            Map.entry(TranspileUtil.createClassType(IllegalStateException.class), StandardTypes::getIllegalStateExceptionType),
             Map.entry(TranspileUtil.createClassType(IteratorImpl.class), StandardTypes::getIteratorImplType),
             Map.entry(TranspileUtil.createClassType(Iterator.class), StandardTypes::getIteratorType),
             Map.entry(TranspileUtil.createClassType(Iterable.class), StandardTypes::getIterableType),
@@ -109,12 +111,15 @@ public class TypeResolverImpl implements TypeResolver {
     public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
             case PsiPrimitiveType primitiveType -> {
+                if(primitiveType.getName().equals("null"))
+                    yield StandardTypes.getNullType();
                 var klass = ReflectionUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
                 yield context.getType(klass);
             }
             case PsiClassType classType -> resolveClassType(classType, stage);
             case PsiWildcardType wildcardType -> resolveWildcardType(wildcardType, stage);
             case PsiArrayType arrayType -> resolveArrayType(arrayType, stage);
+            case PsiCapturedWildcardType capturedWildcardType -> resolveWildcardType(capturedWildcardType.getWildcard(), stage);
             case null, default -> throw new InternalException("Invalid PsiType: " + psiType);
         };
     }
@@ -299,6 +304,10 @@ public class TypeResolverImpl implements TypeResolver {
             var childListType = TranspileUtil.createClassType(ChildList.class);
             if (childListType.isAssignableFrom(ownerType))
                 return StandardTypes.getChildListType().getTypeParameters().get(0);
+            var arrayListType = TranspileUtil.createClassType(ArrayList.class);
+            var linkedListType = TranspileUtil.createClassType(LinkedList.class);
+            if(arrayListType.isAssignableFrom(ownerType) || linkedListType.isAssignableFrom(ownerType))
+                return StandardTypes.getReadWriteListType().getTypeParameters().get(0);
             var listType = TranspileUtil.createClassType(List.class);
             if (listType.isAssignableFrom(ownerType))
                 return StandardTypes.getListType().getTypeParameters().get(0);
@@ -338,6 +347,7 @@ public class TypeResolverImpl implements TypeResolver {
                 classType = ClassTypeBuilder.newBuilder(name, psiClass.getQualifiedName())
                         .category(category)
                         .ephemeral(TranspileUtil.isEphemeral(psiClass))
+                        .struct(TranspileUtil.isStruct(psiClass))
                         .isTemplate(isTemplate)
                         .build();
                 context.bind(classType);
@@ -363,6 +373,11 @@ public class TypeResolverImpl implements TypeResolver {
         }
     }
 
+    private void updateClassType(ClassType classType, PsiClass psiClass) {
+        classType.setName(TranspileUtil.getBizClassName(psiClass));
+        classType.setStruct(TranspileUtil.isStruct(psiClass));
+    }
+
     private TypeCategory getTypeCategory(PsiClass psiClass) {
         return psiClass.isEnum() ? TypeCategory.ENUM
                 : (psiClass.isInterface() ? TypeCategory.INTERFACE : TypeCategory.CLASS);
@@ -371,9 +386,10 @@ public class TypeResolverImpl implements TypeResolver {
     private ClassType resolvePojoClass(PsiClass psiClass, final ResolutionStage stage) {
         try(var entry = ContextUtil.getProfiler().enter("resolvePojoClass: " + stage)) {
             var metaClass = psiClass.getUserData(Keys.MV_CLASS);
-            if (metaClass == null) {
+            if (metaClass == null)
                 metaClass = createMetaClass(psiClass);
-            }
+            else
+                updateClassType(metaClass, psiClass);
             processClassType(metaClass, psiClass, stage);
             return metaClass;
         }

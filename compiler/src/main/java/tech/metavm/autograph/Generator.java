@@ -439,11 +439,15 @@ public class Generator extends CodeGenVisitor {
                 } else {
                     var expressions = NncUtils.map(caseLabelElementList.getElements(),
                             e -> resolveExpression((PsiExpression) e));
-                    cond = new BinaryExpression(
-                            BinaryOperator.IN,
-                            resolveExpression(statement.getExpression()),
-                            ArrayExpression.create(expressions, new ContextArrayTypeProvider(entityContext))
-                    );
+                    cond = null;
+                    for (Expression expression : expressions) {
+                        var expr = new BinaryExpression(BinaryOperator.EQ, switchExpr, expression);
+                        if(cond == null)
+                            cond = expr;
+                        else
+                            cond = new BinaryExpression(BinaryOperator.OR, cond, expr);
+                    }
+                    requireNonNull(cond);
                 }
                 branch = branchNode.addBranch(Values.expression(cond));
             } else {

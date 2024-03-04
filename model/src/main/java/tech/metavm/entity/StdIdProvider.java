@@ -1,9 +1,14 @@
 package tech.metavm.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class StdIdProvider {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(StdIdProvider.class);
 
     private final StdIdStore stdIdStore;
     private final Map<String, Long> ids;
@@ -11,6 +16,7 @@ public class StdIdProvider {
     public StdIdProvider(StdIdStore stdIdStore) {
         this.stdIdStore = stdIdStore;
         ids = stdIdStore.load();
+        LOGGER.info("loaded {} ids", ids.size());
     }
 
     public Long getId(ModelIdentity modelIdentity) {

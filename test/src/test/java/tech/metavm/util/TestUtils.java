@@ -343,6 +343,12 @@ public class TestUtils {
         return NncUtils.findRequired(typeDTO.getClassParam().flows(), f -> methodCode.equals(f.code())).id();
     }
 
+    public static long getStaticMethodIdByCode(TypeDTO typeDTO, String methodCode) {
+        return NncUtils.findRequired(typeDTO.getClassParam().flows(),
+                f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
+        ).id();
+    }
+
     public static long getStaticMethod(TypeDTO typeDTO, String code, RefDTO...parameterTypeRefs) {
         var paramTypeRefList = List.of(parameterTypeRefs);
         return NncUtils.findRequired(typeDTO.getClassParam().flows(),

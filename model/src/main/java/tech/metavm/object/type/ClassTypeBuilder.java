@@ -23,6 +23,7 @@ public class ClassTypeBuilder {
     private boolean anonymous;
     private boolean ephemeral;
     private boolean isTemplate;
+    private boolean struct;
     private String desc;
     private List<ClassType> interfaces = new ArrayList<>();
     private List<Type> typeArguments = new ArrayList<>();
@@ -112,6 +113,11 @@ public class ClassTypeBuilder {
         return this;
     }
 
+    public ClassTypeBuilder struct(boolean struct) {
+        this.struct = struct;
+        return this;
+    }
+
     public ClassTypeBuilder randomSuffix() {
         return suffix(NncUtils.randomNonNegative());
     }
@@ -163,6 +169,7 @@ public class ClassTypeBuilder {
                     template,
                     anonymous,
                     ephemeral,
+                    struct,
                     desc,
                     isTemplate,
                     typeParameters,
@@ -178,6 +185,7 @@ public class ClassTypeBuilder {
             existing.setDesc(desc);
             existing.setTypeParameters(typeParameters);
             existing.setTypeArguments(typeArguments);
+            existing.setStruct(struct);
         }
         if (dependencies != null) {
             classType.setDependencies(dependencies);

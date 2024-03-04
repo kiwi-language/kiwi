@@ -326,4 +326,24 @@ public class ThreadLocalStandardTypesHolder implements StandardTypesHolder {
         TL.get().setPredicateType(type);
     }
 
+    @Override
+    public void setIllegalArgumentExceptionType(ClassType illegalArgumentExceptionType) {
+        TL.get().setIllegalArgumentExceptionType(illegalArgumentExceptionType);
+    }
+
+    @Override
+    public void setIllegalStateExceptionType(ClassType illegalStateExceptionType) {
+        TL.get().setIllegalStateExceptionType(illegalStateExceptionType);
+    }
+
+    @Override
+    public ClassType getIllegalArgumentExceptionType() {
+        return TL.get().getIllegalArgumentExceptionType();
+    }
+
+    @Override
+    public ClassType getIllegalStateExceptionType() {
+        return TL.get().getIllegalStateExceptionType();
+    }
+
 }

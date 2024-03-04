@@ -50,6 +50,7 @@ public enum ErrorCode {
     TYPE_CAST_ERROR(412, "类型转换错误，原类型: {}, 目标类型: {}"),
     NOT_A_PHYSICAL_INSTANCE(413, "对象'{}'不是物理对象"),
     NOT_A_CLASS_INSTANCE(414, "对象'{}'不是类对象"),
+    DELETE_NON_DURABLE_INSTANCE(415, "无法删除非持久化对象"),
 
     // Flow相关错误
     FLOW_NOT_FOUND(401, "流程{}不存在"),
@@ -157,6 +158,7 @@ public enum ErrorCode {
     INCORRECT_ARRAY_MAPPING_ARGUMENTS(1410, "数组映射参数错误"),
     INCORRECT_MAPPING(1411, "映射配置错误"),
     DEFAULT_VIEW_NOT_FOUND(1412, "找不到默认视图"),
+    FAIL_TO_SAVE_VIEW(1413, "保存视图失败: {}"),
 
     ;
 

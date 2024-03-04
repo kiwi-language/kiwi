@@ -449,7 +449,7 @@ public abstract class DurableInstance extends Instance/* implements IdInitializi
 
     @NoProxy
     public Object toSearchConditionValue() {
-        return NncUtils.requireNonNull(id);
+        return id.getPhysicalId();
     }
 
 

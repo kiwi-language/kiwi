@@ -105,7 +105,8 @@ public class UnionType extends CompositeType {
 
     @Override
     public String getInternalName(@Nullable Flow current) {
-        return NncUtils.join(members, type -> type.getInternalName(current), "|");
+        var names = NncUtils.mapAndSort(members, type -> type.getInternalName(current), String::compareTo);
+        return NncUtils.join(names, "|");
     }
 
     @Override

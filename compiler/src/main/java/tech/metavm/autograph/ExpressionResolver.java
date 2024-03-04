@@ -68,7 +68,8 @@ public class ExpressionResolver {
             new EqualsResolver(), new Md5CallResolver(), new RandomPasswordResolver(),
             new SendEmailResolver(), new RegexMatchResolver(), new RandomNumberMatcher(),
             new NumberFormatMatcher(), new GetSessionEntryResolver(), new SetSessionEntryResolver(),
-            new StringFormatResolver(), new GetIdResolver(), new PrintResolver(), new RemoveSessionEntryResolver()
+            new StringFormatResolver(), new GetIdResolver(), new PrintResolver(), new RemoveSessionEntryResolver(),
+            new DeleteObjectResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -110,6 +111,10 @@ public class ExpressionResolver {
 
     public ArrayTypeProvider getArrayTypeProvider() {
         return arrayTypeProvider;
+    }
+
+    public UnionTypeProvider getUnionTypeProvider() {
+        return unionTypeProvider;
     }
 
     public ParameterizedTypeProvider getParameterizedTypeProvider() {

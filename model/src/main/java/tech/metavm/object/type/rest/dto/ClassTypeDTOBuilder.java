@@ -52,6 +52,7 @@ public class ClassTypeDTOBuilder {
     private List<RefDTO> typeParameterRefs = new ArrayList<>();
     private List<RefDTO> dependencyRefs = new ArrayList<>();
     private boolean hasSubTypes;
+    private boolean struct;
     private List<InstanceDTO> enumConstants = new ArrayList<>();
     private List<ErrorDTO> errors = new ArrayList<>();
     @Nullable
@@ -123,6 +124,11 @@ public class ClassTypeDTOBuilder {
 
     public ClassTypeDTOBuilder hasSubTypes(boolean hasSubTypes) {
         this.hasSubTypes = hasSubTypes;
+        return this;
+    }
+
+    public ClassTypeDTOBuilder struct(boolean struct) {
+        this.struct = struct;
         return this;
     }
 
@@ -243,6 +249,7 @@ public class ClassTypeDTOBuilder {
                 typeArgumentRefs,
                 dependencyRefs,
                 hasSubTypes,
+                struct,
                 errors
         );
     }

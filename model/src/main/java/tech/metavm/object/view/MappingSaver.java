@@ -22,6 +22,7 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MappingSaver {
@@ -45,6 +46,8 @@ public class MappingSaver {
 
     // TODO MOVE TO NamingUtils
     private static final Pattern GETTER_CODE_PATTERN = Pattern.compile("^get([A-Z][A-Za-z0-9_$]+$)");
+
+    private static final Pattern BOOL_GETTER_CODE_PATTERN = Pattern.compile("^is([A-Z][A-Za-z0-9_$]+$)");
 
 
     private final InstanceProvider instanceProvider;
@@ -492,21 +495,31 @@ public class MappingSaver {
                 && !getter.getReturnType().isVoid() && getter.getParameters().isEmpty()) {
             var matcher = GETTER_CODE_PATTERN.matcher(getter.getCode());
             if (matcher.matches()) {
-                String propertyCode = NamingUtils.firstCharToLowerCase(matcher.group(1));
-                var setter = getSetter(getter.getDeclaringType(), propertyCode, getter.getReturnType());
-                var field = getter.getDeclaringType().findFieldByCode(propertyCode);
-                if (field != null)
-                    return new Accessor(getter, setter, field, field.getName(), propertyCode);
-                else if (getter.getName().startsWith("获取") && getter.getName().length() > 2)
-                    return new Accessor(getter, setter, null, getter.getName().substring(2), propertyCode);
-                else if (getter.getName().startsWith("get") && getter.getName().length() > 3)
-                    return new Accessor(getter, setter, null,
-                            NamingUtils.firstCharToLowerCase(getter.getName().substring(3)), propertyCode);
-                else
-                    return new Accessor(getter, setter, null, getter.getName(), propertyCode);
+                return getAccessor0(matcher, getter, "get");
+            }
+            if(getter.getReturnType().isBoolean()) {
+                matcher = BOOL_GETTER_CODE_PATTERN.matcher(getter.getCode());
+                if (matcher.matches()) {
+                    return getAccessor0(matcher, getter, "is");
+                }
             }
         }
         return null;
+    }
+
+    private static Accessor getAccessor0(Matcher matcher, Method getter, String getterPrefix) {
+        String propertyCode = NamingUtils.firstCharToLowerCase(matcher.group(1));
+        var setter = getSetter(getter.getDeclaringType(), propertyCode, getter.getReturnType());
+        var field = getter.getDeclaringType().findFieldByCode(propertyCode);
+        if (field != null)
+            return new Accessor(getter, setter, field, field.getName(), propertyCode);
+        else if (getter.getName().startsWith("获取") && getter.getName().length() > 2)
+            return new Accessor(getter, setter, null, getter.getName().substring(2), propertyCode);
+        else if (getter.getName().startsWith(getterPrefix) && getter.getName().length() > getterPrefix.length())
+            return new Accessor(getter, setter, null,
+                    NamingUtils.firstCharToLowerCase(getter.getName().substring(3)), propertyCode);
+        else
+            return new Accessor(getter, setter, null, getter.getName(), propertyCode);
     }
 
     private record Accessor(

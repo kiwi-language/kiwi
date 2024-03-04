@@ -52,4 +52,8 @@ public interface NativeFunctionsHolder {
     Function getRemoveSessionEntry();
 
     void setRemoveSessionEntry(Function function);
+
+    Function getDelete();
+
+    void setDelete(Function function);
 }

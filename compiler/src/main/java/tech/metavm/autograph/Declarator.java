@@ -118,8 +118,8 @@ public class Declarator extends CodeGenVisitor {
                     overriddenMethod, typeResolver)
             );
         }
-        var flow = NncUtils.find(currentClass().getMethods(),
-                f -> f.getInternalName(null).equals(TranspileUtil.getInternalName(method)));
+        var internalName = TranspileUtil.getInternalName(method);
+        var flow = NncUtils.find(currentClass().getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
         List<Parameter> resolvedParams = new ArrayList<>();
@@ -248,7 +248,8 @@ public class Declarator extends CodeGenVisitor {
                 TranspileUtil.createTemplateType(requireNonNull(method.getContainingClass())) :
                 method.getReturnType();
         var metaType = resolveType(type);
-        if (TranspileUtil.getAnnotation(method, Nullable.class) != null)
+        if (TranspileUtil.getAnnotation(method, Nullable.class) != null ||
+                method.getReturnType() != null && TranspileUtil.getAnnotation(method.getReturnType(), Nullable.class) != null)
             metaType = context.getNullableType(metaType);
         return metaType;
     }

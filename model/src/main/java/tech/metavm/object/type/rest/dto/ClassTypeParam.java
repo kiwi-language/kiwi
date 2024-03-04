@@ -32,6 +32,7 @@ public record ClassTypeParam(
         List<RefDTO> typeArgumentRefs,
         List<RefDTO> dependencyRefs,
         boolean hasSubTypes,
+        boolean struct,
         List<ErrorDTO> errors
 ) implements TypeParam {
 

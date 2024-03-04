@@ -91,7 +91,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             var instanceId = Id.parse(id);
             var instance = context.get(instanceId);
             if (instance instanceof ClassInstance classInstance) {
-                if (instanceId instanceof PhysicalId) {
+                if (instanceId instanceof PhysicalId && !classInstance.getType().isStruct()) {
                     var defaultMapping = classInstance.getType().getDefaultMapping();
                     if (defaultMapping != null) {
                         var viewId = new DefaultViewId(defaultMapping.getId(), instanceId);

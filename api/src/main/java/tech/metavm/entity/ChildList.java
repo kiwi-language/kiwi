@@ -2,6 +2,7 @@ package tech.metavm.entity;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.function.Predicate;
 
 public class ChildList<T> extends ArrayList<T> {
 
@@ -61,4 +62,9 @@ public class ChildList<T> extends ArrayList<T> {
     public void clear() {
         super.clear();
     }
+
+    public boolean removeIf(Predicate<? super T> filter) {
+        return super.removeIf(filter);
+    }
+
 }

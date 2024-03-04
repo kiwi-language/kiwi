@@ -516,6 +516,10 @@ public class NncUtils {
         return list.stream().filter(filter).count();
     }
 
+    public static <T> int count(T[] array, Predicate<T> filter) {
+        return (int) Arrays.stream(array).filter(filter).count();
+    }
+
     public static final Pattern INT_PATTERN = Pattern.compile("^-?\\d+$");
 
     public static @Nullable Long tryParseLong(@Nullable String str) {

@@ -71,7 +71,7 @@ public class FlowParsingContext extends BaseParsingContext {
     public Expression resolveVar(Var var) {
         NodeRT node = getNode(var);
         if (node != null) {
-            return node2expression.computeIfAbsent(node, NodeExpression::new);
+            return new NodeExpression(node);
         }
         throw new InternalException(var + " is not a context var of " + this);
     }

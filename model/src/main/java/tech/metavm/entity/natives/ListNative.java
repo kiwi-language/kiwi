@@ -143,6 +143,16 @@ public class ListNative extends IterableNative {
         return Instances.longInstance(array.size());
     }
 
+    public BooleanInstance removeIf(Instance filter, NativeCallContext callContext) {
+        if(filter instanceof ClassInstance classInstance) {
+            var method = classInstance.getType().getMethods().get(0);
+            return Instances.booleanInstance(array.removeIf(e -> method.execute(
+                    classInstance, List.of(e), callContext.instanceRepository(), callContext.parameterizedFlowProvider()).booleanRet()));
+        }
+        else
+            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    }
+
     public ArrayInstance toArray() {
         return array;
     }

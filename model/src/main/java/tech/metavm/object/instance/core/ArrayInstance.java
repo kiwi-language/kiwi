@@ -14,6 +14,7 @@ import tech.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class ArrayInstance extends DurableInstance implements Iterable<Instance> {
 
@@ -416,4 +417,8 @@ public class ArrayInstance extends DurableInstance implements Iterable<Instance>
         listeners.add(listener);
     }
 
+    public boolean removeIf(Predicate<Instance> filter) {
+        ensureLoaded();
+        return elements.removeIf(filter);
+    }
 }
