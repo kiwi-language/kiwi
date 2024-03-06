@@ -49,6 +49,8 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
 
     public static final String EXTRA_LOOP_TEST = "__extraLoopTest__";
 
+    protected final Namer namer = new Namer();
+
     // Do not remove, for debug
     @SuppressWarnings("unused")
     protected boolean containsDescendant(PsiElement ancestor, PsiElement descendant) {

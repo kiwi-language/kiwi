@@ -4,6 +4,7 @@ import tech.metavm.entity.EntityType;
 import tech.metavm.lang.NumberUtils;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.function.Predicate;
 
 @EntityType("Utils")
@@ -26,6 +27,14 @@ public class Utils {
             }
         }
         return null;
+    }
+
+    public static @Nullable Date toDaysNullable(@Nullable Date time) {
+        return time == null ? null : toDays(time);
+    }
+
+    public static Date toDays(Date time) {
+        return new Date(time.getTime() / 86400000 * 86400000);
     }
 
 }

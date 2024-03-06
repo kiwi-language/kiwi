@@ -69,7 +69,7 @@ public class ExpressionResolver {
             new SendEmailResolver(), new RegexMatchResolver(), new RandomNumberMatcher(),
             new NumberFormatMatcher(), new GetSessionEntryResolver(), new SetSessionEntryResolver(),
             new StringFormatResolver(), new GetIdResolver(), new PrintResolver(), new RemoveSessionEntryResolver(),
-            new DeleteObjectResolver()
+            new DeleteObjectResolver(), new DateGetTimeResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(
@@ -121,6 +121,10 @@ public class ExpressionResolver {
         return parameterizedTypeProvider;
     }
 
+    public ParameterizedFlowProvider getParameterizedFlowProvider() {
+        return parameterizedFlowProvider;
+    }
+
     private Expression resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
         return switch (psiExpression) {
             case PsiBinaryExpression binaryExpression -> resolveBinary(binaryExpression, context);
@@ -145,12 +149,7 @@ public class ExpressionResolver {
     private Expression resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
         var operand = resolve(typeCastExpression.getOperand(), context);
         var targetType = typeResolver.resolveDeclaration(requireNonNull(typeCastExpression.getCastType()).getType());
-        if(operand.getType().isNullable() && !targetType.isNullable())
-            targetType = unionTypeProvider.getUnionType(Set.of(targetType, StandardTypes.getNullType()));
-        return Expressions.node(methodGenerator.createFunctionCall(
-                parameterizedFlowProvider.getParameterizedFlow(NativeFunctions.getTypeCast(), List.of(targetType)),
-                List.of(operand)
-        ));
+        return Expressions.node(methodGenerator.createTypeCast(operand, targetType));
     }
 
     private Expression resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
@@ -200,17 +199,31 @@ public class ExpressionResolver {
     }
 
     private Expression resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
-        return new FunctionExpression(
-                Func.IF,
-                ArrayExpression.create(
-                        List.of(
-                                resolve(psiExpression.getCondition(), context),
-                                resolve(requireNonNull(psiExpression.getThenExpression()), context),
-                                resolve(requireNonNull(psiExpression.getElseExpression()), context)
-                        ),
-                        arrayTypeProvider
-                )
+        var condition = resolve(psiExpression.getCondition(), context);
+        var branchNode = methodGenerator.createBranchNode(false);
+        var thenBranch = branchNode.addBranch(Values.expression(condition));
+        var elseBranch = branchNode.addDefaultBranch();
+        methodGenerator.enterCondSection(branchNode);
+        methodGenerator.enterBranch(thenBranch);
+        var thenExpr = resolve(psiExpression.getThenExpression(), context);
+        methodGenerator.exitBranch();
+
+        methodGenerator.enterBranch(elseBranch);
+        var elseExpr = resolve(psiExpression.getElseExpression(), context);
+        methodGenerator.exitBranch();
+
+        var mergeNode = methodGenerator.createMerge();
+        methodGenerator.exitCondSection(mergeNode, List.of());
+
+        var valueField = FieldBuilder
+                .newBuilder("value", "value", mergeNode.getType(),
+                        Types.getUnionType(Set.of(thenExpr.getType(), elseExpr.getType()), unionTypeProvider))
+                .build();
+        new MergeNodeField(valueField, mergeNode, Map.of(
+                thenBranch, Values.expression(thenExpr),
+                elseBranch, Values.expression(elseExpr))
         );
+        return new PropertyExpression(new NodeExpression(mergeNode), valueField);
     }
 
     private Expression resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
@@ -827,7 +840,7 @@ public class ExpressionResolver {
             methodGenerator.createReturn(resolve(bodyExpr, context));
         } else {
             requireNonNull(expression.getBody()).accept(visitor);
-            if(lambdaNode.getReturnType().isVoid()) {
+            if (lambdaNode.getReturnType().isVoid()) {
                 var lastNode = lambdaNode.getBodyScope().getLastNode();
                 if (lastNode == null || !lastNode.isExit())
                     methodGenerator.createReturn();

@@ -5,20 +5,20 @@ import com.intellij.psi.*;
 import java.util.List;
 import java.util.Objects;
 
-public class ForeachTransformer extends VisitorBase {
+import static tech.metavm.util.NncUtils.requireNonNull;
 
-    private final NameTracker nameTracker = new NameTracker();
+public class ForeachTransformer extends VisitorBase {
 
     @Override
     public void visitForeachStatement(PsiForeachStatement statement) {
-
+        var scope = requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         var iterated = Objects.requireNonNull(statement.getIteratedValue());
         var lisType = TranspileUtil.createClassType(List.class);
         var iterationParam = statement.getIterationParameter().getName();
         var isListType = lisType.isAssignableFrom(Objects.requireNonNull(iterated.getType()));
         if (isListType) {
-            var listVar = nameTracker.nextName("list");
-            var indexVar = nameTracker.nextName("i");
+            var listVar = namer.newName("list", scope.getAllDefined());
+            var indexVar = namer.newName("i", scope.getAllDefined());
             super.visitForeachStatement(statement);
             var listDeclStmt = TranspileUtil.createStatementFromText(
                     String.format("var %s = %s;", listVar, iterated.getText()));
@@ -45,24 +45,4 @@ public class ForeachTransformer extends VisitorBase {
         }
     }
 
-    @Override
-    public void visitVariable(PsiVariable variable) {
-        if (!(variable instanceof PsiMember))
-            nameTracker.addName(variable.getName());
-        super.visitVariable(variable);
-    }
-
-    @Override
-    public void visitCodeBlock(PsiCodeBlock block) {
-        nameTracker.enterBlock();
-        super.visitCodeBlock(block);
-        nameTracker.exitBlock();
-    }
-
-    @Override
-    public void visitMethod(PsiMethod method) {
-        nameTracker.enterMethod();
-        super.visitMethod(method);
-        nameTracker.exitMethod();
-    }
 }

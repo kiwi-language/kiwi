@@ -10,6 +10,7 @@ import tech.metavm.manufacturing.material.Unit;
 import tech.metavm.manufacturing.utils.Utils;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 
 @EntityType("入库单项")
 public class InboundOrderItem {
@@ -26,19 +27,17 @@ public class InboundOrderItem {
     @EntityField("单位")
     private Unit unit;
     @EntityField("批次")
-    private Batch batch;
+    private @Nullable Batch batch;
     @EntityField("冲销次数")
     private int reversalCount;
 
-    public InboundOrderItem(InboundOrder inboundOrder, Material material, Position position, long expectedQuantity, long actualQuantity, Unit unit, Batch batch, int reversalCount) {
+    public InboundOrderItem(InboundOrder inboundOrder, Material material, Position position, long expectedQuantity, Unit unit, @Nullable Batch batch) {
         this.inboundOrder = inboundOrder;
         this.material = material;
         this.position = position;
         this.expectedQuantity = expectedQuantity;
-        this.actualQuantity = actualQuantity;
         this.unit = unit;
         this.batch = batch;
-        this.reversalCount = reversalCount;
         inboundOrder.addItem(this);
     }
 
@@ -86,11 +85,11 @@ public class InboundOrderItem {
         this.unit = unit;
     }
 
-    public Batch getBatch() {
+    public @Nullable Batch getBatch() {
         return batch;
     }
 
-    public void setBatch(Batch batch) {
+    public void setBatch(@Nullable Batch batch) {
         this.batch = batch;
     }
 
@@ -109,30 +108,28 @@ public class InboundOrderItem {
 
     @EntityFlow("入库")
     public void inbound(InboundRequest request) {
-        switch (request.type()) {
-            case BY_AMOUNT -> inboundByAmount(request);
-            case BY_QR_CODE -> inboundByQrCode(request);
-            case BY_SPEC -> inboundBySpec(request);
+        switch (request) {
+            case ByAmountInboundRequest byAmountInboundRequest -> inboundByAmount(byAmountInboundRequest);
+            case ByQrCodeInboundRequest byQrCodeInboundRequest -> inboundByQrCode(byQrCodeInboundRequest);
+            case BySpecInboundRequest bySpecInboundRequest -> inboundBySpec(bySpecInboundRequest);
+            default -> throw new IllegalStateException("Unexpected value: " + request);
         }
     }
 
-    private void inboundByAmount(InboundRequest request) {
-        Utils.assertTrue(request.type() == InboundType.BY_AMOUNT, "入库类型不匹配");
-        actualInbound(request, request.quantity(), request.unit(), null);
+    private void inboundByAmount(ByAmountInboundRequest request) {
+        actualInbound(request, request.getAmount(), request.getUnit(), null);
     }
 
-    private void inboundByQrCode(InboundRequest request) {
-        Utils.assertTrue(request.type() == InboundType.BY_QR_CODE, "入库类型不匹配");
-        for (var item : request.byQrcodeItems()) {
-            actualInbound(request, request.quantity(), request.unit(), item.qrCode());
+    private void inboundByQrCode(ByQrCodeInboundRequest request) {
+        for (var item : request.getByQrcodeItems()) {
+            actualInbound(request, request.getAmount(), request.getUnit(), item.qrCode());
         }
     }
 
-    private void inboundBySpec(InboundRequest request) {
-        Utils.assertTrue(request.type() == InboundType.BY_SPEC, "入库类型不匹配");
-        for (BySpecInboundRequestItem bySpecItem : request.bySpecItems()) {
+    private void inboundBySpec(BySpecInboundRequest request) {
+        for (BySpecInboundRequestItem bySpecItem : request.getBySpecItems()) {
             for (int i = 0; i < bySpecItem.qrCodeAmount(); i++) {
-                actualInbound(request, bySpecItem.inboundAmount(), request.unit(), Utils.randomQrCode(request.material().getCode()));
+                actualInbound(request, bySpecItem.inboundAmount(), request.getUnit(), Utils.randomQrCode(request.material().getCode()));
             }
         }
     }
@@ -153,7 +150,8 @@ public class InboundOrderItem {
                 request.client(),
                 request.arrivalDate(),
                 request.productionDate(),
-                request.expirationDate()
+                request.expirationDate(),
+                new Date()
         );
         Inventory.increaseQuantity(
                 material,

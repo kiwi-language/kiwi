@@ -69,6 +69,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     private ClassType template;
     // Don't remove, for search
     @SuppressWarnings("unused")
+    @EntityField("是否抽象")
+    private boolean isAbstract;
     @EntityField("是否模版")
     private boolean isTemplate;
     // Don't remove, used for search
@@ -124,6 +126,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             boolean ephemeral,
             boolean struct,
             @Nullable String desc,
+            boolean isAbstract,
             boolean isTemplate,
             List<TypeVariable> typeParameters,
             List<Type> typeArguments) {
@@ -131,6 +134,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         setTmpId(tmpId);
         setSuperClass(superClass);
         setInterfaces(interfaces);
+        this.isAbstract = isAbstract;
+        this.struct = struct;
         this.template = copySource = template;
         this.source = source;
         this.desc = desc;
@@ -447,7 +452,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             if(m != null)
                 return m;
         }
-        if(isAbstract()) {
+        if(isEffectiveAbstract()) {
             for (ClassType it : interfaces) {
                 var m = it.findMethodByCodeAndParamTypes(code, parameterTypes);
                 if(m != null)
@@ -494,7 +499,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             if(m != null)
                 return m;
         }
-        if(isAbstract()) {
+        if(isEffectiveAbstract()) {
             for (ClassType it : interfaces) {
                 var m = it.getMethod(property, value);
                 if(m != null)
@@ -585,9 +590,12 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return category.isInterface();
     }
 
+    public boolean isEffectiveAbstract() {
+        return isInterface() || isAbstract;
+    }
+
     public boolean isAbstract() {
-        // TODO support abstract class
-        return isInterface();
+        return isAbstract;
     }
 
     @JsonIgnore
@@ -1037,6 +1045,7 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
                     desc,
                     getExtra(),
                     isEnum() ? NncUtils.map(getEnumConstants(), Instance::toDTO) : List.of(),
+                    isAbstract,
                     isTemplate(),
                     NncUtils.map(typeParameters, serContext::getRef),
                     NncUtils.map(typeParameters, Type::toDTO),
@@ -1518,5 +1527,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
     public void setStruct(boolean struct) {
         this.struct = struct;
     }
+
+    public void setAbstract(boolean anAbstract) {
+        isAbstract = anAbstract;
+    }
+
 }
 

@@ -14,7 +14,7 @@ public class SwitchExpressionTransformer extends VisitorBase {
 
     private static final LinkedList<SwitchInfo> switches = new LinkedList<>();
 
-    private final NameTracker nameTracker = new NameTracker();
+//    private final NameTracker nameTracker = new NameTracker();
 
     @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {
@@ -72,7 +72,8 @@ public class SwitchExpressionTransformer extends VisitorBase {
     }
 
     private void enterSwitchExpr(PsiSwitchExpression expression) {
-        switches.push(new SwitchInfo(nameTracker.nextName("switchResult")));
+        var scope = requireNonNull(expression.getUserData(Keys.BODY_SCOPE));
+        switches.push(new SwitchInfo(namer.newName("switchResult", scope.getAllDefined())));
     }
 
     private void exitSwitchExpr() {
@@ -120,8 +121,8 @@ public class SwitchExpressionTransformer extends VisitorBase {
                 var assignment = createStatementFromText(currentSwitchExpr().resultVar + " = " + expr.getText() + ";");
                 replace(exprStmt, assignment);
             }
-        } else {
-            super.visitSwitchLabeledRuleStatement(statement);
+            else
+                super.visitSwitchLabeledRuleStatement(statement);
         }
     }
 
@@ -137,32 +138,6 @@ public class SwitchExpressionTransformer extends VisitorBase {
                 }
             }
         }
-    }
-
-    @Override
-    public void visitMethod(PsiMethod method) {
-        nameTracker.enterMethod();
-        super.visitMethod(method);
-        nameTracker.exitMethod();
-    }
-
-    @Override
-    public void visitCodeBlock(PsiCodeBlock block) {
-        nameTracker.enterBlock();
-        super.visitCodeBlock(block);
-        nameTracker.exitBlock();
-    }
-
-    @Override
-    public void visitParameter(PsiParameter parameter) {
-        nameTracker.addName(parameter.getName());
-        super.visitParameter(parameter);
-    }
-
-    @Override
-    public void visitLocalVariable(PsiLocalVariable variable) {
-        nameTracker.addName(variable.getName());
-        super.visitLocalVariable(variable);
     }
 
     private static class SwitchInfo {

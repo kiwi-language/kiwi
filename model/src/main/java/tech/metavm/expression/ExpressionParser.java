@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.common.RefDTO;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.antlr.MetaVMLexer;
@@ -115,7 +116,7 @@ public class ExpressionParser {
     }
 
     private Expression parsePrefix(MetaVMParser.ExpressionContext expression) {
-        var operator =  switch (expression.prefix.getType()) {
+        var operator = switch (expression.prefix.getType()) {
             case MetaVMParser.ADD -> UnaryOperator.POS;
             case MetaVMParser.SUB -> UnaryOperator.NEG;
             case MetaVMParser.BANG -> UnaryOperator.NOT;
@@ -179,10 +180,11 @@ public class ExpressionParser {
                     parse(expression.expression(0)),
                     parseTypeType(expression.typeType(0))
             );
-            case MetaVMParser.QUESTION -> new ConditionalExpression(
+            case MetaVMParser.QUESTION -> ConditionalExpression.create(
                     parse(expression.expression(0)),
                     parse(expression.expression(1)),
-                    parse(expression.expression(2))
+                    parse(expression.expression(2)),
+                    context.getUnionTypeProvider()
             );
             default -> new BinaryExpression(
                     BinaryOperator.getByOp(bop.getText(), OperatorTypes.BINARY),
@@ -201,6 +203,10 @@ public class ExpressionParser {
                 if (name.startsWith(Constants.CONSTANT_ID_PREFIX)) {
                     return context.getTypeProvider().getType(
                             Long.parseLong(name.substring(Constants.CONSTANT_ID_PREFIX.length()))
+                    );
+                } else if (name.startsWith(Constants.CONSTANT_TMP_ID_PREFIX)) {
+                    return context.getTypeProvider().getType(
+                            RefDTO.fromTmpId(Long.parseLong(name.substring(Constants.CONSTANT_TMP_ID_PREFIX.length())))
                     );
                 } else {
                     String className = classType.typeArguments().isEmpty() ? name :

@@ -22,6 +22,7 @@ public class ClassTypeBuilder {
     private ClassSource source = ClassSource.RUNTIME;
     private boolean anonymous;
     private boolean ephemeral;
+    private boolean isAbstract;
     private boolean isTemplate;
     private boolean struct;
     private String desc;
@@ -136,6 +137,10 @@ public class ClassTypeBuilder {
         return this;
     }
 
+    public ClassTypeBuilder isAbstract(boolean isAbstract) {
+        this.isAbstract = isAbstract;
+        return this;
+    }
 
     public ClassTypeBuilder existing(ClassType existing) {
         this.existing = existing;
@@ -171,6 +176,7 @@ public class ClassTypeBuilder {
                     ephemeral,
                     struct,
                     desc,
+                    isAbstract,
                     isTemplate,
                     typeParameters,
                     typeArguments);
@@ -181,6 +187,7 @@ public class ClassTypeBuilder {
             existing.setSuperClass(superType);
             existing.setInterfaces(interfaces);
             existing.setSource(source);
+            existing.setAbstract(isAbstract);
             existing.setAnonymous(anonymous);
             existing.setDesc(desc);
             existing.setTypeParameters(typeParameters);

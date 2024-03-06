@@ -223,4 +223,8 @@ public class FunctionMethods {
         return Instances.stringInstance(String.format(format.getValue(), args));
     }
 
+    public static LongInstance DATE_GET_TIME(TimeInstance date) {
+        return Instances.longInstance(date.getValue());
+    }
+
 }

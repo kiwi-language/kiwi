@@ -23,7 +23,7 @@ public class FunctionExpression extends Expression {
     public FunctionExpression(Func function, Expression argument) {
         this.function = function;
         if(argument instanceof ArrayExpression arrayExpression) {
-            arguments.addChildren(arrayExpression.getExpressions());
+            arguments.addChildren(NncUtils.map(arrayExpression.getExpressions(), Expression::copy));
         }
         else {
             arguments.addChild(argument);

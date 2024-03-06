@@ -5,6 +5,7 @@ import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.ArrayTypeProvider;
 import tech.metavm.object.type.IndexedTypeProvider;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.UnionTypeProvider;
 import tech.metavm.util.InternalException;
 
 public class SubParsingContext implements ParsingContext {
@@ -65,5 +66,10 @@ public class SubParsingContext implements ParsingContext {
     @Override
     public ArrayTypeProvider getArrayTypeProvider() {
         return parent.getArrayTypeProvider();
+    }
+
+    @Override
+    public UnionTypeProvider getUnionTypeProvider() {
+        return parent.getUnionTypeProvider();
     }
 }

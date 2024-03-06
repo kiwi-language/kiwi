@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static tech.metavm.util.NncUtils.requireNonNull;
+
 public class BreakTransformer extends VisitorBase {
 
     private LoopInfo loopInfo;
 
-    private final NameTracker nameTracker = new NameTracker();
+//    private final NameTracker nameTracker = new NameTracker();
 
     private void defineBreakVar(PsiStatement statement) {
         var loop = currentLoopInfo();
@@ -44,7 +46,7 @@ public class BreakTransformer extends VisitorBase {
             if(loop.breakUsed) {
                 defineBreakVar(statement);
                 var cond = TranspileUtil.createExpressionFromText(loop.getConditionText());
-                var currentCond = NncUtils.requireNonNull(statement.getCondition());
+                var currentCond = requireNonNull(statement.getCondition());
                 currentCond.replace(TranspileUtil.and(currentCond, cond));
             }
         }
@@ -66,22 +68,16 @@ public class BreakTransformer extends VisitorBase {
     }
 
     private LoopInfo currentLoopInfo() {
-        return NncUtils.requireNonNull(loopInfo);
+        return requireNonNull(loopInfo);
     }
 
-    private LoopInfo enterLoop(PsiElement element) {
-        return loopInfo = new LoopInfo(element, loopInfo, nameTracker.nextName("_break"));
+    private LoopInfo enterLoop(PsiStatement element) {
+        var scope = requireNonNull(element.getUserData(Keys.BODY_SCOPE));
+        return loopInfo = new LoopInfo(element, loopInfo, namer.newName("break_", scope.getAllDefined()));
     }
 
     private void exitLoop() {
         loopInfo = currentLoopInfo().parent;
-    }
-
-    @Override
-    public void visitCodeBlock(PsiCodeBlock block) {
-        nameTracker.enterBlock();
-        super.visitCodeBlock(block);
-        nameTracker.exitBlock();
     }
 
     @Override
@@ -96,7 +92,7 @@ public class BreakTransformer extends VisitorBase {
                     loop.breakUsed = true;
                 }
             }
-            NncUtils.requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
+            requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
         }
         String text = loop.breakVar + " = true;";
         var replacement = replace(statement, TranspileUtil.createStatementFromText(text));
@@ -114,13 +110,6 @@ public class BreakTransformer extends VisitorBase {
             }
         }
         return -1;
-    }
-
-    @Override
-    public void visitMethod(PsiMethod method) {
-        nameTracker.enterMethod();
-        super.visitMethod(method);
-        nameTracker.exitMethod();
     }
 
     private static class LoopInfo {

@@ -19,6 +19,7 @@ public class InstanceQueryServiceTest extends TestCase {
     private ParameterizedFlowProvider parameterizedFlowProvider;
     private TypeRepository typeRepository;
     private ArrayTypeProvider arrayTypeProvider;
+    private UnionTypeProvider unionTypeProvider;
 
     @Override
     protected void setUp() throws Exception {
@@ -30,6 +31,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var compositeTypeProviders = new TypeProviders();
         parameterizedFlowProvider = compositeTypeProviders.parameterizedFlowProvider;
         arrayTypeProvider = compositeTypeProviders.arrayTypeProvider;
+        unionTypeProvider = compositeTypeProviders.unionTypeProvider;
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -58,7 +60,8 @@ public class InstanceQueryServiceTest extends TestCase {
                 instanceRepository,
                 parameterizedFlowProvider,
                 typeRepository,
-                arrayTypeProvider
+                arrayTypeProvider,
+                unionTypeProvider
         );
         Assert.assertEquals(1, page.total());
         Assert.assertEquals(foo.tryGetPhysicalId(), page.data().get(0).tryGetPhysicalId());
@@ -82,7 +85,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 ))
                 .build();
         var page2 = instanceQueryService.query(query2,
-                instanceRepository, parameterizedFlowProvider, typeRepository, arrayTypeProvider);
+                instanceRepository, parameterizedFlowProvider, typeRepository, arrayTypeProvider, unionTypeProvider);
         Assert.assertEquals(1, page2.total());
         Assert.assertEquals(foo.tryGetPhysicalId(), page2.data().get(0).tryGetPhysicalId());
     }

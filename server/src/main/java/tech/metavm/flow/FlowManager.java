@@ -208,7 +208,7 @@ public class FlowManager extends EntityContextFactoryBean {
 
     public void createOverridingFlows(Method overridden, ClassType type, IEntityContext context) {
         NncUtils.requireTrue(overridden.isAbstract());
-        if (type.isAbstract()) {
+        if (type.isEffectiveAbstract()) {
             for (ClassType subType : type.getSubTypes()) {
                 createOverridingFlows(overridden, subType, context);
             }

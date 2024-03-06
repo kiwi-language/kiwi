@@ -3,6 +3,7 @@ package tech.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityType;
+import tech.metavm.entity.StandardTypes;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
 
@@ -30,7 +31,7 @@ public class VariableExpression extends Expression {
 
     @Override
     public Type getType() {
-        return null;
+        return StandardTypes.getAnyType();
     }
 
     @Override

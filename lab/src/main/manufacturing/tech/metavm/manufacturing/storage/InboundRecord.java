@@ -23,7 +23,8 @@ public record InboundRecord(
         @EntityField("客户") @Nullable Client client,
         @EntityField("入厂日期") @Nullable Date arrivalDate,
         @EntityField("生产日期") @Nullable Date productionDate,
-        @EntityField("过期日期") @Nullable Date expirationDate
+        @EntityField("过期日期") @Nullable Date expirationDate,
+        @EntityField("创建时间") Date createdAt
 ) {
 
 }

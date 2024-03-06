@@ -122,14 +122,14 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             var utilsType = getClassTypeByCode("tech.metavm.manufacturing.utils.Utils");
             Assert.assertEquals(0, utilsType.getClassParam().errors().size());
 
-            var position = createPosition();
-            processInventory(material, position, qualified, unit);
+            var storageObjects = createPosition();
+            processInventory(material, storageObjects.position, qualified, unit);
 
-            processInbound();
+            processInbound(storageObjects, material, unit);
         });
     }
 
-    private InstanceDTO createPosition() {
+    private StorageObjects createPosition() {
         var warehouseType = getClassTypeByCode("tech.metavm.manufacturing.storage.Warehouse");
         var warehouseConstructorId = TestUtils.getMethodIdByCode(warehouseType, "Warehouse");
         var warehouse = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
@@ -154,7 +154,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                 ))));
         var positionType = getClassTypeByCode("tech.metavm.manufacturing.storage.Position");
         var positionConstructorId = TestUtils.getMethodIdByCode(positionType, "Position");
-        return doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+        var position = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                 positionConstructorId,
                 null,
                 List.of(
@@ -163,6 +163,15 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         ReferenceFieldValue.create(area)
                 )
         )));
+        return new StorageObjects(warehouse, area, position);
+    }
+
+    private record StorageObjects(
+            InstanceDTO warehouse,
+            InstanceDTO area,
+            InstanceDTO position
+    ) {
+
     }
 
 
@@ -250,9 +259,127 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         }
     }
 
-    private void processInbound() {
+    private void processInbound(StorageObjects storageObjects, InstanceDTO material, InstanceDTO unit) {
+        // get InboundBizType type
+        var inboundBizTypeType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundBizType");
+        // get InboundBizType.PURCHASE constant
+        var purchase = TestUtils.getEnumConstantByName(inboundBizTypeType, "采购");
+
+        // get InboundOrder type
+        var inboundOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrder");
+        // create an inbound order
+        var inboundOrderConstructorId = TestUtils.getMethodIdByCode(inboundOrderType, "InboundOrder");
+        var inboundOrder = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                inboundOrderConstructorId,
+                null,
+                List.of(
+                        PrimitiveFieldValue.createString("inboundOrder1"),
+                        ReferenceFieldValue.create(purchase),
+                        ReferenceFieldValue.create(storageObjects.warehouse),
+                        PrimitiveFieldValue.createNull()
+                )
+        )));
+        // create an inbound order item
+        var inboundOrderItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundOrderItem");
+        var inboundOrderItemConstructorId = TestUtils.getMethodIdByCode(inboundOrderItemType, "InboundOrderItem");
+        var inboundOrderItem = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                inboundOrderItemConstructorId,
+                null,
+                List.of(
+                        ReferenceFieldValue.create(inboundOrder),
+                        ReferenceFieldValue.create(material),
+                        ReferenceFieldValue.create(storageObjects.position),
+                        PrimitiveFieldValue.createLong(100L),
+                        ReferenceFieldValue.create(unit),
+                        PrimitiveFieldValue.createNull()
+                )
+        )));
+
+        // get the InboundRequest type
         var inboundRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.InboundRequest");
-        Assert.assertTrue(inboundRequestType.getClassParam().struct());
+
+        // assert that the InboundRequest type is abstract
+        Assert.assertTrue(inboundRequestType.getClassParam().isAbstract());
+
+        // get the ByAmountInboundRequest type
+        var byAmountInboundRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.ByAmountInboundRequest");
+        // assert that the ByAmountInboundRequest type is a struct
+        Assert.assertTrue(byAmountInboundRequestType.getClassParam().struct());
+
+        // invoke InboundOrderItem.inbound with the inboundRequest object
+        var inboundId = TestUtils.getMethodIdByCode(inboundOrderItemType, "inbound");
+        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                inboundId,
+                inboundOrderItem.id(),
+                List.of(
+                        InstanceFieldValue.of(
+                                InstanceDTO.createClassInstance(
+                                        byAmountInboundRequestType.getRef(),
+                                        List.of(
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "bizType"),
+                                                        ReferenceFieldValue.create(purchase)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "position"),
+                                                        ReferenceFieldValue.create(storageObjects.position)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "material"),
+                                                        ReferenceFieldValue.create(material)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "batch"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // supplier
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplier"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // supplier batch no
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplierBatchNo"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // client
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "client"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // arrival date
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "arrivalDate"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // production date
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "productionDate"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // expiration date
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "expirationDate"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "unit"),
+                                                        ReferenceFieldValue.create(unit)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(byAmountInboundRequestType, "amount"),
+                                                        PrimitiveFieldValue.createLong(100L)
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )));
+
+        // reload the inbound order item and check the actualQuantity field
+        var reloadedInboundOrderItem = instanceManager.get(inboundOrderItem.id(), 1).instance();
+        var actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
+        Assert.assertEquals(100L, ((PrimitiveFieldValue) actualQuantity).getValue());
     }
 
 }

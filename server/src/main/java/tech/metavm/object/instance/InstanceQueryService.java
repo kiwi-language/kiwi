@@ -32,8 +32,9 @@ public class InstanceQueryService {
     private SearchQuery buildSearchQuery(InstanceQuery query,
                                          IndexedTypeProvider typeProvider,
                                          InstanceProvider instanceProvider,
-                                         ArrayTypeProvider arrayTypeProvider) {
-        var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider);
+                                         ArrayTypeProvider arrayTypeProvider,
+                                         UnionTypeProvider unionTypeProvider) {
+        var expression = buildCondition(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider);
         Type type = query.type();
         Set<Long> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
                 Set.of(query.type().getId());
@@ -50,37 +51,40 @@ public class InstanceQueryService {
 
     public Page<DurableInstance> query(InstanceQuery query, IEntityContext context) {
         return query(query, context.getInstanceContext(), context.getGenericContext(),
-                new ContextTypeRepository(context), new ContextArrayTypeProvider(context));
+                new ContextTypeRepository(context), new ContextArrayTypeProvider(context), context.getUnionTypeContext());
     }
 
     public Page<DurableInstance> query(InstanceQuery query,
                                        InstanceRepository instanceRepository,
                                        ParameterizedFlowProvider parameterizedFlowProvider,
                                        IndexedTypeProvider typeProvider,
-                                       ArrayTypeProvider arrayTypeProvider) {
+                                       ArrayTypeProvider arrayTypeProvider,
+                                       UnionTypeProvider unionTypeProvider
+                                       ) {
         var type = query.type();
         if (type instanceof ClassType classType && query.sourceMapping() != null) {
             var sourceMapping = query.sourceMapping();
             if (sourceMapping.getTargetType() != type || !(sourceMapping instanceof FieldsObjectMapping sourceObjectMapping))
                 throw new BusinessException(ErrorCode.INVALID_SOURCE_MAPPING);
             var sourceQuery = convertToSourceQuery(query, classType, sourceObjectMapping,
-                    instanceRepository, typeProvider, arrayTypeProvider);
+                    instanceRepository, typeProvider, arrayTypeProvider, unionTypeProvider);
             var sourcePage = query(sourceQuery, instanceRepository, parameterizedFlowProvider,
-                    typeProvider, arrayTypeProvider);
+                    typeProvider, arrayTypeProvider, unionTypeProvider);
             return new Page<>(
                     NncUtils.map(sourcePage.data(),
                             i -> sourceObjectMapping.mapRoot(i, instanceRepository, parameterizedFlowProvider)),
                     sourcePage.total()
             );
         } else
-            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, arrayTypeProvider);
+            return queryPhysical(query, instanceRepository, typeProvider, instanceRepository, arrayTypeProvider, unionTypeProvider);
     }
 
     private InstanceQuery convertToSourceQuery(InstanceQuery query, ClassType viewType,
                                                FieldsObjectMapping mapping,
                                                InstanceProvider instanceProvider,
                                                IndexedTypeProvider typeProvider,
-                                               ArrayTypeProvider arrayTypeProvider) {
+                                               ArrayTypeProvider arrayTypeProvider,
+                                               UnionTypeProvider unionTypeProvider) {
         var sourceType = mapping.getSourceType();
         var fieldMap = new HashMap<Field, Field>();
         for (var fieldMapping : mapping.getFieldMappings()) {
@@ -89,7 +93,7 @@ public class InstanceQueryService {
         }
         String convertedExpr;
         if (query.expression() != null) {
-            var parsingContext = new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, viewType);
+            var parsingContext = new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider, viewType);
             var cond = ExpressionParser.parse(query.expression(), parsingContext);
             var convertedCond = (Expression) cond.accept(new CopyVisitor(cond) {
                 @Override
@@ -136,8 +140,9 @@ public class InstanceQueryService {
                                                 InstanceRepository instanceRepository,
                                                 IndexedTypeProvider typeProvider,
                                                 InstanceProvider instanceProvider,
-                                                ArrayTypeProvider arrayTypeProvider) {
-        var idPage = instanceSearchService.search(buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider));
+                                                ArrayTypeProvider arrayTypeProvider,
+                                                UnionTypeProvider unionTypeProvider) {
+        var idPage = instanceSearchService.search(buildSearchQuery(query, typeProvider, instanceProvider, arrayTypeProvider, unionTypeProvider));
         var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
         var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
         List<Long> ids = NncUtils.merge(idPage.data(), newlyCreatedIds, true);
@@ -153,13 +158,17 @@ public class InstanceQueryService {
         return instanceSearchService.count(buildSearchQuery(query,
                 new ContextTypeRepository(context),
                 context.getInstanceContext(),
-                new ContextArrayTypeProvider(context)));
+                new ContextArrayTypeProvider(context),
+                context.getUnionTypeContext()
+                )
+        );
     }
 
     private Expression buildCondition(InstanceQuery query,
                                       IndexedTypeProvider typeProvider,
                                       InstanceProvider instanceProvider,
-                                      ArrayTypeProvider arrayTypeProvider) {
+                                      ArrayTypeProvider arrayTypeProvider,
+                                      UnionTypeProvider unionTypeProvider) {
         Expression condition = buildConditionForSearchText(
                 query.type().getId(), query.searchText(), query.searchFields(), typeProvider
         );
@@ -192,7 +201,7 @@ public class InstanceQueryService {
                     Expressions.and(condition, fieldCondition) : fieldCondition;
         }
         if (query.expression() != null) {
-            var parsingContext = new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, (ClassType) query.type());
+            var parsingContext = new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider, (ClassType) query.type());
             var exprCond = ExpressionParser.parse(query.expression(), parsingContext);
             condition = condition != null ? Expressions.and(condition, exprCond) : exprCond;
         }

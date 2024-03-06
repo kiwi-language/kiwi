@@ -327,7 +327,7 @@ public class Generator extends CodeGenVisitor {
                         && !isRecordType(superClass) && !isSuperCallPresent(psiMethod)) {
                     builder().createMethodCall(
                             builder().getVariable("this"),
-                            superClass.getMethodByCodeAndParamTypes(superClass.getCodeRequired(), List.of()),
+                            superClass.getDefaultConstructor(),
                             List.of()
                     );
                 }
@@ -423,6 +423,7 @@ public class Generator extends CodeGenVisitor {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
             var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
             Branch branch;
+            String castVar = null;
             if (caseLabelElementList != null && caseLabelElementList.getElementCount() > 0) {
                 Expression cond;
                 if (isTypePatternCase(caseLabelElementList)) {
@@ -436,6 +437,7 @@ public class Generator extends CodeGenVisitor {
                             switchExpr,
                             typeResolver.resolveDeclaration(checkType)
                     );
+                    castVar = requireNonNull(typeTestPattern.getPatternVariable()).getName();
                 } else {
                     var expressions = NncUtils.map(caseLabelElementList.getElements(),
                             e -> resolveExpression((PsiExpression) e));
@@ -454,6 +456,9 @@ public class Generator extends CodeGenVisitor {
                 branch = branchNode.addDefaultBranch();
             }
             builder().enterBranch(branch);
+            if(castVar != null) {
+                builder().setVariable(castVar, switchExpr);
+            }
             if (labeledRuleStmt.getBody() != null) {
                 labeledRuleStmt.getBody().accept(this);
                 if (labeledRuleStmt.getBody() instanceof PsiExpression bodyExpression) {

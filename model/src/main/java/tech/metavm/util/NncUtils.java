@@ -38,6 +38,8 @@ public class NncUtils {
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+    public static final Pattern DIGITS_PTN = Pattern.compile("\\d+");
+
     static {
         OBJECT_MAPPER.registerModule(new Jdk8Module());
         OBJECT_MAPPER.registerModule(new JavaTimeModule());
@@ -112,6 +114,10 @@ public class NncUtils {
         } catch (IOException e) {
             throw new InternalException(String.format("Fail to write file: %s", filePath));
         }
+    }
+
+    public static boolean isDigits(String str) {
+        return DIGITS_PTN.matcher(str).matches();
     }
 
     public static void ensureDirectoryExists(String path) {

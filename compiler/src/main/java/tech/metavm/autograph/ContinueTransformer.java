@@ -9,20 +9,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static tech.metavm.util.NncUtils.requireNonNull;
+
 public class ContinueTransformer extends VisitorBase {
 
-    private final NameTracker nameTracker = new NameTracker();
+//    private final NameTracker nameTracker = new NameTracker();
     private Loop loopInfo;
     @Nullable
     private BlockInfo blockInfo;
 
     @Override
     public void visitMethod(PsiMethod method) {
-        nameTracker.enterMethod();
+//        nameTracker.enterMethod();
         enterBlock(false, null);
         super.visitMethod(method);
         exitBlock();
-        nameTracker.exitMethod();
+//        nameTracker.exitMethod();
     }
 
     @Override
@@ -33,7 +35,7 @@ public class ContinueTransformer extends VisitorBase {
             while (loop != null && !Objects.equals(loop.label, label)) {
                 loop = loop.parent;
             }
-            NncUtils.requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
+            requireNonNull(loop, "Can not find an enclosing loop with label '" + label + "'");
         }
         loop.continueUsed = true;
         var block = currentBlockInfo();
@@ -48,7 +50,7 @@ public class ContinueTransformer extends VisitorBase {
     }
 
     private BlockInfo currentBlockInfo() {
-        return NncUtils.requireNonNull(blockInfo);
+        return requireNonNull(blockInfo);
     }
 
     private void exitBlock() {
@@ -56,11 +58,12 @@ public class ContinueTransformer extends VisitorBase {
     }
 
     private Loop currentLoop() {
-        return NncUtils.requireNonNull(loopInfo);
+        return requireNonNull(loopInfo);
     }
 
-    private void enterLoop(PsiElement element) {
-        loopInfo = new Loop(element, loopInfo, nameTracker.nextName("_continue"));
+    private void enterLoop(PsiStatement statement) {
+        var scope = requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
+        loopInfo = new Loop(statement, loopInfo, namer.newName("continue_", scope.getAllDefined()));
     }
 
     private void exitLoop() {
@@ -130,9 +133,9 @@ public class ContinueTransformer extends VisitorBase {
     }
 
     private void visitLoopBody(PsiStatement body, @Nullable String label) {
-        if(body instanceof PsiCodeBlock) {
-            nameTracker.enterBlock();
-        }
+//        if(body instanceof PsiCodeBlock) {
+//            nameTracker.enterBlock();
+//        }
         enterBlock(true, label);
         var replacement = replace(body, visitBlock(body));
         if (loopInfo.continueUsed) {
@@ -147,21 +150,12 @@ public class ContinueTransformer extends VisitorBase {
             }
         }
         exitBlock();
-        if(body instanceof PsiCodeBlock) {
-            nameTracker.exitBlock();
-        }
     }
 
     private void visitNonLoopBody(PsiStatement body) {
-        if(body instanceof PsiCodeBlock) {
-            nameTracker.enterBlock();
-        }
         enterBlock(false, null);
         replace(body, visitBlock(body));
         exitBlock();
-        if(body instanceof PsiCodeBlock) {
-            nameTracker.exitBlock();
-        }
     }
 
     private PsiElement visitBlock(PsiStatement body) {
@@ -180,20 +174,13 @@ public class ContinueTransformer extends VisitorBase {
                 PsiIfStatement ifStmt = (PsiIfStatement) TranspileUtil.createStatementFromText(text);
                 ifStmt = (PsiIfStatement) replace(stmt, ifStmt);
                 ifStmt = (PsiIfStatement) dest.add(ifStmt);
-                dest = ((PsiBlockStatement) NncUtils.requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
+                dest = ((PsiBlockStatement) requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
                 dest.add(stmt.copy());
             } else {
                 dest.add(stmt);
             }
         }
         return result;
-    }
-
-    @Override
-    public void visitCodeBlock(PsiCodeBlock block) {
-        nameTracker.enterBlock();
-        super.visitCodeBlock(block);
-        nameTracker.exitBlock();
     }
 
     private static class BlockInfo {

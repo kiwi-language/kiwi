@@ -2,9 +2,7 @@ package tech.metavm.autograph;
 
 import tech.metavm.util.NncUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class Scope {
 
@@ -14,6 +12,7 @@ public class Scope {
     private final Set<QualifiedName> isolatedNames = new HashSet<>();
     private final Scope parent;
     private final String methodName;
+    private final List<Scope> children = new ArrayList<>();
 
     public Scope(Scope parent, String methodName) {
         this.parent = parent;
@@ -81,12 +80,28 @@ public class Scope {
 
 
     public void complete() {
-        if(parent != null) {
+        if (parent != null) {
             // TODO: check correctness
             parent.defined.addAll(defined);
             parent.read.addAll(NncUtils.diffSet(read, isolatedNames));
             parent.modified.addAll(NncUtils.diffSet(modified, isolatedNames));
         }
+    }
+
+    public Set<QualifiedName> getAllDefined() {
+        var defined = new HashSet<QualifiedName>();
+        var p = this.parent;
+        while (p != null) {
+            defined.addAll(p.defined);
+            p = p.parent;
+        }
+        getAllDefined(defined);
+        return defined;
+    }
+
+    private void getAllDefined(Set<QualifiedName> defined) {
+        defined.addAll(this.defined);
+        children.forEach(child -> child.getAllDefined(defined));
     }
 
     @Override

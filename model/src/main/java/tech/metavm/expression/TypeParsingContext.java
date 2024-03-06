@@ -19,6 +19,7 @@ public class TypeParsingContext extends BaseParsingContext {
                 context.getInstanceContext(),
                 new ContextTypeRepository(context),
                 new ContextArrayTypeProvider(context),
+                context.getUnionTypeContext(),
                 type
         );
     }
@@ -30,8 +31,9 @@ public class TypeParsingContext extends BaseParsingContext {
     public TypeParsingContext(InstanceProvider instanceProvider,
                               IndexedTypeProvider typeProvider,
                               ArrayTypeProvider arrayTypeProvider,
+                              UnionTypeProvider unionTypeProvider,
                               ClassType type) {
-        super(instanceProvider, typeProvider, arrayTypeProvider);
+        super(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider);
         this.type = type;
         thisExpression = new ThisExpression(type);
         this.getInstanceFunc = id -> instanceProvider.get(new PhysicalId(id));

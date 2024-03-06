@@ -1,32 +1,48 @@
 package tech.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
+import tech.metavm.entity.ChildEntity;
 import tech.metavm.entity.ElementVisitor;
 import tech.metavm.entity.EntityField;
 import tech.metavm.entity.EntityType;
 import tech.metavm.object.instance.core.BooleanInstance;
 import tech.metavm.object.instance.core.Instance;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.Types;
+import tech.metavm.object.type.UnionTypeProvider;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @EntityType("条件表达式")
 public class ConditionalExpression extends Expression {
 
-    @EntityField("条件")
+    public static ConditionalExpression create(@NotNull Expression condition,
+                                               @NotNull Expression trueValue,
+                                               @NotNull Expression falseValue,
+                                               UnionTypeProvider unionTypeProvider) {
+        return new ConditionalExpression(condition, trueValue, falseValue, Types.getUnionType(
+                Set.of(trueValue.getType(), falseValue.getType()), unionTypeProvider));
+    }
+
+    @ChildEntity("条件")
     private final Expression condition;
-    @EntityField("true表达式")
+    @ChildEntity("true表达式")
     private final Expression trueValue;
-    @EntityField("false表达式")
+    @ChildEntity("false表达式")
     private final Expression falseValue;
+    @EntityField("类型")
+    private final Type type;
 
     public ConditionalExpression(@NotNull Expression condition,
                                  @NotNull Expression trueValue,
-                                 @NotNull Expression falseValue) {
+                                 @NotNull Expression falseValue,
+                                 Type type) {
         this.condition = addChild(condition.copy(), "condition");
         this.trueValue = addChild(trueValue.copy(), "trueValue");
         this.falseValue = addChild(falseValue.copy(), "falseValue");
+        this.type = type;
     }
 
     @Override
@@ -43,7 +59,7 @@ public class ConditionalExpression extends Expression {
 
     @Override
     public Type getType() {
-        return trueValue.getType();
+        return type;
     }
 
     @Override

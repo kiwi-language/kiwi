@@ -45,9 +45,9 @@ public class MappingSaver {
     }
 
     // TODO MOVE TO NamingUtils
-    private static final Pattern GETTER_CODE_PATTERN = Pattern.compile("^get([A-Z][A-Za-z0-9_$]+$)");
+    private static final Pattern GETTER_CODE_PATTERN = Pattern.compile("^get([A-Z][A-Za-z0-9_$]*$)");
 
-    private static final Pattern BOOL_GETTER_CODE_PATTERN = Pattern.compile("^is([A-Z][A-Za-z0-9_$]+$)");
+    private static final Pattern BOOL_GETTER_CODE_PATTERN = Pattern.compile("^is([A-Z][A-Za-z0-9_$]*$)");
 
 
     private final InstanceProvider instanceProvider;
@@ -220,7 +220,9 @@ public class MappingSaver {
         return new TypeParsingContext(
                 instanceProvider,
                 typeProvider,
-                compositeTypeFacade, type
+                compositeTypeFacade,
+                compositeTypeFacade,
+                type
         );
     }
 

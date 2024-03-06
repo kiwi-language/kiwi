@@ -28,12 +28,11 @@ public class InboundOrder {
     @EntityField("状态")
     private InboundOrderState state = InboundOrderState.NEW;
 
-    public InboundOrder(String code, InboundBizType bizType, Warehouse warehouse, @Nullable Supplier supplier, InboundOrderState state) {
+    public InboundOrder(String code, InboundBizType bizType, Warehouse warehouse, @Nullable Supplier supplier) {
         this.code = code;
         this.bizType = bizType;
         this.warehouse = warehouse;
         this.supplier = supplier;
-        this.state = state;
     }
 
     public String getCode() {

@@ -4,6 +4,7 @@ import com.intellij.psi.PsiMethod;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.ModelDefRegistry;
 import tech.metavm.entity.StandardTypes;
+import tech.metavm.entity.natives.NativeFunctions;
 import tech.metavm.expression.*;
 import tech.metavm.flow.*;
 import tech.metavm.object.type.*;
@@ -382,6 +383,15 @@ public class MethodGenerator {
         return setNodeExprTypes(new MethodCallNode(null, nextName(method.getName()), null,
                 scope().getLastNode(), scope(),
                 NncUtils.get(self, Values::expression), method, args));
+    }
+
+    NodeRT createTypeCast(Expression operand, Type targetType) {
+        if(operand.getType().isNullable() && !targetType.isNullable())
+            targetType = expressionResolver.getUnionTypeProvider().getUnionType(Set.of(targetType, StandardTypes.getNullType()));
+        return createFunctionCall(
+                expressionResolver.getParameterizedFlowProvider().getParameterizedFlow(NativeFunctions.getTypeCast(), List.of(targetType)),
+                List.of(operand)
+        );
     }
 
     FunctionCallNode createFunctionCall(Function function, List<Expression> arguments) {

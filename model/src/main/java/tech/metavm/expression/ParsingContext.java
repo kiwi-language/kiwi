@@ -5,6 +5,7 @@ import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.ArrayTypeProvider;
 import tech.metavm.object.type.IndexedTypeProvider;
 import tech.metavm.object.type.Type;
+import tech.metavm.object.type.UnionTypeProvider;
 
 public interface ParsingContext {
 
@@ -23,5 +24,7 @@ public interface ParsingContext {
     IndexedTypeProvider getTypeProvider();
 
     ArrayTypeProvider getArrayTypeProvider();
+
+    UnionTypeProvider getUnionTypeProvider();
 
 }

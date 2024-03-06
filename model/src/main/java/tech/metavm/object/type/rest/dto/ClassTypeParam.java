@@ -25,6 +25,7 @@ public record ClassTypeParam(
         String desc,
         Object extra,
         List<InstanceDTO> enumConstants,
+        boolean isAbstract,
         boolean isTemplate,
         List<RefDTO> typeParameterRefs,
         @Nullable List<TypeDTO> typeParameters,

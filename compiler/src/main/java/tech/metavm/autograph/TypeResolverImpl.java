@@ -349,6 +349,7 @@ public class TypeResolverImpl implements TypeResolver {
                         .ephemeral(TranspileUtil.isEphemeral(psiClass))
                         .struct(TranspileUtil.isStruct(psiClass))
                         .isTemplate(isTemplate)
+                        .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
                         .build();
                 context.bind(classType);
             }
@@ -376,6 +377,7 @@ public class TypeResolverImpl implements TypeResolver {
     private void updateClassType(ClassType classType, PsiClass psiClass) {
         classType.setName(TranspileUtil.getBizClassName(psiClass));
         classType.setStruct(TranspileUtil.isStruct(psiClass));
+        classType.setAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT));
     }
 
     private TypeCategory getTypeCategory(PsiClass psiClass) {

@@ -42,7 +42,7 @@ public class ListNestedMapping extends NestedMapping {
     @Override
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         var sourceElementType = sourceType.getListElementType();
-        var constructor = targetType.isAbstract() ? targetReadWriteListType.getDefaultConstructor() :
+        var constructor = targetType.isEffectiveAbstract() ? targetReadWriteListType.getDefaultConstructor() :
                 targetType.getDefaultConstructor();
         var targetList = Nodes.newObject(
                 targetType.getName() + "列表",

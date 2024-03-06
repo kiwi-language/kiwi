@@ -5,6 +5,7 @@ lexer grammar MetaVMLexer;
 ALL_MATCH: 'allmatch';
 AS: 'as';
 THIS:               'this';
+INSTANCEOF:         'instanceof';
 
 
 // Literals

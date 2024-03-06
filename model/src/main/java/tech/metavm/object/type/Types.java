@@ -278,6 +278,28 @@ public class Types {
         }
     }
 
+    public static Type getUnionType(Set<Type> types, UnionTypeProvider unionTypeProvider) {
+        if(types.isEmpty())
+            return StandardTypes.getNeverType();
+        Set<Type> effectiveTypes = new HashSet<>();
+        for (Type type : types) {
+            if (type instanceof UnionType unionType) {
+                effectiveTypes.addAll(unionType.getMembers());
+            } else {
+                effectiveTypes.add(type);
+            }
+        }
+        Set<Type> members = new HashSet<>();
+        out:for (Type effectiveType : effectiveTypes) {
+            for (Type type : effectiveTypes) {
+                if(type != effectiveType && type.isAssignableFrom(effectiveType))
+                    continue out;
+            }
+            members.add(effectiveType);
+        }
+        return members.size() == 1 ? members.iterator().next() : unionTypeProvider.getUnionType(members);
+    }
+
     public static ClassType saveClasType(TypeDTO classDTO, ResolutionStage stage, SaveTypeBatch batch) {
         return TYPE_FACTORY.saveClassType(classDTO, stage, batch);
     }

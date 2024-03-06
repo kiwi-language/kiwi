@@ -105,6 +105,7 @@ public abstract class TypeFactory {
                         .anonymous(typeDTO.anonymous())
                         .typeParameters(NncUtils.map(param.typeParameterRefs(), batch::getTypeVariable))
                         .isTemplate(param.isTemplate())
+                        .isAbstract(param.isAbstract())
                         .struct(param.struct())
                         .desc(param.desc())
                         .source(ClassSource.getByCode(param.source()))
@@ -116,6 +117,7 @@ public abstract class TypeFactory {
                 type.setName(typeDTO.name());
                 type.setDesc(param.desc());
                 type.setStruct(param.struct());
+                type.setAbstract(param.isAbstract());
             }
             var curStage = type.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.SIGNATURE) && curStage.isBefore(ResolutionStage.SIGNATURE)) {

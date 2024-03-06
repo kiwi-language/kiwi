@@ -29,7 +29,8 @@ public class EntityQueryService {
                 context.getInstanceContext(),
                 context.getGenericContext(),
                 new ContextTypeRepository(context),
-                new ContextArrayTypeProvider(context)
+                new ContextArrayTypeProvider(context),
+                context.getUnionTypeContext()
         );
         return new Page<>(
                 NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst)),

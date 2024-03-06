@@ -14,8 +14,10 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.ArrayTypeProvider;
 import tech.metavm.object.type.IndexedTypeProvider;
+import tech.metavm.object.type.UnionTypeProvider;
 import tech.metavm.object.type.mocks.MockArrayTypeProvider;
 import tech.metavm.object.type.mocks.MockTypeRepository;
+import tech.metavm.object.type.mocks.MockUnionTypeProvider;
 import tech.metavm.object.type.mocks.TypeProviders;
 import tech.metavm.util.Instances;
 import tech.metavm.util.MockUtils;
@@ -30,6 +32,7 @@ public class ExpressionEvaluatorTest extends TestCase {
     private InstanceProvider instanceProvider;
     private IndexedTypeProvider typeProvider;
     private ArrayTypeProvider arrayTypeProvider;
+    private UnionTypeProvider unionTypeProvider;
     private ParameterizedFlowProvider parameterizedFlowProvider;
 
     @Override
@@ -38,6 +41,7 @@ public class ExpressionEvaluatorTest extends TestCase {
         typeProvider = new MockTypeRepository();
         instanceProvider = new MockInstanceRepository();
         arrayTypeProvider = new MockArrayTypeProvider();
+        unionTypeProvider = new MockUnionTypeProvider();
         parameterizedFlowProvider = new TypeProviders().parameterizedFlowProvider;
     }
 
@@ -50,6 +54,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                         instanceProvider,
                         typeProvider,
                         arrayTypeProvider,
+                        unionTypeProvider,
                         fooType
                 )
         );
@@ -116,7 +121,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                 .build();
         String str = "allmatch(巴列表, 编号 = this.编号)";
         Expression expression = ExpressionParser.parse(
-                str, new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, fooType)
+                str, new TypeParsingContext(instanceProvider, typeProvider, arrayTypeProvider, unionTypeProvider, fooType)
         );
         Instance result = expression.evaluate(new InstanceEvaluationContext(foo, parameterizedFlowProvider));
         Assert.assertTrue(Instances.isTrue(result));

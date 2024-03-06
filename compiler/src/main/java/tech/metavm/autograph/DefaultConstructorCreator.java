@@ -14,8 +14,7 @@ public class DefaultConstructorCreator extends VisitorBase {
     @Override
     public void visitClass(PsiClass psiClass) {
         super.visitClass(psiClass);
-        if(psiClass instanceof PsiTypeParameter || psiClass.isInterface() ||
-                Objects.requireNonNull(psiClass.getModifierList()).hasModifierProperty(PsiModifier.ABSTRACT))
+        if(psiClass instanceof PsiTypeParameter || psiClass.isInterface())
             return;
         boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
         if (!psiClass.isInterface() && !hashConstructor) {

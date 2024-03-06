@@ -18,40 +18,33 @@ public class CodeGenerator {
     }
 
     void transform(PsiClass psiClass) {
-        try(var entry = ContextUtil.getProfiler().enter("CodeGenerator.transform")) {
+        try (var ignored = ContextUtil.getProfiler().enter("CodeGenerator.transform")) {
             executeCommand(() -> {
-                try(var ignored1 = ContextUtil.getProfiler().enter("VarargsTransformer")) {
-                    psiClass.accept(new VarargsTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("DefaultConstructorCreator")) {
-                    psiClass.accept(new DefaultConstructorCreator());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("SwitchExpressionTransformer")) {
-                    psiClass.accept(new SwitchExpressionTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("SwitchLabelStatementTransformer")) {
-                    psiClass.accept(new SwitchLabelStatementTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("SwitchLabelRuleTransformer")) {
-                    psiClass.accept(new DefaultSwitchCaseAppender());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("ForeachTransformer")) {
-                    psiClass.accept(new ForeachTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("ForTransformer")) {
-                    psiClass.accept(new ForTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("BreakTransformer")) {
-                    psiClass.accept(new BreakTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("ContinueTransformer")) {
-                    psiClass.accept(new ContinueTransformer());
-                }
-                try(var ignored1 = ContextUtil.getProfiler().enter("StringConcatTransformer")) {
-                    psiClass.accept(new StringConcatTransformer());
-                }
+                resolveQnAndActivity(psiClass);
+                psiClass.accept(new VarargsTransformer());
+//                psiClass.accept(new ConditionalExpressionTransformer());
+//                resolveQnAndActivity(psiClass);
+                psiClass.accept(new DefaultConstructorCreator());
+                psiClass.accept(new SwitchExpressionTransformer());
+                resolveQnAndActivity(psiClass);
+                psiClass.accept(new SwitchLabelStatementTransformer());
+                psiClass.accept(new DefaultSwitchCaseAppender());
+                psiClass.accept(new ForeachTransformer());
+                resolveQnAndActivity(psiClass);
+                psiClass.accept(new ForTransformer());
+                resolveQnAndActivity(psiClass);
+                psiClass.accept(new BreakTransformer());
+                resolveQnAndActivity(psiClass);
+                psiClass.accept(new ContinueTransformer());
+                resolveQnAndActivity(psiClass);
+                psiClass.accept(new StringConcatTransformer());
             });
         }
+    }
+
+    private void resolveQnAndActivity(PsiClass psiClass) {
+        psiClass.accept(new QnResolver());
+        psiClass.accept(new ActivityAnalyzer());
     }
 
     void generateDecl(PsiClass psiClass, TypeResolver typeResolver) {

@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -556,6 +557,10 @@ public class TranspileUtil {
         return getAncestor(element, JavaDummyHolder.class) != null;
     }
 
+    public static @Nullable <T extends PsiElement> T getParent(PsiElement element, Class<T> parentClass) {
+        return parentClass.cast(getParent(element, Set.of(parentClass)));
+    }
+
     public static @Nullable PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
         PsiElement current = element;
         while (current != null && !ReflectionUtils.isInstance(parentClasses, current)) {
@@ -683,8 +688,15 @@ public class TranspileUtil {
     }
 
     public static boolean isEphemeral(PsiClass psiClass) {
-        Boolean ephemeral = (Boolean) getAnnotationAttr(psiClass, EntityType.class, "ephemeral");
+        Boolean ephemeral = (Boolean) getEntityAnnotationAttr(psiClass, "ephemeral");
         return ephemeral == Boolean.TRUE;
+    }
+
+    private static @Nullable Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName) {
+        var value = getAnnotationAttr(psiClass, EntityType.class, attributeName);
+        if (value != null)
+            return value;
+        return getAnnotationAttr(psiClass, EntityStruct.class, attributeName);
     }
 
     public static Access getAccess(PsiVariable psiField) {
@@ -705,28 +717,19 @@ public class TranspileUtil {
     }
 
     public static String getBizClassName(PsiClass klass) {
-        String bizName = tryGetNameFromAnnotation(klass, EntityType.class);
+        String bizName = (String) getEntityAnnotationAttr(klass, "value");
         return bizName != null ? bizName : klass.getQualifiedName();
     }
 
     public static boolean isStruct(PsiClass psiClass) {
         return psiClass.isRecord()
-                && NncUtils.count(psiClass.getConstructors(), m -> !(m instanceof LightRecordCanonicalConstructor)) == 0;
+                && NncUtils.count(psiClass.getConstructors(), m -> !(m instanceof LightRecordCanonicalConstructor)) == 0
+                || psiClass.hasAnnotation(EntityStruct.class.getName());
     }
 
     public static boolean isStatic(PsiModifierListOwner modifierListOwner) {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
     }
-
-//    public static String getClassCode(PsiClass psiClass) {
-//        StringBuilder code = new StringBuilder(requireNonNull(psiClass.getName()));
-//        var owner = psiClass.getContainingClass();
-//        while (owner != null) {
-//            code.insert(0, owner.getName() + "_");
-//            owner = owner.getContainingClass();
-//        }
-//        return code.toString();
-//    }
 
     public static String getFlowName(PsiMethod method) {
         String bizName = tryGetNameFromAnnotation(method, EntityFlow.class);
@@ -768,6 +771,14 @@ public class TranspileUtil {
         return annotation;
     }
 
+    public static boolean hasAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
+        return getAnnotation(element, annotationClass) != null;
+    }
+
+    public static boolean hasAnnotation(PsiAnnotationOwner element, Class<? extends Annotation> annotationClass) {
+        return getAnnotation(element, annotationClass) != null;
+    }
+
     private static @Nullable PsiAnnotation findAnnotation(PsiAnnotation[] annotations, String qualifiedName) {
         if (annotations.length == 0) return null;
 
@@ -804,6 +815,7 @@ public class TranspileUtil {
             Map.entry(Double.class.getName(), "Double"),
             Map.entry(Float.class.getName(), "Double"),
             Map.entry(Boolean.class.getName(), "Boolean"),
+            Map.entry(Date.class.getName(), "Time"),
             Map.entry(Set.class.getName(), "Set"),
             Map.entry(Map.class.getName(), "Map"),
             Map.entry(Collection.class.getName(), "Collection"),
@@ -821,9 +833,10 @@ public class TranspileUtil {
         return getInternalName(createType(method.getContainingClass()), null) + "." +
                 method.getName() + "(" + NncUtils.join(
                 List.of(method.getParameterList().getParameters()),
-                p -> getInternalName(p.getType(), method)
+                p -> getInternalName(p.getType(), hasAnnotation(p, Nullable.class), method)
         ) + ")";
     }
+
 
     private static String getInternalName(PsiTypeParameterListOwner typeParameterOwner, PsiMethod current) {
         return switch (typeParameterOwner) {
@@ -831,6 +844,16 @@ public class TranspileUtil {
             case PsiMethod method -> getInternalName(method);
             default -> throw new IllegalStateException("Unexpected value: " + typeParameterOwner);
         };
+    }
+
+    private static String getInternalName(PsiType type, boolean nullable, PsiMethod current) {
+        if(nullable) {
+            var names = List.of("Null", getInternalName(type, current));
+            return names.stream().sorted().collect(Collectors.joining("|"));
+        }
+        else {
+            return getInternalName(type, current);
+        }
     }
 
     private static String getInternalName(PsiType type, PsiMethod current) {

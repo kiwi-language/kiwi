@@ -11,6 +11,7 @@ import tech.metavm.object.instance.core.mocks.MockInstanceRepository;
 import tech.metavm.object.type.*;
 import tech.metavm.object.type.mocks.MockArrayTypeProvider;
 import tech.metavm.object.type.mocks.MockTypeRepository;
+import tech.metavm.object.type.mocks.MockUnionTypeProvider;
 import tech.metavm.util.TestUtils;
 
 import java.util.List;
@@ -22,12 +23,14 @@ public class ExpressionTypeResolverTest extends TestCase {
     private TypeRepository typeRepository;
     private InstanceProvider instanceProvider;
     private ArrayTypeProvider arrayTypeProvider;
+    private UnionTypeProvider unionTypeProvider;
 
     @Override
     protected void setUp() throws Exception {
         typeRepository = new MockTypeRepository();
         instanceProvider = new MockInstanceRepository();
         arrayTypeProvider = new MockArrayTypeProvider();
+        unionTypeProvider = new MockUnionTypeProvider();
         MockStandardTypesInitializer.init();
     }
 
@@ -59,7 +62,7 @@ public class ExpressionTypeResolverTest extends TestCase {
     }
 
     private TypeParsingContext createTypeParsingContext(ClassType type) {
-        return new TypeParsingContext(instanceProvider, typeRepository, arrayTypeProvider, type);
+        return new TypeParsingContext(instanceProvider, typeRepository, arrayTypeProvider, unionTypeProvider, type);
     }
 
 }

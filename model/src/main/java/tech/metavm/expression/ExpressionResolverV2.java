@@ -74,6 +74,21 @@ public class ExpressionResolverV2 extends CopyVisitor {
     }
 
     @Override
+    public Element visitConditionalExpression(ConditionalExpression expression) {
+        assignedTypeStack.push(null);
+        try {
+            return ConditionalExpression.create(
+                    (Expression) expression.getCondition().accept(this),
+                    (Expression) expression.getTrueValue().accept(this),
+                    (Expression) expression.getFalseValue().accept(this),
+                    context.getUnionTypeProvider()
+            );
+        } finally {
+            assignedTypeStack.pop();
+        }
+    }
+
+    @Override
     public Element visitVariablePathExpression(VariablePathExpression expression) {
         try {
             assignedTypeStack.push(null);

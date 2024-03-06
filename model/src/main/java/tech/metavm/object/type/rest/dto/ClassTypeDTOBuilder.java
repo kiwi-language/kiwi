@@ -45,6 +45,7 @@ public class ClassTypeDTOBuilder {
     private List<ObjectMappingDTO> mappings = new ArrayList<>();
     private RefDTO defaultMappingRef;
     private int source = ClassSourceCodes.RUNTIME;
+    private boolean isAbstract;
     private boolean isTemplate;
     private RefDTO templateRef;
     private List<RefDTO> typeArgumentRefs = new ArrayList<>();
@@ -182,6 +183,11 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
+    public ClassTypeDTOBuilder isAbstract(boolean isAbstract) {
+        this.isAbstract = isAbstract;
+        return this;
+    }
+
     public ClassTypeDTOBuilder sourceClassName(String sourceClassName) {
         return this;
     }
@@ -242,6 +248,7 @@ public class ClassTypeDTOBuilder {
                 desc,
                 extra,
                 enumConstants,
+                isAbstract,
                 isTemplate,
                 typeParameterRefs,
                 typeParameters,
