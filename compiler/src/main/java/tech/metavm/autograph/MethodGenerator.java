@@ -13,6 +13,9 @@ import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 public class MethodGenerator {
 
@@ -23,7 +26,6 @@ public class MethodGenerator {
     private final ExpressionResolver expressionResolver;
     private final Map<String, Integer> name2count = new HashMap<>();
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
-    private Expression yieldValue;
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
     private final FunctionTypeProvider functionTypeProvider;
@@ -155,9 +157,16 @@ public class MethodGenerator {
         exitScope();
     }
 
+    void setYield(Expression yield) {
+        variableTable.setYield(yield);
+    }
+
     Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, List<String> outputVars) {
+        return exitCondSection(mergeNode, outputVars, false);
+    }
+
+    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, List<String> outputVars, boolean isSwitchExpression) {
         var branchNode = mergeNode.getBranchNode();
-        yieldValue = null;
         ExpressionTypeMap exprTypes = null;
         for (ScopeInfo scope : condScopes.remove(branchNode)) {
             var lastNode = scope.scope.getLastNode();
@@ -173,7 +182,41 @@ public class MethodGenerator {
         if (exprTypes != null) {
             mergeNode.mergeExpressionTypes(exprTypes);
         }
-        return variableTable.exitCondSection(branchNode, outputVars);
+        var result =  variableTable.exitCondSection(branchNode, outputVars);
+        if(result.values().iterator().next().yield() != null) {
+            var yields = result.values().stream().map(BranchInfo::yield)
+                    .filter(Objects::nonNull)
+                    .toList();
+            var yieldType = Types.getUnionType(
+                    yields.stream().map(Expression::getType).collect(Collectors.toSet()),
+                    expressionResolver.getUnionTypeProvider()
+            );
+            var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getType(), yieldType).build();
+            new MergeNodeField(
+                    yieldField, mergeNode,
+                    branchNode.getBranches()
+                            .stream()
+                            .filter(b -> !b.isTerminating())
+                            .collect(Collectors.toMap(
+                                    java.util.function.Function.identity(),
+                                    b -> Values.expression(
+                                            requireNonNull(result.get(b).yield(),
+                                                    "Yield must be present in all non-terminating branches")
+                                    )
+                            ))
+            );
+            if(isInsideBranch() && !isSwitchExpression) {
+                setYield(Expressions.nodeProperty(mergeNode, yieldField));
+            }
+        }
+        return result.keySet().stream().collect(Collectors.toMap(
+                java.util.function.Function.identity(),
+                b -> result.get(b).variables()
+        ));
+    }
+
+    boolean isInsideBranch() {
+        return variableTable.isInsideBranch();
     }
 
     private ScopeInfo currentScope() {
@@ -203,10 +246,6 @@ public class MethodGenerator {
 
     ScopeInfo exitScope() {
         return scopes.pop();
-    }
-
-    Expression getYield() {
-        return yieldValue;
     }
 
     Type getExpressionType(Expression expression) {
@@ -489,10 +528,6 @@ public class MethodGenerator {
                 scope(),
                 Values.expression(condition)
         ));
-    }
-
-    public void setYieldValue(Expression expression) {
-        yieldValue = NncUtils.requireNonNull(expression);
     }
 
     public PsiMethod getJavaMethod() {

@@ -885,13 +885,8 @@ public class TranspileUtil {
         return type.getCanonicalText();
     }
 
-    public static boolean isColonSwitch(PsiSwitchStatement statement) {
+    public static boolean isColonSwitch(PsiSwitchBlock statement) {
         var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
-        return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
-    }
-
-    public static boolean isColonSwitch(PsiSwitchExpression expression) {
-        var stmts = NncUtils.requireNonNull(expression.getBody()).getStatements();
         return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
     }
 

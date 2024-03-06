@@ -10,8 +10,11 @@ import tech.metavm.util.NncUtils;
 import java.util.*;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
+
 public class VariableTable {
 
+    private final LinkedList<BranchNode> branchNodes = new LinkedList<>();
     private VariableMap variableMap = new VariableMap();
     private final Map<BranchNode, CondSection> condSections = new HashMap<>();
 
@@ -26,6 +29,7 @@ public class VariableTable {
     }
 
     void enterCondSection(BranchNode branchNode) {
+        branchNodes.push(branchNode);
         condSections.put(branchNode, new CondSection(branchNode, variableMap));
     }
 
@@ -42,20 +46,30 @@ public class VariableTable {
         return section.nextBranch(branch);
     }
 
-    Map<Branch, Map<String, Expression>> exitCondSection(BranchNode sectionId, List<String> outputVars) {
+    void setYield(Expression yield) {
+        var branchNode = requireNonNull(branchNodes.peek(), "Not in a branch");
+        condSections.get(branchNode).setYield(yield);
+    }
+
+    Map<Branch, BranchInfo> exitCondSection(BranchNode sectionId, List<String> outputVars) {
         var section = condSections.remove(sectionId);
-        Map<Branch, Map<String, Expression>> result = new HashMap<>();
+        Map<Branch, BranchInfo> result = new HashMap<>();
         for (var entry : section.branchMaps.entrySet()) {
             var branch = entry.getKey();
             var varMap = entry.getValue();
             Map<String, Expression> branchOutputs = new HashMap<>();
-            result.put(branch, branchOutputs);
             for (String outputVar : outputVars) {
                 branchOutputs.put(outputVar, varMap.getVariable(outputVar));
             }
+            result.put(branch, new BranchInfo(branchOutputs, section.yields.get(branch)));
         }
         variableMap = section.entryMap;
+        branchNodes.pop();
         return result;
+    }
+
+    boolean isInsideBranch() {
+        return !branchNodes.isEmpty();
     }
 
     void enterTrySection(TryNode tryNode) {
@@ -82,6 +96,7 @@ public class VariableTable {
         var trySection = trySections.peek();
         trySection.raiseVariables.put(raiseNode, variableMap.copy());
     }
+
 
     private static class VariableMap {
 
@@ -113,6 +128,7 @@ public class VariableTable {
         Expression nextBranchCond;
         final VariableMap entryMap;
         final Map<Branch, VariableMap> branchMaps = new HashMap<>();
+        final Map<Branch, Expression> yields = new HashMap<>();
 
         private final List<ExpressionTypeMap> nextBranchEntries = new ArrayList<>();
 
@@ -145,6 +161,15 @@ public class VariableTable {
                     Expressions.not(branch.getCondition().getExpression()) :
                     Expressions.and(nextBranchCond, Expressions.not(branch.getCondition().getExpression()));
             return extraExprTypeMap != null ? exprTypeMap.merge(extraExprTypeMap) : exprTypeMap;
+        }
+
+        void setYield(Expression yield) {
+            requireNonNull(currentBranch, "Not in a branch");
+            yields.put(currentBranch, yield);
+        }
+
+        Map<Branch, Expression> getYields() {
+            return Collections.unmodifiableMap(yields);
         }
 
     }

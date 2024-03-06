@@ -36,8 +36,8 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitSwitchLabeledRuleStatement(PsiSwitchLabeledRuleStatement statement) {
-        var switchExpr = getEnclosingScope(PsiSwitchStatement.class);
-        builder.newCondBranch(switchExpr);
+        var switchStmt = TranspileUtil.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
+        builder.newCondBranch(switchStmt);
         if (statement.getCaseLabelElementList() != null) {
             statement.getCaseLabelElementList().accept(this);
         }
@@ -113,7 +113,7 @@ public class AstToCfg extends JavaRecursiveElementVisitor {
 
     @Override
     public void visitSwitchLabelStatement(PsiSwitchLabelStatement statement) {
-        var switchStmt = getEnclosingSwitchStatement(statement);
+        var switchStmt = TranspileUtil.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
         builder.newCondBranch(switchStmt, true);
         if (statement.isDefaultCase()) builder.setDefaultCaseFlag(switchStmt);
         else requireNonNull(statement.getCaseLabelElementList()).accept(this);

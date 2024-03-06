@@ -14,28 +14,40 @@ public class SwitchLabelStatementTransformer extends VisitorBase {
     }
 
     @Override
+    public void visitSwitchExpression(PsiSwitchExpression expression) {
+        super.visitSwitchExpression(expression);
+        if(TranspileUtil.isColonSwitch(expression)) {
+            processSwitchBody(requireNonNull(expression.getBody()));
+        }
+    }
+
+    @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
         super.visitSwitchStatement(statement);
         if (TranspileUtil.isColonSwitch(statement)) {
-            var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
-            var newBody = TranspileUtil.createCodeBlock();
-            PsiCodeBlock dest = null;
-            for (PsiStatement stmt : stmts) {
-                if (stmt instanceof PsiSwitchLabelStatement labelStmt) {
-                    String text;
-                    if (labelStmt.isDefaultCase()) {
-                        text = "default -> {}";
-                    } else {
-                        text = "case " + requireNonNull(labelStmt.getCaseLabelElementList()).getText() + " -> {}";
-                    }
-                    var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) newBody.add(createStatementFromText(text));
-                    dest = ((PsiBlockStatement) requireNonNull(labeledRuleStmt.getBody())).getCodeBlock();
-                } else if (!isRedundantBreak(stmt)) {
-                    requireNonNull(dest).add(stmt);
-                }
-            }
-            replace(statement.getBody(), newBody);
+            processSwitchBody(requireNonNull(statement.getBody()));
         }
+    }
+
+    private void processSwitchBody(PsiCodeBlock body) {
+        var stmts = NncUtils.requireNonNull(body).getStatements();
+        var newBody = TranspileUtil.createCodeBlock();
+        PsiCodeBlock dest = null;
+        for (PsiStatement stmt : stmts) {
+            if (stmt instanceof PsiSwitchLabelStatement labelStmt) {
+                String text;
+                if (labelStmt.isDefaultCase()) {
+                    text = "default -> {}";
+                } else {
+                    text = "case " + requireNonNull(labelStmt.getCaseLabelElementList()).getText() + " -> {}";
+                }
+                var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) newBody.add(createStatementFromText(text));
+                dest = ((PsiBlockStatement) requireNonNull(labeledRuleStmt.getBody())).getCodeBlock();
+            } else if (!isRedundantBreak(stmt)) {
+                requireNonNull(dest).add(stmt);
+            }
+        }
+        replace(body, newBody);
     }
 
     private boolean isRedundantBreak(PsiStatement statement) {

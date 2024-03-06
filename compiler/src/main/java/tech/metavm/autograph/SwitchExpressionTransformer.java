@@ -14,8 +14,6 @@ public class SwitchExpressionTransformer extends VisitorBase {
 
     private static final LinkedList<SwitchInfo> switches = new LinkedList<>();
 
-//    private final NameTracker nameTracker = new NameTracker();
-
     @Override
     public void visitSwitchExpression(PsiSwitchExpression expression) {
         enterSwitchExpr(expression);

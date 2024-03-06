@@ -22,10 +22,7 @@ public class CodeGenerator {
             executeCommand(() -> {
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new VarargsTransformer());
-//                psiClass.accept(new ConditionalExpressionTransformer());
-//                resolveQnAndActivity(psiClass);
                 psiClass.accept(new DefaultConstructorCreator());
-                psiClass.accept(new SwitchExpressionTransformer());
                 resolveQnAndActivity(psiClass);
                 psiClass.accept(new SwitchLabelStatementTransformer());
                 psiClass.accept(new DefaultSwitchCaseAppender());

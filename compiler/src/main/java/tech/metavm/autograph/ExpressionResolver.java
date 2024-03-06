@@ -142,6 +142,7 @@ public class ExpressionResolver {
             case PsiInstanceOfExpression instanceOfExpression -> resolveInstanceOf(instanceOfExpression, context);
             case PsiLambdaExpression lambdaExpression -> resolveLambdaExpression(lambdaExpression, context);
             case PsiTypeCastExpression typeCastExpression -> resolveTypeCast(typeCastExpression, context);
+            case PsiSwitchExpression switchExpression -> resolveSwitchExpression(switchExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
     }
@@ -217,7 +218,7 @@ public class ExpressionResolver {
 
         var valueField = FieldBuilder
                 .newBuilder("value", "value", mergeNode.getType(),
-                        Types.getUnionType(Set.of(thenExpr.getType(), elseExpr.getType()), unionTypeProvider))
+                        Types.getUnionType(List.of(thenExpr.getType(), elseExpr.getType()), unionTypeProvider))
                 .build();
         new MergeNodeField(valueField, mergeNode, Map.of(
                 thenBranch, Values.expression(thenExpr),
@@ -848,6 +849,48 @@ public class ExpressionResolver {
         }
         methodGenerator.exitScope();
         return new NodeExpression(lambdaNode);
+    }
+
+
+    private Expression resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
+        var switchExpr = resolve(psiSwitchExpression.getExpression(), context);
+        var branchNode = methodGenerator.createBranchNode(false);
+        methodGenerator.enterCondSection(branchNode);
+        var body = requireNonNull(psiSwitchExpression.getBody());
+        var statements = requireNonNull(body.getStatements());
+        for (PsiStatement statement : statements) {
+            if (statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStatement) {
+                var branch = labeledRuleStatement.isDefaultCase() ?
+                                branchNode.addDefaultBranch() :
+                                branchNode.addBranch(Values.expression(resolveSwitchCaseCondition(switchExpr, labeledRuleStatement, context)));
+                methodGenerator.enterBranch(branch);
+                var caseBody = requireNonNull(labeledRuleStatement.getBody());
+                if (caseBody instanceof PsiExpressionStatement exprStmt) {
+                    methodGenerator.setYield(resolve(exprStmt.getExpression(), context));
+                } else {
+                    caseBody.accept(visitor);
+                }
+                methodGenerator.exitBranch();
+            }
+        }
+        var mergeNode = methodGenerator.createMerge();
+        methodGenerator.exitCondSection(mergeNode, List.of(), true);
+        return Expressions.nodeProperty(mergeNode, mergeNode.getType().getFieldByCode("yield"));
+    }
+
+    private Expression resolveSwitchCaseCondition(Expression switchExpression, PsiSwitchLabeledRuleStatement switchLabeledRuleStatement, ResolutionContext context) {
+        if (switchLabeledRuleStatement.isDefaultCase())
+            return Expressions.trueExpression();
+        var caseElementList = requireNonNull(switchLabeledRuleStatement.getCaseLabelElementList());
+        Expression cond = null;
+        for (PsiCaseLabelElement element : caseElementList.getElements()) {
+            var newCond = Expressions.eq(switchExpression, resolve((PsiExpression) element, context));
+            if (cond == null)
+                cond = newCond;
+            else
+                cond = Expressions.or(cond, newCond);
+        }
+        return cond;
     }
 
     private List<Parameter> resolveParameterList(PsiParameterList parameterList) {

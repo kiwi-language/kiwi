@@ -9,12 +9,22 @@ import static tech.metavm.util.NncUtils.requireNonNull;
 public class DefaultSwitchCaseAppender extends VisitorBase {
 
     @Override
+    public void visitSwitchExpression(PsiSwitchExpression expression) {
+        super.visitSwitchExpression(expression);
+        processSwitch(expression);
+    }
+
+    @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
         super.visitSwitchStatement(statement);
+        processSwitch(statement);
+    }
+
+    private void processSwitch(PsiSwitchBlock statement) {
         if (!TranspileUtil.isColonSwitch(statement)) {
-            var stmts = requireNonNull(statement.getBody()).getStatements();
+            var statements = requireNonNull(statement.getBody()).getStatements();
             boolean hasDefault = false;
-            for (var stmt : stmts) {
+            for (var stmt : statements) {
                 var labelStmt = (PsiSwitchLabeledRuleStatement) stmt;
                 if (labelStmt.isDefaultCase()) {
                     hasDefault = true;
@@ -37,7 +47,7 @@ public class DefaultSwitchCaseAppender extends VisitorBase {
         }
     }
 
-    private boolean isAllCasesCovered(PsiSwitchStatement statement) {
+    private boolean isAllCasesCovered(PsiSwitchBlock statement) {
         var expr = statement.getExpression();
         if (expr.getType() instanceof PsiClassType classType) {
             var psiClass = requireNonNull(classType.resolve());
@@ -48,7 +58,7 @@ public class DefaultSwitchCaseAppender extends VisitorBase {
         return false;
     }
 
-    private boolean isAllEnumCasesCovered(PsiSwitchStatement statement, PsiClass psiClass) {
+    private boolean isAllEnumCasesCovered(PsiSwitchBlock statement, PsiClass psiClass) {
         var enumConstants = new HashSet<>(TranspileUtil.getEnumConstants(psiClass));
         boolean nullCovered = false;
         var stmts = requireNonNull(statement.getBody()).getStatements();

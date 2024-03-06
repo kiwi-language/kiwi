@@ -462,7 +462,7 @@ public class Generator extends CodeGenVisitor {
             if (labeledRuleStmt.getBody() != null) {
                 labeledRuleStmt.getBody().accept(this);
                 if (labeledRuleStmt.getBody() instanceof PsiExpression bodyExpression) {
-                    builder().setYieldValue(resolveExpression(bodyExpression));
+                    builder().setYield(resolveExpression(bodyExpression));
                 }
             }
             builder().exitBranch();
@@ -763,7 +763,7 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitYieldStatement(PsiYieldStatement statement) {
-        builder().setYieldValue(resolveExpression(statement.getExpression()));
+        builder().setYield(resolveExpression(statement.getExpression()));
     }
 
     @Override

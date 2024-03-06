@@ -278,7 +278,7 @@ public class Types {
         }
     }
 
-    public static Type getUnionType(Set<Type> types, UnionTypeProvider unionTypeProvider) {
+    public static Type getUnionType(Collection<Type> types, UnionTypeProvider unionTypeProvider) {
         if(types.isEmpty())
             return StandardTypes.getNeverType();
         Set<Type> effectiveTypes = new HashSet<>();

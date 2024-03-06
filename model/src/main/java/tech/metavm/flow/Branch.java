@@ -143,4 +143,10 @@ public class Branch extends Element implements LocalKey {
         writer.writeNewLine(" -> ");
         scope.writeCode(writer);
     }
+
+    public boolean isTerminating() {
+        var lastNode = scope.getLastNode();
+        return lastNode != null && lastNode.isExit();
+    }
+
 }
