@@ -569,6 +569,14 @@ public class TranspileUtil {
         return current;
     }
 
+    public static PsiElement getParentRequired(PsiElement element, Set<Class<?>> parentClasses) {
+        return requireNonNull(getParent(element, parentClasses));
+    }
+
+    public static Scope getBodyScope(PsiElement element) {
+        return requireNonNull(element.getUserData(Keys.BODY_SCOPE));
+    }
+
     public static PsiExpression createExpressionFromText(String text) {
         return elementFactory.createExpressionFromText(text, null);
     }

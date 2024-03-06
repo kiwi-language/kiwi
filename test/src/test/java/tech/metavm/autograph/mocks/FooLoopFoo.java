@@ -1,5 +1,7 @@
 package tech.metavm.autograph.mocks;
 
+import java.util.Objects;
+
 public class FooLoopFoo {
 
     public int test() {
@@ -11,6 +13,19 @@ public class FooLoopFoo {
         {
             return i;
         }
+    }
+
+    private static String formatMessage(String messageTemplate, Object[] params) {
+        String message = messageTemplate;
+        if(params != null) {
+            for (int i = 0; i < params.length; i++) {
+                message = message.replaceFirst("\\{}", "{" + i + "}");
+            }
+            for (int i = 0; i < params.length; i++) {
+                message = message.replace("{" + i + "}", Objects.toString(params[i]));
+            }
+        }
+        return message;
     }
 
 }

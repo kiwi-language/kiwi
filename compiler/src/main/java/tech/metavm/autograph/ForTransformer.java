@@ -3,27 +3,36 @@ package tech.metavm.autograph;
 import com.intellij.psi.*;
 import tech.metavm.util.NncUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 public class ForTransformer extends VisitorBase {
 
-    private final NameTracker nameTracker = new NameTracker();
+    private final Map<String, String> variableMap = new HashMap<>();
 
     @Override
     public void visitForStatement(PsiForStatement statement) {
-        super.visitForStatement(statement);
-
-        PsiBlockStatement body = statement.getBody() != null ?
-                convertToBlockStatement((PsiStatement) statement.getBody().copy())
-                : (PsiBlockStatement) TranspileUtil.createStatementFromText("{}");
+        var parent = TranspileUtil.getParentRequired(statement, Set.of(PsiMethod.class, PsiStatement.class));
+        var scope = TranspileUtil.getBodyScope(parent);
         var init = statement.getInitialization();
+        var curVariableMap = new HashMap<String, String>();
         if (init != null) {
             if (init instanceof PsiDeclarationStatement declStmt) {
                 for (PsiElement element : declStmt.getDeclaredElements()) {
                     PsiVariable variable = (PsiVariable) element;
-                    nameTracker.addName(variable.getName());
+                    var varName = requireNonNull(variable.getName());
+                    var newName = namer.newName(varName, scope.getAllDefined());
+                    curVariableMap.put(varName, newName);
+                    String declText =
+                            variable.getInitializer() == null ?
+                                    String.format("%s %s;", variable.getType().getPresentableText(), newName)
+                                    : String.format("%s %s = %s;", variable.getType().getPresentableText(), newName, variable.getInitializer().getText());
+                    insertBefore(TranspileUtil.createStatementFromText(declText), statement);
                 }
-                insertBefore((PsiStatement) declStmt.copy(), statement);
             } else {
                 List<PsiStatement> initStmts = tryBreakupStatements(init);
                 for (PsiStatement initStmt : initStmts) {
@@ -31,6 +40,12 @@ public class ForTransformer extends VisitorBase {
                 }
             }
         }
+        variableMap.putAll(curVariableMap);
+        super.visitForStatement(statement);
+        variableMap.keySet().removeAll(curVariableMap.keySet());
+        PsiBlockStatement body = statement.getBody() != null ?
+                convertToBlockStatement((PsiStatement) statement.getBody().copy())
+                : (PsiBlockStatement) TranspileUtil.createStatementFromText("{}");
         if (statement.getUpdate() != null) {
             List<PsiStatement> updateStmts = tryBreakupStatements(statement.getUpdate());
             for (PsiStatement updateStmt : updateStmts) {
@@ -62,40 +77,14 @@ public class ForTransformer extends VisitorBase {
     }
 
     @Override
-    public void visitMethod(PsiMethod method) {
-        nameTracker.enterMethod();
-        super.visitMethod(method);
-        nameTracker.exitMethod();
-    }
-
-    @Override
-    public void visitLocalVariable(PsiLocalVariable variable) {
-        if (nameTracker.isVisible(variable.getName())) {
-            var newName = nameTracker.nextName(variable.getName());
-            nameTracker.rename(variable.getName(), newName);
-            variable.setName(newName);
-        } else {
-            nameTracker.addName(variable.getName());
-        }
-    }
-
-    @Override
-    public void visitCodeBlock(PsiCodeBlock block) {
-        nameTracker.enterBlock();
-        super.visitCodeBlock(block);
-        nameTracker.exitBlock();
-    }
-
-    @Override
     public void visitReferenceExpression(PsiReferenceExpression expression) {
+        super.visitReferenceExpression(expression);
         var target = expression.resolve();
-        if (target instanceof PsiVariable variable) {
-            String mappedName;
-            if ((mappedName = nameTracker.getMappedName(variable.getName())) != null) {
-                replace(expression, TranspileUtil.createExpressionFromText(mappedName));
+        if (target instanceof PsiLocalVariable variable) {
+            var newName = variableMap.get(variable.getName());
+            if (newName != null) {
+                expression.handleElementRename(newName);
             }
         }
     }
-
-
 }
