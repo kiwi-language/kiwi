@@ -126,6 +126,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             processInventory(material, storageObjects.position, qualified, unit);
 
             processInbound(storageObjects, material, unit);
+
+            processTransfer(storageObjects, material, unit);
         });
     }
 
@@ -163,13 +165,24 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         ReferenceFieldValue.create(area)
                 )
         )));
-        return new StorageObjects(warehouse, area, position);
+        var position2 = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                positionConstructorId,
+                null,
+                List.of(
+                        PrimitiveFieldValue.createString("position2"),
+                        PrimitiveFieldValue.createString("库位2"),
+                        ReferenceFieldValue.create(area)
+                )
+        )));
+
+        return new StorageObjects(warehouse, area, position, position2);
     }
 
     private record StorageObjects(
             InstanceDTO warehouse,
             InstanceDTO area,
-            InstanceDTO position
+            InstanceDTO position,
+            InstanceDTO position2
     ) {
 
     }
@@ -229,6 +242,9 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var queriedInventory = queryResp.page().data().get(0);
         Assert.assertEquals(inventory.id(), queriedInventory.id());
 
+        var inventoryOpType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryOp");
+        var adjustment = TestUtils.getEnumConstantByName(inventoryOpType, "库存调整");
+
         // decrease the inventory by 100 and asserts that the inventory is removed
         var decreaseInventoryId = TestUtils.getStaticMethodIdByCode(inventoryType, "decreaseQuantity");
         doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
@@ -248,7 +264,8 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                         PrimitiveFieldValue.createNull(),
                         PrimitiveFieldValue.createNull(),
                         PrimitiveFieldValue.createLong(100L),
-                        ReferenceFieldValue.create(unit)
+                        ReferenceFieldValue.create(unit),
+                        ReferenceFieldValue.create(adjustment)
                 )
         )));
         try {
@@ -380,6 +397,149 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var reloadedInboundOrderItem = instanceManager.get(inboundOrderItem.id(), 1).instance();
         var actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
         Assert.assertEquals(100L, ((PrimitiveFieldValue) actualQuantity).getValue());
+    }
+
+
+    private void processTransfer(StorageObjects storageObjects, InstanceDTO material, InstanceDTO unit) {
+        // get TransferBizType type
+        var transferBizTypeType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferBizType");
+        // get TransferBizType.STORAGE constant
+        var storage = TestUtils.getEnumConstantByName(transferBizTypeType, "仓储调拨");
+
+        // get transfer order type
+        var transferOrderType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferOrder");
+        // create a transfer order
+        var transferOrderConstructorId = TestUtils.getMethodIdByCode(transferOrderType, "TransferOrder");
+        var transferOrder = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                transferOrderConstructorId,
+                null,
+                List.of(
+                        PrimitiveFieldValue.createString("transferOrder1"),
+                        ReferenceFieldValue.create(storage),
+                        ReferenceFieldValue.create(storageObjects.warehouse),
+                        ReferenceFieldValue.create(storageObjects.warehouse)
+                )
+        )));
+
+        // create a transfer order item
+        var transferOrderItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferOrderItem");
+        var transferOrderItemConstructorId = TestUtils.getMethodIdByCode(transferOrderItemType, "TransferOrderItem");
+        var transferOrderItem = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                transferOrderItemConstructorId,
+                null,
+                List.of(
+                        ReferenceFieldValue.create(transferOrder),
+                        ReferenceFieldValue.create(material),
+                        PrimitiveFieldValue.createLong(100L),
+                        ReferenceFieldValue.create(unit),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull()
+                )
+        )));
+
+        // create an inventory
+        var inventoryType = getClassTypeByCode("tech.metavm.manufacturing.storage.Inventory");
+        var inventoryConstructorId = TestUtils.getMethodIdByCode(inventoryType, "Inventory");
+        var qualityInspectionStateType  = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
+        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "合格");
+        var InventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
+        var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "初始");
+        var inventory = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                inventoryConstructorId,
+                null,
+                List.of(
+                        ReferenceFieldValue.create(material),
+                        ReferenceFieldValue.create(storageObjects.position),
+                        ReferenceFieldValue.create(qualifiedInspectionState),
+                        ReferenceFieldValue.create(initialBizState),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createNull(),
+                        PrimitiveFieldValue.createLong(100L)
+                )
+        )));
+
+        // invoke TransferOrderItem.transfer with storageObjects.position2 as the target position
+        var transferRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferRequest");
+        var transferRequestItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferRequestItem");
+        var transferRequestSubItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.TransferRequestSubItem");
+
+        var transferId = TestUtils.getMethodIdByCode(transferOrderType, "transfer");
+        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                                transferId,
+                                transferOrder.id(),
+                                List.of(
+                                        InstanceFieldValue.of(
+                                                InstanceDTO.createClassInstance(
+                                                        transferRequestType.getRef(),
+                                                        List.of(
+                                                                InstanceFieldDTO.create(
+                                                                        TestUtils.getFieldIdByCode(transferRequestType, "to"),
+                                                                        ReferenceFieldValue.create(storageObjects.position2)
+                                                                ),
+                                                                InstanceFieldDTO.create(
+                                                                        TestUtils.getFieldIdByCode(transferRequestType, "items"),
+                                                                        new ListFieldValue(
+                                                                                null,
+                                                                                true,
+                                                                                List.of(
+                                                                                        InstanceFieldValue.of(
+                                                                                                InstanceDTO.createClassInstance(
+                                                                                                        transferRequestItemType.getRef(),
+                                                                                                        List.of(
+                                                                                                                InstanceFieldDTO.create(
+                                                                                                                        TestUtils.getFieldIdByCode(transferRequestItemType, "transferOrderItem"),
+                                                                                                                        ReferenceFieldValue.create(transferOrderItem)
+                                                                                                                ),
+                                                                                                                InstanceFieldDTO.create(
+                                                                                                                        TestUtils.getFieldIdByCode(transferRequestItemType, "subItems"),
+                                                                                                                        new ListFieldValue(
+                                                                                                                                null,
+                                                                                                                                true,
+                                                                                                                                List.of(
+                                                                                                                                        InstanceFieldValue.of(
+                                                                                                                                                InstanceDTO.createClassInstance(
+                                                                                                                                                        transferRequestSubItemType.getRef(),
+                                                                                                                                                        List.of(
+                                                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                                                        TestUtils.getFieldIdByCode(transferRequestSubItemType, "inventory"),
+                                                                                                                                                                        ReferenceFieldValue.create(inventory)
+                                                                                                                                                                ),
+                                                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                                                        TestUtils.getFieldIdByCode(transferRequestSubItemType, "amount"),
+                                                                                                                                                                        PrimitiveFieldValue.createLong(20L)
+                                                                                                                                                                ),
+                                                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                                                        TestUtils.getFieldIdByCode(transferRequestSubItemType, "unit"),
+                                                                                                                                                                        ReferenceFieldValue.create(unit)
+                                                                                                                                                                )
+                                                                                                                                                        )
+                                                                                                                                                )
+                                                                                                                                        )
+                                                                                                                                )
+                                                                                                                        )
+                                                                                                                )
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        );
+        // assert that the transfer has taken place
+        var reloadedInventory = instanceManager.get(inventory.id(), 1).instance();
+        assertEquals(PrimitiveFieldValue.createLong(80L), reloadedInventory.getFieldValue(TestUtils.getFieldIdByCode(inventoryType, "quantity")));
     }
 
 }

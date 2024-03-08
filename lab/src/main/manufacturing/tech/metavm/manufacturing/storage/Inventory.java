@@ -3,6 +3,7 @@ package tech.metavm.manufacturing.storage;
 import tech.metavm.entity.*;
 import tech.metavm.lang.ObjectUtils;
 import tech.metavm.manufacturing.material.*;
+import tech.metavm.manufacturing.utils.Utils;
 
 import javax.annotation.Nullable;
 import java.util.Date;
@@ -71,6 +72,9 @@ public class Inventory {
     }
 
     public Inventory(Material material, Position position, QualityInspectionState qualityInspectionState, InventoryBizState bizState, @Nullable Batch batch, @Nullable String qrCode, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, long quantity) {
+        arrivalDate = Utils.toDaysNullable(arrivalDate);
+        productionDate = Utils.toDaysNullable(productionDate);
+        expirationDate = Utils.toDaysNullable(expirationDate);
         this.material = material;
         this.quantity = quantity;
         this.position = position;
@@ -151,15 +155,53 @@ public class Inventory {
     }
 
     @EntityFlow("增加库存")
-    public void increaseQuantity(long quantity) {
+    public void increaseQuantity(long quantity, Unit unit, InventoryOp op) {
+        quantity = material.convertAmountToMainUnit(quantity, unit);
         this.quantity += quantity;
+        new InventoryChangeRecord(
+                material,
+                position,
+                true,
+                quantity,
+                this.quantity,
+                op,
+                new Date(),
+                bizState,
+                batch,
+                qrCode,
+                supplier,
+                supplierBatchNo,
+                client,
+                arrivalDate,
+                productionDate,
+                expirationDate
+        );
     }
 
     @EntityFlow("减少库存")
-    public void decreaseQuantity(long quantity) {
+    public void decreaseQuantity(long quantity, Unit unit, InventoryOp op) {
+        quantity = material.convertAmountToMainUnit(quantity, unit);
         if (this.quantity - quantity < 0)
             throw new IllegalArgumentException("库存不足");
         this.quantity -= quantity;
+        new InventoryChangeRecord(
+                material,
+                position,
+                false,
+                quantity,
+                this.quantity,
+                op,
+                new Date(),
+                bizState,
+                batch,
+                qrCode,
+                supplier,
+                supplierBatchNo,
+                client,
+                arrivalDate,
+                productionDate,
+                expirationDate
+        );
     }
 
     @EntityFlow("添加库存")
@@ -177,7 +219,11 @@ public class Inventory {
             @Nullable Date productionDate,
             @Nullable Date expirationDate,
             long quantity,
-            Unit unit) {
+            Unit unit,
+            InventoryOp op) {
+        arrivalDate = Utils.toDaysNullable(arrivalDate);
+        productionDate = Utils.toDaysNullable(productionDate);
+        expirationDate = Utils.toDaysNullable(expirationDate);
         var existing = IndexUtils.selectFirst(new Key(
                 material,
                 position,
@@ -192,11 +238,11 @@ public class Inventory {
                 qualityInspectionState,
                 bizState
         ));
-        long convertedQuantity = material.convertAmountToMainUnit(quantity, unit);
         if (existing != null) {
-            existing.increaseQuantity(convertedQuantity);
+            existing.increaseQuantity(quantity, unit, op);
             return existing;
         } else {
+            long convertedQuantity = material.convertAmountToMainUnit(quantity, unit);
             return new Inventory(
                     material,
                     position,
@@ -215,6 +261,14 @@ public class Inventory {
         }
     }
 
+    @EntityFlow("减少指定库存")
+    public static void decreaseInventory(Inventory inventory, long quantity, Unit unit, InventoryOp op) {
+        inventory.decreaseQuantity(quantity, unit, op);
+        if(inventory.quantity == 0)
+            ObjectUtils.delete(inventory);
+
+    }
+
     @EntityFlow("减少库存")
     public static void decreaseQuantity(
             Material material,
@@ -230,8 +284,11 @@ public class Inventory {
             @Nullable Date productionDate,
             @Nullable Date expirationDate,
             long quantity,
-            Unit unit
-    ) {
+            Unit unit,
+            InventoryOp op) {
+        arrivalDate = Utils.toDaysNullable(arrivalDate);
+        productionDate = Utils.toDaysNullable(productionDate);
+        expirationDate = Utils.toDaysNullable(expirationDate);
         var existing = IndexUtils.selectFirst(new Key(
                 material,
                 position,
@@ -247,10 +304,7 @@ public class Inventory {
                 bizState
         ));
         if (existing != null) {
-            long convertedQuantity = material.convertAmountToMainUnit(quantity, unit);
-            existing.decreaseQuantity(convertedQuantity);
-            if(existing.quantity == 0)
-                ObjectUtils.delete(existing);
+            decreaseInventory(existing, quantity, unit, op);
         } else {
             throw new IllegalArgumentException("库存不足");
         }

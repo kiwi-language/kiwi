@@ -116,6 +116,18 @@ public class InboundOrderItem {
         }
     }
 
+    @EntityFlow("冲销")
+    public void reverse(InboundReversalRequest request) {
+        reversalCount++;
+        for (InboundReversalRequestItem item : request.items()) {
+            var convertedAmount = material.convertAmount(item.amount(), item.unit(), unit);
+            if(actualQuantity < convertedAmount)
+                throw new IllegalArgumentException("冲销数量超出实收数量");
+            actualQuantity -= convertedAmount;
+            Inventory.decreaseInventory(item.inventory(), item.amount(), item.unit(), InventoryOp.INBOUND);
+        }
+    }
+
     private void inboundByAmount(ByAmountInboundRequest request) {
         actualInbound(request, request.getAmount(), request.getUnit(), null);
     }
@@ -167,7 +179,8 @@ public class InboundOrderItem {
                 request.productionDate(),
                 request.expirationDate(),
                 quantity,
-                unit
+                unit,
+                InventoryOp.INBOUND
         );
         actualQuantity += request.material().convertAmount(quantity, unit, this.unit);
     }

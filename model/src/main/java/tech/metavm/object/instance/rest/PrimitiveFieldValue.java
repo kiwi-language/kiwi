@@ -33,15 +33,15 @@ public class PrimitiveFieldValue extends FieldValue {
     }
 
     public static PrimitiveFieldValue createString(String value) {
-        return new PrimitiveFieldValue(null, PrimitiveKind.STRING.code(), value);
+        return new PrimitiveFieldValue(value, PrimitiveKind.STRING.code(), value);
     }
 
     public static PrimitiveFieldValue createLong(long value) {
-        return new PrimitiveFieldValue(null, PrimitiveKind.LONG.code(), value);
+        return new PrimitiveFieldValue(Long.toString(value), PrimitiveKind.LONG.code(), value);
     }
 
     public static PrimitiveFieldValue createDouble(double value) {
-        return new PrimitiveFieldValue(null, PrimitiveKind.DOUBLE.code(), value);
+        return new PrimitiveFieldValue(Double.toString(value), PrimitiveKind.DOUBLE.code(), value);
     }
 
     public static PrimitiveFieldValue createTime(long value) {

@@ -24,7 +24,7 @@ public class MethodGenerator {
     private final VariableTable variableTable = new VariableTable();
     private final TypeResolver typeResolver;
     private final ExpressionResolver expressionResolver;
-    private final Map<String, Integer> name2count = new HashMap<>();
+    private final Set<String> generatedNames = new HashSet<>();
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
     private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
@@ -497,9 +497,21 @@ public class MethodGenerator {
         return node;
     }
 
-    private String nextName(String prefix) {
-        int cnt = name2count.compute(prefix, (k, c) -> c == null ? 1 : c + 1);
-        return cnt > 1 ? prefix + "_" + (cnt - 1) : prefix;
+    private String nextName(String nameRoot) {
+        var pieces = nameRoot.split("_");
+        int n;
+        if(NncUtils.isDigits(pieces[pieces.length-1])) {
+            nameRoot = Arrays.stream(pieces).limit(pieces.length-1).collect(Collectors.joining("_"));
+            n = Integer.parseInt(pieces[pieces.length-1]);
+        } else {
+            n = 0;
+        }
+        var newName = nameRoot;
+        while (generatedNames.contains(newName)) {
+            newName = nameRoot + "_" + ++n;
+        }
+        generatedNames.add(newName);
+        return newName;
     }
 
     @SuppressWarnings("UnusedReturnValue")

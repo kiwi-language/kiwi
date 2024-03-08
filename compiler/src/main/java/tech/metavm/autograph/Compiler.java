@@ -97,6 +97,7 @@ public class Compiler {
     public void compile(List<String> sources) {
         var profiler = ContextUtil.getProfiler();
         try (var context = newContext(); var entry = profiler.enter("compile")) {
+            long start = System.currentTimeMillis();
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
             var psiClasses = NncUtils.flatMap(files, file -> List.of(file.getClasses()));
@@ -110,7 +111,8 @@ public class Compiler {
             }
             var generatedTypes = typeResolver.getGeneratedTypes();
             var generatedPFlows = typeResolver.getGeneratedParameterizedFlows();
-            LOGGER.info("Compilation done. {} types generated", generatedTypes.size());
+            long elapsed = System.currentTimeMillis() - start;
+            LOGGER.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, generatedPFlows, typeResolver);
             LOGGER.info("Deploy done");
         }
