@@ -13,10 +13,7 @@ import tech.metavm.util.NamingUtils;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @EntityType("字段对象映射")
 public class FieldsObjectMapping extends ObjectMapping {
@@ -213,9 +210,7 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public void setFieldMappings(List<FieldMapping> fields) {
         this.fieldMappings.resetChildren(fields);
-        Set<Field> aliveFields = NncUtils.mapUnique(fields, FieldMapping::getTargetField);
-        var deadFields = NncUtils.exclude(getTargetType().getFields(), aliveFields::contains);
-        deadFields.forEach(getTargetType()::removeField);
+        getTargetType().setFields(NncUtils.map(fields, FieldMapping::getTargetField));
     }
 
     @Nullable

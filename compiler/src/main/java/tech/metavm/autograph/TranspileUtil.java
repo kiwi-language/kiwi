@@ -726,7 +726,7 @@ public class TranspileUtil {
 
     public static String getBizClassName(PsiClass klass) {
         String bizName = (String) getEntityAnnotationAttr(klass, "value");
-        return bizName != null ? bizName : klass.getQualifiedName();
+        return bizName != null ? bizName : klass.getName();
     }
 
     public static boolean isStruct(PsiClass psiClass) {

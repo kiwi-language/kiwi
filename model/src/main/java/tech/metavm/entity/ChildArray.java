@@ -7,6 +7,7 @@ import tech.metavm.util.InternalException;
 import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,10 @@ public class ChildArray<T extends Entity> extends ReadonlyArray<T> {
                 addChild(create.apply(param, parentRef));
             }
         }
+    }
+
+    public void sort(Comparator<? super T> comparator) {
+        table.sort(comparator);
     }
 
 }

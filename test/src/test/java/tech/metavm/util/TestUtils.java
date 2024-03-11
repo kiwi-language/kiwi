@@ -77,6 +77,15 @@ public class TestUtils {
         }
     }
 
+    public static FieldValue getListElement(FieldValue value, int index) {
+        if(value instanceof ListFieldValue listFieldValue)
+            return listFieldValue.getElements().get(index);
+        else if(value instanceof InstanceFieldValue instanceFieldValue)
+            return ((ListInstanceParam) instanceFieldValue.getInstance().param()).elements().get(index);
+        else
+            throw new InternalException("Invalid value: " + value);
+    }
+
     public static <T> T readJSON(Class<T> klass, String json) {
         try {
             return OBJECT_MAPPER.readValue(json, klass);

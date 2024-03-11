@@ -2,14 +2,12 @@ package tech.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import tech.metavm.entity.*;
-import tech.metavm.entity.natives.RuntimeExceptionNative;
 import tech.metavm.expression.FlowParsingContext;
 import tech.metavm.flow.rest.NewObjectNodeParam;
 import tech.metavm.flow.rest.NodeDTO;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.ClassInstanceBuilder;
 import tech.metavm.object.type.ClassType;
-import tech.metavm.util.Instances;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
 
@@ -39,7 +37,7 @@ public class NewObjectNode extends CallNode implements NewNode {
             node.setParentRef(parentRef);
         } else
             node = new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), subFlow,
-                    arguments, prev, scope, parentRef, param.isEphemeral());
+                    arguments, prev, scope, parentRef, param.isEphemeral(), param.isUnbound());
         return node;
     }
 
@@ -51,13 +49,17 @@ public class NewObjectNode extends CallNode implements NewNode {
     @EntityField("是否临时")
     private boolean ephemeral;
 
+    @EntityField("是否未绑定")
+    private boolean unbound;
+
     public NewObjectNode(Long tmpId, String name, @Nullable String code, Flow subFlow,
                          List<Argument> arguments,
                          NodeRT prev, ScopeRT scope,
-                         @Nullable ParentRef parentRef, boolean ephemeral) {
+                         @Nullable ParentRef parentRef, boolean ephemeral, boolean unbound) {
         super(tmpId, name, code, prev, scope, subFlow, arguments);
         setParentRef(parentRef);
         this.ephemeral = ephemeral;
+        this.unbound = unbound;
     }
 
     @Override
@@ -68,7 +70,8 @@ public class NewObjectNode extends CallNode implements NewNode {
                     serContext.getRef(getSubFlow().getDeclaringType()),
                     NncUtils.map(arguments, Argument::toDTO),
                     NncUtils.get(parentRef, ParentRef::toDTO),
-                    ephemeral
+                    ephemeral,
+                    unbound
             );
         }
     }
@@ -82,7 +85,7 @@ public class NewObjectNode extends CallNode implements NewNode {
                 .ephemeral(ephemeral)
                 .parentRef(parentRef)
                 .build();
-        if (!instance.isEphemeral())
+        if (!instance.isEphemeral() && !unbound)
             frame.addInstance(instance);
         return instance;
     }

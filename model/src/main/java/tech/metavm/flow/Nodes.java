@@ -31,9 +31,9 @@ public class Nodes {
     }
 
     public static NewObjectNode newObject(String name, ClassType type, ScopeRT scope, Method constructor,
-                                          List<Argument> arguments, boolean ephemeral) {
+                                          List<Argument> arguments, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(null, name, null,
-                constructor, arguments, scope.getLastNode(), scope, null, ephemeral);
+                constructor, arguments, scope.getLastNode(), scope, null, ephemeral, unbound);
     }
 
     public static ReturnNode ret(String name, ScopeRT scope, @Nullable Value value) {

@@ -6,6 +6,7 @@ import tech.metavm.util.TypeReference;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -124,5 +125,10 @@ public class ReadWriteArray<T> extends ReadonlyArray<T> implements List<T> {
         clear();
         addAll(values);
     }
+
+    public void sort(Comparator<? super T> comparator) {
+        table.sort(comparator);
+    }
+
 
 }

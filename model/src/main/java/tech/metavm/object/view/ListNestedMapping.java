@@ -50,6 +50,7 @@ public class ListNestedMapping extends NestedMapping {
                 scope,
                 constructor,
                 List.of(),
+                false,
                 true
         );
         var setSourceFunc = NativeFunctions.setSource();
@@ -114,8 +115,11 @@ public class ListNestedMapping extends NestedMapping {
                             sourceType.getName() + "新建来源",
                             null,
                             falseBranch.getScope(),
-                            sourceReadWriteListType.getDefaultConstructor(),
+                            sourceType.isChildList() ?
+                                    sourceType.getDefaultConstructor() :
+                                    sourceReadWriteListType.getDefaultConstructor(),
                             List.of(),
+                            false,
                             true
                     );
                     branch2sourceNode.put(falseBranch, Values.node(source));

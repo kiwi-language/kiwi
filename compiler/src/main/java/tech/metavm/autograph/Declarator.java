@@ -1,6 +1,8 @@
 package tech.metavm.autograph;
 
 import com.intellij.psi.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tech.metavm.entity.EntityIndex;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
@@ -14,15 +16,14 @@ import tech.metavm.util.IdentitySet;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 import static tech.metavm.autograph.TranspileUtil.*;
 
 public class Declarator extends CodeGenVisitor {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(Declarator.class);
 
     private final TypeResolver typeResolver;
 
@@ -95,6 +96,18 @@ public class Declarator extends CodeGenVisitor {
         removedFields.forEach(metaClass::removeField);
         var removedMethods = NncUtils.filter(metaClass.getMethods(),
                 m -> !visitedMethods.contains(m) && !m.isSynthetic());
+        var fieldIndices = new HashMap<String, Integer>();
+        for (int i = 0; i < psiClass.getFields().length; i++) {
+            fieldIndices.put(psiClass.getFields()[i].getName(), i);
+        }
+        metaClass.sortFields(Comparator.comparingInt(f -> fieldIndices.get(f.getCode())));
+        var methodIndices = new HashMap<Method, Integer>();
+        for (int i = 0; i < psiClass.getMethods().length; i++) {
+            var method = psiClass.getMethods()[i].getUserData(Keys.Method);
+            if(method != null)
+                methodIndices.put(method, i);
+        }
+        metaClass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
         removedMethods.forEach(metaClass::removeMethod);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }

@@ -464,7 +464,7 @@ public class MethodGenerator {
                 (param, arg) -> new Argument(null, param, Values.expression(arg))
         );
         return setNodeExprTypes(new NewObjectNode(null, nextName(flow.getName()), null, flow, args,
-                scope().getLastNode(), scope(), null, ephemeral));
+                scope().getLastNode(), scope(), null, ephemeral, false));
     }
 
     ExpressionResolver getExpressionResolver() {

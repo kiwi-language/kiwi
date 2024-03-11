@@ -12,19 +12,27 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
 
     private final boolean ephemeral;
 
+    private final boolean unbound;
+
     public NewObjectNodeParam(RefDTO flowRef,
                               @Nullable RefDTO typeRef,
                               List<ArgumentDTO> arguments,
                               @Nullable ParentRefDTO parent,
-                              boolean ephemeral
+                              boolean ephemeral,
+                              boolean unbound
     ) {
         super(flowRef, typeRef, arguments);
         this.parent = parent;
         this.ephemeral = ephemeral;
+        this.unbound = unbound;
     }
 
     public boolean isEphemeral() {
         return ephemeral;
+    }
+
+    public boolean isUnbound() {
+        return unbound;
     }
 
     @Nullable
@@ -35,7 +43,7 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
     @Override
     public NewObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
         return new NewObjectNodeParam(
-                getFlowRef(), getTypeRef(), getArguments(), parentRef, ephemeral
+                getFlowRef(), getTypeRef(), getArguments(), parentRef, ephemeral, unbound
         );
     }
 

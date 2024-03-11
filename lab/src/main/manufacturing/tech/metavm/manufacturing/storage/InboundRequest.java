@@ -39,6 +39,20 @@ public abstract class InboundRequest {
     @EntityField("单位")
     private Unit unit;
 
+    public InboundRequest(InboundBizType bizType, Position position, Material material, @Nullable Batch batch, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, Unit unit) {
+        this.bizType = bizType;
+        this.position = position;
+        this.material = material;
+        this.batch = batch;
+        this.supplier = supplier;
+        this.supplierBatchNo = supplierBatchNo;
+        this.client = client;
+        this.arrivalDate = arrivalDate;
+        this.productionDate = productionDate;
+        this.expirationDate = expirationDate;
+        this.unit = unit;
+    }
+
     public InboundBizType bizType() {
         return bizType;
     }

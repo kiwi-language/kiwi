@@ -33,7 +33,8 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public void save(ChangeList<InstancePO> diff) {
-        try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.save")) {
+        try (var entry = ContextUtil.getProfiler().enter("InstanceStore.save")) {
+            entry.addMessage("numChanges", diff.inserts().size() + diff.updates().size() + diff.deletes().size());
             diff.apply(
                     instanceMapper::batchInsert,
                     instanceMapper::batchUpdate,
@@ -59,7 +60,8 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public void saveReferences(ChangeList<ReferencePO> refChanges) {
-        try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.saveReferences")) {
+        try (var entry = ContextUtil.getProfiler().enter("InstanceStore.saveReferences")) {
+            entry.addMessage("numChanges", refChanges.inserts().size() + refChanges.updates().size() + refChanges.deletes().size());
             refChanges.apply(
                     referenceMapper::batchInsert,
                     referenceMapper::batchUpdate,

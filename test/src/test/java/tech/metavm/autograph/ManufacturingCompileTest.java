@@ -4,8 +4,10 @@ import org.junit.Assert;
 import tech.metavm.flow.rest.FlowExecutionRequest;
 import tech.metavm.object.instance.core.DefaultViewId;
 import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.object.instance.rest.*;
 import tech.metavm.object.type.rest.dto.GetTypeRequest;
+import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.util.BusinessException;
 import tech.metavm.util.TestUtils;
 
@@ -20,6 +22,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
     public void test() {
         compileTwice(SOURCE_ROOT);
+//        compile(SOURCE_ROOT);
         submit(() -> {
             var roundingRuleType = getClassTypeByCode("tech.metavm.manufacturing.material.RoundingRule");
             var roundHalfUp = TestUtils.getEnumConstantByName(roundingRuleType, "四舍五入");
@@ -128,6 +131,19 @@ public class ManufacturingCompileTest extends CompilerTestBase {
             processInbound(storageObjects, material, unit);
 
             processTransfer(storageObjects, material, unit);
+
+            var routingObjects = processRouting();
+
+            processBOM(
+                    material,
+                    unit,
+                    routingObjects.routing,
+                    routingObjects.routingItem,
+                    getClassTypeByCode("tech.metavm.manufacturing.production.FeedingType"),
+                    getClassTypeByCode("tech.metavm.manufacturing.production.PickingMethod"),
+                    getClassTypeByCode("tech.metavm.manufacturing.GeneralState"),
+                    qualityInspectionStateType
+            );
         });
     }
 
@@ -440,7 +456,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // create an inventory
         var inventoryType = getClassTypeByCode("tech.metavm.manufacturing.storage.Inventory");
         var inventoryConstructorId = TestUtils.getMethodIdByCode(inventoryType, "Inventory");
-        var qualityInspectionStateType  = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
+        var qualityInspectionStateType = getClassTypeByCode("tech.metavm.manufacturing.material.QualityInspectionState");
         var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "合格");
         var InventoryBizStateType = getClassTypeByCode("tech.metavm.manufacturing.storage.InventoryBizState");
         var initialBizState = TestUtils.getEnumConstantByName(InventoryBizStateType, "初始");
@@ -540,6 +556,287 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         // assert that the transfer has taken place
         var reloadedInventory = instanceManager.get(inventory.id(), 1).instance();
         assertEquals(PrimitiveFieldValue.createLong(80L), reloadedInventory.getFieldValue(TestUtils.getFieldIdByCode(inventoryType, "quantity")));
+    }
+
+    private record RoutingObjects(
+            InstanceDTO routing,
+            InstanceDTO routingItem
+    ) {
+
+    }
+
+    private RoutingObjects processRouting() {
+        var routingType = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
+        var defaultMapping = TestUtils.getDefaultMapping(routingType);
+        var routingViewType = typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeRef().id(), false)).type();
+        var fromViewMethodId = TestUtils.getStaticMethodIdByCode(routingType, "fromView");
+        var routingItemType = getClassTypeByCode("tech.metavm.manufacturing.production.RoutingItem");
+        var routingItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(routingItemType).targetTypeRef().id(), false)).type();
+
+        var workCenterType = getClassTypeByCode("tech.metavm.manufacturing.production.WorkCenter");
+        var workCenterConstructorId = TestUtils.getMethodIdByCode(workCenterType, "WorkCenter");
+        var workCenter = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                workCenterConstructorId,
+                null,
+                List.of(
+//                        PrimitiveFieldValue.createString("workCenter1"),
+//                        PrimitiveFieldValue.createString("工作中心1")
+                )
+        )));
+
+        var processType = getClassTypeByCode("tech.metavm.manufacturing.production.Process");
+        var processConstructorId = TestUtils.getMethodIdByCode(processType, "Process");
+        var process = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                processConstructorId,
+                null,
+                List.of(
+                        PrimitiveFieldValue.createString("工序1")
+                )
+        )));
+
+        var routing = doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                fromViewMethodId,
+                null,
+                List.of(
+                        InstanceFieldValue.of(
+                                InstanceDTO.createClassInstance(
+                                        routingViewType.getRef(),
+                                        List.of(
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(routingViewType, "items"),
+                                                        new ListFieldValue(
+                                                                null,
+                                                                true,
+                                                                List.of(
+                                                                        // create a RoutingItem
+                                                                        InstanceFieldValue.of(
+                                                                                InstanceDTO.createClassInstance(
+                                                                                        routingItemViewType.getRef(),
+                                                                                        List.of(
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(routingItemViewType, "processCode"),
+                                                                                                        PrimitiveFieldValue.createString("process1")
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(routingItemViewType, "processDescription"),
+                                                                                                        PrimitiveFieldValue.createString("工序1")
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(routingItemViewType, "workCenter"),
+                                                                                                        ReferenceFieldValue.create(workCenter)
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(routingItemViewType, "sequence"),
+                                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(routingItemViewType, "process"),
+                                                                                                        ReferenceFieldValue.create(process)
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(routingItemViewType, "subItems"),
+                                                                                                        new ListFieldValue(
+                                                                                                                null,
+                                                                                                                true,
+                                                                                                                List.of()
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(routingViewType, "successions"),
+                                                        new ListFieldValue(
+                                                                null,
+                                                                true,
+                                                                List.of()
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )));
+
+        Assert.assertNotNull(routing.id());
+        // reload routing
+        var id = Id.parse(routing.id()).getPhysicalId();
+        var reloadedRoutingView = instanceManager.getDefaultView(PhysicalId.of(id).toString());
+        var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.instance().id());
+        Assert.assertEquals(viewId.getSourceId(), Id.parse(routing.id()));
+
+        var routingItem = ((InstanceFieldValue) TestUtils.getListElement(routing.getFieldValue(TestUtils.getFieldIdByCode(routingType, "items")), 0)).getInstance();
+        return new RoutingObjects(routing, routingItem);
+    }
+
+    private void processBOM(InstanceDTO material, InstanceDTO unit, InstanceDTO routing, InstanceDTO routingItem,
+                            TypeDTO feedingTypeType, TypeDTO pickingMethodType, TypeDTO generalStateType, TypeDTO qualityInspectionStateType) {
+        var bomType = getClassTypeByCode("tech.metavm.manufacturing.production.BOM");
+        var bomDefaultMapping = TestUtils.getDefaultMapping(bomType);
+        var bomViewType = typeManager.getType(new GetTypeRequest(bomDefaultMapping.targetTypeRef().id(), false)).type();
+
+        var bomItemType = getClassTypeByCode("tech.metavm.manufacturing.production.BOMItem");
+        var bomItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(bomItemType).targetTypeRef().id(), false)).type();
+
+        var bomSubItemType = getClassTypeByCode("tech.metavm.manufacturing.production.BOMSubItem");
+        var bomSubItemViewType = typeManager.getType(new GetTypeRequest(TestUtils.getDefaultMapping(bomSubItemType).targetTypeRef().id(), false)).type();
+
+        var directFeedingType = TestUtils.getEnumConstantByName(feedingTypeType, "直接投料");
+        var onDemandPickingMethod = TestUtils.getEnumConstantByName(pickingMethodType, "按需领料");
+
+        var enabledGeneralState = TestUtils.getEnumConstantByName(generalStateType, "启用中");
+        var qualifiedInspectionState = TestUtils.getEnumConstantByName(qualityInspectionStateType, "合格");
+
+        var bomView = doInTransaction(() -> instanceManager.create(
+                InstanceDTO.createClassInstance(
+                        null,
+                        bomViewType.getRef(),
+                        bomDefaultMapping.id(),
+                        List.of(
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "material"),
+                                        ReferenceFieldValue.create(material)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "unit"),
+                                        ReferenceFieldValue.create(unit)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "routing"),
+                                        ReferenceFieldValue.create(routing)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "routingItem"),
+                                        ReferenceFieldValue.create(routingItem)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "state"),
+                                        ReferenceFieldValue.create(enabledGeneralState)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "inbound"),
+                                        PrimitiveFieldValue.createBoolean(true)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "automaticInBound"),
+                                        PrimitiveFieldValue.createBoolean(true)
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "items"),
+                                        new ListFieldValue(
+                                                null,
+                                                true,
+                                                List.of(
+                                                        // create a BOMItem
+                                                        InstanceFieldValue.of(
+                                                                InstanceDTO.createClassInstance(
+                                                                        bomItemViewType.getRef(),
+                                                                        List.of(
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "sequence"),
+                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "material"),
+                                                                                        ReferenceFieldValue.create(material)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "numerator"),
+                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "denominator"),
+                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "attritionRate"),
+                                                                                        PrimitiveFieldValue.createDouble(0.0)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "version"),
+                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "pickingMethod"),
+                                                                                        ReferenceFieldValue.create(onDemandPickingMethod)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "routingSpecified"),
+                                                                                        PrimitiveFieldValue.createBoolean(false)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "routingItem"),
+                                                                                        ReferenceFieldValue.create(routingItem)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "qualityInspectionState"),
+                                                                                        ReferenceFieldValue.create(qualifiedInspectionState)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "feedingType"),
+                                                                                        ReferenceFieldValue.create(directFeedingType)
+                                                                                ),
+                                                                                InstanceFieldDTO.create(
+                                                                                        TestUtils.getFieldIdByCode(bomItemViewType, "subItems"),
+                                                                                        new ListFieldValue(
+                                                                                                null,
+                                                                                                true,
+                                                                                                List.of(
+                                                                                                        // create a BOMSubItem
+                                                                                                        InstanceFieldValue.of(
+                                                                                                                InstanceDTO.createClassInstance(
+                                                                                                                        bomSubItemViewType.getRef(),
+                                                                                                                        List.of(
+                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                        TestUtils.getFieldIdByCode(bomSubItemViewType, "sequence"),
+                                                                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                                                                ),
+                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                        TestUtils.getFieldIdByCode(bomSubItemViewType, "numerator"),
+                                                                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                                                                ),
+                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                        TestUtils.getFieldIdByCode(bomSubItemViewType, "denominator"),
+                                                                                                                                        PrimitiveFieldValue.createLong(1L)
+                                                                                                                                ),
+                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                        TestUtils.getFieldIdByCode(bomSubItemViewType, "routingItem"),
+                                                                                                                                        ReferenceFieldValue.create(routingItem)
+                                                                                                                                ),
+                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                        TestUtils.getFieldIdByCode(bomSubItemViewType, "qualityInspectionState"),
+                                                                                                                                        ReferenceFieldValue.create(qualifiedInspectionState)
+                                                                                                                                ),
+                                                                                                                                InstanceFieldDTO.create(
+                                                                                                                                        TestUtils.getFieldIdByCode(bomSubItemViewType, "feedingType"),
+                                                                                                                                        ReferenceFieldValue.create(directFeedingType)
+                                                                                                                                )
+                                                                                                                        )
+                                                                                                                )
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                ),
+                                InstanceFieldDTO.create(
+                                        TestUtils.getFieldIdByCode(bomViewType, "multiOutputMaterials"),
+                                        new ListFieldValue(
+                                                null,
+                                                true,
+                                                List.of()
+                                        )
+                                )
+                        )
+                )
+        ));
     }
 
 }

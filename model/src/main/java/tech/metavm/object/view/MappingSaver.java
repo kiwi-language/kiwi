@@ -5,10 +5,7 @@ import tech.metavm.entity.EntityRepository;
 import tech.metavm.entity.IEntityContext;
 import tech.metavm.entity.StandardTypes;
 import tech.metavm.expression.TypeParsingContext;
-import tech.metavm.flow.Flow;
-import tech.metavm.flow.Method;
-import tech.metavm.flow.ParameterizedFlowProvider;
-import tech.metavm.flow.ValueFactory;
+import tech.metavm.flow.*;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.InstanceProvider;
 import tech.metavm.object.type.*;
@@ -22,8 +19,10 @@ import tech.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class MappingSaver {
 
@@ -41,7 +40,7 @@ public class MappingSaver {
                 context.getGenericContext(),
                 context,
                 context
-                );
+        );
     }
 
     // TODO MOVE TO NamingUtils
@@ -235,6 +234,8 @@ public class MappingSaver {
             mapping.generateDeclarations(compositeTypeFacade);
         }
         retransformClassType(type);
+        if(type.isStruct())
+            saveFromViewMethod(type, mapping, false);
         if (generateCode) {
             var directFieldMappings = NncUtils.toMap(
                     NncUtils.filterByType(mapping.getFieldMappings(), DirectFieldMapping.class),
@@ -255,8 +256,62 @@ public class MappingSaver {
             mapping.generateCode(compositeTypeFacade);
             retransformClassType(mapping.getTargetType().getEffectiveTemplate());
             retransformClassType(type);
+            if (type.isStruct())
+                saveFromViewMethod(type, mapping, true);
         }
         return mapping;
+    }
+
+    private void saveFromViewMethod(ClassType type, FieldsObjectMapping mapping, boolean generateCode) {
+        var viewType = mapping.getTargetType();
+        var canonicalConstructor = type.getCanonicalConstructor();
+        var fromView = type.findMethodByCodeAndParamTypes("fromView", List.of(viewType));
+        if (fromView == null) {
+            fromView = MethodBuilder.newBuilder(type, "fromView", "fromView", compositeTypeFacade)
+                    .parameters(new Parameter(null, "view", "view", viewType))
+                    .returnType(type)
+                    .isStatic(true)
+                    .build();
+        }
+        if(generateCode) {
+            fromView.clearNodes();
+            var scope = fromView.getRootScope();
+            var inputNode = Nodes.input(fromView);
+            var view = Nodes.value("view", Values.nodeProperty(inputNode, inputNode.getType().getFieldByCode("view")), scope);
+
+            var fieldValues = new HashMap<String, Supplier<Value>>();
+            for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
+                var nestedMapping = fieldMapping.nestedMapping();
+                if (nestedMapping == null)
+                    fieldValues.put(fieldMapping.getTargetField().getCode(), () -> Values.nodeProperty(view, fieldMapping.getTargetField()));
+                else {
+                    var fieldValue = nestedMapping.generateUnmappingCode(
+                            () -> Values.nodeProperty(view, fieldMapping.getTargetField()),
+                            scope
+                    );
+                    fieldValues.put(fieldMapping.getTargetField().getCode(), fieldValue);
+                }
+            }
+
+            var newNode = Nodes.newObject(
+                    "newObject",
+                    type,
+                    fromView.getRootScope(),
+                    canonicalConstructor,
+                    NncUtils.biMap(
+                            viewType.getAllFields(),
+                            canonicalConstructor.getParameters(),
+                            (f, p) -> new Argument(
+                                    null,
+                                    p,
+                                    fieldValues.get(p.getCode()).get()
+                            )
+                    ),
+                    false,
+                    false
+            );
+            Nodes.ret("return", scope, Values.node(newNode));
+        }
     }
 
     private DirectFieldMapping saveBuiltinDirectFieldMapping(Field field,
@@ -293,6 +348,7 @@ public class MappingSaver {
             var template = ClassTypeBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .isTemplate(true)
                     .ephemeral(true)
+                    .struct(true)
                     .anonymous(true)
                     .typeParameters(NncUtils.map(
                             sourceType.getTypeParameters(),
@@ -311,6 +367,7 @@ public class MappingSaver {
             return ClassTypeBuilder.newBuilder(viewTypeName, viewTypeCode)
                     .ephemeral(true)
                     .anonymous(true)
+                    .struct(true)
                     .build();
         }
     }
@@ -383,7 +440,8 @@ public class MappingSaver {
                                 List.of(elementNestedMapping.getTargetType()),
                                 compositeTypeFacade,
                                 new MockDTOProvider()
-                        ));;
+                        ));
+                        ;
                         yield new ListNestedMapping(classType, targetType,
                                 parameterizedTypeProvider.getParameterizedType(
                                         StandardTypes.getReadWriteListType(),
@@ -495,11 +553,17 @@ public class MappingSaver {
     private static @Nullable Accessor getAccessor(Method getter) {
         if (!getter.isSynthetic() && getter.isPublic() && getter.getCode() != null
                 && !getter.getReturnType().isVoid() && getter.getParameters().isEmpty()) {
+            var code2field = getter.getDeclaringType().getAllFields().stream()
+                    .filter(f -> f.getCode() != null)
+                    .collect(Collectors.toMap(Field::getCode, Function.identity()));
+            var field = code2field.get(getter.getCode());
+            if (field != null)
+                return new Accessor(getter, null, field, field.getName(), field.getCode());
             var matcher = GETTER_CODE_PATTERN.matcher(getter.getCode());
             if (matcher.matches()) {
                 return getAccessor0(matcher, getter, "get");
             }
-            if(getter.getReturnType().isBoolean()) {
+            if (getter.getReturnType().isBoolean()) {
                 matcher = BOOL_GETTER_CODE_PATTERN.matcher(getter.getCode());
                 if (matcher.matches()) {
                     return getAccessor0(matcher, getter, "is");

@@ -30,12 +30,16 @@ public record InstanceDTO(
     }
 
     public static InstanceDTO createClassInstance(@Nullable String id, RefDTO typeRef, List<InstanceFieldDTO> fields) {
+        return createClassInstance(id, typeRef, null, fields);
+    }
+
+    public static InstanceDTO createClassInstance(@Nullable String id, RefDTO typeRef, Long sourceMappingId, List<InstanceFieldDTO> fields) {
         return new InstanceDTO(
                 id,
                 typeRef,
                 null,
                 null,
-                null,
+                sourceMappingId,
                 new ClassInstanceParam(fields)
         );
     }

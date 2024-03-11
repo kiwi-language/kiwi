@@ -162,6 +162,10 @@ public abstract class FieldMapping extends Element {
         return nestedMapping instanceof ObjectNestedMapping classCodeGenerator ? classCodeGenerator.getMapping() : null;
     }
 
+    public NestedMapping nestedMapping() {
+        return nestedMapping;
+    }
+
     public boolean isValidLocalKey() {
         return getCode() != null;
     }

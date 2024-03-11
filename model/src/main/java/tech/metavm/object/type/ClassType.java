@@ -365,6 +365,10 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         return getMethodByCodeAndParamTypes(Types.getConstructorCode(this), List.of());
     }
 
+    public void sortFields(Comparator<Field> comparator) {
+        this.fields.sort(comparator);
+    }
+
     public List<Field> getSortedFields() {
         if (sortedFields == null) {
             synchronized (this) {
@@ -1448,6 +1452,14 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
             MappingSaver.create(context).saveBuiltinMapping(this, true);
     }
 
+    public Method getCanonicalConstructor() {
+        var paramTypes = NncUtils.map(getAllFields(), Field::getType);
+        return NncUtils.findRequired(
+                getMethods(),
+                m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes)
+        );
+    }
+
     public boolean shouldGenerateBuiltinMapping() {
         return isClass() && !isAnonymous();
     }
@@ -1532,5 +1544,8 @@ public class ClassType extends Type implements GenericDeclaration, ChangeAware, 
         isAbstract = anAbstract;
     }
 
+    public void sortMethods(Comparator<Method> comparator) {
+        methods.sort(comparator);
+    }
 }
 
