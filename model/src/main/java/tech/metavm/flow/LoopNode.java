@@ -82,7 +82,8 @@ public abstract class LoopNode extends ScopeNode {
     @Override
     public final NodeExecResult execute(MetaFrame frame) {
         ClassInstance loopObject = (ClassInstance) frame.getOutput(this);
-        if (loopObject == null) {
+        if (!frame.isLooping(this)) {
+            frame.enterLoop(this);
             loopObject = initLoopObject(frame);
             frame.setOutput(this, loopObject);
         } else {
@@ -90,6 +91,7 @@ public abstract class LoopNode extends ScopeNode {
         }
         var extraCondValue = (BooleanInstance) condition.evaluate(frame);
         if (!extraCondValue.getValue() || !checkExtraCondition(loopObject, frame)) {
+            frame.exitLoop(this);
             return next(loopObject);
         }
         if (bodyScope.isEmpty()) {

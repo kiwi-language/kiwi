@@ -173,7 +173,7 @@ public class BranchNode extends NodeRT {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var exitBranch = frame.getExitBranch(this);
+        var exitBranch = frame.removeExitBranch(this);
         for (Branch branch : branches) {
             if (exitBranch != null) {
                 if (branch == exitBranch) {

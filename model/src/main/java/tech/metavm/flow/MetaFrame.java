@@ -21,6 +21,7 @@ public class MetaFrame implements EvaluationContext, Frame {
     @Nullable
     private final ClassType owner;
     private final Map<NodeRT, Instance> outputs = new HashMap<>();
+    private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private final InstanceRepository instanceRepository;
@@ -50,6 +51,18 @@ public class MetaFrame implements EvaluationContext, Frame {
 
     public void setOutput(NodeRT node, Instance output) {
         this.outputs.put(node, output);
+    }
+
+    public boolean isLooping(LoopNode loopNode) {
+        return loopingNodes.contains(loopNode);
+    }
+
+    public void enterLoop(LoopNode loopNode) {
+        loopingNodes.add(loopNode);
+    }
+
+    public void exitLoop(LoopNode loopNode) {
+        loopingNodes.remove(loopNode);
     }
 
     public Instance addInstance(DurableInstance instance) {
@@ -210,8 +223,8 @@ public class MetaFrame implements EvaluationContext, Frame {
         exitBranches.put(branchNode, branch);
     }
 
-    public @Nullable Branch getExitBranch(BranchNode branchNode) {
-        return exitBranches.get(branchNode);
+    public @Nullable Branch removeExitBranch(BranchNode branchNode) {
+        return exitBranches.remove(branchNode);
     }
 
     public FrameState getState() {

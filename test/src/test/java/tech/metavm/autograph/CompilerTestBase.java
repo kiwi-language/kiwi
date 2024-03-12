@@ -99,8 +99,17 @@ public abstract class CompilerTestBase extends TestCase  {
 
     @Override
     protected void tearDown() throws Exception {
-        typeClient = null;
         executor.close();
+        typeClient = null;
+        executor = null;
+        typeManager = null;
+        instanceManager = null;
+        allocatorStore = null;
+        flowExecutionService = null;
+        flowManager = null;
+        applicationManager = null;
+        loginService = null;
+        platformUserManager = null;
         StandardTypes.setHolder(new GlobalStandardTypesHolder());
         NativeFunctions.setHolder(new GlobalNativeFunctionsHolder());
         ModelDefRegistry.setHolder(new GlobalDefContextHolder());

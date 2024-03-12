@@ -132,7 +132,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
             processTransfer(storageObjects, material, unit);
 
-            var routingObjects = processRouting();
+            var routingObjects = processRouting(material, unit);
 
             processBOM(
                     material,
@@ -413,6 +413,122 @@ public class ManufacturingCompileTest extends CompilerTestBase {
         var reloadedInboundOrderItem = instanceManager.get(inboundOrderItem.id(), 1).instance();
         var actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
         Assert.assertEquals(100L, ((PrimitiveFieldValue) actualQuantity).getValue());
+
+        // inbound by spec
+
+        // get the ByAmountInboundRequest type
+        var bySpecInboundRequestType = getClassTypeByCode("tech.metavm.manufacturing.storage.BySpecInboundRequest");
+        var bySpecInboundRequestItemType = getClassTypeByCode("tech.metavm.manufacturing.storage.BySpecInboundRequestItem");
+        // assert that the ByAmountInboundRequest type is a struct
+        Assert.assertTrue(byAmountInboundRequestType.getClassParam().struct());
+
+        // invoke InboundOrderItem.inbound with the inboundRequest object
+        doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
+                inboundId,
+                inboundOrderItem.id(),
+                List.of(
+                        InstanceFieldValue.of(
+                                InstanceDTO.createClassInstance(
+                                        bySpecInboundRequestType.getRef(),
+                                        List.of(
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "bizType"),
+                                                        ReferenceFieldValue.create(purchase)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "position"),
+                                                        ReferenceFieldValue.create(storageObjects.position)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "material"),
+                                                        ReferenceFieldValue.create(material)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "batch"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // supplier
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplier"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // supplier batch no
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "supplierBatchNo"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // client
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "client"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // arrival date
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "arrivalDate"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // production date
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "productionDate"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                // expiration date
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "expirationDate"),
+                                                        PrimitiveFieldValue.createNull()
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(inboundRequestType, "unit"),
+                                                        ReferenceFieldValue.create(unit)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestType, "bySpecItems"),
+                                                        new ListFieldValue(
+                                                                null,
+                                                                true,
+                                                                List.of(
+                                                                        InstanceFieldValue.of(
+                                                                                InstanceDTO.createClassInstance(
+                                                                                        bySpecInboundRequestItemType.getRef(),
+                                                                                        List.of(
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "qrCodeAmount"),
+                                                                                                        PrimitiveFieldValue.createLong(2)
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "inboundAmount"),
+                                                                                                        PrimitiveFieldValue.createLong(10)
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        ),
+                                                                        InstanceFieldValue.of(
+                                                                                InstanceDTO.createClassInstance(
+                                                                                        bySpecInboundRequestItemType.getRef(),
+                                                                                        List.of(
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "qrCodeAmount"),
+                                                                                                        PrimitiveFieldValue.createLong(3)
+                                                                                                ),
+                                                                                                InstanceFieldDTO.create(
+                                                                                                        TestUtils.getFieldIdByCode(bySpecInboundRequestItemType, "inboundAmount"),
+                                                                                                        PrimitiveFieldValue.createLong(5)
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )));
+
+        reloadedInboundOrderItem = instanceManager.get(inboundOrderItem.id(), 1).instance();
+        actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
+        Assert.assertEquals(135L, ((PrimitiveFieldValue) actualQuantity).getValue());
     }
 
 
@@ -565,7 +681,7 @@ public class ManufacturingCompileTest extends CompilerTestBase {
 
     }
 
-    private RoutingObjects processRouting() {
+    private RoutingObjects processRouting(InstanceDTO material, InstanceDTO unit) {
         var routingType = getClassTypeByCode("tech.metavm.manufacturing.production.Routing");
         var defaultMapping = TestUtils.getDefaultMapping(routingType);
         var routingViewType = typeManager.getType(new GetTypeRequest(defaultMapping.targetTypeRef().id(), false)).type();
@@ -602,6 +718,18 @@ public class ManufacturingCompileTest extends CompilerTestBase {
                                 InstanceDTO.createClassInstance(
                                         routingViewType.getRef(),
                                         List.of(
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(routingViewType, "name"),
+                                                        PrimitiveFieldValue.createString("routing001")
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(routingViewType, "material"),
+                                                        ReferenceFieldValue.create(material)
+                                                ),
+                                                InstanceFieldDTO.create(
+                                                        TestUtils.getFieldIdByCode(routingViewType, "unit"),
+                                                        ReferenceFieldValue.create(unit)
+                                                ),
                                                 InstanceFieldDTO.create(
                                                         TestUtils.getFieldIdByCode(routingViewType, "items"),
                                                         new ListFieldValue(

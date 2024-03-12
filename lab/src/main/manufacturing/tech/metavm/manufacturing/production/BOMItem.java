@@ -6,6 +6,9 @@ import tech.metavm.entity.EntityStruct;
 import tech.metavm.manufacturing.material.Material;
 import tech.metavm.manufacturing.material.QualityInspectionState;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @EntityStruct("BOMItem")
 public class BOMItem {
 
@@ -34,7 +37,7 @@ public class BOMItem {
     @ChildEntity("subItems")
     private final ChildList<BOMSubItem> subItems;
 
-    public BOMItem(int sequence, Material material, long numerator, long denominator, double attritionRate, long version, PickingMethod pickingMethod, boolean routingSpecified, RoutingItem routingItem, QualityInspectionState qualityInspectionState, FeedingType feedingType, ChildList<BOMSubItem> subItems) {
+    public BOMItem(int sequence, Material material, long numerator, long denominator, double attritionRate, long version, PickingMethod pickingMethod, boolean routingSpecified, RoutingItem routingItem, QualityInspectionState qualityInspectionState, FeedingType feedingType, List<BOMSubItem> subItems) {
         this.sequence = sequence;
         this.material = material;
         this.numerator = numerator;
@@ -46,7 +49,7 @@ public class BOMItem {
         this.routingItem = routingItem;
         this.qualityInspectionState = qualityInspectionState;
         this.feedingType = feedingType;
-        this.subItems = subItems;
+        this.subItems = new ChildList<>(subItems);
     }
 
     public int getSequence() {
@@ -137,7 +140,13 @@ public class BOMItem {
         this.feedingType = feedingType;
     }
 
-    public ChildList<BOMSubItem> getSubItems() {
-        return subItems;
+    public List<BOMSubItem> getSubItems() {
+        return new ArrayList<>(subItems);
     }
+
+    public void setSubItems(List<BOMSubItem> subItems) {
+        this.subItems.clear();
+        this.subItems.addAll(subItems);
+    }
+
 }

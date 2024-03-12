@@ -24,6 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+
 public class MappingSaver {
 
     public static MappingSaver create(IEntityContext context) {
@@ -128,7 +130,7 @@ public class MappingSaver {
         if (fieldMapping == null) {
             return switch (fieldMappingDTO.param()) {
                 case DirectFieldMappingParam directParam -> {
-                    var sourceField = sourceType.getField(Objects.requireNonNull(fieldMappingDTO.sourceFieldRef()));
+                    var sourceField = sourceType.getField(requireNonNull(fieldMappingDTO.sourceFieldRef()));
                     yield new DirectFieldMapping(
                             fieldMappingDTO.tmpId(),
                             createTargetField(
@@ -191,7 +193,7 @@ public class MappingSaver {
             var param = fieldMappingDTO.param();
             switch (fieldMapping) {
                 case DirectFieldMapping directFieldMapping -> directFieldMapping.update(
-                        sourceType.getField(Objects.requireNonNull(fieldMappingDTO.sourceFieldRef())),
+                        sourceType.getField(requireNonNull(fieldMappingDTO.sourceFieldRef())),
                         fieldMappingDTO.readonly(), compositeTypeFacade);
                 case FlowFieldMapping flowFieldMapping -> {
                     var flowParam = (FlowFieldMappingParam) param;
@@ -264,7 +266,7 @@ public class MappingSaver {
 
     private void saveFromViewMethod(ClassType type, FieldsObjectMapping mapping, boolean generateCode) {
         var viewType = mapping.getTargetType();
-        var canonicalConstructor = type.getCanonicalConstructor();
+        var canonicalConstructor = getFromViewConstructor(type);
         var fromView = type.findMethodByCodeAndParamTypes("fromView", List.of(viewType));
         if (fromView == null) {
             fromView = MethodBuilder.newBuilder(type, "fromView", "fromView", compositeTypeFacade)
@@ -313,6 +315,34 @@ public class MappingSaver {
             Nodes.ret("return", scope, Values.node(newNode));
         }
     }
+
+    private Method getFromViewConstructor(ClassType type) {
+        var fields = NncUtils.merge(
+                NncUtils.map(getVisibleFields(type), f -> new NameAndType(f.getCodeRequired(), f.getType())),
+                NncUtils.map(getAccessors(type), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
+        );
+        var fieldTypes = NncUtils.toMap(fields, f -> f.name, f -> f.type);
+        return NncUtils.findRequired(
+                type.getMethods(),
+                m -> m.isConstructor() && isFromViewConstructor(m, fieldTypes)
+        );
+    }
+
+    private boolean isFromViewConstructor(Method constructor, Map<String, Type> fieldTypes) {
+        if(constructor.getParameters().size() == fieldTypes.size()) {
+            return NncUtils.allMatch(
+                    constructor.getParameters(),
+                    p -> Objects.equals(p.getType(), fieldTypes.get(p.getName()))
+            );
+        }
+        else
+            return false;
+    }
+
+    private record NameAndType(
+            String name,
+            Type type
+    ) {}
 
     private DirectFieldMapping saveBuiltinDirectFieldMapping(Field field,
                                                              FieldsObjectMapping containingMapping,
@@ -389,7 +419,7 @@ public class MappingSaver {
     private Field createTargetField(ClassType targetType, String name, String code, Type type,
                                     boolean isChild, boolean asTitle, boolean readonly) {
         if (targetType.getTemplate() != null) {
-            var template = Objects.requireNonNull(targetType.getTemplate());
+            var template = requireNonNull(targetType.getTemplate());
             var typeSubst = new TypeSubstitutor(
                     targetType.getTypeArguments(),
                     template.getTypeParameters(),
