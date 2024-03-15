@@ -15,15 +15,15 @@ public class EntityContextFactoryBean {
         return entityContextFactory.newContext();
     }
 
-    public IEntityContext newContext(Id appId) {
+    public IEntityContext newContext(long appId) {
         return entityContextFactory.newContext(appId);
     }
 
     public IEntityContext newPlatformContext() {
-        return newContext(Constants.getPlatformAppId());
+        return newContext(Constants.PLATFORM_APP_ID);
     }
 
-    public IEntityContext newContext(Id appId, IdInitializer idProvider) {
+    public IEntityContext newContext(long appId, IdInitializer idProvider) {
         return entityContextFactory.newContext(appId, idProvider);
     }
 

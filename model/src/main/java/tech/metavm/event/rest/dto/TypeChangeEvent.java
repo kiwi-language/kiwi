@@ -12,7 +12,7 @@ public class TypeChangeEvent extends AppEvent {
     @Nullable
     private final String triggerClientId;
 
-    public TypeChangeEvent(String appId, long version, List<String> typeIds, @Nullable String triggerClientId) {
+    public TypeChangeEvent(long appId, long version, List<String> typeIds, @Nullable String triggerClientId) {
         super(appId, AppEventKind.TYPE_CHANGE.code());
         this.version = version;
         this.typeIds = typeIds;

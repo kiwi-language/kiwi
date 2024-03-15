@@ -52,7 +52,7 @@ public class TypeManagerTest extends TestCase {
         flowManager = new FlowManager(entityContextFactory);
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
-        ContextUtil.setAppId(TestConstants.getAppId());
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testLoadByPaths() {
-        ContextUtil.setAppId(Constants.getRootAppId());
+        ContextUtil.setAppId(Constants.ROOT_APP_ID);
         var fooType = ModelDefRegistry.getClassType(Foo.class);
         var stringType = StandardTypes.getStringType();
         String path1 = "傻.巴.编号";

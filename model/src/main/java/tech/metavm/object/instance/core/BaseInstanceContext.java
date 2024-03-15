@@ -29,7 +29,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     public static final Logger LOGGER = LoggerFactory.getLogger(BaseInstanceContext.class);
 
-    protected final Id appId;
+    protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Id, DurableInstance> instanceMap = new HashMap<>();
     private final Set<Id> creatingIds = new HashSet<>();
@@ -56,7 +56,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final ParameterizedFlowProvider parameterizedFlowProvider;
     private int seq;
 
-    public BaseInstanceContext(Id appId,
+    public BaseInstanceContext(long appId,
                                IInstanceContext parent,
                                boolean readonly,
                                IndexSource indexSource,
@@ -476,7 +476,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public Id getAppId() {
+    public long getAppId() {
         return appId;
     }
 

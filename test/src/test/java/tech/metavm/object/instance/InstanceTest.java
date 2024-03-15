@@ -29,7 +29,7 @@ public class InstanceTest extends TestCase {
 
     @Override
     protected void setUp() {
-        ContextUtil.setAppId(Constants.getAppId(APP_ID));
+        ContextUtil.setAppId(APP_ID);
         MockStandardTypesInitializer.init();
     }
 

@@ -39,7 +39,7 @@ public final class PhysicalId extends Id {
     @Override
     public void write(InstanceOutput output) {
         output.write(TAG);
-        output.writeLong(id);
+        output.writeId(this);
     }
 
     public long getId() {

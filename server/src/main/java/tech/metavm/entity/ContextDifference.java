@@ -115,7 +115,7 @@ public class ContextDifference {
                 typeId.tag().code(),
                 typeId.id(),
                 subTree.data(),
-                subTree.parentId().getPhysicalId(),
+                NncUtils.getOrElse(subTree.parentId(), Id::getPhysicalId, -1L),
                 subTree.parentFieldId(),
                 rootId.getPhysicalId(),
                 id == rootId ? tree.version() : 0L,

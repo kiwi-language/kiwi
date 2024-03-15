@@ -38,7 +38,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public Entity(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
-        this.id = TmpId.of(tmpId);
+        this.id = tmpId != null ? TmpId.of(tmpId) : null;
         this.ephemeralEntity = ephemeral;
         if (parentRef != null) {
             if (parentRef.parent() instanceof ReadonlyArray<?> array) {
@@ -315,6 +315,6 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     public void setTmpId(Long tmpId) {
-        initId(TmpId.of(tmpId));
+        initId(tmpId != null ? TmpId.of(tmpId) : null);
     }
 }

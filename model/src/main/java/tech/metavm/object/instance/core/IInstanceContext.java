@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 
 public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository {
 
-    IInstanceContext createSame(Id appId);
+    IInstanceContext createSame(long appId);
 
     void setLockMode(LockMode mode);
 
@@ -84,7 +84,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void initIds();
 
-    Id getAppId();
+    long getAppId();
 
     Type getType(Id id);
 

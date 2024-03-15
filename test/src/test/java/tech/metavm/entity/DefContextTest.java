@@ -34,7 +34,7 @@ public class DefContextTest extends TestCase {
     protected void setUp() {
         idProvider = new MockIdProvider();
         var bridge = new EntityInstanceContextBridge();
-        var instanceContext = InstanceContextBuilder.newBuilder(Constants.getRootAppId(),
+        var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
                         new MemInstanceStore(), new DefaultIdInitializer(idProvider), bridge, bridge, bridge)
                 .readonly(false)
                 .build();
@@ -106,7 +106,7 @@ public class DefContextTest extends TestCase {
                 Map.of(quxAmountField, Instances.longInstance(100L)),
                 quxType
         );
-        qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.getAppId(), quxType), quxType));
+        qux.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, quxType), quxType));
         ConstantExpression model = new ConstantExpression(qux);
         Instance instance = def.createInstance(model, objectInstanceMap, null);
         ConstantExpression recoveredModel = def.createModelHelper(instance, objectInstanceMap);

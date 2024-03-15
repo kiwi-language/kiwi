@@ -23,7 +23,7 @@ public class PlatformUsers {
                     )
             );
         }
-        try (var context = platformContext.createSame(app.getId())) {
+        try (var context = platformContext.createSame(app.getPhysicalId())) {
             for (PlatformUser platformUser : platformUsers) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user != null) {

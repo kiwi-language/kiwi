@@ -39,7 +39,7 @@ public class InstanceQueryService {
         Set<Id> typeIds = (type instanceof ClassType classType) ? classType.getSubTypeIds() :
                 Set.of(query.type().getId());
         return new SearchQuery(
-                ContextUtil.getAppId().getPhysicalId(),
+                ContextUtil.getAppId(),
                 typeIds,
                 expression,
                 query.includeBuiltin(),

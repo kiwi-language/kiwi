@@ -44,23 +44,23 @@ public class EntityContextFactory {
     }
 
 
-    public IEntityContext newContext(Id appId, IdInitializer idProvider) {
+    public IEntityContext newContext(long appId, IdInitializer idProvider) {
         return newContext(appId, defContext, idProvider);
     }
 
-    public IEntityContext newContext(Id appId) {
+    public IEntityContext newContext(long appId) {
         return newContext(appId, defContext);
     }
 
-    public IEntityContext newContext(Id appId, @Nullable IEntityContext parent) {
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent) {
         return newContext(appId, parent, null);
     }
 
-    public IEntityContext newContext(Id appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
         return newContext(appId, parent, idProvider, defaultAsyncLogProcess);
     }
 
-    public IEntityContext newContext(Id appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider,
+    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider,
                                      boolean asyncLogProcessing) {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(), asyncLogProcessing,
@@ -70,7 +70,7 @@ public class EntityContextFactory {
         return context;
     }
 
-    public IInstanceContext newBridgedInstanceContext(Id appId,
+    public IInstanceContext newBridgedInstanceContext(long appId,
                                                       boolean readonly,
                                                       @Nullable Boolean asyncLogProcessing,
                                                       @Nullable IInstanceContext parent,

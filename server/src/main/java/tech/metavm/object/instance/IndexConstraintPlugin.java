@@ -43,16 +43,16 @@ public class IndexConstraintPlugin implements ContextPlugin {
             var instance = context.get(instancePO.getInstanceId());
             if (instance instanceof ClassInstance classInstance) {
                 instanceMap.put(classInstance.getPhysicalId(), classInstance);
-                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(), context.getAppId().getPhysicalId()));
+                currentEntries.addAll(PersistenceUtils.getIndexEntries(classInstance, context.getParameterizedFlowProvider(), context.getAppId()));
             }
         });
         List<InstancePO> oldInstances = NncUtils.union(change.updates(), change.deletes());
         Set<Long> oldInstanceIds = NncUtils.mapUnique(oldInstances, InstancePO::getId);
         Set<IndexEntryPO> relatedEntries = new HashSet<>();
         NncUtils.doInBatch(NncUtils.map(oldInstances, InstancePO::getId),
-                ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId().getPhysicalId(), ids)));
+                ids -> relatedEntries.addAll(indexEntryMapper.selectByInstanceIds(context.getAppId(), ids)));
         NncUtils.doInBatch(NncUtils.map(currentEntries, IndexEntryPO::getKey),
-                keys -> relatedEntries.addAll(indexEntryMapper.selectByKeys(context.getAppId().getPhysicalId(), keys)));
+                keys -> relatedEntries.addAll(indexEntryMapper.selectByKeys(context.getAppId(), keys)));
 
         List<IndexEntryPO> oldEntries = NncUtils.filter(
                 relatedEntries,

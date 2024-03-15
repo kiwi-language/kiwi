@@ -117,7 +117,7 @@ public class InstanceInput implements Closeable {
     }
 
     public TypeTag readTypeTag() {
-        return TypeTag.fromCode(readInt());
+        return TypeTag.fromCode(read());
     }
 
     public double readDouble() {

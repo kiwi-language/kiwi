@@ -10,6 +10,6 @@ public interface IdInitializer {
 
     TypeId getTypeId(Id id);
 
-    void initializeIds(Id appId, Collection<? extends DurableInstance> instances);
+    void initializeIds(long appId, Collection<? extends DurableInstance> instances);
 
 }

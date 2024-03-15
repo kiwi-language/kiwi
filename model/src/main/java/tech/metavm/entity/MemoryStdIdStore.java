@@ -1,20 +1,22 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryStdIdStore implements StdIdStore {
 
-    private final Map<String, Long> ids = new HashMap<>();
+    private final Map<String, Id> ids = new HashMap<>();
 
     @Override
-    public void save(Map<String, Long> ids) {
+    public void save(Map<String, Id> ids) {
         this.ids.clear();
         this.ids.putAll(ids);
     }
 
     @Override
-    public Map<String, Long> load() {
+    public Map<String, Id> load() {
         return new HashMap<>(ids);
     }
 

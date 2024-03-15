@@ -1,6 +1,8 @@
 package tech.metavm.entity;
 
 import org.springframework.stereotype.Component;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.object.instance.core.PhysicalId;
 import tech.metavm.system.persistence.FileMapper;
 import tech.metavm.system.persistence.FilePO;
 import tech.metavm.util.InstanceInput;
@@ -23,12 +25,12 @@ public class DatabaseStdIdStore implements StdIdStore {
     }
 
     @Override
-    public void save(Map<String, Long> ids) {
+    public void save(Map<String, Id> ids) {
         fileMapper.save(buildFile(ids));
     }
 
     @Override
-    public Map<String, Long> load() {
+    public Map<String, Id> load() {
         var file = fileMapper.selectByName(FILE_NAME);
         if(file != null)
             return buildIds(file.getContent());
@@ -36,25 +38,25 @@ public class DatabaseStdIdStore implements StdIdStore {
             return Map.of();
     }
 
-    private Map<String, Long> buildIds(byte[] content) {
+    private Map<String, Id> buildIds(byte[] content) {
         var input = new InstanceInput(new ByteArrayInputStream(content));
         var size = input.readInt();
-        var ids = new HashMap<String, Long>(size);
+        var ids = new HashMap<String, Id>(size);
         for (int i = 0; i < size; i++) {
             var key = input.readString();
-            var value = input.readLong();
+            var value = input.readId();
             ids.put(key, value);
         }
         return ids;
     }
 
-    private FilePO buildFile(Map<String, Long> ids) {
+    private FilePO buildFile(Map<String, Id> ids) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.writeInt(ids.size());
         for (var entry : ids.entrySet()) {
             output.writeString(entry.getKey());
-            output.writeLong(entry.getValue());
+            output.writeId((PhysicalId) entry.getValue());
         }
         return new FilePO(FILE_NAME, bout.toByteArray());
     }

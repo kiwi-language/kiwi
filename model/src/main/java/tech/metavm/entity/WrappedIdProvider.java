@@ -29,7 +29,7 @@ public class WrappedIdProvider implements EntityIdProvider {
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
         return underlyingIdProvider.allocate(appId, typeId2count);
     }
 }

@@ -11,7 +11,6 @@ import tech.metavm.object.instance.IInstanceStore;
 import tech.metavm.object.instance.core.ClassInstance;
 import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.search.InstanceSearchService;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -44,7 +43,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryBean implements 
         if (NncUtils.isEmpty(logs)) {
             return;
         }
-        var appId = Constants.getAppId(logs.get(0).getAppId());
+        var appId = logs.get(0).getAppId();
         List<Id> idsToLoad = NncUtils.filterAndMap(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getInstanceId);
         Set<Long> newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
         try (var context = newContext(appId)) {
@@ -57,7 +56,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryBean implements 
             List<Id> removed = NncUtils.filterAndMap(logs, InstanceLog::isDelete, InstanceLog::getInstanceId);
             if (NncUtils.isNotEmpty(changed) || NncUtils.isNotEmpty(removed)) {
                 try (var ignored = context.getProfiler().enter("bulk")) {
-                    instanceSearchService.bulk(appId.getPhysicalId(), changed, removed);
+                    instanceSearchService.bulk(appId, changed, removed);
                 }
             }
             instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::getVersion));

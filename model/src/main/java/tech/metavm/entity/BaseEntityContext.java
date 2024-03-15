@@ -535,7 +535,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public Id getAppId(Object model) {
+    public long getAppId(Object model) {
         if (model2instance.containsKey(model)) {
             return getAppId();
         } else if (parent != null) {
@@ -609,7 +609,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
 
     @Override
-    public Id getAppId() {
+    public long getAppId() {
         NncUtils.requireNonNull(instanceContext);
         return instanceContext.getAppId();
     }

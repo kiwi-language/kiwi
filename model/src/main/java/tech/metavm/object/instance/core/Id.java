@@ -27,7 +27,7 @@ public abstract class Id implements Comparable<Id> {
     public static Id readId(InstanceInput input) {
         var tag = input.read();
         return switch (tag) {
-            case PhysicalId.TAG -> new PhysicalId(input.readLong(), input.readTypeTag(), input.readLong());
+            case PhysicalId.TAG -> input.readId();
             case TmpId.TAG -> new TmpId(input.readLong());
             case DefaultViewId.TAG -> new DefaultViewId(readId(input), readId(input));
             case ChildViewId.TAG -> new ChildViewId(readId(input), readId(input), (ViewId) readId(input));

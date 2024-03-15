@@ -16,10 +16,7 @@ import tech.metavm.task.RemoveAppTaskGroup;
 import tech.metavm.task.TaskSignal;
 import tech.metavm.user.*;
 import tech.metavm.user.rest.dto.*;
-import tech.metavm.util.BusinessException;
-import tech.metavm.util.ContextUtil;
-import tech.metavm.util.Instances;
-import tech.metavm.util.NncUtils;
+import tech.metavm.util.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,23 +86,23 @@ public class ApplicationManager extends EntityContextFactoryBean {
     }
 
     private void ensurePlatformUser() {
-        if (ContextUtil.getAppId().getPhysicalId() != PLATFORM_APP_ID)
+        if (ContextUtil.getAppId() != PLATFORM_APP_ID)
             throw new BusinessException(ErrorCode.REENTERING_APP);
     }
 
     @Transactional
     public CreateAppResult createBuiltin(ApplicationCreateRequest request) {
-        return createBuiltin(null, request);
+        return createBuiltin(-1L, request);
     }
 
     @Transactional
     public CreateAppResult createRoot() {
-        return createBuiltin(getRootAppId(), ApplicationCreateRequest.fromNewUser(ROOT_APP_NAME, ROOT_ADMIN_LOGIN_NAME, ROOT_ADMIN_PASSWORD));
+        return createBuiltin(ROOT_APP_ID, ApplicationCreateRequest.fromNewUser(ROOT_APP_NAME, ROOT_ADMIN_LOGIN_NAME, ROOT_ADMIN_PASSWORD));
     }
 
     @Transactional
     public CreateAppResult createPlatform() {
-        return createBuiltin(getPlatformAppId(), ApplicationCreateRequest.fromNewUser(PLATFORM_APP_NAME, PLATFORM_ADMIN_LOGIN_NAME, PLATFORM_ADMIN_PASSWORD));
+        return createBuiltin(PLATFORM_APP_ID, ApplicationCreateRequest.fromNewUser(PLATFORM_APP_NAME, PLATFORM_ADMIN_LOGIN_NAME, PLATFORM_ADMIN_PASSWORD));
     }
 
 
@@ -114,11 +111,11 @@ public class ApplicationManager extends EntityContextFactoryBean {
         ensurePlatformUser();
         try (var platformCtx = newPlatformContext()) {
             Application app;
-            if (appDTO.id() == null) {
+            if (appDTO.id() == -1L) {
                 var owner = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
-                app = createApp(null, appDTO.name(), owner, platformCtx);
+                app = createApp(-1L, appDTO.name(), owner, platformCtx);
             } else {
-                app = platformCtx.getEntity(Application.class, appDTO.id());
+                app = platformCtx.getEntity(Application.class, Constants.getAppId(appDTO.id()));
                 ensureAppAdmin(app);
                 app.setName(appDTO.name());
             }
@@ -127,31 +124,25 @@ public class ApplicationManager extends EntityContextFactoryBean {
         }
     }
 
-    private Application createApp(Id id, String name, PlatformUser owner, IEntityContext platformContext) {
-        var appId = id != null ? id : allocateAppId();
-        platformContext.bind(new TaskSignal(appId.toString()));
+    private Application createApp(long id, String name, PlatformUser owner, IEntityContext platformContext) {
+        var appId = id != -1L ? id : allocateAppId().getPhysicalId();
+        platformContext.bind(new TaskSignal(appId));
         Application application = new Application(name, owner);
         // initIdManually will bind application to context
-        platformContext.initIdManually(application, appId);
+        platformContext.initIdManually(application, Constants.getAppId(appId));
         platformUserManager.joinApplication(owner, application, platformContext);
         return application;
     }
 
     private Id allocateAppId() {
         var appType = ModelDefRegistry.getType(Application.class);
-        return PhysicalId.of(idService.allocate(getPlatformAppId(), appType), appType);
+        return PhysicalId.of(idService.allocate(PLATFORM_APP_ID, appType), appType);
     }
 
-    private CreateAppResult createBuiltin(Id id, ApplicationCreateRequest request) {
-        ContextUtil.setAppId(getPlatformAppId());
+    private CreateAppResult createBuiltin(long id, ApplicationCreateRequest request) {
+        ContextUtil.setAppId(PLATFORM_APP_ID);
         try (var platformContext = newPlatformContext()) {
-            Id appId;
-            if (id != null)
-                appId = id;
-            else {
-                var appType = ModelDefRegistry.getType(Application.class);
-                appId = PhysicalId.of(idService.allocate(getPlatformAppId(), appType), appType);
-            }
+            long appId = id != -1L ? id : PLATFORM_APP_ID;
             PlatformUser owner;
             if (request.creatorId() == null) {
                 Role role = roleManager.save(new RoleDTO(TmpId.of(ContextUtil.nextTmpId()).toString(), ADMIN_ROLE_NAME), platformContext);
@@ -167,16 +158,15 @@ public class ApplicationManager extends EntityContextFactoryBean {
                 owner = platformContext.getEntity(PlatformUser.class, request.creatorId());
             createApp(appId, request.name(), owner, platformContext);
             platformContext.finish();
-            return new CreateAppResult(appId.toString(), owner.getStringId());
+            return new CreateAppResult(appId, owner.getStringId());
         }
     }
 
     @Transactional
     public void update(ApplicationDTO applicationDTO) {
-        setupContextInfo(Id.parse(applicationDTO.id()));
-        NncUtils.requireNonNull(applicationDTO.id());
+        setupContextInfo(applicationDTO.id());
         try (IEntityContext platformContext = newPlatformContext()) {
-            Application app = platformContext.getEntity(Application.class, applicationDTO.id());
+            Application app = platformContext.getEntity(Application.class, Constants.getAppId(applicationDTO.id()));
             ensureAppAdmin(app);
             app.setName(applicationDTO.name());
             platformContext.finish();
@@ -305,7 +295,7 @@ public class ApplicationManager extends EntityContextFactoryBean {
             throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_OWNER);
     }
 
-    private void setupContextInfo(Id appId) {
+    private void setupContextInfo(long appId) {
         ContextUtil.setAppId(appId);
         ContextUtil.setUserId(null);
     }

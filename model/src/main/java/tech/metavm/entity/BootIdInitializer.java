@@ -28,14 +28,14 @@ public class BootIdInitializer implements IdInitializer {
     }
 
     @Override
-    public void initializeIds(Id appId, Collection<? extends DurableInstance> instances) {
+    public void initializeIds(long appId, Collection<? extends DurableInstance> instances) {
         List<DurableInstance> toInitialize = new ArrayList<>();
         for (DurableInstance instance : instances) {
             var entity = instance.getMappedEntity();
             if(entity != null) {
                 var id = bootIdProvider.getId(identityContext.getModelId(entity));
                 if(id != null) {
-                    instance.initId(PhysicalId.of(id, instance.getType()));
+                    instance.initId(id);
                     continue;
                 }
             }

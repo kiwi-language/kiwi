@@ -44,7 +44,7 @@ public class InstanceContextFactory {
                 || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
     }
 
-    public InstanceContextBuilder newBuilder(Id appId,
+    public InstanceContextBuilder newBuilder(long appId,
                                              TypeProvider typeProvider,
                                              MappingProvider mappingProvider,
                                              ParameterizedFlowProvider parameterizedFlowProvider) {

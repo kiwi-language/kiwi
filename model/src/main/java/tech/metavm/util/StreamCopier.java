@@ -60,7 +60,7 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitReference() {
         output.write(WireTypes.REFERENCE);
-        output.writeLong(readLong());
+        output.writeId(readId());
     }
 
     @Override

@@ -170,7 +170,7 @@ public class Compiler {
     }
 
     private IEntityContext newContext() {
-        return contextFactory.newEntityContext(Id.parse(typeClient.getAppId()));
+        return contextFactory.newEntityContext(typeClient.getAppId());
     }
 
 }

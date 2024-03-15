@@ -1,7 +1,6 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.IInstanceContext;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.DefaultTypeFactory;
 import tech.metavm.object.type.TypeFactory;
 
@@ -27,7 +26,7 @@ public class CompilerEntityContext extends BaseEntityContext {
     }
 
     @Override
-    public IEntityContext createSame(Id appId) {
+    public IEntityContext createSame(long appId) {
         return new CompilerEntityContext(
                 getInstanceContext(),
                 getParent(),

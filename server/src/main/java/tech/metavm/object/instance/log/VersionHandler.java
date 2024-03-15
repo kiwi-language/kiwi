@@ -42,12 +42,12 @@ public class VersionHandler implements LogHandler<Version> {
             }
             if (!typeIds.isEmpty()) {
                 eventQueue.publishAppEvent(
-                        new TypeChangeEvent(context.getAppId().toString(), maxVersion, new ArrayList<>(typeIds), clientId)
+                        new TypeChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(typeIds), clientId)
                 );
             }
             if (!functionIds.isEmpty()) {
                 eventQueue.publishAppEvent(
-                        new FunctionChangeEvent(context.getAppId().toString(), maxVersion, new ArrayList<>(functionIds), clientId)
+                        new FunctionChangeEvent(context.getAppId(), maxVersion, new ArrayList<>(functionIds), clientId)
                 );
             }
         }

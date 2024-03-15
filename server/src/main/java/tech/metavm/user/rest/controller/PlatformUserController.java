@@ -86,7 +86,7 @@ public class PlatformUserController {
     }
 
     @PostMapping("/enter-app/{id:[0-9]+}")
-    public Result<LoginInfo> enterApp(@PathVariable("id") String id, HttpServletRequest request, HttpServletResponse response) {
+    public Result<LoginInfo> enterApp(@PathVariable("id") long id, HttpServletRequest request, HttpServletResponse response) {
         Token token = Tokens.getToken(id, request);
         if (token != null) {
             var loginInfo = loginService.verify(token);
@@ -114,7 +114,7 @@ public class PlatformUserController {
     }
 
     private void ensurePlatformUser(HttpServletRequest request) {
-        if (ContextUtil.getAppId().getPhysicalId() != Constants.PLATFORM_APP_ID) {
+        if (ContextUtil.getAppId() != Constants.PLATFORM_APP_ID) {
             var platformToken = Tokens.getPlatformToken(request);
             if (platformToken == null || !loginService.verify(platformToken).isSuccessful())
                 throw new BusinessException(ErrorCode.PLATFORM_USER_REQUIRED);

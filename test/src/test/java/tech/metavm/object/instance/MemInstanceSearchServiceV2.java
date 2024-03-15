@@ -64,7 +64,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
 
     public boolean contains(Id id) {
-        return sourceMap.containsKey(getAppId().getPhysicalId(), id)
+        return sourceMap.containsKey(getAppId(), id)
                 || sourceMap.containsKey(ROOT_APP_ID, id);
     }
 

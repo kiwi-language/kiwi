@@ -8,12 +8,12 @@ import tech.metavm.user.rest.dto.LoginRequest;
 public class LoginUtils {
 
     public static void loginWithAuthFile(AuthConfig authConfig, TypeClient typeClient) {
-        typeClient.login(Id.parse(authConfig.appId()).toString(), authConfig.loginName(), authConfig.password());
+        typeClient.login(authConfig.appId(), authConfig.loginName(), authConfig.password());
     }
 
     public static void login(long appId, String loginName, String password) {
         CompilerHttpUtils.setAppId(2L);
-        CompilerHttpUtils.post("/login", new LoginRequest(Constants.getPlatformAppId().toString(), loginName, password),
+        CompilerHttpUtils.post("/login", new LoginRequest(Constants.PLATFORM_APP_ID, loginName, password),
                 new TypeReference<LoginInfo>() {
                 });
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {

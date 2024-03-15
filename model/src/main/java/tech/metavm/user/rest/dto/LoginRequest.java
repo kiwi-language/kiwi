@@ -1,7 +1,7 @@
 package tech.metavm.user.rest.dto;
 
 public record LoginRequest(
-        String appId,
+        long appId,
         String loginName,
         String password
 ) {

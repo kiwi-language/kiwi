@@ -12,7 +12,7 @@ public class FunctionChangeEvent extends AppEvent {
     @Nullable
     private final String triggerClientId;
 
-    public FunctionChangeEvent(String appId, long version, List<String> functionIds, @Nullable String triggerClientId) {
+    public FunctionChangeEvent(long appId, long version, List<String> functionIds, @Nullable String triggerClientId) {
         super(appId, AppEventKind.FUNCTION_CHANGE.code());
         this.functionIds = functionIds;
         this.version = version;

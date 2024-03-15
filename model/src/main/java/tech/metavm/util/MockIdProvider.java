@@ -28,12 +28,12 @@ public class MockIdProvider implements EntityIdProvider {
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count) {
+    public Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count) {
         Map<Type, List<Long>> result = new HashMap<>();
         typeId2count.forEach((type, count) -> {
             List<Long> ids = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                long id = allocateOne(type);
+                var id = allocateOne(type);
                 ids.add(id);
             }
             result.put(type, ids);
@@ -42,7 +42,7 @@ public class MockIdProvider implements EntityIdProvider {
         return result;
     }
 
-    private long allocateOne(Type type) {
+    private Long allocateOne(Type type) {
         TypeCategory category = type.getCategory();
         long resultId = nextIdMap.compute(category, (c, id) -> id == null ?
                 requireNonNull(category.getIdRegion(), "region not found for category " + category).start() + INITIAL_NEXT_ID :

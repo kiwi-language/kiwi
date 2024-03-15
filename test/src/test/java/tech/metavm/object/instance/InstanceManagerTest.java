@@ -29,7 +29,7 @@ public class InstanceManagerTest extends TestCase {
         var instanceQueryService = new InstanceQueryService(instanceSearchService);
         entityContextFactory = bootResult.entityContextFactory();
         instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService);
-        ContextUtil.setAppId(TestConstants.getAppId());
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override

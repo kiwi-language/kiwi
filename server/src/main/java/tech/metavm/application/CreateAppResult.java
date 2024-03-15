@@ -1,4 +1,4 @@
 package tech.metavm.application;
 
-public record CreateAppResult(String appId, String ownerId) {
+public record CreateAppResult(long appId, String ownerId) {
 }

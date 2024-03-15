@@ -6,6 +6,7 @@ import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ModelIdentity;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.ReadonlyArray;
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.core.TypeId;
 import tech.metavm.util.InternalException;
 import tech.metavm.util.NncUtils;
@@ -50,7 +51,7 @@ public class StdAllocators {
         }
     }
 
-    public Long getId(Object object) {
+    public Id getId(Object object) {
         return switch (object) {
             case java.lang.reflect.Field field -> getId0(Field.class, getFieldQualifiedName(field));
             case Type type -> getId0(ClassType.class, getTypeCode(type));
@@ -61,7 +62,7 @@ public class StdAllocators {
         };
     }
 
-    public void putId(Object object, long id) {
+    public void putId(Object object, Id id) {
         switch (object) {
             case java.lang.reflect.Field field -> putId0(Field.class, getFieldQualifiedName(field), id);
             case Type type -> putId0(ClassType.class, getTypeCode(type), id);
@@ -72,28 +73,28 @@ public class StdAllocators {
         }
     }
 
-    public StdAllocator getAllocatorById(long id) {
+    public StdAllocator getAllocatorById(Id id) {
         return NncUtils.find(allocatorMap.values(), a -> a.contains(id));
     }
 
-    private Long getId0(Type javaType, String entityCode) {
+    private Id getId0(Type javaType, String entityCode) {
         StdAllocator allocator = getAllocator(javaType);
         return allocator.getId(entityCode);
     }
 
-    private void putId0(Type javaType, String entityCode, long id) {
+    private void putId0(Type javaType, String entityCode, Id id) {
         allocatorMap.get(javaType).putId(entityCode, id);
     }
 
-    public TypeId getTypeId(long id) {
+    public TypeId getTypeId(Id id) {
         StdAllocator classTypeAllocator = allocatorMap.get(ClassType.class);
         StdAllocator arrayTypeAllocator = allocatorMap.get(ArrayType.class);
         for (StdAllocator allocator : allocatorMap.values()) {
             if (allocator.contains(id)) {
                 if (isMetaArray(allocator.getJavaType())) {
-                    return TypeId.ofArray(arrayTypeAllocator.getId(allocator.getJavaType().getTypeName()));
+                    return TypeId.ofArray(arrayTypeAllocator.getId(allocator.getJavaType().getTypeName()).getPhysicalId());
                 } else {
-                    return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()));
+                    return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()).getPhysicalId());
                 }
             }
         }
@@ -108,7 +109,7 @@ public class StdAllocators {
         Map<Type, List<Long>> result = new HashMap<>();
         typeId2count.forEach((javaType, count) -> {
 //            Class<?> javaType = ModelDefRegistry.getJavaType(type);
-            List<Long> ids = getAllocator(javaType).allocate(count);
+            var ids = getAllocator(javaType).allocate(count);
             result.put(javaType, ids);
         });
         return result;
@@ -183,8 +184,8 @@ public class StdAllocators {
         allocatorMap.values().forEach(StdAllocator::save);
     }
 
-    public Map<String, Long> getIdMap() {
-        var ids = new HashMap<String, Long>();
+    public Map<String, Id> getIdMap() {
+        var ids = new HashMap<String, Id>();
         allocatorMap.values().forEach(a -> a.buildIdMap(ids));
         return ids;
     }

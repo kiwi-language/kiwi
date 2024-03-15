@@ -11,9 +11,9 @@ public interface EntityIdProvider {
 
     TypeId getTypeId(Id id);
 
-    Map<Type, List<Long>> allocate(Id appId, Map<Type, Integer> typeId2count);
+    Map<Type, List<Long>> allocate(long appId, Map<Type, Integer> typeId2count);
 
-    default Long allocateOne(Id appId, Type type) {
+    default Long allocateOne(long appId, Type type) {
         return allocate(appId, Map.of(type, 1)).values().iterator().next().get(0);
     }
 

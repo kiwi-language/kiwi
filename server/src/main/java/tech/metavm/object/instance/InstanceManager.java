@@ -204,7 +204,7 @@ public class InstanceManager extends EntityContextFactoryBean {
             Set<Id> ids = new HashSet<>();
             ids.add(id);
             while (!ids.isEmpty()) {
-                var refs = instanceStore.getAllStrongReferences(context.getAppId().getPhysicalId(), ids, visited);
+                var refs = instanceStore.getAllStrongReferences(context.getAppId(), ids, visited);
                 ids.clear();
                 for (ReferencePO ref : refs) {
                     var sourceId = ref.getSourceInstanceId();

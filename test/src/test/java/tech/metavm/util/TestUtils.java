@@ -9,10 +9,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType;
 import org.hamcrest.MatcherAssert;
 import org.slf4j.Logger;
-import tech.metavm.common.RefDTO;
 import tech.metavm.entity.*;
 import tech.metavm.event.MockEventQueue;
 import tech.metavm.flow.rest.MethodParam;
@@ -23,7 +21,7 @@ import tech.metavm.object.instance.core.*;
 import tech.metavm.object.instance.log.InstanceLogService;
 import tech.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import tech.metavm.object.instance.rest.*;
-import tech.metavm.object.type.*;
+import tech.metavm.object.type.Types;
 import tech.metavm.object.type.rest.dto.TypeDTO;
 import tech.metavm.object.view.rest.dto.ObjectMappingDTO;
 
@@ -254,9 +252,7 @@ public class TestUtils {
         EntityUtils.visitGraph(List.of(root), o -> {
             if (o instanceof Entity entity && entity.isIdNull()) {
                 var type = ModelDefRegistry.getDefContext().getType(EntityUtils.getRealType(entity.getClass()));
-                var typeId = Types.getType(entity).getPhysicalId();
-                var typeTag = entity instanceof ReadonlyArray<?> ? TypeTag.Array : TypeTag.Class;
-                entity.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.getAppId(), type), typeTag, typeId));
+                entity.initId(PhysicalId.of(idProvider.allocateOne(TestConstants.APP_ID, type), type));
             }
         });
     }
@@ -281,7 +277,7 @@ public class TestUtils {
             @Override
             public Void visitDurableInstance(DurableInstance instance) {
                 if (!instance.isIdInitialized()) {
-                    long id = idProvider.allocateOne(TestConstants.getAppId(), instance.getType());
+                    var id = idProvider.allocateOne(TestConstants.APP_ID, instance.getType());
 //                    if (instance instanceof ArrayInstance arrayInstance) {
 //                        id = switch (arrayInstance.getType().getKind()) {
 //                            case READ_WRITE -> ref.nextReadWriteArrayId++;

@@ -197,11 +197,8 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     private Id getEntityId(Object entity) {
         if(EntityUtils.isEphemeral(entity) )
             return null;
-        var physicalId = stdIdProvider.getId(identityContext.getModelId(entity));
-        if(physicalId == null)
-            return null;
-        var type = getType(EntityUtils.getRealType(entity.getClass()));
-        return PhysicalId.of(physicalId, type);
+        //        var type = getType(EntityUtils.getRealType(entity.getClass()));
+        return stdIdProvider.getId(identityContext.getModelId(entity));
     }
 
     @SuppressWarnings("unchecked")
@@ -325,11 +322,11 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
         return javaType2Def.containsKey(javaType);
     }
 
-    public Map<String, Long> getStdIdMap() {
-        var stdIds = new HashMap<String, Long>();
+    public Map<String, Id> getStdIdMap() {
+        var stdIds = new HashMap<String, Id>();
         for (Object entity : entities) {
             var instance = getInstance(entity);
-            var id = instance.tryGetPhysicalId();
+            var id = instance.getId();
             if(id != null) {
                 var modeId = identityContext.getModelId(entity);
                 stdIds.put(modeId.qualifiedName(), id);
@@ -699,7 +696,7 @@ public class DefContext extends BaseEntityContext implements DefMap, IEntityCont
     }
 
     @Override
-    public IEntityContext createSame(Id appId) {
+    public IEntityContext createSame(long appId) {
         throw new UnsupportedOperationException();
     }
 

@@ -25,17 +25,17 @@ public class Tokens {
         for (Cookie cookie : request.getCookies()) {
             var m = TOKEN_COOKIE_NAME_PATTERN.matcher(cookie.getName());
             if(m.matches()) {
-                tokens.add(new Token(m.group(1), cookie.getValue()));
+                tokens.add(new Token(Long.parseLong(m.group(1)), cookie.getValue()));
             }
         }
         return tokens;
     }
 
     public static @Nullable Token getPlatformToken(HttpServletRequest request) {
-        return getToken(Constants.getPlatformAppId().toString(), request);
+        return getToken(Constants.PLATFORM_APP_ID, request);
     }
 
-    public static void removeToken(String appId, HttpServletResponse response) {
+    public static void removeToken(long appId, HttpServletResponse response) {
         removeCookie(response, getTokenCookieName(appId));
     }
 
@@ -46,7 +46,7 @@ public class Tokens {
         response.addCookie(removed);
     }
 
-    public static @Nullable Token getToken(String appId, HttpServletRequest request) {
+    public static @Nullable Token getToken(long appId, HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         Map<String, Cookie> cookieMap = NncUtils.toMap(cookies, Cookie::getName);
         String rawToken = NncUtils.get(cookieMap.get(getTokenCookieName(appId)), Cookie::getValue);
@@ -54,15 +54,15 @@ public class Tokens {
     }
 
     public static void setPlatformToken(HttpServletResponse response, Token token) {
-        setToken(response, Constants.getPlatformAppId().toString(), token);
+        setToken(response, Constants.PLATFORM_APP_ID, token);
     }
 
-    public static void setToken(HttpServletResponse servletResponse, String appId, Token token) {
+    public static void setToken(HttpServletResponse servletResponse, long appId, Token token) {
         setTokenCookie(servletResponse, getTokenCookieName(appId), token);
     }
 
-    private static String getTokenCookieName(String appId) {
-        return String.format("__token_%s__", appId);
+    private static String getTokenCookieName(long appId) {
+        return String.format("__token_%d__", appId);
     }
 
     private static void setTokenCookie(HttpServletResponse servletResponse, String cookieName, Token token) {

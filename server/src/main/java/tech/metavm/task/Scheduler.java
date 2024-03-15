@@ -5,8 +5,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.entity.*;
-import tech.metavm.object.instance.core.Id;
-import tech.metavm.util.Constants;
 import tech.metavm.util.NncUtils;
 import tech.metavm.util.TransactionUtils;
 
@@ -66,7 +64,7 @@ public class Scheduler extends EntityContextFactoryBean {
             TaskSignal signal = selectSignalForScheduling(platformContext);
             if (signal != null) {
                 if (signal.hasUnfinishedTasks())
-                    runTaskForApplication(Id.parse(signal.getAppId()).getPhysicalId());
+                    runTaskForApplication(signal.getAppId());
                 else
                     removeSignal(signal);
             }
@@ -85,7 +83,7 @@ public class Scheduler extends EntityContextFactoryBean {
                             .limit(512)
                             .build()
             );
-            activeSignalMap.putAll(NncUtils.toMap(signals, t -> Id.parse(t.getAppId()).getPhysicalId()));
+            activeSignalMap.putAll(NncUtils.toMap(signals, TaskSignal::getAppId));
             lastSignalPollAt = current;
         }
     }
@@ -120,7 +118,7 @@ public class Scheduler extends EntityContextFactoryBean {
     }
 
     private List<String> takeTask(long appId) {
-        try (var context = newContext(Constants.getAppId(appId))) {
+        try (var context = newContext(appId)) {
             Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
             List<Task> runnableTasks = context.query(
                     Task.IDX_STATE_LAST_RUN_AT.newQueryBuilder()
@@ -179,7 +177,7 @@ public class Scheduler extends EntityContextFactoryBean {
         if (!runningTaskIds.add(taskId))
             return;
         try {
-            try (var context = newContext(Constants.getAppId(appId))) {
+            try (var context = newContext(appId)) {
                 Objects.requireNonNull(context.getInstanceContext()).setLockMode(LockMode.EXCLUSIVE);
                 Task task = context.getEntity(Task.class, taskId);
                 if (task.isRunning()) {
@@ -227,7 +225,7 @@ public class Scheduler extends EntityContextFactoryBean {
     private TaskSignal nextSignal(TaskSignal signal) {
         if (signal == null)
             return NncUtils.get(activeSignalMap.firstEntry(), Map.Entry::getValue);
-        TaskSignal next = NncUtils.get(activeSignalMap.higherEntry(Id.parse(signal.getAppId()).getPhysicalId()), Map.Entry::getValue);
+        TaskSignal next = NncUtils.get(activeSignalMap.higherEntry(signal.getAppId()), Map.Entry::getValue);
         if (next == null)
             next = NncUtils.get(activeSignalMap.firstEntry(), Map.Entry::getValue);
         return next;
@@ -235,11 +233,11 @@ public class Scheduler extends EntityContextFactoryBean {
 
 
     private void addSignal(TaskSignal signal) {
-        activeSignalMap.put(Id.parse(signal.getAppId()).getPhysicalId(), signal);
+        activeSignalMap.put(signal.getAppId(), signal);
     }
 
     private void removeSignal(TaskSignal signal) {
-        activeSignalMap.remove(Id.parse(signal.getAppId()).getPhysicalId());
+        activeSignalMap.remove(signal.getAppId());
     }
 
     public void waitForJobDone(Task task, int maxSchedules) {

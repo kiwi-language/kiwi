@@ -4,8 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
+import tech.metavm.object.instance.core.PhysicalId;
 
 public class StdAllocatorTest extends TestCase {
 
@@ -24,23 +23,23 @@ public class StdAllocatorTest extends TestCase {
     }
 
     public void testSmoking() {
-        List<Long> ids = allocator.allocate(3);
-        allocator.putId(ClassType.class.getName(), ids.get(0));
-        allocator.putId(Field.class.getName(), ids.get(1));
-        allocator.putId(Index.class.getName(), ids.get(2));
-        long typeId = allocator.getId(ClassType.class.getName());
-        long fieldId = allocator.getId(Field.class.getName());
-        long uniqueConstraintId = allocator.getId(Index.class.getName());
-        Assert.assertEquals((long) ids.get(0), typeId);
-        Assert.assertEquals((long) ids.get(1), fieldId);
-        Assert.assertEquals((long) ids.get(2), uniqueConstraintId);
+        var ids = allocator.allocate(3);
+        allocator.putId(ClassType.class.getName(), PhysicalId.ofClass(ids.get(0), 1L));
+        allocator.putId(Field.class.getName(), PhysicalId.ofClass(ids.get(1), 1L));
+        allocator.putId(Index.class.getName(), PhysicalId.ofClass(ids.get(2), 1L));
+        var typeId = allocator.getId(ClassType.class.getName());
+        var fieldId = allocator.getId(Field.class.getName());
+        var uniqueConstraintId = allocator.getId(Index.class.getName());
+        Assert.assertEquals(PhysicalId.ofClass(ids.get(0), 1L), typeId);
+        Assert.assertEquals(PhysicalId.ofClass(ids.get(1), 1L), fieldId);
+        Assert.assertEquals(PhysicalId.ofClass(ids.get(2), 1L), uniqueConstraintId);
     }
 
     public void testIdContains() {
-        long allocatedId = allocator.allocate(1).get(0);
-        allocator.putId(Field.class.getName(), allocatedId);
-        long fieldId = allocator.getId(Field.class.getName());
-        Assert.assertEquals(allocatedId, fieldId);
+        var allocatedId = allocator.allocate(1).get(0);
+        allocator.putId(Field.class.getName(), PhysicalId.ofClass(allocatedId, 1L));
+        var fieldId = allocator.getId(Field.class.getName());
+        Assert.assertEquals(PhysicalId.ofClass(allocatedId, 1L), fieldId);
         Assert.assertTrue(allocator.contains(fieldId));
     }
 

@@ -172,9 +172,9 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getGenericContext().getParameterizedType(StandardTypes.getReadWriteListType(), List.of(elementType));
     }
 
-    Id getAppId(Object model);
+    long getAppId(Object model);
 
-    Id getAppId();
+    long getAppId();
 
 //    default Field getField(long id) {
 //        return getEntity(Field.class, id);
@@ -294,6 +294,6 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     boolean isRemoved(Object entity);
 
-    IEntityContext createSame(Id appId);
+    IEntityContext createSame(long appId);
 
 }

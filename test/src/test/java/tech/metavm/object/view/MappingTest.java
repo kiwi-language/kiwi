@@ -49,7 +49,7 @@ public class MappingTest extends TestCase {
         flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         FlowSavingContext.initConfig();
-        ContextUtil.setAppId(TestConstants.getAppId());
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override

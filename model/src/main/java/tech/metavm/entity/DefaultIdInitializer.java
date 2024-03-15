@@ -1,10 +1,12 @@
 package tech.metavm.entity;
 
 import tech.metavm.object.instance.core.*;
+import tech.metavm.object.type.ArrayType;
+import tech.metavm.object.type.ClassType;
+import tech.metavm.object.type.Type;
 import tech.metavm.util.NncUtils;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class DefaultIdInitializer implements IdInitializer {
 
@@ -20,25 +22,38 @@ public class DefaultIdInitializer implements IdInitializer {
     }
 
     @Override
-    public void initializeIds(Id appId, Collection<? extends DurableInstance> instancesToInitId) {
+    public void initializeIds(long appId, Collection<? extends DurableInstance> instancesToInitId) {
         var countMap = NncUtils.mapAndCount(instancesToInitId, Instance::getType);
         var type2ids = idProvider.allocate(appId, countMap);
+        var classType = ModelDefRegistry.getType(ClassType.class);
+        var classTypeInst = ModelDefRegistry.getDefContext().getInstance(classType);
+        Map<Type, DurableInstance> typeInstance = new HashMap<>();
+        if(instancesToInitId.remove(classTypeInst)) {
+            var ids = type2ids.get(classType);
+            var id = ids.remove(ids.size() - 1);
+            classTypeInst.initId(PhysicalId.ofClass(id, id));
+            typeInstance.put(classType, classTypeInst);
+        }
+        for (DurableInstance instance : instancesToInitId) {
+            if(instance.getMappedEntity() instanceof Type type)
+                typeInstance.put(type, instance);
+        }
         var type2instances = NncUtils.toMultiMap(instancesToInitId, Instance::getType);
-//        var allocatedMap = new HashMap<Long, Instance>();
-        type2instances.forEach((type, instances) -> {
-            List<Long> ids = type2ids.get(type);
-//            for (Long id : ids) {
-//                boolean contains1 = allocatedMap.containsKey(id);
-//                if (contains1)
-//                    throw new InternalException();
-//                boolean contains = containsId(id);
-//                if (contains)
-//                    throw new InternalException();
-//            }
-//            for (var instance : instances) {
-//                allocatedMap.put(instance.tryGetPhysicalId(), instance);
-//            }
-            NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id, type)));
-        });
+        var arrayType = ModelDefRegistry.getType(ArrayType.class);
+        var types = new ArrayList<>(type2instances.keySet());
+        types.sort(Comparator.comparingInt(t -> {
+            if(t == classType)
+                return 0;
+            if(t == arrayType)
+                return 1;
+            return 2;
+        }));
+        for (Type type : types) {
+            var instances = type2instances.get(type);
+            var ids = type2ids.get(type);
+            var typeTag = type.getTag();
+            var typeId = typeInstance.containsKey(type) ? typeInstance.get(type).getPhysicalId() : type.getPhysicalId();
+            NncUtils.biForEach(instances, ids, (inst, id) -> inst.initId(PhysicalId.of(id, typeTag, typeId)));
+        }
     }
 }

@@ -139,14 +139,15 @@ public class PersistenceUtils {
         new StreamVisitor(new ByteArrayInputStream(instancePO.getData())) {
             @Override
             public void visitReference() {
+                var targetId = readId();
                 refs.add(new ReferencePO(
                         instancePO.getAppId(),
                         instancePO.getId(),
                         instancePO.getTypeTag(),
                         instancePO.getTypeId(),
-                        readLong(),
-                        read(),
-                        readLong(),
+                        targetId.getId(),
+                        targetId.getTypeTag().code(),
+                        targetId.getTypeId(),
                         -1L,
                         ReferenceKind.getFromType(arrayType.getElementType()).code()
                 ));

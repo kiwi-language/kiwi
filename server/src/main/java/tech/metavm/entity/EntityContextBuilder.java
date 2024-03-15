@@ -29,7 +29,7 @@ public class EntityContextBuilder {
     private IdInitializer idInitializer;
     private List<ContextPlugin> plugins = List.of();
     private EventQueue eventQueue;
-    private Id appId;
+    private long appId = -1L;
     private boolean asyncLogProcessing;
     private DefContext defContext;
     private boolean childrenLazyLoading;
@@ -91,7 +91,7 @@ public class EntityContextBuilder {
         return this;
     }
 
-    public EntityContextBuilder appId(Id appId) {
+    public EntityContextBuilder appId(long appId) {
         this.appId = appId;
         return this;
     }
@@ -107,7 +107,7 @@ public class EntityContextBuilder {
     }
 
     public IEntityContext build() {
-        if (appId == null)
+        if (appId == -1L)
             appId = ContextUtil.getAppId();
         if (defContext == null)
             defContext = ModelDefRegistry.getDefContext();

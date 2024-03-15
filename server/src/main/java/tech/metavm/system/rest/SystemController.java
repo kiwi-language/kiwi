@@ -72,9 +72,9 @@ public class SystemController {
     public Result<Void> initTest(HttpServletRequest request, HttpServletResponse response) {
         bootstrapController.boot(true);
         var createAppResult = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(APP_NAME, LOGIN_NAME, PASSWD));
-        loginController.login(request, response, new LoginRequest(Constants.getPlatformAppId().toString(), LOGIN_NAME, PASSWD));
+        loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
         NncUtils.writeFile(RESULT_JSON_FILE, "[]");
-        NncUtils.writeFile(APP_ID_FILE, createAppResult.appId());
+        NncUtils.writeFile(APP_ID_FILE, createAppResult.appId() + "");
         clearDirectory(METAVM_HOME);
         clearDirectory(METAVM_HOME_1);
         clearDirectory(METAVM_HOME_2);
@@ -101,11 +101,11 @@ public class SystemController {
     }
 
     @PostMapping("/new-app")
-    public Result<String> newApp(HttpServletRequest request, HttpServletResponse response) {
+    public Result<Long> newApp(HttpServletRequest request, HttpServletResponse response) {
         String appName = "test_" + NncUtils.randomInt(1000);
         String loginName = "admin_" + NncUtils.randomInt(1000);
         var appId = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(appName, loginName, PASSWD)).appId();
-        loginController.login(request, response, new LoginRequest(Constants.getPlatformAppId().toString(), LOGIN_NAME, PASSWD));
+        loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
         return Result.success(appId);
     }
 

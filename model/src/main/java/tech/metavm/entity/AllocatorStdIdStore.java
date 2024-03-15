@@ -1,5 +1,6 @@
 package tech.metavm.entity;
 
+import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.type.StdAllocators;
 
 import java.util.Map;
@@ -13,11 +14,11 @@ public class AllocatorStdIdStore implements StdIdStore {
     }
 
     @Override
-    public void save(Map<String, Long> ids) {
+    public void save(Map<String, Id> ids) {
     }
 
     @Override
-    public Map<String, Long> load() {
+    public Map<String, Id> load() {
         return allocators.getIdMap();
     }
 }

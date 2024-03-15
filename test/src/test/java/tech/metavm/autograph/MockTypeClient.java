@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 import tech.metavm.object.instance.InstanceManager;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.object.instance.rest.GetTreesRequest;
 import tech.metavm.object.instance.rest.InstanceVersionDTO;
 import tech.metavm.object.instance.rest.InstanceVersionsRequest;
@@ -44,13 +43,13 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public String getAppId() {
-        return submit((() -> ContextUtil.getAppId().toString()), "getAppId");
+    public long getAppId() {
+        return submit((ContextUtil::getAppId), "getAppId");
     }
 
     @Override
-    public void setAppId(String appId) {
-        submit(() -> ContextUtil.setAppId(Id.parse(appId)));
+    public void setAppId(long appId) {
+        submit(() -> ContextUtil.setAppId(appId));
     }
 
     @Override
@@ -59,8 +58,8 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public void login(String appId, String loginName, String password) {
-        submit(() -> ContextUtil.setAppId(Id.parse(appId)));
+    public void login(long appId, String loginName, String password) {
+        submit(() -> ContextUtil.setAppId(appId));
     }
 
     @Override
@@ -100,7 +99,7 @@ public class MockTypeClient implements TypeClient {
         try {
             return executor.submit(() -> {
                 ContextUtil.resetProfiler();
-                try (var entry = ContextUtil.getProfiler().enter(taskName)) {
+                try (var ignored = ContextUtil.getProfiler().enter(taskName)) {
                     return callable.call();
                 } finally {
                     var result = ContextUtil.getProfiler().finish(false, true);

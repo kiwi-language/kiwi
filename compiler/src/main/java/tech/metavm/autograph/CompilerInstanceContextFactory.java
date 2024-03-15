@@ -30,12 +30,12 @@ public class CompilerInstanceContextFactory {
         serverTreeSource = new ServerTreeSource(typeClient);
     }
 
-    public IInstanceContext newContext(Id appId) {
+    public IInstanceContext newContext(long appId) {
         //noinspection resource
         return newEntityContext(appId).getInstanceContext();
     }
 
-    public IEntityContext newEntityContext(Id appId) {
+    public IEntityContext newEntityContext(long appId) {
         var bridge = new EntityInstanceContextBridge();
         var context = newBridgedInstanceContext(appId, bridge, new DefaultIdInitializer(idService));
         var entityContext = new CompilerEntityContext(context, defContext, defContext);
@@ -43,7 +43,7 @@ public class CompilerInstanceContextFactory {
         return entityContext;
     }
 
-    public IInstanceContext newBridgedInstanceContext(Id appId, EntityInstanceContextBridge bridge, IdInitializer idProvider) {
+    public IInstanceContext newBridgedInstanceContext(long appId, EntityInstanceContextBridge bridge, IdInitializer idProvider) {
         return new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),

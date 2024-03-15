@@ -28,7 +28,7 @@ public class WrappedIdInitializer implements IdInitializer{
     }
 
     @Override
-    public void initializeIds(Id appId, Collection<? extends DurableInstance> instances) {
+    public void initializeIds(long appId, Collection<? extends DurableInstance> instances) {
         underlyingIdInitializer.initializeIds(appId, instances);
     }
 }

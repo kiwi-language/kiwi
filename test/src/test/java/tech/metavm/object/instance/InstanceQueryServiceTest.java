@@ -32,7 +32,7 @@ public class InstanceQueryServiceTest extends TestCase {
         parameterizedFlowProvider = compositeTypeProviders.parameterizedFlowProvider;
         arrayTypeProvider = compositeTypeProviders.arrayTypeProvider;
         unionTypeProvider = compositeTypeProviders.unionTypeProvider;
-        ContextUtil.setAppId(TestConstants.getAppId());
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     public void testEqCondition() {

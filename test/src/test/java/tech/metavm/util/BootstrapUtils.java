@@ -131,9 +131,9 @@ public class BootstrapUtils {
             var entityContextFactory = createEntityContextFactory(idProvider, instanceStore, instanceSearchService);
             entityContextFactory.setDefContext(defContext);
             TestUtils.doInTransactionWithoutResult(() -> {
-                try(var context = entityContextFactory.newContext(Constants.getPlatformAppId())) {
+                try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     context.bind(new JobSchedulerStatus());
-                    context.bind(new TaskSignal(TestConstants.getAppId().toString()));
+                    context.bind(new TaskSignal(TestConstants.APP_ID));
                     context.finish();
                 }
             });
@@ -180,9 +180,9 @@ public class BootstrapUtils {
                     instanceSearchService.copy()
             );
             TestUtils.doInTransactionWithoutResult(() -> {
-                try(var context = entityContextFactory.newContext(Constants.getPlatformAppId())) {
+                try(var context = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     context.bind(new JobSchedulerStatus());
-                    context.bind(new TaskSignal(TestConstants.getAppId().toString()));
+                    context.bind(new TaskSignal(TestConstants.APP_ID));
                     context.finish();
                 }
             });

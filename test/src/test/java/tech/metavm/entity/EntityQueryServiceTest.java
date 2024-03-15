@@ -24,7 +24,7 @@ public class EntityQueryServiceTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         var instanceQueryService = new InstanceQueryService(instanceSearchService);
         entityQueryService = new EntityQueryService(instanceQueryService);
-        ContextUtil.setAppId(TestConstants.getAppId());
+        ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext(TestConstants.getAppId());
+        return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 
     public void test() {
@@ -87,7 +87,7 @@ public class EntityQueryServiceTest extends TestCase {
 
     public void testSearchTypes() {
         ClassType fooType = ModelDefRegistry.getClassType(Foo.class);
-        try (var context = entityContextFactory.newContext(Constants.getRootAppId())) {
+        try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
             Page<ClassType> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(ClassType.class)
                             .addField("category", fooType.getCategory())

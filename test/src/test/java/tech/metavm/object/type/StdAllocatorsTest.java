@@ -4,12 +4,12 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.entity.ReadWriteArray;
+import tech.metavm.object.instance.core.PhysicalId;
+import tech.metavm.util.ParameterizedTypeImpl;
 import tech.metavm.util.ReflectionUtils;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,44 +29,44 @@ public class StdAllocatorsTest extends TestCase {
     public void testSmoking() {
         java.lang.reflect.Field typeNameField = ReflectionUtils.getField(Type.class, "name");
 
-        Map<java.lang.reflect.Type, List<Long>> class2ids = allocators.allocate(
+        var class2ids = allocators.allocate(
                 Map.of(ClassType.class, 1, Field.class, 1)
         );
 
-        allocators.putId(Field.class, class2ids.get(ClassType.class).get(0));
-        allocators.putId(typeNameField, class2ids.get(Field.class).get(0));
+        allocators.putId(Field.class, PhysicalId.ofClass(class2ids.get(ClassType.class).get(0), 1L));
+        allocators.putId(typeNameField, PhysicalId.ofClass(class2ids.get(Field.class).get(0), 1L));
 
-        long fieldClassId = allocators.getId(Field.class);
+        var fieldClassId = allocators.getId(Field.class);
         LOGGER.info("Field id: " + fieldClassId);
 
-        long typeNameFieldId = allocators.getId(typeNameField);
+        var typeNameFieldId = allocators.getId(typeNameField);
         LOGGER.info("Type.name id: " + typeNameFieldId);
     }
 
     public void testGetTypeId() {
         java.lang.reflect.Field typeNameReflectField = ReflectionUtils.getField(Type.class, "name");
 
-        Map<java.lang.reflect.Type, List<Long>> class2ids = allocators.allocate(
+        var class2ids = allocators.allocate(
                 Map.of(ClassType.class, 3, Field.class, 1, TypeCategory.class, 1)
         );
-        allocators.putId(ClassType.class, class2ids.get(ClassType.class).get(0));
-        allocators.putId(Field.class, class2ids.get(ClassType.class).get(1));
-        allocators.putId(TypeCategory.class, class2ids.get(ClassType.class).get(2));
-        allocators.putId(typeNameReflectField, class2ids.get(Field.class).get(0));
-        allocators.putId(TypeCategory.CLASS, class2ids.get(TypeCategory.class).get(0));
+        allocators.putId(ClassType.class, PhysicalId.ofClass(class2ids.get(ClassType.class).get(0), 1L));
+        allocators.putId(Field.class, PhysicalId.ofClass(class2ids.get(ClassType.class).get(1), 1L));
+        allocators.putId(TypeCategory.class, PhysicalId.ofClass(class2ids.get(ClassType.class).get(2), 1L));
+        allocators.putId(typeNameReflectField, PhysicalId.ofClass(class2ids.get(Field.class).get(0), 1L));
+        allocators.putId(TypeCategory.CLASS, PhysicalId.ofClass(class2ids.get(TypeCategory.class).get(0), 1L));
 
-        long typeClassId = allocators.getId(ClassType.class);
-        long fieldClassId = allocators.getId(Field.class);
-        Assert.assertEquals(typeClassId, allocators.getTypeId(fieldClassId));
+        var typeClassId = allocators.getId(ClassType.class);
+        var fieldClassId = allocators.getId(Field.class);
+        Assert.assertEquals(typeClassId.getPhysicalId(), allocators.getTypeId(fieldClassId).id());
 
-        long typeNameFieldId = allocators.getId(typeNameReflectField);
-        Assert.assertEquals(fieldClassId, allocators.getTypeId(typeNameFieldId));
+        var typeNameFieldId = allocators.getId(typeNameReflectField);
+        Assert.assertEquals(fieldClassId.getPhysicalId(), allocators.getTypeId(typeNameFieldId).id());
 
-        long typeCategoryClassId = allocators.getId(TypeCategory.class);
-        Assert.assertEquals(typeClassId, allocators.getTypeId(typeCategoryClassId));
+        var typeCategoryClassId = allocators.getId(TypeCategory.class);
+        Assert.assertEquals(typeClassId.getPhysicalId(), allocators.getTypeId(typeCategoryClassId).id());
 
-        long enumConstantId = allocators.getId(TypeCategory.CLASS);
-        Assert.assertEquals(typeCategoryClassId, allocators.getTypeId(enumConstantId));
+        var enumConstantId = allocators.getId(TypeCategory.CLASS);
+        Assert.assertEquals(typeCategoryClassId.getPhysicalId(), allocators.getTypeId(enumConstantId).id());
 
         allocators.save();
     }

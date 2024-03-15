@@ -14,7 +14,7 @@ public class ContextUtil {
         @Nullable String clientId;
         Id platformUserId;
         Id userId;
-        Id appId;
+        long appId = -1L;
         long nextTmpId = 1L;
         String token;
         private Profiler profiler = new Profiler();
@@ -24,10 +24,10 @@ public class ContextUtil {
             return nextTmpId++;
         }
 
-        void enterApp(Id appId, Id appUserId) {
-            if(this.appId == null)
+        void enterApp(long appId, Id appUserId) {
+            if(this.appId == -1L)
                 throw new BusinessException(ErrorCode.INVALID_TOKEN);
-            if(this.appId.getPhysicalId() == Constants.PLATFORM_APP_ID)
+            if(this.appId == Constants.PLATFORM_APP_ID)
                 throw new BusinessException(ErrorCode.REENTERING_APP);
             platformUserId = this.userId;
             this.appId = appId;
@@ -35,9 +35,9 @@ public class ContextUtil {
         }
 
         void exitApp() {
-            if(this.appId == null || this.appId.getPhysicalId() == Constants.PLATFORM_APP_ID)
+            if(this.appId == -1L || this.appId == Constants.PLATFORM_APP_ID)
                 throw new BusinessException(ErrorCode.NOT_IN_APP);
-            this.appId = Constants.getPlatformAppId();
+            this.appId = Constants.PLATFORM_APP_ID;
             this.userId = platformUserId;
             this.platformUserId = null;
         }
@@ -54,7 +54,7 @@ public class ContextUtil {
 
     private static final ThreadLocal<ContextInfo> THREAD_LOCAL = new ThreadLocal<>();
 
-    public static Id getAppId() {
+    public static long getAppId() {
         return getContextInfo().appId;
     }
 
@@ -91,7 +91,7 @@ public class ContextUtil {
         return contextInfo;
     }
 
-    public static void enterApp(Id appId, Id appUserId) {
+    public static void enterApp(long appId, Id appUserId) {
         getContextInfo().enterApp(appId, appUserId);
     }
 
@@ -115,7 +115,7 @@ public class ContextUtil {
         getContextInfo().userId = userId;
     }
 
-    public static void setAppId(Id appId) {
+    public static void setAppId(long appId) {
         getContextInfo().appId = appId;
     }
 
@@ -127,7 +127,7 @@ public class ContextUtil {
         var clientInfo = getContextInfo();
         clientInfo.userId = null;
         clientInfo.clientId = null;
-        clientInfo.appId = null;
+        clientInfo.appId = -1L;
     }
 
     public static void resetProfiler() {

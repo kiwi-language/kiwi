@@ -12,9 +12,9 @@ public final class SubContext {
     private final IdentityHashMap<Tree, Tree> entities = new IdentityHashMap<>();
     private final Map<Id, Tree> entityMap = new HashMap<>();
     private final Set<ReferencePO> references = new HashSet<>();
-    private final Id appId;
+    private final long appId;
 
-    public SubContext(Id appId) {
+    public SubContext(long appId) {
         this.appId = appId;
     }
 
@@ -32,7 +32,7 @@ public final class SubContext {
         }
         entityMap.put(tree.id(), tree);
         entities.put(tree, tree);
-        new ReferenceExtractor(tree.openInput(), appId.getPhysicalId(), references::add).visitMessage();
+        new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
     }
 
     public Set<ReferencePO> getReferences() {

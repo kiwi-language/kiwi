@@ -25,7 +25,7 @@ public class JobSchedulerTest extends TestCase {
         TransactionOperations transactionOperations = new MockTransactionOperations();
         Scheduler.THREAD_POOL_SIZE = 1;
         jobScheduler = new Scheduler(entityContextFactory, transactionOperations);
-        ContextUtil.setAppId(TestConstants.getAppId());
+        ContextUtil.setAppId(APP_ID);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class JobSchedulerTest extends TestCase {
     }
 
     private IEntityContext newContext() {
-        return entityContextFactory.newContext(Constants.getAppId(APP_ID));
+        return entityContextFactory.newContext(APP_ID);
     }
 
 }

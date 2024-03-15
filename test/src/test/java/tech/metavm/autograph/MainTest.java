@@ -330,11 +330,11 @@ public class MainTest extends CompilerTestBase {
         submit(() -> {
             var sysApp = doInTransaction(() -> applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser("test", "admin", "123456")));
             var sysLoginResult = doInTransaction(() -> loginService.login(new LoginRequest(
-                    Constants.getPlatformAppId().toString(),
+                    Constants.PLATFORM_APP_ID,
                     "admin",
                     "123456"
             ), "127.0.0.1"));
-            ContextUtil.setAppId(Constants.getPlatformAppId());
+            ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
             ContextUtil.setUserId(Id.parse(sysLoginResult.userId()));
             var sysLoginResult2 = doInTransaction(() -> platformUserManager.enterApp(sysApp.appId()));
             LOGGER.info(sysLoginResult2.toString());

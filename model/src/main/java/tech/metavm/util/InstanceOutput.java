@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+import static java.util.Objects.requireNonNull;
+
 public class InstanceOutput extends OutputStream {
 
     public static byte[] toByteArray(DurableInstance instance) {
@@ -55,20 +57,18 @@ public class InstanceOutput extends OutputStream {
         if (instance instanceof PrimitiveInstance primitiveInstance) {
             write(primitiveInstance.getWireType());
             primitiveInstance.writeTo(this, includeChildren);
-        }
-        else if(instance instanceof DurableInstance d) {
-            if(d.isEphemeral())
+        } else if (instance instanceof DurableInstance d) {
+            if (d.isEphemeral())
                 write(WireTypes.NULL);
             else if (isReference) {
                 write(WireTypes.REFERENCE);
-                writeLong(d.getPhysicalId());
+                writeId((PhysicalId) requireNonNull(d.getId()));
             } else {
                 write(WireTypes.RECORD);
-                writeLong(d.getPhysicalId());
+                writeId((PhysicalId) requireNonNull(d.getId()));
                 d.writeTo(this, includeChildren);
             }
-        }
-        else
+        } else
             throw new InternalException("Invalid instance: " + instance);
     }
 

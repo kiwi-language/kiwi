@@ -12,15 +12,15 @@ import java.util.Objects;
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 public abstract class AppEvent {
-    private final String appId;
+    private final long appId;
     private final int kind;
 
-    public AppEvent(String appId, int kind) {
+    public AppEvent(long appId, int kind) {
         this.appId = appId;
         this.kind = kind;
     }
 
-    public String getAppId() {
+    public long getAppId() {
         return appId;
     }
 

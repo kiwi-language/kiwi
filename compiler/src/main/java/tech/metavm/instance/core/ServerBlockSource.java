@@ -33,7 +33,7 @@ public class ServerBlockSource implements BlockSource {
     private BlockRT fromDTO(BlockDTO blockDTO) {
         return new BlockRT(
                 blockDTO.id(),
-                Id.parse(blockDTO.appId()),
+                blockDTO.appId(),
                 new TypeId(TypeTag.fromCode(blockDTO.typeTag()), blockDTO.typeId()),
                 blockDTO.start(),
                 blockDTO.end(),

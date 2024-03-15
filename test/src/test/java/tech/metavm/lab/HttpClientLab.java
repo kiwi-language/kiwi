@@ -29,7 +29,7 @@ public class HttpClientLab {
                 .header("Content-Type", "application/json")
                 .header("AppId", Long.toString(2L))
                 .POST(HttpRequest.BodyPublishers.ofString(
-                        NncUtils.toJSONString(new LoginRequest("2", "demo", "123456"))
+                        NncUtils.toJSONString(new LoginRequest(2L, "demo", "123456"))
                 ))
                 .build();
 

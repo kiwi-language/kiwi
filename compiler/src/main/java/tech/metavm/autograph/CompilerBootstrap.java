@@ -31,11 +31,11 @@ public class CompilerBootstrap {
             throw new IllegalStateException("Already boot");
         try(var ignored = ContextUtil.getProfiler().enter("CompilerBootstrap.boot")) {
             boot = true;
-            ContextUtil.setAppId(Constants.getRootAppId());
+            ContextUtil.setAppId(Constants.ROOT_APP_ID);
             var bridge = new EntityInstanceContextBridge();
             var identityContext = new IdentityContext();
             var idInitializer = new BootIdInitializer(new BootIdProvider(stdAllocators), identityContext);
-            var standardInstanceContext = contextFactory.newBridgedInstanceContext(getRootAppId(), bridge,
+            var standardInstanceContext = contextFactory.newBridgedInstanceContext(ROOT_APP_ID, bridge,
                     idInitializer);
             contextFactory.setStdContext(standardInstanceContext);
             var defContext = new DefContext(

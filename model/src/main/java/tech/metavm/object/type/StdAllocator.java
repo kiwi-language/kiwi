@@ -3,7 +3,10 @@ package tech.metavm.object.type;
 import tech.metavm.entity.ChildArray;
 import tech.metavm.entity.ReadWriteArray;
 import tech.metavm.entity.ReadonlyArray;
-import tech.metavm.util.*;
+import tech.metavm.object.instance.core.Id;
+import tech.metavm.util.NncUtils;
+import tech.metavm.util.ReflectionUtils;
+import tech.metavm.util.TypeParser;
 
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
@@ -20,9 +23,8 @@ public class StdAllocator {
     private final AllocatorStore store;
     private final String fileName;
     private long nextId;
-    private final long initialNextId;
-    private final Map<String, Long> code2id = new LinkedHashMap<>();
-    private final Map<Long, String> id2code = new LinkedHashMap<>();
+    private final Map<String, Id> code2id = new LinkedHashMap<>();
+    private final Map<Id, String> id2code = new LinkedHashMap<>();
     private final Type javaType;
 
     public StdAllocator(AllocatorStore store, String fileName, Type javaType, long base) {
@@ -30,7 +32,6 @@ public class StdAllocator {
         this.fileName = fileName;
         this.javaType = javaType;
         nextId = base;
-        initialNextId = nextId;
     }
 
     public StdAllocator(AllocatorStore store, String fileName) {
@@ -41,40 +42,25 @@ public class StdAllocator {
         this.fileName = fileName;
         for (String propertyName : properties.stringPropertyNames()) {
             if(!propertyName.startsWith(SYSTEM_PROP_PREFIX)) {
-                long id = Long.parseLong(properties.getProperty(propertyName));
+                var id = Id.parse(properties.getProperty(propertyName));
                 putId(propertyName, id);
-                if(id >= nextId) {
-                    nextId = id + 1;
+                var physicalId = id.getPhysicalId();
+                if(physicalId >= nextId) {
+                    nextId = physicalId + 1;
                 }
             }
         }
-        initialNextId = nextId;
     }
 
-    public Long getId(String code) {
+    public Id getId(String code) {
         return code2id.get(code);
     }
 
-    public String getCodeById(long id) {
-        for (Map.Entry<String, Long> entry : code2id.entrySet()) {
-            if(entry.getValue() == id) {
-                return entry.getKey();
-            }
-        }
-        throw new InternalException("code not found for id: " + id);
-    }
-
-    private long allocateId(String code) {
-        long id = nextId++;
-        putId(code, id);
-        return id;
-    }
-
-    public void buildIdMap(Map<String, Long> ids) {
+    public void buildIdMap(Map<String, Id> ids) {
         code2id.forEach((code, id) -> ids.put(javaType.getTypeName() + "." + code, id));
     }
 
-    public boolean contains(long id) {
+    public boolean contains(Id id) {
         return id2code.containsKey(id);
     }
 
@@ -104,7 +90,7 @@ public class StdAllocator {
         return fileName;
     }
 
-    public void putId(String code, long id) {
+    public void putId(String code, Id id) {
         code2id.put(code, id);
         id2code.put(id, code);
     }

@@ -29,7 +29,7 @@ public class BlockManager {
 
     private BlockDTO toDTO(BlockPO blockPO) {
         return new BlockDTO(
-                blockPO.getId(), Constants.getAppId(blockPO.getAppId()).toString(),
+                blockPO.getId(), blockPO.getAppId(),
                 blockPO.getTypeTag(), blockPO.getTypeId(), blockPO.getStartId(),
                 blockPO.getEndId(), blockPO.getNextId(), blockPO.getActive()
         );

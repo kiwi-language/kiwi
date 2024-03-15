@@ -38,7 +38,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final IInstanceStore instanceStore;
     private final Cache cache;
 
-    public InstanceContext(Id appId,
+    public InstanceContext(long appId,
                            IInstanceStore instanceStore,
                            IdInitializer idInitializer,
                            Executor executor,
@@ -359,7 +359,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
         ContextDifference difference =
-                new ContextDifference(appId.getPhysicalId(), id -> internalGet(id).getType().getTypeId());
+                new ContextDifference(appId, id -> internalGet(id).getType().getTypeId());
         difference.diff(headContext.trees(), bufferedTrees);
         difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
 //        computeVirtualUpdates(difference.getEntityChange());
@@ -424,7 +424,7 @@ public class InstanceContext extends BufferingInstanceContext {
             Set<Long> idsToRemove = NncUtils.mapUnique(entityChange.deletes(), InstancePO::getId);
             Set<Long> idsToUpdate = NncUtils.mapUnique(entityChange.updates(), InstancePO::getId);
             ReferencePO ref = instanceStore.getFirstReference(
-                    appId.getPhysicalId(), idsToRemove, mergeSets(idsToRemove, idsToUpdate)
+                    appId, idsToRemove, mergeSets(idsToRemove, idsToUpdate)
             );
             if (ref != null)
                 throw BusinessException.strongReferencesPreventRemoval(get(ref.getSourceInstanceId()),
@@ -484,7 +484,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private Set<ReferencePO> getBufferedReferences(Collection<Tree> trees) {
         Set<ReferencePO> references = new HashSet<>();
         for (Tree tree : trees) {
-            new ReferenceExtractor(tree.openInput(), appId.getPhysicalId(), references::add).visitMessage();
+            new ReferenceExtractor(tree.openInput(), appId, references::add).visitMessage();
         }
         return references;
     }
@@ -551,7 +551,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public IInstanceContext createSame(Id appId) {
+    public IInstanceContext createSame(long appId) {
         return new InstanceContext(
                 appId,
                 instanceStore,

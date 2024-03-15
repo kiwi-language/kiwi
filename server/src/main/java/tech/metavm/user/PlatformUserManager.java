@@ -11,7 +11,6 @@ import tech.metavm.common.Page;
 import tech.metavm.entity.*;
 import tech.metavm.event.EventQueue;
 import tech.metavm.event.rest.dto.JoinAppEvent;
-import tech.metavm.object.instance.core.Id;
 import tech.metavm.user.rest.dto.*;
 import tech.metavm.util.*;
 
@@ -131,15 +130,15 @@ public class PlatformUserManager extends EntityContextFactoryBean {
     }
 
     @Transactional
-    public LoginResult enterApp(String id) {
+    public LoginResult enterApp(long id) {
         try (var platformCtx = newPlatformContext()) {
-            var app = platformCtx.getEntity(Application.class, id);
+            var app = platformCtx.getEntity(Application.class, Constants.getAppId(id));
             var user = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
             if (user.hasJoinedApplication(app)) {
-                ContextUtil.enterApp(app.getId(), null);
-                try (var ctx = newContext(app.getId())) {
+                ContextUtil.enterApp(id, null);
+                try (var ctx = newContext(app.getPhysicalId())) {
                     var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, user.tryGetId());
-                    var token = loginService.directLogin(Id.parse(id), appUser, ctx);
+                    var token = loginService.directLogin(id, appUser, ctx);
                     ctx.finish();
                     return new LoginResult(token, user.getStringId());
                 } finally {
@@ -160,11 +159,11 @@ public class PlatformUserManager extends EntityContextFactoryBean {
 
     public void joinApplication(PlatformUser platformUser, Application app, IEntityContext platformContext) {
         platformUser.joinApplication(app);
-        if (!app.idEquals(platformContext.getAppId())) {
+        if (app.getPhysicalId() != platformContext.getAppId()) {
             if (app.isIdNull())
                 platformContext.initIds();
-            ContextUtil.enterApp(app.getId(), null);
-            try (var context = newContext(app.getId())) {
+            ContextUtil.enterApp(app.getPhysicalId(), null);
+            try (var context = newContext(app.getPhysicalId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),
@@ -228,7 +227,7 @@ public class PlatformUserManager extends EntityContextFactoryBean {
 
     public Page<PlatformUser> query(PlatformUserQuery query, IEntityContext context) {
         var app = NncUtils.get(query.appId(), appId -> context.getEntity(Application.class, appId));
-        var dataPage = entityQueryService.query(
+        return entityQueryService.query(
                 EntityQueryBuilder.newBuilder(PlatformUser.class)
                         .searchText(query.searchText())
                         .addFieldIfNotNull("applications", app)
@@ -239,7 +238,6 @@ public class PlatformUserManager extends EntityContextFactoryBean {
                         .build(),
                 context
         );
-        return dataPage;
     }
 
     @Transactional(readOnly = true)

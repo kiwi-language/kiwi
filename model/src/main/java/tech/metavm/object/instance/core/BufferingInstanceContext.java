@@ -19,7 +19,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     protected final LoadingBuffer loadingBuffer;
     protected final IdInitializer idInitializer;
 
-    public BufferingInstanceContext(Id appId,
+    public BufferingInstanceContext(long appId,
                                     List<TreeSource> treeSources,
                                     VersionSource versionSource,
                                     IndexSource indexSource,

@@ -58,7 +58,7 @@ public class InstanceStore extends BaseInstanceStore {
     public List<Version> getRootVersions(List<Long> ids, IInstanceContext context) {
         try(var entry = context.getProfiler().enter("getRootVersions")) {
             entry.addMessage("numIds", ids.size());
-            return instanceMapper.selectRootVersions(context.getAppId().getPhysicalId(), ids);
+            return instanceMapper.selectRootVersions(context.getAppId(), ids);
         }
     }
 
@@ -93,20 +93,20 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public List<Id> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return NncUtils.map(indexEntryMapper.scan(context.getAppId().getPhysicalId(), from, to),
+        return NncUtils.map(indexEntryMapper.scan(context.getAppId(), from, to),
                 IndexEntryPO::getId);
     }
 
     @Override
     public long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return indexEntryMapper.countRange(context.getAppId().getPhysicalId(), from, to);
+        return indexEntryMapper.countRange(context.getAppId(), from, to);
     }
 
     @Override
     public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.query")) {
             return NncUtils.map(
-                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query,context.getAppId().getPhysicalId(), context.getLockMode().code())),
+                    indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query,context.getAppId(), context.getLockMode().code())),
                     IndexEntryPO::getId
             );
         }
@@ -115,7 +115,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public long count(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.count")) {
-            return indexEntryMapper.count(PersistenceUtils.toIndexQueryPO(query, context.getAppId().getPhysicalId(), context.getLockMode().code()));
+            return indexEntryMapper.count(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
         }
     }
 
@@ -123,7 +123,7 @@ public class InstanceStore extends BaseInstanceStore {
     public List<Id> getByReferenceTargetId(long targetId, long startIdExclusive, long limit, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.getByReferenceTargetId")) {
             return NncUtils.map(
-                    referenceMapper.selectByTargetId(context.getAppId().getPhysicalId(), targetId, startIdExclusive, limit),
+                    referenceMapper.selectByTargetId(context.getAppId(), targetId, startIdExclusive, limit),
                     r -> PhysicalId.of(r.getSourceId(), TypeTag.fromCode(r.getTargetTypeTag()), r.getSourceId())
             );
         }
@@ -132,14 +132,14 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.queryByTypeIds")) {
-            return instanceMapper.selectByTypeIds(context.getAppId().getPhysicalId(), queries);
+            return instanceMapper.selectByTypeIds(context.getAppId(), queries);
         }
     }
 
     @Override
     public List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.scan")) {
-            return instanceMapper.scan(context.getAppId().getPhysicalId(), queries);
+            return instanceMapper.scan(context.getAppId(), queries);
         }
     }
 
@@ -157,7 +157,7 @@ public class InstanceStore extends BaseInstanceStore {
             entry.addMessage("numInstances", ids.size());
             if (entry.isVerbose())
                 entry.addMessage("ids", ids);
-            var records = instanceMapper.selectForest(context.getAppId().getPhysicalId(), ids,
+            var records = instanceMapper.selectForest(context.getAppId(), ids,
                     context.getLockMode().code());
             var typeIds = NncUtils.mapUnique(records, r -> PhysicalId.of(r.getId(), TypeTag.fromCode(r.getTypeTag()), r.getTypeId()));
             context.buffer(typeIds);
@@ -175,7 +175,7 @@ public class InstanceStore extends BaseInstanceStore {
             if (NncUtils.isEmpty(request.ids())) {
                 return List.of();
             }
-            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId().getPhysicalId(), request.ids(),
+            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(), request.ids(),
                     context.getLockMode().code());
             Set<Id> typeIds = NncUtils.mapUnique(records,
                     r -> PhysicalId.of(r.getTypeId(), TypeTag.fromCode(r.getTypeTag()), r.getTypeId()));

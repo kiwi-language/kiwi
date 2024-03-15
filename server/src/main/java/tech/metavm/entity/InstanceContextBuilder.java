@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 public class InstanceContextBuilder {
 
-    public static InstanceContextBuilder newBuilder(Id appId,
+    public static InstanceContextBuilder newBuilder(long appId,
                                                     IInstanceStore instanceStore,
                                                     IdInitializer idProvider,
                                                     TypeProvider typeProvider,
@@ -27,7 +27,7 @@ public class InstanceContextBuilder {
                 typeProvider, mappingProvider, parameterizedFlowProvider);
     }
 
-    private final Id appId;
+    private final long appId;
     private IInstanceStore instanceStore;
     private IdInitializer idInitializer;
     private Executor executor;
@@ -43,7 +43,7 @@ public class InstanceContextBuilder {
     private boolean readonly;
     private Function<Id, TypeId> getTypeIdInterceptor;
 
-    public InstanceContextBuilder(Id appId,
+    public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
                                   IdInitializer idInitializer,
                                   TypeProvider typeProvider,

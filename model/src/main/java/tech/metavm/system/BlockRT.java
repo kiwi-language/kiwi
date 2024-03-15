@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class BlockRT implements Comparable<BlockRT> {
-    private final Id appId;
+    private final long appId;
     private final long id;
     private final TypeId typeId;
     private final long start;
@@ -19,7 +19,7 @@ public class BlockRT implements Comparable<BlockRT> {
     private boolean active;
     private long next;
 
-    public BlockRT(long id, Id appId, TypeId typeId, long start, long end, long next) {
+    public BlockRT(long id, long appId, TypeId typeId, long start, long end, long next) {
         this.id = id;
         this.appId = appId;
         this.typeId = typeId;
@@ -73,7 +73,7 @@ public class BlockRT implements Comparable<BlockRT> {
         return active;
     }
 
-    public Id getAppId() {
+    public long getAppId() {
         return appId;
     }
 
@@ -82,7 +82,7 @@ public class BlockRT implements Comparable<BlockRT> {
     }
 
     public BlockDTO toDTO() {
-        return new BlockDTO(id, appId.toString(), typeId.tag().code(), typeId.id(), start, end, next, active);
+        return new BlockDTO(id, appId, typeId.tag().code(), typeId.id(), start, end, next, active);
     }
 
     @Override

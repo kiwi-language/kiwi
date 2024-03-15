@@ -19,7 +19,7 @@ import java.util.List;
 
 public class CompilerInstanceContext extends BufferingInstanceContext {
 
-    public CompilerInstanceContext(Id appId,
+    public CompilerInstanceContext(long appId,
                                    List<TreeSource> treeSources,
                                    VersionSource versionSource,
                                    IdInitializer idService,
@@ -38,7 +38,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
     }
 
     @Override
-    public IInstanceContext createSame(Id appId) {
+    public IInstanceContext createSame(long appId) {
         return null;
     }
 

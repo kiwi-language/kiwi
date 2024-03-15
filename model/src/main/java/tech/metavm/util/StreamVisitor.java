@@ -56,7 +56,7 @@ public class StreamVisitor {
     }
 
     public PhysicalId readId() {
-        return PhysicalId.of(input.readLong(), readTypeTag(), readLong());
+        return input.readId();
     }
 
     public TypeTag readTypeTag() {
@@ -100,7 +100,7 @@ public class StreamVisitor {
     }
 
     public void visitReference() {
-        input.readLong();
+        input.readId();
     }
 
     public void visitString() {

@@ -44,7 +44,7 @@ public class InstanceContextTest extends TestCase {
 
     private IInstanceContext newContext() {
         return new InstanceContext(
-                TestConstants.getAppId(),
+                TestConstants.APP_ID,
                 instanceStore,
                 new DefaultIdInitializer(idProvider),
                 executor,

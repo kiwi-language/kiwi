@@ -13,7 +13,7 @@ public class BlockUtils {
     public static BlockPO toPO(BlockRT blockRT) {
         return new BlockPO(
                 blockRT.getId(),
-                blockRT.getAppId().getPhysicalId(),
+                blockRT.getAppId(),
                 blockRT.getTypeId().tag().code(),
                 blockRT.getTypeId().id(),
                 blockRT.getStart(),
@@ -26,7 +26,7 @@ public class BlockUtils {
     public static BlockRT createBlockRT(BlockPO blockPO) {
         return new BlockRT(
                 Objects.requireNonNull(blockPO.getId()),
-                Constants.getAppId(blockPO.getAppId()),
+                blockPO.getAppId(),
                 new TypeId(TypeTag.fromCode(blockPO.getTypeTag()), blockPO.getTypeId()),
                 blockPO.getStartId(),
                 blockPO.getEndId(),

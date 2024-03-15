@@ -52,7 +52,7 @@ public class VerificationFilter extends OncePerRequestFilter {
         if(appId == null)
             appId = NncUtils.tryParseLong(request.getParameter("__app_id__"));
         if (appId != null) {
-            var token = Tokens.getToken(appId.toString(), request);
+            var token = Tokens.getToken(appId, request);
             if (token != null &&  loginService.verify(token).isSuccessful()) {
                 filterChain.doFilter(request, response);
                 return;
